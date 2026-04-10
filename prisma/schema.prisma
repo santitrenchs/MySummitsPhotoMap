@@ -1,0 +1,175 @@
+// MySummitsPhotoMap — Prisma Schema
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────
+// GLOBAL — shared catalog, never duplicated per tenant
+// ─────────────────────────────────────────────────────────
+
+model Peak {
+  id            String   @id @default(uuid())
+  name          String
+  latitude      Float
+  longitude     Float
+  altitudeM     Int
+  mountainRange String?
+  country       String   @default("ES")
+  createdAt     DateTime @default(now())
+
+  ascents Ascent[]
+
+  @@map("peaks")
+}
+
+// ─────────────────────────────────────────────────────────
+// CONTROL PLANE — auth & tenant orchestration (no tenant_id)
+// ─────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+
+  memberships Membership[]
+  ascents     Ascent[]
+
+  @@map("users")
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  /// null = shared DB (current); non-null = dedicated DB URL (future per-tenant isolation)
+  dbUrl     String?
+  createdAt DateTime @default(now())
+
+  memberships    Membership[]
+  ascents        Ascent[]
+  photos         Photo[]
+  persons        Person[]
+  faceDetections FaceDetection[]
+  faceTags       FaceTag[]
+
+  @@map("tenants")
+}
+
+model Membership {
+  id        String         @id @default(uuid())
+  userId    String
+  tenantId  String
+  role      MembershipRole @default(OWNER)
+  createdAt DateTime       @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+  @@map("memberships")
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// ─────────────────────────────────────────────────────────
+// DATA PLANE — all tables are tenant-scoped (tenantId required)
+// ─────────────────────────────────────────────────────────
+
+model Ascent {
+  id          String   @id @default(uuid())
+  tenantId    String
+  peakId      String
+  date        DateTime @db.Date
+  route       String?
+  description String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  peak   Peak   @relation(fields: [peakId], references: [id])
+  user   User   @relation(fields: [createdBy], references: [id])
+  photos Photo[]
+
+  @@index([tenantId])
+  @@index([tenantId, peakId])
+  @@map("ascents")
+}
+
+model Photo {
+  id         String   @id @default(uuid())
+  tenantId   String
+  ascentId   String
+  /// S3/R2 object key — e.g. tenant/{tenantId}/photos/{photoId}.jpg
+  storageKey String
+  /// Public CDN URL
+  url        String
+  createdAt  DateTime @default(now())
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ascent         Ascent          @relation(fields: [ascentId], references: [id], onDelete: Cascade)
+  faceDetections FaceDetection[]
+
+  @@index([tenantId, ascentId])
+  @@map("photos")
+}
+
+model Person {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  faceTags FaceTag[]
+
+  @@index([tenantId])
+  @@map("persons")
+}
+
+model FaceDetection {
+  id          String   @id @default(uuid())
+  tenantId    String
+  photoId     String
+  /// { x: number, y: number, width: number, height: number, confidence: number }
+  boundingBox Json
+  createdAt   DateTime @default(now())
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  photo    Photo     @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  faceTags FaceTag[]
+
+  @@index([tenantId, photoId])
+  @@map("face_detections")
+}
+
+model FaceTag {
+  id              String   @id @default(uuid())
+  tenantId        String
+  faceDetectionId String
+  personId        String
+  createdAt       DateTime @default(now())
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  faceDetection FaceDetection @relation(fields: [faceDetectionId], references: [id], onDelete: Cascade)
+  person        Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([faceDetectionId, personId])
+  @@index([tenantId, personId])
+  @@map("face_tags")
+}
