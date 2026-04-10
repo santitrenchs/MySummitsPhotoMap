@@ -133,16 +133,51 @@ const PEAKS = [
   { name: "Comaloforno",                 latitude: 42.5303, longitude:  0.9839, altitudeM: 3033, mountainRange: "Alta Ribagorça",       country: "ES" },
   { name: "Punta Alta de Comalesbienes", latitude: 42.5347, longitude:  0.9472, altitudeM: 3014, mountainRange: "Alta Ribagorça",       country: "ES" },
   { name: "Cap de Vaquèira",             latitude: 42.6067, longitude:  1.1028, altitudeM: 3011, mountainRange: "Alta Ribagorça",       country: "ES" },
+
+  // ── Cerdanya catalana ─────────────────────────────────────────────────────
+  { name: "Comabona",                    latitude: 42.2597, longitude:  2.1947, altitudeM: 2924, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Carlit",                      latitude: 42.5736, longitude:  1.9289, altitudeM: 2921, mountainRange: "Cerdanya",               country: "FR" },
+  { name: "Tossa Plana de Lles",         latitude: 42.3272, longitude:  1.6711, altitudeM: 2916, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puigpedrós",                  latitude: 42.4083, longitude:  1.9417, altitudeM: 2914, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puigmal",                     latitude: 42.3697, longitude:  2.0889, altitudeM: 2913, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig de Noufonts",            latitude: 42.3944, longitude:  2.0786, altitudeM: 2861, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Pic de la Vaca",             latitude: 42.3806, longitude:  2.1147, altitudeM: 2826, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig de Tirapits",            latitude: 42.3717, longitude:  2.0783, altitudeM: 2803, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig de la Canal del Cristall", latitude: 42.4011, longitude: 2.1375, altitudeM: 2738, mountainRange: "Cerdanya",             country: "ES" },
+  { name: "Puig de Coma de Vaca",        latitude: 42.3736, longitude:  2.1083, altitudeM: 2770, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig de l'Home Mort",         latitude: 42.3628, longitude:  2.0717, altitudeM: 2748, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Vulturó",                     latitude: 42.2481, longitude:  1.7214, altitudeM: 2648, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Cadí Occidental",             latitude: 42.2600, longitude:  1.7139, altitudeM: 2640, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig del Sac",               latitude: 42.3472, longitude:  2.0728, altitudeM: 2695, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "La Perdiu",                   latitude: 42.2547, longitude:  1.7411, altitudeM: 2620, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Cadí Oriental",               latitude: 42.2653, longitude:  1.7533, altitudeM: 2547, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig d'Estanyet",             latitude: 42.3592, longitude:  2.0481, altitudeM: 2603, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Tossa d'Alp",                latitude: 42.2736, longitude:  1.9003, altitudeM: 2531, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Serra de l'Olla",             latitude: 42.3069, longitude:  1.9725, altitudeM: 2560, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig de Queralbs",            latitude: 42.3514, longitude:  2.1417, altitudeM: 2518, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig de Pedrouriol",          latitude: 42.3347, longitude:  2.0411, altitudeM: 2633, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig Alt de Ger",             latitude: 42.3317, longitude:  1.9467, altitudeM: 2455, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig de l'Orri",              latitude: 42.2900, longitude:  1.9225, altitudeM: 2450, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Puig de Coll Roig",           latitude: 42.2808, longitude:  1.8625, altitudeM: 2420, mountainRange: "Cerdanya",               country: "ES" },
 ];
 
 async function main() {
   console.log("Seeding peaks…");
 
-  // Clear and recreate — safe because peaks is catalog data, not user data
-  await prisma.peak.deleteMany();
-  const result = await prisma.peak.createMany({ data: PEAKS });
+  // Upsert by name — safe to rerun, won't break existing ascent references
+  let upserted = 0;
+  for (const peak of PEAKS) {
+    const existing = await prisma.peak.findFirst({ where: { name: peak.name }, select: { id: true } });
+    if (existing) {
+      await prisma.peak.update({ where: { id: existing.id }, data: peak });
+    } else {
+      await prisma.peak.create({ data: peak });
+    }
+    upserted++;
+    process.stdout.write(`\r  ${upserted}/${PEAKS.length}`);
+  }
 
-  console.log(`Done — ${result.count} peaks seeded.`);
+  console.log(`\nDone — ${upserted} peaks upserted.`);
 }
 
 main()

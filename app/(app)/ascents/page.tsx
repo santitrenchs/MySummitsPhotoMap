@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { listAscents } from "@/lib/services/ascent.service";
 import { DeleteAscentButton } from "@/components/ascents/DeleteAscentButton";
+import { prisma } from "@/lib/db/client";
 
 export default async function AscentsPage() {
   const session = await auth();
@@ -63,6 +64,7 @@ export default async function AscentsPage() {
                 gap: 16,
               }}
             >
+              <Link href={`/ascents/${ascent.id}`} style={{ flex: 1, minWidth: 0, textDecoration: "none" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>
@@ -95,6 +97,7 @@ export default async function AscentsPage() {
                   </p>
                 )}
               </div>
+              </Link>
               <DeleteAscentButton id={ascent.id} />
             </div>
           ))}

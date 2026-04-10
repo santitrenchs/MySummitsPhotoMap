@@ -16,6 +16,7 @@ export type MapPeak = {
 
 const STYLE: maplibregl.StyleSpecification = {
   version: 8,
+  glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
   sources: {
     carto: {
       type: "raster",
@@ -43,7 +44,10 @@ export default function MapView({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const ascentedSet = useRef(new Set(ascentedPeakIds));
+  const justSelectedRef = useRef(false);
   const [selected, setSelected] = useState<MapPeak | null>(null);
+  const [zoom, setZoom] = useState(8);
+  const [hillshade, setHillshade] = useState(true);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -56,11 +60,74 @@ export default function MapView({
     });
     mapRef.current = map;
 
-    map.addControl(new maplibregl.NavigationControl(), "top-right");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+
+    map.on("zoom", () => setZoom(Math.round(map.getZoom() * 10) / 10));
+    map.on("click", () => {
+      if (justSelectedRef.current) { justSelectedRef.current = false; return; }
+      setSelected(null);
+    });
 
     map.once("load", () => {
       map.resize();
+
+      // Terrain elevation source for hillshading (AWS Terrarium, no API key)
+      map.addSource("terrain", {
+        type: "raster-dem",
+        tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+        tileSize: 256,
+        encoding: "terrarium",
+        maxzoom: 15,
+      });
+
+      map.addLayer({
+        id: "hillshading",
+        type: "hillshade",
+        source: "terrain",
+        paint: {
+          "hillshade-exaggeration": 0.7,
+          "hillshade-illumination-direction": 315,
+          "hillshade-illumination-anchor": "map",
+          "hillshade-highlight-color": "rgba(255,255,255,0.4)",
+          "hillshade-shadow-color": "rgba(0,0,0,0.55)",
+        },
+      });
+
+      // GeoJSON source for name/altitude labels
+      map.addSource("peaks-labels", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: peaks.map((p) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
+            properties: { name: p.name, alt: p.altitudeM },
+          })),
+        },
+      });
+
+      // Labels visible from zoom 10 onwards; MapLibre handles collision avoidance
+      map.addLayer({
+        id: "peak-labels",
+        type: "symbol",
+        source: "peaks-labels",
+        minzoom: 10,
+        layout: {
+          "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 11,
+          "text-offset": [0, 1.1],
+          "text-anchor": "top",
+          "text-optional": true,
+          "text-allow-overlap": false,
+          "text-max-width": 9,
+        },
+        paint: {
+          "text-color": "#1f2937",
+          "text-halo-color": "rgba(255,255,255,0.88)",
+          "text-halo-width": 1.5,
+        },
+      });
 
       peaks.forEach((peak) => {
         const ascended = ascentedSet.current.has(peak.id);
@@ -92,6 +159,7 @@ export default function MapView({
         el.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
+          justSelectedRef.current = true;
           setSelected(peak);
         });
 
@@ -108,6 +176,12 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getLayer("hillshading")) return;
+    map.setLayoutProperty("hillshading", "visibility", hillshade ? "visible" : "none");
+  }, [hillshade]);
+
   return (
     <div style={{ position: "relative", height: "calc(100vh - 3.5rem)" }}>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
@@ -115,11 +189,58 @@ export default function MapView({
       {/* Badge */}
       <div style={{
         position: "absolute", top: 12, left: 12, zIndex: 10,
-        background: "rgba(255,255,255,0.92)", border: "1px solid #e5e7eb",
-        borderRadius: 8, padding: "6px 12px", fontSize: 12, color: "#4b5563",
+        display: "flex", gap: 6,
         pointerEvents: "none",
       }}>
-        <strong style={{ color: "#111827" }}>{peaks.length}</strong> Pyrenean peaks &gt;3000m
+        <div style={{
+          background: "rgba(255,255,255,0.92)", border: "1px solid #e5e7eb",
+          borderRadius: 8, padding: "6px 12px", fontSize: 12, color: "#4b5563",
+        }}>
+          <strong style={{ color: "#111827" }}>{peaks.length}</strong> Pyrenean peaks &gt;3000m
+        </div>
+        <div style={{
+          background: "rgba(255,255,255,0.92)", border: "1px solid #e5e7eb",
+          borderRadius: 8, padding: "6px 12px", fontSize: 12, color: "#4b5563",
+        }}>
+          zoom <strong style={{ color: "#111827" }}>{zoom}</strong>
+          {zoom < 10 && <span style={{ color: "#9ca3af" }}> · labels at 10</span>}
+        </div>
+        <button
+          onClick={() => setHillshade((v) => !v)}
+          style={{
+            background: hillshade ? "#0369a1" : "rgba(255,255,255,0.92)",
+            border: "1px solid #e5e7eb",
+            borderRadius: 8, padding: "6px 12px", fontSize: 12,
+            color: hillshade ? "white" : "#4b5563",
+            cursor: "pointer", pointerEvents: "auto",
+          }}
+        >
+          Relief
+        </button>
+      </div>
+
+      {/* Zoom controls */}
+      <div style={{
+        position: "absolute", bottom: 110, right: 12, zIndex: 10,
+        display: "flex", flexDirection: "column", gap: 1,
+      }}>
+        {[{ label: "+", action: () => mapRef.current?.zoomIn() }, { label: "−", action: () => mapRef.current?.zoomOut() }].map(({ label, action }) => (
+          <button
+            key={label}
+            onClick={action}
+            style={{
+              width: 30, height: 30,
+              background: "rgba(255,255,255,0.95)", border: "1px solid #d1d5db",
+              borderRadius: label === "+" ? "8px 8px 0 0" : "0 0 8px 8px",
+              fontSize: 18, fontWeight: 400, color: "#374151",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+            }}
+            aria-label={label === "+" ? "Zoom in" : "Zoom out"}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Legend */}
@@ -142,14 +263,6 @@ export default function MapView({
       {/* Detail panel */}
       {selected && (
         <>
-          {/* Backdrop: truly transparent, just catches outside clicks */}
-          <div
-            style={{
-              position: "absolute", inset: 0, zIndex: 10,
-              background: "transparent",
-            }}
-            onClick={() => setSelected(null)}
-          />
           <div style={{
             position: "absolute", top: 12, right: 12, width: 280,
             background: "white", borderRadius: 12,
