@@ -17,6 +17,22 @@ export async function listAscents(tenantId: string) {
       peak: {
         select: { id: true, name: true, altitudeM: true, mountainRange: true },
       },
+      photos: {
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          url: true,
+          faceDetections: {
+            select: {
+              faceTags: {
+                select: {
+                  person: { select: { id: true, name: true } },
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 }
