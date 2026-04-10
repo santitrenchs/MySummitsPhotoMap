@@ -17,6 +17,7 @@
     "@aws-sdk/client-s3": "^3.696.0",
     "@aws-sdk/s3-request-presigner": "^3.696.0",
     "@prisma/client": "^5.22.0",
+    "@vladmandic/face-api": "^1.7.15",
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^2.4.3",
     "maplibre-gl": "^4.7.1",

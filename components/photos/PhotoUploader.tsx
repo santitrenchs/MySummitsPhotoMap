@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { PhotoFaceTagger } from "./PhotoFaceTagger";
 
 type Photo = { id: string; url: string };
 
@@ -19,6 +20,7 @@ export function PhotoUploader({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [tagging, setTagging] = useState<Photo | null>(null);
 
   async function uploadFiles(files: FileList | File[]) {
     setError(null);
@@ -125,6 +127,18 @@ export function PhotoUploader({
                 style={{ objectFit: "cover" }}
                 sizes="140px"
               />
+              {/* Tag faces button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setTagging(photo); }}
+                style={{
+                  position: "absolute", bottom: 4, left: 4,
+                  padding: "2px 7px", borderRadius: 6,
+                  background: "rgba(0,0,0,0.55)", border: "none",
+                  color: "white", fontSize: 10, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Tag
+              </button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(photo.id); }}
                 style={{
@@ -141,6 +155,13 @@ export function PhotoUploader({
             </div>
           ))}
         </div>
+      )}
+
+      {tagging && (
+        <PhotoFaceTagger
+          photo={tagging}
+          onClose={() => setTagging(null)}
+        />
       )}
     </div>
   );

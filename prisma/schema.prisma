@@ -146,8 +146,10 @@ model FaceDetection {
   id          String   @id @default(uuid())
   tenantId    String
   photoId     String
-  /// { x: number, y: number, width: number, height: number, confidence: number }
+  /// { x: number, y: number, width: number, height: number }
   boundingBox Json
+  /// 128-float face descriptor vector, stored as number[]
+  descriptor  Json?
   createdAt   DateTime @default(now())
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
