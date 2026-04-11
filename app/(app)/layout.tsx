@@ -22,7 +22,7 @@ export default async function AppLayout({
       {/* CSS variables for nav heights — used by map and other full-bleed sections */}
       <style>{`
         :root {
-          --top-nav-h: 3.5rem;
+          --top-nav-h: 3rem;
           --bottom-nav-h: 0px;
         }
         @media (max-width: 639px) {
