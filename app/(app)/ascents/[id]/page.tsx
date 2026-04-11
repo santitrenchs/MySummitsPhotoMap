@@ -244,36 +244,62 @@ export default async function AscentDetailPage({
           </section>
         )}
 
-        {/* ── MINI MAP ─────────────────────────────────────────────────── */}
+        {/* ── MAP / WIKILOC ────────────────────────────────────────────── */}
         <section style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>
-            Location
-          </h2>
-          <a href={osmLink} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
-            <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid #e5e7eb", position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
+              {ascent.wikiloc ? "Route · Wikiloc" : "Location"}
+            </h2>
+            {ascent.wikiloc && (
+              <a
+                href={ascent.wikiloc.replace("embedv2.do", "iframe/index").replace(/&[^?]*$/, "")}
+                target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 11, fontWeight: 600, color: "#4C8C2B", textDecoration: "none" }}
+              >
+                Open in Wikiloc ↗
+              </a>
+            )}
+          </div>
+
+          {ascent.wikiloc ? (
+            /* ── Wikiloc embed ── */
+            <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid #e5e7eb" }}>
               <iframe
-                src={mapUrl}
+                src={ascent.wikiloc}
                 width="100%"
-                height="200"
-                style={{ border: "none", display: "block", pointerEvents: "none" }}
-                title="Peak location"
+                height="300"
+                style={{ border: "none", display: "block" }}
+                title="Wikiloc route"
+                allowFullScreen
               />
-              {/* Clickable overlay */}
-              <div style={{
-                position: "absolute", inset: 0,
-                display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
-                padding: 10,
-              }}>
-                <span style={{
-                  background: "rgba(255,255,255,0.92)", backdropFilter: "blur(4px)",
-                  borderRadius: 20, padding: "4px 12px",
-                  fontSize: 11, fontWeight: 600, color: "#374151",
-                }}>
-                  {latitude.toFixed(4)}°N · {longitude.toFixed(4)}°E ↗
-                </span>
-              </div>
             </div>
-          </a>
+          ) : (
+            /* ── OpenStreetMap fallback ── */
+            <a href={osmLink} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
+              <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid #e5e7eb", position: "relative" }}>
+                <iframe
+                  src={mapUrl}
+                  width="100%"
+                  height="200"
+                  style={{ border: "none", display: "block", pointerEvents: "none" }}
+                  title="Peak location"
+                />
+                <div style={{
+                  position: "absolute", inset: 0,
+                  display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
+                  padding: 10,
+                }}>
+                  <span style={{
+                    background: "rgba(255,255,255,0.92)", backdropFilter: "blur(4px)",
+                    borderRadius: 20, padding: "4px 12px",
+                    fontSize: 11, fontWeight: 600, color: "#374151",
+                  }}>
+                    {latitude.toFixed(4)}°N · {longitude.toFixed(4)}°E ↗
+                  </span>
+                </div>
+              </div>
+            </a>
+          )}
         </section>
 
         {/* ── ADD PHOTOS ───────────────────────────────────────────────── */}
