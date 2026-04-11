@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ImageCropModal } from "@/components/photos/ImageCropModal";
+import { PhotoTagStep, type FaceDraft } from "@/components/photos/PhotoTagStep";
 
 type Peak = {
   id: string;
@@ -25,15 +26,15 @@ export function NewAscentForm({
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  // Crop queue: raw files waiting for the crop modal
+  // Step 1: crop queue (raw files)
   const [cropQueue, setCropQueue] = useState<File[]>([]);
-  // Cropped blobs ready to upload on submit, paired with preview object URLs
-  const [croppedBlobs, setCroppedBlobs] = useState<Blob[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
+  // Step 2: tag queue (cropped blobs waiting for face tagging)
+  const [tagQueue, setTagQueue] = useState<Blob[]>([]);
+  // Step 3: ready items (tagged, ready to upload on submit)
+  const [readyItems, setReadyItems] = useState<{ blob: Blob; faces: FaceDraft[]; preview: string }[]>([]);
 
-  // Revoke object URLs on unmount to avoid memory leaks
   useEffect(() => {
-    return () => { previews.forEach((url) => URL.revokeObjectURL(url)); };
+    return () => { readyItems.forEach((item) => URL.revokeObjectURL(item.preview)); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -49,21 +50,28 @@ export function NewAscentForm({
     if (arr.length) setCropQueue((prev) => [...prev, ...arr]);
   }
 
+  // Crop → tag step
   function handleCropDone(blob: Blob) {
-    const url = URL.createObjectURL(blob);
-    setCroppedBlobs((prev) => [...prev, blob]);
-    setPreviews((prev) => [...prev, url]);
     setCropQueue((q) => q.slice(1));
+    setTagQueue((q) => [...q, blob]);
   }
-
   function handleCropCancel() {
     setCropQueue((q) => q.slice(1));
   }
 
+  // Tag step → ready
+  function handleTagDone(blob: Blob, faces: FaceDraft[]) {
+    const preview = URL.createObjectURL(blob);
+    setReadyItems((prev) => [...prev, { blob, faces, preview }]);
+    setTagQueue((q) => q.slice(1));
+  }
+  function handleTagSkip(blob: Blob) {
+    handleTagDone(blob, []);
+  }
+
   function removeFile(index: number) {
-    URL.revokeObjectURL(previews[index]);
-    setCroppedBlobs((prev) => prev.filter((_, i) => i !== index));
-    setPreviews((prev) => prev.filter((_, i) => i !== index));
+    URL.revokeObjectURL(readyItems[index].preview);
+    setReadyItems((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -96,12 +104,13 @@ export function NewAscentForm({
 
     const ascent = await ascentRes.json();
 
-    // Step 2 — upload cropped photos (if any)
-    if (croppedBlobs.length > 0) {
-      for (let i = 0; i < croppedBlobs.length; i++) {
-        setStatus(`Uploading photo ${i + 1} of ${croppedBlobs.length}…`);
+    // Step 2 — upload photos + save face tags
+    if (readyItems.length > 0) {
+      for (let i = 0; i < readyItems.length; i++) {
+        const item = readyItems[i];
+        setStatus(`Uploading photo ${i + 1} of ${readyItems.length}…`);
         const fd = new FormData();
-        fd.append("file", croppedBlobs[i], "photo.jpg");
+        fd.append("file", item.blob, "photo.jpg");
         fd.append("ascentId", ascent.id);
         const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
         if (!photoRes.ok) {
@@ -111,6 +120,22 @@ export function NewAscentForm({
           router.push(`/ascents/${ascent.id}`);
           router.refresh();
           return;
+        }
+        // Save face detections + tags in one shot
+        if (item.faces.length > 0) {
+          const photo = await photoRes.json();
+          setStatus(`Saving tags for photo ${i + 1}…`);
+          await fetch(`/api/photos/${photo.id}/faces`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              faces: item.faces.map((f) => ({
+                boundingBox: f.boundingBox,
+                descriptor: f.descriptor,
+                personName: f.personName ?? null,
+              })),
+            }),
+          });
         }
       }
     }
@@ -133,12 +158,21 @@ export function NewAscentForm({
 
   return (
     <>
-      {/* Crop modal — shown for each queued file before it gets added */}
+      {/* Step 1 — Crop modal */}
       {cropQueue.length > 0 && (
         <ImageCropModal
           file={cropQueue[0]}
           onCrop={handleCropDone}
           onCancel={handleCropCancel}
+        />
+      )}
+
+      {/* Step 2 — Tag step (auto face detection) */}
+      {cropQueue.length === 0 && tagQueue.length > 0 && (
+        <PhotoTagStep
+          blob={tagQueue[0]}
+          onDone={handleTagDone}
+          onSkip={handleTagSkip}
         />
       )}
 
@@ -241,30 +275,43 @@ export function NewAscentForm({
           </p>
         </div>
 
-        {/* Cropped previews */}
-        {previews.length > 0 && (
+        {/* Ready previews (cropped + tagged) */}
+        {readyItems.length > 0 && (
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
             gap: 8, marginTop: 12,
           }}>
-            {previews.map((src, i) => (
-              <div key={i} style={{ position: "relative", aspectRatio: "4/5", borderRadius: 8, overflow: "hidden", background: "#f3f4f6" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); removeFile(i); }}
-                  style={{
-                    position: "absolute", top: 3, right: 3,
-                    width: 20, height: 20, borderRadius: "50%",
-                    background: "rgba(0,0,0,0.55)", border: "none",
-                    color: "white", fontSize: 10, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}
-                >✕</button>
-              </div>
-            ))}
+            {readyItems.map((item, i) => {
+              const taggedCount = item.faces.filter((f) => f.personName).length;
+              return (
+                <div key={i} style={{ position: "relative", aspectRatio: "4/5", borderRadius: 8, overflow: "hidden", background: "#f3f4f6" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  {taggedCount > 0 && (
+                    <span style={{
+                      position: "absolute", bottom: 4, left: 4,
+                      background: "rgba(34,197,94,0.88)", backdropFilter: "blur(4px)",
+                      borderRadius: 10, padding: "2px 6px",
+                      fontSize: 9, fontWeight: 700, color: "white",
+                    }}>
+                      {taggedCount} tagged
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                    style={{
+                      position: "absolute", top: 3, right: 3,
+                      width: 20, height: 20, borderRadius: "50%",
+                      background: "rgba(0,0,0,0.55)", border: "none",
+                      color: "white", fontSize: 10, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >✕</button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -302,7 +349,7 @@ export function NewAscentForm({
             cursor: "pointer", opacity: loading ? 0.6 : 1,
           }}
         >
-          {loading ? status ?? "Saving…" : `Save${croppedBlobs.length > 0 ? ` + ${croppedBlobs.length} photo${croppedBlobs.length > 1 ? "s" : ""}` : ""}`}
+          {loading ? status ?? "Saving…" : `Save${readyItems.length > 0 ? ` + ${readyItems.length} photo${readyItems.length > 1 ? "s" : ""}` : ""}`}
         </button>
       </div>
     </form>

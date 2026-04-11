@@ -25,7 +25,20 @@ export async function POST(
   try {
     await saveFaceDetections(session.user.tenantId, id, faces);
     const detections = await getFaceDetections(session.user.tenantId, id);
-    return NextResponse.json(detections);
+
+    // Tag faces that have a personName (from PhotoTagStep)
+    const { findOrCreatePerson } = await import("@/lib/services/person.service");
+    const { setFaceTag } = await import("@/lib/services/face-detection.service");
+    for (let i = 0; i < faces.length; i++) {
+      const personName = faces[i]?.personName?.trim();
+      if (personName && detections[i]) {
+        const person = await findOrCreatePerson(session.user.tenantId, personName);
+        await setFaceTag(session.user.tenantId, detections[i].id, person.id);
+      }
+    }
+
+    const withTags = await getFaceDetections(session.user.tenantId, id);
+    return NextResponse.json(withTags);
   } catch (err) {
     console.error("[faces POST]", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

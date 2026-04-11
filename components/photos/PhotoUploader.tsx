@@ -3,8 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { PhotoFaceTagger } from "./PhotoFaceTagger";
 import { ImageCropModal } from "./ImageCropModal";
+import { PhotoTagStep, type FaceDraft } from "./PhotoTagStep";
 
 type Photo = { id: string; url: string };
 
@@ -21,18 +21,39 @@ export function PhotoUploader({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [tagging, setTagging] = useState<Photo | null>(null);
 
-  // Crop queue: files waiting to be cropped one by one
+  // Step 1: crop queue
   const [cropQueue, setCropQueue] = useState<File[]>([]);
+  // Step 2: tag queue (cropped blobs waiting for face tagging)
+  const [tagQueue, setTagQueue] = useState<Blob[]>([]);
 
   function queueFiles(files: FileList | File[]) {
     setError(null);
     setCropQueue(Array.from(files));
   }
 
-  async function uploadBlob(blob: Blob) {
+  // Crop done → move to tag step
+  function handleCropDone(blob: Blob) {
+    setCropQueue((q) => q.slice(1));
+    setTagQueue((q) => [...q, blob]);
+  }
+  function handleCropCancel() {
+    setCropQueue((q) => q.slice(1));
+  }
+
+  // Tag done → upload with faces
+  async function handleTagDone(blob: Blob, faces: FaceDraft[]) {
+    setTagQueue((q) => q.slice(1));
+    await uploadWithFaces(blob, faces);
+  }
+  function handleTagSkip(blob: Blob) {
+    handleTagDone(blob, []);
+  }
+
+  async function uploadWithFaces(blob: Blob, faces: FaceDraft[]) {
     setUploading(true);
+    setError(null);
+
     const formData = new FormData();
     formData.append("file", blob, "photo.jpg");
     formData.append("ascentId", ascentId);
@@ -46,19 +67,24 @@ export function PhotoUploader({
     }
     const photo: Photo = await res.json();
     setPreviews((prev) => [...prev, photo]);
+
+    // Save face detections + tags atomically
+    if (faces.length > 0) {
+      await fetch(`/api/photos/${photo.id}/faces`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          faces: faces.map((f) => ({
+            boundingBox: f.boundingBox,
+            descriptor: f.descriptor,
+            personName: f.personName ?? null,
+          })),
+        }),
+      });
+    }
+
     setUploading(false);
     router.refresh();
-  }
-
-  function handleCropDone(blob: Blob) {
-    // Remove first item from queue, upload the cropped blob
-    setCropQueue((q) => q.slice(1));
-    uploadBlob(blob);
-  }
-
-  function handleCropCancel() {
-    // Skip this file, move to next
-    setCropQueue((q) => q.slice(1));
   }
 
   async function handleDelete(photoId: string) {
@@ -70,12 +96,21 @@ export function PhotoUploader({
 
   return (
     <div>
-      {/* Crop modal — shown one file at a time */}
+      {/* Step 1 — Crop modal */}
       {cropQueue.length > 0 && (
         <ImageCropModal
           file={cropQueue[0]}
           onCrop={handleCropDone}
           onCancel={handleCropCancel}
+        />
+      )}
+
+      {/* Step 2 — Tag step (auto face detection) */}
+      {cropQueue.length === 0 && tagQueue.length > 0 && (
+        <PhotoTagStep
+          blob={tagQueue[0]}
+          onDone={handleTagDone}
+          onSkip={handleTagSkip}
         />
       )}
 
@@ -91,13 +126,10 @@ export function PhotoUploader({
         onClick={() => inputRef.current?.click()}
         style={{
           border: `2px dashed ${dragging ? "#0369a1" : "#d1d5db"}`,
-          borderRadius: 12,
-          padding: "32px 16px",
-          textAlign: "center",
-          cursor: "pointer",
+          borderRadius: 12, padding: "32px 16px",
+          textAlign: "center", cursor: "pointer",
           background: dragging ? "#eff6ff" : "#f9fafb",
-          transition: "all 0.15s",
-          marginBottom: 16,
+          transition: "all 0.15s", marginBottom: 16,
         }}
       >
         <input
@@ -106,7 +138,7 @@ export function PhotoUploader({
           accept="image/jpeg,image/png,image/webp"
           multiple
           style={{ display: "none" }}
-          onChange={(e) => { if (e.target.files?.length) queueFiles(e.target.files); }}
+          onChange={(e) => { if (e.target.files?.length) queueFiles(e.target.files); e.target.value = ""; }}
         />
         <p style={{ fontSize: 28, margin: "0 0 8px" }}>📷</p>
         <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", margin: 0 }}>
@@ -147,17 +179,6 @@ export function PhotoUploader({
                 sizes="140px"
               />
               <button
-                onClick={(e) => { e.stopPropagation(); setTagging(photo); }}
-                style={{
-                  position: "absolute", bottom: 4, left: 4,
-                  padding: "2px 7px", borderRadius: 6,
-                  background: "rgba(0,0,0,0.55)", border: "none",
-                  color: "white", fontSize: 10, fontWeight: 600, cursor: "pointer",
-                }}
-              >
-                Tag
-              </button>
-              <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(photo.id); }}
                 style={{
                   position: "absolute", top: 4, right: 4,
@@ -171,13 +192,6 @@ export function PhotoUploader({
             </div>
           ))}
         </div>
-      )}
-
-      {tagging && (
-        <PhotoFaceTagger
-          photo={tagging}
-          onClose={() => setTagging(null)}
-        />
       )}
     </div>
   );
