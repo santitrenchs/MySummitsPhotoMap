@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { PhotoFaceTagger } from "./PhotoFaceTagger";
+import { ImageCropModal } from "./ImageCropModal";
 
 type Photo = { id: string; url: string };
 
@@ -22,33 +23,42 @@ export function PhotoUploader({
   const [dragging, setDragging] = useState(false);
   const [tagging, setTagging] = useState<Photo | null>(null);
 
-  async function uploadFiles(files: FileList | File[]) {
+  // Crop queue: files waiting to be cropped one by one
+  const [cropQueue, setCropQueue] = useState<File[]>([]);
+
+  function queueFiles(files: FileList | File[]) {
     setError(null);
+    setCropQueue(Array.from(files));
+  }
+
+  async function uploadBlob(blob: Blob) {
     setUploading(true);
+    const formData = new FormData();
+    formData.append("file", blob, "photo.jpg");
+    formData.append("ascentId", ascentId);
 
-    for (const file of Array.from(files)) {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("ascentId", ascentId);
-
-      const res = await fetch("/api/photos/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Upload failed");
-        setUploading(false);
-        return;
-      }
-
-      const photo: Photo = await res.json();
-      setPreviews((prev) => [...prev, photo]);
+    const res = await fetch("/api/photos/upload", { method: "POST", body: formData });
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error ?? "Upload failed");
+      setUploading(false);
+      return;
     }
-
+    const photo: Photo = await res.json();
+    setPreviews((prev) => [...prev, photo]);
     setUploading(false);
     router.refresh();
+  }
+
+  function handleCropDone(blob: Blob) {
+    // Remove first item from queue, upload the cropped blob
+    setCropQueue((q) => q.slice(1));
+    uploadBlob(blob);
+  }
+
+  function handleCropCancel() {
+    // Skip this file, move to next
+    setCropQueue((q) => q.slice(1));
   }
 
   async function handleDelete(photoId: string) {
@@ -60,6 +70,15 @@ export function PhotoUploader({
 
   return (
     <div>
+      {/* Crop modal — shown one file at a time */}
+      {cropQueue.length > 0 && (
+        <ImageCropModal
+          file={cropQueue[0]}
+          onCrop={handleCropDone}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       {/* Drop zone */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -67,7 +86,7 @@ export function PhotoUploader({
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
-          if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
+          if (e.dataTransfer.files.length) queueFiles(e.dataTransfer.files);
         }}
         onClick={() => inputRef.current?.click()}
         style={{
@@ -87,7 +106,7 @@ export function PhotoUploader({
           accept="image/jpeg,image/png,image/webp"
           multiple
           style={{ display: "none" }}
-          onChange={(e) => { if (e.target.files?.length) uploadFiles(e.target.files); }}
+          onChange={(e) => { if (e.target.files?.length) queueFiles(e.target.files); }}
         />
         <p style={{ fontSize: 28, margin: "0 0 8px" }}>📷</p>
         <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", margin: 0 }}>
@@ -127,7 +146,6 @@ export function PhotoUploader({
                 style={{ objectFit: "cover" }}
                 sizes="140px"
               />
-              {/* Tag faces button */}
               <button
                 onClick={(e) => { e.stopPropagation(); setTagging(photo); }}
                 style={{
@@ -149,9 +167,7 @@ export function PhotoUploader({
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
                 aria-label="Delete photo"
-              >
-                ✕
-              </button>
+              >✕</button>
             </div>
           ))}
         </div>
