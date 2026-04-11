@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ImageCropModal } from "@/components/photos/ImageCropModal";
 
 type Peak = {
   id: string;
@@ -22,9 +23,19 @@ export function NewAscentForm({
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
+
+  // Crop queue: raw files waiting for the crop modal
+  const [cropQueue, setCropQueue] = useState<File[]>([]);
+  // Cropped blobs ready to upload on submit, paired with preview object URLs
+  const [croppedBlobs, setCroppedBlobs] = useState<Blob[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
+  // Revoke object URLs on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => { previews.forEach((url) => URL.revokeObjectURL(url)); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const groups = peaks.reduce<Record<string, Peak[]>>((acc, peak) => {
     const group = peak.mountainRange ?? "Other";
@@ -33,20 +44,25 @@ export function NewAscentForm({
     return acc;
   }, {});
 
-  function addFiles(files: FileList | File[]) {
+  function queueFiles(files: FileList | File[]) {
     const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
-    setSelectedFiles((prev) => [...prev, ...arr]);
-    arr.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviews((prev) => [...prev, e.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
+    if (arr.length) setCropQueue((prev) => [...prev, ...arr]);
+  }
+
+  function handleCropDone(blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    setCroppedBlobs((prev) => [...prev, blob]);
+    setPreviews((prev) => [...prev, url]);
+    setCropQueue((q) => q.slice(1));
+  }
+
+  function handleCropCancel() {
+    setCropQueue((q) => q.slice(1));
   }
 
   function removeFile(index: number) {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    URL.revokeObjectURL(previews[index]);
+    setCroppedBlobs((prev) => prev.filter((_, i) => i !== index));
     setPreviews((prev) => prev.filter((_, i) => i !== index));
   }
 
@@ -80,16 +96,15 @@ export function NewAscentForm({
 
     const ascent = await ascentRes.json();
 
-    // Step 2 — upload photos (if any)
-    if (selectedFiles.length > 0) {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        setStatus(`Uploading photo ${i + 1} of ${selectedFiles.length}…`);
+    // Step 2 — upload cropped photos (if any)
+    if (croppedBlobs.length > 0) {
+      for (let i = 0; i < croppedBlobs.length; i++) {
+        setStatus(`Uploading photo ${i + 1} of ${croppedBlobs.length}…`);
         const fd = new FormData();
-        fd.append("file", selectedFiles[i]);
+        fd.append("file", croppedBlobs[i], "photo.jpg");
         fd.append("ascentId", ascent.id);
         const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
         if (!photoRes.ok) {
-          // Non-fatal: ascent was saved, photos partially uploaded
           setError(`Ascent saved but photo ${i + 1} failed to upload.`);
           setLoading(false);
           setStatus(null);
@@ -117,6 +132,16 @@ export function NewAscentForm({
   };
 
   return (
+    <>
+      {/* Crop modal — shown for each queued file before it gets added */}
+      {cropQueue.length > 0 && (
+        <ImageCropModal
+          file={cropQueue[0]}
+          onCrop={handleCropDone}
+          onCancel={handleCropCancel}
+        />
+      )}
+
     <form
       onSubmit={handleSubmit}
       style={{
@@ -191,7 +216,7 @@ export function NewAscentForm({
         <div
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}
+          onDrop={(e) => { e.preventDefault(); setDragging(false); queueFiles(e.dataTransfer.files); }}
           onClick={() => inputRef.current?.click()}
           style={{
             border: `2px dashed ${dragging ? "#0369a1" : "#d1d5db"}`,
@@ -205,7 +230,7 @@ export function NewAscentForm({
             ref={inputRef} type="file"
             accept="image/jpeg,image/png,image/webp"
             multiple style={{ display: "none" }}
-            onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); }}
+            onChange={(e) => { if (e.target.files?.length) queueFiles(e.target.files); e.target.value = ""; }}
           />
           <p style={{ fontSize: 22, margin: "0 0 4px" }}>📷</p>
           <p style={{ fontSize: 13, fontWeight: 600, color: "#374151", margin: 0 }}>
@@ -216,7 +241,7 @@ export function NewAscentForm({
           </p>
         </div>
 
-        {/* Previews */}
+        {/* Cropped previews */}
         {previews.length > 0 && (
           <div style={{
             display: "grid",
@@ -224,7 +249,7 @@ export function NewAscentForm({
             gap: 8, marginTop: 12,
           }}>
             {previews.map((src, i) => (
-              <div key={i} style={{ position: "relative", aspectRatio: "1", borderRadius: 8, overflow: "hidden", background: "#f3f4f6" }}>
+              <div key={i} style={{ position: "relative", aspectRatio: "4/5", borderRadius: 8, overflow: "hidden", background: "#f3f4f6" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 <button
@@ -277,9 +302,10 @@ export function NewAscentForm({
             cursor: "pointer", opacity: loading ? 0.6 : 1,
           }}
         >
-          {loading ? status ?? "Saving…" : `Save${selectedFiles.length > 0 ? ` + ${selectedFiles.length} photo${selectedFiles.length > 1 ? "s" : ""}` : ""}`}
+          {loading ? status ?? "Saving…" : `Save${croppedBlobs.length > 0 ? ` + ${croppedBlobs.length} photo${croppedBlobs.length > 1 ? "s" : ""}` : ""}`}
         </button>
       </div>
     </form>
+    </>
   );
 }
