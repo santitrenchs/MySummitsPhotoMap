@@ -47,6 +47,36 @@ export async function getAscentedPeakIds(tenantId: string): Promise<string[]> {
   return rows.map((r) => r.peakId);
 }
 
+export async function getAscentMapData(tenantId: string) {
+  const db = await getTenantConnection(tenantId);
+  const rows = await db.ascent.findMany({
+    where: { tenantId },
+    orderBy: { date: "desc" }, // newest first → deduplicate keeps most recent per peak
+    select: {
+      id: true,
+      peakId: true,
+      date: true,
+      route: true,
+      photos: {
+        take: 1,
+        orderBy: { createdAt: "asc" },
+        select: { url: true },
+      },
+    },
+  });
+  // Keep only the most recent ascent per peak
+  const seen = new Set<string>();
+  return rows
+    .filter((r) => { if (seen.has(r.peakId)) return false; seen.add(r.peakId); return true; })
+    .map((r) => ({
+      peakId: r.peakId,
+      ascentId: r.id,
+      photoUrl: r.photos[0]?.url ?? null,
+      date: r.date.toISOString(),
+      route: r.route,
+    }));
+}
+
 export async function createAscent(
   tenantId: string,
   input: CreateAscentInput

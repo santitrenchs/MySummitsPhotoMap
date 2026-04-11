@@ -1,23 +1,26 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { MapPeak } from "./MapView";
+import type { MapPeak, AscentMapEntry } from "./MapView";
 
 const MapView = dynamic(() => import("./MapView"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-[calc(100vh-3.5rem)] bg-gray-100">
-      <p className="text-sm text-gray-400">Loading map…</p>
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "center",
+      height: "calc(100vh - 3.5rem)", background: "#f1f5f9",
+    }}>
+      <p style={{ fontSize: 13, color: "#9ca3af" }}>Loading map…</p>
     </div>
   ),
 });
 
 export default function MapContainer({
   peaks,
-  ascentedPeakIds = [],
+  ascentData = [],
 }: {
   peaks: MapPeak[];
-  ascentedPeakIds?: string[];
+  ascentData?: AscentMapEntry[];
 }) {
-  return <MapView peaks={peaks} ascentedPeakIds={ascentedPeakIds} />;
+  return <MapView peaks={peaks} ascentData={ascentData} />;
 }

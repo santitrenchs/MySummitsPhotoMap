@@ -1,14 +1,14 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/client";
-import { getAscentedPeakIds } from "@/lib/services/ascent.service";
+import { getAscentMapData } from "@/lib/services/ascent.service";
 import MapContainer from "@/components/map/MapContainer";
 
 export default async function MapPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [peaks, ascentedPeakIds] = await Promise.all([
+  const [peaks, ascentData] = await Promise.all([
     prisma.peak.findMany({
       orderBy: { altitudeM: "desc" },
       select: {
@@ -21,8 +21,8 @@ export default async function MapPage() {
         country: true,
       },
     }),
-    getAscentedPeakIds(session.user.tenantId),
+    getAscentMapData(session.user.tenantId),
   ]);
 
-  return <MapContainer peaks={peaks} ascentedPeakIds={ascentedPeakIds} />;
+  return <MapContainer peaks={peaks} ascentData={ascentData} />;
 }
