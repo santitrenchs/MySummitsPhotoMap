@@ -132,6 +132,7 @@ model Person {
   id        String   @id @default(uuid())
   tenantId  String
   name      String
+  email     String?
   avatarUrl String?
   createdAt DateTime @default(now())
 

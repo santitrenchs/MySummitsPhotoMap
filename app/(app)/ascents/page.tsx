@@ -79,7 +79,7 @@ export default async function AscentsPage() {
           </Link>
         </div>
       ) : (
-        <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} />
+        <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} />
       )}
     </div>
   );

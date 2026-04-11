@@ -12,7 +12,7 @@ export type AscentData = {
   peak: { id: string; name: string; altitudeM: number; mountainRange: string | null };
   firstPhotoId: string | null;
   firstPhotoUrl: string | null;
-  persons: { id: string; name: string }[];
+  persons: { id: string; name: string; email?: string | null }[];
 };
 
 type Sort = "date-desc" | "date-asc" | "elev-desc" | "name-asc";
@@ -97,10 +97,12 @@ export function AscentsClient({
   ascents,
   allPersons,
   allYears,
+  currentUserEmail,
 }: {
   ascents: AscentData[];
   allPersons: { id: string; name: string }[];
   allYears: number[];
+  currentUserEmail?: string | null;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -356,6 +358,7 @@ export function AscentsClient({
             const dateStr = new Date(a.date).toLocaleDateString("en-GB", {
               day: "numeric", month: "short", year: "numeric",
             });
+            const others = a.persons.filter(p => !currentUserEmail || p.email !== currentUserEmail);
             return (
               <div
                 key={a.id}
@@ -449,16 +452,16 @@ export function AscentsClient({
                     <span style={{ fontSize: 17 }}>🗺️</span>
                     {a.route && <span style={{ fontSize: 12, fontWeight: 600, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.route}</span>}
                   </button>
-                  {a.persons.length > 0 && (
+                  {others.length > 0 && (
                     <button className="action-btn" style={{ marginLeft: 6 }}>
                       <span style={{ fontSize: 17 }}>👥</span>
-                      <span style={{ fontSize: 12, fontWeight: 600 }}>{a.persons.length}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600 }}>{others.length}</span>
                     </button>
                   )}
                 </div>
 
                 {/* ── Caption ─────────────────────────────────────── */}
-                {(a.persons.length > 0 || a.description) && (
+                {(others.length > 0 || a.description) && (
                   <div style={{ padding: "10px 14px 14px" }}>
                     {a.description && (
                       <p style={{
@@ -469,9 +472,9 @@ export function AscentsClient({
                         {a.description}
                       </p>
                     )}
-                    {a.persons.length > 0 && (
+                    {others.length > 0 && (
                       <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                        {a.persons.map((p) => <PersonChip key={p.id} name={p.name} />)}
+                        {others.map((p) => <PersonChip key={p.id} name={p.name} />)}
                       </div>
                     )}
                   </div>

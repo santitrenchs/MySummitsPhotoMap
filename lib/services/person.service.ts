@@ -53,12 +53,24 @@ export async function getPersonDetails(tenantId: string, personId: string) {
   });
 }
 
-export async function renamePerson(tenantId: string, personId: string, name: string) {
+export async function updatePerson(
+  tenantId: string,
+  personId: string,
+  data: { name?: string; email?: string | null }
+) {
   const db = await getTenantConnection(tenantId);
   return db.person.updateMany({
     where: { id: personId, tenantId },
-    data: { name: name.trim() },
+    data: {
+      ...(data.name !== undefined && { name: data.name.trim() }),
+      ...(data.email !== undefined && { email: data.email?.trim() || null }),
+    },
   });
+}
+
+/** @deprecated use updatePerson */
+export async function renamePerson(tenantId: string, personId: string, name: string) {
+  return updatePerson(tenantId, personId, { name });
 }
 
 export async function deletePerson(tenantId: string, personId: string) {

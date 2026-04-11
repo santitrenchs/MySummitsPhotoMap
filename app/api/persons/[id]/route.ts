@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { renamePerson, deletePerson } from "@/lib/services/person.service";
+import { updatePerson, deletePerson } from "@/lib/services/person.service";
 
 export async function PATCH(
   req: Request,
@@ -9,9 +9,12 @@ export async function PATCH(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const { name } = await req.json();
-  if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
-  await renamePerson(session.user.tenantId, id, name);
+  const body = await req.json();
+  const { name, email } = body as { name?: string; email?: string | null };
+  if (name !== undefined && !name?.trim()) {
+    return NextResponse.json({ error: "Name cannot be empty" }, { status: 400 });
+  }
+  await updatePerson(session.user.tenantId, id, { name, email });
   return NextResponse.json({ ok: true });
 }
 
