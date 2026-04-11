@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export type AscentData = {
   id: string;
@@ -105,6 +105,7 @@ export function AscentsClient({
   currentUserEmail?: string | null;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState<number | "">("");
   const [personFilter, setPersonFilter] = useState("");
@@ -115,6 +116,12 @@ export function AscentsClient({
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Peak filter: seeded from ?peak=<peakId> URL param (e.g. from map panel)
+  const [peakFilter, setPeakFilter] = useState<string>(() => searchParams.get("peak") ?? "");
+  const peakFilterName = peakFilter
+    ? (ascents.find((a) => a.peak.id === peakFilter)?.peak.name ?? "")
+    : "";
+
   const metrics = useMemo(() => ({
     total: ascents.length,
     maxElev: ascents.length > 0 ? Math.max(...ascents.map((a) => a.peak.altitudeM)) : 0,
@@ -124,6 +131,7 @@ export function AscentsClient({
 
   const filtered = useMemo(() => {
     let r = ascents;
+    if (peakFilter) r = r.filter((a) => a.peak.id === peakFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       r = r.filter(
@@ -142,7 +150,7 @@ export function AscentsClient({
       if (sort === "elev-desc") return b.peak.altitudeM - a.peak.altitudeM;
       return a.peak.name.localeCompare(b.peak.name);
     });
-  }, [ascents, search, yearFilter, personFilter, withPhotoOnly, sort]);
+  }, [ascents, peakFilter, search, yearFilter, personFilter, withPhotoOnly, sort]);
 
   const activeFilterCount = [
     search.trim() !== "",
@@ -259,6 +267,40 @@ export function AscentsClient({
           </div>
         ))}
       </div>
+
+      {/* ── Peak filter chip (from map) ──────────────────────────── */}
+      {peakFilter && peakFilterName && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            background: "#eff6ff", border: "1.5px solid #bfdbfe",
+            borderRadius: 24, padding: "6px 10px 6px 14px",
+            fontSize: 13, fontWeight: 600, color: "#0369a1",
+          }}>
+            <span>⛰️ {peakFilterName}</span>
+            <button
+              onClick={() => {
+                setPeakFilter("");
+                // Clean up the URL param without a full navigation
+                const url = new URL(window.location.href);
+                url.searchParams.delete("peak");
+                window.history.replaceState(null, "", url.toString());
+              }}
+              style={{
+                width: 18, height: 18, borderRadius: "50%",
+                background: "#bfdbfe", border: "none", color: "#0369a1",
+                fontSize: 11, fontWeight: 700, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}
+              aria-label="Clear peak filter"
+            >✕</button>
+          </div>
+          <span style={{ fontSize: 12, color: "#9ca3af" }}>
+            {filtered.length} ascent{filtered.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
 
       {/* ── Search bar ───────────────────────────────────────────── */}
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>

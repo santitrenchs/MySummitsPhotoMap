@@ -22,6 +22,7 @@ export type AscentMapEntry = {
   photoUrl: string | null;
   date: string;
   route: string | null;
+  ascentCount: number;
 };
 
 type Filter = "all" | "climbed" | "not-climbed";
@@ -581,8 +582,13 @@ export default function MapView({
                   <span style={{
                     background: "#dcfce7", color: "#16a34a",
                     borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700,
-                  }}>✓ Climbed</span>
+                  }}>
+                    ✓ {selected.ascent.ascentCount > 1
+                      ? `${selected.ascent.ascentCount} ascents`
+                      : "Climbed"}
+                  </span>
                   <span style={{ fontSize: 12, color: "#6b7280" }}>
+                    {selected.ascent.ascentCount > 1 ? "Last: " : ""}
                     {new Date(selected.ascent.date).toLocaleDateString("en-GB", {
                       day: "numeric", month: "short", year: "numeric",
                     })}
@@ -595,7 +601,14 @@ export default function MapView({
                 )}
                 <button
                   className="panel-action-btn"
-                  onClick={() => router.push(`/ascents/${selected.ascent!.ascentId}`)}
+                  onClick={() => {
+                    const a = selected.ascent!;
+                    router.push(
+                      a.ascentCount > 1
+                        ? `/ascents?peak=${a.peakId}`
+                        : `/ascents/${a.ascentId}`
+                    );
+                  }}
                   style={{
                     width: "100%", padding: "11px",
                     background: "#111827", color: "white",
@@ -603,7 +616,9 @@ export default function MapView({
                     fontSize: 13, fontWeight: 700, cursor: "pointer",
                   }}
                 >
-                  View ascent →
+                  {selected.ascent.ascentCount > 1
+                    ? `View ${selected.ascent.ascentCount} ascents →`
+                    : "View ascent →"}
                 </button>
               </>
             ) : (

@@ -64,6 +64,10 @@ export async function getAscentMapData(tenantId: string) {
       },
     },
   });
+  // Count ascents per peak
+  const countMap = new Map<string, number>();
+  for (const r of rows) countMap.set(r.peakId, (countMap.get(r.peakId) ?? 0) + 1);
+
   // Keep only the most recent ascent per peak
   const seen = new Set<string>();
   return rows
@@ -74,6 +78,7 @@ export async function getAscentMapData(tenantId: string) {
       photoUrl: r.photos[0]?.url ?? null,
       date: r.date.toISOString(),
       route: r.route,
+      ascentCount: countMap.get(r.peakId) ?? 1,
     }));
 }
 

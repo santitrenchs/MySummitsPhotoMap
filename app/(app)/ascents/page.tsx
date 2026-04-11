@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { listAscents } from "@/lib/services/ascent.service";
 import { AscentsClient } from "@/components/ascents/AscentsClient";
 
@@ -79,7 +80,9 @@ export default async function AscentsPage() {
           </Link>
         </div>
       ) : (
-        <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} />
+        <Suspense>
+          <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} />
+        </Suspense>
       )}
     </div>
   );
