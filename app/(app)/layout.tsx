@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { SignOutButton } from "@/components/ui/sign-out-button";
+import { NavBar } from "@/components/nav/NavBar";
 
 export default async function AppLayout({
   children,
@@ -12,28 +11,27 @@ export default async function AppLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white border-b border-gray-200 h-14 flex items-center px-4 gap-6 shrink-0">
-        <Link href="/map" className="font-semibold text-gray-900 text-sm">
-          MySummits
-        </Link>
-        <nav className="flex gap-4 text-sm text-gray-500">
-          <Link href="/map" className="hover:text-gray-900 transition-colors">
-            Map
-          </Link>
-          <Link href="/ascents" className="hover:text-gray-900 transition-colors">
-            Ascents
-          </Link>
-          <Link href="/persons" className="hover:text-gray-900 transition-colors">
-            People
-          </Link>
-        </nav>
-        <div className="ml-auto flex items-center gap-4 text-sm text-gray-500">
-          <span>{session.user.name}</span>
-          <SignOutButton />
-        </div>
-      </header>
-      <main className="flex-1">{children}</main>
+    <div style={{ minHeight: "100svh", display: "flex", flexDirection: "column" }}>
+      <NavBar
+        userName={session.user.name ?? null}
+        userEmail={session.user.email ?? null}
+      />
+      <main style={{ flex: 1, paddingBottom: "var(--bottom-nav-h, 0px)" }}>
+        {children}
+      </main>
+      {/* CSS variables for nav heights — used by map and other full-bleed sections */}
+      <style>{`
+        :root {
+          --top-nav-h: 3.5rem;
+          --bottom-nav-h: 0px;
+        }
+        @media (max-width: 639px) {
+          :root {
+            --top-nav-h: 0px;
+            --bottom-nav-h: calc(60px + env(safe-area-inset-bottom));
+          }
+        }
+      `}</style>
     </div>
   );
 }

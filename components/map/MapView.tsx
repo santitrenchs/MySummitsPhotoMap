@@ -400,7 +400,7 @@ export default function MapView({
     : { top: 12, right: 12, width: 300, maxHeight: "calc(100% - 80px)", borderRadius: 18 };
 
   return (
-    <div style={{ position: "relative", height: "calc(100vh - 3.5rem)", background: "#e2e8f0" }}>
+    <div style={{ position: "relative", height: "calc(100svh - var(--top-nav-h, 3.5rem) - var(--bottom-nav-h, 0px))", background: "#e2e8f0" }}>
       <style>{`
         @keyframes panelIn {
           from { opacity: 0; transform: translateY(12px) scale(0.98); }

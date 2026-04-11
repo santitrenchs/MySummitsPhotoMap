@@ -8,7 +8,7 @@ const MapView = dynamic(() => import("./MapView"), {
   loading: () => (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "center",
-      height: "calc(100vh - 3.5rem)", background: "#f1f5f9",
+      height: "calc(100svh - var(--top-nav-h, 3.5rem) - var(--bottom-nav-h, 0px))", background: "#f1f5f9",
     }}>
       <p style={{ fontSize: 13, color: "#9ca3af" }}>Loading map…</p>
     </div>
