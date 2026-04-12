@@ -80,7 +80,7 @@ export const ca: Dict = {
   profile_privateDesc: "Aquest usuari ha configurat el seu perfil com a privat. Només els seus amics poden veure'l.",
 
   people_emptyHint: "Obre una foto i prem Etiquetar per detectar i nomenar cares",
-  people_title: "Amics", people_search: "🔍  Cercar amics…",
+  people_title: "Social", people_search: "🔍  Cercar amics…",
   people_editPerson: "Editar amic", people_fullName: "Nom complet",
   people_lastClimb: "Última ascensió:", people_noMatch: "Cap amic coincideix amb la cerca",
   people_sort_ascents: "Ascensions", people_sort_photos: "Fotos",

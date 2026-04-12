@@ -80,7 +80,7 @@ export const fr: Dict = {
   profile_privateDesc: "Cet utilisateur a configuré son profil en privé. Seuls ses amis peuvent le voir.",
 
   people_emptyHint: "Ouvre une photo et clique sur Identifier pour détecter et nommer les visages",
-  people_title: "Amis", people_search: "🔍  Chercher des amis…",
+  people_title: "Social", people_search: "🔍  Chercher des amis…",
   people_editPerson: "Modifier l'ami", people_fullName: "Nom complet",
   people_lastClimb: "Dernière ascension :", people_noMatch: "Aucun ami ne correspond",
   people_sort_ascents: "Ascensions", people_sort_photos: "Photos",
