@@ -179,4 +179,11 @@ export type Dict = {
   home_badge25: string; home_badge50: string;
   home_badgeRegions: string; home_badgePhotos: string;
   home_badgeFriends: string;
+
+  // Level names
+  level_novice: string; level_explorer: string; level_hiker: string;
+  level_mountaineer: string; level_peakBagger: string; level_summiteer: string;
+  // Level progress & gamification
+  home_levelNext: string; home_maxLevel: string;
+  home_inviteFriends: string; home_motivationDefend: string;
 };
