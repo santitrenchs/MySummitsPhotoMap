@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import { useT } from "@/components/providers/I18nProvider";
@@ -95,14 +95,19 @@ export default function MapView({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const ascentByPeakId = useRef(new Map(ascentData.map((a) => [a.peakId, a])));
-  const markerEls = useRef(new Map<string, HTMLElement>()); // peakId → el
+  const markerEls = useRef(new Map<string, HTMLElement>());
   const justSelectedRef = useRef(false);
 
   const [selected, setSelected] = useState<Selected>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [hillshade, setHillshade] = useState(true);
+  const [terrain3d, setTerrain3d] = useState(true);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Detect mobile
   useEffect(() => {
@@ -112,15 +117,43 @@ export default function MapView({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Apply filter: toggle HTML markers + GeoJSON layer visibility
+  // Search results — filter peaks by name
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return peaks
+      .filter((p) => p.name.toLowerCase().includes(q) || (p.mountainRange ?? "").toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [searchQuery, peaks]);
+
+  // Fly to peak with cinematic 3D tour
+  function flyToPeak(peak: MapPeak) {
+    const map = mapRef.current;
+    if (!map) return;
+
+    setSearchQuery("");
+    setSearchOpen(false);
+
+    const ascent = ascentByPeakId.current.get(peak.id) ?? null;
+    setSelected({ peak, ascent });
+    justSelectedRef.current = true;
+
+    map.flyTo({
+      center: [peak.longitude, peak.latitude],
+      zoom: 13,
+      pitch: terrain3d ? 65 : 0,
+      bearing: 20,
+      duration: 2200,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      easing: (t: number) => 1 - Math.pow(1 - t, 3), // ease-out cubic
+    });
+  }
+
+  // Apply filter
   useEffect(() => {
     const showAscended = filter !== "not-climbed";
     const showUnascended = filter !== "climbed";
-
-    markerEls.current.forEach((el) => {
-      el.style.display = showAscended ? "block" : "none";
-    });
-
+    markerEls.current.forEach((el) => { el.style.display = showAscended ? "block" : "none"; });
     const map = mapRef.current;
     if (map) {
       for (const layer of ["clusters", "cluster-count", "unclustered-peaks", "peak-labels"]) {
@@ -131,7 +164,7 @@ export default function MapView({
     }
   }, [filter]);
 
-  // Clear selection if it's hidden by the current filter
+  // Clear selection if hidden by filter
   useEffect(() => {
     if (!selected) return;
     const isAscended = ascentByPeakId.current.has(selected.peak.id);
@@ -146,6 +179,24 @@ export default function MapView({
     map.setLayoutProperty("hillshading", "visibility", hillshade ? "visible" : "none");
   }, [hillshade]);
 
+  // Terrain 3D toggle
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!map.isStyleLoaded()) return;
+    try {
+      if (terrain3d) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
+        map.easeTo({ pitch: 45, duration: 600 });
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (map as any).setTerrain(null);
+        map.easeTo({ pitch: 0, duration: 600 });
+      }
+    } catch { /* terrain not ready yet */ }
+  }, [terrain3d]);
+
   // Map initialisation (runs once)
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -155,6 +206,7 @@ export default function MapView({
       style: MAP_STYLE,
       center: [0.5, 42.75],
       zoom: 8,
+      pitch: 45,
     });
     mapRef.current = map;
 
@@ -168,7 +220,7 @@ export default function MapView({
     map.once("load", () => {
       map.resize();
 
-      // ── Terrain / hillshade ─────────────────────────────────────────────
+      // ── Terrain source + 3D + hillshade ────────────────────────────────
       map.addSource("terrain", {
         type: "raster-dem",
         tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
@@ -176,6 +228,11 @@ export default function MapView({
         encoding: "terrarium",
         maxzoom: 15,
       });
+
+      // Enable 3D terrain by default
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
+
       map.addLayer({
         id: "hillshading",
         type: "hillshade",
@@ -189,7 +246,7 @@ export default function MapView({
         },
       });
 
-      // ── GeoJSON source for unascended peaks (with clustering) ───────────
+      // ── GeoJSON source for unascended peaks ─────────────────────────────
       const unascentedFeatures = peaks
         .filter((p) => !ascentByPeakId.current.has(p.id))
         .map((p) => ({
@@ -206,7 +263,6 @@ export default function MapView({
         data: { type: "FeatureCollection", features: unascentedFeatures },
       });
 
-      // Cluster bubbles
       map.addLayer({
         id: "clusters",
         type: "circle",
@@ -222,7 +278,6 @@ export default function MapView({
         },
       });
 
-      // Cluster count label
       map.addLayer({
         id: "cluster-count",
         type: "symbol",
@@ -236,7 +291,6 @@ export default function MapView({
         paint: { "text-color": "white" },
       });
 
-      // Individual unclustered dots
       map.addLayer({
         id: "unclustered-peaks",
         type: "circle",
@@ -252,7 +306,6 @@ export default function MapView({
         },
       });
 
-      // Peak name labels at zoom ≥ 10 (unascended only)
       map.addLayer({
         id: "peak-labels",
         type: "symbol",
@@ -276,7 +329,6 @@ export default function MapView({
         },
       });
 
-      // ── Cluster click → zoom in ─────────────────────────────────────────
       map.on("click", "clusters", (e) => {
         justSelectedRef.current = true;
         const features = map.queryRenderedFeatures(e.point, { layers: ["clusters"] });
@@ -289,7 +341,6 @@ export default function MapView({
         });
       });
 
-      // ── Unclustered dot click → open panel ─────────────────────────────
       map.on("click", "unclustered-peaks", (e) => {
         justSelectedRef.current = true;
         const props = e.features?.[0]?.properties;
@@ -298,7 +349,6 @@ export default function MapView({
         if (peak) setSelected({ peak, ascent: null });
       });
 
-      // ── Hover tooltips ──────────────────────────────────────────────────
       map.on("mousemove", "unclustered-peaks", (e) => {
         const props = e.features?.[0]?.properties;
         if (!props || !containerRef.current) return;
@@ -315,7 +365,6 @@ export default function MapView({
       });
       map.on("mouseleave", "clusters", () => setTooltip(null));
 
-      // ── Cursor changes ──────────────────────────────────────────────────
       for (const layer of ["clusters", "unclustered-peaks"]) {
         map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
@@ -343,7 +392,6 @@ export default function MapView({
         ].filter(Boolean).join(";");
 
         if (!entry.photoUrl) {
-          // Initials fallback
           el.style.background = "linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%)";
           el.style.display = "flex";
           el.style.alignItems = "center";
@@ -355,9 +403,7 @@ export default function MapView({
           el.textContent = peak.name[0]?.toUpperCase() ?? "?";
         }
 
-        el.addEventListener("mouseenter", () => {
-          el.style.boxShadow = RING_HOVER;
-        });
+        el.addEventListener("mouseenter", () => { el.style.boxShadow = RING_HOVER; });
         el.addEventListener("mousemove", (e) => {
           if (!containerRef.current) return;
           const me = e as MouseEvent;
@@ -368,10 +414,7 @@ export default function MapView({
             y: me.clientY - cRect.top,
           });
         });
-        el.addEventListener("mouseleave", () => {
-          el.style.boxShadow = RING;
-          setTooltip(null);
-        });
+        el.addEventListener("mouseleave", () => { el.style.boxShadow = RING; setTooltip(null); });
         el.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -384,7 +427,7 @@ export default function MapView({
           .setLngLat([peak.longitude, peak.latitude])
           .addTo(map);
       }
-    }); // end map.once("load")
+    });
 
     return () => {
       map.remove();
@@ -394,7 +437,7 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Derived counts for filter chips ────────────────────────────────────────
+  // ── Derived counts ────────────────────────────────────────────────────────
   const climbedCount = ascentData.length;
   const FILTERS: { value: Filter; label: string }[] = [
     { value: "all", label: `${t.map_all}  ${peaks.length}` },
@@ -417,16 +460,100 @@ export default function MapView({
           from { transform: translateY(100%); }
           to   { transform: translateY(0); }
         }
+        @keyframes searchDrop {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         .map-panel { animation: panelIn 0.22s ease both; }
         .map-panel-mobile { animation: panelInMobile 0.28s ease both; }
         .filter-chip { transition: background 0.15s, color 0.15s, box-shadow 0.15s; }
         .filter-chip:active { transform: scale(0.95); }
         .panel-action-btn { transition: opacity 0.15s, transform 0.15s; }
         .panel-action-btn:hover { opacity: 0.88; transform: scale(0.98); }
+        .search-result:hover { background: #f3f4f6; }
       `}</style>
 
       {/* Map canvas */}
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+
+      {/* ── Search bar ── top center ────────────────────────────────────── */}
+      <div style={{
+        position: "absolute", top: 12,
+        left: "50%", transform: "translateX(-50%)",
+        zIndex: 20, width: isMobile ? "calc(100% - 100px)" : 280,
+      }}>
+        <div style={{ position: "relative" }}>
+          <span style={{
+            position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+            fontSize: 14, pointerEvents: "none", color: "#9ca3af",
+          }}>🔍</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+            onFocus={() => setSearchOpen(true)}
+            onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+            placeholder="Buscar cima…"
+            style={{
+              width: "100%", padding: "8px 12px 8px 32px",
+              borderRadius: 24, border: "none",
+              fontSize: 13, fontWeight: 500, color: "#111827",
+              background: "rgba(255,255,255,0.97)",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+              outline: "none", boxSizing: "border-box",
+            }}
+          />
+          {searchQuery && (
+            <button
+              onMouseDown={() => setSearchQuery("")}
+              style={{
+                position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer",
+                color: "#9ca3af", fontSize: 14, lineHeight: 1, padding: 2,
+              }}
+            >✕</button>
+          )}
+        </div>
+
+        {/* Dropdown results */}
+        {searchOpen && searchResults.length > 0 && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+            background: "white", borderRadius: 14,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
+            overflow: "hidden",
+            animation: "searchDrop 0.15s ease both",
+          }}>
+            {searchResults.map((peak) => {
+              const isClimbed = ascentByPeakId.current.has(peak.id);
+              return (
+                <button
+                  key={peak.id}
+                  className="search-result"
+                  onMouseDown={() => flyToPeak(peak)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    width: "100%", padding: "10px 14px",
+                    background: "none", border: "none", cursor: "pointer",
+                    textAlign: "left", borderBottom: "1px solid #f3f4f6",
+                  }}
+                >
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>{isClimbed ? "✅" : "🏔"}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827" }}>
+                      {peak.name}
+                    </p>
+                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                      {peak.altitudeM.toLocaleString(t.dateLocale)} m
+                      {peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* ── Hover tooltip ───────────────────────────────────────────────── */}
       {tooltip && (
@@ -446,7 +573,7 @@ export default function MapView({
         </div>
       )}
 
-      {/* ── Filter chips + Relief ── top left ──────────────────────────── */}
+      {/* ── Filter chips + Relief + 3D ── top left ──────────────────────── */}
       <div style={{
         position: "absolute", top: 12, left: 12, zIndex: 10,
         display: "flex", gap: 6, flexWrap: "wrap",
@@ -478,6 +605,18 @@ export default function MapView({
             backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
           }}
         >{t.map_relief}</button>
+        <button
+          className="filter-chip"
+          onClick={() => setTerrain3d((v) => !v)}
+          style={{
+            padding: "7px 14px", borderRadius: 24, border: "none",
+            fontSize: 12, fontWeight: 600, cursor: "pointer",
+            background: terrain3d ? "#7c3aed" : "rgba(255,255,255,0.92)",
+            color: terrain3d ? "white" : "#374151",
+            boxShadow: "0 1px 8px rgba(0,0,0,0.15)",
+            backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+          }}
+        >3D</button>
       </div>
 
       {/* ── Zoom controls ── bottom right ─────────────────────────────── */}
@@ -534,19 +673,14 @@ export default function MapView({
             boxShadow: "0 12px 48px rgba(0,0,0,0.2)",
           }}
         >
-          {/* Hero image */}
           <div style={{ position: "relative", aspectRatio: "3/2", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
             {selected.ascent?.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={selected.ascent.photoUrl}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              />
+              <img src={selected.ascent.photoUrl} alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             ) : (
               <PanelPlaceholder />
             )}
-            {/* Close button */}
             <button
               onClick={() => setSelected(null)}
               aria-label="Close"
@@ -559,7 +693,6 @@ export default function MapView({
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >✕</button>
-            {/* Altitude badge */}
             <div style={{
               position: "absolute", bottom: 10, left: 12,
               background: "rgba(0,0,0,0.52)", backdropFilter: "blur(6px)",
@@ -571,7 +704,6 @@ export default function MapView({
             </div>
           </div>
 
-          {/* Info */}
           <div style={{ padding: "16px 16px 22px" }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111827", margin: "0 0 2px", lineHeight: 1.25 }}>
               {selected.peak.name}
@@ -609,11 +741,7 @@ export default function MapView({
                   className="panel-action-btn"
                   onClick={() => {
                     const a = selected.ascent!;
-                    router.push(
-                      a.ascentCount > 1
-                        ? `/ascents?peak=${a.peakId}`
-                        : `/ascents/${a.ascentId}`
-                    );
+                    router.push(a.ascentCount > 1 ? `/ascents?peak=${a.peakId}` : `/ascents/${a.ascentId}`);
                   }}
                   style={{
                     width: "100%", padding: "11px",
