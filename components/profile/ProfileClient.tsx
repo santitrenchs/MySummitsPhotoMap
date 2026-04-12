@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
+import { AvatarCropModal } from "@/components/photos/AvatarCropModal";
 
 type Ascent = {
   id: string;
@@ -373,19 +374,27 @@ function EditProfileModal({
   const [username, setUsername] = useState(user.username ?? "");
   const [bio, setBio] = useState(user.bio ?? "");
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAvatarChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset input so the same file can be re-selected
+    e.target.value = "";
+    setCropFile(file);
+  }, []);
+
+  const handleCropDone = useCallback(async (blob: Blob) => {
+    setCropFile(null);
     setUploadingAvatar(true);
     setError(null);
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", new File([blob], "avatar.jpg", { type: "image/jpeg" }));
     const res = await fetch("/api/settings/avatar", { method: "POST", body: fd });
     setUploadingAvatar(false);
     if (!res.ok) {
@@ -437,6 +446,14 @@ function EditProfileModal({
   };
 
   return (
+    <>
+    {cropFile && (
+      <AvatarCropModal
+        file={cropFile}
+        onCrop={handleCropDone}
+        onCancel={() => setCropFile(null)}
+      />
+    )}
     <div
       ref={backdropRef}
       onClick={(e) => { if (e.target === backdropRef.current) onClose(); }}
@@ -590,5 +607,6 @@ function EditProfileModal({
         </div>
       </div>
     </div>
+    </>
   );
 }
