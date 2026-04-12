@@ -167,7 +167,7 @@ export const fr: Dict = {
   social_noActivitySub: "Quand ils ajouteront leurs ascensions, elles apparaîtront ici",
   social_myActivity: "Ton activité",
 
-  nav_home: "Accueil",
+  nav_home: "Ma progression",
   home_greeting: "Bonjour, {name} 👋",
   home_statSummits: "Sommets", home_statPhotos: "Photos",
   home_statRegions: "Régions", home_statFriends: "Amis",

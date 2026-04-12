@@ -167,7 +167,7 @@ export const ca: Dict = {
   social_noActivitySub: "Quan pugin les seves ascensions, apareixeran aquí",
   social_myActivity: "La teva activitat",
 
-  nav_home: "Inici",
+  nav_home: "El meu progrés",
   home_greeting: "Hola, {name} 👋",
   home_statSummits: "Cims", home_statPhotos: "Fotos",
   home_statRegions: "Regions", home_statFriends: "Amics",

@@ -167,7 +167,7 @@ export const de: Dict = {
   social_noActivitySub: "Wenn sie ihre Besteigungen eintragen, erscheinen sie hier",
   social_myActivity: "Deine Aktivität",
 
-  nav_home: "Start",
+  nav_home: "Mein Fortschritt",
   home_greeting: "Hallo, {name} 👋",
   home_statSummits: "Gipfel", home_statPhotos: "Fotos",
   home_statRegions: "Regionen", home_statFriends: "Freunde",
