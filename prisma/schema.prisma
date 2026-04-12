@@ -67,6 +67,7 @@ model User {
   ascents                Ascent[]
   sentFriendRequests     Friendship[] @relation("SentFriendRequests")
   receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
+  linkedPerson           Person?      @relation("PersonUser")
 
   @@map("users")
 }
@@ -184,9 +185,11 @@ model Person {
   name      String
   email     String?
   avatarUrl String?
+  userId    String?  @unique
   createdAt DateTime @default(now())
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User?     @relation("PersonUser", fields: [userId], references: [id], onDelete: SetNull)
   faceTags FaceTag[]
 
   @@index([tenantId])
@@ -212,11 +215,12 @@ model FaceDetection {
 }
 
 model FaceTag {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   tenantId        String
   faceDetectionId String
   personId        String
-  createdAt       DateTime @default(now())
+  status          TagStatus @default(ACCEPTED)
+  createdAt       DateTime  @default(now())
 
   tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   faceDetection FaceDetection @relation(fields: [faceDetectionId], references: [id], onDelete: Cascade)
@@ -224,5 +228,12 @@ model FaceTag {
 
   @@unique([faceDetectionId, personId])
   @@index([tenantId, personId])
+  @@index([tenantId, status])
   @@map("face_tags")
+}
+
+enum TagStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }

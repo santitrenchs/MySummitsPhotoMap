@@ -68,6 +68,16 @@ export const en: Dict = {
   friends_noPending: "No pending requests", friends_noFriends: "No friends yet on MySummits",
   friends_noFriendsSub: "Search for your mountain companions above",
   friends_noResults: "No users found", friends_since: "Friends since",
+  friends_block: "Block", friends_blocked: "Blocked", friends_unblock: "Unblock",
+  friends_blockedSection: "Blocked users",
+
+  tags_title: "Pending tags", tags_noPending: "No pending tags",
+  tags_approve: "Accept", tags_reject: "Reject",
+  tags_taggedIn: "You were tagged in a photo",
+  tags_pendingCount: "Pending tags ({n})", tags_in: "in",
+
+  profile_private: "Private profile",
+  profile_privateDesc: "This user has set their profile to private. Only their friends can view it.",
 
   people_emptyHint: "Open a photo and click Tag to detect and name faces",
   people_title: "Friends", people_search: "🔍  Search friends…",
@@ -114,6 +124,9 @@ export const en: Dict = {
   settings_deleting: "Deleting…", settings_deleteConfirmButton: "Delete my account",
   settings_usernameAvailable: "✓ Available", settings_usernameTaken: "✗ Already taken",
   settings_usernameInvalid: "3–20 chars, letters / numbers / . _", settings_usernameChecking: "Checking…",
+  settings_linkedPerson: "Linked profile", settings_linkedPersonDesc: "Link your account to your face-tag profile",
+  settings_claimPerson: "Link profile", settings_unclaimPerson: "Unlink",
+  settings_searchPerson: "Search your name in photos…", settings_linkedPersonCurrent: "Linked to",
 
   auth_signInDesc: "Sign in to your account", auth_accountCreated: "Account created! Sign in to get started.",
   auth_invalidCredentials: "Invalid email or password", auth_signingIn: "Signing in…",

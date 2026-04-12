@@ -68,6 +68,16 @@ export const fr: Dict = {
   friends_noPending: "Aucune demande en attente", friends_noFriends: "Pas encore d'amis sur MySummits",
   friends_noFriendsSub: "Cherche tes compagnons de montagne ci-dessus",
   friends_noResults: "Aucun utilisateur trouvé", friends_since: "Amis depuis",
+  friends_block: "Bloquer", friends_blocked: "Bloqué", friends_unblock: "Débloquer",
+  friends_blockedSection: "Utilisateurs bloqués",
+
+  tags_title: "Tags en attente", tags_noPending: "Aucun tag en attente",
+  tags_approve: "Accepter", tags_reject: "Refuser",
+  tags_taggedIn: "Vous avez été identifié dans une photo",
+  tags_pendingCount: "Tags en attente ({n})", tags_in: "dans",
+
+  profile_private: "Profil privé",
+  profile_privateDesc: "Cet utilisateur a configuré son profil en privé. Seuls ses amis peuvent le voir.",
 
   people_emptyHint: "Ouvre une photo et clique sur Identifier pour détecter et nommer les visages",
   people_title: "Amis", people_search: "🔍  Chercher des amis…",
@@ -114,6 +124,9 @@ export const fr: Dict = {
   settings_deleting: "Suppression…", settings_deleteConfirmButton: "Supprimer mon compte",
   settings_usernameAvailable: "✓ Disponible", settings_usernameTaken: "✗ Déjà utilisé",
   settings_usernameInvalid: "3–20 caractères, lettres / chiffres / . _", settings_usernameChecking: "Vérification…",
+  settings_linkedPerson: "Profil lié", settings_linkedPersonDesc: "Liez votre compte à votre profil de tags",
+  settings_claimPerson: "Lier le profil", settings_unclaimPerson: "Délier",
+  settings_searchPerson: "Cherche ton nom dans les photos…", settings_linkedPersonCurrent: "Lié à",
 
   auth_signInDesc: "Connecte-toi à ton compte", auth_accountCreated: "Compte créé ! Connecte-toi pour commencer.",
   auth_invalidCredentials: "E-mail ou mot de passe incorrect", auth_signingIn: "Connexion…",

@@ -5,6 +5,7 @@ import { I18nProvider } from "@/components/providers/I18nProvider";
 import { getLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/types";
 import { countPendingRequests } from "@/lib/services/friendship.service";
+import { countPendingTagsForUser } from "@/lib/services/face-detection.service";
 
 export default async function AppLayout({
   children,
@@ -14,9 +15,10 @@ export default async function AppLayout({
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [locale, pendingFriendRequests] = await Promise.all([
+  const [locale, pendingFriendRequests, pendingTagCount] = await Promise.all([
     getLocale(),
     countPendingRequests(session.user.id),
+    countPendingTagsForUser(session.user.id),
   ]);
 
   return (
@@ -26,6 +28,7 @@ export default async function AppLayout({
           userName={session.user.name ?? null}
           userEmail={session.user.email ?? null}
           pendingFriendRequests={pendingFriendRequests}
+          pendingTagCount={pendingTagCount}
         />
         <main style={{ flex: 1, paddingBottom: "var(--bottom-nav-h, 0px)" }}>
           {children}

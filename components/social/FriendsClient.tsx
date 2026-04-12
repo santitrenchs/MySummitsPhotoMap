@@ -8,9 +8,11 @@ import { i } from "@/lib/i18n";
 
 type UserStub = { id: string; name: string; username: string | null };
 
-type FriendEntry = { id: string; friend: UserStub; createdAt: string };
+type FriendEntry     = { id: string; friend: UserStub; createdAt: string };
 type IncomingRequest = { id: string; requester: UserStub; createdAt: string };
-type SentRequest = { id: string; addressee: UserStub; createdAt: string };
+type SentRequest     = { id: string; addressee: UserStub; createdAt: string };
+type BlockedEntry    = { id: string; user: UserStub; createdAt: string };
+type PendingTag      = { id: string; personName: string; photoUrl: string; peakName: string; ascentId: string; createdAt: string };
 
 type SearchResult = UserStub & {
   status: "none" | "pending_sent" | "pending_received" | "accepted";
@@ -48,15 +50,16 @@ function Btn({
   onClick, variant = "default", children, disabled,
 }: {
   onClick: () => void;
-  variant?: "default" | "ghost" | "danger" | "success";
+  variant?: "default" | "ghost" | "danger" | "success" | "warning";
   children: React.ReactNode;
   disabled?: boolean;
 }) {
   const colors: Record<string, { bg: string; color: string; border: string }> = {
-    default: { bg: "#0369a1", color: "white", border: "#0369a1" },
-    ghost:   { bg: "white", color: "#6b7280", border: "#e5e7eb" },
-    danger:  { bg: "white", color: "#ef4444", border: "#fecaca" },
-    success: { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
+    default: { bg: "#0369a1",  color: "white",   border: "#0369a1" },
+    ghost:   { bg: "white",    color: "#6b7280",  border: "#e5e7eb" },
+    danger:  { bg: "white",    color: "#ef4444",  border: "#fecaca" },
+    success: { bg: "#f0fdf4",  color: "#16a34a",  border: "#bbf7d0" },
+    warning: { bg: "#fff7ed",  color: "#ea580c",  border: "#fed7aa" },
   };
   const c = colors[variant];
   return (
@@ -76,28 +79,42 @@ function Btn({
   );
 }
 
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <h2 style={{ fontSize: 13, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>
+      {label}
+    </h2>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function FriendsClient({
   initialFriends,
   initialIncoming,
   initialSent,
+  initialBlocked,
+  initialPendingTags,
 }: {
   initialFriends: FriendEntry[];
   initialIncoming: IncomingRequest[];
   initialSent: SentRequest[];
+  initialBlocked: BlockedEntry[];
+  initialPendingTags: PendingTag[];
 }) {
   const t = useT();
   const [friends, setFriends] = useState(initialFriends);
   const [incoming, setIncoming] = useState(initialIncoming);
   const [sent, setSent] = useState(initialSent);
+  const [blocked, setBlocked] = useState(initialBlocked);
+  const [pendingTags, setPendingTags] = useState(initialPendingTags);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Build a map of known statuses for quick lookup ──────────────────────────
+  // ── Build status for quick lookup ──────────────────────────────────────────
   function getStatus(userId: string): { status: SearchResult["status"]; friendshipId?: string } {
     const f = friends.find((x) => x.friend.id === userId);
     if (f) return { status: "accepted", friendshipId: f.id };
@@ -187,6 +204,52 @@ export function FriendsClient({
     }
   }
 
+  // ── Block ────────────────────────────────────────────────────────────────────
+  async function block(friend: FriendEntry) {
+    // id here is the userId to block (the PATCH uses userId, not friendshipId)
+    const res = await fetch(`/api/friendships/${friend.friend.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "BLOCKED" }),
+    });
+    if (!res.ok) return;
+    const newEntry = await res.json();
+    setFriends((prev) => prev.filter((f) => f.id !== friend.id));
+    setBlocked((prev) => [...prev, { id: newEntry.id, user: friend.friend, createdAt: new Date().toISOString() }]);
+  }
+
+  // ── Unblock ──────────────────────────────────────────────────────────────────
+  async function unblock(entry: BlockedEntry) {
+    const res = await fetch(`/api/friendships/${entry.user.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "UNBLOCKED" }),
+    });
+    if (!res.ok) return;
+    setBlocked((prev) => prev.filter((b) => b.id !== entry.id));
+  }
+
+  // ── Tag approval ─────────────────────────────────────────────────────────────
+  async function approveTag(tagId: string) {
+    const res = await fetch(`/api/face-tags/${tagId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "ACCEPTED" }),
+    });
+    if (!res.ok) return;
+    setPendingTags((prev) => prev.filter((t) => t.id !== tagId));
+  }
+
+  async function rejectTag(tagId: string) {
+    const res = await fetch(`/api/face-tags/${tagId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "REJECTED" }),
+    });
+    if (!res.ok) return;
+    setPendingTags((prev) => prev.filter((t) => t.id !== tagId));
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div>
@@ -256,12 +319,36 @@ export function FriendsClient({
         )}
       </div>
 
+      {/* ── Pending tags ── */}
+      {pendingTags.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <SectionHeader label={i(t.tags_pendingCount, { n: pendingTags.length })} />
+          {pendingTags.map((tag) => (
+            <div key={tag.id} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "10px 0", borderBottom: "1px solid #f3f4f6",
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={tag.photoUrl} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{tag.personName}</p>
+                <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>
+                  {t.tags_taggedIn} · {tag.peakName}
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <Btn onClick={() => approveTag(tag.id)}>{t.tags_approve}</Btn>
+                <Btn variant="ghost" onClick={() => rejectTag(tag.id)}>{t.tags_reject}</Btn>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── Incoming requests ── */}
       {incoming.length > 0 && (
         <div style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>
-            {i(t.friends_pendingSection, { n: incoming.length })}
-          </h2>
+          <SectionHeader label={i(t.friends_pendingSection, { n: incoming.length })} />
           {incoming.map((req) => (
             <UserRow key={req.id}>
               <Avatar name={req.requester.name} size={38} />
@@ -279,7 +366,7 @@ export function FriendsClient({
       )}
 
       {/* ── Friends list ── */}
-      {friends.length === 0 && incoming.length === 0 ? (
+      {friends.length === 0 && incoming.length === 0 && pendingTags.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 0", border: "1px dashed #e5e7eb", borderRadius: 12 }}>
           <p style={{ fontSize: 32, margin: "0 0 8px" }}>🏔</p>
           <p style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", margin: 0 }}>{t.friends_noFriends}</p>
@@ -287,9 +374,7 @@ export function FriendsClient({
         </div>
       ) : friends.length > 0 && (
         <div>
-          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>
-            {t.friends_title} · {friends.length}
-          </h2>
+          <SectionHeader label={`${t.friends_title} · ${friends.length}`} />
           {friends.map((f) => (
             <UserRow key={f.id}>
               <Avatar name={f.friend.name} size={38} />
@@ -297,18 +382,19 @@ export function FriendsClient({
                 <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{f.friend.name}</p>
                 {f.friend.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{f.friend.username}</p>}
               </div>
-              <Btn variant="danger" onClick={() => remove(f.id, f.friend.id)}>{t.friends_remove}</Btn>
+              <div style={{ display: "flex", gap: 6 }}>
+                <Btn variant="danger" onClick={() => remove(f.id, f.friend.id)}>{t.friends_remove}</Btn>
+                <Btn variant="warning" onClick={() => block(f)}>{t.friends_block}</Btn>
+              </div>
             </UserRow>
           ))}
         </div>
       )}
 
-      {/* Sent requests (collapsed) */}
+      {/* ── Sent requests ── */}
       {sent.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>
-            {t.friends_requestSent} · {sent.length}
-          </h2>
+          <SectionHeader label={`${t.friends_requestSent} · ${sent.length}`} />
           {sent.map((s) => (
             <UserRow key={s.id}>
               <Avatar name={s.addressee.name} size={38} />
@@ -317,6 +403,23 @@ export function FriendsClient({
                 {s.addressee.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{s.addressee.username}</p>}
               </div>
               <Btn variant="ghost" onClick={() => remove(s.id, s.addressee.id)}>{t.friends_cancel}</Btn>
+            </UserRow>
+          ))}
+        </div>
+      )}
+
+      {/* ── Blocked users ── */}
+      {blocked.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <SectionHeader label={`${t.friends_blockedSection} · ${blocked.length}`} />
+          {blocked.map((b) => (
+            <UserRow key={b.id}>
+              <Avatar name={b.user.name} size={38} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{b.user.name}</p>
+                {b.user.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{b.user.username}</p>}
+              </div>
+              <Btn variant="ghost" onClick={() => unblock(b)}>{t.friends_unblock}</Btn>
             </UserRow>
           ))}
         </div>

@@ -68,6 +68,16 @@ export const es: Dict = {
   friends_noPending: "Sin solicitudes pendientes", friends_noFriends: "Aún no tienes amigos en MySummits",
   friends_noFriendsSub: "Busca a tus compañeros de montaña arriba",
   friends_noResults: "No se encontraron usuarios", friends_since: "Amigos desde",
+  friends_block: "Bloquear", friends_blocked: "Bloqueado", friends_unblock: "Desbloquear",
+  friends_blockedSection: "Bloqueados",
+
+  tags_title: "Etiquetas pendientes", tags_noPending: "No hay etiquetas pendientes",
+  tags_approve: "Aceptar", tags_reject: "Rechazar",
+  tags_taggedIn: "Te han etiquetado en una foto",
+  tags_pendingCount: "Etiquetas pendientes ({n})", tags_in: "en",
+
+  profile_private: "Perfil privado",
+  profile_privateDesc: "Este usuario ha configurado su perfil como privado. Solo sus amigos pueden verlo.",
 
   people_emptyHint: "Abre una foto y pulsa Etiquetar para detectar y nombrar caras",
   people_title: "Amigos", people_search: "🔍  Buscar amigos…",
@@ -114,6 +124,9 @@ export const es: Dict = {
   settings_deleting: "Eliminando…", settings_deleteConfirmButton: "Eliminar mi cuenta",
   settings_usernameAvailable: "✓ Disponible", settings_usernameTaken: "✗ Ya está en uso",
   settings_usernameInvalid: "3–20 caracteres, letras / números / . _", settings_usernameChecking: "Comprobando…",
+  settings_linkedPerson: "Perfil vinculado", settings_linkedPersonDesc: "Vincula tu cuenta a tu perfil de etiquetas",
+  settings_claimPerson: "Vincular perfil", settings_unclaimPerson: "Desvincular",
+  settings_searchPerson: "Busca tu nombre en las fotos…", settings_linkedPersonCurrent: "Vinculado a",
 
   auth_signInDesc: "Inicia sesión en tu cuenta", auth_accountCreated: "¡Cuenta creada! Inicia sesión para empezar.",
   auth_invalidCredentials: "Email o contraseña incorrectos", auth_signingIn: "Iniciando sesión…",

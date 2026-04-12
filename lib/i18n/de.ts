@@ -68,6 +68,16 @@ export const de: Dict = {
   friends_noPending: "Keine ausstehenden Anfragen", friends_noFriends: "Noch keine Freunde auf MySummits",
   friends_noFriendsSub: "Suche oben nach deinen Bergkameraden",
   friends_noResults: "Keine Benutzer gefunden", friends_since: "Freunde seit",
+  friends_block: "Blockieren", friends_blocked: "Blockiert", friends_unblock: "Entblocken",
+  friends_blockedSection: "Blockierte Nutzer",
+
+  tags_title: "Ausstehende Tags", tags_noPending: "Keine ausstehenden Tags",
+  tags_approve: "Annehmen", tags_reject: "Ablehnen",
+  tags_taggedIn: "Du wurdest in einem Foto markiert",
+  tags_pendingCount: "Ausstehende Tags ({n})", tags_in: "in",
+
+  profile_private: "Privates Profil",
+  profile_privateDesc: "Dieser Nutzer hat sein Profil auf privat gesetzt. Nur seine Freunde können es sehen.",
 
   people_emptyHint: "Öffne ein Foto und klicke auf Markieren, um Gesichter zu erkennen und zu benennen",
   people_title: "Freunde", people_search: "🔍  Freunde suchen…",
@@ -114,6 +124,9 @@ export const de: Dict = {
   settings_deleting: "Löschen…", settings_deleteConfirmButton: "Mein Konto löschen",
   settings_usernameAvailable: "✓ Verfügbar", settings_usernameTaken: "✗ Bereits vergeben",
   settings_usernameInvalid: "3–20 Zeichen, Buchstaben / Zahlen / . _", settings_usernameChecking: "Prüfung…",
+  settings_linkedPerson: "Verknüpftes Profil", settings_linkedPersonDesc: "Verknüpfe dein Konto mit deinem Tag-Profil",
+  settings_claimPerson: "Profil verknüpfen", settings_unclaimPerson: "Verknüpfung aufheben",
+  settings_searchPerson: "Suche deinen Namen in Fotos…", settings_linkedPersonCurrent: "Verknüpft mit",
 
   auth_signInDesc: "Melde dich in deinem Konto an", auth_accountCreated: "Konto erstellt! Melde dich an, um loszulegen.",
   auth_invalidCredentials: "E-Mail oder Passwort falsch", auth_signingIn: "Anmeldung…",

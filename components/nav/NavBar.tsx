@@ -10,6 +10,7 @@ type NavBarProps = {
   userName: string | null;
   userEmail: string | null;
   pendingFriendRequests?: number;
+  pendingTagCount?: number;
 };
 
 function initials(name: string | null, email: string | null): string {
@@ -22,7 +23,7 @@ function initials(name: string | null, email: string | null): string {
   return "U";
 }
 
-export function NavBar({ userName, userEmail, pendingFriendRequests = 0 }: NavBarProps) {
+export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pendingTagCount = 0 }: NavBarProps) {
   const pathname = usePathname();
   const t = useT();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -316,14 +317,14 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0 }: NavBa
           <Link href="/ascents" className={`nav-link${isActive("/ascents") ? " active" : ""}`}>{t.nav_ascents}</Link>
           <Link href="/friends" className={`nav-link${isActive("/friends") ? " active" : ""}`} style={{ position: "relative" }}>
             {t.nav_people}
-            {pendingFriendRequests > 0 && (
+            {(pendingFriendRequests + pendingTagCount) > 0 && (
               <span style={{
                 position: "absolute", top: 6, right: 2,
                 minWidth: 16, height: 16, borderRadius: 8,
                 background: "#ef4444", color: "white",
                 fontSize: 10, fontWeight: 700, lineHeight: "16px",
                 textAlign: "center", padding: "0 4px",
-              }}>{pendingFriendRequests}</span>
+              }}>{pendingFriendRequests + pendingTagCount}</span>
             )}
           </Link>
         </nav>
@@ -410,14 +411,14 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0 }: NavBa
           <Link href="/friends" className={`tab-item${isActive("/friends") ? " active" : ""}`}>
             <div className="tab-icon-wrap">
               <PeopleIcon size={22} active={isActive("/friends")} />
-              {pendingFriendRequests > 0 && (
+              {(pendingFriendRequests + pendingTagCount) > 0 && (
                 <span style={{
                   position: "absolute", top: -2, right: -4,
                   minWidth: 14, height: 14, borderRadius: 7,
                   background: "#ef4444", color: "white",
                   fontSize: 9, fontWeight: 700, lineHeight: "14px",
                   textAlign: "center", padding: "0 3px",
-                }}>{pendingFriendRequests}</span>
+                }}>{pendingFriendRequests + pendingTagCount}</span>
               )}
             </div>
             <span className="tab-label">{t.nav_people}</span>

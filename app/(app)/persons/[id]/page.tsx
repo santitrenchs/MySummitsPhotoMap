@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getPersonDetails } from "@/lib/services/person.service";
+import { getFriendshipBetween } from "@/lib/services/friendship.service";
 import { getServerT } from "@/lib/i18n/server";
 
 export default async function PersonDetailPage({
@@ -17,7 +18,48 @@ export default async function PersonDetailPage({
   const person = await getPersonDetails(session.user.tenantId, id);
   if (!person) notFound();
 
-  // Group photos by ascent
+  // ── Privacy gating ──────────────────────────────────────────────────────────
+  const linkedUser = person.user;
+  const isOwnProfile = linkedUser?.id === session.user.id;
+
+  if (linkedUser && !isOwnProfile && !linkedUser.profilePublic) {
+    const friendship = await getFriendshipBetween(session.user.id, linkedUser.id);
+    const isFriend = friendship?.status === "ACCEPTED";
+
+    if (!isFriend) {
+      return (
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 16px" }}>
+          <Link
+            href="/persons"
+            style={{ fontSize: 13, color: "#6b7280", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 20 }}
+          >
+            ← {t.people_title}
+          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: "50%",
+              background: "#f3f4f6", border: "1px solid #e5e7eb",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 24, color: "#9ca3af", fontWeight: 700, flexShrink: 0,
+            }}>
+              🔒
+            </div>
+            <div>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: 0 }}>{person.name}</h1>
+              <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 0" }}>{t.profile_private}</p>
+            </div>
+          </div>
+          <div style={{ textAlign: "center", padding: "40px 0", border: "1px dashed #e5e7eb", borderRadius: 12 }}>
+            <p style={{ fontSize: 32, margin: "0 0 8px" }}>🔒</p>
+            <p style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", margin: 0 }}>{t.profile_private}</p>
+            <p style={{ fontSize: 13, color: "#9ca3af", margin: "4px 0 0" }}>{t.profile_privateDesc}</p>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // ── Group photos by ascent ──────────────────────────────────────────────────
   const ascentMap = new Map<string, {
     id: string;
     date: Date;

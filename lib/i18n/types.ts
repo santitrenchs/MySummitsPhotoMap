@@ -80,6 +80,17 @@ export type Dict = {
   friends_pendingSection: string; friends_noPending: string;
   friends_noFriends: string; friends_noFriendsSub: string; friends_noResults: string;
   friends_since: string;
+  friends_block: string; friends_blocked: string; friends_unblock: string;
+  friends_blockedSection: string;
+
+  // Tags (face tag approval)
+  tags_title: string; tags_noPending: string;
+  tags_approve: string; tags_reject: string;
+  tags_taggedIn: string; tags_pendingCount: string;
+  tags_in: string;
+
+  // Profile privacy
+  profile_private: string; profile_privateDesc: string;
 
   // Settings
   settings_title: string; settings_subtitle: string; settings_language: string;
@@ -107,6 +118,9 @@ export type Dict = {
   settings_deleting: string; settings_deleteConfirmButton: string;
   settings_usernameAvailable: string; settings_usernameTaken: string;
   settings_usernameInvalid: string; settings_usernameChecking: string;
+  settings_linkedPerson: string; settings_linkedPersonDesc: string;
+  settings_claimPerson: string; settings_unclaimPerson: string;
+  settings_searchPerson: string; settings_linkedPersonCurrent: string;
 
   // Auth
   auth_signInDesc: string; auth_accountCreated: string; auth_invalidCredentials: string;

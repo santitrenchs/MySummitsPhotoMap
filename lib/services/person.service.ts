@@ -1,4 +1,5 @@
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
+import { prisma } from "@/lib/db/client";
 
 export async function listPersonsWithStats(tenantId: string) {
   const db = await getTenantConnection(tenantId);
@@ -7,6 +8,7 @@ export async function listPersonsWithStats(tenantId: string) {
     orderBy: { name: "asc" },
     include: {
       faceTags: {
+        where: { status: "ACCEPTED" },
         orderBy: { createdAt: "desc" },
         include: {
           faceDetection: {
@@ -31,7 +33,9 @@ export async function getPersonDetails(tenantId: string, personId: string) {
   return db.person.findFirst({
     where: { id: personId, tenantId },
     include: {
+      user: { select: { id: true, profilePublic: true } },
       faceTags: {
+        where: { status: "ACCEPTED" },
         orderBy: { createdAt: "desc" },
         include: {
           faceDetection: {
@@ -78,12 +82,16 @@ export async function deletePerson(tenantId: string, personId: string) {
   return db.person.deleteMany({ where: { id: personId, tenantId } });
 }
 
-export async function listPersons(tenantId: string) {
+export async function listPersons(tenantId: string, search?: string) {
   const db = await getTenantConnection(tenantId);
   return db.person.findMany({
-    where: { tenantId },
+    where: {
+      tenantId,
+      ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
+    },
     orderBy: { name: "asc" },
     select: { id: true, name: true },
+    take: search ? 10 : undefined,
   });
 }
 
@@ -95,4 +103,44 @@ export async function findOrCreatePerson(tenantId: string, name: string) {
   });
   if (existing) return existing;
   return db.person.create({ data: { tenantId, name: trimmed } });
+}
+
+// ─── Claim (link User ↔ Person) ───────────────────────────────────────────────
+
+export async function claimPersonProfile(tenantId: string, personId: string, userId: string) {
+  const db = await getTenantConnection(tenantId);
+  const person = await db.person.findFirst({ where: { id: personId, tenantId } });
+  if (!person) throw new Error("Person not found");
+  if (person.userId && person.userId !== userId) throw new Error("Already claimed by another user");
+
+  // Ensure user doesn't already have a linked person in this tenant
+  const existing = await db.person.findFirst({ where: { tenantId, userId } });
+  if (existing && existing.id !== personId) throw new Error("You already have a linked profile");
+
+  return db.person.update({ where: { id: personId }, data: { userId } });
+}
+
+export async function unclaimPersonProfile(tenantId: string, personId: string, userId: string) {
+  const db = await getTenantConnection(tenantId);
+  const person = await db.person.findFirst({ where: { id: personId, tenantId } });
+  if (!person) throw new Error("Person not found");
+  if (person.userId !== userId) throw new Error("Forbidden");
+  return db.person.update({ where: { id: personId }, data: { userId: null } });
+}
+
+export async function getLinkedPerson(tenantId: string, userId: string) {
+  const db = await getTenantConnection(tenantId);
+  return db.person.findFirst({
+    where: { tenantId, userId },
+    select: { id: true, name: true },
+  });
+}
+
+// ─── Global lookup (for settings page showing linked person across tenants) ───
+
+export async function getLinkedPersonGlobal(userId: string) {
+  return prisma.person.findFirst({
+    where: { userId },
+    select: { id: true, name: true, tenantId: true },
+  });
 }

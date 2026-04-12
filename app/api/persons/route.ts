@@ -2,10 +2,12 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { listPersons, findOrCreatePerson } from "@/lib/services/person.service";
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const persons = await listPersons(session.user.tenantId);
+  const { searchParams } = new URL(req.url);
+  const q = searchParams.get("q")?.trim();
+  const persons = await listPersons(session.user.tenantId, q ?? undefined);
   return NextResponse.json(persons);
 }
 

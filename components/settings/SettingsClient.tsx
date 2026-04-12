@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { signOut } from "next-auth/react";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { LOCALE_OPTIONS } from "@/lib/i18n";
@@ -14,6 +14,8 @@ type UserSettings = {
   emailNotifications: boolean; activityNotifications: boolean;
   autoDetectFaces: boolean; autoSuggestPeople: boolean; reviewFacesBeforeSave: boolean;
 };
+
+type PersonStub = { id: string; name: string };
 
 type UsernameState = "idle" | "checking" | "available" | "taken" | "invalid";
 const USERNAME_RE = /^[a-zA-Z0-9_.]{3,20}$/;
@@ -65,9 +67,20 @@ function Card({ children }: { children: React.ReactNode }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
+export function SettingsClient({
+  initialUser,
+  initialLinkedPerson,
+}: {
+  initialUser: UserSettings;
+  initialLinkedPerson: PersonStub | null;
+}) {
   const { t, locale, setLocale } = useI18n();
   const [settings, setSettings] = useState(initialUser);
+  const [linkedPerson, setLinkedPerson] = useState<PersonStub | null>(initialLinkedPerson);
+  const [personSearch, setPersonSearch] = useState("");
+  const [personResults, setPersonResults] = useState<PersonStub[]>([]);
+  const [personSearching, setPersonSearching] = useState(false);
+  const personDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Account form
   const [name, setName] = useState(initialUser.name);
@@ -163,6 +176,35 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
     setDeleting(true);
     await fetch("/api/settings/account", { method: "DELETE" });
     signOut({ callbackUrl: "/login" });
+  }
+
+  // Linked person search + claim
+  function handlePersonSearch(value: string) {
+    setPersonSearch(value);
+    if (personDebounceRef.current) clearTimeout(personDebounceRef.current);
+    if (!value.trim() || value.trim().length < 2) { setPersonResults([]); return; }
+    personDebounceRef.current = setTimeout(async () => {
+      setPersonSearching(true);
+      try {
+        const res = await fetch(`/api/persons?q=${encodeURIComponent(value.trim())}`);
+        if (res.ok) setPersonResults(await res.json());
+      } finally { setPersonSearching(false); }
+    }, 350);
+  }
+
+  async function claimPerson(person: PersonStub) {
+    const res = await fetch(`/api/persons/${person.id}/claim`, { method: "POST" });
+    if (!res.ok) return;
+    setLinkedPerson(person);
+    setPersonSearch("");
+    setPersonResults([]);
+  }
+
+  async function unclaimPerson() {
+    if (!linkedPerson) return;
+    const res = await fetch(`/api/persons/${linkedPerson.id}/claim`, { method: "DELETE" });
+    if (!res.ok) return;
+    setLinkedPerson(null);
   }
 
   // Flexible delete confirm word based on locale
@@ -316,6 +358,61 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
         <SettingsRow label={t.settings_allowTagging} last>
           <Toggle value={settings.allowOthersToTag} onChange={(v) => saveToggle("allowOthersToTag", v)} />
         </SettingsRow>
+      </Card>
+
+      {/* Linked person profile */}
+      <SectionHeader label={t.settings_linkedPerson} />
+      <Card>
+        {linkedPerson ? (
+          <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+              background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)",
+              color: "white", fontWeight: 700, fontSize: 14,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {linkedPerson.name[0]?.toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>
+                {t.settings_linkedPersonCurrent} <span style={{ color: "#0369a1" }}>{linkedPerson.name}</span>
+              </p>
+              <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>{t.settings_linkedPersonDesc}</p>
+            </div>
+            <button onClick={unclaimPerson}
+              style={{ padding: "6px 12px", background: "white", color: "#ef4444", border: "1px solid #fecaca", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+              {t.settings_unclaimPerson}
+            </button>
+          </div>
+        ) : (
+          <div style={{ padding: "14px 16px" }}>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 10px", lineHeight: 1.5 }}>{t.settings_linkedPersonDesc}</p>
+            <div style={{ position: "relative" }}>
+              <input
+                type="text" value={personSearch}
+                onChange={(e) => handlePersonSearch(e.target.value)}
+                placeholder={t.settings_searchPerson}
+                style={{ ...inputStyle, paddingRight: 36 }}
+              />
+              {personSearching && (
+                <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#9ca3af" }}>…</span>
+              )}
+            </div>
+            {personResults.length > 0 && (
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden", marginTop: 6 }}>
+                {personResults.map((p) => (
+                  <button key={p.id} onClick={() => claimPerson(p)}
+                    style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", background: "white", border: "none", borderBottom: "1px solid #f3f4f6", cursor: "pointer", textAlign: "left", fontSize: 13, color: "#111827" }}>
+                    <span style={{ width: 28, height: 28, borderRadius: "50%", background: "#eff6ff", color: "#0369a1", fontWeight: 700, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {p.name[0]?.toUpperCase()}
+                    </span>
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Notifications */}

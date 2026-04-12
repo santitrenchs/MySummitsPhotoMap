@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { respondToFriendRequest, removeFriendship } from "@/lib/services/friendship.service";
+import { respondToFriendRequest, removeFriendship, blockUser, unblockUser } from "@/lib/services/friendship.service";
 
 export async function PATCH(
   req: Request,
@@ -12,11 +12,19 @@ export async function PATCH(
   const { id } = await params;
   const { action } = await req.json();
 
-  if (action !== "ACCEPTED" && action !== "REJECTED") {
-    return NextResponse.json({ error: "action must be ACCEPTED or REJECTED" }, { status: 400 });
-  }
-
   try {
+    if (action === "BLOCKED") {
+      // id here is the userId to block
+      const result = await blockUser(session.user.id, id);
+      return NextResponse.json(result);
+    }
+    if (action === "UNBLOCKED") {
+      await unblockUser(session.user.id, id);
+      return NextResponse.json({ ok: true });
+    }
+    if (action !== "ACCEPTED" && action !== "REJECTED") {
+      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    }
     const result = await respondToFriendRequest(id, session.user.id, action);
     return NextResponse.json(result);
   } catch (err) {

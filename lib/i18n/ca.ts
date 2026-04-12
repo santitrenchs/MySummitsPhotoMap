@@ -68,6 +68,16 @@ export const ca: Dict = {
   friends_noPending: "Sense sol·licituds pendents", friends_noFriends: "Encara no tens amics a MySummits",
   friends_noFriendsSub: "Cerca els teus companys de muntanya aquí dalt",
   friends_noResults: "No s'han trobat usuaris", friends_since: "Amics des de",
+  friends_block: "Bloquejar", friends_blocked: "Bloquejat", friends_unblock: "Desbloquejar",
+  friends_blockedSection: "Bloquejats",
+
+  tags_title: "Etiquetes pendents", tags_noPending: "No hi ha etiquetes pendents",
+  tags_approve: "Acceptar", tags_reject: "Rebutjar",
+  tags_taggedIn: "T'han etiquetat en una foto",
+  tags_pendingCount: "Etiquetes pendents ({n})", tags_in: "a",
+
+  profile_private: "Perfil privat",
+  profile_privateDesc: "Aquest usuari ha configurat el seu perfil com a privat. Només els seus amics poden veure'l.",
 
   people_emptyHint: "Obre una foto i prem Etiquetar per detectar i nomenar cares",
   people_title: "Amics", people_search: "🔍  Cercar amics…",
@@ -114,6 +124,9 @@ export const ca: Dict = {
   settings_deleting: "Eliminant…", settings_deleteConfirmButton: "Eliminar el meu compte",
   settings_usernameAvailable: "✓ Disponible", settings_usernameTaken: "✗ Ja està en ús",
   settings_usernameInvalid: "3–20 caràcters, lletres / números / . _", settings_usernameChecking: "Comprovant…",
+  settings_linkedPerson: "Perfil vinculat", settings_linkedPersonDesc: "Vincula el teu compte al teu perfil d'etiquetes",
+  settings_claimPerson: "Vincular perfil", settings_unclaimPerson: "Desvincular",
+  settings_searchPerson: "Cerca el teu nom a les fotos…", settings_linkedPersonCurrent: "Vinculat a",
 
   auth_signInDesc: "Inicia sessió al teu compte", auth_accountCreated: "Compte creat! Inicia sessió per començar.",
   auth_invalidCredentials: "Correu o contrasenya incorrectes", auth_signingIn: "Iniciant sessió…",

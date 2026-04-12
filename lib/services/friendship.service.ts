@@ -54,6 +54,31 @@ export async function respondToFriendRequest(
   });
 }
 
+export async function blockUser(blockerId: string, blockedId: string) {
+  if (blockerId === blockedId) throw new Error("Cannot block yourself");
+
+  // Delete any existing friendship between them (in either direction)
+  await prisma.friendship.deleteMany({
+    where: {
+      OR: [
+        { requesterId: blockerId, addresseeId: blockedId },
+        { requesterId: blockedId, addresseeId: blockerId },
+      ],
+    },
+  });
+
+  // Create new BLOCKED record with blocker as requester
+  return prisma.friendship.create({
+    data: { requesterId: blockerId, addresseeId: blockedId, status: "BLOCKED" },
+  });
+}
+
+export async function unblockUser(blockerId: string, blockedId: string) {
+  return prisma.friendship.deleteMany({
+    where: { requesterId: blockerId, addresseeId: blockedId, status: "BLOCKED" },
+  });
+}
+
 export async function removeFriendship(friendshipId: string, userId: string) {
   const f = await prisma.friendship.findUnique({ where: { id: friendshipId } });
   if (!f) throw new Error("Not found");
@@ -107,6 +132,16 @@ export async function listIncomingRequests(userId: string) {
 export async function listSentRequests(userId: string) {
   return prisma.friendship.findMany({
     where: { requesterId: userId, status: "PENDING" },
+    include: {
+      addressee: { select: { id: true, name: true, username: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function listBlockedUsers(userId: string) {
+  return prisma.friendship.findMany({
+    where: { requesterId: userId, status: "BLOCKED" },
     include: {
       addressee: { select: { id: true, name: true, username: true } },
     },

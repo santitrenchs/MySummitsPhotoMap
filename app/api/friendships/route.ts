@@ -4,6 +4,7 @@ import {
   listFriends,
   listIncomingRequests,
   listSentRequests,
+  listBlockedUsers,
   sendFriendRequest,
 } from "@/lib/services/friendship.service";
 
@@ -11,13 +12,14 @@ export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [friends, incoming, sent] = await Promise.all([
+  const [friends, incoming, sent, blocked] = await Promise.all([
     listFriends(session.user.id),
     listIncomingRequests(session.user.id),
     listSentRequests(session.user.id),
+    listBlockedUsers(session.user.id),
   ]);
 
-  return NextResponse.json({ friends, incoming, sent });
+  return NextResponse.json({ friends, incoming, sent, blocked });
 }
 
 export async function POST(req: Request) {
