@@ -9,6 +9,7 @@ import { useT } from "@/components/providers/I18nProvider";
 type NavBarProps = {
   userName: string | null;
   userEmail: string | null;
+  pendingFriendRequests?: number;
 };
 
 function initials(name: string | null, email: string | null): string {
@@ -21,7 +22,7 @@ function initials(name: string | null, email: string | null): string {
   return "U";
 }
 
-export function NavBar({ userName, userEmail }: NavBarProps) {
+export function NavBar({ userName, userEmail, pendingFriendRequests = 0 }: NavBarProps) {
   const pathname = usePathname();
   const t = useT();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -313,7 +314,18 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
         <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Link href="/map" className={`nav-link${isActive("/map") ? " active" : ""}`}>{t.nav_map}</Link>
           <Link href="/ascents" className={`nav-link${isActive("/ascents") ? " active" : ""}`}>{t.nav_ascents}</Link>
-          <Link href="/persons" className={`nav-link${isActive("/persons") ? " active" : ""}`}>{t.nav_people}</Link>
+          <Link href="/friends" className={`nav-link${isActive("/friends") ? " active" : ""}`} style={{ position: "relative" }}>
+            {t.nav_people}
+            {pendingFriendRequests > 0 && (
+              <span style={{
+                position: "absolute", top: 6, right: 2,
+                minWidth: 16, height: 16, borderRadius: 8,
+                background: "#ef4444", color: "white",
+                fontSize: 10, fontWeight: 700, lineHeight: "16px",
+                textAlign: "center", padding: "0 4px",
+              }}>{pendingFriendRequests}</span>
+            )}
+          </Link>
         </nav>
 
         {/* Avatar + dropdown */}
@@ -395,9 +407,18 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
             </Link>
           </div>
 
-          <Link href="/persons" className={`tab-item${isActive("/persons") ? " active" : ""}`}>
+          <Link href="/friends" className={`tab-item${isActive("/friends") ? " active" : ""}`}>
             <div className="tab-icon-wrap">
-              <PeopleIcon size={22} active={isActive("/persons")} />
+              <PeopleIcon size={22} active={isActive("/friends")} />
+              {pendingFriendRequests > 0 && (
+                <span style={{
+                  position: "absolute", top: -2, right: -4,
+                  minWidth: 14, height: 14, borderRadius: 7,
+                  background: "#ef4444", color: "white",
+                  fontSize: 9, fontWeight: 700, lineHeight: "14px",
+                  textAlign: "center", padding: "0 3px",
+                }}>{pendingFriendRequests}</span>
+              )}
             </div>
             <span className="tab-label">{t.nav_people}</span>
           </Link>

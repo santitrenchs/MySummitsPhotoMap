@@ -61,6 +61,14 @@ export const en: Dict = {
   ascents_stat_ascents: "ascents", ascents_stat_highest: "highest",
   ascents_stat_peaks: "peaks", ascents_stat_people: "friends",
 
+  friends_title: "Friends", friends_searchPlaceholder: "Search by name or username…",
+  friends_add: "Add", friends_requestSent: "Sent", friends_alreadyFriends: "Friends",
+  friends_accept: "Accept", friends_reject: "Reject", friends_remove: "Remove friend",
+  friends_cancel: "Cancel request", friends_pendingSection: "Requests ({n})",
+  friends_noPending: "No pending requests", friends_noFriends: "No friends yet on MySummits",
+  friends_noFriendsSub: "Search for your mountain companions above",
+  friends_noResults: "No users found", friends_since: "Friends since",
+
   people_emptyHint: "Open a photo and click Tag to detect and name faces",
   people_title: "Friends", people_search: "🔍  Search friends…",
   people_editPerson: "Edit friend", people_fullName: "Full name",
@@ -82,6 +90,7 @@ export const en: Dict = {
   settings_passwordsDontMatch: "Passwords don't match",
   settings_passwordTooShort: "New password must be at least 8 characters",
   settings_failedToSave: "Failed to save",
+  settings_appearInSearch: "Appear in search", settings_appearInSearchDesc: "Allow others to find you by name or username",
   settings_privacy: "Privacy", settings_profilePublic: "Public profile",
   settings_profilePublicDesc: "Anyone can view your ascents and peaks",
   settings_reviewTags: "Review tags before publishing",

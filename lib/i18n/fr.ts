@@ -61,6 +61,14 @@ export const fr: Dict = {
   ascents_stat_ascents: "ascensions", ascents_stat_highest: "plus haute",
   ascents_stat_peaks: "sommets", ascents_stat_people: "amis",
 
+  friends_title: "Amis", friends_searchPlaceholder: "Chercher par nom ou pseudo…",
+  friends_add: "Ajouter", friends_requestSent: "Envoyée", friends_alreadyFriends: "Amis",
+  friends_accept: "Accepter", friends_reject: "Ignorer", friends_remove: "Supprimer l'ami",
+  friends_cancel: "Annuler la demande", friends_pendingSection: "Demandes ({n})",
+  friends_noPending: "Aucune demande en attente", friends_noFriends: "Pas encore d'amis sur MySummits",
+  friends_noFriendsSub: "Cherche tes compagnons de montagne ci-dessus",
+  friends_noResults: "Aucun utilisateur trouvé", friends_since: "Amis depuis",
+
   people_emptyHint: "Ouvre une photo et clique sur Identifier pour détecter et nommer les visages",
   people_title: "Amis", people_search: "🔍  Chercher des amis…",
   people_editPerson: "Modifier l'ami", people_fullName: "Nom complet",
@@ -82,6 +90,7 @@ export const fr: Dict = {
   settings_passwordsDontMatch: "Les mots de passe ne correspondent pas",
   settings_passwordTooShort: "Le nouveau mot de passe doit comporter au moins 8 caractères",
   settings_failedToSave: "Impossible d'enregistrer",
+  settings_appearInSearch: "Apparaître dans les recherches", settings_appearInSearchDesc: "Permet aux autres de te trouver par nom ou pseudo",
   settings_privacy: "Confidentialité", settings_profilePublic: "Profil public",
   settings_profilePublicDesc: "N'importe qui peut voir tes ascensions et sommets",
   settings_reviewTags: "Vérifier les tags avant publication",

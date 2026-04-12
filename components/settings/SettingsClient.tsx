@@ -10,7 +10,7 @@ import type { Locale } from "@/lib/i18n/types";
 
 type UserSettings = {
   id: string; name: string; email: string; username: string | null; language: string;
-  profilePublic: boolean; reviewTagsBeforePost: boolean; allowOthersToTag: boolean;
+  profilePublic: boolean; appearInSearch: boolean; reviewTagsBeforePost: boolean; allowOthersToTag: boolean;
   emailNotifications: boolean; activityNotifications: boolean;
   autoDetectFaces: boolean; autoSuggestPeople: boolean; reviewFacesBeforeSave: boolean;
 };
@@ -306,6 +306,9 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
       <Card>
         <SettingsRow label={t.settings_profilePublic} description={t.settings_profilePublicDesc}>
           <Toggle value={settings.profilePublic} onChange={(v) => saveToggle("profilePublic", v)} />
+        </SettingsRow>
+        <SettingsRow label={t.settings_appearInSearch} description={t.settings_appearInSearchDesc}>
+          <Toggle value={settings.appearInSearch} onChange={(v) => saveToggle("appearInSearch", v)} />
         </SettingsRow>
         <SettingsRow label={t.settings_reviewTags} description={t.settings_reviewTagsDesc}>
           <Toggle value={settings.reviewTagsBeforePost} onChange={(v) => saveToggle("reviewTagsBeforePost", v)} />

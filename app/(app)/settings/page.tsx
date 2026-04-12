@@ -23,6 +23,7 @@ export default async function SettingsPage() {
       autoDetectFaces: true,
       autoSuggestPeople: true,
       reviewFacesBeforeSave: true,
+      appearInSearch: true,
     },
   });
 

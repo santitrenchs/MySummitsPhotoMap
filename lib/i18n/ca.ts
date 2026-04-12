@@ -61,6 +61,14 @@ export const ca: Dict = {
   ascents_stat_ascents: "ascensions", ascents_stat_highest: "més alta",
   ascents_stat_peaks: "cims", ascents_stat_people: "amics",
 
+  friends_title: "Amics", friends_searchPlaceholder: "Cerca per nom o usuari…",
+  friends_add: "Afegir", friends_requestSent: "Enviada", friends_alreadyFriends: "Amics",
+  friends_accept: "Acceptar", friends_reject: "Ignorar", friends_remove: "Eliminar amic",
+  friends_cancel: "Cancel·lar sol·licitud", friends_pendingSection: "Sol·licituds ({n})",
+  friends_noPending: "Sense sol·licituds pendents", friends_noFriends: "Encara no tens amics a MySummits",
+  friends_noFriendsSub: "Cerca els teus companys de muntanya aquí dalt",
+  friends_noResults: "No s'han trobat usuaris", friends_since: "Amics des de",
+
   people_emptyHint: "Obre una foto i prem Etiquetar per detectar i nomenar cares",
   people_title: "Amics", people_search: "🔍  Cercar amics…",
   people_editPerson: "Editar amic", people_fullName: "Nom complet",
@@ -82,6 +90,7 @@ export const ca: Dict = {
   settings_passwordsDontMatch: "Les contrasenyes no coincideixen",
   settings_passwordTooShort: "La nova contrasenya ha de tenir almenys 8 caràcters",
   settings_failedToSave: "No s'ha pogut desar",
+  settings_appearInSearch: "Aparèixer a les cerques", settings_appearInSearchDesc: "Permet que altres et trobin per nom o usuari",
   settings_privacy: "Privadesa", settings_profilePublic: "Perfil públic",
   settings_profilePublicDesc: "Qualsevol pot veure les teves ascensions i cims",
   settings_reviewTags: "Revisar etiquetes abans de publicar",

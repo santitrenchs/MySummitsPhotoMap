@@ -73,6 +73,14 @@ export type Dict = {
   people_delete_body_photos: string; people_delete_body_simple: string;
   people_stat_people: string; people_stat_photos: string; people_stat_ascents: string;
 
+  // Friends / Social
+  friends_title: string; friends_searchPlaceholder: string;
+  friends_add: string; friends_requestSent: string; friends_alreadyFriends: string;
+  friends_accept: string; friends_reject: string; friends_remove: string; friends_cancel: string;
+  friends_pendingSection: string; friends_noPending: string;
+  friends_noFriends: string; friends_noFriendsSub: string; friends_noResults: string;
+  friends_since: string;
+
   // Settings
   settings_title: string; settings_subtitle: string; settings_language: string;
   settings_account: string; settings_username: string;
@@ -84,6 +92,7 @@ export type Dict = {
   settings_passwordsDontMatch: string; settings_passwordTooShort: string;
   settings_failedToSave: string;
   settings_privacy: string; settings_profilePublic: string;
+  settings_appearInSearch: string; settings_appearInSearchDesc: string;
   settings_profilePublicDesc: string; settings_reviewTags: string;
   settings_reviewTagsDesc: string; settings_allowTagging: string;
   settings_notifications: string; settings_emailNotif: string;
