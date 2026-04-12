@@ -9,6 +9,7 @@ import { useT } from "@/components/providers/I18nProvider";
 type NavBarProps = {
   userName: string | null;
   userEmail: string | null;
+  userAvatarUrl?: string | null;
   pendingFriendRequests?: number;
   pendingTagCount?: number;
 };
@@ -23,7 +24,7 @@ function initials(name: string | null, email: string | null): string {
   return "U";
 }
 
-export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pendingTagCount = 0 }: NavBarProps) {
+export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendRequests = 0, pendingTagCount = 0 }: NavBarProps) {
   const pathname = usePathname();
   const t = useT();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -326,9 +327,12 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pending
             role="button"
             aria-label="Profile menu"
             aria-expanded={dropdownOpen}
-            style={{ position: "relative" }}
+            style={{ position: "relative", overflow: "hidden", padding: 0 }}
           >
-            {ini}
+            {userAvatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={userAvatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            ) : ini}
             {(pendingFriendRequests + pendingTagCount) > 0 && (
               <span style={{
                 position: "absolute", top: -2, right: -2,
@@ -432,7 +436,7 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pending
             <span className="tab-label">{t.nav_people}</span>
           </Link>
 
-          <MobileProfileTab ini={ini} />
+          <MobileProfileTab ini={ini} avatarUrl={userAvatarUrl ?? null} />
         </div>
       </nav>
     </>
@@ -441,7 +445,7 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pending
 
 // ── Mobile profile tab ─────────────────────────────────────────────────────────
 
-function MobileProfileTab({ ini }: { ini: string }) {
+function MobileProfileTab({ ini, avatarUrl }: { ini: string; avatarUrl: string | null }) {
   const t = useT();
   const pathname = usePathname();
 
@@ -457,8 +461,12 @@ function MobileProfileTab({ ini }: { ini: string }) {
           color: "white", fontSize: 10, fontWeight: 700,
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 0 0 1.5px rgba(3,105,161,0.3)",
+          overflow: "hidden",
         }}>
-          {ini}
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : ini}
         </div>
       </div>
       <span className="tab-label">{t.nav_profile}</span>

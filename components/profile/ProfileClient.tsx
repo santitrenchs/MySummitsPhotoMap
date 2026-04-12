@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
@@ -31,7 +31,7 @@ type Photo = {
 };
 
 type Props = {
-  user: { name: string; username: string | null; bio: string | null };
+  user: { name: string; username: string | null; bio: string | null; avatarUrl: string | null };
   ascents: Ascent[];
   peaks: Peak[];
   photos: Photo[];
@@ -55,6 +55,7 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, stats
   // Local user state so edits show immediately
   const [user, setUser] = useState(initialUser);
 
+
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 0 32px" }}>
       {/* ── Header ── */}
@@ -68,8 +69,14 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, stats
             fontSize: 26, fontWeight: 700, color: "white",
             flexShrink: 0,
             boxShadow: "0 0 0 3px white, 0 0 0 4px #bfdbfe",
+            overflow: "hidden",
           }}>
-            {initials(user.name)}
+            {user.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              initials(user.name)
+            )}
           </div>
 
           {/* Name / username */}
@@ -357,17 +364,38 @@ function EditProfileModal({
   onClose,
   onSaved,
 }: {
-  user: { name: string; username: string | null; bio: string | null };
+  user: { name: string; username: string | null; bio: string | null; avatarUrl: string | null };
   onClose: () => void;
-  onSaved: (updated: { name: string; username: string | null; bio: string | null }) => void;
+  onSaved: (updated: { name: string; username: string | null; bio: string | null; avatarUrl: string | null }) => void;
 }) {
   const t = useT();
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.username ?? "");
   const [bio, setBio] = useState(user.bio ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    setError(null);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/settings/avatar", { method: "POST", body: fd });
+    setUploadingAvatar(false);
+    if (!res.ok) {
+      const data = await res.json();
+      setError(typeof data.error === "string" ? data.error : t.settings_failedToSave);
+      return;
+    }
+    const { avatarUrl: newUrl } = await res.json();
+    setAvatarUrl(newUrl);
+  }, [t]);
 
   async function handleSave() {
     setSaving(true);
@@ -391,6 +419,7 @@ function EditProfileModal({
       name: name.trim(),
       username: username.trim() || null,
       bio: bio.trim() || null,
+      avatarUrl,
     });
   }
 
@@ -435,6 +464,52 @@ function EditProfileModal({
         <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111827", margin: "0 0 20px" }}>
           {t.profile_editProfile}
         </h2>
+
+        {/* Avatar picker */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingAvatar}
+            style={{
+              position: "relative", width: 80, height: 80, borderRadius: "50%",
+              background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)",
+              border: "none", cursor: uploadingAvatar ? "default" : "pointer",
+              padding: 0, overflow: "hidden",
+              boxShadow: "0 0 0 3px white, 0 0 0 4px #bfdbfe",
+            }}
+          >
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span style={{ fontSize: 28, fontWeight: 700, color: "white" }}>
+                {initials(name || user.name)}
+              </span>
+            )}
+            {/* Overlay */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: uploadingAvatar ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.28)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {uploadingAvatar ? (
+                <span style={{ fontSize: 18 }}>⏳</span>
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              )}
+            </div>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: "none" }}
+            onChange={handleAvatarChange}
+          />
+        </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Name */}
@@ -501,13 +576,13 @@ function EditProfileModal({
             {t.cancel}
           </button>
           <button
-            onClick={handleSave} disabled={saving || !name.trim()}
+            onClick={handleSave} disabled={saving || !name.trim() || uploadingAvatar}
             style={{
               flex: 2, padding: "10px 16px",
               background: "#0369a1", color: "white",
               border: "none", borderRadius: 8,
               fontSize: 14, fontWeight: 600, cursor: "pointer",
-              opacity: (saving || !name.trim()) ? 0.6 : 1,
+              opacity: (saving || !name.trim() || uploadingAvatar) ? 0.6 : 1,
             }}
           >
             {saving ? t.saving : t.save}

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db/client";
 export async function getProfileData(tenantId: string, userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, username: true, bio: true },
+    select: { id: true, name: true, username: true, bio: true, avatarUrl: true },
   });
 
   const db = await getTenantConnection(tenantId);

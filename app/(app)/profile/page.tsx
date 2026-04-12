@@ -16,6 +16,7 @@ export default async function ProfilePage() {
         name: data.user.name,
         username: data.user.username ?? null,
         bio: data.user.bio ?? null,
+        avatarUrl: data.user.avatarUrl ?? null,
       }}
       ascents={data.ascents}
       peaks={data.peaks}

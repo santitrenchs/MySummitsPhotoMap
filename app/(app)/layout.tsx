@@ -6,6 +6,7 @@ import { getLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/types";
 import { countPendingRequests } from "@/lib/services/friendship.service";
 import { countPendingTagsForUser } from "@/lib/services/face-detection.service";
+import { prisma } from "@/lib/db/client";
 
 export default async function AppLayout({
   children,
@@ -15,10 +16,11 @@ export default async function AppLayout({
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [locale, pendingFriendRequests, pendingTagCount] = await Promise.all([
+  const [locale, pendingFriendRequests, pendingTagCount, dbUser] = await Promise.all([
     getLocale(),
     countPendingRequests(session.user.id),
     countPendingTagsForUser(session.user.id),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { avatarUrl: true } }),
   ]);
 
   return (
@@ -27,6 +29,7 @@ export default async function AppLayout({
         <NavBar
           userName={session.user.name ?? null}
           userEmail={session.user.email ?? null}
+          userAvatarUrl={dbUser?.avatarUrl ?? null}
           pendingFriendRequests={pendingFriendRequests}
           pendingTagCount={pendingTagCount}
         />
