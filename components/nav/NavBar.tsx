@@ -315,18 +315,7 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pending
         <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Link href="/map" className={`nav-link${isActive("/map") ? " active" : ""}`}>{t.nav_map}</Link>
           <Link href="/ascents" className={`nav-link${isActive("/ascents") ? " active" : ""}`}>{t.nav_ascents}</Link>
-          <Link href="/friends" className={`nav-link${isActive("/friends") ? " active" : ""}`} style={{ position: "relative" }}>
-            {t.nav_people}
-            {(pendingFriendRequests + pendingTagCount) > 0 && (
-              <span style={{
-                position: "absolute", top: 6, right: 2,
-                minWidth: 16, height: 16, borderRadius: 8,
-                background: "#ef4444", color: "white",
-                fontSize: 10, fontWeight: 700, lineHeight: "16px",
-                textAlign: "center", padding: "0 4px",
-              }}>{pendingFriendRequests + pendingTagCount}</span>
-            )}
-          </Link>
+          <Link href="/persons" className={`nav-link${isActive("/persons") ? " active" : ""}`}>{t.nav_people}</Link>
         </nav>
 
         {/* Avatar + dropdown */}
@@ -337,8 +326,18 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pending
             role="button"
             aria-label="Profile menu"
             aria-expanded={dropdownOpen}
+            style={{ position: "relative" }}
           >
             {ini}
+            {(pendingFriendRequests + pendingTagCount) > 0 && (
+              <span style={{
+                position: "absolute", top: -2, right: -2,
+                minWidth: 14, height: 14, borderRadius: 7,
+                background: "#ef4444", color: "white",
+                fontSize: 9, fontWeight: 700, lineHeight: "14px",
+                textAlign: "center", padding: "0 3px", pointerEvents: "none",
+              }}>{pendingFriendRequests + pendingTagCount}</span>
+            )}
           </div>
 
           {dropdownOpen && (
@@ -358,6 +357,24 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pending
                 >
                   <ProfileIcon />
                   {t.nav_profile}
+                </Link>
+                <Link
+                  href="/friends"
+                  className="dropdown-item"
+                  onClick={() => setDropdownOpen(false)}
+                  style={{ position: "relative" }}
+                >
+                  <FriendsIcon />
+                  {t.friends_title}
+                  {(pendingFriendRequests + pendingTagCount) > 0 && (
+                    <span style={{
+                      marginLeft: "auto",
+                      minWidth: 18, height: 18, borderRadius: 9,
+                      background: "#ef4444", color: "white",
+                      fontSize: 10, fontWeight: 700, lineHeight: "18px",
+                      textAlign: "center", padding: "0 5px",
+                    }}>{pendingFriendRequests + pendingTagCount}</span>
+                  )}
                 </Link>
                 <Link
                   href="/settings"
@@ -408,18 +425,9 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pending
             </Link>
           </div>
 
-          <Link href="/friends" className={`tab-item${isActive("/friends") ? " active" : ""}`}>
+          <Link href="/persons" className={`tab-item${isActive("/persons") ? " active" : ""}`}>
             <div className="tab-icon-wrap">
-              <PeopleIcon size={22} active={isActive("/friends")} />
-              {(pendingFriendRequests + pendingTagCount) > 0 && (
-                <span style={{
-                  position: "absolute", top: -2, right: -4,
-                  minWidth: 14, height: 14, borderRadius: 7,
-                  background: "#ef4444", color: "white",
-                  fontSize: 9, fontWeight: 700, lineHeight: "14px",
-                  textAlign: "center", padding: "0 3px",
-                }}>{pendingFriendRequests + pendingTagCount}</span>
-              )}
+              <PeopleIcon size={22} active={isActive("/persons")} />
             </div>
             <span className="tab-label">{t.nav_people}</span>
           </Link>
@@ -530,6 +538,17 @@ function PlusIcon() {
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
+function FriendsIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="7" r="3" />
+      <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      <path d="M21 21v-2a4 4 0 0 0-3-3.85" />
     </svg>
   );
 }
