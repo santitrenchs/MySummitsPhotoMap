@@ -1,12 +1,13 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { listPersonsWithStats } from "@/lib/services/person.service";
 import { PersonsClient, type PersonCard } from "@/components/persons/PersonsClient";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function PersonsPage() {
   const session = await auth();
   if (!session) redirect("/login");
+  const t = await getServerT();
 
   const raw = await listPersonsWithStats(session.user.tenantId);
 
@@ -59,7 +60,7 @@ export default async function PersonsPage() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: 0 }}>People</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: 0 }}>{t.people_title}</h1>
       </div>
 
       {persons.length === 0 ? (
@@ -68,10 +69,8 @@ export default async function PersonsPage() {
           border: "1px dashed #e5e7eb", borderRadius: 12,
         }}>
           <p style={{ fontSize: 32, margin: "0 0 8px" }}>👥</p>
-          <p style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", margin: 0 }}>No people tagged yet</p>
-          <p style={{ fontSize: 13, color: "#9ca3af", margin: "4px 0 0" }}>
-            Open a photo and click Tag to detect and name faces
-          </p>
+          <p style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", margin: 0 }}>{t.people_noMatch}</p>
+          <p style={{ fontSize: 13, color: "#9ca3af", margin: "4px 0 0" }}>{t.people_emptyHint}</p>
         </div>
       ) : (
         <PersonsClient persons={persons} />

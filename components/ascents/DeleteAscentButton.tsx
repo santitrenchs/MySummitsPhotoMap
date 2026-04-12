@@ -2,13 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useT } from "@/components/providers/I18nProvider";
 
 export function DeleteAscentButton({ id }: { id: string }) {
   const router = useRouter();
+  const t = useT();
   const [loading, setLoading] = useState(false);
 
   async function handleDelete() {
-    if (!confirm("Delete this ascent?")) return;
+    if (!confirm(t.ascents_delete_title)) return;
     setLoading(true);
     await fetch(`/api/ascents/${id}`, { method: "DELETE" });
     router.refresh();
@@ -24,7 +26,7 @@ export function DeleteAscentButton({ id }: { id: string }) {
         cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
       }}
     >
-      {loading ? "…" : "Delete"}
+      {loading ? "…" : t.delete}
     </button>
   );
 }

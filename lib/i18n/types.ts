@@ -52,6 +52,8 @@ export type Dict = {
   emotional_many: string;  // "... with {p1}, {p2} and {n} more on {date}."
 
   // Ascents list
+  ascents_newAscent: string; ascents_logTitle: string; ascents_editTitle: string;
+  ascents_emptyTitle: string; ascents_emptySub: string;
   ascents_title: string; ascents_search: string; ascents_filters: string;
   ascents_allYears: string; ascents_allPeople: string;
   ascents_withPhoto: string; ascents_clearAll: string;
@@ -63,6 +65,7 @@ export type Dict = {
   ascents_stat_peaks: string; ascents_stat_people: string;
 
   // People
+  people_emptyHint: string;
   people_title: string; people_search: string; people_editPerson: string;
   people_fullName: string; people_lastClimb: string; people_noMatch: string;
   people_sort_ascents: string; people_sort_photos: string;
@@ -95,6 +98,13 @@ export type Dict = {
   settings_deleting: string; settings_deleteConfirmButton: string;
   settings_usernameAvailable: string; settings_usernameTaken: string;
   settings_usernameInvalid: string; settings_usernameChecking: string;
+
+  // Auth
+  auth_signInDesc: string; auth_accountCreated: string; auth_invalidCredentials: string;
+  auth_signingIn: string; auth_signIn: string; auth_noAccount: string; auth_createOne: string;
+  auth_createAccountDesc: string; auth_yourName: string; auth_password: string;
+  auth_minPassword: string; auth_registrationFailed: string;
+  auth_creatingAccount: string; auth_createAccount: string; auth_haveAccount: string;
 
   // Crop modal
   crop_title: string; crop_next: string;

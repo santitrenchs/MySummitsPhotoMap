@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useT } from "@/components/providers/I18nProvider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const t = useT();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,9 +29,7 @@ export default function RegisterPage() {
 
     if (!res.ok) {
       const data = await res.json();
-      setError(
-        typeof data.error === "string" ? data.error : "Registration failed"
-      );
+      setError(typeof data.error === "string" ? data.error : t.auth_registrationFailed);
       setLoading(false);
       return;
     }
@@ -43,16 +43,13 @@ export default function RegisterPage() {
         <div className="mb-8 text-center">
           <span className="text-3xl">🏔</span>
           <h1 className="mt-2 text-2xl font-bold text-gray-900">MySummits</h1>
-          <p className="mt-1 text-sm text-gray-500">Create your account</p>
+          <p className="mt-1 text-sm text-gray-500">{t.auth_createAccountDesc}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Your name
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              {t.auth_yourName}
             </label>
             <input
               id="name"
@@ -65,11 +62,8 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Email
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              {t.settings_email}
             </label>
             <input
               id="email"
@@ -82,11 +76,8 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Password
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              {t.auth_password}
             </label>
             <input
               id="password"
@@ -97,7 +88,7 @@ export default function RegisterPage() {
               autoComplete="new-password"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
-            <p className="mt-1 text-xs text-gray-400">Minimum 8 characters</p>
+            <p className="mt-1 text-xs text-gray-400">{t.auth_minPassword}</p>
           </div>
 
           {error && (
@@ -111,17 +102,14 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full py-2 px-4 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Creating account…" : "Create account"}
+            {loading ? t.auth_creatingAccount : t.auth_createAccount}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="text-primary-600 hover:underline font-medium"
-          >
-            Sign in
+          {t.auth_haveAccount}{" "}
+          <Link href="/login" className="text-primary-600 hover:underline font-medium">
+            {t.auth_signIn}
           </Link>
         </p>
       </div>

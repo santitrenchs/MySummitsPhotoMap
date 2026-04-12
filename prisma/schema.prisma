@@ -17,10 +17,14 @@ datasource db {
 model Peak {
   id            String   @id @default(uuid())
   name          String
+  comarca       String?
   latitude      Float
   longitude     Float
   altitudeM     Int
   mountainRange String?
+  tag1          String?
+  tag2          String?
+  tag3          String?
   country       String   @default("ES")
   createdAt     DateTime @default(now())
 

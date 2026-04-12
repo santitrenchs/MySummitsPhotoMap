@@ -60,7 +60,7 @@ export default async function PersonDetailPage({
         href="/persons"
         style={{ fontSize: 13, color: "#6b7280", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 20 }}
       >
-        ← Back to people
+        ← {t.people_title}
       </Link>
 
       {/* Header */}

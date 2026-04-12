@@ -4,10 +4,12 @@ import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useT } from "@/components/providers/I18nProvider";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useT();
   const justRegistered = searchParams.get("registered") === "1";
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ function LoginForm() {
     });
 
     if (result?.error) {
-      setError("Invalid email or password");
+      setError(t.auth_invalidCredentials);
       setLoading(false);
       return;
     }
@@ -39,22 +41,19 @@ function LoginForm() {
       <div className="mb-8 text-center">
         <span className="text-3xl">🏔</span>
         <h1 className="mt-2 text-2xl font-bold text-gray-900">MySummits</h1>
-        <p className="mt-1 text-sm text-gray-500">Sign in to your account</p>
+        <p className="mt-1 text-sm text-gray-500">{t.auth_signInDesc}</p>
       </div>
 
       {justRegistered && (
         <div className="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-          Account created! Sign in to get started.
+          {t.auth_accountCreated}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Email
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            {t.settings_email}
           </label>
           <input
             id="email"
@@ -67,11 +66,8 @@ function LoginForm() {
         </div>
 
         <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Password
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            {t.auth_password}
           </label>
           <input
             id="password"
@@ -94,17 +90,14 @@ function LoginForm() {
           disabled={loading}
           className="w-full py-2 px-4 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? "Signing in…" : "Sign in"}
+          {loading ? t.auth_signingIn : t.auth_signIn}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/register"
-          className="text-primary-600 hover:underline font-medium"
-        >
-          Create one
+        {t.auth_noAccount}{" "}
+        <Link href="/register" className="text-primary-600 hover:underline font-medium">
+          {t.auth_createOne}
         </Link>
       </p>
     </div>
