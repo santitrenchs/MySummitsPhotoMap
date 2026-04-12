@@ -15,7 +15,7 @@ export async function listAscents(tenantId: string) {
     orderBy: { date: "desc" },
     include: {
       peak: {
-        select: { id: true, name: true, altitudeM: true, mountainRange: true },
+        select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true },
       },
       photos: {
         orderBy: { createdAt: "asc" },

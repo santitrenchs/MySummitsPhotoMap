@@ -11,7 +11,7 @@ export type AscentData = {
   date: string;
   route: string | null;
   description: string | null;
-  peak: { id: string; name: string; altitudeM: number; mountainRange: string | null };
+  peak: { id: string; name: string; altitudeM: number; mountainRange: string | null; latitude: number; longitude: number };
   firstPhotoId: string | null;
   firstPhotoUrl: string | null;
   persons: { id: string; name: string; email?: string | null }[];
@@ -26,11 +26,13 @@ export function AscentsClient({
   allPersons,
   allYears,
   currentUserEmail,
+  currentUserName,
 }: {
   ascents: AscentData[];
   allPersons: { id: string; name: string }[];
   allYears: number[];
   currentUserEmail?: string | null;
+  currentUserName?: string;
 }) {
   const router = useRouter();
   const t = useT();
@@ -310,7 +312,7 @@ export function AscentsClient({
                   peak: a.peak,
                   photoUrl: a.firstPhotoUrl,
                   persons: others,
-                  user: { name: "" },
+                  user: { name: currentUserName ?? "" },
                 }}
                 onDelete={(id) => setDeleteConfirm(id)}
                 isDeleting={deletingId === a.id}

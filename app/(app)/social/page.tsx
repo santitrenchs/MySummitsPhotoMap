@@ -10,9 +10,10 @@ function toCardData(item: SocialFeedItem): AscentCardData {
     id: item.id,
     date: item.date,
     route: item.route,
+    description: item.description,
     peak: item.peak,
     photoUrl: item.photos[0]?.url ?? null,
-    persons: [],
+    persons: item.persons,
     user: item.user,
   };
 }

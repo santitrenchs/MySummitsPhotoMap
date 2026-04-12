@@ -81,7 +81,7 @@ export default async function AscentsPage() {
         </div>
       ) : (
         <Suspense>
-          <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} />
+          <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} currentUserName={session.user.name ?? ""} />
         </Suspense>
       )}
     </div>

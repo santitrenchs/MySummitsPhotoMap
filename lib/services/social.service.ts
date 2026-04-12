@@ -4,8 +4,10 @@ export type SocialFeedItem = {
   id: string;
   date: string; // ISO string
   route: string | null;
-  peak: { name: string; altitudeM: number };
+  description: string | null;
+  peak: { name: string; altitudeM: number; latitude: number; longitude: number };
   photos: { id: string; url: string }[];
+  persons: { id: string; name: string }[];
   user: { id: string; name: string; username: string | null };
 };
 
@@ -16,18 +18,62 @@ export type SocialData = {
 };
 
 const ASCENT_INCLUDE = {
-  peak: { select: { name: true, altitudeM: true } },
-  photos: { orderBy: { createdAt: "asc" as const }, take: 6, select: { id: true, url: true } },
+  peak: { select: { name: true, altitudeM: true, latitude: true, longitude: true } },
+  photos: {
+    orderBy: { createdAt: "asc" as const },
+    take: 6,
+    select: {
+      id: true,
+      url: true,
+      faceDetections: {
+        select: {
+          faceTags: {
+            where: { status: "ACCEPTED" },
+            select: { person: { select: { id: true, name: true } } },
+          },
+        },
+      },
+    },
+  },
   user: { select: { id: true, name: true, username: true } },
 } as const;
 
-function toItem(a: {
-  id: string; date: Date; route: string | null;
-  peak: { name: string; altitudeM: number };
-  photos: { id: string; url: string }[];
+type RawAscent = {
+  id: string;
+  date: Date;
+  route: string | null;
+  description: string | null;
+  peak: { name: string; altitudeM: number; latitude: number; longitude: number };
+  photos: {
+    id: string;
+    url: string;
+    faceDetections: {
+      faceTags: { person: { id: string; name: string } }[];
+    }[];
+  }[];
   user: { id: string; name: string; username: string | null };
-}): SocialFeedItem {
-  return { ...a, date: a.date.toISOString() };
+};
+
+function toItem(a: RawAscent): SocialFeedItem {
+  // Deduplicate persons across all photos
+  const personMap = new Map<string, { id: string; name: string }>();
+  for (const photo of a.photos) {
+    for (const fd of photo.faceDetections) {
+      for (const tag of fd.faceTags) {
+        personMap.set(tag.person.id, tag.person);
+      }
+    }
+  }
+  return {
+    id: a.id,
+    date: a.date.toISOString(),
+    route: a.route,
+    description: a.description,
+    peak: a.peak,
+    photos: a.photos.map(({ id, url }) => ({ id, url })),
+    persons: Array.from(personMap.values()),
+    user: a.user,
+  };
 }
 
 export async function getSocialData(userId: string): Promise<SocialData> {
@@ -45,7 +91,7 @@ export async function getSocialData(userId: string): Promise<SocialData> {
   ]);
 
   const friendsCount = friendships.length;
-  const myAscents = myAscentRows.map(toItem);
+  const myAscents = (myAscentRows as unknown as RawAscent[]).map(toItem);
 
   if (friendsCount === 0) {
     return { friendsCount: 0, feed: [], myAscents };
@@ -62,5 +108,5 @@ export async function getSocialData(userId: string): Promise<SocialData> {
     include: ASCENT_INCLUDE,
   });
 
-  return { friendsCount, feed: feedRows.map(toItem), myAscents };
+  return { friendsCount, feed: (feedRows as unknown as RawAscent[]).map(toItem), myAscents };
 }
