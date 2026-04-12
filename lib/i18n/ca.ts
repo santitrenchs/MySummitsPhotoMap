@@ -145,6 +145,7 @@ export const ca: Dict = {
   tag_removeTag: "Treure etiqueta", tag_noFaces: "No s'han detectat cares — continua per desar",
   tag_continue: "Continuar ›", tag_continueTagged: "Continuar · {n} etiquetats ›",
   tag_detecting2: "Detectant…",
+  tag_addManual: "Afegir persona", tag_drawHint: "Toca on és la persona", tag_cancelDraw: "Cancel·lar",
 
   photo_clickOrDrag: "Fes clic o arrossega fotos aquí", photo_uploading: "Pujant…",
   photo_maxSize: "JPEG, PNG, WebP · màx. 10 MB cadascuna",
@@ -159,7 +160,10 @@ export const ca: Dict = {
   profile_noAscents: "Encara no hi ha ascensions",
 
   social_subtitle: "Ascensions recents dels teus amics",
-  social_noFriends: "Encara sense amics",
-  social_noFriendsSub: "Afegeix amics per veure les seves ascensions aquí",
+  social_noFriends: "Encara no tens amics",
+  social_noFriendsSub: "Afegeix amics per veure les seves ascensions i comparar el vostre progrés",
   social_addFriends: "Afegir amics",
+  social_noActivity: "Els teus amics encara no han publicat",
+  social_noActivitySub: "Quan pugin les seves ascensions, apareixeran aquí",
+  social_myActivity: "La teva activitat",
 };

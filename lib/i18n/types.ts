@@ -138,6 +138,7 @@ export type Dict = {
   tag_searchOrType: string; tag_createNew: string; tag_removeTag: string;
   tag_noFaces: string; tag_continue: string; tag_continueTagged: string;
   tag_detecting2: string;
+  tag_addManual: string; tag_drawHint: string; tag_cancelDraw: string;
 
   // Photo uploader
   photo_clickOrDrag: string; photo_uploading: string;
@@ -157,4 +158,7 @@ export type Dict = {
   social_noFriends: string;
   social_noFriendsSub: string;
   social_addFriends: string;
+  social_noActivity: string;
+  social_noActivitySub: string;
+  social_myActivity: string;
 };

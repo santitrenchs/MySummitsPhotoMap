@@ -45,10 +45,12 @@ export function PhotoTagStep({
   blob,
   onDone,
   onSkip,
+  initialFaces = [],
 }: {
   blob: Blob;
   onDone: (blob: Blob, faces: FaceDraft[]) => void;
   onSkip: (blob: Blob) => void;
+  initialFaces?: FaceDraft[];
 }) {
   const t = useT();
   const objUrlRef = useRef(URL.createObjectURL(blob));
@@ -61,6 +63,7 @@ export function PhotoTagStep({
   const [persons, setPersons] = useState<Person[]>([]);
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const [drawMode, setDrawMode] = useState(false);
 
   // Fetch persons list for tagging suggestions
   useEffect(() => {
@@ -130,20 +133,41 @@ export function PhotoTagStep({
         }
       }
 
-      setFaces(
-        results.map((det, i) => ({
-          tempId: `face-${i}`,
-          boundingBox: {
-            x: det.detection.box.x / img.naturalWidth,
-            y: det.detection.box.y / img.naturalHeight,
-            width: det.detection.box.width / img.naturalWidth,
-            height: det.detection.box.height / img.naturalHeight,
-          },
-          descriptor: Array.from(det.descriptor),
-          personName: null,
-          suggestion: suggestionMap.get(i) ?? null,
-        }))
-      );
+      // Build detected faces
+      const detected: FaceDraft[] = results.map((det, i) => ({
+        tempId: `face-${i}`,
+        boundingBox: {
+          x: det.detection.box.x / img.naturalWidth,
+          y: det.detection.box.y / img.naturalHeight,
+          width: det.detection.box.width / img.naturalWidth,
+          height: det.detection.box.height / img.naturalHeight,
+        },
+        descriptor: Array.from(det.descriptor),
+        personName: null,
+        suggestion: suggestionMap.get(i) ?? null,
+      }));
+
+      // Merge with initialFaces: match by bounding box center overlap
+      const unmatched = [...initialFaces];
+      const merged = detected.map((face) => {
+        const cx = face.boundingBox.x + face.boundingBox.width / 2;
+        const cy = face.boundingBox.y + face.boundingBox.height / 2;
+        const idx = unmatched.findIndex(
+          (init) =>
+            cx >= init.boundingBox.x &&
+            cx <= init.boundingBox.x + init.boundingBox.width &&
+            cy >= init.boundingBox.y &&
+            cy <= init.boundingBox.y + init.boundingBox.height
+        );
+        if (idx !== -1) {
+          const match = unmatched.splice(idx, 1)[0];
+          return { ...face, personName: match.personName, suggestion: match.personName ?? face.suggestion };
+        }
+        return face;
+      });
+
+      // Remaining initial faces that weren't re-detected → keep as manual boxes
+      setFaces([...merged, ...unmatched]);
     } catch (err) {
       console.error("[PhotoTagStep] Detection failed:", err);
     }
@@ -181,6 +205,31 @@ export function PhotoTagStep({
     : persons;
   // Count confirmed tags + pending suggestions (will be auto-confirmed on continue)
   const taggedCount = faces.filter((f) => f.personName || f.suggestion).length;
+
+  // ── Manual tap-to-place helper ───────────────────────────────────────────────
+
+  function handleImageTap(clientX: number, clientY: number) {
+    if (!drawMode || !imgRef.current) return;
+    const rect = imgRef.current.getBoundingClientRect();
+    const px = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const py = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    const r = 0.09; // circle radius as fraction of image dimension
+    const newFace: FaceDraft = {
+      tempId: `manual-${Date.now()}`,
+      boundingBox: {
+        x: Math.max(0, px - r),
+        y: Math.max(0, py - r),
+        width: r * 2,
+        height: r * 2,
+      },
+      descriptor: [],
+      personName: null,
+      suggestion: null,
+    };
+    setFaces((prev) => [...prev, newFace]);
+    setActiveFaceId(newFace.tempId);
+    setDrawMode(false);
+  }
 
   // Auto-confirm any pending suggestions before handing off
   function handleDone() {
@@ -222,6 +271,16 @@ export function PhotoTagStep({
           display: flex; align-items: center; justify-content: center;
           font-size: 15px; font-weight: 700; color: #0369a1; flex-shrink: 0;
         }
+        .face-box {
+          position: absolute;
+          border-radius: 8px;
+          border: 2.5px solid rgba(255,255,255,0.85);
+          box-shadow: 0 0 0 1.5px rgba(0,0,0,0.35), 0 3px 12px rgba(0,0,0,0.35);
+          cursor: pointer;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .face-box.ring-tagged { border-color: #22c55e; box-shadow: 0 0 0 2px #22c55e, 0 3px 12px rgba(34,197,94,0.4); }
+        .face-box.ring-active { border-color: #0ea5e9; box-shadow: 0 0 0 2.5px #0ea5e9, 0 4px 18px rgba(14,165,233,0.5); }
       `}</style>
 
       {/* ── Full-screen dark container ─────────────────────────────────── */}
@@ -261,10 +320,17 @@ export function PhotoTagStep({
         </div>
 
         {/* Photo + face overlays */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", padding: "4px 0" }}
-          onClick={() => setActiveFaceId(null)}
+        <div
+          style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", padding: "4px 0" }}
+          onClick={(e) => {
+            if (drawMode) handleImageTap(e.clientX, e.clientY);
+            else setActiveFaceId(null);
+          }}
+          onTouchEnd={drawMode ? (e) => { e.preventDefault(); const t = e.changedTouches[0]; handleImageTap(t.clientX, t.clientY); } : undefined}
         >
-          <div style={{ position: "relative" }}>
+          <div
+            style={{ position: "relative", cursor: drawMode ? "crosshair" : "default" }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               ref={imgRef}
@@ -276,18 +342,64 @@ export function PhotoTagStep({
                 maxWidth: "100vw",
                 maxHeight: "calc(100svh - 180px)",
                 objectFit: "contain",
+                userSelect: "none",
+                WebkitUserSelect: "none",
               }}
             />
 
-            {/* Face rings */}
+            {/* Face rings (auto-detected) + boxes (manual) */}
             {imgLoaded && renderedSize.w > 0 && phase === "ready" && faces.map((face) => {
               const { x, y, width, height } = face.boundingBox;
-              const cx = (x + width / 2) * renderedSize.w;
-              const cy = (y + height / 2) * renderedSize.h;
-              const diameter = Math.max(width * renderedSize.w, height * renderedSize.h) * 1.25;
+              const isManual = face.descriptor.length === 0;
               const isActive = activeFaceId === face.tempId;
               const isTagged = !!face.personName;
               const hasSuggestion = !!face.suggestion && !isTagged;
+
+              if (isManual) {
+                // Rectangular box for manually drawn faces
+                const boxClass = `face-box ${isActive ? "ring-active" : isTagged ? "ring-tagged" : ""}`;
+                return (
+                  <div
+                    key={face.tempId}
+                    className={boxClass}
+                    style={{
+                      left: x * renderedSize.w,
+                      top: y * renderedSize.h,
+                      width: width * renderedSize.w,
+                      height: height * renderedSize.h,
+                      pointerEvents: drawMode ? "none" : "auto",
+                    }}
+                    onClick={(e) => { e.stopPropagation(); setActiveFaceId(isActive ? null : face.tempId); }}
+                  >
+                    {isTagged && (
+                      <span style={{
+                        position: "absolute", bottom: -26, left: "50%",
+                        transform: "translateX(-50%)",
+                        whiteSpace: "nowrap", padding: "3px 10px",
+                        background: "rgba(0,0,0,0.68)", backdropFilter: "blur(6px)",
+                        borderRadius: 20, fontSize: 11, fontWeight: 700, color: "white",
+                        pointerEvents: "none", boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+                      }}>
+                        {face.personName}
+                      </span>
+                    )}
+                    {!isTagged && !isActive && (
+                      <div style={{
+                        position: "absolute", inset: 0, borderRadius: 6,
+                        background: "rgba(255,255,255,0.07)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <span style={{ fontSize: 16, color: "rgba(255,255,255,0.7)", fontWeight: 300 }}>+</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Circular ring for auto-detected faces
+              const cx = (x + width / 2) * renderedSize.w;
+              const cy = (y + height / 2) * renderedSize.h;
+              const diameter = Math.max(width * renderedSize.w, height * renderedSize.h) * 1.25;
               const ringClass = `face-ring ${isActive ? "ring-active" : isTagged ? "ring-tagged" : hasSuggestion ? "ring-suggested" : ""}`;
 
               return (
@@ -299,18 +411,17 @@ export function PhotoTagStep({
                     top: cy - diameter / 2,
                     width: diameter,
                     height: diameter,
+                    pointerEvents: drawMode ? "none" : "auto",
                   }}
                   onClick={(e) => { e.stopPropagation(); setActiveFaceId(isActive ? null : face.tempId); }}
                 >
-                  {/* Suggestion chip — tap to confirm */}
                   {hasSuggestion && !isActive && (
                     <button
                       style={{
                         position: "absolute", top: -32, left: "50%",
                         transform: "translateX(-50%)",
                         whiteSpace: "nowrap", padding: "4px 10px",
-                        background: "rgba(14,165,233,0.88)",
-                        backdropFilter: "blur(6px)",
+                        background: "rgba(14,165,233,0.88)", backdropFilter: "blur(6px)",
                         borderRadius: 20, border: "none", cursor: "pointer",
                         fontSize: 11, fontWeight: 700, color: "white",
                         display: "flex", alignItems: "center", gap: 4,
@@ -322,25 +433,18 @@ export function PhotoTagStep({
                       ✓ {face.suggestion}
                     </button>
                   )}
-
-                  {/* Name label below ring */}
                   {isTagged && (
                     <span style={{
-                      position: "absolute",
-                      bottom: -26, left: "50%",
+                      position: "absolute", bottom: -26, left: "50%",
                       transform: "translateX(-50%)",
                       whiteSpace: "nowrap", padding: "3px 10px",
                       background: "rgba(0,0,0,0.68)", backdropFilter: "blur(6px)",
-                      borderRadius: 20,
-                      fontSize: 11, fontWeight: 700, color: "white",
-                      pointerEvents: "none",
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+                      borderRadius: 20, fontSize: 11, fontWeight: 700, color: "white",
+                      pointerEvents: "none", boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
                     }}>
                       {face.personName}
                     </span>
                   )}
-
-                  {/* Tap indicator for untagged faces */}
                   {!isTagged && !hasSuggestion && !isActive && (
                     <div style={{
                       position: "absolute", inset: 0, borderRadius: "50%",
@@ -375,12 +479,17 @@ export function PhotoTagStep({
           </div>
         </div>
 
-        {/* No faces hint */}
-        {phase === "ready" && faces.length === 0 && (
-          <div style={{
-            display: "flex", justifyContent: "center", padding: "8px 0",
-            animation: "tagFadeIn 0.3s ease",
-          }}>
+        {/* Draw mode hint / no faces hint */}
+        <div style={{ display: "flex", justifyContent: "center", padding: "8px 0", minHeight: 36, animation: "tagFadeIn 0.3s ease" }}>
+          {drawMode ? (
+            <span style={{
+              fontSize: 12, color: "white",
+              background: "rgba(14,165,233,0.85)", backdropFilter: "blur(6px)",
+              borderRadius: 20, padding: "6px 18px", fontWeight: 600,
+            }}>
+              {t.tag_drawHint}
+            </span>
+          ) : phase === "ready" && faces.length === 0 ? (
             <span style={{
               fontSize: 12, color: "rgba(255,255,255,0.5)",
               background: "rgba(255,255,255,0.08)",
@@ -388,24 +497,43 @@ export function PhotoTagStep({
             }}>
               {t.tag_noFaces}
             </span>
-          </div>
-        )}
+          ) : null}
+        </div>
 
-        {/* Continue button */}
+        {/* Add person + Continue buttons */}
         <div style={{
-          padding: "12px 20px",
+          padding: "8px 20px 12px",
           paddingBottom: "max(20px, env(safe-area-inset-bottom))",
-          flexShrink: 0,
+          flexShrink: 0, display: "flex", flexDirection: "column", gap: 10,
         }}>
+          {/* Add manually button */}
+          {phase === "ready" && (
+            <button
+              onClick={() => { setDrawMode(!drawMode); setActiveFaceId(null); }}
+              style={{
+                width: "100%", padding: "12px",
+                background: drawMode ? "rgba(14,165,233,0.2)" : "rgba(255,255,255,0.1)",
+                border: drawMode ? "1.5px solid rgba(14,165,233,0.6)" : "1.5px solid rgba(255,255,255,0.15)",
+                borderRadius: 14,
+                fontSize: 14, fontWeight: 600,
+                color: drawMode ? "#7dd3fc" : "rgba(255,255,255,0.75)",
+                cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{drawMode ? "✕" : "+"}</span>
+              {drawMode ? t.tag_cancelDraw : t.tag_addManual}
+            </button>
+          )}
+
+          {/* Continue button */}
           <button
             onClick={handleDone}
             disabled={phase === "detecting"}
             style={{
-              width: "100%",
-              padding: "15px",
+              width: "100%", padding: "15px",
               background: phase === "detecting" ? "rgba(255,255,255,0.2)" : "white",
-              color: "#111827",
-              border: "none", borderRadius: 14,
+              color: "#111827", border: "none", borderRadius: 14,
               fontSize: 15, fontWeight: 700,
               cursor: phase === "detecting" ? "default" : "pointer",
               transition: "background 0.15s",

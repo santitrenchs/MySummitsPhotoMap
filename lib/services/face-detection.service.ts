@@ -42,7 +42,7 @@ export async function getKnownDescriptors(tenantId: string) {
   const byPerson = new Map<string, { name: string; descriptors: number[][] }>();
   for (const tag of tags) {
     const desc = tag.faceDetection.descriptor as number[] | null;
-    if (!desc) continue;
+    if (!desc || (desc as unknown[]).length === 0) continue;
     if (!byPerson.has(tag.person.id)) {
       byPerson.set(tag.person.id, { name: tag.person.name, descriptors: [] });
     }

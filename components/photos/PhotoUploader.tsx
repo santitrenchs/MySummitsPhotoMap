@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ImageCropModal } from "./ImageCropModal";
 import { PhotoTagStep, type FaceDraft } from "./PhotoTagStep";
+
+type RetagItem = { photoId: string; blob: Blob; existingFaces: FaceDraft[] };
 import { useT } from "@/components/providers/I18nProvider";
 
 type Photo = { id: string; url: string };
@@ -28,8 +30,8 @@ export function PhotoUploader({
   const [cropQueue, setCropQueue] = useState<File[]>([]);
   // Step 2: tag queue for new uploads (cropped blobs)
   const [tagQueue, setTagQueue] = useState<Blob[]>([]);
-  // Re-tag queue for existing photos: { photoId, blob }
-  const [retagQueue, setRetagQueue] = useState<{ photoId: string; blob: Blob }[]>([]);
+  // Re-tag queue for existing photos
+  const [retagQueue, setRetagQueue] = useState<RetagItem[]>([]);
 
   function queueFiles(files: FileList | File[]) {
     setError(null);
@@ -99,10 +101,26 @@ export function PhotoUploader({
   }
 
   async function openRetag(photo: Photo) {
-    // Fetch via server proxy to avoid CORS on the R2/CDN URL
-    const res = await fetch(`/api/photos/${photo.id}/blob`);
-    const blob = await res.blob();
-    setRetagQueue((q) => [...q, { photoId: photo.id, blob }]);
+    const [blobRes, facesRes] = await Promise.all([
+      fetch(`/api/photos/${photo.id}/blob`),
+      fetch(`/api/photos/${photo.id}/faces`),
+    ]);
+    const [blob, facesData] = await Promise.all([blobRes.blob(), facesRes.json()]);
+
+    const existingFaces: FaceDraft[] = (facesData as {
+      id: string;
+      boundingBox: { x: number; y: number; width: number; height: number };
+      descriptor: number[] | null;
+      faceTags: { status: string; person: { name: string } }[];
+    }[]).map((det) => ({
+      tempId: `existing-${det.id}`,
+      boundingBox: det.boundingBox,
+      descriptor: det.descriptor ?? [],
+      personName: det.faceTags.find((t) => t.status === "ACCEPTED")?.person.name ?? null,
+      suggestion: null,
+    }));
+
+    setRetagQueue((q) => [...q, { photoId: photo.id, blob, existingFaces }]);
   }
 
   async function handleRetagDone(blob: Blob, faces: FaceDraft[]) {
@@ -153,6 +171,7 @@ export function PhotoUploader({
       {cropQueue.length === 0 && tagQueue.length === 0 && retagQueue.length > 0 && (
         <PhotoTagStep
           blob={retagQueue[0].blob}
+          initialFaces={retagQueue[0].existingFaces}
           onDone={handleRetagDone}
           onSkip={handleRetagSkip}
         />

@@ -145,6 +145,7 @@ export const fr: Dict = {
   tag_removeTag: "Retirer le tag", tag_noFaces: "Aucun visage détecté — continuer pour enregistrer",
   tag_continue: "Continuer ›", tag_continueTagged: "Continuer · {n} identifiés ›",
   tag_detecting2: "Détection…",
+  tag_addManual: "Ajouter une personne", tag_drawHint: "Touche là où se trouve la personne", tag_cancelDraw: "Annuler",
 
   photo_clickOrDrag: "Cliquer ou glisser des photos ici", photo_uploading: "Envoi…",
   photo_maxSize: "JPEG, PNG, WebP · max. 10 Mo chacune",
@@ -159,7 +160,10 @@ export const fr: Dict = {
   profile_noAscents: "Aucune ascension enregistrée",
 
   social_subtitle: "Ascensions récentes de tes amis",
-  social_noFriends: "Pas encore d'amis",
-  social_noFriendsSub: "Ajoute des amis pour voir leurs ascensions ici",
+  social_noFriends: "Tu n'as pas encore d'amis",
+  social_noFriendsSub: "Ajoute des amis pour voir leurs ascensions et comparer vos progrès",
   social_addFriends: "Ajouter des amis",
+  social_noActivity: "Tes amis n'ont pas encore publié",
+  social_noActivitySub: "Quand ils ajouteront leurs ascensions, elles apparaîtront ici",
+  social_myActivity: "Ton activité",
 };

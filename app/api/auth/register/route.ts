@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       uniqueSlug(name),
     ]);
 
-    // Atomic: create user + tenant + membership in one transaction
+    // Atomic: create user + tenant + membership + linked person in one transaction
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: { email, name, passwordHash },
@@ -58,6 +58,11 @@ export async function POST(req: NextRequest) {
 
       await tx.membership.create({
         data: { userId: user.id, tenantId: tenant.id, role: "OWNER" },
+      });
+
+      // Auto-create a Person linked to this user so their name appears immediately in tagging
+      await tx.person.create({
+        data: { tenantId: tenant.id, name, userId: user.id },
       });
     });
 

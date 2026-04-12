@@ -145,6 +145,7 @@ export const de: Dict = {
   tag_removeTag: "Markierung entfernen", tag_noFaces: "Keine Gesichter erkannt — weiter zum Speichern",
   tag_continue: "Weiter ›", tag_continueTagged: "Weiter · {n} markiert ›",
   tag_detecting2: "Erkennung…",
+  tag_addManual: "Person hinzufügen", tag_drawHint: "Tippe auf die Person im Bild", tag_cancelDraw: "Abbrechen",
 
   photo_clickOrDrag: "Fotos hier klicken oder ablegen", photo_uploading: "Hochladen…",
   photo_maxSize: "JPEG, PNG, WebP · max. 10 MB pro Bild",
@@ -160,6 +161,9 @@ export const de: Dict = {
 
   social_subtitle: "Aktuelle Besteigungen deiner Freunde",
   social_noFriends: "Noch keine Freunde",
-  social_noFriendsSub: "Füge Freunde hinzu, um ihre Besteigungen hier zu sehen",
+  social_noFriendsSub: "Füge Freunde hinzu, um ihre Besteigungen zu sehen und euren Fortschritt zu vergleichen",
   social_addFriends: "Freunde hinzufügen",
+  social_noActivity: "Deine Freunde haben noch nichts veröffentlicht",
+  social_noActivitySub: "Wenn sie ihre Besteigungen eintragen, erscheinen sie hier",
+  social_myActivity: "Deine Aktivität",
 };
