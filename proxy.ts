@@ -8,8 +8,8 @@ export default auth((req) => {
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isAuthApi = pathname.startsWith("/api/auth");
 
-  // Always allow NextAuth internal API routes
-  if (isAuthApi) return NextResponse.next();
+  // Always allow NextAuth internal API routes and health check
+  if (isAuthApi || pathname === "/api/health") return NextResponse.next();
 
   // Redirect authenticated users away from auth pages
   if (isLoggedIn && isAuthPage) {
