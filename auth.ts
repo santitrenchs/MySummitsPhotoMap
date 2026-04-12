@@ -39,7 +39,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           // Attach tenantId so it lands in the JWT on first sign-in
           tenantId: user.memberships[0]?.tenantId ?? null,
-          isAdmin: user.isAdmin,
         };
       },
     }),
@@ -50,15 +49,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id ?? "";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.tenantId = (user as any).tenantId;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.isAdmin = (user as any).isAdmin ?? false;
       }
       return token;
     },
     session({ session, token }) {
       session.user.id = token.id as string;
       session.user.tenantId = token.tenantId as string;
-      session.user.isAdmin = token.isAdmin as boolean;
       return session;
     },
   },

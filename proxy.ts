@@ -26,9 +26,6 @@ export default auth((req) => {
     if (!isLoggedIn) {
       return NextResponse.redirect(new URL("/admin/login", req.nextUrl));
     }
-    if (!req.auth?.user?.isAdmin) {
-      return NextResponse.redirect(new URL("/admin/login?error=unauthorized", req.nextUrl));
-    }
     return NextResponse.next();
   }
 
