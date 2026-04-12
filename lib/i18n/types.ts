@@ -161,4 +161,22 @@ export type Dict = {
   social_noActivity: string;
   social_noActivitySub: string;
   social_myActivity: string;
+
+  // Home / Dashboard
+  nav_home: string;
+  home_greeting: string;
+  home_statSummits: string; home_statPhotos: string;
+  home_statRegions: string; home_statFriends: string;
+  home_ranking: string; home_youAre: string;
+  home_motivationBeat: string; home_motivationFirst: string;
+  home_motivationNoFriends: string; home_motivationNoFriendsSub: string;
+  home_addFriends: string;
+  home_recentAscents: string; home_seeAll: string;
+  home_friendsActivity: string; home_noFriendActivity: string;
+  home_noAscents: string; home_logFirst: string;
+  home_badges: string; home_climbed: string;
+  home_badgeFirst: string; home_badge10: string;
+  home_badge25: string; home_badge50: string;
+  home_badgeRegions: string; home_badgePhotos: string;
+  home_badgeFriends: string;
 };

@@ -314,6 +314,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
 
         {/* Nav links */}
         <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Link href="/home" className={`nav-link${isActive("/home") ? " active" : ""}`}>{t.nav_home}</Link>
           <Link href="/map" className={`nav-link${isActive("/map") ? " active" : ""}`}>{t.nav_map}</Link>
           <Link href="/ascents" className={`nav-link${isActive("/ascents") ? " active" : ""}`}>{t.nav_ascents}</Link>
           <Link href="/social" className={`nav-link${isActive("/social") ? " active" : ""}`}>{t.nav_people}</Link>
@@ -408,18 +409,18 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
       <nav className="bottom-tab-bar" aria-label="Main navigation">
         <div className="tab-inner">
 
+          <Link href="/home" className={`tab-item${isActive("/home") ? " active" : ""}`}>
+            <div className="tab-icon-wrap">
+              <HomeIcon size={22} active={isActive("/home")} />
+            </div>
+            <span className="tab-label">{t.nav_home}</span>
+          </Link>
+
           <Link href="/map" className={`tab-item${isActive("/map") ? " active" : ""}`}>
             <div className="tab-icon-wrap">
               <MapIcon size={22} active={isActive("/map")} />
             </div>
             <span className="tab-label">{t.nav_map}</span>
-          </Link>
-
-          <Link href="/ascents" className={`tab-item${isActive("/ascents") ? " active" : ""}`}>
-            <div className="tab-icon-wrap">
-              <MountainIcon size={22} active={isActive("/ascents")} />
-            </div>
-            <span className="tab-label">{t.nav_ascents}</span>
           </Link>
 
           {/* Central + button */}
@@ -429,14 +430,19 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
             </Link>
           </div>
 
+          <Link href="/ascents" className={`tab-item${isActive("/ascents") ? " active" : ""}`}>
+            <div className="tab-icon-wrap">
+              <MountainIcon size={22} active={isActive("/ascents")} />
+            </div>
+            <span className="tab-label">{t.nav_ascents}</span>
+          </Link>
+
           <Link href="/social" className={`tab-item${isActive("/social") ? " active" : ""}`}>
             <div className="tab-icon-wrap">
               <PeopleIcon size={22} active={isActive("/social")} />
             </div>
             <span className="tab-label">{t.nav_people}</span>
           </Link>
-
-          <MobileProfileTab ini={ini} avatarUrl={userAvatarUrl ?? null} />
         </div>
       </nav>
     </>
@@ -475,6 +481,18 @@ function MobileProfileTab({ ini, avatarUrl }: { ini: string; avatarUrl: string |
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
+
+function HomeIcon({ size = 18, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round"
+      stroke="currentColor" strokeWidth={active ? 2 : 1.8}>
+      {active
+        ? <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" fill="currentColor" opacity="0.15" /><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></>
+        : <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></>
+      }
+    </svg>
+  );
+}
 
 function LogoIcon() {
   return (
