@@ -1,10 +1,15 @@
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { prisma } from "@/lib/db/client";
 
-export async function listPersonsWithStats(tenantId: string) {
+export async function listPersonsWithStats(tenantId: string, userIdFilter?: string[]) {
   const db = await getTenantConnection(tenantId);
   return db.person.findMany({
-    where: { tenantId },
+    where: {
+      tenantId,
+      ...(userIdFilter !== undefined
+        ? { userId: { in: userIdFilter } }
+        : {}),
+    },
     orderBy: { name: "asc" },
     include: {
       faceTags: {

@@ -365,16 +365,18 @@ export function FriendsClient({
         </div>
       )}
 
-      {/* ── Friends list ── */}
-      {friends.length === 0 && incoming.length === 0 && pendingTags.length === 0 ? (
+      {/* ── Empty state (no friends, no requests, no pending tags) ── */}
+      {friends.length === 0 && incoming.length === 0 && pendingTags.length === 0 && sent.length === 0 && (
         <div style={{ textAlign: "center", padding: "48px 0", border: "1px dashed #e5e7eb", borderRadius: 12 }}>
           <p style={{ fontSize: 32, margin: "0 0 8px" }}>🏔</p>
           <p style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", margin: 0 }}>{t.friends_noFriends}</p>
           <p style={{ fontSize: 13, color: "#9ca3af", margin: "4px 0 0" }}>{t.friends_noFriendsSub}</p>
         </div>
-      ) : friends.length > 0 && (
-        <div>
-          <SectionHeader label={`${t.friends_title} · ${friends.length}`} />
+      )}
+
+      {/* ── Friends management (remove / block) ── */}
+      {friends.length > 0 && (
+        <div style={{ marginTop: incoming.length > 0 || pendingTags.length > 0 ? 8 : 0 }}>
           {friends.map((f) => (
             <UserRow key={f.id}>
               <Avatar name={f.friend.name} size={38} />
