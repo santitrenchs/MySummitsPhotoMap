@@ -7,10 +7,32 @@ export default auth((req) => {
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isAuthApi = pathname.startsWith("/api/auth");
+  const isAdminLogin = pathname === "/admin/login";
+  const isAdminRoute = pathname.startsWith("/admin") && !isAdminLogin;
 
   // Always allow NextAuth internal API routes and health check
   if (isAuthApi || pathname === "/api/health") return NextResponse.next();
 
+  // ── Backoffice (/admin/*) ──────────────────────────────────
+  if (isAdminLogin) {
+    // Already logged in as admin → skip login page
+    if (isLoggedIn && req.auth?.user?.isAdmin) {
+      return NextResponse.redirect(new URL("/admin/users", req.nextUrl));
+    }
+    return NextResponse.next();
+  }
+
+  if (isAdminRoute) {
+    if (!isLoggedIn) {
+      return NextResponse.redirect(new URL("/admin/login", req.nextUrl));
+    }
+    if (!req.auth?.user?.isAdmin) {
+      return NextResponse.redirect(new URL("/admin/login?error=unauthorized", req.nextUrl));
+    }
+    return NextResponse.next();
+  }
+
+  // ── Main app ───────────────────────────────────────────────
   // Redirect authenticated users away from auth pages
   if (isLoggedIn && isAuthPage) {
     return NextResponse.redirect(new URL("/map", req.nextUrl));
