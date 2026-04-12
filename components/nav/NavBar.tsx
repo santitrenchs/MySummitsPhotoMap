@@ -315,7 +315,7 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pending
         <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Link href="/map" className={`nav-link${isActive("/map") ? " active" : ""}`}>{t.nav_map}</Link>
           <Link href="/ascents" className={`nav-link${isActive("/ascents") ? " active" : ""}`}>{t.nav_ascents}</Link>
-          <Link href="/persons" className={`nav-link${isActive("/persons") ? " active" : ""}`}>{t.nav_people}</Link>
+          <Link href="/social" className={`nav-link${isActive("/social") ? " active" : ""}`}>{t.nav_people}</Link>
         </nav>
 
         {/* Avatar + dropdown */}
@@ -425,9 +425,9 @@ export function NavBar({ userName, userEmail, pendingFriendRequests = 0, pending
             </Link>
           </div>
 
-          <Link href="/persons" className={`tab-item${isActive("/persons") ? " active" : ""}`}>
+          <Link href="/social" className={`tab-item${isActive("/social") ? " active" : ""}`}>
             <div className="tab-icon-wrap">
-              <PeopleIcon size={22} active={isActive("/persons")} />
+              <PeopleIcon size={22} active={isActive("/social")} />
             </div>
             <span className="tab-label">{t.nav_people}</span>
           </Link>

@@ -95,7 +95,7 @@ export async function listPersons(tenantId: string, search?: string) {
       ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
     },
     orderBy: { name: "asc" },
-    select: { id: true, name: true },
+    select: { id: true, name: true, userId: true },
     take: search ? 10 : undefined,
   });
 }
@@ -131,6 +131,40 @@ export async function unclaimPersonProfile(tenantId: string, personId: string, u
   if (!person) throw new Error("Person not found");
   if (person.userId !== userId) throw new Error("Forbidden");
   return db.person.update({ where: { id: personId }, data: { userId: null } });
+}
+
+// ─── Cross-tenant claim (used from Settings — person may be in any tenant) ───
+
+/** Search persons by name across ALL tenants (for the linked-profile settings flow). */
+export async function searchPersonsGlobal(query: string) {
+  return prisma.person.findMany({
+    where: {
+      name: { contains: query, mode: "insensitive" },
+      userId: null, // only show unclaimed persons
+    },
+    select: { id: true, name: true, tenantId: true },
+    take: 10,
+    orderBy: { name: "asc" },
+  });
+}
+
+/** Claim a person from any tenant (cross-tenant safe). */
+export async function claimPersonProfileGlobal(personId: string, userId: string) {
+  const person = await prisma.person.findUnique({ where: { id: personId } });
+  if (!person) throw new Error("Person not found");
+  if (person.userId && person.userId !== userId) throw new Error("Already claimed by another user");
+  // userId is @unique — one link per user globally
+  const existing = await prisma.person.findFirst({ where: { userId } });
+  if (existing && existing.id !== personId) throw new Error("You already have a linked profile");
+  return prisma.person.update({ where: { id: personId }, data: { userId } });
+}
+
+/** Unclaim a person from any tenant (cross-tenant safe). */
+export async function unclaimPersonProfileGlobal(personId: string, userId: string) {
+  const person = await prisma.person.findUnique({ where: { id: personId } });
+  if (!person) throw new Error("Person not found");
+  if (person.userId !== userId) throw new Error("Forbidden");
+  return prisma.person.update({ where: { id: personId }, data: { userId: null } });
 }
 
 export async function getLinkedPerson(tenantId: string, userId: string) {

@@ -36,7 +36,7 @@ export type FaceDraft = {
   suggestion: string | null;
 };
 
-type Person = { id: string; name: string };
+type Person = { id: string; name: string; userId?: string | null };
 type KnownPerson = { name: string; descriptors: number[][] };
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -507,21 +507,41 @@ export function PhotoTagStep({
                 </div>
               )}
 
-              {filteredPersons.slice(0, 10).map((person) => (
-                <div
-                  key={person.id}
-                  className="person-row"
-                  onClick={() => tagFace(activeFaceId, person.name)}
-                >
-                  <div className="person-avatar">{person.name[0]?.toUpperCase()}</div>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0 }}>
-                    {person.name}
-                  </p>
-                  {activeFace.personName === person.name && (
-                    <span style={{ marginLeft: "auto", fontSize: 13, color: "#22c55e", fontWeight: 700 }}>✓</span>
-                  )}
-                </div>
-              ))}
+              {filteredPersons.slice(0, 10).map((person) => {
+                const isVerified = !!person.userId;
+                return (
+                  <div
+                    key={person.id}
+                    className="person-row"
+                    onClick={() => tagFace(activeFaceId, person.name)}
+                  >
+                    <div className="person-avatar" style={isVerified ? { background: "linear-gradient(135deg, #dbeafe, #bfdbfe)", color: "#1d4ed8" } : undefined}>
+                      {person.name[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0 }}>
+                          {person.name}
+                        </p>
+                        {isVerified && (
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", justifyContent: "center",
+                            width: 16, height: 16, borderRadius: "50%",
+                            background: "#0369a1", flexShrink: 0,
+                          }}>
+                            <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                              <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {activeFace.personName === person.name && (
+                      <span style={{ marginLeft: "auto", fontSize: 13, color: "#22c55e", fontWeight: 700 }}>✓</span>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* Remove existing tag */}
               {activeFace.personName && (

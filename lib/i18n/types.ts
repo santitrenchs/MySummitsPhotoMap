@@ -151,4 +151,10 @@ export type Dict = {
   profile_stat_photos: string;
   profile_timesClimbed: string;
   profile_noAscents: string;
+
+  // Social feed
+  social_subtitle: string;
+  social_noFriends: string;
+  social_noFriendsSub: string;
+  social_addFriends: string;
 };

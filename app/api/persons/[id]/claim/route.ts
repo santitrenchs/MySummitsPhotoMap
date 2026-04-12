@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { claimPersonProfile, unclaimPersonProfile } from "@/lib/services/person.service";
+import { claimPersonProfileGlobal, unclaimPersonProfileGlobal } from "@/lib/services/person.service";
 
 export async function POST(
   _req: Request,
@@ -12,7 +12,7 @@ export async function POST(
   const { id } = await params;
 
   try {
-    const person = await claimPersonProfile(session.user.tenantId, id, session.user.id);
+    const person = await claimPersonProfileGlobal(id, session.user.id);
     return NextResponse.json({ id: person.id, name: person.name });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 400 });
@@ -29,7 +29,7 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    await unclaimPersonProfile(session.user.tenantId, id, session.user.id);
+    await unclaimPersonProfileGlobal(id, session.user.id);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 400 });

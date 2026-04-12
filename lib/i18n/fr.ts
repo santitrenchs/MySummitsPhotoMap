@@ -157,4 +157,9 @@ export const fr: Dict = {
   profile_stat_photos: "photos",
   profile_timesClimbed: "×{n}",
   profile_noAscents: "Aucune ascension enregistrée",
+
+  social_subtitle: "Ascensions récentes de tes amis",
+  social_noFriends: "Pas encore d'amis",
+  social_noFriendsSub: "Ajoute des amis pour voir leurs ascensions ici",
+  social_addFriends: "Ajouter des amis",
 };

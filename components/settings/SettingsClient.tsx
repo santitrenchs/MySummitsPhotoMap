@@ -186,7 +186,7 @@ export function SettingsClient({
     personDebounceRef.current = setTimeout(async () => {
       setPersonSearching(true);
       try {
-        const res = await fetch(`/api/persons?q=${encodeURIComponent(value.trim())}`);
+        const res = await fetch(`/api/persons/search-global?q=${encodeURIComponent(value.trim())}`);
         if (res.ok) setPersonResults(await res.json());
       } finally { setPersonSearching(false); }
     }, 350);
