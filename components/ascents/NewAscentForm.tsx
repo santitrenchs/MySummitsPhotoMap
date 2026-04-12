@@ -4,6 +4,8 @@ import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ImageCropModal } from "@/components/photos/ImageCropModal";
 import { PhotoTagStep, type FaceDraft } from "@/components/photos/PhotoTagStep";
+import { useT } from "@/components/providers/I18nProvider";
+import { i as fmt } from "@/lib/i18n";
 
 type Peak = {
   id: string;
@@ -20,6 +22,7 @@ export function NewAscentForm({
   defaultPeakId?: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -82,7 +85,7 @@ export function NewAscentForm({
     const form = new FormData(e.currentTarget);
 
     // Step 1 — create ascent
-    setStatus("Saving ascent…");
+    setStatus(t.newAscent_savingAscent);
     const ascentRes = await fetch("/api/ascents", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -108,13 +111,13 @@ export function NewAscentForm({
     if (readyItems.length > 0) {
       for (let i = 0; i < readyItems.length; i++) {
         const item = readyItems[i];
-        setStatus(`Uploading photo ${i + 1} of ${readyItems.length}…`);
+        setStatus(fmt(t.newAscent_uploadingPhoto, { i: i + 1, n: readyItems.length }));
         const fd = new FormData();
         fd.append("file", item.blob, "photo.jpg");
         fd.append("ascentId", ascent.id);
         const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
         if (!photoRes.ok) {
-          setError(`Ascent saved but photo ${i + 1} failed to upload.`);
+          setError(fmt(t.newAscent_photoFailed, { i: i + 1 }));
           setLoading(false);
           setStatus(null);
           router.push(`/ascents/${ascent.id}`);
@@ -124,7 +127,7 @@ export function NewAscentForm({
         // Save face detections + tags in one shot
         if (item.faces.length > 0) {
           const photo = await photoRes.json();
-          setStatus(`Saving tags for photo ${i + 1}…`);
+          setStatus(fmt(t.newAscent_savingTags, { i: i + 1 }));
           await fetch(`/api/photos/${photo.id}/faces`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -186,18 +189,18 @@ export function NewAscentForm({
     >
       {/* Peak */}
       <div>
-        <label htmlFor="peakId" style={labelStyle}>Peak *</label>
+        <label htmlFor="peakId" style={labelStyle}>{t.field_peak} *</label>
         <select
           id="peakId" name="peakId" required
           defaultValue={defaultPeakId ?? ""}
           style={{ ...inputStyle, background: "white" }}
         >
-          <option value="" disabled>Select a peak…</option>
+          <option value="" disabled>{t.field_selectPeak}</option>
           {Object.entries(groups).sort().map(([range, rangePeaks]) => (
             <optgroup key={range} label={range}>
               {rangePeaks.map((peak) => (
                 <option key={peak.id} value={peak.id}>
-                  {peak.name} ({peak.altitudeM.toLocaleString()} m)
+                  {peak.name} ({peak.altitudeM.toLocaleString(t.dateLocale)} m)
                 </option>
               ))}
             </optgroup>
@@ -207,7 +210,7 @@ export function NewAscentForm({
 
       {/* Date */}
       <div>
-        <label htmlFor="date" style={labelStyle}>Date *</label>
+        <label htmlFor="date" style={labelStyle}>{t.field_date} *</label>
         <input
           id="date" name="date" type="date" required
           defaultValue={new Date().toISOString().split("T")[0]}
@@ -218,11 +221,11 @@ export function NewAscentForm({
       {/* Route */}
       <div>
         <label htmlFor="route" style={labelStyle}>
-          Route <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+          {t.field_route} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
         </label>
         <input
           id="route" name="route" type="text"
-          placeholder="e.g. Norte de Salenques"
+          placeholder={t.field_routePlaceholder}
           maxLength={500} style={inputStyle}
         />
       </div>
@@ -230,11 +233,11 @@ export function NewAscentForm({
       {/* Description */}
       <div>
         <label htmlFor="description" style={labelStyle}>
-          Notes <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+          {t.field_notes} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
         </label>
         <textarea
           id="description" name="description" rows={3}
-          placeholder="Conditions, weather, memories…"
+          placeholder={t.field_notesPlaceholder}
           maxLength={2000}
           style={{ ...inputStyle, resize: "vertical" }}
         />
@@ -243,7 +246,7 @@ export function NewAscentForm({
       {/* Photos */}
       <div>
         <label style={labelStyle}>
-          Photos <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+          {t.field_photos} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
         </label>
 
         {/* Drop zone */}
@@ -268,10 +271,10 @@ export function NewAscentForm({
           />
           <p style={{ fontSize: 22, margin: "0 0 4px" }}>📷</p>
           <p style={{ fontSize: 13, fontWeight: 600, color: "#374151", margin: 0 }}>
-            Click or drag photos here
+            {t.newAscent_clickOrDrag}
           </p>
           <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>
-            JPEG, PNG, WebP · max 10 MB each
+            {t.newAscent_maxSize}
           </p>
         </div>
 
@@ -295,7 +298,7 @@ export function NewAscentForm({
                       borderRadius: 10, padding: "2px 6px",
                       fontSize: 9, fontWeight: 700, color: "white",
                     }}>
-                      {taggedCount} tagged
+                      {fmt(t.newAscent_tagged, { n: taggedCount })}
                     </span>
                   )}
                   <button
@@ -339,7 +342,7 @@ export function NewAscentForm({
             cursor: "pointer", opacity: loading ? 0.5 : 1,
           }}
         >
-          Cancel
+          {t.cancel}
         </button>
         <button
           type="submit" disabled={loading}
@@ -349,7 +352,7 @@ export function NewAscentForm({
             cursor: "pointer", opacity: loading ? 0.6 : 1,
           }}
         >
-          {loading ? status ?? "Saving…" : `Save${readyItems.length > 0 ? ` + ${readyItems.length} photo${readyItems.length > 1 ? "s" : ""}` : ""}`}
+          {loading ? (status ?? t.saving) : readyItems.length > 0 ? fmt(t.newAscent_saveWithPhotos, { n: readyItems.length }) : t.newAscent_save}
         </button>
       </div>
     </form>

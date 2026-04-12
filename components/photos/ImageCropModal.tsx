@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/components/providers/I18nProvider";
 
 const RATIOS = [
   { label: "1:1", value: 1 },
@@ -20,6 +21,7 @@ export function ImageCropModal({
   onCrop: (blob: Blob) => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   const [src, setSrc] = useState("");
   const [ratio, setRatio] = useState(4 / 5);   // w / h
   const [scale, setScale] = useState(1);
@@ -194,7 +196,7 @@ export function ImageCropModal({
           onClick={onCancel}
           style={{ background: "none", border: "none", color: "white", fontSize: 24, cursor: "pointer", padding: 0, lineHeight: 1 }}
         >←</button>
-        <span style={{ color: "white", fontSize: 15, fontWeight: 700 }}>Crop</span>
+        <span style={{ color: "white", fontSize: 15, fontWeight: 700 }}>{t.crop_title}</span>
         <button
           onClick={applyCrop}
           disabled={applying || !ready}
@@ -203,7 +205,7 @@ export function ImageCropModal({
             color: applying ? "#555" : "#0095f6",
             fontSize: 15, fontWeight: 700, cursor: applying ? "default" : "pointer", padding: 0,
           }}
-        >{applying ? "…" : "Next"}</button>
+        >{applying ? "…" : t.crop_next}</button>
       </div>
 
       {/* ── Crop canvas ──────────────────────────────────────────────────── */}

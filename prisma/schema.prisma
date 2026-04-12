@@ -38,6 +38,23 @@ model User {
   email        String   @unique
   passwordHash String
   name         String
+  username     String?  @unique
+  language     String   @default("en")
+
+  // Privacy
+  profilePublic         Boolean @default(true)
+  reviewTagsBeforePost  Boolean @default(false)
+  allowOthersToTag      Boolean @default(true)
+
+  // Notifications
+  emailNotifications    Boolean @default(true)
+  activityNotifications Boolean @default(true)
+
+  // Photos & Tagging
+  autoDetectFaces       Boolean @default(true)
+  autoSuggestPeople     Boolean @default(true)
+  reviewFacesBeforeSave Boolean @default(false)
+
   createdAt    DateTime @default(now())
 
   memberships Membership[]

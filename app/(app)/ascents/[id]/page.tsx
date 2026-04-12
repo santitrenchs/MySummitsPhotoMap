@@ -3,6 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { PhotoUploader } from "@/components/photos/PhotoUploader";
+import { getServerT } from "@/lib/i18n/server";
+import { i } from "@/lib/i18n";
 
 export default async function AscentDetailPage({
   params,
@@ -42,6 +44,8 @@ export default async function AscentDetailPage({
 
   if (!ascent) notFound();
 
+  const t = await getServerT();
+
   // ── Derived data ──────────────────────────────────────────────────────────
   const heroPhoto = ascent.photos[0] ?? null;
   const allPhotos = ascent.photos;
@@ -59,16 +63,21 @@ export default async function AscentDetailPage({
   // "others" = everyone except the logged-in user
   const persons = allPersons.filter(p => p.email !== session.user.email);
 
-  const dateStr = new Date(ascent.date).toLocaleDateString("en-GB", {
+  const dateStr = new Date(ascent.date).toLocaleDateString(t.dateLocale, {
     day: "numeric", month: "long", year: "numeric",
   });
 
   // Emotional summary sentence
-  let emotionalText = `You climbed ${ascent.peak.name}`;
-  if (persons.length === 1) emotionalText += ` with ${persons[0].name}`;
-  else if (persons.length === 2) emotionalText += ` with ${persons[0].name} and ${persons[1].name}`;
-  else if (persons.length >= 3) emotionalText += ` with ${persons[0].name}, ${persons[1].name} and ${persons.length - 2} more`;
-  emotionalText += ` on ${dateStr}.`;
+  let emotionalText: string;
+  if (persons.length === 0) {
+    emotionalText = i(t.emotional_solo, { peak: ascent.peak.name, date: dateStr });
+  } else if (persons.length === 1) {
+    emotionalText = i(t.emotional_one, { peak: ascent.peak.name, p1: persons[0].name, date: dateStr });
+  } else if (persons.length === 2) {
+    emotionalText = i(t.emotional_two, { peak: ascent.peak.name, p1: persons[0].name, p2: persons[1].name, date: dateStr });
+  } else {
+    emotionalText = i(t.emotional_many, { peak: ascent.peak.name, p1: persons[0].name, p2: persons[1].name, n: persons.length - 2, date: dateStr });
+  }
 
   const { latitude, longitude } = ascent.peak;
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.08},${latitude - 0.05},${longitude + 0.08},${latitude + 0.05}&layer=mapnik&marker=${latitude},${longitude}`;
@@ -136,7 +145,7 @@ export default async function AscentDetailPage({
               borderRadius: 20, padding: "4px 12px",
               color: "white", fontSize: 13, fontWeight: 700,
             }}>
-              {ascent.peak.altitudeM.toLocaleString()} m
+              {ascent.peak.altitudeM.toLocaleString(t.dateLocale)} m
             </span>
             <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 12 }}>{dateStr}</span>
           </div>
@@ -178,16 +187,16 @@ export default async function AscentDetailPage({
         {/* ── QUICK STATS ──────────────────────────────────────────────── */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           <StatChip emoji="📅" text={dateStr} />
-          <StatChip emoji="📏" text={`${ascent.peak.altitudeM.toLocaleString()} m`} />
+          <StatChip emoji="📏" text={`${ascent.peak.altitudeM.toLocaleString(t.dateLocale)} m`} />
           {ascent.route && <StatChip emoji="🧭" text={ascent.route} />}
-          {allPhotos.length > 0 && <StatChip emoji="📸" text={`${allPhotos.length} photo${allPhotos.length !== 1 ? "s" : ""}`} />}
+          {allPhotos.length > 0 && <StatChip emoji="📸" text={i(t.detail_photos, { n: allPhotos.length })} />}
         </div>
 
         {/* ── PEOPLE ───────────────────────────────────────────────────── */}
         {persons.length > 0 && (
           <section style={{ marginBottom: 24 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>
-              With
+              {t.detail_with}
             </h2>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               {persons.map((p) => (
@@ -212,7 +221,7 @@ export default async function AscentDetailPage({
         {allPhotos.length > 0 && (
           <section style={{ marginBottom: 28 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>
-              Photos · {allPhotos.length}
+              {i(t.detail_photos, { n: allPhotos.length })}
             </h2>
             <div style={{
               display: "grid",
@@ -248,7 +257,7 @@ export default async function AscentDetailPage({
         <section style={{ marginBottom: 28 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
-              {ascent.wikiloc ? "Route · Wikiloc" : "Location"}
+              {ascent.wikiloc ? t.detail_routeWikiloc : t.detail_location}
             </h2>
             {ascent.wikiloc && (
               <a
@@ -256,7 +265,7 @@ export default async function AscentDetailPage({
                 target="_blank" rel="noopener noreferrer"
                 style={{ fontSize: 11, fontWeight: 600, color: "#4C8C2B", textDecoration: "none" }}
               >
-                Open in Wikiloc ↗
+                {t.detail_openWikiloc}
               </a>
             )}
           </div>
@@ -305,7 +314,7 @@ export default async function AscentDetailPage({
         {/* ── ADD PHOTOS ───────────────────────────────────────────────── */}
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>
-            Add photos
+            {t.detail_addPhotos}
           </h2>
           <PhotoUploader
             ascentId={id}

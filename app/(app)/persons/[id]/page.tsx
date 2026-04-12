@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getPersonDetails } from "@/lib/services/person.service";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function PersonDetailPage({
   params,
@@ -12,6 +13,7 @@ export default async function PersonDetailPage({
   if (!session) redirect("/login");
 
   const { id } = await params;
+  const t = await getServerT();
   const person = await getPersonDetails(session.user.tenantId, id);
   if (!person) notFound();
 
@@ -91,7 +93,7 @@ export default async function PersonDetailPage({
         </div>
         <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px" }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {highestPeak ? `${highestPeak.peakName} (${highestPeak.altitudeM.toLocaleString()} m)` : "—"}
+            {highestPeak ? `${highestPeak.peakName} (${highestPeak.altitudeM.toLocaleString(t.dateLocale)} m)` : "—"}
           </div>
           <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Highest peak</div>
         </div>
@@ -116,7 +118,7 @@ export default async function PersonDetailPage({
                   fontSize: 11, fontWeight: 700, color: "#0369a1",
                   background: "#eff6ff", borderRadius: 20, padding: "2px 7px",
                 }}>
-                  {a.altitudeM.toLocaleString()} m
+                  {a.altitudeM.toLocaleString(t.dateLocale)} m
                 </span>
                 <span style={{ fontSize: 12, color: "#9ca3af", marginLeft: "auto" }}>
                   {new Date(a.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}

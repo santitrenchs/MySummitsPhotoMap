@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
+import { useT } from "@/components/providers/I18nProvider";
+import { i } from "@/lib/i18n";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -86,6 +88,10 @@ export default function MapView({
   ascentData?: AscentMapEntry[];
 }) {
   const router = useRouter();
+  const t = useT();
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const ascentByPeakId = useRef(new Map(ascentData.map((a) => [a.peakId, a])));
@@ -297,7 +303,7 @@ export default function MapView({
         const props = e.features?.[0]?.properties;
         if (!props || !containerRef.current) return;
         const pt = map.project(e.lngLat);
-        setTooltip({ text: `${props.name} · ${Number(props.alt).toLocaleString()} m`, x: pt.x, y: pt.y });
+        setTooltip({ text: `${props.name} · ${Number(props.alt).toLocaleString(tRef.current.dateLocale)} m`, x: pt.x, y: pt.y });
       });
       map.on("mouseleave", "unclustered-peaks", () => setTooltip(null));
 
@@ -305,7 +311,7 @@ export default function MapView({
         const props = e.features?.[0]?.properties;
         if (!props || !containerRef.current) return;
         const pt = map.project(e.lngLat);
-        setTooltip({ text: `${props.point_count} unclimbed peaks · click to zoom`, x: pt.x, y: pt.y });
+        setTooltip({ text: i(tRef.current.map_unclimbedPeaks, { n: props.point_count }), x: pt.x, y: pt.y });
       });
       map.on("mouseleave", "clusters", () => setTooltip(null));
 
@@ -357,7 +363,7 @@ export default function MapView({
           const me = e as MouseEvent;
           const cRect = containerRef.current.getBoundingClientRect();
           setTooltip({
-            text: `${peak.name} · ${peak.altitudeM.toLocaleString()} m`,
+            text: `${peak.name} · ${peak.altitudeM.toLocaleString(tRef.current.dateLocale)} m`,
             x: me.clientX - cRect.left,
             y: me.clientY - cRect.top,
           });
@@ -391,9 +397,9 @@ export default function MapView({
   // ── Derived counts for filter chips ────────────────────────────────────────
   const climbedCount = ascentData.length;
   const FILTERS: { value: Filter; label: string }[] = [
-    { value: "all", label: `All  ${peaks.length}` },
-    { value: "climbed", label: `✓ Climbed  ${climbedCount}` },
-    { value: "not-climbed", label: `○ Not yet  ${peaks.length - climbedCount}` },
+    { value: "all", label: `${t.map_all}  ${peaks.length}` },
+    { value: "climbed", label: `✓ ${t.map_climbed}  ${climbedCount}` },
+    { value: "not-climbed", label: `○ ${t.map_notYet}  ${peaks.length - climbedCount}` },
   ];
 
   const panelStyle: React.CSSProperties = isMobile
@@ -471,7 +477,7 @@ export default function MapView({
             boxShadow: "0 1px 8px rgba(0,0,0,0.15)",
             backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
           }}
-        >🏔 Relief</button>
+        >{t.map_relief}</button>
       </div>
 
       {/* ── Zoom controls ── bottom right ─────────────────────────────── */}
@@ -483,7 +489,7 @@ export default function MapView({
           <button
             key={label}
             onClick={fn}
-            aria-label={label === "+" ? "Zoom in" : "Zoom out"}
+            aria-label={label === "+" ? t.map_zoomIn : t.map_zoomOut}
             style={{
               width: 32, height: 32,
               background: "rgba(255,255,255,0.96)", border: "1px solid #d1d5db",
@@ -507,11 +513,11 @@ export default function MapView({
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <div style={{ width: 14, height: 14, borderRadius: "50%", background: "linear-gradient(135deg,#dbeafe,#eff6ff)", border: "2px solid white", boxShadow: "0 0 0 2px #22c55e" }} />
-          <span>Climbed</span>
+          <span>{t.map_climbed}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#60a5fa", border: "2px solid white" }} />
-          <span>Not yet</span>
+          <span>{t.map_notYet}</span>
         </div>
       </div>
 
@@ -560,7 +566,7 @@ export default function MapView({
               borderRadius: 20, padding: "4px 12px",
             }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
-                {selected.peak.altitudeM.toLocaleString()} m
+                {selected.peak.altitudeM.toLocaleString(t.dateLocale)} m
               </span>
             </div>
           </div>
@@ -584,12 +590,12 @@ export default function MapView({
                     borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700,
                   }}>
                     ✓ {selected.ascent.ascentCount > 1
-                      ? `${selected.ascent.ascentCount} ascents`
-                      : "Climbed"}
+                      ? i(t.map_ascentsBadge, { n: selected.ascent.ascentCount })
+                      : t.map_climbedBadge}
                   </span>
                   <span style={{ fontSize: 12, color: "#6b7280" }}>
-                    {selected.ascent.ascentCount > 1 ? "Last: " : ""}
-                    {new Date(selected.ascent.date).toLocaleDateString("en-GB", {
+                    {selected.ascent.ascentCount > 1 ? `${t.map_last} ` : ""}
+                    {new Date(selected.ascent.date).toLocaleDateString(t.dateLocale, {
                       day: "numeric", month: "short", year: "numeric",
                     })}
                   </span>
@@ -617,14 +623,14 @@ export default function MapView({
                   }}
                 >
                   {selected.ascent.ascentCount > 1
-                    ? `View ${selected.ascent.ascentCount} ascents →`
-                    : "View ascent →"}
+                    ? i(t.map_viewAscents, { n: selected.ascent.ascentCount })
+                    : t.map_viewAscent}
                 </button>
               </>
             ) : (
               <>
                 <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 16px" }}>
-                  Not yet climbed
+                  {t.map_notYetClimbed}
                 </p>
                 <button
                   className="panel-action-btn"
@@ -636,7 +642,7 @@ export default function MapView({
                     fontSize: 13, fontWeight: 700, cursor: "pointer",
                   }}
                 >
-                  + Log ascent
+                  {t.map_logAscent}
                 </button>
               </>
             )}

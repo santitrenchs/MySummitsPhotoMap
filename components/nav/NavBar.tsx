@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
+import { useT } from "@/components/providers/I18nProvider";
 
 type NavBarProps = {
   userName: string | null;
@@ -22,6 +23,7 @@ function initials(name: string | null, email: string | null): string {
 
 export function NavBar({ userName, userEmail }: NavBarProps) {
   const pathname = usePathname();
+  const t = useT();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
   const ini = initials(userName, userEmail);
@@ -309,9 +311,9 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
 
         {/* Nav links */}
         <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Link href="/map" className={`nav-link${isActive("/map") ? " active" : ""}`}>Map</Link>
-          <Link href="/ascents" className={`nav-link${isActive("/ascents") ? " active" : ""}`}>Ascents</Link>
-          <Link href="/persons" className={`nav-link${isActive("/persons") ? " active" : ""}`}>People</Link>
+          <Link href="/map" className={`nav-link${isActive("/map") ? " active" : ""}`}>{t.nav_map}</Link>
+          <Link href="/ascents" className={`nav-link${isActive("/ascents") ? " active" : ""}`}>{t.nav_ascents}</Link>
+          <Link href="/persons" className={`nav-link${isActive("/persons") ? " active" : ""}`}>{t.nav_people}</Link>
         </nav>
 
         {/* Avatar + dropdown */}
@@ -338,14 +340,17 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
               <div className="dropdown-section">
                 <span className="dropdown-item muted">
                   <ProfileIcon />
-                  Profile
-                  <span className="coming-soon">Soon</span>
+                  {t.nav_profile}
+                  <span className="coming-soon">{t.nav_comingSoon}</span>
                 </span>
-                <span className="dropdown-item muted">
+                <Link
+                  href="/settings"
+                  className="dropdown-item"
+                  onClick={() => setDropdownOpen(false)}
+                >
                   <SettingsIcon />
-                  Settings
-                  <span className="coming-soon">Soon</span>
-                </span>
+                  {t.nav_settings}
+                </Link>
               </div>
 
               {/* Sign out */}
@@ -354,7 +359,7 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
                   className="dropdown-item danger"
                   onClick={() => { setDropdownOpen(false); signOut({ callbackUrl: "/login" }); }}
                 >
-                  <SignOutIcon /> Sign out
+                  <SignOutIcon /> {t.nav_signOut}
                 </button>
               </div>
             </div>
@@ -370,19 +375,19 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
             <div className="tab-icon-wrap">
               <MapIcon size={22} active={isActive("/map")} />
             </div>
-            <span className="tab-label">Map</span>
+            <span className="tab-label">{t.nav_map}</span>
           </Link>
 
           <Link href="/ascents" className={`tab-item${isActive("/ascents") ? " active" : ""}`}>
             <div className="tab-icon-wrap">
               <MountainIcon size={22} active={isActive("/ascents")} />
             </div>
-            <span className="tab-label">Ascents</span>
+            <span className="tab-label">{t.nav_ascents}</span>
           </Link>
 
           {/* Central + button */}
           <div className="tab-plus-wrap">
-            <Link href="/ascents/new" className="tab-plus-btn" aria-label="Log new ascent">
+            <Link href="/ascents/new" className="tab-plus-btn" aria-label={t.nav_logAscent}>
               <PlusIcon />
             </Link>
           </div>
@@ -391,7 +396,7 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
             <div className="tab-icon-wrap">
               <PeopleIcon size={22} active={isActive("/persons")} />
             </div>
-            <span className="tab-label">People</span>
+            <span className="tab-label">{t.nav_people}</span>
           </Link>
 
           <MobileProfileTab ini={ini} userName={userName} userEmail={userEmail} />
@@ -404,6 +409,7 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
 // ── Mobile profile tab ─────────────────────────────────────────────────────────
 
 function MobileProfileTab({ ini, userName, userEmail }: { ini: string; userName: string | null; userEmail: string | null }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -436,7 +442,7 @@ function MobileProfileTab({ ini, userName, userEmail }: { ini: string; userName:
           {ini}
         </div>
       </div>
-      <span className="tab-label" style={{ color: "inherit" }}>Profile</span>
+      <span className="tab-label" style={{ color: "inherit" }}>{t.nav_profile}</span>
 
       {open && (
         <div style={{
@@ -464,29 +470,27 @@ function MobileProfileTab({ ini, userName, userEmail }: { ini: string; userName:
               cursor: "default",
             }}>
               <ProfileIcon />
-              Profile
+              {t.nav_profile}
               <span style={{
                 fontSize: 9.5, fontWeight: 600, color: "#d1d5db",
                 textTransform: "uppercase", letterSpacing: "0.04em",
                 marginLeft: "auto", padding: "2px 6px",
                 border: "1px solid #e5e7eb", borderRadius: 20,
-              }}>Soon</span>
+              }}>{t.nav_comingSoon}</span>
             </span>
-            <span style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "9px 16px",
-              fontSize: 13, fontWeight: 500, color: "#c4c9d4",
-              cursor: "default",
-            }}>
+            <Link
+              href="/settings"
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "9px 16px",
+                fontSize: 13, fontWeight: 500, color: "#374151",
+                textDecoration: "none",
+              }}
+              onClick={() => setOpen(false)}
+            >
               <SettingsIcon />
-              Settings
-              <span style={{
-                fontSize: 9.5, fontWeight: 600, color: "#d1d5db",
-                textTransform: "uppercase", letterSpacing: "0.04em",
-                marginLeft: "auto", padding: "2px 6px",
-                border: "1px solid #e5e7eb", borderRadius: 20,
-              }}>Soon</span>
-            </span>
+              {t.nav_settings}
+            </Link>
           </div>
           <div style={{ padding: "6px 0" }}>
             <button
@@ -498,7 +502,7 @@ function MobileProfileTab({ ini, userName, userEmail }: { ini: string; userName:
               }}
               onClick={() => signOut({ callbackUrl: "/login" })}
             >
-              <SignOutIcon /> Sign out
+              <SignOutIcon /> {t.nav_signOut}
             </button>
           </div>
         </div>

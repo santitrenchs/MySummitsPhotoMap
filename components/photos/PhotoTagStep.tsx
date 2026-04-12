@@ -2,6 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type * as FaceApiType from "@vladmandic/face-api";
+import { useT } from "@/components/providers/I18nProvider";
+import { i } from "@/lib/i18n";
 
 // Singleton: models are loaded once for the lifetime of the page
 let faceApiMod: typeof FaceApiType | null = null;
@@ -48,6 +50,7 @@ export function PhotoTagStep({
   onDone: (blob: Blob, faces: FaceDraft[]) => void;
   onSkip: (blob: Blob) => void;
 }) {
+  const t = useT();
   const objUrlRef = useRef(URL.createObjectURL(blob));
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -230,10 +233,10 @@ export function PhotoTagStep({
             onClick={() => onSkip(blob)}
             style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
           >
-            Skip
+            {t.skip}
           </button>
           <span style={{ fontSize: 14, fontWeight: 700, color: "white", letterSpacing: "-0.01em" }}>
-            {phase === "detecting" ? "Detecting faces…" : faces.length === 0 ? "Tag people" : `Tag people · ${faces.length} found`}
+            {phase === "detecting" ? t.tag_detecting : faces.length === 0 ? t.tag_tagPeople : i(t.tag_tagPeopleFound, { n: faces.length })}
           </span>
           <button
             onClick={() => onDone(blob, faces)}
@@ -244,7 +247,7 @@ export function PhotoTagStep({
             }}
             disabled={phase === "detecting"}
           >
-            Done{taggedCount > 0 ? ` (${taggedCount})` : ""}
+            {taggedCount > 0 ? `${t.done} (${taggedCount})` : t.done}
           </button>
         </div>
 
@@ -356,7 +359,7 @@ export function PhotoTagStep({
                   display: "flex", alignItems: "center", gap: 10,
                 }}>
                   <Spinner />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "white" }}>Detecting faces…</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{t.tag_detecting}</span>
                 </div>
               </div>
             )}
@@ -374,7 +377,7 @@ export function PhotoTagStep({
               background: "rgba(255,255,255,0.08)",
               borderRadius: 20, padding: "6px 18px",
             }}>
-              No faces detected — continue to save
+              {t.tag_noFaces}
             </span>
           </div>
         )}
@@ -400,10 +403,10 @@ export function PhotoTagStep({
             }}
           >
             {phase === "detecting"
-              ? "Detecting…"
+              ? t.tag_detecting2
               : taggedCount > 0
-              ? `Continue · ${taggedCount} tagged ›`
-              : "Continue ›"}
+              ? i(t.tag_continueTagged, { n: taggedCount })
+              : t.tag_continue}
           </button>
         </div>
       </div>
@@ -433,7 +436,7 @@ export function PhotoTagStep({
             {/* Sheet handle + header */}
             <div style={{ padding: "14px 20px 12px", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
               <div style={{ width: 36, height: 4, background: "#e5e7eb", borderRadius: 2, margin: "0 auto 14px" }} />
-              <p style={{ fontSize: 15, fontWeight: 700, color: "#111827", margin: "0 0 12px" }}>Who is this?</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: "#111827", margin: "0 0 12px" }}>{t.tag_whoIsThis}</p>
 
               {/* Auto-suggestion confirm chip */}
               {activeFace.suggestion && !activeFace.personName && (
@@ -448,14 +451,14 @@ export function PhotoTagStep({
                   }}
                 >
                   <div>
-                    <p style={{ fontSize: 11, color: "#0369a1", margin: "0 0 1px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Looks like</p>
+                    <p style={{ fontSize: 11, color: "#0369a1", margin: "0 0 1px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.tag_looksLike}</p>
                     <p style={{ fontSize: 15, fontWeight: 700, color: "#0369a1", margin: 0 }}>{activeFace.suggestion}</p>
                   </div>
                   <span style={{
                     fontSize: 12, fontWeight: 700, color: "white",
                     background: "#0369a1", borderRadius: 20, padding: "5px 14px",
                     flexShrink: 0,
-                  }}>Confirm ✓</span>
+                  }}>{t.tag_confirmCta}</span>
                 </button>
               )}
 
@@ -467,7 +470,7 @@ export function PhotoTagStep({
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && search.trim()) tagFace(activeFaceId, search.trim());
                 }}
-                placeholder="Search or type a new name…"
+                placeholder={t.tag_searchOrType}
                 style={{
                   width: "100%", padding: "10px 14px",
                   border: "1.5px solid #e5e7eb", borderRadius: 10,
@@ -490,7 +493,7 @@ export function PhotoTagStep({
                     <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
                       &ldquo;{search.trim()}&rdquo;
                     </p>
-                    <p style={{ fontSize: 12, color: "#9ca3af", margin: "1px 0 0" }}>Create new person</p>
+                    <p style={{ fontSize: 12, color: "#9ca3af", margin: "1px 0 0" }}>{t.tag_createNew}</p>
                   </div>
                 </div>
               )}
@@ -520,7 +523,7 @@ export function PhotoTagStep({
                     onClick={() => { removeTag(activeFaceId); setActiveFaceId(null); }}
                   >
                     <div className="person-avatar" style={{ background: "#fee2e2", color: "#dc2626" }}>✕</div>
-                    <p style={{ fontSize: 14, fontWeight: 500, color: "#dc2626", margin: 0 }}>Remove tag</p>
+                    <p style={{ fontSize: 14, fontWeight: 500, color: "#dc2626", margin: 0 }}>{t.tag_removeTag}</p>
                   </div>
                 </>
               )}

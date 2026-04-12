@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/providers/I18nProvider";
 
 export type PersonCard = {
   id: string;
@@ -62,13 +63,14 @@ function FaceAvatar({
   );
 }
 
-function formatDate(iso: string | null) {
+function formatDate(iso: string | null, dateLocale: string) {
   if (!iso) return null;
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function PersonsClient({ persons }: { persons: PersonCard[] }) {
   const router = useRouter();
+  const t = useT();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("ascents");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -150,10 +152,10 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
   }
 
   const SORTS: { value: Sort; label: string }[] = [
-    { value: "ascents", label: "Ascents" },
-    { value: "photos", label: "Photos" },
-    { value: "recent", label: "Recent" },
-    { value: "name", label: "A–Z" },
+    { value: "ascents", label: t.people_sort_ascents },
+    { value: "photos", label: t.people_sort_photos },
+    { value: "recent", label: t.people_sort_recent },
+    { value: "name", label: t.people_sort_az },
   ];
 
   return (
@@ -181,19 +183,19 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
             boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
           }}>
             <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", margin: "0 0 20px" }}>
-              Edit person
+              {t.people_editPerson}
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 22 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 5 }}>
-                  Name
+                  {t.settings_name}
                 </label>
                 <input
                   ref={editNameRef}
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSaveEdit(); if (e.key === "Escape") setEditingPerson(null); }}
-                  placeholder="Full name"
+                  placeholder={t.people_fullName}
                   style={{
                     width: "100%", padding: "10px 12px", fontSize: 14, fontWeight: 600,
                     border: "1.5px solid #e5e7eb", borderRadius: 10, outline: "none",
@@ -203,7 +205,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
               </div>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 5 }}>
-                  Email <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+                  {t.settings_email} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
                 </label>
                 <input
                   type="email"
@@ -225,14 +227,14 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                 disabled={saving}
                 style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}
               >
-                Cancel
+                {t.cancel}
               </button>
               <button
                 onClick={handleSaveEdit}
                 disabled={saving || !editName.trim()}
                 style={{ padding: "9px 18px", background: "#0369a1", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
               >
-                {saving ? "Saving…" : "Save"}
+                {saving ? t.saving : t.save}
               </button>
             </div>
           </div>
@@ -256,20 +258,19 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
             </h3>
             {deleteConfirm.photoCount > 0 ? (
               <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 22px", lineHeight: 1.6 }}>
-                Appears in <strong>{deleteConfirm.photoCount} photo{deleteConfirm.photoCount !== 1 ? "s" : ""}</strong>.
-                All face tags will be removed. This cannot be undone.
+                {t.people_delete_body_photos.replace("{n}", String(deleteConfirm.photoCount))}
               </p>
             ) : (
-              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 22px" }}>This cannot be undone.</p>
+              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 22px" }}>{t.people_delete_body_simple}</p>
             )}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button onClick={() => setDeleteConfirm(null)} disabled={deleting}
                 style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
-                Cancel
+                {t.cancel}
               </button>
               <button onClick={confirmDelete} disabled={deleting}
                 style={{ padding: "9px 18px", background: "#ef4444", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer", opacity: deleting ? 0.6 : 1 }}>
-                {deleting ? "Deleting…" : "Delete"}
+                {deleting ? t.deleting : t.delete}
               </button>
             </div>
           </div>
@@ -283,9 +284,9 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
       {/* ── Metrics pills ─────────────────────────────────────────────────── */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
         {[
-          { emoji: "👥", value: metrics.total, label: "people" },
-          { emoji: "📸", value: metrics.totalPhotos, label: "photos" },
-          { emoji: "🏔", value: metrics.totalAscents, label: "ascents" },
+          { emoji: "👥", value: metrics.total, label: t.people_stat_people },
+          { emoji: "📸", value: metrics.totalPhotos, label: t.people_stat_photos },
+          { emoji: "🏔", value: metrics.totalAscents, label: t.people_stat_ascents },
         ].map(({ emoji, value, label }) => (
           <div key={label} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
@@ -312,7 +313,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
         <input
           type="text"
-          placeholder="🔍  Search people…"
+          placeholder={t.people_search}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
@@ -338,7 +339,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
       {filtered.length === 0 ? (
         <div style={{ textAlign: "center", padding: "56px 0" }}>
           <p style={{ fontSize: 36, margin: "0 0 8px" }}>🔍</p>
-          <p style={{ fontSize: 14, color: "#6b7280", margin: 0 }}>No people match your search</p>
+          <p style={{ fontSize: 14, color: "#6b7280", margin: 0 }}>{t.people_noMatch}</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -399,13 +400,13 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                         onClick={() => openEdit(person)}
                         style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", fontSize: 13, color: "#374151", cursor: "pointer" }}
                       >
-                        Edit
+                        {t.edit}
                       </button>
                       <button
                         onClick={() => { setDeleteConfirm({ id: person.id, name: person.name, photoCount: person.photoCount }); setOpenMenuId(null); }}
                         style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", fontSize: 13, color: "#ef4444", cursor: "pointer" }}
                       >
-                        Delete
+                        {t.delete}
                       </button>
                     </div>
                   )}
@@ -461,7 +462,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                   )}
                   {person.lastAscentDate && (
                     <span style={{ fontSize: 11, color: "#6b7280" }}>
-                      🗓 Last climb: {formatDate(person.lastAscentDate)}
+                      🗓 {t.people_lastClimb} {formatDate(person.lastAscentDate, t.dateLocale)}
                     </span>
                   )}
                 </div>

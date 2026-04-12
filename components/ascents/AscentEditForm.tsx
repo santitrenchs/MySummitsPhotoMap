@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/providers/I18nProvider";
 
 /** Extract embed src from a full <iframe> paste or return the URL as-is */
 function normalizeWikiloc(raw: string): string {
@@ -27,6 +28,7 @@ export function AscentEditForm({
   defaultWikiloc: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wikiloc, setWikiloc] = useState(defaultWikiloc);
@@ -62,7 +64,7 @@ export function AscentEditForm({
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error ?? "Failed to save");
+      setError(data.error ?? t.edit_failedToSave);
       setSaving(false);
       return;
     }
@@ -82,7 +84,7 @@ export function AscentEditForm({
     >
       {/* Date */}
       <div>
-        <label htmlFor="date" style={labelStyle}>Date *</label>
+        <label htmlFor="date" style={labelStyle}>{t.field_date} *</label>
         <input
           id="date" name="date" type="date" required
           defaultValue={defaultDate}
@@ -93,12 +95,12 @@ export function AscentEditForm({
       {/* Route */}
       <div>
         <label htmlFor="route" style={labelStyle}>
-          Route <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+          {t.field_route} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
         </label>
         <input
           id="route" name="route" type="text"
           defaultValue={defaultRoute}
-          placeholder="e.g. Norte de Salenques"
+          placeholder={t.field_routePlaceholder}
           maxLength={500} style={inputStyle}
         />
       </div>
@@ -106,12 +108,12 @@ export function AscentEditForm({
       {/* Description */}
       <div>
         <label htmlFor="description" style={labelStyle}>
-          Notes <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+          {t.field_notes} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
         </label>
         <textarea
           id="description" name="description" rows={3}
           defaultValue={defaultDescription}
-          placeholder="Conditions, weather, memories…"
+          placeholder={t.field_notesPlaceholder}
           maxLength={2000}
           style={{ ...inputStyle, resize: "vertical" }}
         />
@@ -120,19 +122,19 @@ export function AscentEditForm({
       {/* Wikiloc */}
       <div>
         <label htmlFor="wikiloc" style={labelStyle}>
-          Wikiloc route <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+          {t.field_wikiloc} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
         </label>
         <textarea
           id="wikiloc"
           rows={3}
           value={wikiloc}
           onChange={(e) => setWikiloc(e.target.value)}
-          placeholder={`Paste the iframe code from Wikiloc, e.g.\n<iframe src="https://es.wikiloc.com/wikiloc/embedv2.do?id=..." ...></iframe>`}
+          placeholder={t.field_wikilockPlaceholder}
           style={{ ...inputStyle, resize: "vertical", fontFamily: "monospace", fontSize: 12 }}
         />
         {wikiloc.trim() && (
           <p style={{ fontSize: 11, color: "#6b7280", margin: "6px 0 0" }}>
-            Embed URL: <code style={{ color: "#0369a1" }}>{normalizeWikiloc(wikiloc)}</code>
+            {t.field_wikilockPreview} <code style={{ color: "#0369a1" }}>{normalizeWikiloc(wikiloc)}</code>
           </p>
         )}
       </div>
@@ -157,7 +159,7 @@ export function AscentEditForm({
             cursor: "pointer", opacity: saving ? 0.5 : 1,
           }}
         >
-          Cancel
+          {t.cancel}
         </button>
         <button
           type="submit" disabled={saving}
@@ -167,7 +169,7 @@ export function AscentEditForm({
             cursor: "pointer", opacity: saving ? 0.6 : 1,
           }}
         >
-          {saving ? "Saving…" : "Save changes"}
+          {saving ? t.saving : t.edit_saveChanges}
         </button>
       </div>
     </form>

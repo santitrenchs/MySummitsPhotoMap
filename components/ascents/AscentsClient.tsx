@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useT } from "@/components/providers/I18nProvider";
 
 export type AscentData = {
   id: string;
@@ -105,6 +106,7 @@ export function AscentsClient({
   currentUserEmail?: string | null;
 }) {
   const router = useRouter();
+  const t = useT();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState<number | "">("");
@@ -169,10 +171,10 @@ export function AscentsClient({
   }
 
   const SORTS: { value: Sort; label: string }[] = [
-    { value: "date-desc", label: "Newest" },
-    { value: "date-asc", label: "Oldest" },
-    { value: "elev-desc", label: "Highest" },
-    { value: "name-asc", label: "A–Z" },
+    { value: "date-desc", label: t.ascents_sort_newest },
+    { value: "date-asc", label: t.ascents_sort_oldest },
+    { value: "elev-desc", label: t.ascents_sort_highest },
+    { value: "name-asc", label: t.ascents_sort_az },
   ];
 
   return (
@@ -228,18 +230,18 @@ export function AscentsClient({
             width: "100%", maxWidth: 360,
             boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
           }}>
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>Delete ascent?</h3>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>{t.ascents_delete_title}</h3>
             <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 22px", lineHeight: 1.6 }}>
-              All photos will also be deleted. This cannot be undone.
+              {t.ascents_delete_body}
             </p>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button onClick={() => setDeleteConfirm(null)}
                 style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
-                Cancel
+                {t.cancel}
               </button>
               <button onClick={() => confirmDelete(deleteConfirm)}
                 style={{ padding: "9px 18px", background: "#ef4444", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer" }}>
-                Delete
+                {t.delete}
               </button>
             </div>
           </div>
@@ -251,10 +253,10 @@ export function AscentsClient({
       {/* ── Stats pills ──────────────────────────────────────────── */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
         {[
-          { e: "🏔", v: metrics.total, l: "ascents" },
-          { e: "📏", v: `${metrics.maxElev.toLocaleString()} m`, l: "highest" },
-          { e: "⛰️", v: metrics.uniquePeaks, l: "peaks" },
-          { e: "👥", v: metrics.people, l: "people" },
+          { e: "🏔", v: metrics.total, l: t.ascents_stat_ascents },
+          { e: "📏", v: `${metrics.maxElev.toLocaleString(t.dateLocale)} m`, l: t.ascents_stat_highest },
+          { e: "⛰️", v: metrics.uniquePeaks, l: t.ascents_stat_peaks },
+          { e: "👥", v: metrics.people, l: t.ascents_stat_people },
         ].map(({ e, v, l }) => (
           <div key={l} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
@@ -306,7 +308,7 @@ export function AscentsClient({
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
         <input
           type="text"
-          placeholder="🔍  Search peaks, routes, people…"
+          placeholder={t.ascents_search}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
@@ -325,7 +327,7 @@ export function AscentsClient({
             display: "flex", alignItems: "center", gap: 6,
           }}
         >
-          ⚙️ Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          ⚙️ {t.ascents_filters}{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
         </button>
       </div>
 
@@ -340,7 +342,7 @@ export function AscentsClient({
             <select className="filter-select" value={yearFilter}
               onChange={(e) => setYearFilter(e.target.value === "" ? "" : Number(e.target.value))}
               style={{ color: yearFilter !== "" ? "#0369a1" : "#6b7280" }}>
-              <option value="">All years</option>
+              <option value="">{t.ascents_allYears}</option>
               {allYears.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           )}
@@ -348,7 +350,7 @@ export function AscentsClient({
             <select className="filter-select" value={personFilter}
               onChange={(e) => setPersonFilter(e.target.value)}
               style={{ color: personFilter ? "#0369a1" : "#6b7280" }}>
-              <option value="">All people</option>
+              <option value="">{t.ascents_allPeople}</option>
               {allPersons.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           )}
@@ -362,7 +364,7 @@ export function AscentsClient({
               fontSize: 13, fontWeight: 600, cursor: "pointer",
             }}
           >
-            📸 With photo
+            {t.ascents_withPhoto}
           </button>
           {/* Segmented sort */}
           <div style={{ marginLeft: "auto", display: "inline-flex", background: "#f3f4f6", borderRadius: 24, padding: 3, gap: 2 }}>
@@ -381,7 +383,7 @@ export function AscentsClient({
               onClick={() => { setSearch(""); setYearFilter(""); setPersonFilter(""); setWithPhotoOnly(false); }}
               style={{ background: "none", border: "none", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}
             >
-              Clear all
+              {t.ascents_clearAll}
             </button>
           )}
         </div>
@@ -390,14 +392,14 @@ export function AscentsClient({
       {filtered.length === 0 ? (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
           <p style={{ fontSize: 48, margin: "0 0 12px" }}>🔍</p>
-          <p style={{ fontSize: 15, fontWeight: 600, color: "#374151", margin: "0 0 4px" }}>No ascents found</p>
-          <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>Try adjusting your filters</p>
+          <p style={{ fontSize: 15, fontWeight: 600, color: "#374151", margin: "0 0 4px" }}>{t.ascents_noResults}</p>
+          <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>{t.ascents_noResultsSub}</p>
         </div>
       ) : (
         /* ── Feed ───────────────────────────────────────────────── */
         <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
           {filtered.map((a, i) => {
-            const dateStr = new Date(a.date).toLocaleDateString("en-GB", {
+            const dateStr = new Date(a.date).toLocaleDateString(t.dateLocale, {
               day: "numeric", month: "short", year: "numeric",
             });
             const others = a.persons.filter(p => !currentUserEmail || p.email !== currentUserEmail);
@@ -446,7 +448,7 @@ export function AscentsClient({
                           disabled={deletingId === a.id}
                           style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", fontSize: 13, color: "#ef4444", cursor: "pointer" }}
                         >
-                          {deletingId === a.id ? "Deleting…" : "Delete"}
+                          {deletingId === a.id ? t.deleting : t.delete}
                         </button>
                       </div>
                     )}
@@ -469,7 +471,7 @@ export function AscentsClient({
                     borderRadius: 20, padding: "5px 12px",
                   }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "white", letterSpacing: "0.01em" }}>
-                      {a.peak.altitudeM.toLocaleString()} m
+                      {a.peak.altitudeM.toLocaleString(t.dateLocale)} m
                     </span>
                   </div>
                   {/* Bottom gradient scrim */}

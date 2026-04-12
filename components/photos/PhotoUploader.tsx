@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ImageCropModal } from "./ImageCropModal";
 import { PhotoTagStep, type FaceDraft } from "./PhotoTagStep";
+import { useT } from "@/components/providers/I18nProvider";
 
 type Photo = { id: string; url: string };
 
@@ -16,6 +17,7 @@ export function PhotoUploader({
   existingPhotos: Photo[];
 }) {
   const router = useRouter();
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<Photo[]>(existingPhotos);
   const [uploading, setUploading] = useState(false);
@@ -61,7 +63,7 @@ export function PhotoUploader({
     const res = await fetch("/api/photos/upload", { method: "POST", body: formData });
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error ?? "Upload failed");
+      setError(data.error ?? t.photo_uploadFailed);
       setUploading(false);
       return;
     }
@@ -88,7 +90,7 @@ export function PhotoUploader({
   }
 
   async function handleDelete(photoId: string) {
-    if (!confirm("Delete this photo?")) return;
+    if (!confirm(t.photo_deleteConfirm)) return;
     await fetch(`/api/photos/${photoId}`, { method: "DELETE" });
     setPreviews((prev) => prev.filter((p) => p.id !== photoId));
     router.refresh();
@@ -142,10 +144,10 @@ export function PhotoUploader({
         />
         <p style={{ fontSize: 28, margin: "0 0 8px" }}>📷</p>
         <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", margin: 0 }}>
-          {uploading ? "Uploading…" : "Click or drag photos here"}
+          {uploading ? t.photo_uploading : t.photo_clickOrDrag}
         </p>
         <p style={{ fontSize: 12, color: "#9ca3af", margin: "4px 0 0" }}>
-          JPEG, PNG, WebP · max 10 MB each
+          {t.photo_maxSize}
         </p>
       </div>
 
