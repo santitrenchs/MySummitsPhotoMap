@@ -23,22 +23,21 @@ export async function POST(
   const { faces } = await req.json();
   if (!Array.isArray(faces)) return NextResponse.json({ error: "faces required" }, { status: 400 });
   try {
-    await saveFaceDetections(session.user.tenantId, id, faces);
-    const detections = await getFaceDetections(session.user.tenantId, id);
+    // created[] is in the same order as faces[] (insertion order from $transaction)
+    const created = await saveFaceDetections(session.user.tenantId, id, faces);
 
-    // Tag faces that have a personName (from PhotoTagStep)
+    // Tag faces in parallel — use created[i].id to guarantee alignment
     const { findOrCreatePerson } = await import("@/lib/services/person.service");
     const { setFaceTag } = await import("@/lib/services/face-detection.service");
-    for (let i = 0; i < faces.length; i++) {
-      const personName = faces[i]?.personName?.trim();
-      if (personName && detections[i]) {
+    await Promise.all(faces.map(async (face, i) => {
+      const personName = face?.personName?.trim();
+      if (personName && created[i]) {
         const person = await findOrCreatePerson(session.user.tenantId, personName);
-        await setFaceTag(session.user.tenantId, detections[i].id, person.id);
+        await setFaceTag(session.user.tenantId, created[i].id, person.id);
       }
-    }
+    }));
 
-    const withTags = await getFaceDetections(session.user.tenantId, id);
-    return NextResponse.json(withTags);
+    return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[faces POST]", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

@@ -24,10 +24,12 @@ export function PhotoUploader({
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  // Step 1: crop queue
+  // Step 1: crop queue (new uploads)
   const [cropQueue, setCropQueue] = useState<File[]>([]);
-  // Step 2: tag queue (cropped blobs waiting for face tagging)
+  // Step 2: tag queue for new uploads (cropped blobs)
   const [tagQueue, setTagQueue] = useState<Blob[]>([]);
+  // Re-tag queue for existing photos: { photoId, blob }
+  const [retagQueue, setRetagQueue] = useState<{ photoId: string; blob: Blob }[]>([]);
 
   function queueFiles(files: FileList | File[]) {
     setError(null);
@@ -96,9 +98,40 @@ export function PhotoUploader({
     router.refresh();
   }
 
+  async function openRetag(photo: Photo) {
+    // Fetch via server proxy to avoid CORS on the R2/CDN URL
+    const res = await fetch(`/api/photos/${photo.id}/blob`);
+    const blob = await res.blob();
+    setRetagQueue((q) => [...q, { photoId: photo.id, blob }]);
+  }
+
+  async function handleRetagDone(blob: Blob, faces: FaceDraft[]) {
+    const current = retagQueue[0];
+    setRetagQueue((q) => q.slice(1));
+    if (!current) return;
+    if (faces.length > 0) {
+      await fetch(`/api/photos/${current.photoId}/faces`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          faces: faces.map((f) => ({
+            boundingBox: f.boundingBox,
+            descriptor: f.descriptor,
+            personName: f.personName ?? null,
+          })),
+        }),
+      });
+    }
+    router.refresh();
+  }
+
+  function handleRetagSkip(_blob: Blob) {
+    setRetagQueue((q) => q.slice(1));
+  }
+
   return (
     <div>
-      {/* Step 1 — Crop modal */}
+      {/* Step 1 — Crop modal (new uploads) */}
       {cropQueue.length > 0 && (
         <ImageCropModal
           file={cropQueue[0]}
@@ -107,12 +140,21 @@ export function PhotoUploader({
         />
       )}
 
-      {/* Step 2 — Tag step (auto face detection) */}
+      {/* Step 2 — Tag step for new uploads */}
       {cropQueue.length === 0 && tagQueue.length > 0 && (
         <PhotoTagStep
           blob={tagQueue[0]}
           onDone={handleTagDone}
           onSkip={handleTagSkip}
+        />
+      )}
+
+      {/* Re-tag step for existing photos */}
+      {cropQueue.length === 0 && tagQueue.length === 0 && retagQueue.length > 0 && (
+        <PhotoTagStep
+          blob={retagQueue[0].blob}
+          onDone={handleRetagDone}
+          onSkip={handleRetagSkip}
         />
       )}
 
@@ -180,6 +222,22 @@ export function PhotoUploader({
                 style={{ objectFit: "cover" }}
                 sizes="140px"
               />
+              {/* Tag faces button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); openRetag(photo); }}
+                style={{
+                  position: "absolute", bottom: 4, left: 4,
+                  height: 22, borderRadius: 11,
+                  background: "rgba(0,0,0,0.55)", border: "none",
+                  color: "white", fontSize: 10, fontWeight: 700,
+                  cursor: "pointer", padding: "0 7px",
+                  display: "flex", alignItems: "center", gap: 3,
+                }}
+                aria-label="Tag faces"
+              >
+                👤
+              </button>
+              {/* Delete button */}
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(photo.id); }}
                 style={{

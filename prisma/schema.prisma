@@ -39,6 +39,7 @@ model User {
   passwordHash String
   name         String
   username     String?  @unique
+  bio          String?
   language     String   @default("en")
 
   // Privacy

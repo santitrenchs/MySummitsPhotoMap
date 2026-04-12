@@ -109,4 +109,13 @@ export type Dict = {
   // Photo uploader
   photo_clickOrDrag: string; photo_uploading: string;
   photo_maxSize: string; photo_uploadFailed: string; photo_deleteConfirm: string;
+
+  // Profile
+  profile_editProfile: string;
+  profile_bio: string;
+  profile_bioPlaceholder: string;
+  profile_tab_peaks: string;
+  profile_stat_photos: string;
+  profile_timesClimbed: string;
+  profile_noAscents: string;
 };

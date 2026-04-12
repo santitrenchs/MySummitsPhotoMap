@@ -338,11 +338,14 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
 
               {/* Nav items */}
               <div className="dropdown-section">
-                <span className="dropdown-item muted">
+                <Link
+                  href="/profile"
+                  className="dropdown-item"
+                  onClick={() => setDropdownOpen(false)}
+                >
                   <ProfileIcon />
                   {t.nav_profile}
-                  <span className="coming-soon">{t.nav_comingSoon}</span>
-                </span>
+                </Link>
                 <Link
                   href="/settings"
                   className="dropdown-item"
@@ -399,7 +402,7 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
             <span className="tab-label">{t.nav_people}</span>
           </Link>
 
-          <MobileProfileTab ini={ini} userName={userName} userEmail={userEmail} />
+          <MobileProfileTab ini={ini} />
         </div>
       </nav>
     </>
@@ -408,28 +411,14 @@ export function NavBar({ userName, userEmail }: NavBarProps) {
 
 // ── Mobile profile tab ─────────────────────────────────────────────────────────
 
-function MobileProfileTab({ ini, userName, userEmail }: { ini: string; userName: string | null; userEmail: string | null }) {
+function MobileProfileTab({ ini }: { ini: string }) {
   const t = useT();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handle(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, [open]);
+  const pathname = usePathname();
 
   return (
-    <div
-      ref={ref}
-      className="tab-item"
-      style={{ position: "relative", cursor: "pointer" }}
-      onClick={() => setOpen((o) => !o)}
-      role="button"
-      aria-label="Profile"
+    <Link
+      href="/profile"
+      className={`tab-item${pathname.startsWith("/profile") ? " active" : ""}`}
     >
       <div className="tab-icon-wrap">
         <div style={{
@@ -442,72 +431,8 @@ function MobileProfileTab({ ini, userName, userEmail }: { ini: string; userName:
           {ini}
         </div>
       </div>
-      <span className="tab-label" style={{ color: "inherit" }}>{t.nav_profile}</span>
-
-      {open && (
-        <div style={{
-          position: "absolute",
-          bottom: "calc(100% + 10px)",
-          right: -4,
-          background: "white",
-          border: "1px solid rgba(0,0,0,0.08)",
-          borderRadius: 14,
-          boxShadow: "0 -2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.12)",
-          minWidth: 196,
-          overflow: "hidden",
-          zIndex: 200,
-          animation: "dropIn 0.15s cubic-bezier(0.34,1.56,0.64,1)",
-        }}>
-          <div style={{ padding: "14px 16px 12px", borderBottom: "1px solid #f3f4f6" }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: "0 0 2px" }}>{userName ?? "User"}</p>
-            {userEmail && <p style={{ fontSize: 11.5, color: "#9ca3af", margin: 0 }}>{userEmail}</p>}
-          </div>
-          <div style={{ padding: "6px 0", borderBottom: "1px solid #f3f4f6" }}>
-            <span style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "9px 16px",
-              fontSize: 13, fontWeight: 500, color: "#c4c9d4",
-              cursor: "default",
-            }}>
-              <ProfileIcon />
-              {t.nav_profile}
-              <span style={{
-                fontSize: 9.5, fontWeight: 600, color: "#d1d5db",
-                textTransform: "uppercase", letterSpacing: "0.04em",
-                marginLeft: "auto", padding: "2px 6px",
-                border: "1px solid #e5e7eb", borderRadius: 20,
-              }}>{t.nav_comingSoon}</span>
-            </span>
-            <Link
-              href="/settings"
-              style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "9px 16px",
-                fontSize: 13, fontWeight: 500, color: "#374151",
-                textDecoration: "none",
-              }}
-              onClick={() => setOpen(false)}
-            >
-              <SettingsIcon />
-              {t.nav_settings}
-            </Link>
-          </div>
-          <div style={{ padding: "6px 0" }}>
-            <button
-              style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "9px 16px",
-                fontSize: 13, fontWeight: 500, color: "#ef4444",
-                background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer",
-              }}
-              onClick={() => signOut({ callbackUrl: "/login" })}
-            >
-              <SignOutIcon /> {t.nav_signOut}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      <span className="tab-label">{t.nav_profile}</span>
+    </Link>
   );
 }
 

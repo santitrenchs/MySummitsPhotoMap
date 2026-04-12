@@ -11,7 +11,8 @@ export async function saveFaceDetections(
 ) {
   const db = await getTenantConnection(tenantId);
   await db.faceDetection.deleteMany({ where: { tenantId, photoId } });
-  await db.$transaction(
+  // Return created records in insertion order (same order as input `faces`)
+  return db.$transaction(
     faces.map((f) =>
       db.faceDetection.create({
         data: {

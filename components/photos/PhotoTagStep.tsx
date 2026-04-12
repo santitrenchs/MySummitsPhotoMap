@@ -179,7 +179,16 @@ export function PhotoTagStep({
   const filteredPersons = search.trim()
     ? persons.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
     : persons;
-  const taggedCount = faces.filter((f) => f.personName).length;
+  // Count confirmed tags + pending suggestions (will be auto-confirmed on continue)
+  const taggedCount = faces.filter((f) => f.personName || f.suggestion).length;
+
+  // Auto-confirm any pending suggestions before handing off
+  function handleDone() {
+    onDone(blob, faces.map((f) => ({
+      ...f,
+      personName: f.personName ?? f.suggestion ?? null,
+    })));
+  }
 
   return (
     <>
@@ -239,7 +248,7 @@ export function PhotoTagStep({
             {phase === "detecting" ? t.tag_detecting : faces.length === 0 ? t.tag_tagPeople : i(t.tag_tagPeopleFound, { n: faces.length })}
           </span>
           <button
-            onClick={() => onDone(blob, faces)}
+            onClick={handleDone}
             style={{
               fontSize: 14, fontWeight: 700,
               color: phase === "ready" ? "#0ea5e9" : "rgba(255,255,255,0.35)",
@@ -389,7 +398,7 @@ export function PhotoTagStep({
           flexShrink: 0,
         }}>
           <button
-            onClick={() => onDone(blob, faces)}
+            onClick={handleDone}
             disabled={phase === "detecting"}
             style={{
               width: "100%",

@@ -116,4 +116,12 @@ export const de: Dict = {
   photo_clickOrDrag: "Fotos hier klicken oder ablegen", photo_uploading: "Hochladen…",
   photo_maxSize: "JPEG, PNG, WebP · max. 10 MB pro Bild",
   photo_uploadFailed: "Upload fehlgeschlagen", photo_deleteConfirm: "Dieses Foto löschen?",
+
+  profile_editProfile: "Profil bearbeiten",
+  profile_bio: "Bio",
+  profile_bioPlaceholder: "Kurze Bio über deine Abenteuer…",
+  profile_tab_peaks: "Gipfel",
+  profile_stat_photos: "Fotos",
+  profile_timesClimbed: "×{n}",
+  profile_noAscents: "Noch keine Besteigungen",
 };

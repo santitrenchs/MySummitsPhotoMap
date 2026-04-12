@@ -30,7 +30,7 @@ export async function PATCH(req: Request) {
   const body = await req.json();
 
   const allowed = [
-    "name", "username", "language",
+    "name", "username", "bio", "language",
     "profilePublic", "reviewTagsBeforePost", "allowOthersToTag",
     "emailNotifications", "activityNotifications",
     "autoDetectFaces", "autoSuggestPeople", "reviewFacesBeforeSave",
