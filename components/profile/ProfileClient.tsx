@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
@@ -373,6 +373,8 @@ function EditProfileModal({
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.username ?? "");
   const [bio, setBio] = useState(user.bio ?? "");
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -384,7 +386,6 @@ function EditProfileModal({
   const handleAvatarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Reset input so the same file can be re-selected
     e.target.value = "";
     setCropFile(file);
   }, []);
@@ -393,18 +394,26 @@ function EditProfileModal({
     setCropFile(null);
     setUploadingAvatar(true);
     setError(null);
-    const fd = new FormData();
-    fd.append("file", new File([blob], "avatar.jpg", { type: "image/jpeg" }));
-    const res = await fetch("/api/settings/avatar", { method: "POST", body: fd });
-    setUploadingAvatar(false);
-    if (!res.ok) {
-      const data = await res.json();
-      setError(typeof data.error === "string" ? data.error : t.settings_failedToSave);
-      return;
+    try {
+      const fd = new FormData();
+      fd.append("file", new File([blob], "avatar.jpg", { type: "image/jpeg" }));
+      const res = await fetch("/api/settings/avatar", { method: "POST", body: fd });
+      let data: Record<string, unknown> = {};
+      try { data = await res.json(); } catch { /* ignore parse error */ }
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : t.settings_failedToSave);
+        return;
+      }
+      const newUrl = (data.avatarUrl as string) + `?v=${Date.now()}`;
+      setAvatarUrl(newUrl);
+      // Refresh the NavBar immediately after avatar is saved
+      startTransition(() => router.refresh());
+    } catch {
+      setError(t.settings_failedToSave);
+    } finally {
+      setUploadingAvatar(false);
     }
-    const { avatarUrl: newUrl } = await res.json();
-    setAvatarUrl(newUrl);
-  }, [t]);
+  }, [t, router, startTransition]);
 
   async function handleSave() {
     setSaving(true);

@@ -28,14 +28,16 @@ export async function POST(req: Request) {
   const userId = session.user.id;
   const key = `avatars/${userId}.jpg`;
 
-  // Delete old avatar from R2 if it exists (same key, so overwrite is fine — but explicit is cleaner)
-  const existing = await prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } });
-  if (existing?.avatarUrl) {
-    try { await deleteFromR2(key); } catch { /* ignore if missing */ }
+  try {
+    // Overwrite any existing avatar at the same key
+    try { await deleteFromR2(key); } catch { /* key might not exist yet */ }
+
+    const avatarUrl = await uploadToR2({ key, body: buffer, contentType: file.type });
+    await prisma.user.update({ where: { id: userId }, data: { avatarUrl } });
+
+    return NextResponse.json({ avatarUrl });
+  } catch (err) {
+    console.error("[avatar upload]", err);
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
-
-  const avatarUrl = await uploadToR2({ key, body: buffer, contentType: file.type });
-  await prisma.user.update({ where: { id: userId }, data: { avatarUrl } });
-
-  return NextResponse.json({ avatarUrl });
 }
