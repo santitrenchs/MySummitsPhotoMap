@@ -32,16 +32,8 @@ function AdminLoginForm() {
       return;
     }
 
-    // Fetch updated session to check isAdmin
-    const res = await fetch("/api/auth/session");
-    const session = await res.json();
-
-    if (!session?.user?.isAdmin) {
-      setError("No tienes permisos de administrador.");
-      setLoading(false);
-      return;
-    }
-
+    // Let the server-side layout verify isAdmin — redirects back here with
+    // ?error=unauthorized if the user doesn't have admin rights
     router.push("/admin/users");
     router.refresh();
   }
