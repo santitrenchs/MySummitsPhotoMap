@@ -498,7 +498,7 @@ const panelStyle: React.CSSProperties = isMobile
             style={{
               width: "100%", padding: "8px 30px 8px 32px",
               borderRadius: 10, border: "none",
-              fontSize: 14, fontWeight: 500, color: "#111827",
+              fontSize: 16, fontWeight: 500, color: "#111827",
               background: "#f3f4f6",
               outline: "none", boxSizing: "border-box",
             }}
