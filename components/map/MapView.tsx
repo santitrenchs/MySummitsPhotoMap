@@ -630,7 +630,7 @@ const panelStyle: React.CSSProperties = isMobile
 
       {/* ── Zoom controls ── bottom right ─────────────────────────────── */}
       <div style={{
-        position: "absolute", bottom: 80, right: 12, zIndex: 10,
+        position: "absolute", bottom: 100, right: 12, zIndex: 10,
         display: "flex", flexDirection: "column", gap: 1,
       }}>
         {([{ label: "+", fn: () => mapRef.current?.zoomIn() }, { label: "−", fn: () => mapRef.current?.zoomOut() }] as const).map(({ label, fn }) => (
@@ -652,7 +652,7 @@ const panelStyle: React.CSSProperties = isMobile
 
       {/* ── Legend ── bottom right ─────────────────────────────────────── */}
       <div style={{
-        position: "absolute", bottom: 36, right: 12, zIndex: 10,
+        position: "absolute", bottom: 28, right: 12, zIndex: 10,
         background: "rgba(255,255,255,0.92)", borderRadius: 10,
         padding: "8px 12px", fontSize: 11, color: "#6b7280",
         pointerEvents: "none", display: "flex", flexDirection: "column", gap: 5,
