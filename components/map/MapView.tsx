@@ -439,13 +439,7 @@ export default function MapView({
 
   // ── Derived counts ────────────────────────────────────────────────────────
   const climbedCount = ascentData.length;
-  const FILTERS: { value: Filter; label: string }[] = [
-    { value: "all", label: `${t.map_all}  ${peaks.length}` },
-    { value: "climbed", label: `✓ ${t.map_climbed}  ${climbedCount}` },
-    { value: "not-climbed", label: `○ ${t.map_notYet}  ${peaks.length - climbedCount}` },
-  ];
-
-  const panelStyle: React.CSSProperties = isMobile
+const panelStyle: React.CSSProperties = isMobile
     ? { bottom: 0, left: 0, right: 0, borderRadius: "20px 20px 0 0", maxHeight: "70vh" }
     : { top: 12, right: 12, width: 300, maxHeight: "calc(100% - 80px)", borderRadius: 18 };
 
@@ -476,15 +470,22 @@ export default function MapView({
       {/* Map canvas */}
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
-      {/* ── Search bar ── top center ────────────────────────────────────── */}
+      {/* ── Unified search + filter panel ── top ──────────────────────── */}
       <div style={{
         position: "absolute", top: 12,
-        left: "50%", transform: "translateX(-50%)",
-        zIndex: 20, width: isMobile ? "calc(100% - 100px)" : 280,
+        left: 12, right: 12,
+        ...(isMobile ? {} : { right: "auto", width: 380 }),
+        zIndex: 20,
+        background: "rgba(255,255,255,0.97)",
+        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        borderRadius: 16,
+        boxShadow: "0 2px 16px rgba(0,0,0,0.2)",
+        overflow: "hidden",
       }}>
-        <div style={{ position: "relative" }}>
+        {/* Row 1: Search input */}
+        <div style={{ position: "relative", padding: "10px 12px 8px" }}>
           <span style={{
-            position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+            position: "absolute", left: 22, top: "50%", transform: "translateY(-50%)",
             fontSize: 14, pointerEvents: "none", color: "#9ca3af",
           }}>🔍</span>
           <input
@@ -495,11 +496,10 @@ export default function MapView({
             onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
             placeholder="Buscar cima…"
             style={{
-              width: "100%", padding: "8px 12px 8px 32px",
-              borderRadius: 24, border: "none",
-              fontSize: 13, fontWeight: 500, color: "#111827",
-              background: "rgba(255,255,255,0.97)",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+              width: "100%", padding: "8px 30px 8px 32px",
+              borderRadius: 10, border: "none",
+              fontSize: 14, fontWeight: 500, color: "#111827",
+              background: "#f3f4f6",
               outline: "none", boxSizing: "border-box",
             }}
           />
@@ -507,7 +507,7 @@ export default function MapView({
             <button
               onMouseDown={() => setSearchQuery("")}
               style={{
-                position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                position: "absolute", right: 18, top: "50%", transform: "translateY(-50%)",
                 background: "none", border: "none", cursor: "pointer",
                 color: "#9ca3af", fontSize: 14, lineHeight: 1, padding: 2,
               }}
@@ -515,13 +515,67 @@ export default function MapView({
           )}
         </div>
 
-        {/* Dropdown results */}
+        {/* Row 2: Filter chips + toggles */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 5,
+          padding: "0 10px 10px",
+          borderTop: "1px solid #f3f4f6",
+          paddingTop: 8,
+        }}>
+          <div style={{ display: "flex", gap: 5, flex: 1, minWidth: 0, flexWrap: "nowrap", overflow: "hidden" }}>
+            {[
+              { value: "all" as Filter,         label: `${t.map_all} ${peaks.length}` },
+              { value: "climbed" as Filter,      label: `✓ ${climbedCount}` },
+              { value: "not-climbed" as Filter,  label: `○ ${peaks.length - climbedCount}` },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                className="filter-chip"
+                onClick={() => setFilter(value)}
+                style={{
+                  padding: "5px 10px", borderRadius: 20, border: "none",
+                  fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  background: filter === value ? "#111827" : "#f3f4f6",
+                  color: filter === value ? "white" : "#374151",
+                  whiteSpace: "nowrap", flexShrink: 0,
+                }}
+              >{label}</button>
+            ))}
+          </div>
+
+          <div style={{ width: 1, height: 18, background: "#e5e7eb", flexShrink: 0 }} />
+
+          <button
+            className="filter-chip"
+            onClick={() => setHillshade((v) => !v)}
+            title={t.map_relief}
+            style={{
+              padding: "5px 9px", borderRadius: 20, border: "none",
+              fontSize: 13, fontWeight: 700, cursor: "pointer",
+              background: hillshade ? "#0369a1" : "#f3f4f6",
+              color: hillshade ? "white" : "#374151",
+              flexShrink: 0,
+            }}
+          >⛰️</button>
+
+          <button
+            className="filter-chip"
+            onClick={() => setTerrain3d((v) => !v)}
+            style={{
+              padding: "5px 9px", borderRadius: 20, border: "none",
+              fontSize: 11, fontWeight: 800, letterSpacing: "0.02em", cursor: "pointer",
+              background: terrain3d ? "#7c3aed" : "#f3f4f6",
+              color: terrain3d ? "white" : "#374151",
+              flexShrink: 0,
+            }}
+          >3D</button>
+        </div>
+
+        {/* Search results (inline, extends panel) */}
         {searchOpen && searchResults.length > 0 && (
           <div style={{
-            position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
-            background: "white", borderRadius: 14,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
-            overflow: "hidden",
+            borderTop: "1px solid #f3f4f6",
+            maxHeight: 260, overflowY: "auto",
             animation: "searchDrop 0.15s ease both",
           }}>
             {searchResults.map((peak) => {
@@ -573,51 +627,6 @@ export default function MapView({
         </div>
       )}
 
-      {/* ── Filter chips + Relief + 3D ── top left ──────────────────────── */}
-      <div style={{
-        position: "absolute", top: 12, left: 12, zIndex: 10,
-        display: "flex", gap: 6, flexWrap: "wrap",
-      }}>
-        {FILTERS.map(({ value, label }) => (
-          <button
-            key={value}
-            className="filter-chip"
-            onClick={() => setFilter(value)}
-            style={{
-              padding: "7px 14px", borderRadius: 24, border: "none",
-              fontSize: 12, fontWeight: 600, cursor: "pointer",
-              background: filter === value ? "#111827" : "rgba(255,255,255,0.92)",
-              color: filter === value ? "white" : "#374151",
-              boxShadow: "0 1px 8px rgba(0,0,0,0.15)",
-              backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-            }}
-          >{label}</button>
-        ))}
-        <button
-          className="filter-chip"
-          onClick={() => setHillshade((v) => !v)}
-          style={{
-            padding: "7px 14px", borderRadius: 24, border: "none",
-            fontSize: 12, fontWeight: 600, cursor: "pointer",
-            background: hillshade ? "#0369a1" : "rgba(255,255,255,0.92)",
-            color: hillshade ? "white" : "#374151",
-            boxShadow: "0 1px 8px rgba(0,0,0,0.15)",
-            backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-          }}
-        >{t.map_relief}</button>
-        <button
-          className="filter-chip"
-          onClick={() => setTerrain3d((v) => !v)}
-          style={{
-            padding: "7px 14px", borderRadius: 24, border: "none",
-            fontSize: 12, fontWeight: 600, cursor: "pointer",
-            background: terrain3d ? "#7c3aed" : "rgba(255,255,255,0.92)",
-            color: terrain3d ? "white" : "#374151",
-            boxShadow: "0 1px 8px rgba(0,0,0,0.15)",
-            backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-          }}
-        >3D</button>
-      </div>
 
       {/* ── Zoom controls ── bottom right ─────────────────────────────── */}
       <div style={{
