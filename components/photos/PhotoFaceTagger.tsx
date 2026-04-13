@@ -103,8 +103,7 @@ export function PhotoFaceTagger({
       });
       const savedData = await res.json();
       if (!res.ok) throw new Error(savedData.error ?? `HTTP ${res.status}`);
-      const saved: Detection[] = savedData;
-      setDetections(saved);
+      setDetections(Array.isArray(savedData) ? savedData : []);
 
       // Match against known persons
       if (faces.length > 0) {

@@ -42,8 +42,6 @@ export function AscentsClient({
   const [personFilter, setPersonFilter] = useState("");
   const [withPhotoOnly, setWithPhotoOnly] = useState(false);
   const [sort, setSort] = useState<Sort>("date-desc");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Peak filter: seeded from ?peak=<peakId> URL param (e.g. from map panel)
@@ -89,14 +87,6 @@ export function AscentsClient({
     withPhotoOnly,
   ].filter(Boolean).length;
 
-  async function confirmDelete(id: string) {
-    setDeletingId(id);
-    setDeleteConfirm(null);
-    await fetch(`/api/ascents/${id}`, { method: "DELETE" });
-    setDeletingId(null);
-    router.refresh();
-  }
-
   const SORTS: { value: Sort; label: string }[] = [
     { value: "date-desc", label: t.ascents_sort_newest },
     { value: "date-asc", label: t.ascents_sort_oldest },
@@ -117,35 +107,6 @@ export function AscentsClient({
         .filter-select:focus { border-color: #93c5fd; }
       `}</style>
 
-      {/* ── Delete modal ─────────────────────────────────────────── */}
-      {deleteConfirm && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 50,
-          background: "rgba(0,0,0,0.5)",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
-        }}>
-          <div style={{
-            background: "white", borderRadius: 18, padding: 28,
-            width: "100%", maxWidth: 360,
-            boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
-          }}>
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>{t.ascents_delete_title}</h3>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 22px", lineHeight: 1.6 }}>
-              {t.ascents_delete_body}
-            </p>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => setDeleteConfirm(null)}
-                style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
-                {t.cancel}
-              </button>
-              <button onClick={() => confirmDelete(deleteConfirm)}
-                style={{ padding: "9px 18px", background: "#ef4444", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer" }}>
-                {t.delete}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
 
 
@@ -314,8 +275,6 @@ export function AscentsClient({
                   persons: others,
                   user: { name: currentUserName ?? "" },
                 }}
-                onDelete={(id) => setDeleteConfirm(id)}
-                isDeleting={deletingId === a.id}
               />
             );
           })}

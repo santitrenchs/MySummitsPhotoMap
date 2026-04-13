@@ -159,6 +159,7 @@ const PEAKS = [
   { name: "Puig Alt de Ger",             latitude: 42.3317, longitude:  1.9467, altitudeM: 2455, mountainRange: "Cerdanya",               country: "ES" },
   { name: "Puig de l'Orri",              latitude: 42.2900, longitude:  1.9225, altitudeM: 2450, mountainRange: "Cerdanya",               country: "ES" },
   { name: "Puig de Coll Roig",           latitude: 42.2808, longitude:  1.8625, altitudeM: 2420, mountainRange: "Cerdanya",               country: "ES" },
+  { name: "Moixeró",                     latitude: 42.2997, longitude:  1.8219, altitudeM: 2083, mountainRange: "Cerdanya",               country: "ES" },
 ];
 
 async function main() {

@@ -44,6 +44,12 @@ export type Dict = {
   // Ascent detail
   detail_with: string; detail_photos: string; detail_addPhotos: string;
   detail_location: string; detail_routeWikiloc: string; detail_openWikiloc: string;
+  detail_editPhoto: string; detail_tagPeople: string;
+  detail_viewOnMap: string; detail_addPhoto: string;
+  detail_addWikiloc: string; detail_and: string;
+
+  // Date picker
+  date_today: string; date_selectYear: string;
 
   // Emotional text (ascent detail page)
   emotional_solo: string;  // "You climbed {peak} on {date}."

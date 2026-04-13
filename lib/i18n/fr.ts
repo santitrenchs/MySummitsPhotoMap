@@ -42,6 +42,10 @@ export const fr: Dict = {
   detail_with: "Avec", detail_photos: "Photos · {n}", detail_addPhotos: "Ajouter des photos",
   detail_location: "Localisation", detail_routeWikiloc: "Itinéraire · Wikiloc",
   detail_openWikiloc: "Ouvrir dans Wikiloc ↗",
+  detail_editPhoto: "Modifier photo", detail_tagPeople: "Étiqueter",
+  detail_viewOnMap: "🗺  Voir sur la carte", detail_addPhoto: "Ajouter photo",
+  detail_addWikiloc: "Ajouter itinéraire Wikiloc", detail_and: "et",
+  date_today: "Aujourd'hui", date_selectYear: "Choisir l'année",
 
   emotional_solo: "Tu as gravi {peak} le {date}.",
   emotional_one: "Tu as gravi {peak} avec {p1} le {date}.",
@@ -191,5 +195,5 @@ export const fr: Dict = {
   home_levelNext: "{current}/{next} sommets pour le niveau suivant",
   home_maxLevel: "Niveau max ! 🏆",
   home_inviteFriends: "Inviter des amis",
-  home_motivationDefend: "{name} n'est qu'à {n} sommet(s) — continue à grimper !",
+  home_motivationDefend: "{name} n'est qu'à {n} sommet{n,plural,=1{}other{s}} — continue à grimper !",
 };

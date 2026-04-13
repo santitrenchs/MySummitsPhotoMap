@@ -6,7 +6,6 @@ import { useT } from "@/components/providers/I18nProvider";
 const RATIOS = [
   { label: "1:1", value: 1 },
   { label: "4:5", value: 4 / 5 },
-  { label: "16:9", value: 16 / 9 },
 ];
 
 // Output resolution (Instagram standard)

@@ -179,7 +179,7 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
           )}
 
           {/* Top-right: ⋮ menu (profile) or nothing */}
-          {isProfile && onDelete && (
+          {isProfile && (
             <div
               style={{ position: "absolute", top: 6, right: 6, zIndex: 45 }}
               onClick={(e) => e.stopPropagation()}
@@ -201,15 +201,14 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
                   boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
                 }} onClick={(e) => e.stopPropagation()}>
                   <button
-                    onClick={() => { setMenuOpen(false); onDelete(ascent.id); }}
-                    disabled={isDeleting}
+                    onClick={() => { setMenuOpen(false); router.push(`/ascents/${ascent.id}`); }}
                     style={{
                       display: "block", width: "100%", padding: "10px 16px",
                       textAlign: "left", background: "none", border: "none",
-                      fontSize: 13, color: "#ef4444", cursor: "pointer",
+                      fontSize: 13, color: "#111827", cursor: "pointer",
                     }}
                   >
-                    {isDeleting ? t.deleting : t.delete}
+                    {t.edit}
                   </button>
                 </div>
               )}
@@ -253,39 +252,30 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
         {/* ── Below image ─────────────────────────────────────────────── */}
         <div style={{ padding: "10px 14px 12px" }} onClick={(e) => e.stopPropagation()}>
 
-          {/* Persons chips */}
-          {ascent.persons.length > 0 && (
-            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 6 }}>
-              {ascent.persons.map((p) => (
-                <span key={p.id} style={{
-                  display: "inline-flex", alignItems: "center", gap: 4,
-                  fontSize: 12, fontWeight: 600, color: "#374151",
-                  background: "#f3f4f6", border: "1px solid #e5e7eb",
-                  borderRadius: 20, padding: "3px 10px",
-                }}>
-                  <span style={{
-                    width: 15, height: 15, borderRadius: "50%",
-                    background: "#dbeafe", color: "#0369a1",
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 8, fontWeight: 700, flexShrink: 0,
-                  }}>
-                    {p.name[0]?.toUpperCase()}
+          {/* Line 1: bold username + "amb" companions (same format as detail page) */}
+          <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.5, margin: 0 }}>
+            <span style={{ fontWeight: 700 }}>{ascent.user.name}</span>
+            {ascent.persons.length > 0 && (
+              <span style={{ fontWeight: 400 }}>
+                {" "}{t.detail_with.toLowerCase()}{" "}
+                {ascent.persons.map((p, i) => (
+                  <span key={p.id}>
+                    {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
+                    <span style={{ fontWeight: 600 }}>{p.name}</span>
                   </span>
-                  {p.name}
-                </span>
-              ))}
-            </div>
-          )}
+                ))}
+              </span>
+            )}
+          </p>
 
-          {/* Instagram-style caption: bold owner name + description inline */}
+          {/* Line 2: description */}
           {ascent.description && (
             <p style={{
-              fontSize: 13, color: "#111827", margin: 0, lineHeight: 1.5,
+              fontSize: 13, color: "#374151", margin: "4px 0 0", lineHeight: 1.5,
               display: "-webkit-box", WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical", overflow: "hidden",
             }}>
-              <span style={{ fontWeight: 700 }}>{ascent.user.name || ascent.peak.name}</span>
-              {" "}{ascent.description}
+              {ascent.description}
             </p>
           )}
         </div>

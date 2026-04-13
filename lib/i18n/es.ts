@@ -42,6 +42,10 @@ export const es: Dict = {
   detail_with: "Con", detail_photos: "Fotos · {n}", detail_addPhotos: "Añadir fotos",
   detail_location: "Ubicación", detail_routeWikiloc: "Ruta · Wikiloc",
   detail_openWikiloc: "Abrir en Wikiloc ↗",
+  detail_editPhoto: "Editar foto", detail_tagPeople: "Etiquetar",
+  detail_viewOnMap: "🗺  Ver en el mapa", detail_addPhoto: "Añadir foto",
+  detail_addWikiloc: "Añadir ruta Wikiloc", detail_and: "y",
+  date_today: "Hoy", date_selectYear: "Selecciona el año",
 
   emotional_solo: "Subiste {peak} el {date}.",
   emotional_one: "Subiste {peak} con {p1} el {date}.",
@@ -191,5 +195,5 @@ export const es: Dict = {
   home_levelNext: "{current}/{next} cimas para el siguiente nivel",
   home_maxLevel: "¡Nivel máximo! 🏆",
   home_inviteFriends: "Invitar amigos",
-  home_motivationDefend: "{name} solo está a {n} cima(s) — ¡sigue escalando!",
+  home_motivationDefend: "{name} solo está a {n} cima{n,plural,=1{}other{s}} — ¡sigue escalando!",
 };

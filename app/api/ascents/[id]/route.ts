@@ -17,15 +17,13 @@ export async function PATCH(
   const existing = await db.ascent.findFirst({ where: { id, tenantId: session.user.tenantId } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const updated = await db.ascent.update({
-    where: { id },
-    data: {
-      route: body.route ?? null,
-      description: body.description ?? null,
-      wikiloc: body.wikiloc ?? null,
-      date: body.date ? new Date(body.date) : undefined,
-    },
-  });
+  const data: Record<string, unknown> = {};
+  if ("route" in body)       data.route       = body.route ?? null;
+  if ("description" in body) data.description = body.description ?? null;
+  if ("wikiloc" in body)     data.wikiloc     = body.wikiloc ?? null;
+  if ("date" in body)        data.date        = body.date ? new Date(body.date) : null;
+
+  const updated = await db.ascent.update({ where: { id }, data });
 
   return NextResponse.json(updated);
 }

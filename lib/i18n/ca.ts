@@ -42,6 +42,10 @@ export const ca: Dict = {
   detail_with: "Amb", detail_photos: "Fotos · {n}", detail_addPhotos: "Afegir fotos",
   detail_location: "Ubicació", detail_routeWikiloc: "Ruta · Wikiloc",
   detail_openWikiloc: "Obrir a Wikiloc ↗",
+  detail_editPhoto: "Editar foto", detail_tagPeople: "Etiquetar",
+  detail_viewOnMap: "🗺  Veure al mapa", detail_addPhoto: "Afegir foto",
+  detail_addWikiloc: "Afegir ruta Wikiloc", detail_and: "i",
+  date_today: "Avui", date_selectYear: "Selecciona l'any",
 
   emotional_solo: "Vas pujar {peak} el {date}.",
   emotional_one: "Vas pujar {peak} amb {p1} el {date}.",
@@ -191,5 +195,5 @@ export const ca: Dict = {
   home_levelNext: "{current}/{next} cims per al proper nivell",
   home_maxLevel: "Nivell màxim! 🏆",
   home_inviteFriends: "Convidar amics",
-  home_motivationDefend: "{name} només està a {n} cim(s) — continua escalant!",
+  home_motivationDefend: "{name} només està a {n} cim{n,plural,=1{}other{s}} — continua escalant!",
 };
