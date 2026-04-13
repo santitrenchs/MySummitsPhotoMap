@@ -119,7 +119,7 @@ export function PhotoFaceTagger({
           );
           const matcher = new faceapi.FaceMatcher(labeled, 0.6);
           const newSuggestions = new Map<string, string>();
-          saved.forEach((det, i) => {
+          (Array.isArray(savedData) ? savedData : []).forEach((det, i) => {
             if (!faces[i]) return;
             const desc = new Float32Array(faces[i].descriptor);
             const match = matcher.findBestMatch(desc);
