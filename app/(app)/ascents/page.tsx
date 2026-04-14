@@ -20,7 +20,7 @@ export default async function AscentsPage() {
     for (const photo of a.photos) {
       for (const fd of photo.faceDetections) {
         for (const tag of fd.faceTags) {
-          personMap.set(tag.person.id, tag.person);
+          personMap.set(tag.person.id, { id: tag.person.id, name: tag.person.name, email: tag.person.email ?? null });
         }
       }
     }

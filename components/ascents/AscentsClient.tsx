@@ -258,7 +258,10 @@ export function AscentsClient({
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
           {filtered.map((a, i) => {
-            const others = a.persons.filter(p => !currentUserEmail || p.email !== currentUserEmail);
+            const others = a.persons.filter(p =>
+              (currentUserEmail ? p.email !== currentUserEmail : true) &&
+              (currentUserName ? p.name !== currentUserName : true)
+            );
             return (
               <AscentCard
                 key={a.id}

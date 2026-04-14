@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { HomeData } from "@/lib/services/home.service";
 import type { Dict } from "@/lib/i18n/types";
 import { i } from "@/lib/i18n";
@@ -132,7 +133,14 @@ export function HomeClient({ data, locale, t }: {
   t: Dict;
 }) {
   const router = useRouter();
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const { user, stats, leaderboard, userRank, nextRankName, nextRankGap, recentAscents, friendsActivity } = data;
+
+  function navigate(href: string) {
+    if (navigatingTo) return;
+    setNavigatingTo(href);
+    router.push(href.replace("#hero", ""));
+  }
   const badges = computeBadges(stats);
   const levelInfo = getLevelInfo(stats.totalAscents);
   const firstName = user.name.split(" ")[0];
@@ -174,6 +182,7 @@ export function HomeClient({ data, locale, t }: {
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 0 64px" }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── Hero header ─────────────────────────────────────────────────── */}
       <div style={{
@@ -231,14 +240,16 @@ export function HomeClient({ data, locale, t }: {
       {/* ── Summit hero card ─────────────────────────────────────────────── */}
       <div style={{ padding: "16px 16px 0" }}>
         <div
-          onClick={() => router.push("/ascents")}
+          onClick={() => navigate("/ascents#hero")}
           style={{
             background: "linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 60%,#2563eb 100%)",
             borderRadius: 20, padding: "20px 24px",
-            cursor: "pointer",
+            cursor: navigatingTo === "/ascents#hero" ? "wait" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "space-between",
             position: "relative", overflow: "hidden",
             boxShadow: "0 4px 20px rgba(29,78,216,0.35)",
+            opacity: navigatingTo === "/ascents#hero" ? 0.85 : 1,
+            transition: "opacity 0.15s",
           }}
         >
           <div style={{ position: "absolute", top: -30, right: -20, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
@@ -250,7 +261,11 @@ export function HomeClient({ data, locale, t }: {
               {stats.totalAscents.toLocaleString(locale)}
             </div>
           </div>
-          <div style={{ fontSize: 56, opacity: 0.85, position: "relative" }}>🏔️</div>
+          {navigatingTo === "/ascents#hero" ? (
+            <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+          ) : (
+            <div style={{ fontSize: 56, opacity: 0.85, position: "relative" }}>🏔️</div>
+          )}
         </div>
       </div>
 
@@ -260,14 +275,20 @@ export function HomeClient({ data, locale, t }: {
           {SECONDARY_STATS.map(({ emoji, value, label, href }) => (
             <div
               key={label}
-              onClick={() => router.push(href)}
+              onClick={() => navigate(href)}
               style={{
                 background: "white", border: "1px solid #e5e7eb", borderRadius: 14,
-                padding: "13px 10px", cursor: "pointer",
+                padding: "13px 10px", cursor: navigatingTo === href ? "wait" : "pointer",
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                opacity: navigatingTo === href ? 0.6 : 1,
+                transition: "opacity 0.15s",
               }}
             >
-              <span style={{ fontSize: 20 }}>{emoji}</span>
+              {navigatingTo === href ? (
+                <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid #e5e7eb", borderTopColor: "#0369a1", animation: "spin 0.7s linear infinite" }} />
+              ) : (
+                <span style={{ fontSize: 20 }}>{emoji}</span>
+              )}
               <div style={{ fontSize: 22, fontWeight: 800, color: "#111827", lineHeight: 1 }}>
                 {value.toLocaleString(locale)}
               </div>

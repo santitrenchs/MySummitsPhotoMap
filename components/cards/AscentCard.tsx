@@ -97,6 +97,7 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
   const router = useRouter();
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navigating, setNavigating] = useState(false);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -113,15 +114,19 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
   const location = ascent.route ?? null;
 
   function handleCardClick() {
-    if (isProfile) router.push(`/ascents/${ascent.id}`);
+    if (isProfile && !navigating) {
+      setNavigating(true);
+      router.push(`/ascents/${ascent.id}`);
+    }
   }
 
   return (
     <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div
         className="ascent-card"
         // @ts-expect-error CSS custom property
-        style={{ "--card-i": Math.min(animationIndex, 8) }}
+        style={{ "--card-i": Math.min(animationIndex, 8), cursor: navigating ? "wait" : undefined }}
         onClick={handleCardClick}
       >
         {/* ── Social header (social variant only, above image) ────────── */}
@@ -151,6 +156,22 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
             />
           ) : (
             <MountainPlaceholder />
+          )}
+
+          {/* Loading overlay */}
+          {navigating && (
+            <div style={{
+              position: "absolute", inset: 0, zIndex: 30,
+              background: "rgba(0,0,0,0.35)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: "50%",
+                border: "3px solid rgba(255,255,255,0.3)",
+                borderTopColor: "white",
+                animation: "spin 0.7s linear infinite",
+              }} />
+            </div>
           )}
 
           {/* Top gradient (for location label readability) */}
@@ -201,7 +222,7 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
                   boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
                 }} onClick={(e) => e.stopPropagation()}>
                   <button
-                    onClick={() => { setMenuOpen(false); router.push(`/ascents/${ascent.id}`); }}
+                    onClick={() => { setMenuOpen(false); setNavigating(true); router.push(`/ascents/${ascent.id}`); }}
                     style={{
                       display: "block", width: "100%", padding: "10px 16px",
                       textAlign: "left", background: "none", border: "none",

@@ -184,6 +184,7 @@ export function ImageCropModal({
       background: "#000",
       display: "flex", flexDirection: "column",
     }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -201,10 +202,14 @@ export function ImageCropModal({
           disabled={applying || !ready}
           style={{
             background: "none", border: "none",
-            color: applying ? "#555" : "#0095f6",
-            fontSize: 15, fontWeight: 700, cursor: applying ? "default" : "pointer", padding: 0,
+            color: applying ? "rgba(255,255,255,0.4)" : "#0095f6",
+            fontSize: 15, fontWeight: 700, cursor: applying ? "wait" : "pointer", padding: 0,
+            display: "flex", alignItems: "center", gap: 6,
           }}
-        >{applying ? "…" : t.crop_next}</button>
+        >
+          {applying && <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#0095f6", animation: "spin 0.7s linear infinite", display: "inline-block" }} />}
+          {applying ? "…" : t.crop_next}
+        </button>
       </div>
 
       {/* ── Crop canvas ──────────────────────────────────────────────────── */}

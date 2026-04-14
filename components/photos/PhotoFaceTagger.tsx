@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type * as FaceApiType from "@vladmandic/face-api";
-
-// Module-level ref so the import is only done once across renders
-let faceApiMod: typeof FaceApiType | null = null;
+import { getFaceApi } from "./faceApiSingleton";
 
 type BoundingBox = { x: number; y: number; width: number; height: number };
 type Person = { id: string; name: string };
@@ -27,19 +24,23 @@ export function PhotoFaceTagger({
   const [tagInput, setTagInput] = useState("");
   const [persons, setPersons] = useState<Person[]>([]);
   const [saving, setSaving] = useState(false);
-  const [modelLoaded, setModelLoaded] = useState(false);
+  const [modelLoaded, setModelLoaded] = useState(false); // kept for future use
   const [status, setStatus] = useState<string | null>(null);
   const [faceMatches, setFaceMatches] = useState<Map<string, string>>(new Map()); // detectionId → suggested name
+  const [loadingInitial, setLoadingInitial] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Load existing detections + persons on mount
   useEffect(() => {
-    fetch(`/api/photos/${photo.id}/faces`)
-      .then((r) => r.json())
-      .then((data) => setDetections(Array.isArray(data) ? data : []));
-    fetch("/api/persons")
-      .then((r) => r.json())
-      .then((data) => setPersons(Array.isArray(data) ? data : []));
+    Promise.all([
+      fetch(`/api/photos/${photo.id}/faces`).then((r) => r.json()).catch(() => []),
+      fetch("/api/persons").then((r) => r.json()).catch(() => []),
+    ]).then(([facesData, personsData]) => {
+      setDetections(Array.isArray(facesData) ? facesData : []);
+      setPersons(Array.isArray(personsData) ? personsData : []);
+    }).finally(() => {
+      setLoadingInitial(false);
+    });
   }, [photo.id]);
 
   // Focus input when a box is activated
@@ -47,30 +48,20 @@ export function PhotoFaceTagger({
     if (activeBox) setTimeout(() => inputRef.current?.focus(), 50);
   }, [activeBox]);
 
-  async function loadModel(): Promise<typeof FaceApiType | null> {
-    if (faceApiMod) return faceApiMod;
-    setStatus("Loading models…");
-    try {
-      const mod = await import("@vladmandic/face-api");
-      faceApiMod = mod as unknown as typeof FaceApiType;
-      await Promise.all([
-        faceApiMod.nets.ssdMobilenetv1.loadFromUri("/models/face-api"),
-        faceApiMod.nets.faceLandmark68TinyNet.loadFromUri("/models/face-api"),
-        faceApiMod.nets.faceRecognitionNet.loadFromUri("/models/face-api"),
-      ]);
-      setModelLoaded(true);
-      setStatus(null);
-      return faceApiMod;
-    } catch {
-      setStatus("Failed to load model");
-      return null;
-    }
-  }
-
   async function detectFaces() {
     setDetecting(true);
-    const faceapi = await loadModel();
-    if (!faceapi || !imgRef.current) { setDetecting(false); return; }
+    setStatus("Carregant models…");
+    let faceapi: Awaited<ReturnType<typeof getFaceApi>>;
+    try {
+      faceapi = await getFaceApi();
+    } catch {
+      setStatus("Error carregant models");
+      setDetecting(false);
+      return;
+    }
+    setModelLoaded(true);
+    setStatus(null);
+    if (!imgRef.current) { setDetecting(false); return; }
 
     const img = imgRef.current;
     if (!img.complete || img.width === 0 || img.naturalWidth === 0) {
@@ -190,6 +181,7 @@ export function PhotoFaceTagger({
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div style={{
         background: "white", borderRadius: 16,
         width: "min(900px, 100%)", maxHeight: "calc(100vh - 32px)",
@@ -202,17 +194,27 @@ export function PhotoFaceTagger({
         }}>
           <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Tag faces</span>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {status && <span style={{ fontSize: 12, color: "#6b7280" }}>{status}</span>}
+            {status && (
+              <span style={{
+                fontSize: 12, color: detecting ? "#0369a1" : "#6b7280",
+                background: detecting ? "#eff6ff" : "#f3f4f6",
+                padding: "3px 8px", borderRadius: 10, fontWeight: 500,
+              }}>{status}</span>
+            )}
             <button
               onClick={detectFaces}
-              disabled={detecting || !imgLoaded}
+              disabled={detecting || !imgLoaded || loadingInitial}
               style={{
                 padding: "6px 14px", background: "#0369a1", color: "white",
                 border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                cursor: "pointer", opacity: detecting || !imgLoaded ? 0.6 : 1,
+                cursor: "pointer", opacity: detecting || !imgLoaded || loadingInitial ? 0.6 : 1,
+                display: "flex", alignItems: "center", gap: 6,
               }}
             >
-              {detecting ? "Detecting…" : !imgLoaded ? "Loading…" : detections.length > 0 ? "Re-detect" : "Detect faces"}
+              {(detecting || loadingInitial) && (
+                <span style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "white", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />
+              )}
+              {loadingInitial ? "Carregant…" : detecting ? "Detectant…" : !imgLoaded ? "Carregant…" : detections.length > 0 ? "Re-detectar" : "Detectar cares"}
             </button>
             <button
               onClick={onClose}
@@ -227,6 +229,16 @@ export function PhotoFaceTagger({
         {/* Image area */}
         <div style={{ flex: 1, overflow: "auto", padding: 20, textAlign: "center" }}>
           <div style={{ position: "relative", display: "inline-block" }}>
+            {loadingInitial && (
+              <div style={{
+                position: "absolute", inset: 0, zIndex: 10,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: "rgba(255,255,255,0.7)", borderRadius: 8,
+                pointerEvents: "none",
+              }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid #e5e7eb", borderTopColor: "#0369a1", animation: "spin 0.7s linear infinite" }} />
+              </div>
+            )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               ref={imgRef}

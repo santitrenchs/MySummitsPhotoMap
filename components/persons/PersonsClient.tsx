@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
 
@@ -74,6 +74,13 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("ascents");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+
+  const navigate = useCallback((href: string) => {
+    if (navigatingTo) return;
+    setNavigatingTo(href);
+    router.push(href);
+  }, [navigatingTo, router]);
 
   // Edit modal state
   const [editingPerson, setEditingPerson] = useState<PersonCard | null>(null);
@@ -161,6 +168,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
   return (
     <>
       <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
         .person-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
         .person-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.10) !important; }
         .photo-thumb { transition: transform 0.18s ease; cursor: pointer; }
@@ -352,10 +360,20 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                 borderRadius: 16,
                 // NO overflow:hidden here — would clip the dropdown menu
                 boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                cursor: "pointer", position: "relative",
+                cursor: navigatingTo === `/persons/${person.id}` ? "wait" : "pointer",
+                position: "relative",
+                opacity: navigatingTo === `/persons/${person.id}` ? 0.65 : 1,
+                transition: "opacity 0.15s",
               }}
-              onClick={() => router.push(`/persons/${person.id}`)}
+              onClick={() => navigate(`/persons/${person.id}`)}
             >
+              {/* Loading spinner overlay */}
+              {navigatingTo === `/persons/${person.id}` && (
+                <div style={{ position: "absolute", top: 12, right: 12, zIndex: 10 }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid #e5e7eb", borderTopColor: "#0369a1", animation: "spin 0.7s linear infinite" }} />
+                </div>
+              )}
+
               {/* Card header */}
               <div style={{ padding: "16px 16px 12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
                 <FaceAvatar

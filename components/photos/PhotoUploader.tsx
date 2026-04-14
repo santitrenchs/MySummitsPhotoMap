@@ -116,7 +116,7 @@ export function PhotoUploader({
       tempId: `existing-${det.id}`,
       boundingBox: det.boundingBox,
       descriptor: det.descriptor ?? [],
-      personName: det.faceTags.find((t) => t.status === "ACCEPTED")?.person.name ?? null,
+      personName: det.faceTags[0]?.person.name ?? null,
       suggestion: null,
     }));
 
@@ -179,22 +179,24 @@ export function PhotoUploader({
 
       {/* Drop zone */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragOver={(e) => { if (uploading) return; e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
-          if (e.dataTransfer.files.length) queueFiles(e.dataTransfer.files);
+          if (!uploading && e.dataTransfer.files.length) queueFiles(e.dataTransfer.files);
         }}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => { if (!uploading) inputRef.current?.click(); }}
         style={{
-          border: `2px dashed ${dragging ? "#0369a1" : "#d1d5db"}`,
+          border: `2px dashed ${uploading ? "#bfdbfe" : dragging ? "#0369a1" : "#d1d5db"}`,
           borderRadius: 12, padding: "32px 16px",
-          textAlign: "center", cursor: "pointer",
-          background: dragging ? "#eff6ff" : "#f9fafb",
+          textAlign: "center", cursor: uploading ? "wait" : "pointer",
+          background: uploading ? "#eff6ff" : dragging ? "#eff6ff" : "#f9fafb",
           transition: "all 0.15s", marginBottom: 16,
+          position: "relative",
         }}
       >
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <input
           ref={inputRef}
           type="file"
@@ -203,13 +205,18 @@ export function PhotoUploader({
           style={{ display: "none" }}
           onChange={(e) => { if (e.target.files?.length) queueFiles(e.target.files); e.target.value = ""; }}
         />
-        <p style={{ fontSize: 28, margin: "0 0 8px" }}>📷</p>
-        <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", margin: 0 }}>
-          {uploading ? t.photo_uploading : t.photo_clickOrDrag}
-        </p>
-        <p style={{ fontSize: 12, color: "#9ca3af", margin: "4px 0 0" }}>
-          {t.photo_maxSize}
-        </p>
+        {uploading ? (
+          <>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid #bfdbfe", borderTopColor: "#0369a1", animation: "spin 0.7s linear infinite", margin: "0 auto 8px" }} />
+            <p style={{ fontSize: 14, fontWeight: 600, color: "#0369a1", margin: 0 }}>{t.photo_uploading}</p>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 28, margin: "0 0 8px" }}>📷</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", margin: 0 }}>{t.photo_clickOrDrag}</p>
+            <p style={{ fontSize: 12, color: "#9ca3af", margin: "4px 0 0" }}>{t.photo_maxSize}</p>
+          </>
+        )}
       </div>
 
       {error && (

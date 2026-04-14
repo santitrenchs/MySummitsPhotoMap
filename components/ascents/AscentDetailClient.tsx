@@ -47,6 +47,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
   const [photo, setPhoto] = useState(initialPhoto);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [tagBlob, setTagBlob] = useState<Blob | null>(null);
+  const [existingFaces, setExistingFaces] = useState<FaceDraft[]>([]);
   const [replacing, setReplacing] = useState(false);
 
   // ── Toast ─────────────────────────────────────────────────────────────────
@@ -201,18 +202,32 @@ export function AscentDetailClient(props: AscentDetailProps) {
 
   async function openEditPhoto() {
     if (photo) {
-      // Re-crop the existing photo: fetch it as a File and open the crop modal
       setReplacing(true);
       try {
-        const res = await fetch(`/api/photos/${photo.id}/proxy`);
-        const blob = await res.blob();
+        const [blobRes, facesRes] = await Promise.all([
+          fetch(`/api/photos/${photo.id}/proxy`),
+          fetch(`/api/photos/${photo.id}/faces`),
+        ]);
+        const [blob, facesData] = await Promise.all([blobRes.blob(), facesRes.json()]);
         const file = new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" });
+
+        const faces: FaceDraft[] = (Array.isArray(facesData) ? facesData : []).map(
+          (det: { id: string; boundingBox: FaceDraft["boundingBox"]; descriptor: number[] | null; faceTags: { status: string; person: { name: string } }[] }) => ({
+            tempId: `existing-${det.id}`,
+            boundingBox: det.boundingBox,
+            descriptor: det.descriptor ?? [],
+            personName: det.faceTags[0]?.person.name ?? null,
+            suggestion: null,
+          })
+        );
+
+        setExistingFaces(faces);
         setCropFile(file);
       } finally {
         setReplacing(false);
       }
     } else {
-      // No photo yet — open file picker to upload one
+      setExistingFaces([]);
       fileInputRef.current?.click();
     }
   }
@@ -225,7 +240,12 @@ export function AscentDetailClient(props: AscentDetailProps) {
 
   function handleCropDone(blob: Blob) {
     setCropFile(null);
-    setTagBlob(blob); // proceed to face tagging step
+    setTagBlob(blob);
+  }
+
+  function handleCropCancel() {
+    setCropFile(null);
+    setExistingFaces([]);
   }
 
   async function uploadPhotoWithFaces(blob: Blob, faces: FaceDraft[]) {
@@ -285,6 +305,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
 
   return (
     <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       {toast && <ToastNotification message={toast} />}
 
       {/* Date picker sheet */}
@@ -313,7 +334,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
         <ImageCropModal
           file={cropFile}
           onCrop={handleCropDone}
-          onCancel={() => setCropFile(null)}
+          onCancel={handleCropCancel}
         />
       )}
 
@@ -321,8 +342,9 @@ export function AscentDetailClient(props: AscentDetailProps) {
       {tagBlob && (
         <PhotoTagStep
           blob={tagBlob}
+          initialFaces={existingFaces}
           onDone={(blob, faces) => uploadPhotoWithFaces(blob, faces)}
-          onSkip={(blob) => uploadPhotoWithFaces(blob, [])}
+          onSkip={() => setTagBlob(null)}
         />
       )}
 
@@ -344,6 +366,19 @@ export function AscentDetailClient(props: AscentDetailProps) {
             />
           ) : (
             <HeroPlaceholder />
+          )}
+
+          {/* Upload overlay */}
+          {replacing && tagBlob === null && cropFile === null && (
+            <div style={{
+              position: "absolute", inset: 0, zIndex: 20,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12,
+              pointerEvents: "none",
+            }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite" }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{t.saving}</span>
+            </div>
           )}
 
           {/* Top gradient (for action buttons readability) */}
@@ -387,12 +422,21 @@ export function AscentDetailClient(props: AscentDetailProps) {
                 background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)",
                 WebkitBackdropFilter: "blur(8px)",
                 color: "white", fontSize: 12, fontWeight: 600,
-                cursor: "pointer", opacity: replacing ? 0.5 : 1,
+                cursor: replacing ? "wait" : "pointer", opacity: replacing ? 0.7 : 1,
                 minHeight: 36,
               }}
             >
-              <span>✏️</span>
-              <span>{photo ? t.detail_editPhoto : t.detail_addPhoto}</span>
+              {replacing && !tagBlob ? (
+                <>
+                  <div style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "white", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+                  <span>Carregant…</span>
+                </>
+              ) : (
+                <>
+                  <span>✏️</span>
+                  <span>{photo ? t.detail_editPhoto : t.detail_addPhoto}</span>
+                </>
+              )}
             </button>
 
           </div>
@@ -488,28 +532,37 @@ export function AscentDetailClient(props: AscentDetailProps) {
             {/* Description — inline editable, autosave on blur */}
             <div style={{ marginTop: 6, marginBottom: 14 }}>
               {editingDescription ? (
-                <textarea
-                  value={descDraft}
-                  onChange={(e) => setDescDraft(e.target.value)}
-                  onBlur={saveDescriptionOnBlur}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      descCancelRef.current = true;
-                      setEditingDescription(false);
-                      setDescDraft(currentDescription ?? "");
-                    }
-                  }}
-                  placeholder={t.field_notesPlaceholder}
-                  rows={3}
-                  autoFocus
-                  style={{
-                    width: "100%", padding: "7px 10px",
-                    border: "1px solid #d1d5db", borderRadius: 8,
-                    fontSize: 14, color: "#111827", outline: "none",
-                    boxSizing: "border-box", background: "white",
-                    resize: "vertical",
-                  }}
-                />
+                <div style={{ position: "relative" }}>
+                  <textarea
+                    value={descDraft}
+                    onChange={(e) => setDescDraft(e.target.value)}
+                    onBlur={saveDescriptionOnBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        descCancelRef.current = true;
+                        setEditingDescription(false);
+                        setDescDraft(currentDescription ?? "");
+                      }
+                    }}
+                    placeholder={t.field_notesPlaceholder}
+                    rows={3}
+                    autoFocus
+                    disabled={savingField}
+                    style={{
+                      width: "100%", padding: "7px 10px",
+                      border: "1px solid #d1d5db", borderRadius: 8,
+                      fontSize: 14, color: "#111827", outline: "none",
+                      boxSizing: "border-box", background: "white",
+                      resize: "vertical", opacity: savingField ? 0.6 : 1,
+                    }}
+                  />
+                  {savingField && (
+                    <div style={{ position: "absolute", top: 8, right: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid #d1d5db", borderTopColor: "#0369a1", animation: "spin 0.7s linear infinite" }} />
+                      <span style={{ fontSize: 11, color: "#9ca3af" }}>{t.saving}</span>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button
                   onClick={() => { setDescDraft(currentDescription ?? ""); setEditingDescription(true); }}
@@ -535,28 +588,37 @@ export function AscentDetailClient(props: AscentDetailProps) {
             {editingRoute ? (
               <div style={{ marginBottom: 16, marginTop: 12, display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 14, flexShrink: 0 }}>📍</span>
-                <input
-                  type="text"
-                  value={routeDraft}
-                  onChange={(e) => setRouteDraft(e.target.value)}
-                  onBlur={saveRouteOnBlur}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") e.currentTarget.blur();
-                    if (e.key === "Escape") {
-                      routeCancelRef.current = true;
-                      setEditingRoute(false);
-                      setRouteDraft(currentRoute ?? "");
-                    }
-                  }}
-                  placeholder={t.field_routePlaceholder}
-                  autoFocus
-                  style={{
-                    flex: 1, padding: "7px 10px",
-                    border: "1px solid #d1d5db", borderRadius: 8,
-                    fontSize: 14, color: "#111827", outline: "none",
-                    boxSizing: "border-box", background: "white",
-                  }}
-                />
+                <div style={{ flex: 1, position: "relative" }}>
+                  <input
+                    type="text"
+                    value={routeDraft}
+                    onChange={(e) => setRouteDraft(e.target.value)}
+                    onBlur={saveRouteOnBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.currentTarget.blur();
+                      if (e.key === "Escape") {
+                        routeCancelRef.current = true;
+                        setEditingRoute(false);
+                        setRouteDraft(currentRoute ?? "");
+                      }
+                    }}
+                    placeholder={t.field_routePlaceholder}
+                    autoFocus
+                    disabled={savingField}
+                    style={{
+                      width: "100%", padding: "7px 10px",
+                      border: "1px solid #d1d5db", borderRadius: 8,
+                      fontSize: 14, color: "#111827", outline: "none",
+                      boxSizing: "border-box", background: "white",
+                      opacity: savingField ? 0.6 : 1,
+                    }}
+                  />
+                  {savingField && (
+                    <div style={{ position: "absolute", top: "50%", right: 8, transform: "translateY(-50%)", display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid #d1d5db", borderTopColor: "#0369a1", animation: "spin 0.7s linear infinite" }} />
+                    </div>
+                  )}
+                </div>
               </div>
             ) : currentRoute ? (
               <button

@@ -104,6 +104,13 @@ export default function MapView({
   const [terrain3d, setTerrain3d] = useState(true);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+
+  function navigate(href: string) {
+    if (navigatingTo) return;
+    setNavigatingTo(href);
+    router.push(href);
+  }
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -446,6 +453,7 @@ const panelStyle: React.CSSProperties = isMobile
   return (
     <div style={{ position: "relative", height: "calc(100svh - var(--top-nav-h, 3.5rem) - var(--bottom-nav-h, 0px))", background: "#e2e8f0" }}>
       <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes panelIn {
           from { opacity: 0; transform: translateY(12px) scale(0.98); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -746,41 +754,63 @@ const panelStyle: React.CSSProperties = isMobile
                     <span>🧭</span> {selected.ascent.route}
                   </p>
                 )}
-                <button
-                  className="panel-action-btn"
-                  onClick={() => {
-                    const a = selected.ascent!;
-                    router.push(a.ascentCount > 1 ? `/ascents?peak=${a.peakId}` : `/ascents/${a.ascentId}`);
-                  }}
-                  style={{
-                    width: "100%", padding: "11px",
-                    background: "#111827", color: "white",
-                    border: "none", borderRadius: 12,
-                    fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  }}
-                >
-                  {selected.ascent.ascentCount > 1
-                    ? i(t.map_viewAscents, { n: selected.ascent.ascentCount })
-                    : t.map_viewAscent}
-                </button>
+                {(() => {
+                  const a = selected.ascent!;
+                  const href = a.ascentCount > 1 ? `/ascents?peak=${a.peakId}` : `/ascents/${a.ascentId}`;
+                  const loading = navigatingTo === href;
+                  return (
+                    <button
+                      className="panel-action-btn"
+                      onClick={() => navigate(href)}
+                      disabled={!!navigatingTo}
+                      style={{
+                        width: "100%", padding: "11px",
+                        background: "#111827", color: "white",
+                        border: "none", borderRadius: 12,
+                        fontSize: 13, fontWeight: 700,
+                        cursor: loading ? "wait" : "pointer",
+                        opacity: loading ? 0.7 : 1,
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                        transition: "opacity 0.15s",
+                      }}
+                    >
+                      {loading && <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />}
+                      {a.ascentCount > 1
+                        ? i(t.map_viewAscents, { n: a.ascentCount })
+                        : t.map_viewAscent}
+                    </button>
+                  );
+                })()}
               </>
             ) : (
               <>
                 <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 16px" }}>
                   {t.map_notYetClimbed}
                 </p>
-                <button
-                  className="panel-action-btn"
-                  onClick={() => router.push(`/ascents/new?peakId=${selected.peak.id}`)}
-                  style={{
-                    width: "100%", padding: "11px",
-                    background: "#0369a1", color: "white",
-                    border: "none", borderRadius: 12,
-                    fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  }}
-                >
-                  {t.map_logAscent}
-                </button>
+                {(() => {
+                  const href = `/ascents/new?peakId=${selected.peak.id}`;
+                  const loading = navigatingTo === href;
+                  return (
+                    <button
+                      className="panel-action-btn"
+                      onClick={() => navigate(href)}
+                      disabled={!!navigatingTo}
+                      style={{
+                        width: "100%", padding: "11px",
+                        background: "#0369a1", color: "white",
+                        border: "none", borderRadius: 12,
+                        fontSize: 13, fontWeight: 700,
+                        cursor: loading ? "wait" : "pointer",
+                        opacity: loading ? 0.7 : 1,
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                        transition: "opacity 0.15s",
+                      }}
+                    >
+                      {loading && <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />}
+                      {t.map_logAscent}
+                    </button>
+                  );
+                })()}
               </>
             )}
           </div>
