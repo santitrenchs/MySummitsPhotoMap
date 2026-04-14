@@ -206,4 +206,17 @@ export const fr: Dict = {
   home_altZone1: "Basse montagne", home_altZone2: "Moyenne montagne",
   home_altZone3: "Haute montagne", home_altZone4: "Haute montagne technique",
   home_altZone5: "Expédition", home_altZone6: "Expédition extrême",
+
+  auth_forgotPassword: "Mot de passe oublié ?",
+  auth_forgotPasswordDesc: "Entrez votre email et nous vous enverrons un lien de réinitialisation.",
+  auth_sendResetLink: "Envoyer le lien",
+  auth_sendingResetLink: "Envoi…",
+  auth_resetLinkSent: "Si un compte existe avec cet email, vous recevrez un lien sous peu.",
+  auth_resetPassword: "Nouveau mot de passe",
+  auth_resetPasswordDesc: "Choisissez un nouveau mot de passe pour votre compte.",
+  auth_passwordsNoMatch: "Les mots de passe ne correspondent pas.",
+  auth_resettingPassword: "Enregistrement…",
+  auth_resetSuccess: "Mot de passe mis à jour. Vous pouvez maintenant vous connecter.",
+  auth_invalidResetToken: "Ce lien est invalide ou a expiré.",
+  auth_backToLogin: "Retour à la connexion",
 };

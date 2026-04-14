@@ -118,6 +118,18 @@ enum MembershipRole {
   MEMBER
 }
 
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  email     String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+  @@map("password_reset_tokens")
+}
+
 model Friendship {
   id          String           @id @default(uuid())
   requesterId String

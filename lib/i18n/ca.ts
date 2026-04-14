@@ -206,4 +206,17 @@ export const ca: Dict = {
   home_altZone1: "Baixa muntanya", home_altZone2: "Mitja muntanya",
   home_altZone3: "Alta muntanya", home_altZone4: "Alta muntanya tècnica",
   home_altZone5: "Expedició", home_altZone6: "Expedició extrema",
+
+  auth_forgotPassword: "Has oblidat la contrasenya?",
+  auth_forgotPasswordDesc: "Introdueix el teu email i t'enviarem un enllaç per restablir-la.",
+  auth_sendResetLink: "Enviar enllaç",
+  auth_sendingResetLink: "Enviant…",
+  auth_resetLinkSent: "Si existeix un compte amb aquest email, rebràs l'enllaç en breu.",
+  auth_resetPassword: "Nova contrasenya",
+  auth_resetPasswordDesc: "Tria una nova contrasenya per al teu compte.",
+  auth_passwordsNoMatch: "Les contrasenyes no coincideixen.",
+  auth_resettingPassword: "Desant…",
+  auth_resetSuccess: "Contrasenya actualitzada. Ja pots iniciar sessió.",
+  auth_invalidResetToken: "L'enllaç no és vàlid o ha caducat.",
+  auth_backToLogin: "Tornar a l'inici de sessió",
 };

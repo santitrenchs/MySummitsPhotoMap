@@ -206,4 +206,17 @@ export const es: Dict = {
   home_altZone1: "Baja montaña", home_altZone2: "Media montaña",
   home_altZone3: "Alta montaña", home_altZone4: "Alta montaña técnica",
   home_altZone5: "Expedición", home_altZone6: "Expedición extrema",
+
+  auth_forgotPassword: "¿Olvidaste tu contraseña?",
+  auth_forgotPasswordDesc: "Introduce tu email y te enviaremos un enlace para restablecerla.",
+  auth_sendResetLink: "Enviar enlace",
+  auth_sendingResetLink: "Enviando…",
+  auth_resetLinkSent: "Si existe una cuenta con ese email, recibirás el enlace en breve.",
+  auth_resetPassword: "Nueva contraseña",
+  auth_resetPasswordDesc: "Elige una nueva contraseña para tu cuenta.",
+  auth_passwordsNoMatch: "Las contraseñas no coinciden.",
+  auth_resettingPassword: "Guardando…",
+  auth_resetSuccess: "Contraseña actualizada. Ya puedes iniciar sesión.",
+  auth_invalidResetToken: "El enlace no es válido o ha caducado.",
+  auth_backToLogin: "Volver al inicio de sesión",
 };

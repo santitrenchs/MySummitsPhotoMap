@@ -206,4 +206,17 @@ export const en: Dict = {
   home_altZone1: "Low mountain", home_altZone2: "Mid mountain",
   home_altZone3: "High mountain", home_altZone4: "Technical alpine",
   home_altZone5: "Expedition", home_altZone6: "Extreme expedition",
+
+  auth_forgotPassword: "Forgot your password?",
+  auth_forgotPasswordDesc: "Enter your email and we'll send you a reset link.",
+  auth_sendResetLink: "Send reset link",
+  auth_sendingResetLink: "Sending…",
+  auth_resetLinkSent: "If an account exists with that email, you'll receive a link shortly.",
+  auth_resetPassword: "Reset password",
+  auth_resetPasswordDesc: "Choose a new password for your account.",
+  auth_passwordsNoMatch: "Passwords don't match.",
+  auth_resettingPassword: "Saving…",
+  auth_resetSuccess: "Password updated. You can now sign in.",
+  auth_invalidResetToken: "This link is invalid or has expired.",
+  auth_backToLogin: "Back to sign in",
 };

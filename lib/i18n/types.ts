@@ -134,6 +134,11 @@ export type Dict = {
   auth_createAccountDesc: string; auth_yourName: string; auth_password: string;
   auth_minPassword: string; auth_registrationFailed: string;
   auth_creatingAccount: string; auth_createAccount: string; auth_haveAccount: string;
+  auth_forgotPassword: string; auth_forgotPasswordDesc: string;
+  auth_sendResetLink: string; auth_sendingResetLink: string; auth_resetLinkSent: string;
+  auth_resetPassword: string; auth_resetPasswordDesc: string;
+  auth_passwordsNoMatch: string; auth_resettingPassword: string;
+  auth_resetSuccess: string; auth_invalidResetToken: string; auth_backToLogin: string;
 
   // Crop modal
   crop_title: string; crop_next: string;

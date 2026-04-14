@@ -206,4 +206,17 @@ export const de: Dict = {
   home_altZone1: "Niedergebirge", home_altZone2: "Mittelgebirge",
   home_altZone3: "Hochgebirge", home_altZone4: "Alpines Gelände",
   home_altZone5: "Expedition", home_altZone6: "Extreme Expedition",
+
+  auth_forgotPassword: "Passwort vergessen?",
+  auth_forgotPasswordDesc: "Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen.",
+  auth_sendResetLink: "Link senden",
+  auth_sendingResetLink: "Senden…",
+  auth_resetLinkSent: "Falls ein Konto mit dieser E-Mail existiert, erhältst du in Kürze einen Link.",
+  auth_resetPassword: "Neues Passwort",
+  auth_resetPasswordDesc: "Wähle ein neues Passwort für dein Konto.",
+  auth_passwordsNoMatch: "Die Passwörter stimmen nicht überein.",
+  auth_resettingPassword: "Speichern…",
+  auth_resetSuccess: "Passwort aktualisiert. Du kannst dich jetzt anmelden.",
+  auth_invalidResetToken: "Dieser Link ist ungültig oder abgelaufen.",
+  auth_backToLogin: "Zurück zur Anmeldung",
 };
