@@ -399,6 +399,7 @@ export default function MapView({
         const el = document.createElement("div");
         el.setAttribute("aria-label", `${peak.name} ${peak.altitudeM}m (climbed)`);
         el.style.cssText = [
+          "position:absolute",  // explicit — maplibre-gl.css may not apply on iOS Safari
           "width:42px", "height:42px", "border-radius:50%",
           "overflow:hidden", "cursor:pointer",
           "border:2.5px solid white",
