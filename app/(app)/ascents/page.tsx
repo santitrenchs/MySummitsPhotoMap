@@ -16,7 +16,7 @@ export default async function AscentsPage() {
   // Enrich: extract firstPhoto + deduplicated persons per ascent
   const ascents = raw.map((a) => {
     const firstPhoto = a.photos[0] ?? null;
-    const personMap = new Map<string, { id: string; name: string }>();
+    const personMap = new Map<string, { id: string; name: string; email: string | null }>();
     for (const photo of a.photos) {
       for (const fd of photo.faceDetections) {
         for (const tag of fd.faceTags) {
