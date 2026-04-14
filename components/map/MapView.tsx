@@ -446,14 +446,14 @@ export default function MapView({
           .addTo(map);
       }
 
-      // Force marker positions to recalculate after iOS has fully laid out
-      // the canvas. Without this, map.resize() at the top of this handler
-      // fires before the canvas has its final CSS size on iOS, causing all
+      // Force marker positions to recalculate after the map has fully
+      // rendered. map.resize() at the top of this handler fires before
+      // the canvas has its final CSS size on iOS Safari, causing all
       // HTML markers to be offset downward by exactly the canvas height.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          map.resize();
-        });
+      // 'idle' fires after the first complete render, guaranteeing layout
+      // is settled — more reliable than rAF on iOS Safari.
+      map.once("idle", () => {
+        map.resize();
       });
     });
 
