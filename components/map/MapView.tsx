@@ -101,9 +101,9 @@ export default function MapView({
   const [selected, setSelected] = useState<Selected>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [hillshade, setHillshade] = useState(true);
-  const [terrain3d, setTerrain3d] = useState(true);
+  const [terrain3d, setTerrain3d] = useState(() => window.innerWidth >= 640);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
 
   function navigate(href: string) {
@@ -208,12 +208,13 @@ export default function MapView({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    const initMobile = window.innerWidth < 640;
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE,
       center: [0.5, 42.75],
       zoom: 8,
-      pitch: 45,
+      pitch: initMobile ? 0 : 45,
     });
     mapRef.current = map;
 
@@ -244,9 +245,11 @@ export default function MapView({
         maxzoom: 15,
       });
 
-      // Enable 3D terrain by default
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
+      // Enable 3D terrain by default (desktop only — mobile starts flat)
+      if (!initMobile) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
+      }
 
       map.addLayer({
         id: "hillshading",
