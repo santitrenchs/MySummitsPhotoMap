@@ -7,11 +7,12 @@ const APP_URL = process.env.NEXTAUTH_URL ?? "https://www.azitracks.com";
 export async function sendPasswordResetEmail(to: string, token: string) {
   const resetUrl = `${APP_URL}/reset-password?token=${token}`;
 
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: FROM,
     to,
     subject: "Restablece tu contraseña — AziTracks",
     html: `
+
 <!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -65,4 +66,11 @@ export async function sendPasswordResetEmail(to: string, token: string) {
 </body>
 </html>`,
   });
+
+  if (error) {
+    console.error("[email] Resend error:", error);
+    throw new Error(`Resend failed: ${JSON.stringify(error)}`);
+  }
+
+  console.log("[email] sent OK, id:", data?.id);
 }

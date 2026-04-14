@@ -29,9 +29,15 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   const t = useT();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
   const ini = initials(userName, userEmail);
   const totalPending = pendingFriendRequests + pendingTagCount;
+
+  // Reset pending state once navigation completes
+  useEffect(() => {
+    setPendingPath(null);
+  }, [pathname]);
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -55,6 +61,12 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   }, [mobileMenuOpen]);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const tabActive = (href: string) =>
+    pendingPath === href || (pendingPath === null && isActive(href));
+
+  function handleTabClick(href: string) {
+    setPendingPath(href);
+  }
 
   return (
     <>
@@ -234,7 +246,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           transition: color 0.15s;
         }
         .tab-item.active { color: #0369a1; }
-        .tab-item:active { opacity: 0.65; }
+        .tab-item:active { opacity: 0.65; transform: scale(0.88); transition: transform 0.1s; }
         .tab-icon-wrap {
           position: relative;
           display: flex;
@@ -637,16 +649,16 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
       <nav className="bottom-tab-bar" aria-label="Main navigation">
         <div className="tab-inner">
 
-          <Link href="/home" className={`tab-item${isActive("/home") ? " active" : ""}`}>
+          <Link href="/home" className={`tab-item${tabActive("/home") ? " active" : ""}`} onClick={() => handleTabClick("/home")}>
             <div className="tab-icon-wrap">
-              <HomeIcon size={22} active={isActive("/home")} />
+              <HomeIcon size={22} active={tabActive("/home")} />
             </div>
             <span className="tab-label">{t.nav_home}</span>
           </Link>
 
-          <Link href="/map" className={`tab-item${isActive("/map") ? " active" : ""}`}>
+          <Link href="/map" className={`tab-item${tabActive("/map") ? " active" : ""}`} onClick={() => handleTabClick("/map")}>
             <div className="tab-icon-wrap">
-              <MapIcon size={22} active={isActive("/map")} />
+              <MapIcon size={22} active={tabActive("/map")} />
             </div>
             <span className="tab-label">{t.nav_map}</span>
           </Link>
@@ -658,16 +670,16 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
             </Link>
           </div>
 
-          <Link href="/ascents" className={`tab-item${isActive("/ascents") ? " active" : ""}`}>
+          <Link href="/ascents" className={`tab-item${tabActive("/ascents") ? " active" : ""}`} onClick={() => handleTabClick("/ascents")}>
             <div className="tab-icon-wrap">
-              <MountainIcon size={22} active={isActive("/ascents")} />
+              <MountainIcon size={22} active={tabActive("/ascents")} />
             </div>
             <span className="tab-label">{t.nav_ascents}</span>
           </Link>
 
-          <Link href="/social" className={`tab-item${isActive("/social") ? " active" : ""}`}>
+          <Link href="/social" className={`tab-item${tabActive("/social") ? " active" : ""}`} onClick={() => handleTabClick("/social")}>
             <div className="tab-icon-wrap">
-              <PeopleIcon size={22} active={isActive("/social")} />
+              <PeopleIcon size={22} active={tabActive("/social")} />
             </div>
             <span className="tab-label">{t.nav_people}</span>
           </Link>

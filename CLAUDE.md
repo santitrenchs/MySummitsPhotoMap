@@ -383,6 +383,8 @@ The `detail_with` key (also in all locales) is used in the caption as `t.detail_
 - **`--top-nav-h` must match mobile header height**: The CSS variable `--top-nav-h` in `app/(app)/layout.tsx` is set to `52px` on mobile to match the `.mobile-header` height in `NavBar.tsx`. If the header height changes, update both in sync — otherwise the map overflows and the sticky header covers the filter panel.
 - **Middleware (`proxy.ts`) — public auth routes**: Any new unauthenticated page (e.g. `/forgot-password`, `/reset-password`) must be added to the `isAuthPage` check in `proxy.ts`, otherwise the middleware redirects unauthenticated users to `/login` before they can reach it.
 - **`npm install` must save to `package.json`**: Always use `npm install <pkg> --save`. Running `npm install` without `--save` in a local dev session installs the package locally but doesn't add it to `package.json` — the Railway build will then fail with "Module not found".
+- **Prisma schema changes require two steps**: This project uses `prisma db push` (no migrations). After adding a model to `schema.prisma`, run `npx prisma db push` (to create the table) **and** `npx prisma generate` (to regenerate the client). Then restart the dev server — otherwise the new model will be `undefined` at runtime even though the table exists.
+- **Resend returns errors silently**: `resend.emails.send()` does not throw on API errors — it returns `{ data, error }`. Always destructure and check: `const { data, error } = await resend.emails.send(...); if (error) throw new Error(...)`. Otherwise failed sends appear as successes with no logs.
 
 ---
 

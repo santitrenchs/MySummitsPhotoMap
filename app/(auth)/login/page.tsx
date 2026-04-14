@@ -32,7 +32,7 @@ function LoginForm() {
       return;
     }
 
-    router.push("/map");
+    router.push("/home");
     router.refresh();
   }
 
