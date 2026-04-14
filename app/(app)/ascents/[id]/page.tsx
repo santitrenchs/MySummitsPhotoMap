@@ -64,9 +64,13 @@ export default async function AscentDetailPage({
       }
     }
   }
+  const currentUserName = user?.name ?? session.user.name ?? "";
   const persons = Array.from(personMap.entries())
     .map(([pid, p]) => ({ id: pid, ...p }))
-    .filter(p => p.email !== session.user.email);
+    .filter(p =>
+      (session.user.email ? p.email !== session.user.email : true) &&
+      (currentUserName ? p.name !== currentUserName : true)
+    );
 
   const dateStr = new Date(ascent.date).toLocaleDateString(t.dateLocale, {
     day: "numeric", month: "long", year: "numeric",
@@ -87,7 +91,7 @@ export default async function AscentDetailPage({
       route={ascent.route}
       description={ascent.description}
       wikiloc={ascent.wikiloc}
-      userName={user?.name ?? session.user.name ?? ""}
+      userName={currentUserName}
       heroPhoto={heroPhoto ? { id: heroPhoto.id, url: heroPhoto.url } : null}
       persons={persons}
     />
