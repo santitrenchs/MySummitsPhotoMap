@@ -211,7 +211,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
 
         /* ── Mobile bottom tab bar ───────────────── */
         .bottom-tab-bar {
-          display: none;
+          display: block;
           position: fixed;
           bottom: 0;
           left: 0;
@@ -310,10 +310,9 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         /* Responsive show/hide */
         @media (max-width: 639px) {
           .desktop-nav { display: none !important; }
-          .bottom-tab-bar { display: block; }
         }
         @media (min-width: 640px) {
-          .bottom-tab-bar { display: none; }
+          .bottom-tab-bar { display: none !important; }
           .mobile-header { display: none !important; }
           .mobile-sheet-backdrop { display: none !important; }
         }
