@@ -490,9 +490,9 @@ const panelStyle: React.CSSProperties = isMobile
         }
         .map-panel { animation: panelIn 0.22s ease both; }
         .map-panel-mobile { animation: panelInMobile 0.28s ease both; }
-        /* iOS Safari: WebGL canvas creates its own GPU compositing layer.
-           HTML markers need explicit z-index to render above the canvas. */
-        .maplibregl-marker { z-index: 1; }
+        /* iOS Safari: maplibre-gl.css position:absolute not always applied
+           to dynamically created markers — set it explicitly. */
+        .maplibregl-marker { position: absolute !important; z-index: 1; }
         .filter-chip { transition: background 0.15s, color 0.15s, box-shadow 0.15s; }
         .filter-chip:active { transform: scale(0.95); }
         .panel-action-btn { transition: opacity 0.15s, transform 0.15s; }
