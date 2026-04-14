@@ -211,6 +211,8 @@ FaceDetection / FaceTag
 - Home tab = Mi Progreso (gamification dashboard). Root `/` redirects to `/home` when authenticated.
 - **Mobile header** (`components/nav/NavBar.tsx`): sticky 52px bar shown only on mobile (`<640px`). Contains the AziTracks logo **absolutely centered** (`position: absolute; left: 50%; transform: translateX(-50%)`) so it stays visually centered regardless of avatar width. The avatar div uses `justify-content: flex-end` on the header.
 - **`--top-nav-h` CSS variable**: set to `52px` on mobile (in `app/(app)/layout.tsx`) to match the mobile header height. Map and other full-height containers use `calc(100svh - var(--top-nav-h) - var(--bottom-nav-h))` — this variable must stay in sync with the actual `.mobile-header` height (currently `52px`).
+- **Login redirects to `/home`**: after successful login, `app/(auth)/login/page.tsx` pushes to `/home` (Mi Progreso), not `/map`.
+- **Bottom tab bar instant feedback**: `NavBar.tsx` uses a `pendingPath` state to highlight the tapped tab immediately, before Next.js completes navigation. `handleTabClick(href)` sets `pendingPath`; a `useEffect` on `pathname` resets it once navigation completes. `tabActive(href)` checks `pendingPath` first, then falls back to `isActive`. **Do not call `router.push` inside `handleTabClick`** — the `Link` component handles navigation; calling push too causes double navigation and blanks the tab bar.
 
 ---
 

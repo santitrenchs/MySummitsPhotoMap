@@ -139,6 +139,13 @@ export type Dict = {
   auth_resetPassword: string; auth_resetPasswordDesc: string;
   auth_passwordsNoMatch: string; auth_resettingPassword: string;
   auth_resetSuccess: string; auth_invalidResetToken: string; auth_backToLogin: string;
+  // Voucher gate (register flow)
+  auth_voucher_title: string; auth_voucher_subtitle: string;
+  auth_voucher_placeholder: string; auth_voucher_btn: string; auth_voucher_verifying: string;
+  auth_voucher_invalid: string; auth_voucher_verified: string;
+  auth_voucher_noCode: string; auth_voucher_tokenExpired: string;
+  auth_nameHint: string; auth_emailExists: string; auth_createAccountSubmit: string;
+  auth_haveCode: string;
 
   // Crop modal
   crop_title: string; crop_next: string;
@@ -206,4 +213,6 @@ export type Dict = {
   home_hideLevels: string;
   home_altZone1: string; home_altZone2: string; home_altZone3: string;
   home_altZone4: string; home_altZone5: string; home_altZone6: string;
+  // Onboarding (new users, 0 ascents)
+  home_onboarding_title: string; home_onboarding_sub: string; home_onboarding_cta: string;
 };

@@ -100,7 +100,7 @@ function LoginForm() {
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">
-        {t.auth_noAccount}{" "}
+        {t.auth_haveCode}{" "}
         <Link href="/register" className="text-primary-600 hover:underline font-medium">
           {t.auth_createOne}
         </Link>

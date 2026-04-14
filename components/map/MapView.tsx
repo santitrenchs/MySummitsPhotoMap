@@ -224,6 +224,14 @@ export default function MapView({
       setSelected(null);
     });
 
+    // Resize map whenever the container changes size (fixes client-side
+    // navigation timing: CSS vars may settle after map init, and the single
+    // map.resize() inside map.once("load") fires too early on mobile).
+    const ro = new ResizeObserver(() => {
+      if (mapRef.current) mapRef.current.resize();
+    });
+    ro.observe(containerRef.current);
+
     map.once("load", () => {
       map.resize();
 
@@ -437,6 +445,7 @@ export default function MapView({
     });
 
     return () => {
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
       markerEls.current.clear();

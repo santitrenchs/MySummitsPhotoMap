@@ -304,6 +304,34 @@ export function HomeClient({ data, locale, t }: {
         </div>
       </div>
 
+      {/* ── Onboarding banner (new users only) ──────────────────────────── */}
+      {stats.totalAscents === 0 && (
+        <div style={{ padding: "16px 16px 0" }}>
+          <div style={{
+            background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+            border: "1.5px solid #86efac",
+            borderRadius: 20, padding: "24px 20px",
+            textAlign: "center",
+          }}>
+            <p style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 800, color: "#14532d", letterSpacing: "-0.02em" }}>
+              {t.home_onboarding_title}
+            </p>
+            <p style={{ margin: "0 0 20px", fontSize: 14, color: "#166534", lineHeight: 1.5 }}>
+              {t.home_onboarding_sub}
+            </p>
+            <Link href="/ascents/new" style={{
+              display: "inline-block",
+              background: "#16a34a", color: "white",
+              padding: "11px 24px", borderRadius: 12,
+              fontSize: 14, fontWeight: 700, textDecoration: "none",
+              boxShadow: "0 4px 12px rgba(22,163,74,0.35)",
+            }}>
+              {t.home_onboarding_cta} →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ── Summit hero card ─────────────────────────────────────────────── */}
       <div style={{ padding: "16px 16px 0" }}>
         <div
