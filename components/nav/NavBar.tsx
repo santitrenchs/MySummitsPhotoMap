@@ -28,8 +28,10 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   const pathname = usePathname();
   const t = useT();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
   const ini = initials(userName, userEmail);
+  const totalPending = pendingFriendRequests + pendingTagCount;
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -41,6 +43,16 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
   }, [dropdownOpen]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileMenuOpen]);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
@@ -290,8 +302,224 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         }
         @media (min-width: 640px) {
           .bottom-tab-bar { display: none; }
+          .mobile-header { display: none !important; }
+          .mobile-sheet-backdrop { display: none !important; }
+        }
+
+        /* ── Mobile header (avatar only) ─────────── */
+        .mobile-header {
+          position: sticky;
+          top: 0;
+          z-index: 50;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          padding: 0 16px;
+          height: 52px;
+          background: rgba(255,255,255,0.97);
+          backdrop-filter: saturate(180%) blur(16px);
+          -webkit-backdrop-filter: saturate(180%) blur(16px);
+          border-bottom: 1px solid rgba(0,0,0,0.07);
+        }
+
+        /* ── Mobile bottom sheet ─────────────────── */
+        .mobile-sheet-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 200;
+          background: rgba(0,0,0,0.45);
+          animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        .mobile-sheet {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: white;
+          border-radius: 20px 20px 0 0;
+          padding-bottom: env(safe-area-inset-bottom);
+          animation: sheetUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+          overflow: hidden;
+        }
+        @keyframes sheetUp {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+        .sheet-handle {
+          width: 36px;
+          height: 4px;
+          border-radius: 2px;
+          background: #e5e7eb;
+          margin: 12px auto 4px;
+        }
+        .sheet-user {
+          padding: 12px 20px 16px;
+          border-bottom: 1px solid #f3f4f6;
+        }
+        .sheet-name {
+          font-size: 15px;
+          font-weight: 700;
+          color: #111827;
+          margin: 0 0 2px;
+        }
+        .sheet-email {
+          font-size: 13px;
+          color: #9ca3af;
+          margin: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .sheet-section {
+          padding: 8px 0;
+          border-bottom: 1px solid #f3f4f6;
+        }
+        .sheet-section:last-child { border-bottom: none; }
+        .sheet-item {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 14px 20px;
+          font-size: 15px;
+          font-weight: 500;
+          color: #111827;
+          text-decoration: none;
+          background: none;
+          border: none;
+          width: 100%;
+          text-align: left;
+          cursor: pointer;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+        .sheet-item:active { background: #f9fafb; }
+        .sheet-item.danger { color: #ef4444; }
+        .sheet-item.danger:active { background: #fef2f2; }
+        .sheet-item-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: #f3f4f6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .sheet-item.danger .sheet-item-icon {
+          background: #fef2f2;
         }
       `}</style>
+
+      {/* ── MOBILE HEADER ───────────────────────────────────────────────────── */}
+      <header className="mobile-header">
+        {/* Logo: absolutely centered, unaffected by avatar width */}
+        <Link href="/map" style={{
+          position: "absolute", left: "50%", transform: "translateX(-50%)",
+          display: "flex", alignItems: "center", gap: 5, textDecoration: "none",
+        }}>
+          <LogoIcon size={22} />
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>
+            AziTracks
+          </span>
+        </Link>
+
+        {/* Avatar: right-aligned via header's justify-content: flex-end */}
+        <div
+          onClick={() => setMobileMenuOpen(true)}
+          role="button"
+          aria-label="Profile menu"
+          style={{ position: "relative", cursor: "pointer" }}
+        >
+          <div style={{
+            width: 34, height: 34, borderRadius: "50%",
+            background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)",
+            color: "white", fontSize: 13, fontWeight: 700,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            border: "1.5px solid rgba(255,255,255,0.8)",
+            boxShadow: "0 0 0 1.5px #e0e7ef",
+            overflow: "hidden",
+          }}>
+            {userAvatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={userAvatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            ) : ini}
+          </div>
+          {totalPending > 0 && (
+            <span style={{
+              position: "absolute", top: -2, right: -2,
+              minWidth: 14, height: 14, borderRadius: 7,
+              background: "#ef4444", color: "white",
+              fontSize: 9, fontWeight: 700, lineHeight: "14px",
+              textAlign: "center", padding: "0 3px", pointerEvents: "none",
+            }}>{totalPending}</span>
+          )}
+        </div>
+      </header>
+
+      {/* ── MOBILE BOTTOM SHEET ──────────────────────────────────────────────── */}
+      {mobileMenuOpen && (
+        <div className="mobile-sheet-backdrop" onClick={() => setMobileMenuOpen(false)}>
+          <div className="mobile-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-handle" />
+
+            {/* User info */}
+            <div className="sheet-user">
+              <p className="sheet-name">{userName ?? "User"}</p>
+              {userEmail && <p className="sheet-email">{userEmail}</p>}
+            </div>
+
+            {/* Nav items */}
+            <div className="sheet-section">
+              <Link href="/profile" className="sheet-item" onClick={() => setMobileMenuOpen(false)}>
+                <span className="sheet-item-icon"><ProfileIcon size={18} /></span>
+                {t.nav_profile}
+              </Link>
+              <Link href="/friends" className="sheet-item" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
+                <span className="sheet-item-icon" style={{ position: "relative" }}>
+                  <FriendsIcon size={18} />
+                  {totalPending > 0 && (
+                    <span style={{
+                      position: "absolute", top: -4, right: -4,
+                      minWidth: 14, height: 14, borderRadius: 7,
+                      background: "#ef4444", color: "white",
+                      fontSize: 9, fontWeight: 700, lineHeight: "14px",
+                      textAlign: "center", padding: "0 3px",
+                    }}>{totalPending}</span>
+                  )}
+                </span>
+                {t.friends_title}
+                {totalPending > 0 && (
+                  <span style={{
+                    marginLeft: "auto", minWidth: 20, height: 20, borderRadius: 10,
+                    background: "#ef4444", color: "white",
+                    fontSize: 11, fontWeight: 700, lineHeight: "20px",
+                    textAlign: "center", padding: "0 5px",
+                  }}>{totalPending}</span>
+                )}
+              </Link>
+              <Link href="/settings" className="sheet-item" onClick={() => setMobileMenuOpen(false)}>
+                <span className="sheet-item-icon"><SettingsIcon size={18} /></span>
+                {t.nav_settings}
+              </Link>
+            </div>
+
+            {/* Sign out */}
+            <div className="sheet-section">
+              <button
+                className="sheet-item danger"
+                onClick={() => { setMobileMenuOpen(false); signOut({ callbackUrl: "/login" }); }}
+              >
+                <span className="sheet-item-icon"><SignOutIcon size={18} /></span>
+                {t.nav_signOut}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── DESKTOP TOP NAV ──────────────────────────────────────────────────── */}
       <header className="desktop-nav" style={{
@@ -309,7 +537,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         {/* Logo */}
         <Link href="/map" style={{ display: "flex", alignItems: "center", gap: 7, textDecoration: "none", marginRight: 24, flexShrink: 0 }}>
           <LogoIcon />
-          <span style={{ fontSize: 14, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>MySummits</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>AziTracks</span>
         </Link>
 
         {/* Nav links */}
@@ -334,14 +562,14 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
               // eslint-disable-next-line @next/next/no-img-element
               <img src={userAvatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
             ) : ini}
-            {(pendingFriendRequests + pendingTagCount) > 0 && (
+            {totalPending > 0 && (
               <span style={{
                 position: "absolute", top: -2, right: -2,
                 minWidth: 14, height: 14, borderRadius: 7,
                 background: "#ef4444", color: "white",
                 fontSize: 9, fontWeight: 700, lineHeight: "14px",
                 textAlign: "center", padding: "0 3px", pointerEvents: "none",
-              }}>{pendingFriendRequests + pendingTagCount}</span>
+              }}>{totalPending}</span>
             )}
           </div>
 
@@ -371,14 +599,14 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
                 >
                   <FriendsIcon />
                   {t.friends_title}
-                  {(pendingFriendRequests + pendingTagCount) > 0 && (
+                  {totalPending > 0 && (
                     <span style={{
                       marginLeft: "auto",
                       minWidth: 18, height: 18, borderRadius: 9,
                       background: "#ef4444", color: "white",
                       fontSize: 10, fontWeight: 700, lineHeight: "18px",
                       textAlign: "center", padding: "0 5px",
-                    }}>{pendingFriendRequests + pendingTagCount}</span>
+                    }}>{totalPending}</span>
                   )}
                 </Link>
                 <Link
@@ -494,9 +722,9 @@ function HomeIcon({ size = 18, active = false }: { size?: number; active?: boole
   );
 }
 
-function LogoIcon() {
+function LogoIcon({ size = 20 }: { size?: number }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 19 L8.5 7 L13 14 L17 9.5 L21 19 Z" fill="#dbeafe" stroke="#0369a1" strokeWidth="1.8" />
       <path d="M17 9.5 L19 6.5" stroke="#0369a1" strokeWidth="1.8" />
       <circle cx="19" cy="6" r="1.2" fill="#0369a1" />
@@ -568,9 +796,9 @@ function PlusIcon() {
   );
 }
 
-function FriendsIcon() {
+function FriendsIcon({ size = 15 }: { size?: number }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="9" cy="7" r="3" />
       <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
@@ -579,27 +807,27 @@ function FriendsIcon() {
   );
 }
 
-function ProfileIcon() {
+function ProfileIcon({ size = 15 }: { size?: number }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
     </svg>
   );
 }
 
-function SettingsIcon() {
+function SettingsIcon({ size = 15 }: { size?: number }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   );
 }
 
-function SignOutIcon() {
+function SignOutIcon({ size = 15 }: { size?: number }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />

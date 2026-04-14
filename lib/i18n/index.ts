@@ -31,8 +31,9 @@ export function getT(locale: string): Dict {
  */
 export function i(s: string, vars: Record<string, string | number>): string {
   // 1. Resolve plural blocks: {key,plural,=1{one}other{many}}
+  // Uses [^{}] so braces are not ambiguous, correctly handles empty inner content like =1{}
   s = s.replace(
-    /\{(\w+),plural,([^}]*(?:\{[^}]*\}[^}]*)*)\}/g,
+    /\{(\w+),plural,((?:[^{}]|\{[^{}]*\})*)\}/g,
     (_, key, rules) => {
       const n = Number(vars[key] ?? 0);
       // Parse =N{...} and other{...} tokens

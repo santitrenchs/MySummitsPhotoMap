@@ -192,4 +192,13 @@ export type Dict = {
   // Level progress & gamification
   home_levelNext: string; home_maxLevel: string;
   home_inviteFriends: string; home_motivationDefend: string;
+  home_progression: string;
+  home_altReq: string;
+  home_altReqMulti: string;
+  home_levelProgress: string;
+  home_levelNeedSummits: string;
+  home_seeAllLevels: string;
+  home_hideLevels: string;
+  home_altZone1: string; home_altZone2: string; home_altZone3: string;
+  home_altZone4: string; home_altZone5: string; home_altZone6: string;
 };

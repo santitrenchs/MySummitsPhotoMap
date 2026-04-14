@@ -43,7 +43,7 @@ export default async function AppLayout({
           }
           @media (max-width: 639px) {
             :root {
-              --top-nav-h: 0px;
+              --top-nav-h: 52px;
               --bottom-nav-h: calc(60px + env(safe-area-inset-bottom));
             }
           }

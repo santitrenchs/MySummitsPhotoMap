@@ -37,6 +37,12 @@ export type HomeData = {
     totalPhotos: number;
     totalRegions: number;
     friendsCount: number;
+    maxAltitude: number;
+    peaks1000plus: number;
+    peaks2000plus: number;
+    peaks3000plus: number;
+    peaks4000plus: number;
+    peaks5000plus: number;
   };
   leaderboard: LeaderboardEntry[];
   userRank: number; // 1-based
@@ -82,6 +88,14 @@ export async function getHomeData(userId: string): Promise<HomeData> {
     myAscents.map((a) => a.peak.mountainRange).filter(Boolean)
   ).size;
   const totalPhotos = await prisma.photo.count({ where: { ascent: { createdBy: userId } } });
+
+  // Altitude stats (derived from myAscents, no extra query needed)
+  const maxAltitude = myAscents.length > 0 ? Math.max(...myAscents.map((a) => a.peak.altitudeM)) : 0;
+  const peaks1000plus = myAscents.filter((a) => a.peak.altitudeM > 1000).length;
+  const peaks2000plus = myAscents.filter((a) => a.peak.altitudeM > 2000).length;
+  const peaks3000plus = myAscents.filter((a) => a.peak.altitudeM > 3000).length;
+  const peaks4000plus = myAscents.filter((a) => a.peak.altitudeM > 4000).length;
+  const peaks5000plus = myAscents.filter((a) => a.peak.altitudeM > 5000).length;
 
   // 5. Leaderboard (me + friends)
   const allUserIds = [userId, ...friendUserIds];
@@ -175,7 +189,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
 
   return {
     user: { name: user?.name ?? "", username: user?.username ?? null, avatarUrl: user?.avatarUrl ?? null },
-    stats: { totalAscents, uniquePeaks, totalPhotos, totalRegions, friendsCount },
+    stats: { totalAscents, uniquePeaks, totalPhotos, totalRegions, friendsCount, maxAltitude, peaks1000plus, peaks2000plus, peaks3000plus, peaks4000plus, peaks5000plus },
     leaderboard,
     userRank,
     nextRankName,

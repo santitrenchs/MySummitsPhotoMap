@@ -9,18 +9,43 @@ import { i } from "@/lib/i18n";
 
 // ─── Level system ─────────────────────────────────────────────────────────────
 
-const LEVEL_DEFS: { min: number; next: number | null; key: keyof Dict }[] = [
-  { min: 0,   next: 1,   key: "level_novice" },
-  { min: 1,   next: 10,  key: "level_explorer" },
-  { min: 10,  next: 25,  key: "level_hiker" },
-  { min: 25,  next: 50,  key: "level_mountaineer" },
-  { min: 50,  next: 100, key: "level_peakBagger" },
-  { min: 100, next: null, key: "level_summiteer" },
+type AltReq = { threshold: number; count: number };
+type LevelDef = { idx: number; emoji: string; name: string; minAscents: number; altReqs?: AltReq[] };
+
+const LEVEL_DEFS: LevelDef[] = [
+  { idx: 1,  emoji: "🐣", name: "Trail Seed",       minAscents: 1 },
+  { idx: 2,  emoji: "🌱", name: "Pathling",          minAscents: 3 },
+  { idx: 3,  emoji: "🧭", name: "Ridge Scout",       minAscents: 10 },
+  { idx: 4,  emoji: "🥾", name: "Peak Walker",       minAscents: 15 },
+  { idx: 5,  emoji: "⛰️", name: "Summit Tamer",      minAscents: 25, altReqs: [{ threshold: 1000, count: 1 }] },
+  { idx: 6,  emoji: "❄️", name: "Sky Breaker",       minAscents: 40, altReqs: [{ threshold: 2000, count: 1 }] },
+  { idx: 7,  emoji: "👑", name: "Peak Master",       minAscents: 60, altReqs: [{ threshold: 3000, count: 1 }] },
+  { idx: 8,  emoji: "🔥", name: "Legend Ascender",   minAscents: 80, altReqs: [{ threshold: 4000, count: 1 }] },
+  { idx: 9,  emoji: "🌌", name: "Mythic Summiteer",  minAscents: 100, altReqs: [{ threshold: 5000, count: 1 }] },
+  { idx: 10, emoji: "🏔️", name: "Apex Warden",       minAscents: 120, altReqs: [{ threshold: 3000, count: 3 }, { threshold: 4000, count: 1 }, { threshold: 5000, count: 1 }] },
 ];
 
-function getLevelInfo(n: number) {
-  const lvl = [...LEVEL_DEFS].reverse().find((l) => n >= l.min) ?? LEVEL_DEFS[0];
-  return { key: lvl.key, next: lvl.next, progress: lvl.next ? Math.min(1, n / lvl.next) : 1 };
+function getAltCount(stats: HomeData["stats"], threshold: number): number {
+  if (threshold >= 5000) return stats.peaks5000plus;
+  if (threshold >= 4000) return stats.peaks4000plus;
+  if (threshold >= 3000) return stats.peaks3000plus;
+  if (threshold >= 2000) return stats.peaks2000plus;
+  return stats.peaks1000plus;
+}
+
+function meetsLevel(def: LevelDef, n: number, stats: HomeData["stats"]): boolean {
+  if (n < def.minAscents) return false;
+  return !def.altReqs || def.altReqs.every((r) => getAltCount(stats, r.threshold) >= r.count);
+}
+
+function getLevelState(stats: HomeData["stats"]) {
+  let currentIdx = -1;
+  for (let i = 0; i < LEVEL_DEFS.length; i++) {
+    if (meetsLevel(LEVEL_DEFS[i], stats.totalAscents, stats)) currentIdx = i;
+  }
+  const current = currentIdx >= 0 ? LEVEL_DEFS[currentIdx] : null;
+  const next = currentIdx < LEVEL_DEFS.length - 1 ? LEVEL_DEFS[currentIdx + 1] : null;
+  return { currentIdx, current, next };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -134,6 +159,7 @@ export function HomeClient({ data, locale, t }: {
 }) {
   const router = useRouter();
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+  const [progressionExpanded, setProgressionExpanded] = useState(false);
   const { user, stats, leaderboard, userRank, nextRankName, nextRankGap, recentAscents, friendsActivity } = data;
 
   function navigate(href: string) {
@@ -142,8 +168,35 @@ export function HomeClient({ data, locale, t }: {
     router.push(href.replace("#hero", ""));
   }
   const badges = computeBadges(stats);
-  const levelInfo = getLevelInfo(stats.totalAscents);
+  const levelState = getLevelState(stats);
   const firstName = user.name.split(" ")[0];
+
+  // Collapsed progression: 1 done before + in-progress + 2 locked (4 total)
+  const visibleIndices: number[] = (() => {
+    if (progressionExpanded) return LEVEL_DEFS.map((_, i) => i);
+    const total = LEVEL_DEFS.length;
+    const next = levelState.currentIdx + 1; // 0 if no level yet
+    if (next >= total) {
+      // Max level: show last 4
+      const s = Math.max(0, total - 4);
+      return Array.from({ length: total - s }, (_, i) => s + i);
+    }
+    let start = Math.max(0, next - 1);
+    const end = Math.min(total - 1, start + 3);
+    if (end - start < 3) start = Math.max(0, end - 3);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  })();
+
+  // Altitude breakdown for summit card (only non-zero buckets)
+  const fmt = (n: number) => n.toLocaleString(locale);
+  const altBuckets = [
+    { icon: "🌿", name: t.home_altZone1, range: `0–${fmt(1000)} m`,             count: stats.totalAscents - stats.peaks1000plus },
+    { icon: "⛰️", name: t.home_altZone2, range: `${fmt(1000)}–${fmt(2000)} m`,  count: stats.peaks1000plus - stats.peaks2000plus },
+    { icon: "🏔️", name: t.home_altZone3, range: `${fmt(2000)}–${fmt(3000)} m`,  count: stats.peaks2000plus - stats.peaks3000plus },
+    { icon: "❄️", name: t.home_altZone4, range: `${fmt(3000)}–${fmt(4000)} m`,  count: stats.peaks3000plus - stats.peaks4000plus },
+    { icon: "🔥", name: t.home_altZone5, range: `${fmt(4000)}–${fmt(5000)} m`,  count: stats.peaks4000plus - stats.peaks5000plus },
+    { icon: "🌌", name: t.home_altZone6, range: `${fmt(5000)}+ m`,              count: stats.peaks5000plus },
+  ].filter((b) => b.count > 0);
   const myCount = leaderboard.find((e) => e.isCurrentUser)?.ascentCount ?? stats.totalAscents;
 
   // Motivation
@@ -206,13 +259,13 @@ export function HomeClient({ data, locale, t }: {
               {user.username ? `@${user.username}` : user.name}
             </h1>
             <div style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
+              display: "inline-flex", alignItems: "center", gap: 6,
               background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
-              borderRadius: 20, padding: "3px 10px",
+              borderRadius: 20, padding: "4px 12px",
             }}>
-              <span style={{ fontSize: 11 }}>⛰️</span>
+              <span style={{ fontSize: 14 }}>{levelState.current?.emoji ?? "🎯"}</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: "white", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                {t[levelInfo.key] as string}
+                {levelState.current?.name ?? "Newcomer"}
               </span>
             </div>
           </div>
@@ -223,17 +276,31 @@ export function HomeClient({ data, locale, t }: {
           <div style={{ height: 7, borderRadius: 4, background: "rgba(255,255,255,0.2)", overflow: "hidden" }}>
             <div style={{
               height: "100%", borderRadius: 4,
-              width: `${levelInfo.progress * 100}%`,
-              background: levelInfo.next
+              width: `${levelState.next ? Math.min(stats.totalAscents / levelState.next.minAscents * 100, 100) : 100}%`,
+              background: levelState.next
                 ? "linear-gradient(90deg,#7dd3fc,#e0f2fe)"
                 : "linear-gradient(90deg,#fde68a,#fbbf24)",
             }} />
           </div>
-          <p style={{ margin: "5px 0 0", fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
-            {levelInfo.next
-              ? i(t.home_levelNext, { current: stats.totalAscents, next: levelInfo.next })
-              : t.home_maxLevel}
-          </p>
+          {levelState.next ? (
+            <div style={{ marginTop: 5, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
+                {stats.totalAscents}/{levelState.next.minAscents} summits → {levelState.next.emoji} {levelState.next.name}
+              </span>
+              {levelState.next.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
+                <span key={r.threshold} style={{
+                  fontSize: 10, fontWeight: 700, color: "white",
+                  background: "rgba(255,255,255,0.22)", borderRadius: 10, padding: "2px 8px",
+                }}>
+                  +{r.count > 1 ? ` ${r.count}×` : ""} &gt;{r.threshold.toLocaleString()}m
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p style={{ margin: "5px 0 0", fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
+              {t.home_maxLevel}
+            </p>
+          )}
         </div>
       </div>
 
@@ -263,8 +330,29 @@ export function HomeClient({ data, locale, t }: {
           </div>
           {navigatingTo === "/ascents#hero" ? (
             <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+          ) : altBuckets.length > 0 ? (
+            <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 8, maxWidth: "58%" }}>
+              {altBuckets.map((b) => (
+                <div key={b.name} style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
+                  <span style={{ fontSize: 14, lineHeight: "1.2", flexShrink: 0, marginTop: 1 }}>{b.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", lineHeight: "1.2", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {b.name}
+                      </span>
+                      <span style={{ fontSize: 17, fontWeight: 800, color: "white", flexShrink: 0, letterSpacing: "-0.02em" }}>
+                        {b.count}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginTop: 1 }}>
+                      {b.range}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <div style={{ fontSize: 56, opacity: 0.85, position: "relative" }}>🏔️</div>
+            <div style={{ fontSize: 56, opacity: 0.85 }}>🏔️</div>
           )}
         </div>
       </div>
@@ -299,6 +387,155 @@ export function HomeClient({ data, locale, t }: {
           ))}
         </div>
       </div>
+
+      {/* ── Progression timeline ────────────────────────────────────────── */}
+      <section style={{ padding: "20px 16px 0" }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 14px" }}>
+          {t.home_progression}
+        </h2>
+        <div>
+          {LEVEL_DEFS.map((def, idx) => {
+            if (!visibleIndices.includes(idx)) return null;
+
+            // "In-progress" = the next level being worked toward (not yet achieved)
+            const isDone = idx <= levelState.currentIdx;
+            const isInProgress = levelState.next !== null && idx === levelState.currentIdx + 1;
+            const isLocked = !isDone && !isInProgress;
+            const isLastVisible = visibleIndices[visibleIndices.length - 1] === idx;
+
+            return (
+              <div key={def.idx} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                {/* Left: circle + connector */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 30, flexShrink: 0 }}>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                    background: isDone ? "#16a34a" : isInProgress ? "#0369a1" : "#e5e7eb",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: isDone ? 13 : 11,
+                    color: isDone || isInProgress ? "white" : "#9ca3af",
+                    fontWeight: 800,
+                    boxShadow: isInProgress ? "0 0 0 3px #bfdbfe" : "none",
+                  }}>
+                    {isDone ? "✓" : def.idx}
+                  </div>
+                  {!isLastVisible && (
+                    <div style={{
+                      width: 2, flex: 1, minHeight: 10,
+                      background: idx < levelState.currentIdx ? "#86efac" : "#e5e7eb",
+                      margin: "3px 0",
+                    }} />
+                  )}
+                </div>
+
+                {/* Right: level card */}
+                <div style={{
+                  flex: 1,
+                  background: isInProgress ? "linear-gradient(135deg,#eff6ff,#f0f9ff)" : "white",
+                  border: isInProgress ? "1.5px solid #bfdbfe" : "1px solid #e5e7eb",
+                  borderRadius: 12, padding: "10px 12px",
+                  marginBottom: isLastVisible ? 0 : 8,
+                  opacity: isLocked ? 0.7 : 1,
+                }}>
+                  {/* Header row */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 20 }}>{def.emoji}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, flex: 1, color: isInProgress ? "#0369a1" : isLocked ? "#9ca3af" : "#111827" }}>
+                      {def.name}
+                    </span>
+                    {isDone && (
+                      <span style={{ fontSize: 9, fontWeight: 800, background: "#dcfce7", color: "#166534", padding: "2px 7px", borderRadius: 8 }}>
+                        ✓
+                      </span>
+                    )}
+                    {isLocked && (
+                      <span style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1 }}>🔒</span>
+                    )}
+                  </div>
+
+                  {/* Requirement pills */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 6,
+                      background: isDone ? "#f0fdf4" : "#f3f4f6",
+                      color: isDone ? "#16a34a" : isLocked ? "#9ca3af" : "#374151",
+                    }}>
+                      {def.minAscents} {t.home_statSummits.toLowerCase()}
+                    </span>
+                    {def.altReqs?.map((r) => {
+                      const met = getAltCount(stats, r.threshold) >= r.count;
+                      const label = r.count === 1
+                        ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
+                        : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
+                      return (
+                        <span key={r.threshold} style={{
+                          fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 6,
+                          background: met ? "#f0fdf4" : "#f3f4f6",
+                          color: met ? "#16a34a" : isLocked ? "#9ca3af" : "#374151",
+                        }}>
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  {/* In-progress: show detailed progress */}
+                  {isInProgress && (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #dbeafe" }}>
+                      <div style={{ height: 4, borderRadius: 2, background: "#dbeafe", overflow: "hidden", marginBottom: 5 }}>
+                        <div style={{
+                          height: "100%", borderRadius: 2,
+                          width: `${Math.min(stats.totalAscents / def.minAscents * 100, 100)}%`,
+                          background: "#0369a1",
+                        }} />
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0369a1", marginBottom: 2 }}>
+                        {i(t.home_levelProgress, { current: stats.totalAscents, total: def.minAscents })}
+                      </div>
+                      {stats.totalAscents < def.minAscents && (
+                        <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>
+                          → {i(t.home_levelNeedSummits, { n: def.minAscents - stats.totalAscents })}
+                        </div>
+                      )}
+                      {def.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
+                        <div key={r.threshold} style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>
+                          → {i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Expand / collapse CTA */}
+        {!progressionExpanded ? (
+          <button
+            onClick={() => setProgressionExpanded(true)}
+            style={{
+              width: "100%", marginTop: 12,
+              background: "none", border: "1.5px solid #e5e7eb", borderRadius: 10,
+              padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#374151",
+              cursor: "pointer",
+            }}
+          >
+            {t.home_seeAllLevels}
+          </button>
+        ) : (
+          <button
+            onClick={() => setProgressionExpanded(false)}
+            style={{
+              width: "100%", marginTop: 10,
+              background: "none", border: "none",
+              padding: "6px", fontSize: 13, fontWeight: 600, color: "#9ca3af",
+              cursor: "pointer",
+            }}
+          >
+            {t.home_hideLevels}
+          </button>
+        )}
+      </section>
 
       {/* ── Leaderboard ─────────────────────────────────────────────────── */}
       {leaderboard.length > 1 && (
