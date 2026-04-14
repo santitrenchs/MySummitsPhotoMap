@@ -41,8 +41,9 @@ The app has four main sections:
 
 ### Mi Progreso (Home)
 The gamification dashboard. Entry point of the app (root `/` redirects here when authenticated). Shows:
-- **Level system**: Novato → Explorador → Senderista → Montañero → Cazacimas → Cumbrista, with a progress bar showing `current/next summits to next level`
-- **Summit hero card**: primary metric (total ascents) displayed prominently
+- **Level system**: 10 gamified levels (Trail Seed → Apex Warden), defined in `LEVEL_DEFS` in `HomeClient.tsx`. Each level has `minAscents` and optional `altReqs` (altitude bracket requirements). See level definitions below.
+- **Progression section**: collapses to 4 visible rows (1 done before + in-progress + 2 locked). Expand/collapse toggle. "In-progress" level = `levelState.next` (the next unachieved level), not the current achieved one.
+- **Summit hero card**: primary metric (total ascents) displayed prominently + altitude distribution breakdown (zone names + count + range, only non-zero buckets shown).
 - **Secondary KPIs**: photos, regions, friends as a 3-column row
 - **Leaderboard** ("Tu posición en la cordada"): friend ranking with +/- diff badges showing gap vs current user
 - **Dynamic motivation banner**: gold 🏆 if #1 with margin, orange ⚠️ if lead threatened (gap ≤ 3), green 🎯 if chasing someone — includes a direct CTA button to log an ascent
@@ -51,6 +52,37 @@ The gamification dashboard. Entry point of the app (root `/` redirects here when
 - **Achievements**: 7 computed badges with SVG progress rings — gold ring + checkmark when earned, blue ring with `current/target` counter when in progress, gray when locked
 
 Designed to make the user feel proud of their journey and motivated to keep climbing.
+
+#### Level system (10 levels)
+
+Defined as `LEVEL_DEFS: LevelDef[]` in `components/home/HomeClient.tsx`:
+
+| idx | Emoji | Name | minAscents | altReqs |
+|-----|-------|------|------------|---------|
+| 1 | 🐣 | Trail Seed | 1 | — |
+| 2 | 🌱 | Pathling | 3 | — |
+| 3 | 🧭 | Ridge Scout | 10 | — |
+| 4 | 🥾 | Peak Walker | 15 | — |
+| 5 | ⛰️ | Summit Tamer | 25 | ≥1 peak >1000m |
+| 6 | ❄️ | Sky Breaker | 40 | ≥1 peak >2000m |
+| 7 | 👑 | Peak Master | 60 | ≥1 peak >3000m |
+| 8 | 🔥 | Legend Ascender | 80 | ≥1 peak >4000m |
+| 9 | 🌌 | Mythic Summiteer | 100 | ≥1 peak >5000m |
+| 10 | 🏔️ | Apex Warden | 120 | ≥3 peaks >3000m, ≥1 >4000m, ≥1 >5000m |
+
+`meetsLevel()` checks both `totalAscents >= minAscents` AND all `altReqs` (using `getAltCount()` which maps thresholds to the precomputed stats fields).
+
+#### Altitude bucket stats
+
+Computed in `lib/services/home.service.ts` from the already-fetched `myAscents` array — **no extra DB queries**:
+```typescript
+peaks1000plus = myAscents.filter(a => a.peak.altitudeM > 1000).length
+peaks2000plus = ...  // same pattern up to peaks5000plus
+maxAltitude   = Math.max(...myAscents.map(a => a.peak.altitudeM))
+```
+These 6 fields plus `maxAltitude` are part of `HomeData["stats"]`.
+
+The altitude distribution in the hero card shows 6 named zones (🌿 Baja montaña, ⛰️ Media montaña, 🏔️ Alta montaña, ❄️ Alta montaña técnica, 🔥 Expedición, 🌌 Expedición extrema), each derived as the difference between adjacent bracket counts. Only non-zero buckets are shown.
 
 ### Mapa
 Interactive map (maplibre-gl + Carto tiles + hillshade terrain) showing all peaks. Users can:
@@ -177,6 +209,8 @@ FaceDetection / FaceTag
 - Mobile bottom tab bar: **Mi Progreso · Mapa · + (log ascent, center CTA) · Ascensiones · Social** (5 zones, profile accessible from Mi Progreso header).
 - Desktop top nav: Mi Progreso · Mapa · Ascensiones · Social + avatar button.
 - Home tab = Mi Progreso (gamification dashboard). Root `/` redirects to `/home` when authenticated.
+- **Mobile header** (`components/nav/NavBar.tsx`): sticky 52px bar shown only on mobile (`<640px`). Contains the AziTracks logo **absolutely centered** (`position: absolute; left: 50%; transform: translateX(-50%)`) so it stays visually centered regardless of avatar width. The avatar div uses `justify-content: flex-end` on the header.
+- **`--top-nav-h` CSS variable**: set to `52px` on mobile (in `app/(app)/layout.tsx`) to match the mobile header height. Map and other full-height containers use `calc(100svh - var(--top-nav-h) - var(--bottom-nav-h))` — this variable must stay in sync with the actual `.mobile-header` height (currently `52px`).
 
 ---
 
@@ -187,6 +221,7 @@ FaceDetection / FaceTag
 - **Databases**: Two Railway PostgreSQL instances — sandbox (port 40040) and production (port 10046 / internal `postgres-52e3.railway.internal:5432`)
 - **File storage**: Cloudflare R2, public base URL `https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev`
   - Avatar key pattern: `avatars/{userId}.jpg`
+- **Email**: Resend (`resend` npm package), domain `mail.azitracks.com` (subdomain configured in GoDaddy via Resend auto-setup), region `eu-west-1`. From address: `AziTracks <noreply@mail.azitracks.com>`. API key in env var `RESEND_API_KEY`, from address in `RESEND_FROM`. Email logic in `lib/email.ts`.
 
 ---
 
@@ -326,6 +361,14 @@ All 5 locales (`ca`, `en`, `es`, `fr`, `de`) must have these keys in `lib/i18n/`
 | `detail_and` | i | and | y | et | und |
 | `date_today` | Avui | Today | Hoy | Aujourd'hui | Heute |
 | `date_selectYear` | Selecciona l'any | Select year | Selecciona el año | Choisir l'année | Jahr wählen |
+| `home_progression` | Progressió | Progression | Progresión | Progression | Aufstieg |
+| `home_altReq` | Superar els {m}m | Reach {m}m | Superar los {m}m | Dépasser {m}m | Über {m}m |
+| `home_altReqMulti` | {n} cimes sobre {m}m | {n} peaks over {m}m | {n} cimas sobre {m}m | {n} sommets sur {m}m | {n} Gipfel über {m}m |
+| `home_levelProgress` | {current} / {total} cimes | {current} / {total} summits | {current} / {total} cimas | {current} / {total} sommets | {current} / {total} Gipfel |
+| `home_levelNeedSummits` | {n} cima{n,plural,=1{}other{s}} més | {n} more summit{n,plural,=1{}other{s}} | {n} cima{n,plural,=1{}other{s}} más | encore {n} sommet{n,plural,=1{}other{s}} | noch {n} Gipfel |
+| `home_seeAllLevels` | Veure tots els nivells → | See all levels → | Ver todos los niveles → | Voir tous les niveaux → | Alle Level → |
+| `home_hideLevels` | Veure menys | See less | Ver menos | Voir moins | Weniger |
+| `home_altZone1`–`home_altZone6` | — | low/mid/high/tech/expedition/extreme | Baja/Media/Alta montaña/Alta técnica/Expedición/Expedición extrema | — | — |
 
 The `detail_with` key (also in all locales) is used in the caption as `t.detail_with.toLowerCase()` — so it can be "Amb" / "With" / "Con" / "Avec" / "Mit" stored in any case.
 
@@ -336,6 +379,28 @@ The `detail_with` key (also in all locales) is used in the caption as `t.detail_
 - **`toLocaleString()` without locale**: causes hydration mismatch between Node.js server and browser. Always pass an explicit locale string, or skip formatting entirely for short numbers (e.g. `{altitudeM} m` not `{altitudeM.toLocaleString()} m`).
 - **Array guard on face detections**: API endpoints that return face detections can return non-arrays on edge cases. Always guard with `Array.isArray(data) ? data : []` before calling `.some()`, `.map()`, etc.
 - **Peak coordinates order**: maplibre-gl uses `[longitude, latitude]`. The DB stores `latitude` and `longitude` as separate fields. Always write `[peak.longitude, peak.latitude]` — never swap.
+- **i18n plural regex — use `[^{}]`, not `[^}]`**: The `i()` function in `lib/i18n/index.ts` handles plural blocks like `{n,plural,=1{}other{s}}`. The inner content of `=1{}` is empty, which breaks patterns that use `[^}]` (because `{` is then a valid non-`}` char, making brace nesting ambiguous). The correct pattern is `((?:[^{}]|\{[^{}]*\})*)` — `[^{}]` excludes both brace types, alternated with `\{[^{}]*\}` for explicit pairs. **Never change this regex without verifying empty inner blocks still work.**
+- **`--top-nav-h` must match mobile header height**: The CSS variable `--top-nav-h` in `app/(app)/layout.tsx` is set to `52px` on mobile to match the `.mobile-header` height in `NavBar.tsx`. If the header height changes, update both in sync — otherwise the map overflows and the sticky header covers the filter panel.
+- **Middleware (`proxy.ts`) — public auth routes**: Any new unauthenticated page (e.g. `/forgot-password`, `/reset-password`) must be added to the `isAuthPage` check in `proxy.ts`, otherwise the middleware redirects unauthenticated users to `/login` before they can reach it.
+- **`npm install` must save to `package.json`**: Always use `npm install <pkg> --save`. Running `npm install` without `--save` in a local dev session installs the package locally but doesn't add it to `package.json` — the Railway build will then fail with "Module not found".
+
+---
+
+## Auth & Email Flows
+
+### Forgot Password / Reset Password
+
+- **`PasswordResetToken` model**: `token` (32-byte hex, unique), `email`, `expiresAt` (1h), `usedAt` (set on use). Table: `password_reset_tokens`.
+- **`POST /api/auth/forgot-password`**: looks up user by email, always returns 200 (never reveals if email exists), deletes previous tokens for that email, creates new token, calls `sendPasswordResetEmail()`.
+- **`POST /api/auth/reset-password`**: validates token exists + not used + not expired, updates `user.passwordHash`, marks token `usedAt`.
+- **`lib/email.ts`**: Resend client wrapper. `sendPasswordResetEmail(to, token)` sends branded HTML email with reset link `{APP_URL}/reset-password?token={token}`.
+- **Pages**: `/forgot-password` (email form), `/reset-password` (new password + confirm form, reads `?token=` from query). Both are in `app/(auth)/` group and listed as public in `proxy.ts`.
+- **Login page**: "¿Olvidaste tu contraseña?" link (`auth_forgotPassword` i18n key) appears inline next to the password label, links to `/forgot-password`.
+
+### What's still missing (not yet implemented)
+- Email verification on register
+- Rate limiting on login
+- OAuth (Google / Apple)
 
 ---
 
@@ -343,6 +408,7 @@ The `detail_with` key (also in all locales) is used in the caption as `t.detail_
 
 Keep these in mind but do not over-engineer for them in the MVP:
 
+- **Email verification**: send verification link on register, block or warn until verified
 - **Friend system**: User search, friend requests, accepted friends feed — the social layer is partially built but needs a full friend-request flow
 - **Challenges**: Time-limited goals (e.g., "Climb 3 peaks this month") to drive retention
 - **Collections / Lists**: Curated peak lists (e.g., "100 Pyrenean 3000ers") a user can work through
