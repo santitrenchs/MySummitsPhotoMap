@@ -1,9 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useCallback } from "react";
 import type { MapPeak, AscentMapEntry } from "./MapView";
-import LocationPrompt from "./LocationPrompt";
 
 const MapView = dynamic(() => import("./MapView"), {
   ssr: false,
@@ -24,15 +22,5 @@ export default function MapContainer({
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
 }) {
-  const [gpsPosition, setGpsPosition] = useState<{ lat: number; lon: number } | null>(null);
-  const handleGpsAcquired = useCallback((pos: { lat: number; lon: number }) => {
-    setGpsPosition(pos);
-  }, []);
-
-  return (
-    <div style={{ position: "relative" }}>
-      <MapView peaks={peaks} ascentData={ascentData} gpsPosition={gpsPosition} />
-      <LocationPrompt onGpsAcquired={handleGpsAcquired} />
-    </div>
-  );
+  return <MapView peaks={peaks} ascentData={ascentData} />;
 }

@@ -19,9 +19,6 @@ export const es: Dict = {
   map_climbedBadge: "Subida", map_ascentsBadge: "{n} ascensiones", map_last: "Última:",
   map_zoomIn: "Acercar", map_zoomOut: "Alejar",
   map_unclimbedPeaks: "{n} cimas sin subir · haz clic para ampliar",
-  map_locationPrompt: "¿Explorar cimas cerca de ti?",
-  map_locationAllow: "Usar mi ubicación",
-  map_locationDismiss: "Ahora no",
 
   field_peak: "Cima", field_selectPeak: "Selecciona una cima…", field_date: "Fecha",
   field_route: "Ruta", field_routePlaceholder: "p. ej. Norte de Salenques",

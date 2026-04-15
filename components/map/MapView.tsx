@@ -78,16 +78,44 @@ function PanelPlaceholder() {
   );
 }
 
+// ─── Map view persistence ─────────────────────────────────────────────────────
+
+const MAP_VIEW_KEY = "azitracks_map_view";
+
+function resolveInitialView(
+  ascentData: AscentMapEntry[],
+  peaks: MapPeak[]
+): { center: [number, number]; zoom: number } {
+  // Priority 1: last saved map position
+  try {
+    const saved = localStorage.getItem(MAP_VIEW_KEY);
+    if (saved) {
+      const { center, zoom } = JSON.parse(saved);
+      if (Array.isArray(center) && center.length === 2 && typeof zoom === "number") {
+        return { center: center as [number, number], zoom };
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Priority 2: most recent ascent's peak coordinates
+  if (ascentData.length > 0) {
+    const sorted = [...ascentData].sort((a, b) => b.date.localeCompare(a.date));
+    const peak = peaks.find((p) => p.id === sorted[0].peakId);
+    if (peak) return { center: [peak.longitude, peak.latitude], zoom: 9 };
+  }
+
+  // Priority 3: Barcelona default
+  return { center: [2.1734, 41.3851], zoom: 8 };
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function MapView({
   peaks,
   ascentData = [],
-  gpsPosition = null,
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
-  gpsPosition?: { lat: number; lon: number } | null;
 }) {
   const router = useRouter();
   const t = useT();
@@ -206,27 +234,31 @@ export default function MapView({
     } catch { /* terrain not ready yet */ }
   }, [terrain3d]);
 
-  // Fly to GPS position when LocationPrompt grants permission
-  useEffect(() => {
-    if (!gpsPosition) return;
-    const map = mapRef.current;
-    if (!map) return;
-    map.flyTo({ center: [gpsPosition.lon, gpsPosition.lat], zoom: 9, duration: 1800 });
-  }, [gpsPosition]);
-
   // Map initialisation (runs once)
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     const initMobile = window.innerWidth < 640;
+    const { center, zoom } = resolveInitialView(ascentData, peaks);
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE,
-      center: [0.5, 42.75],
-      zoom: 8,
+      center,
+      zoom,
       pitch: initMobile ? 0 : 45,
     });
     mapRef.current = map;
+
+    // Save map position on every move so we can restore it next session
+    map.on("moveend", () => {
+      try {
+        const c = map.getCenter();
+        localStorage.setItem(MAP_VIEW_KEY, JSON.stringify({
+          center: [c.lng, c.lat],
+          zoom: map.getZoom(),
+        }));
+      } catch { /* ignore */ }
+    });
 
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
 

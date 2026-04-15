@@ -19,9 +19,6 @@ export const ca: Dict = {
   map_climbedBadge: "Pujada", map_ascentsBadge: "{n} ascensions", map_last: "Última:",
   map_zoomIn: "Apropar", map_zoomOut: "Allunyar",
   map_unclimbedPeaks: "{n} cims sense pujar · fes clic per ampliar",
-  map_locationPrompt: "Explorar cims a prop teu?",
-  map_locationAllow: "Usar la meva ubicació",
-  map_locationDismiss: "Ara no",
 
   field_peak: "Cim", field_selectPeak: "Selecciona un cim…", field_date: "Data",
   field_route: "Ruta", field_routePlaceholder: "p. ex. Nord del Salenques",
