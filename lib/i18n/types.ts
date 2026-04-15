@@ -17,7 +17,7 @@ export type Dict = {
   skip: string; done: string; optional: string;
 
   // Map
-  map_all: string; map_climbed: string; map_notYet: string;
+  map_all: string; map_climbed: string; map_notYet: string; map_myCount: string;
   map_relief: string; map_loadingMap: string;
   map_viewAscent: string; map_viewAscents: string;
   map_logAscent: string; map_notYetClimbed: string;

@@ -12,7 +12,7 @@ export const en: Dict = {
   saving: "Saving…", deleting: "Deleting…", close: "Close", next: "Next",
   skip: "Skip", done: "Done", optional: "optional",
 
-  map_all: "All", map_climbed: "Climbed", map_notYet: "Not yet",
+  map_all: "All", map_climbed: "Climbed", map_notYet: "Not yet", map_myCount: "My {n}",
   map_relief: "🏔 Relief", map_loadingMap: "Loading map…",
   map_viewAscent: "View ascent →", map_viewAscents: "View {n} ascents →",
   map_logAscent: "+ Log ascent", map_notYetClimbed: "Not yet climbed",

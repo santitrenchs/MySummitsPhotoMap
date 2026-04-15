@@ -12,7 +12,7 @@ export const ca: Dict = {
   saving: "Desant…", deleting: "Eliminant…", close: "Tancar", next: "Següent",
   skip: "Ometre", done: "Fet", optional: "opcional",
 
-  map_all: "Totes", map_climbed: "Pujades", map_notYet: "Pendents",
+  map_all: "Totes", map_climbed: "Pujades", map_notYet: "Pendents", map_myCount: "Les meves {n}",
   map_relief: "🏔 Relleu", map_loadingMap: "Carregant mapa…",
   map_viewAscent: "Veure ascensió →", map_viewAscents: "Veure {n} ascensions →",
   map_logAscent: "+ Registrar ascensió", map_notYetClimbed: "Encara no pujada",

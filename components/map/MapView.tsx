@@ -568,9 +568,9 @@ const panelStyle: React.CSSProperties = isMobile
         }}>
           <div style={{ display: "flex", gap: 5, flex: 1, minWidth: 0, flexWrap: "nowrap", overflow: "hidden" }}>
             {[
-              { value: "all" as Filter,         label: `${t.map_all} ${peaks.length}` },
-              { value: "climbed" as Filter,      label: `✓ ${climbedCount}` },
-              { value: "not-climbed" as Filter,  label: `○ ${peaks.length - climbedCount}` },
+              { value: "all" as Filter,         label: t.map_all },
+              { value: "climbed" as Filter,      label: i(t.map_myCount, { n: climbedCount }) },
+              { value: "not-climbed" as Filter,  label: t.map_notYet },
             ].map(({ value, label }) => (
               <button
                 key={value}

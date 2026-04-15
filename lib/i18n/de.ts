@@ -12,7 +12,7 @@ export const de: Dict = {
   saving: "Speichern…", deleting: "Löschen…", close: "Schließen", next: "Weiter",
   skip: "Überspringen", done: "Fertig", optional: "optional",
 
-  map_all: "Alle", map_climbed: "Bestiegen", map_notYet: "Noch nicht",
+  map_all: "Alle", map_climbed: "Bestiegen", map_notYet: "Noch nicht", map_myCount: "Meine {n}",
   map_relief: "🏔 Relief", map_loadingMap: "Karte wird geladen…",
   map_viewAscent: "Besteigung anzeigen →", map_viewAscents: "{n} Besteigungen anzeigen →",
   map_logAscent: "+ Besteigung eintragen", map_notYetClimbed: "Noch nicht bestiegen",

@@ -12,7 +12,7 @@ export const fr: Dict = {
   saving: "Enregistrement…", deleting: "Suppression…", close: "Fermer", next: "Suivant",
   skip: "Passer", done: "Terminé", optional: "facultatif",
 
-  map_all: "Toutes", map_climbed: "Gravies", map_notYet: "À faire",
+  map_all: "Toutes", map_climbed: "Gravies", map_notYet: "À faire", map_myCount: "Mes {n}",
   map_relief: "🏔 Relief", map_loadingMap: "Chargement de la carte…",
   map_viewAscent: "Voir l'ascension →", map_viewAscents: "Voir {n} ascensions →",
   map_logAscent: "+ Enregistrer une ascension", map_notYetClimbed: "Pas encore gravi",
