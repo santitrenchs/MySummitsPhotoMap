@@ -17,7 +17,7 @@ export default async function NewAscentPage({
 
   const peaks = await prisma.peak.findMany({
     orderBy: [{ mountainRange: "asc" }, { altitudeM: "desc" }],
-    select: { id: true, name: true, altitudeM: true, mountainRange: true },
+    select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true },
   });
 
   return (

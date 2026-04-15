@@ -32,6 +32,7 @@ export type Dict = {
   field_wikilockPlaceholder: string; field_wikilockPreview: string;
 
   // New ascent
+  newAscent_pickTitle: string; newAscent_skipPhoto: string; newAscent_suggested: string;
   newAscent_clickOrDrag: string; newAscent_maxSize: string;
   newAscent_savingAscent: string; newAscent_uploadingPhoto: string;
   newAscent_savingTags: string; newAscent_save: string;

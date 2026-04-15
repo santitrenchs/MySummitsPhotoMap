@@ -4,14 +4,19 @@ import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ImageCropModal } from "@/components/photos/ImageCropModal";
 import { PhotoTagStep, type FaceDraft } from "@/components/photos/PhotoTagStep";
+import { PeakPicker } from "@/components/ascents/PeakPicker";
 import { useT } from "@/components/providers/I18nProvider";
 import { i as fmt } from "@/lib/i18n";
+import { extractImageMeta } from "@/lib/exif";
+import { nearestPeak } from "@/lib/nearest-peak";
 
 type Peak = {
   id: string;
   name: string;
   altitudeM: number;
   mountainRange: string | null;
+  latitude: number;
+  longitude: number;
 };
 
 export function NewAscentForm({
@@ -24,10 +29,14 @@ export function NewAscentForm({
   const router = useRouter();
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
+  // "pick" = photo-first entry, "form" = show the form
+  const [step, setStep] = useState<"pick" | "form">(defaultPeakId ? "form" : "pick");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [suggestedDate, setSuggestedDate] = useState<string | null>(null);
+  const [suggestedPeakId, setSuggestedPeakId] = useState<string | null>(null);
 
   // Step 1: crop queue (raw files)
   const [cropQueue, setCropQueue] = useState<File[]>([]);
@@ -41,16 +50,23 @@ export function NewAscentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const groups = peaks.reduce<Record<string, Peak[]>>((acc, peak) => {
-    const group = peak.mountainRange ?? "Other";
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(peak);
-    return acc;
-  }, {});
-
   function queueFiles(files: FileList | File[]) {
     const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (arr.length) setCropQueue((prev) => [...prev, ...arr]);
+  }
+
+  // Called from the pick step only — queues files AND extracts EXIF from the first image
+  function handlePickFiles(files: FileList | File[]) {
+    queueFiles(files);
+    const first = Array.from(files).find((f) => f.type.startsWith("image/"));
+    if (!first) return;
+    extractImageMeta(first).then(({ date, lat, lng }) => {
+      if (date) setSuggestedDate(date);
+      if (lat !== null && lng !== null) {
+        const found = nearestPeak(lat, lng, peaks);
+        if (found) setSuggestedPeakId(found.id);
+      }
+    });
   }
 
   // Crop → tag step
@@ -67,6 +83,7 @@ export function NewAscentForm({
     const preview = URL.createObjectURL(blob);
     setReadyItems((prev) => [...prev, { blob, faces, preview }]);
     setTagQueue((q) => q.slice(1));
+    setStep("form");
   }
   function handleTagSkip(blob: Blob) {
     handleTagDone(blob, []);
@@ -83,6 +100,12 @@ export function NewAscentForm({
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
+
+    if (!form.get("peakId")) {
+      setError(t.field_peak);
+      setLoading(false);
+      return;
+    }
 
     // Step 1 — create ascent
     setStatus(t.newAscent_savingAscent);
@@ -161,7 +184,7 @@ export function NewAscentForm({
 
   return (
     <>
-      {/* Step 1 — Crop modal */}
+      {/* Crop modal — overlays on top of whichever step is active */}
       {cropQueue.length > 0 && (
         <ImageCropModal
           file={cropQueue[0]}
@@ -170,7 +193,7 @@ export function NewAscentForm({
         />
       )}
 
-      {/* Step 2 — Tag step (auto face detection) */}
+      {/* Tag step — overlays on top of whichever step is active */}
       {cropQueue.length === 0 && tagQueue.length > 0 && (
         <PhotoTagStep
           blob={tagQueue[0]}
@@ -179,7 +202,66 @@ export function NewAscentForm({
         />
       )}
 
-    <form
+      {/* Pick step — photo-first entry point */}
+      {step === "pick" && (
+        <div style={{
+          background: "white", border: "1px solid #e5e7eb",
+          borderRadius: 12, padding: 32,
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 40, margin: "0 0 8px" }}>📷</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>
+              {t.newAscent_pickTitle}
+            </p>
+          </div>
+
+          {/* Drop zone */}
+          <div
+            style={{ width: "100%" }}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setDragging(false); handlePickFiles(e.dataTransfer.files); }}
+            onClick={() => inputRef.current?.click()}
+          >
+            <div style={{
+              border: `2px dashed ${dragging ? "#0369a1" : "#d1d5db"}`,
+              borderRadius: 10, padding: "28px 16px",
+              textAlign: "center", cursor: "pointer",
+              background: dragging ? "#eff6ff" : "#f9fafb",
+              transition: "all 0.15s",
+            }}>
+              <input
+                ref={inputRef} type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                multiple style={{ display: "none" }}
+                onChange={(e) => { if (e.target.files?.length) handlePickFiles(e.target.files); e.target.value = ""; }}
+              />
+              <p style={{ fontSize: 13, fontWeight: 600, color: "#374151", margin: "0 0 4px" }}>
+                {t.newAscent_clickOrDrag}
+              </p>
+              <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>
+                {t.newAscent_maxSize}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setStep("form")}
+            style={{
+              background: "none", border: "none", padding: 0,
+              fontSize: 13, color: "#6b7280", cursor: "pointer",
+              textDecoration: "underline", textUnderlineOffset: 3,
+            }}
+          >
+            {t.newAscent_skipPhoto}
+          </button>
+        </div>
+      )}
+
+      {/* Form step */}
+      {step === "form" && <form
       onSubmit={handleSubmit}
       style={{
         background: "white", border: "1px solid #e5e7eb",
@@ -189,23 +271,14 @@ export function NewAscentForm({
     >
       {/* Peak */}
       <div>
-        <label htmlFor="peakId" style={labelStyle}>{t.field_peak} *</label>
-        <select
-          id="peakId" name="peakId" required
-          defaultValue={defaultPeakId ?? ""}
-          style={{ ...inputStyle, background: "white" }}
-        >
-          <option value="" disabled>{t.field_selectPeak}</option>
-          {Object.entries(groups).sort().map(([range, rangePeaks]) => (
-            <optgroup key={range} label={range}>
-              {rangePeaks.map((peak) => (
-                <option key={peak.id} value={peak.id}>
-                  {peak.name} ({peak.altitudeM.toLocaleString(t.dateLocale)} m)
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        <label style={labelStyle}>{t.field_peak} *</label>
+        <PeakPicker
+          peaks={peaks}
+          defaultPeakId={defaultPeakId ?? suggestedPeakId ?? undefined}
+          name="peakId"
+          placeholder={t.field_selectPeak}
+          suggested={!defaultPeakId && !!suggestedPeakId}
+        />
       </div>
 
       {/* Date */}
@@ -213,7 +286,7 @@ export function NewAscentForm({
         <label htmlFor="date" style={labelStyle}>{t.field_date} *</label>
         <input
           id="date" name="date" type="date" required
-          defaultValue={new Date().toISOString().split("T")[0]}
+          defaultValue={suggestedDate ?? new Date().toISOString().split("T")[0]}
           style={inputStyle}
         />
       </div>
@@ -265,7 +338,7 @@ export function NewAscentForm({
         >
           <input
             ref={inputRef} type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             multiple style={{ display: "none" }}
             onChange={(e) => { if (e.target.files?.length) queueFiles(e.target.files); e.target.value = ""; }}
           />
@@ -355,7 +428,7 @@ export function NewAscentForm({
           {loading ? (status ?? t.saving) : readyItems.length > 0 ? fmt(t.newAscent_saveWithPhotos, { n: readyItems.length }) : t.newAscent_save}
         </button>
       </div>
-    </form>
+    </form>}
     </>
   );
 }

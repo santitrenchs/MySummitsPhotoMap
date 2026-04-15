@@ -1,0 +1,37 @@
+type PeakLike = {
+  id: string;
+  latitude: number;
+  longitude: number;
+};
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function nearestPeak<T extends PeakLike>(
+  lat: number,
+  lng: number,
+  peaks: T[],
+  thresholdKm = 5
+): T | null {
+  let best: T | null = null;
+  let bestDist = Infinity;
+
+  for (const peak of peaks) {
+    const dist = haversineKm(lat, lng, peak.latitude, peak.longitude);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = peak;
+    }
+  }
+
+  return bestDist <= thresholdKm ? best : null;
+}

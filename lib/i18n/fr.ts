@@ -27,6 +27,9 @@ export const fr: Dict = {
   field_wikilockPlaceholder: "Colle le code iframe de Wikiloc, ex.\n<iframe src=\"https://es.wikiloc.com/wikiloc/embedv2.do?id=...\" ...></iframe>",
   field_wikilockPreview: "URL d'intégration :",
 
+  newAscent_pickTitle: "Commence par la photo",
+  newAscent_skipPhoto: "Continuer sans photo →",
+  newAscent_suggested: "suggéré",
   newAscent_clickOrDrag: "Cliquer ou glisser des photos ici",
   newAscent_maxSize: "JPEG, PNG, WebP · max. 10 Mo chacune",
   newAscent_savingAscent: "Enregistrement de l'ascension…",
