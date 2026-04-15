@@ -19,6 +19,9 @@ export const de: Dict = {
   map_climbedBadge: "Bestiegen", map_ascentsBadge: "{n} Besteigungen", map_last: "Zuletzt:",
   map_zoomIn: "Vergrößern", map_zoomOut: "Verkleinern",
   map_unclimbedPeaks: "{n} nicht bestiegene Gipfel · klicken zum Vergrößern",
+  map_locationPrompt: "Gipfel in deiner Nähe entdecken?",
+  map_locationAllow: "Meinen Standort verwenden",
+  map_locationDismiss: "Nicht jetzt",
 
   field_peak: "Gipfel", field_selectPeak: "Gipfel auswählen…", field_date: "Datum",
   field_route: "Route", field_routePlaceholder: "z. B. Nordgrat des Salenques",

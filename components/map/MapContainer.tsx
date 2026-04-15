@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { MapPeak, AscentMapEntry } from "./MapView";
+import LocationPrompt from "./LocationPrompt";
 
 const MapView = dynamic(() => import("./MapView"), {
   ssr: false,
@@ -22,5 +23,10 @@ export default function MapContainer({
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
 }) {
-  return <MapView peaks={peaks} ascentData={ascentData} />;
+  return (
+    <div style={{ position: "relative" }}>
+      <MapView peaks={peaks} ascentData={ascentData} />
+      <LocationPrompt />
+    </div>
+  );
 }

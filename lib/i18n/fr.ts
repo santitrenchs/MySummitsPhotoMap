@@ -19,6 +19,9 @@ export const fr: Dict = {
   map_climbedBadge: "Gravi", map_ascentsBadge: "{n} ascensions", map_last: "Dernière :",
   map_zoomIn: "Zoom avant", map_zoomOut: "Zoom arrière",
   map_unclimbedPeaks: "{n} sommets non gravis · cliquer pour zoomer",
+  map_locationPrompt: "Explorer les sommets près de vous ?",
+  map_locationAllow: "Utiliser ma position",
+  map_locationDismiss: "Pas maintenant",
 
   field_peak: "Sommet", field_selectPeak: "Choisir un sommet…", field_date: "Date",
   field_route: "Itinéraire", field_routePlaceholder: "ex. Arête Nord du Salenques",

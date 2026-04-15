@@ -23,6 +23,7 @@ export type Dict = {
   map_logAscent: string; map_notYetClimbed: string;
   map_climbedBadge: string; map_ascentsBadge: string; map_last: string;
   map_zoomIn: string; map_zoomOut: string; map_unclimbedPeaks: string;
+  map_locationPrompt: string; map_locationAllow: string; map_locationDismiss: string;
 
   // Form fields
   field_peak: string; field_selectPeak: string; field_date: string;

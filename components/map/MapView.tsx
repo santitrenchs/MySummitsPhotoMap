@@ -204,6 +204,18 @@ export default function MapView({
     } catch { /* terrain not ready yet */ }
   }, [terrain3d]);
 
+  // Fly to GPS position when LocationPrompt grants permission
+  useEffect(() => {
+    function onGpsAcquired(e: Event) {
+      const map = mapRef.current;
+      if (!map) return;
+      const { lat, lon } = (e as CustomEvent<{ lat: number; lon: number }>).detail;
+      map.flyTo({ center: [lon, lat], zoom: 9, duration: 1800 });
+    }
+    window.addEventListener("azitracks:gps-acquired", onGpsAcquired);
+    return () => window.removeEventListener("azitracks:gps-acquired", onGpsAcquired);
+  }, []);
+
   // Map initialisation (runs once)
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
