@@ -83,9 +83,11 @@ function PanelPlaceholder() {
 export default function MapView({
   peaks,
   ascentData = [],
+  gpsPosition = null,
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
+  gpsPosition?: { lat: number; lon: number } | null;
 }) {
   const router = useRouter();
   const t = useT();
@@ -206,15 +208,11 @@ export default function MapView({
 
   // Fly to GPS position when LocationPrompt grants permission
   useEffect(() => {
-    function onGpsAcquired(e: Event) {
-      const map = mapRef.current;
-      if (!map) return;
-      const { lat, lon } = (e as CustomEvent<{ lat: number; lon: number }>).detail;
-      map.flyTo({ center: [lon, lat], zoom: 9, duration: 1800 });
-    }
-    window.addEventListener("azitracks:gps-acquired", onGpsAcquired);
-    return () => window.removeEventListener("azitracks:gps-acquired", onGpsAcquired);
-  }, []);
+    if (!gpsPosition) return;
+    const map = mapRef.current;
+    if (!map) return;
+    map.flyTo({ center: [gpsPosition.lon, gpsPosition.lat], zoom: 9, duration: 1800 });
+  }, [gpsPosition]);
 
   // Map initialisation (runs once)
   useEffect(() => {

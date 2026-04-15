@@ -56,7 +56,11 @@ function markShownThisSession() {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function LocationPrompt() {
+export default function LocationPrompt({
+  onGpsAcquired,
+}: {
+  onGpsAcquired: (pos: { lat: number; lon: number }) => void;
+}) {
   const t = useT();
   const [visible, setVisible] = useState(false);
   const [slideIn, setSlideIn] = useState(false);
@@ -120,9 +124,7 @@ export default function LocationPrompt() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         saveDecision("granted");
-        window.dispatchEvent(new CustomEvent("azitracks:gps-acquired", {
-          detail: { lat: pos.coords.latitude, lon: pos.coords.longitude },
-        }));
+        onGpsAcquired({ lat: pos.coords.latitude, lon: pos.coords.longitude });
       },
       () => saveDecision("denied"),
       { timeout: 15_000, maximumAge: 60_000 }
