@@ -78,6 +78,9 @@ export type Dict = {
   people_sort_ascents: string; people_sort_photos: string;
   people_sort_recent: string; people_sort_az: string;
   people_delete_body_photos: string; people_delete_body_simple: string;
+  people_reconcile: string; people_reconcileTitle: string;
+  people_reconcileSelect: string; people_reconcileConfirm: string;
+  people_reconcileNoFriends: string; people_reconcileLinked: string;
   people_stat_people: string; people_stat_photos: string; people_stat_ascents: string;
 
   // Friends / Social
@@ -87,8 +90,15 @@ export type Dict = {
   friends_pendingSection: string; friends_noPending: string;
   friends_noFriends: string; friends_noFriendsSub: string; friends_noResults: string;
   friends_since: string;
+  friends_taggedSection: string;
   friends_block: string; friends_blocked: string; friends_unblock: string;
   friends_blockedSection: string;
+  friends_inviteSection: string; friends_invitePlaceholder: string;
+  friends_inviteBtn: string; friends_inviteSending: string;
+  friends_inviteSent: string; friends_inviteAlreadyInvited: string;
+  friends_inviteAlreadyRegistered: string; friends_inviteError: string;
+  friends_inviteListSection: string;
+  friends_inviteStatusPending: string; friends_inviteStatusUsed: string; friends_inviteStatusExpired: string;
 
   // Tags (face tag approval)
   tags_title: string; tags_noPending: string;

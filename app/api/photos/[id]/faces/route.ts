@@ -33,7 +33,7 @@ export async function POST(
       const personName = face?.personName?.trim();
       if (personName && created[i]) {
         const person = await findOrCreatePerson(session.user.tenantId, personName);
-        await setFaceTag(session.user.tenantId, created[i].id, person.id);
+        await setFaceTag(session.user.tenantId, created[i].id, person.id, session.user.id);
       }
     }));
 

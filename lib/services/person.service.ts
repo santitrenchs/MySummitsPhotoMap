@@ -95,7 +95,7 @@ export async function listPersons(tenantId: string, search?: string) {
       ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
     },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, userId: true },
+    select: { id: true, name: true, email: true, userId: true },
     take: search ? 10 : undefined,
   });
 }
@@ -165,6 +165,83 @@ export async function unclaimPersonProfileGlobal(personId: string, userId: strin
   if (!person) throw new Error("Person not found");
   if (person.userId !== userId) throw new Error("Forbidden");
   return prisma.person.update({ where: { id: personId }, data: { userId: null } });
+}
+
+// ─── Reconcile tag → registered user ─────────────────────────────────────────
+
+/**
+ * Associates a Person tag with a registered user.
+ *
+ * Case A — no canonical Person exists for (tenantId, targetUserId):
+ *   Sets person.userId = targetUserId and person.name = displayName.
+ *
+ * Case B — a canonical Person already exists for (tenantId, targetUserId):
+ *   Reassigns all FaceTags from the old Person to the canonical one,
+ *   handling @@unique([faceDetectionId, personId]) conflicts by deleting
+ *   duplicates. Then deletes the old Person.
+ *
+ * Returns the canonical Person after reconciliation.
+ */
+export async function reconcilePersonToUser(
+  tenantId: string,
+  personId: string,
+  targetUserId: string,
+  displayName: string,
+) {
+  // Validate person belongs to tenant
+  const person = await prisma.person.findFirst({ where: { id: personId, tenantId } });
+  if (!person) throw new Error("Person not found");
+  if (person.userId) throw new Error("Already reconciled");
+
+  // Check if a canonical Person already exists for this user in this tenant
+  const canonical = await prisma.person.findFirst({ where: { tenantId, userId: targetUserId } });
+
+  if (!canonical) {
+    // Case A: this person becomes the canonical one
+    return prisma.person.update({
+      where: { id: personId },
+      data: { userId: targetUserId, name: displayName },
+      select: { id: true, name: true, userId: true },
+    });
+  }
+
+  // Case B: merge old person's FaceTags into the canonical person
+  const oldTags = await prisma.faceTag.findMany({ where: { personId, tenantId } });
+
+  // Find which faceDetectionIds the canonical already has tagged
+  const canonicalDetectionIds = new Set(
+    (await prisma.faceTag.findMany({
+      where: { personId: canonical.id, tenantId },
+      select: { faceDetectionId: true },
+    })).map((t) => t.faceDetectionId),
+  );
+
+  await prisma.$transaction([
+    // Delete old tags that would conflict with canonical's existing tags
+    prisma.faceTag.deleteMany({
+      where: {
+        personId,
+        tenantId,
+        faceDetectionId: { in: oldTags.filter((t) => canonicalDetectionIds.has(t.faceDetectionId)).map((t) => t.faceDetectionId) },
+      },
+    }),
+    // Reassign remaining tags to canonical
+    prisma.faceTag.updateMany({
+      where: {
+        personId,
+        tenantId,
+        faceDetectionId: { notIn: [...canonicalDetectionIds] },
+      },
+      data: { personId: canonical.id },
+    }),
+    // Delete the now-empty old Person
+    prisma.person.delete({ where: { id: personId } }),
+  ]);
+
+  return prisma.person.findUnique({
+    where: { id: canonical.id },
+    select: { id: true, name: true, userId: true },
+  });
 }
 
 export async function getLinkedPerson(tenantId: string, userId: string) {

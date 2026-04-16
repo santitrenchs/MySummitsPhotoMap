@@ -65,7 +65,8 @@ export async function getFaceDetections(tenantId: string, photoId: string) {
 export async function setFaceTag(
   tenantId: string,
   faceDetectionId: string,
-  personId: string
+  personId: string,
+  taggerUserId?: string,
 ) {
   const db = await getTenantConnection(tenantId);
   // Remove any existing tag on this detection first (one person per box)
@@ -79,12 +80,16 @@ export async function setFaceTag(
     select: { userId: true },
   });
   if (person?.userId) {
-    const linkedUser = await prisma.user.findUnique({
-      where: { id: person.userId },
-      select: { reviewTagsBeforePost: true, allowOthersToTag: true },
-    });
-    if (linkedUser && !linkedUser.allowOthersToTag) return null;
-    if (linkedUser?.reviewTagsBeforePost) status = "PENDING";
+    // If the tagger is the same person being tagged, always accept
+    const isSelf = taggerUserId && taggerUserId === person.userId;
+    if (!isSelf) {
+      const linkedUser = await prisma.user.findUnique({
+        where: { id: person.userId },
+        select: { reviewTagsBeforePost: true, allowOthersToTag: true },
+      });
+      if (linkedUser && !linkedUser.allowOthersToTag) return null;
+      if (linkedUser?.reviewTagsBeforePost) status = "PENDING";
+    }
   }
 
   return db.faceTag.create({

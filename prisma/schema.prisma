@@ -76,7 +76,8 @@ model User {
   ascents                Ascent[]
   sentFriendRequests     Friendship[] @relation("SentFriendRequests")
   receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
-  linkedPerson           Person?      @relation("PersonUser")
+  linkedPersons          Person[]     @relation("PersonUser")
+  sentInvitations        Voucher[]    @relation("SentInvitations")
   voucherUse             VoucherUse?
 
   @@map("users")
@@ -123,16 +124,21 @@ enum MembershipRole {
 }
 
 model Voucher {
-  id        String    @id @default(uuid())
-  code      String    @unique
-  maxUses   Int       @default(1)
-  usedCount Int       @default(0)
-  note      String?
-  expiresAt DateTime?
-  createdAt DateTime  @default(now())
+  id           String    @id @default(uuid())
+  code         String    @unique
+  maxUses      Int       @default(1)
+  usedCount    Int       @default(0)
+  note         String?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  // Invitation fields — null for admin-created vouchers
+  inviterId    String?
+  inviteeEmail String?
 
-  uses VoucherUse[]
+  uses    VoucherUse[]
+  inviter User?        @relation("SentInvitations", fields: [inviterId], references: [id], onDelete: SetNull)
 
+  @@index([inviterId])
   @@map("vouchers")
 }
 
@@ -235,13 +241,14 @@ model Person {
   name      String
   email     String?
   avatarUrl String?
-  userId    String?  @unique
+  userId    String?
   createdAt DateTime @default(now())
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user     User?     @relation("PersonUser", fields: [userId], references: [id], onDelete: SetNull)
   faceTags FaceTag[]
 
+  @@unique([tenantId, userId])
   @@index([tenantId])
   @@map("persons")
 }

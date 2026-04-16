@@ -46,6 +46,7 @@ export default async function PersonsPage() {
       id: person.id,
       name: person.name,
       email: person.email ?? null,
+      userId: person.userId ?? null,
       photoCount: person.faceTags.length,
       ascentCount: ascents.length,
       highestPeak,

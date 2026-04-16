@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 
@@ -17,6 +17,21 @@ type PendingTag      = { id: string; personName: string; photoUrl: string; peakN
 type SearchResult = UserStub & {
   status: "none" | "pending_sent" | "pending_received" | "accepted";
   friendshipId?: string;
+};
+
+type InvitationEntry = {
+  id: string;
+  inviteeEmail: string;
+  usedCount: number;
+  expiresAt: string;
+  createdAt: string;
+};
+
+type PersonStub = {
+  id: string;
+  name: string;
+  email: string | null;
+  userId: string | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -229,6 +244,125 @@ export function FriendsClient({
     setBlocked((prev) => prev.filter((b) => b.id !== entry.id));
   }
 
+  // ── Invite ───────────────────────────────────────────────────────────────────
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteStatus, setInviteStatus] = useState<
+    null | "sending" | "invited" | "already_invited" | "already_registered" | "error"
+  >(null);
+  const [invitations, setInvitations] = useState<InvitationEntry[]>([]);
+
+  useEffect(() => {
+    fetch("/api/invitations")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setInvitations(data); })
+      .catch(() => {});
+  }, []);
+
+  async function sendInvite() {
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email) return;
+    setInviteStatus("sending");
+    try {
+      const res = await fetch("/api/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setInviteStatus("error"); return; }
+      if (data.status === "already_registered") { setInviteStatus("already_registered"); return; }
+      if (data.status === "already_invited") { setInviteStatus("already_invited"); return; }
+      setInviteStatus("invited");
+      setInviteEmail("");
+      setInvitations((prev) => [
+        { id: data.id ?? String(Date.now()), inviteeEmail: email, usedCount: 0, expiresAt: data.expiresAt, createdAt: new Date().toISOString() },
+        ...prev,
+      ]);
+    } catch {
+      setInviteStatus("error");
+    }
+  }
+
+  function inviteStatusMsg(): { text: string; color: string } | null {
+    if (!inviteStatus || inviteStatus === "sending") return null;
+    if (inviteStatus === "invited")              return { text: t.friends_inviteSent,              color: "#16a34a" };
+    if (inviteStatus === "already_invited")      return { text: t.friends_inviteAlreadyInvited,    color: "#ea580c" };
+    if (inviteStatus === "already_registered")   return { text: t.friends_inviteAlreadyRegistered, color: "#0369a1" };
+    return { text: t.friends_inviteError, color: "#ef4444" };
+  }
+
+  function getInviteEntryStatus(inv: InvitationEntry): { label: string; color: string } {
+    if (inv.usedCount > 0)                        return { label: t.friends_inviteStatusUsed,    color: "#16a34a" };
+    if (new Date(inv.expiresAt) < new Date())     return { label: t.friends_inviteStatusExpired, color: "#9ca3af" };
+    return { label: t.friends_inviteStatusPending, color: "#ea580c" };
+  }
+
+  // ── Persons (tagged people) ───────────────────────────────────────────────────
+  const [persons, setPersons] = useState<PersonStub[]>([]);
+
+  useEffect(() => {
+    fetch("/api/persons")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setPersons(data.filter((p: PersonStub) => !p.userId)); })
+      .catch(() => {});
+  }, []);
+
+  // Reconcile modal
+  type FriendStub = { id: string; name: string; username: string | null };
+  const [reconcilingPerson, setReconcilingPerson] = useState<PersonStub | null>(null);
+  const [reconcileFriends, setReconcileFriends] = useState<FriendStub[]>([]);
+  const [loadingReconcileFriends, setLoadingReconcileFriends] = useState(false);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [reconcileSaving, setReconcileSaving] = useState(false);
+  const [reconcileSearch, setReconcileSearch] = useState("");
+  const [reconcileError, setReconcileError] = useState<string | null>(null);
+
+  async function openReconcile(person: PersonStub) {
+    setReconcilingPerson(person);
+    setSelectedFriendId(null);
+    setReconcileSearch("");
+    setReconcileError(null);
+    setLoadingReconcileFriends(true);
+    try {
+      const res = await fetch("/api/friendships");
+      const data = await res.json();
+      setReconcileFriends((data.friends ?? []).map((f: { friend: FriendStub }) => f.friend));
+    } finally {
+      setLoadingReconcileFriends(false);
+    }
+  }
+
+  async function handleReconcile() {
+    if (!reconcilingPerson || !selectedFriendId) return;
+    setReconcileSaving(true);
+    setReconcileError(null);
+    try {
+      const res = await fetch(`/api/persons/${reconcilingPerson.id}/reconcile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: selectedFriendId }),
+      });
+      if (res.ok) {
+        setPersons((prev) => prev.filter((p) => p.id !== reconcilingPerson.id));
+        setReconcilingPerson(null);
+      } else {
+        const data = await res.json();
+        const msg = data.error ?? "";
+        if (msg === "Already reconciled") {
+          setReconcileError("Este tag ya está vinculado a un usuario.");
+        } else if (res.status === 403) {
+          setReconcileError("Solo puedes vincular a amigos aceptados.");
+        } else {
+          setReconcileError("Error al vincular. Inténtalo de nuevo.");
+        }
+      }
+    } catch {
+      setReconcileError("Error de conexión. Inténtalo de nuevo.");
+    } finally {
+      setReconcileSaving(false);
+    }
+  }
+
   // ── Tag approval ─────────────────────────────────────────────────────────────
   async function approveTag(tagId: string) {
     const res = await fetch(`/api/face-tags/${tagId}`, {
@@ -331,9 +465,9 @@ export function FriendsClient({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={tag.photoUrl} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{tag.personName}</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{tag.peakName}</p>
                 <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>
-                  {t.tags_taggedIn} · {tag.peakName}
+                  {t.tags_taggedIn}
                 </p>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
@@ -426,6 +560,166 @@ export function FriendsClient({
           ))}
         </div>
       )}
+
+      {/* ── Reconcile modal ── */}
+      {reconcilingPerson && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "white", borderRadius: 18, padding: 28, width: "100%", maxWidth: 380, boxShadow: "0 24px 64px rgba(0,0,0,0.22)" }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>
+              {t.people_reconcileTitle}
+            </h3>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 18px" }}>&ldquo;{reconcilingPerson.name}&rdquo;</p>
+            {loadingReconcileFriends ? (
+              <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "16px 0" }}>…</p>
+            ) : reconcileFriends.length === 0 ? (
+              <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "16px 0" }}>{t.people_reconcileNoFriends}</p>
+            ) : (
+              <>
+              <input
+                type="text"
+                value={reconcileSearch}
+                onChange={(e) => setReconcileSearch(e.target.value)}
+                placeholder={t.friends_searchPlaceholder}
+                style={{
+                  width: "100%", boxSizing: "border-box", marginBottom: 10,
+                  padding: "8px 12px", fontSize: 13,
+                  border: "1px solid #e5e7eb", borderRadius: 8, outline: "none",
+                  background: "#f9fafb",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20, maxHeight: 220, overflowY: "auto" }}>
+                {reconcileFriends
+                  .filter((f) => !reconcileSearch.trim() || f.name.toLowerCase().includes(reconcileSearch.toLowerCase()) || f.username?.toLowerCase().includes(reconcileSearch.toLowerCase()))
+                  .map((f) => (
+                  <button key={f.id} onClick={() => setSelectedFriendId(f.id)} style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                    borderRadius: 10, border: "1.5px solid", cursor: "pointer", textAlign: "left",
+                    borderColor: selectedFriendId === f.id ? "#0369a1" : "#e5e7eb",
+                    background: selectedFriendId === f.id ? "#eff6ff" : "white",
+                  }}>
+                    <Avatar name={f.name} size={32} />
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{f.name}</p>
+                      {f.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{f.username}</p>}
+                    </div>
+                    {selectedFriendId === f.id && <span style={{ marginLeft: "auto", color: "#0369a1", fontWeight: 700 }}>✓</span>}
+                  </button>
+                ))}
+              </div>
+              </>
+            )}
+            {reconcileError && (
+              <p style={{ fontSize: 12, color: "#ef4444", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", margin: "0 0 12px" }}>
+                {reconcileError}
+              </p>
+            )}
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setReconcilingPerson(null)} disabled={reconcileSaving}
+                style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+                {t.cancel}
+              </button>
+              <button onClick={handleReconcile} disabled={!selectedFriendId || reconcileSaving}
+                style={{ padding: "9px 18px", background: "#0369a1", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer", opacity: !selectedFriendId || reconcileSaving ? 0.5 : 1 }}>
+                {reconcileSaving ? "…" : t.people_reconcileConfirm}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tagged persons ── */}
+      {persons.length > 0 && (
+        <div style={{ marginTop: 36, paddingTop: 24, borderTop: "1px solid #f3f4f6" }}>
+          <SectionHeader label={t.friends_taggedSection} />
+          {persons.map((p) => (
+            <UserRow key={p.id}>
+              <div style={{
+                width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
+                background: p.userId
+                  ? "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)"
+                  : "linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 15, fontWeight: 700,
+                color: p.userId ? "white" : "#9ca3af",
+              }}>
+                {p.name[0]?.toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{p.name}</p>
+                  {p.userId && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#0369a1", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "1px 6px", flexShrink: 0 }}>
+                      ✓ {t.people_reconcileLinked}
+                    </span>
+                  )}
+                </div>
+                {p.email && <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>{p.email}</p>}
+              </div>
+              {!p.userId && (
+                <Btn onClick={() => openReconcile(p)}>{t.people_reconcile}</Btn>
+              )}
+            </UserRow>
+          ))}
+        </div>
+      )}
+
+      {/* ── Invite a friend ── */}
+      <div style={{ marginTop: 36, paddingTop: 24, borderTop: "1px solid #f3f4f6" }}>
+        <SectionHeader label={t.friends_inviteSection} />
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          <input
+            type="email"
+            value={inviteEmail}
+            onChange={(e) => { setInviteEmail(e.target.value); setInviteStatus(null); }}
+            onKeyDown={(e) => { if (e.key === "Enter") sendInvite(); }}
+            placeholder={t.friends_invitePlaceholder}
+            style={{
+              flex: 1, padding: "9px 12px",
+              border: "1px solid #e5e7eb", borderRadius: 8,
+              fontSize: 13, outline: "none", background: "#f9fafb",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "#0369a1")}
+            onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+          />
+          <Btn onClick={sendInvite} disabled={inviteStatus === "sending" || !inviteEmail.trim()}>
+            {inviteStatus === "sending" ? t.friends_inviteSending : t.friends_inviteBtn}
+          </Btn>
+        </div>
+        {inviteStatusMsg() && (
+          <p style={{ fontSize: 12, color: inviteStatusMsg()!.color, margin: "0 0 8px" }}>
+            {inviteStatusMsg()!.text}
+          </p>
+        )}
+
+        {/* Sent invitations list */}
+        {invitations.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>
+              {t.friends_inviteListSection}
+            </p>
+            {invitations.map((inv) => {
+              const s = getInviteEntryStatus(inv);
+              return (
+                <div key={inv.id} style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "8px 0", borderBottom: "1px solid #f9fafb",
+                }}>
+                  <p style={{ fontSize: 13, color: "#374151", margin: 0, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {inv.inviteeEmail}
+                  </p>
+                  <span style={{
+                    fontSize: 11, fontWeight: 600, color: s.color,
+                    background: `${s.color}15`, borderRadius: 6,
+                    padding: "2px 8px", flexShrink: 0, marginLeft: 8,
+                  }}>
+                    {s.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

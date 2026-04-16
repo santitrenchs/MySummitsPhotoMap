@@ -13,7 +13,7 @@ export async function POST(
   const { personName } = await req.json();
   if (!personName?.trim()) return NextResponse.json({ error: "personName required" }, { status: 400 });
   const person = await findOrCreatePerson(session.user.tenantId, personName);
-  const tag = await setFaceTag(session.user.tenantId, id, person.id);
+  const tag = await setFaceTag(session.user.tenantId, id, person.id, session.user.id);
   return NextResponse.json(tag);
 }
 

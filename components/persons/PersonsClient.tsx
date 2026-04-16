@@ -9,6 +9,7 @@ export type PersonCard = {
   id: string;
   name: string;
   email?: string | null;
+  userId?: string | null;
   photoCount: number;
   ascentCount: number;
   highestPeak: { name: string; altitudeM: number } | null;
@@ -92,6 +93,14 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string; photoCount: number } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Reconcile modal state
+  type FriendStub = { id: string; name: string; username: string | null };
+  const [reconciling, setReconciling] = useState<PersonCard | null>(null);
+  const [friends, setFriends] = useState<FriendStub[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [reconcileSaving, setReconcileSaving] = useState(false);
+
   const editNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -156,6 +165,38 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
     setDeleting(false);
     setDeleteConfirm(null);
     router.refresh();
+  }
+
+  async function openReconcile(person: PersonCard) {
+    setReconciling(person);
+    setSelectedFriendId(null);
+    setOpenMenuId(null);
+    setLoadingFriends(true);
+    try {
+      const res = await fetch("/api/friendships");
+      const data = await res.json();
+      setFriends((data.friends ?? []).map((f: { friend: FriendStub }) => f.friend));
+    } finally {
+      setLoadingFriends(false);
+    }
+  }
+
+  async function handleReconcile() {
+    if (!reconciling || !selectedFriendId) return;
+    setReconcileSaving(true);
+    try {
+      const res = await fetch(`/api/persons/${reconciling.id}/reconcile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: selectedFriendId }),
+      });
+      if (res.ok) {
+        setReconciling(null);
+        router.refresh();
+      }
+    } finally {
+      setReconcileSaving(false);
+    }
   }
 
   const SORTS: { value: Sort; label: string }[] = [
@@ -285,6 +326,89 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
         </div>
       )}
 
+      {/* ── Reconcile modal ───────────────────────────────────────────────── */}
+      {reconciling && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 50,
+          background: "rgba(0,0,0,0.45)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+        }}>
+          <div style={{
+            background: "white", borderRadius: 18,
+            padding: 28, width: "100%", maxWidth: 380,
+            boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
+          }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>
+              {t.people_reconcileTitle}
+            </h3>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 18px" }}>
+              &ldquo;{reconciling.name}&rdquo;
+            </p>
+
+            {loadingFriends ? (
+              <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "16px 0" }}>…</p>
+            ) : friends.length === 0 ? (
+              <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "16px 0" }}>
+                {t.people_reconcileNoFriends}
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20, maxHeight: 240, overflowY: "auto" }}>
+                {friends.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setSelectedFriendId(f.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "10px 14px", borderRadius: 10, border: "1.5px solid",
+                      borderColor: selectedFriendId === f.id ? "#0369a1" : "#e5e7eb",
+                      background: selectedFriendId === f.id ? "#eff6ff" : "white",
+                      cursor: "pointer", textAlign: "left",
+                    }}
+                  >
+                    <div style={{
+                      width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                      background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)",
+                      color: "white", fontWeight: 700, fontSize: 13,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      {f.name[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{f.name}</p>
+                      {f.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{f.username}</p>}
+                    </div>
+                    {selectedFriendId === f.id && (
+                      <span style={{ marginLeft: "auto", color: "#0369a1", fontWeight: 700 }}>✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setReconciling(null)}
+                disabled={reconcileSaving}
+                style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={handleReconcile}
+                disabled={!selectedFriendId || reconcileSaving}
+                style={{
+                  padding: "9px 18px", background: "#0369a1", border: "none", borderRadius: 10,
+                  fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer",
+                  opacity: !selectedFriendId || reconcileSaving ? 0.5 : 1,
+                }}
+              >
+                {reconcileSaving ? "…" : t.people_reconcileConfirm}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {openMenuId && (
         <div onClick={() => setOpenMenuId(null)} style={{ position: "fixed", inset: 0, zIndex: 10 }} />
       )}
@@ -383,9 +507,20 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                   size={52}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 700, fontSize: 16, color: "#111827", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {person.name}
-                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <p style={{ fontWeight: 700, fontSize: 16, color: "#111827", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {person.name}
+                    </p>
+                    {person.userId && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, color: "#0369a1",
+                        background: "#eff6ff", border: "1px solid #bfdbfe",
+                        borderRadius: 6, padding: "1px 6px", flexShrink: 0,
+                      }}>
+                        ✓ {t.people_reconcileLinked}
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>
                     {person.ascentCount} ascent{person.ascentCount !== 1 ? "s" : ""} · {person.photoCount} photo{person.photoCount !== 1 ? "s" : ""}
                   </p>
@@ -420,6 +555,14 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                       >
                         {t.edit}
                       </button>
+                      {!person.userId && (
+                        <button
+                          onClick={() => openReconcile(person)}
+                          style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", fontSize: 13, color: "#0369a1", cursor: "pointer" }}
+                        >
+                          {t.people_reconcile}
+                        </button>
+                      )}
                       <button
                         onClick={() => { setDeleteConfirm({ id: person.id, name: person.name, photoCount: person.photoCount }); setOpenMenuId(null); }}
                         style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", fontSize: 13, color: "#ef4444", cursor: "pointer" }}
