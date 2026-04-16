@@ -376,6 +376,77 @@ The `detail_with` key (also in all locales) is used in the caption as `t.detail_
 
 ---
 
+## Photo Storage Architecture
+
+### Display crop + resized original (implemented 2026-04-16)
+
+Every new photo upload stores **two files in R2**:
+
+| File | Key pattern | Format | Max size | Purpose |
+|------|-------------|--------|----------|---------|
+| Display crop | `tenant/{tenantId}/photos/{photoId}.jpg` | JPEG 0.85 | 1080×1350 | Shown everywhere in the app |
+| Resized original | `tenant/{tenantId}/photos/{photoId}_original.jpg` | JPEG 0.85 | max 3000px long side | Re-crop, future reprints |
+
+**`Photo` model new fields** (all nullable — legacy photos have them null):
+```prisma
+originalStorageKey String?   // null = legacy photo, no re-crop available
+cropX      Float?            // normalized [0-1] fraction of original width
+cropY      Float?
+cropW      Float?
+cropH      Float?
+cropAspect String?           // "4:5" | "1:1"
+```
+
+**Key files:**
+- `lib/storage/r2.ts` — `photoStorageKey()` (display) + `photoOriginalStorageKey()` (original)
+- `lib/services/photo.service.ts` — `uploadPhoto()` accepts `originalBuffer?` + `cropMeta?` + `reuseOriginalStorageKey?`
+- `components/photos/ImageCropModal.tsx` — `resizeForStorage(file)` exported util (max 3000px, JPEG 0.85); `onCrop(blob, cropMeta)` signature
+- `app/api/photos/upload/route.ts` — accepts `originalFile`, `cropMeta`, `reuseOriginalPhotoId` in FormData
+- `app/api/photos/[id]/original/route.ts` — serves the original via proxy (private, 1h cache)
+- `app/api/photos/[id]/route.ts` — DELETE accepts `?keepOriginal=1` to preserve original during re-crop
+
+**Re-crop flow** (`AscentDetailClient`):
+- "Editar foto" button: if `photo.originalStorageKey` exists → fetches original + existing face tags → opens `ImageCropModal` → re-crop → new display JPEG uploaded, original reused via `reuseOriginalPhotoId`, old photo deleted with `?keepOriginal=1`
+- If no `originalStorageKey` (legacy photo) → opens file picker for full replacement
+- Re-crop uses fresh face detection (no initialFaces merge) — crop coordinates changed
+
+**face-api / TF.js backend:**
+- `faceApiSingleton.ts` forces `tf.setBackend("cpu")` before loading models
+- **Why:** maplibre-gl exhausts Chrome's WebGL context limit (~16 contexts). TF.js defaults to WebGL and fails silently. CPU backend is ~1-2s slower but reliable.
+
+**`NewAscentForm` flow:**
+- Always starts at `"pick"` step (photo-first) regardless of `defaultPeakId`
+- If `defaultPeakId` present (e.g. from map), GPS peak suggestion from EXIF is skipped — pre-selected peak is preserved
+- `cropMeta` and `originalFile` flow through crop→tag→submit pipeline same as `PhotoUploader`
+
+---
+
+## Navigation Labels
+
+| Tab | es | ca | en | fr | de |
+|-----|----|----|----|----|-----|
+| Home | Mi Progreso | Mi Progrés | My Progress | Ma Progression | Mein Fortschritt |
+| Map | **Atlas** | **Atlas** | **Atlas** | **Atlas** | **Atlas** |
+| Ascents | **Bitácora** | **Bitàcola** | **Logbook** | **Carnet** | **Logbuch** |
+| Social | Social | Social | Social | Social | Social |
+
+Note: "Atlas" is intentionally not translated — it's a brand name aligned with the potential app rename to AziAtlas.
+
+---
+
+## Map Panel — Unclimbed Peaks
+
+When tapping an unclimbed peak in the map, the panel shows:
+- **No illustration placeholder** — clean white panel only
+- Peak name + altitude in the title (`Penyes Altes · 2276 m`)
+- Mountain range subtitle
+- "Aún sin subir" status
+- "+ Registrar ascensión" CTA → navigates to `/ascents/new?peakId=xxx`
+
+When tapping a climbed peak, the panel shows the hero photo (if any) with altitude badge overlaid.
+
+---
+
 ## Known Gotchas
 
 - **`toLocaleString()` without locale**: causes hydration mismatch between Node.js server and browser. Always pass an explicit locale string, or skip formatting entirely for short numbers (e.g. `{altitudeM} m` not `{altitudeM.toLocaleString()} m`).
@@ -393,6 +464,10 @@ The `detail_with` key (also in all locales) is used in the caption as `t.detail_
 - **iOS Safari — `isMobile` and map state must initialize from `window` directly**: `useState(false)` for `isMobile` or `terrain3d` causes a desktop→mobile flash and incorrect initial map pitch. Use lazy initializers: `useState(() => window.innerWidth < 640)`. This is safe in `MapView.tsx` because the component is loaded with `dynamic(..., { ssr: false })`.
 - **Login redirect must be a full page load**: After `signIn()`, use `window.location.href = '/home'` instead of `router.push('/home') + router.refresh()`. Client-side navigation after auth can cause CSS styles injected by server components (like the NavBar `<style>` block) to not apply correctly on first render in iOS Safari.
 - **iOS Safari — keyboard hides input in PhotoTagStep bottom sheet**: The tag search bottom sheet (`position: fixed; bottom: 0`) does not reposition when the soft keyboard opens — iOS Safari doesn't adjust `fixed` elements for the virtual keyboard. The search `<input>` ends up hidden behind the keyboard. Fix: use the `visualViewport` API to detect keyboard height and shift the sheet's `bottom` offset dynamically. Component: `components/photos/PhotoTagStep.tsx`, bottom sheet at zIndex 1200. **Pending fix.**
+- **face-api + maplibre WebGL context exhaustion**: maplibre-gl creates a WebGL context per map mount. After navigating to/from the map several times, Chrome hits the ~16 context limit. TF.js (used by face-api) defaults to WebGL backend and fails silently — 0 faces detected, no error logged. Fix: force CPU backend in `faceApiSingleton.ts` via `tf.setBackend("cpu")` before loading models. `tf` is typed as a namespace without `setBackend` in face-api types — cast with `api.tf as unknown as { setBackend, ready }`.
+- **PhotoTagStep body scroll lock**: `PhotoTagStep` sets `document.body.style.overflow = "hidden"` on mount and restores it on unmount. This prevents iOS Safari address bar jumps during face tagging. If you add another fullscreen modal, do the same — don't rely on `z-index` alone.
+- **`ImageCropModal.onCrop` signature**: `onCrop(blob: Blob, cropMeta: CropMeta)` — second parameter added. TypeScript allows consumers with `(blob: Blob) => void` (extra params ignored), but `NewAscentForm`, `PhotoUploader`, and `AscentDetailClient` all use `cropMeta` — never remove it.
+- **Display crop aspect ratio is always 4:5**: `ImageCropModal` only offers 4:5. Landscape photos (4:3, 16:9) get cropped heavily. This is a known limitation — adding a 4:3 ratio option is deferred. Users can manually zoom out and center to minimize crop loss.
 - **Prisma client cache after `db push`**: After running `prisma db push`, the dev server must be restarted. If you only run `prisma generate` without restarting, the running server still uses the old client from memory — new fields will appear as `Unknown argument` errors at runtime even though the DB is correct.
 - **`Person.userId` is NOT globally unique**: Changed from `@unique` to `@@unique([tenantId, userId])`. One User can have one linked Person per tenant. This is intentional — the same user can appear as a tag in multiple tenants. Never revert to global `@unique`.
 - **Self-tagging always ACCEPTED**: `setFaceTag()` in `face-detection.service.ts` accepts a `taggerUserId` param. If `taggerUserId === person.userId`, the tag is created as ACCEPTED regardless of `reviewTagsBeforePost`. Always pass `session.user.id` when calling `setFaceTag` from API routes.
