@@ -17,8 +17,9 @@ export async function getFaceApi(): Promise<typeof FaceApiType> {
 
     // Force CPU backend to avoid competing with maplibre-gl for WebGL contexts.
     // The map exhausts the browser's WebGL context limit (~16), leaving none for TF.js.
-    await api.tf.setBackend("cpu");
-    await api.tf.ready();
+    const tf = api.tf as unknown as { setBackend: (b: string) => Promise<void>; ready: () => Promise<void> };
+    await tf.setBackend("cpu");
+    await tf.ready();
 
     await Promise.all([
       api.nets.ssdMobilenetv1.loadFromUri("/models/face-api"),
