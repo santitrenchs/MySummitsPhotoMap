@@ -227,6 +227,17 @@ model Photo {
   url        String
   createdAt  DateTime @default(now())
 
+  /// S3/R2 object key for the resized original — e.g. tenant/{tenantId}/photos/{photoId}_original.jpg
+  /// null = legacy photo (original not available)
+  originalStorageKey String?
+  /// Crop region as fractions [0-1] of the original image dimensions
+  cropX      Float?
+  cropY      Float?
+  cropW      Float?
+  cropH      Float?
+  /// Aspect ratio of the crop — e.g. "4:5" or "1:1"
+  cropAspect String?
+
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ascent         Ascent          @relation(fields: [ascentId], references: [id], onDelete: Cascade)
   faceDetections FaceDetection[]

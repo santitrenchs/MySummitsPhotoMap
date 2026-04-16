@@ -45,7 +45,7 @@ export const ca: Dict = {
   detail_with: "Amb", detail_photos: "Fotos · {n}", detail_addPhotos: "Afegir fotos",
   detail_location: "Ubicació", detail_routeWikiloc: "Ruta · Wikiloc",
   detail_openWikiloc: "Obrir a Wikiloc ↗",
-  detail_editPhoto: "Editar foto", detail_tagPeople: "Etiquetar",
+  detail_editPhoto: "Editar foto", detail_tagPeople: "Etiquetar", detail_reCrop: "Re-enquadrar",
   detail_viewOnMap: "🗺  Veure al mapa", detail_addPhoto: "Afegir foto",
   detail_addWikiloc: "Afegir ruta Wikiloc", detail_and: "i",
   date_today: "Avui", date_selectYear: "Selecciona l'any",

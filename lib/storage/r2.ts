@@ -5,7 +5,7 @@ const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID!;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME!;
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL!;
+export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL!;
 
 export const s3 = new S3Client({
   region: "auto",
@@ -70,4 +70,8 @@ export async function getPresignedUploadUrl(key: string, contentType: string) {
 
 export function photoStorageKey(tenantId: string, photoId: string): string {
   return `tenant/${tenantId}/photos/${photoId}.jpg`;
+}
+
+export function photoOriginalStorageKey(tenantId: string, photoId: string): string {
+  return `tenant/${tenantId}/photos/${photoId}_original.jpg`;
 }

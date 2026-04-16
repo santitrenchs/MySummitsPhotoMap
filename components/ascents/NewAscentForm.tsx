@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ImageCropModal } from "@/components/photos/ImageCropModal";
+import { ImageCropModal, resizeForStorage, type CropMeta } from "@/components/photos/ImageCropModal";
 import { PhotoTagStep, type FaceDraft } from "@/components/photos/PhotoTagStep";
 import { PeakPicker } from "@/components/ascents/PeakPicker";
 import { useT } from "@/components/providers/I18nProvider";
@@ -30,7 +30,7 @@ export function NewAscentForm({
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   // "pick" = photo-first entry, "form" = show the form
-  const [step, setStep] = useState<"pick" | "form">(defaultPeakId ? "form" : "pick");
+  const [step, setStep] = useState<"pick" | "form">("pick");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,10 +40,10 @@ export function NewAscentForm({
 
   // Step 1: crop queue (raw files)
   const [cropQueue, setCropQueue] = useState<File[]>([]);
-  // Step 2: tag queue (cropped blobs waiting for face tagging)
-  const [tagQueue, setTagQueue] = useState<Blob[]>([]);
+  // Step 2: tag queue (cropped blobs + metadata waiting for face tagging)
+  const [tagQueue, setTagQueue] = useState<{ blob: Blob; cropMeta: CropMeta; originalFile: File }[]>([]);
   // Step 3: ready items (tagged, ready to upload on submit)
-  const [readyItems, setReadyItems] = useState<{ blob: Blob; faces: FaceDraft[]; preview: string }[]>([]);
+  const [readyItems, setReadyItems] = useState<{ blob: Blob; cropMeta: CropMeta; originalFile: File; faces: FaceDraft[]; preview: string }[]>([]);
 
   useEffect(() => {
     return () => { readyItems.forEach((item) => URL.revokeObjectURL(item.preview)); };
@@ -62,7 +62,8 @@ export function NewAscentForm({
     if (!first) return;
     extractImageMeta(first).then(({ date, lat, lng }) => {
       if (date) setSuggestedDate(date);
-      if (lat !== null && lng !== null) {
+      // Don't suggest a peak from GPS if one is already pre-selected (e.g. coming from the map)
+      if (!defaultPeakId && lat !== null && lng !== null) {
         const found = nearestPeak(lat, lng, peaks);
         if (found) setSuggestedPeakId(found.id);
       }
@@ -70,9 +71,10 @@ export function NewAscentForm({
   }
 
   // Crop → tag step
-  function handleCropDone(blob: Blob) {
+  function handleCropDone(blob: Blob, cropMeta: CropMeta) {
+    const originalFile = cropQueue[0];
     setCropQueue((q) => q.slice(1));
-    setTagQueue((q) => [...q, blob]);
+    setTagQueue((q) => [...q, { blob, cropMeta, originalFile }]);
   }
   function handleCropCancel() {
     setCropQueue((q) => q.slice(1));
@@ -80,8 +82,9 @@ export function NewAscentForm({
 
   // Tag step → ready
   function handleTagDone(blob: Blob, faces: FaceDraft[]) {
+    const current = tagQueue[0];
     const preview = URL.createObjectURL(blob);
-    setReadyItems((prev) => [...prev, { blob, faces, preview }]);
+    setReadyItems((prev) => [...prev, { blob, cropMeta: current.cropMeta, originalFile: current.originalFile, faces, preview }]);
     setTagQueue((q) => q.slice(1));
     setStep("form");
   }
@@ -144,6 +147,9 @@ export function NewAscentForm({
         const fd = new FormData();
         fd.append("file", item.blob, "photo.jpg");
         fd.append("ascentId", ascent.id);
+        const originalBlob = await resizeForStorage(item.originalFile);
+        fd.append("originalFile", originalBlob, "original.jpg");
+        fd.append("cropMeta", JSON.stringify(item.cropMeta));
         const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
         if (!photoRes.ok) {
           setError(fmt(t.newAscent_photoFailed, { i: i + 1 }));
@@ -202,7 +208,7 @@ export function NewAscentForm({
       {/* Tag step — overlays on top of whichever step is active */}
       {cropQueue.length === 0 && tagQueue.length > 0 && (
         <PhotoTagStep
-          blob={tagQueue[0]}
+          blob={tagQueue[0].blob}
           onDone={handleTagDone}
           onSkip={handleTagSkip}
         />

@@ -392,6 +392,12 @@ The `detail_with` key (also in all locales) is used in the caption as `t.detail_
 - **iOS Safari — map marker positions wrong on first load**: Even with `position:absolute`, maplibre calculates marker transforms using the canvas size at the moment markers are added. If `map.resize()` fires before iOS has finished laying out the canvas (which happens inside `map.once('load')`), the internal map height is 0 or incorrect — markers end up offset downward by exactly the canvas height. Fix: call `map.once('idle', () => map.resize())` after adding all markers so the resize happens after the first complete render. The `ResizeObserver` on the container handles subsequent resizes.
 - **iOS Safari — `isMobile` and map state must initialize from `window` directly**: `useState(false)` for `isMobile` or `terrain3d` causes a desktop→mobile flash and incorrect initial map pitch. Use lazy initializers: `useState(() => window.innerWidth < 640)`. This is safe in `MapView.tsx` because the component is loaded with `dynamic(..., { ssr: false })`.
 - **Login redirect must be a full page load**: After `signIn()`, use `window.location.href = '/home'` instead of `router.push('/home') + router.refresh()`. Client-side navigation after auth can cause CSS styles injected by server components (like the NavBar `<style>` block) to not apply correctly on first render in iOS Safari.
+- **iOS Safari — keyboard hides input in PhotoTagStep bottom sheet**: The tag search bottom sheet (`position: fixed; bottom: 0`) does not reposition when the soft keyboard opens — iOS Safari doesn't adjust `fixed` elements for the virtual keyboard. The search `<input>` ends up hidden behind the keyboard. Fix: use the `visualViewport` API to detect keyboard height and shift the sheet's `bottom` offset dynamically. Component: `components/photos/PhotoTagStep.tsx`, bottom sheet at zIndex 1200. **Pending fix.**
+- **Prisma client cache after `db push`**: After running `prisma db push`, the dev server must be restarted. If you only run `prisma generate` without restarting, the running server still uses the old client from memory — new fields will appear as `Unknown argument` errors at runtime even though the DB is correct.
+- **`Person.userId` is NOT globally unique**: Changed from `@unique` to `@@unique([tenantId, userId])`. One User can have one linked Person per tenant. This is intentional — the same user can appear as a tag in multiple tenants. Never revert to global `@unique`.
+- **Self-tagging always ACCEPTED**: `setFaceTag()` in `face-detection.service.ts` accepts a `taggerUserId` param. If `taggerUserId === person.userId`, the tag is created as ACCEPTED regardless of `reviewTagsBeforePost`. Always pass `session.user.id` when calling `setFaceTag` from API routes.
+- **Invitations use Vouchers, not a separate model**: Friend invitations create a standard `Voucher` record with `maxUses: 1`, `inviterId`, and `inviteeEmail` set. Admin-created vouchers have these fields null. The invitation flow does NOT create any new token model — it reuses the existing voucher system.
+- **Email before voucher creation**: In `POST /api/invitations`, the email is sent BEFORE creating the Voucher in the DB. This ensures no orphaned vouchers if the email fails. If you reorder this, a failed email will leave an active voucher that blocks re-invitation.
 
 ---
 
@@ -406,10 +412,34 @@ The `detail_with` key (also in all locales) is used in the caption as `t.detail_
 - **Pages**: `/forgot-password` (email form), `/reset-password` (new password + confirm form, reads `?token=` from query). Both are in `app/(auth)/` group and listed as public in `proxy.ts`.
 - **Login page**: "¿Olvidaste tu contraseña?" link (`auth_forgotPassword` i18n key) appears inline next to the password label, links to `/forgot-password`.
 
+### Friend Invitations
+
+- **`POST /api/invitations`**: Creates a single-use `Voucher` (7-day expiry) and sends `sendFriendInvitationEmail()`. Checks:
+  - Email already registered → `{ status: "already_registered" }` (no voucher created)
+  - Active invitation exists for same `{inviterId, email}` → `{ status: "already_invited" }` (reuses existing)
+  - Otherwise → creates voucher + sends email → `{ status: "invited" }`
+- **`GET /api/invitations`**: Returns all vouchers where `inviterId = currentUser.id` with status (pending/used/expired).
+- **`lib/email.ts`**: `sendFriendInvitationEmail(to, inviterName, voucherCode)` — branded HTML with voucher code in a highlighted box. Text instructs the invitee to search for the inviter in Amigos after registering.
+- **Voucher model extended**: `inviterId String?` (FK → User), `inviteeEmail String?`. Admin-created vouchers have both null. `@@index([inviterId])` added.
+- **UI in `/friends`**: "Invitar a un amigo" section at the bottom — email input + send button + list of sent invitations with status badges (Pendiente / Registrado / Expirada).
+
+### Tag Reconciliation (Person → registered User)
+
+- **`POST /api/persons/[id]/reconcile`** with `{ userId }`:
+  - Validates `userId` is an accepted friend of the current user
+  - **Case A** (no canonical Person for that userId in tenant): sets `person.userId = userId`, `person.name = friend.username ?? friend.name`
+  - **Case B** (canonical Person already exists): reassigns all FaceTags to canonical (skipping conflicts on `@@unique([faceDetectionId, personId])`), deletes the old Person
+  - Returns the canonical Person
+- **Logic in `reconcilePersonToUser()`** in `lib/services/person.service.ts`
+- **UI in `/friends`**: "Personas etiquetadas" section shows only unlinked Persons (no `userId`). Reconcile button opens a modal with friend selector + search input. On success the Person disappears from the list.
+- **`/persons` page**: Still exists as a full catalog (linked + unlinked). The `/friends` section only shows actionable (unlinked) persons.
+- **Linked Persons**: Show a "✓ Vinculado" badge in PersonsClient. No reconcile button shown.
+
 ### What's still missing (not yet implemented)
 - Email verification on register
 - Rate limiting on login
 - OAuth (Google / Apple)
+- Registering with an invitation voucher doesn't auto-create the friendship or link the Person — the invitee must find the inviter manually in Amigos and send a friend request
 
 ---
 
@@ -418,7 +448,7 @@ The `detail_with` key (also in all locales) is used in the caption as `t.detail_
 Keep these in mind but do not over-engineer for them in the MVP:
 
 - **Email verification**: send verification link on register, block or warn until verified
-- **Friend system**: User search, friend requests, accepted friends feed — the social layer is partially built but needs a full friend-request flow
+- **Friend system**: User search, friend requests, accepted friends feed — core friendship flow is complete. Pending: auto-link Person when invitee registers with invitation voucher
 - **Challenges**: Time-limited goals (e.g., "Climb 3 peaks this month") to drive retention
 - **Collections / Lists**: Curated peak lists (e.g., "100 Pyrenean 3000ers") a user can work through
 - **Notifications**: Friend activity alerts, milestone celebrations

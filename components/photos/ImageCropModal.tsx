@@ -7,13 +7,53 @@ import { useT } from "@/components/providers/I18nProvider";
 // Output resolution (Instagram standard)
 const OUTPUT_W = 1080;
 
+// Max long side for stored original (covers 20×30cm prints at 300 DPI)
+const ORIGINAL_MAX_PX = 3000;
+
+/**
+ * Resize a File to at most ORIGINAL_MAX_PX on the longest side,
+ * output as JPEG 0.85. Used to store a space-efficient original
+ * that still supports high-quality reprints.
+ */
+export function resizeForStorage(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, ORIGINAL_MAX_PX / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.round(img.naturalWidth * scale);
+      const h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("resizeForStorage: toBlob failed"))),
+        "image/jpeg",
+        0.85,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("resizeForStorage: image load failed")); };
+    img.src = url;
+  });
+}
+
+export type CropMeta = {
+  x: number;      // left edge as fraction [0-1] of original width
+  y: number;      // top edge as fraction [0-1] of original height
+  w: number;      // crop width as fraction [0-1] of original width
+  h: number;      // crop height as fraction [0-1] of original height
+  aspect: string; // e.g. "4:5"
+};
+
 export function ImageCropModal({
   file,
   onCrop,
   onCancel,
 }: {
   file: File;
-  onCrop: (blob: Blob) => void;
+  onCrop: (blob: Blob, cropMeta: CropMeta) => void;
   onCancel: () => void;
 }) {
   const t = useT();
@@ -166,10 +206,19 @@ export function ImageCropModal({
 
     ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, OUTPUT_W, outH);
 
+    // Normalize crop coords to [0-1] fractions of the original image
+    const cropMeta: CropMeta = {
+      x: srcX / img.naturalWidth,
+      y: srcY / img.naturalHeight,
+      w: srcW / img.naturalWidth,
+      h: srcH / img.naturalHeight,
+      aspect: ratio === 1 ? "1:1" : "4:5",
+    };
+
     canvas.toBlob((blob) => {
       setApplying(false);
-      if (blob) onCrop(blob);
-    }, "image/jpeg", 0.93);
+      if (blob) onCrop(blob, cropMeta);
+    }, "image/jpeg", 0.85);
   }
 
   const { cropW, cropH } = getCropSize();

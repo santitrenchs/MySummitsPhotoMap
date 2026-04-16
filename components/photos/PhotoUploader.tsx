@@ -3,10 +3,11 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ImageCropModal } from "./ImageCropModal";
+import { ImageCropModal, resizeForStorage, type CropMeta } from "./ImageCropModal";
 import { PhotoTagStep, type FaceDraft } from "./PhotoTagStep";
 
 type RetagItem = { photoId: string; blob: Blob; existingFaces: FaceDraft[] };
+type TagItem = { blob: Blob; cropMeta: CropMeta; originalFile: File };
 import { useT } from "@/components/providers/I18nProvider";
 
 type Photo = { id: string; url: string };
@@ -28,8 +29,8 @@ export function PhotoUploader({
 
   // Step 1: crop queue (new uploads)
   const [cropQueue, setCropQueue] = useState<File[]>([]);
-  // Step 2: tag queue for new uploads (cropped blobs)
-  const [tagQueue, setTagQueue] = useState<Blob[]>([]);
+  // Step 2: tag queue for new uploads (cropped blobs + original + crop metadata)
+  const [tagQueue, setTagQueue] = useState<TagItem[]>([]);
   // Re-tag queue for existing photos
   const [retagQueue, setRetagQueue] = useState<RetagItem[]>([]);
 
@@ -39,9 +40,10 @@ export function PhotoUploader({
   }
 
   // Crop done → move to tag step
-  function handleCropDone(blob: Blob) {
+  function handleCropDone(blob: Blob, cropMeta: CropMeta) {
+    const originalFile = cropQueue[0];
     setCropQueue((q) => q.slice(1));
-    setTagQueue((q) => [...q, blob]);
+    setTagQueue((q) => [...q, { blob, cropMeta, originalFile }]);
   }
   function handleCropCancel() {
     setCropQueue((q) => q.slice(1));
@@ -49,20 +51,27 @@ export function PhotoUploader({
 
   // Tag done → upload with faces
   async function handleTagDone(blob: Blob, faces: FaceDraft[]) {
+    const current = tagQueue[0];
     setTagQueue((q) => q.slice(1));
-    await uploadWithFaces(blob, faces);
+    await uploadWithFaces(blob, faces, current?.cropMeta, current?.originalFile);
   }
   function handleTagSkip(blob: Blob) {
     handleTagDone(blob, []);
   }
 
-  async function uploadWithFaces(blob: Blob, faces: FaceDraft[]) {
+  async function uploadWithFaces(blob: Blob, faces: FaceDraft[], cropMeta?: CropMeta, originalFile?: File) {
     setUploading(true);
     setError(null);
 
     const formData = new FormData();
     formData.append("file", blob, "photo.jpg");
     formData.append("ascentId", ascentId);
+
+    if (originalFile && cropMeta) {
+      const originalBlob = await resizeForStorage(originalFile);
+      formData.append("originalFile", originalBlob, "original.jpg");
+      formData.append("cropMeta", JSON.stringify(cropMeta));
+    }
 
     const res = await fetch("/api/photos/upload", { method: "POST", body: formData });
     if (!res.ok) {
@@ -161,7 +170,7 @@ export function PhotoUploader({
       {/* Step 2 — Tag step for new uploads */}
       {cropQueue.length === 0 && tagQueue.length > 0 && (
         <PhotoTagStep
-          blob={tagQueue[0]}
+          blob={tagQueue[0].blob}
           onDone={handleTagDone}
           onSkip={handleTagSkip}
         />

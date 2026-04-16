@@ -272,31 +272,35 @@ export function PhotoTagStep({
 
         {/* Header */}
         <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
+          display: "flex", flexDirection: "column",
           padding: "16px 20px 10px",
           paddingTop: "max(16px, env(safe-area-inset-top))",
-          flexShrink: 0,
+          flexShrink: 0, gap: 6,
         }}>
-          <button
-            onClick={() => onSkip(blob)}
-            style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
-          >
-            {t.skip}
-          </button>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "white", letterSpacing: "-0.01em" }}>
+          {/* Row 1: actions */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <button
+              onClick={() => onSkip(blob)}
+              style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+            >
+              {t.skip}
+            </button>
+            <button
+              onClick={handleDone}
+              style={{
+                fontSize: 14, fontWeight: 700,
+                color: phase === "ready" ? "#0ea5e9" : "rgba(255,255,255,0.35)",
+                background: "none", border: "none", cursor: "pointer", padding: "4px 0",
+              }}
+              disabled={phase === "detecting"}
+            >
+              {taggedCount > 0 ? `${t.done} (${taggedCount})` : t.done}
+            </button>
+          </div>
+          {/* Row 2: status title */}
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "white", letterSpacing: "-0.01em", textAlign: "center" }}>
             {phase === "detecting" ? t.tag_detecting : faces.length === 0 ? t.tag_tagPeople : i(t.tag_tagPeopleFound, { n: faces.length })}
-          </span>
-          <button
-            onClick={handleDone}
-            style={{
-              fontSize: 14, fontWeight: 700,
-              color: phase === "ready" ? "#0ea5e9" : "rgba(255,255,255,0.35)",
-              background: "none", border: "none", cursor: "pointer", padding: "4px 0",
-            }}
-            disabled={phase === "detecting"}
-          >
-            {taggedCount > 0 ? `${t.done} (${taggedCount})` : t.done}
-          </button>
+          </p>
         </div>
 
         {/* Photo + face overlays */}
@@ -326,6 +330,22 @@ export function PhotoTagStep({
                 WebkitUserSelect: "none",
               }}
             />
+            {/* Detecting overlay — spinner over the image, not a black screen */}
+            {phase === "detecting" && (
+              <div style={{
+                position: "absolute", inset: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: "rgba(0,0,0,0.35)",
+                borderRadius: 4,
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: "50%",
+                  border: "3px solid rgba(255,255,255,0.25)",
+                  borderTopColor: "white",
+                  animation: "spin 0.7s linear infinite",
+                }} />
+              </div>
+            )}
 
             {/* Face rings (auto-detected) + boxes (manual) */}
             {imgLoaded && renderedSize.w > 0 && phase === "ready" && faces.map((face) => {

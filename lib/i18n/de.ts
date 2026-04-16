@@ -45,7 +45,7 @@ export const de: Dict = {
   detail_with: "Mit", detail_photos: "Fotos · {n}", detail_addPhotos: "Fotos hinzufügen",
   detail_location: "Standort", detail_routeWikiloc: "Route · Wikiloc",
   detail_openWikiloc: "In Wikiloc öffnen ↗",
-  detail_editPhoto: "Foto bearbeiten", detail_tagPeople: "Markieren",
+  detail_editPhoto: "Foto bearbeiten", detail_tagPeople: "Markieren", detail_reCrop: "Neu zuschneiden",
   detail_viewOnMap: "🗺  Auf Karte anzeigen", detail_addPhoto: "Foto hinzufügen",
   detail_addWikiloc: "Wikiloc-Route hinzufügen", detail_and: "und",
   date_today: "Heute", date_selectYear: "Jahr wählen",

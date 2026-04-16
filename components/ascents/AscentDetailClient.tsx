@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
-import { ImageCropModal } from "@/components/photos/ImageCropModal";
+import { ImageCropModal, resizeForStorage, type CropMeta } from "@/components/photos/ImageCropModal";
 import { PhotoTagStep, type FaceDraft } from "@/components/photos/PhotoTagStep";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ export type AscentDetailProps = {
   description: string | null;
   wikiloc: string | null;
   userName: string;
-  heroPhoto: { id: string; url: string } | null;
+  heroPhoto: { id: string; url: string; originalStorageKey: string | null } | null;
   persons: Person[];
   ascentId: string;
 };
@@ -47,8 +47,13 @@ export function AscentDetailClient(props: AscentDetailProps) {
   const [photo, setPhoto] = useState(initialPhoto);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [tagBlob, setTagBlob] = useState<Blob | null>(null);
+  const [pendingCropMeta, setPendingCropMeta] = useState<CropMeta | null>(null);
   const [existingFaces, setExistingFaces] = useState<FaceDraft[]>([]);
   const [replacing, setReplacing] = useState(false);
+  // true when re-cropping from existing original (no new original upload needed)
+  const [recroppingOriginalId, setRecroppingOriginalId] = useState<string | null>(null);
+  // original File for new uploads (cleared after upload)
+  const pendingOriginalFileRef = useRef<File | null>(null);
 
   // ── Toast ─────────────────────────────────────────────────────────────────
   const [toast, setToast] = useState<string | null>(null);
@@ -201,15 +206,17 @@ export function AscentDetailClient(props: AscentDetailProps) {
   // ── Photo replace flow ────────────────────────────────────────────────────
 
   async function openEditPhoto() {
-    if (photo) {
+    if (photo?.originalStorageKey) {
+      // Has original → re-crop from original, preserving existing face tags
       setReplacing(true);
       try {
-        const [blobRes, facesRes] = await Promise.all([
-          fetch(`/api/photos/${photo.id}/proxy`),
+        const [originalRes, facesRes] = await Promise.all([
+          fetch(`/api/photos/${photo.id}/original`),
           fetch(`/api/photos/${photo.id}/faces`),
         ]);
-        const [blob, facesData] = await Promise.all([blobRes.blob(), facesRes.json()]);
-        const file = new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" });
+        if (!originalRes.ok) throw new Error("Original not available");
+        const [blob, facesData] = await Promise.all([originalRes.blob(), facesRes.json()]);
+        const file = new File([blob], "original.jpg", { type: blob.type || "image/jpeg" });
 
         const faces: FaceDraft[] = (Array.isArray(facesData) ? facesData : []).map(
           (det: { id: string; boundingBox: FaceDraft["boundingBox"]; descriptor: number[] | null; faceTags: { status: string; person: { name: string } }[] }) => ({
@@ -221,12 +228,16 @@ export function AscentDetailClient(props: AscentDetailProps) {
           })
         );
 
+        setRecroppingOriginalId(photo.id);
         setExistingFaces(faces);
         setCropFile(file);
+      } catch {
+        // silently ignore
       } finally {
         setReplacing(false);
       }
     } else {
+      // No original (legacy photo or no photo) → file picker to replace/add
       setExistingFaces([]);
       fileInputRef.current?.click();
     }
@@ -238,23 +249,54 @@ export function AscentDetailClient(props: AscentDetailProps) {
     e.target.value = "";
   }
 
-  function handleCropDone(blob: Blob) {
+  // openReCrop merged into openEditPhoto above
+  function openReCrop() {
+    // kept as no-op stub — functionality moved to openEditPhoto
+
+  }
+
+  function handleCropDone(blob: Blob, cropMeta: CropMeta) {
+    // For new uploads (not re-crop), save the original file before clearing cropFile
+    if (!recroppingOriginalId && cropFile) {
+      pendingOriginalFileRef.current = cropFile;
+    }
     setCropFile(null);
+    setPendingCropMeta(cropMeta);
     setTagBlob(blob);
   }
 
   function handleCropCancel() {
     setCropFile(null);
     setExistingFaces([]);
+    setRecroppingOriginalId(null);
+    setPendingCropMeta(null);
+    pendingOriginalFileRef.current = null;
   }
 
   async function uploadPhotoWithFaces(blob: Blob, faces: FaceDraft[]) {
     setTagBlob(null);
     setReplacing(true);
+    const cropMeta = pendingCropMeta;
+    const reuseOriginalId = recroppingOriginalId;
+    setPendingCropMeta(null);
+    setRecroppingOriginalId(null);
     try {
       const fd = new FormData();
       fd.append("file", blob, "photo.jpg");
       fd.append("ascentId", id);
+
+      if (reuseOriginalId) {
+        // Re-crop: reuse existing original in R2
+        fd.append("reuseOriginalPhotoId", reuseOriginalId);
+        if (cropMeta) fd.append("cropMeta", JSON.stringify(cropMeta));
+      } else if (pendingOriginalFileRef.current && cropMeta) {
+        // New upload: resize and send original
+        const originalBlob = await resizeForStorage(pendingOriginalFileRef.current);
+        fd.append("originalFile", originalBlob, "original.jpg");
+        fd.append("cropMeta", JSON.stringify(cropMeta));
+        pendingOriginalFileRef.current = null;
+      }
+
       const uploadRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
       if (!uploadRes.ok) throw new Error("Upload failed");
       const newPhoto = await uploadRes.json();
@@ -274,12 +316,12 @@ export function AscentDetailClient(props: AscentDetailProps) {
         });
       }
 
-      // Delete old photo if one existed
+      // Delete old photo if one existed (original is preserved via reuseOriginalPhotoId)
       if (photo) {
-        await fetch(`/api/photos/${photo.id}`, { method: "DELETE" });
+        await fetch(`/api/photos/${photo.id}?keepOriginal=${reuseOriginalId ? "1" : "0"}`, { method: "DELETE" });
       }
 
-      setPhoto({ id: newPhoto.id, url: newPhoto.url });
+      setPhoto({ id: newPhoto.id, url: newPhoto.url, originalStorageKey: newPhoto.originalStorageKey ?? null });
       router.refresh();
     } catch {
       // silently ignore — page refresh will show real state
@@ -339,10 +381,11 @@ export function AscentDetailClient(props: AscentDetailProps) {
       )}
 
       {/* Face tag step — same flow as new ascent creation */}
+      {/* Re-crop: don't pass initialFaces — new crop has different coordinates, let detection run fresh */}
       {tagBlob && (
         <PhotoTagStep
           blob={tagBlob}
-          initialFaces={existingFaces}
+          initialFaces={recroppingOriginalId ? [] : existingFaces}
           onDone={(blob, faces) => uploadPhotoWithFaces(blob, faces)}
           onSkip={() => setTagBlob(null)}
         />
@@ -412,7 +455,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
             position: "absolute", top: 16, right: 16,
             display: "flex", gap: 8,
           }}>
-            {/* Edit photo */}
+            {/* Edit photo — re-crops from original if available, else opens file picker */}
             <button
               onClick={openEditPhoto}
               disabled={replacing}

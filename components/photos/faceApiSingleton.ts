@@ -14,6 +14,12 @@ export async function getFaceApi(): Promise<typeof FaceApiType> {
   modelsLoading = (async () => {
     const mod = await import("@vladmandic/face-api");
     const api = mod as unknown as typeof FaceApiType;
+
+    // Force CPU backend to avoid competing with maplibre-gl for WebGL contexts.
+    // The map exhausts the browser's WebGL context limit (~16), leaving none for TF.js.
+    await api.tf.setBackend("cpu");
+    await api.tf.ready();
+
     await Promise.all([
       api.nets.ssdMobilenetv1.loadFromUri("/models/face-api"),
       api.nets.faceLandmark68TinyNet.loadFromUri("/models/face-api"),
