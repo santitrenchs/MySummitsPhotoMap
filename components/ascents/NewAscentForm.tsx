@@ -107,6 +107,12 @@ export function NewAscentForm({
       return;
     }
 
+    if (readyItems.length === 0) {
+      setError(t.field_photos);
+      setLoading(false);
+      return;
+    }
+
     // Step 1 — create ascent
     setStatus(t.newAscent_savingAscent);
     const ascentRes = await fetch("/api/ascents", {
@@ -246,17 +252,6 @@ export function NewAscentForm({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setStep("form")}
-            style={{
-              background: "none", border: "none", padding: 0,
-              fontSize: 13, color: "#6b7280", cursor: "pointer",
-              textDecoration: "underline", textUnderlineOffset: 3,
-            }}
-          >
-            {t.newAscent_skipPhoto}
-          </button>
         </div>
       )}
 
@@ -318,12 +313,10 @@ export function NewAscentForm({
 
       {/* Photos */}
       <div>
-        <label style={labelStyle}>
-          {t.field_photos} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
-        </label>
+        <label style={labelStyle}>{t.field_photos} *</label>
 
-        {/* Drop zone */}
-        <div
+        {/* Drop zone — hidden once photo is added (one photo per ascent) */}
+        {readyItems.length === 0 && <div
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={(e) => { e.preventDefault(); setDragging(false); queueFiles(e.dataTransfer.files); }}
@@ -349,7 +342,7 @@ export function NewAscentForm({
           <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>
             {t.newAscent_maxSize}
           </p>
-        </div>
+        </div>}
 
         {/* Ready previews (cropped + tagged) */}
         {readyItems.length > 0 && (

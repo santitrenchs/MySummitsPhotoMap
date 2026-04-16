@@ -23,7 +23,7 @@ export const de: Dict = {
   field_peak: "Gipfel", field_selectPeak: "Gipfel auswählen…", field_date: "Datum",
   field_route: "Route", field_routePlaceholder: "z. B. Nordgrat des Salenques",
   field_notes: "Notizen", field_notesPlaceholder: "Bedingungen, Wetter, Erinnerungen…",
-  field_photos: "Fotos", field_wikiloc: "Wikiloc-Route",
+  field_photos: "Foto", field_wikiloc: "Wikiloc-Route",
   field_wikilockPlaceholder: "Füge den iframe-Code von Wikiloc ein, z. B.\n<iframe src=\"https://es.wikiloc.com/wikiloc/embedv2.do?id=...\" ...></iframe>",
   field_wikilockPreview: "Einbettungs-URL:",
 

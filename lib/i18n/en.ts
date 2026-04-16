@@ -23,7 +23,7 @@ export const en: Dict = {
   field_peak: "Peak", field_selectPeak: "Select a peak…", field_date: "Date",
   field_route: "Route", field_routePlaceholder: "e.g. Norte de Salenques",
   field_notes: "Notes", field_notesPlaceholder: "Conditions, weather, memories…",
-  field_photos: "Photos", field_wikiloc: "Wikiloc route",
+  field_photos: "Photo", field_wikiloc: "Wikiloc route",
   field_wikilockPlaceholder: "Paste the iframe code from Wikiloc, e.g.\n<iframe src=\"https://es.wikiloc.com/wikiloc/embedv2.do?id=...\" ...></iframe>",
   field_wikilockPreview: "Embed URL:",
 

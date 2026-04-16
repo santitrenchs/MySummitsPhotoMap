@@ -23,7 +23,7 @@ export const fr: Dict = {
   field_peak: "Sommet", field_selectPeak: "Choisir un sommet…", field_date: "Date",
   field_route: "Itinéraire", field_routePlaceholder: "ex. Arête Nord du Salenques",
   field_notes: "Notes", field_notesPlaceholder: "Conditions, météo, souvenirs…",
-  field_photos: "Photos", field_wikiloc: "Itinéraire Wikiloc",
+  field_photos: "Photo", field_wikiloc: "Itinéraire Wikiloc",
   field_wikilockPlaceholder: "Colle le code iframe de Wikiloc, ex.\n<iframe src=\"https://es.wikiloc.com/wikiloc/embedv2.do?id=...\" ...></iframe>",
   field_wikilockPreview: "URL d'intégration :",
 

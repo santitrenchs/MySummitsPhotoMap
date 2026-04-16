@@ -23,7 +23,7 @@ export const ca: Dict = {
   field_peak: "Cim", field_selectPeak: "Selecciona un cim…", field_date: "Data",
   field_route: "Ruta", field_routePlaceholder: "p. ex. Nord del Salenques",
   field_notes: "Notes", field_notesPlaceholder: "Condicions, temps, records…",
-  field_photos: "Fotos", field_wikiloc: "Ruta de Wikiloc",
+  field_photos: "Foto", field_wikiloc: "Ruta de Wikiloc",
   field_wikilockPlaceholder: "Enganxa el codi iframe de Wikiloc, p. ex.\n<iframe src=\"https://es.wikiloc.com/wikiloc/embedv2.do?id=...\" ...></iframe>",
   field_wikilockPreview: "URL d'incrustació:",
 

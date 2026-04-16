@@ -3,10 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 
-const RATIOS = [
-  { label: "1:1", value: 1 },
-  { label: "4:5", value: 4 / 5 },
-];
 
 // Output resolution (Instagram standard)
 const OUTPUT_W = 1080;
@@ -317,22 +313,6 @@ export function ImageCropModal({
           );
         })()}
 
-        {/* Ratio pills */}
-        <div style={{ display: "flex", gap: 8 }}>
-          {RATIOS.map(({ label, value }) => (
-            <button
-              key={label}
-              onClick={() => setRatio(value)}
-              style={{
-                padding: "6px 16px", borderRadius: 20, border: "none",
-                background: ratio === value ? "white" : "rgba(255,255,255,0.12)",
-                color: ratio === value ? "black" : "white",
-                fontSize: 12, fontWeight: 700, cursor: "pointer",
-                transition: "background 0.15s",
-              }}
-            >{label}</button>
-          ))}
-        </div>
       </div>
     </div>
   );
