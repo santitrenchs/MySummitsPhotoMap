@@ -45,6 +45,12 @@ export function PhotoTagStep({
   const searchRef = useRef<HTMLInputElement>(null);
   const [drawMode, setDrawMode] = useState(false);
 
+  // Lock body scroll while fullscreen tagging UI is visible
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
   // Fetch persons list for tagging suggestions
   useEffect(() => {
     fetch("/api/persons")
@@ -563,7 +569,7 @@ export function PhotoTagStep({
             style={{
               background: "white",
               borderRadius: "22px 22px 0 0",
-              maxHeight: "65vh",
+              maxHeight: "65svh",
               display: "flex", flexDirection: "column",
               paddingBottom: "env(safe-area-inset-bottom)",
               overflow: "hidden",
