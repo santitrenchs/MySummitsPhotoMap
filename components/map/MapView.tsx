@@ -758,40 +758,43 @@ const panelStyle: React.CSSProperties = isMobile
             boxShadow: "0 12px 48px rgba(0,0,0,0.2)",
           }}
         >
-          <div style={{ position: "relative", aspectRatio: "3/2", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
-            {selected.ascent?.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
+          {selected.ascent?.photoUrl && (
+            <div style={{ position: "relative", aspectRatio: "3/2", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={selected.ascent.photoUrl} alt=""
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            ) : (
-              <PanelPlaceholder />
-            )}
-            <button
-              onClick={() => setSelected(null)}
-              aria-label="Close"
-              style={{
-                position: "absolute", top: 10, right: 10,
-                width: 28, height: 28, borderRadius: "50%",
-                background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
-                border: "none", cursor: "pointer",
-                color: "white", fontSize: 13,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}
-            >✕</button>
-            <div style={{
-              position: "absolute", bottom: 10, left: 12,
-              background: "rgba(0,0,0,0.52)", backdropFilter: "blur(6px)",
-              borderRadius: 20, padding: "4px 12px",
-            }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
-                {selected.peak.altitudeM.toLocaleString(t.dateLocale)} m
-              </span>
+              <div style={{
+                position: "absolute", bottom: 10, left: 12,
+                background: "rgba(0,0,0,0.52)", backdropFilter: "blur(6px)",
+                borderRadius: 20, padding: "4px 12px",
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
+                  {selected.peak.altitudeM.toLocaleString(t.dateLocale)} m
+                </span>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Close button — always visible */}
+          <button
+            onClick={() => setSelected(null)}
+            aria-label="Close"
+            style={{
+              position: "absolute", top: 10, right: 10,
+              width: 28, height: 28, borderRadius: "50%",
+              background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
+              border: "none", cursor: "pointer",
+              color: "white", fontSize: 13,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >✕</button>
 
           <div style={{ padding: "16px 16px 22px" }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111827", margin: "0 0 2px", lineHeight: 1.25 }}>
               {selected.peak.name}
+              <span style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", marginLeft: 8 }}>
+                · {selected.peak.altitudeM.toLocaleString(t.dateLocale)} m
+              </span>
             </h2>
             {selected.peak.mountainRange && (
               <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 14px" }}>
