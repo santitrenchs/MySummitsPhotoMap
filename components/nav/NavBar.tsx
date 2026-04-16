@@ -430,10 +430,10 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         {/* Logo: absolutely centered, unaffected by avatar width */}
         <Link href="/map" style={{
           position: "absolute", left: "50%", transform: "translateX(-50%)",
-          display: "flex", alignItems: "center", gap: 5, textDecoration: "none",
+          display: "flex", alignItems: "center", gap: 7, textDecoration: "none",
         }}>
-          <LogoIcon size={22} />
-          <span style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>
+          <LogoIcon size={29} />
+          <span style={{ fontSize: 23, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>
             AziTracks
           </span>
         </Link>
