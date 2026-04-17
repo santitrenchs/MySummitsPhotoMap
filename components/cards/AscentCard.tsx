@@ -129,20 +129,49 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
         style={{ "--card-i": Math.min(animationIndex, 8), cursor: navigating ? "wait" : undefined }}
         onClick={handleCardClick}
       >
-        {/* ── Social header (social variant only, above image) ────────── */}
-        {!isProfile && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "10px 14px 8px",
-          }}>
-            <InitialsAvatar name={ascent.user.name} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontWeight: 700, fontSize: 14, color: "#111827", margin: 0 }}>
-                {ascent.user.name}
-              </p>
-            </div>
+        {/* ── Header (both variants) ──────────────────────────────────── */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 14px 8px",
+        }}>
+          <InitialsAvatar name={ascent.user.name} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontWeight: 700, fontSize: 14, color: "#111827", margin: 0 }}>
+              {ascent.user.name}
+            </p>
           </div>
-        )}
+          {isProfile && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  width: 30, height: 30, borderRadius: "50%",
+                  color: "#6b7280", fontSize: 20, lineHeight: 1,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >⋮</button>
+              {menuOpen && (
+                <div style={{
+                  position: "absolute", right: 14, zIndex: 50,
+                  background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
+                }} onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => { setMenuOpen(false); setNavigating(true); router.push(`/ascents/${ascent.id}`); }}
+                    style={{
+                      display: "block", width: "100%", padding: "10px 16px",
+                      textAlign: "left", background: "none", border: "none",
+                      fontSize: 13, color: "#111827", cursor: "pointer",
+                    }}
+                  >
+                    {t.edit}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* ── Hero image with full overlay ────────────────────────────── */}
         <div style={{ position: "relative", aspectRatio: "4/5", overflow: "hidden", background: "#e2e8f0" }}>
@@ -174,12 +203,6 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
             </div>
           )}
 
-          {/* Top gradient (for location label readability) */}
-          <div style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: 80,
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 100%)",
-            pointerEvents: "none",
-          }} />
 
           {/* Bottom gradient (for peak name readability) */}
           <div style={{
@@ -188,55 +211,9 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
             pointerEvents: "none",
           }} />
 
-          {/* Top-left: location */}
-          {location && (
-            <div style={{
-              position: "absolute", top: 12, left: 12,
-              fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.85)",
-              letterSpacing: "0.1em", textTransform: "uppercase",
-            }}>
-              {location}
-            </div>
-          )}
 
-          {/* Top-right: ⋮ menu (profile) or nothing */}
-          {isProfile && (
-            <div
-              style={{ position: "absolute", top: 6, right: 6, zIndex: 45 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-                style={{
-                  background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)",
-                  border: "none", cursor: "pointer",
-                  width: 30, height: 30, borderRadius: "50%",
-                  color: "white", fontSize: 18, lineHeight: 1,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >⋮</button>
-              {menuOpen && (
-                <div style={{
-                  position: "absolute", right: 0, top: 34, zIndex: 50,
-                  background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
-                }} onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => { setMenuOpen(false); setNavigating(true); router.push(`/ascents/${ascent.id}`); }}
-                    style={{
-                      display: "block", width: "100%", padding: "10px 16px",
-                      textAlign: "left", background: "none", border: "none",
-                      fontSize: 13, color: "#111827", cursor: "pointer",
-                    }}
-                  >
-                    {t.edit}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Bottom-left: peak name + date */}
+          {/* Bottom-left: peak name + route + date */}
           <div style={{
             position: "absolute", bottom: 12, left: 12, right: 72,
           }}>
@@ -248,6 +225,16 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
             }}>
               {ascent.peak.name}
             </p>
+            {ascent.route && (
+              <p style={{
+                margin: "2px 0 0", fontSize: 12, fontWeight: 600,
+                color: "rgba(255,255,255,0.85)",
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                textShadow: "0 1px 3px rgba(0,0,0,0.4)",
+              }}>
+                {ascent.route}
+              </p>
+            )}
             <p style={{
               margin: "3px 0 0", fontSize: 12, fontWeight: 500,
               color: "rgba(255,255,255,0.75)",
@@ -269,6 +256,13 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
             </span>
           </div>
         </div>
+
+        {/* ── Mini map (flush below photo) ─────────────────────────────── */}
+        <MiniMap
+          latitude={ascent.peak.latitude}
+          longitude={ascent.peak.longitude}
+          zoom={10}
+        />
 
         {/* ── Below image ─────────────────────────────────────────────── */}
         <div style={{ padding: "10px 14px 12px" }} onClick={(e) => e.stopPropagation()}>
@@ -292,7 +286,7 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
           {/* Line 2: description */}
           {ascent.description && (
             <p style={{
-              fontSize: 13, color: "#374151", margin: "4px 0 0", lineHeight: 1.5,
+              fontSize: 14, color: "#374151", margin: "4px 0 0", lineHeight: 1.5,
               display: "-webkit-box", WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical", overflow: "hidden",
             }}>
@@ -300,14 +294,6 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
             </p>
           )}
         </div>
-
-        {/* ── Mini map ────────────────────────────────────────────────── */}
-        <MiniMap
-          latitude={ascent.peak.latitude}
-          longitude={ascent.peak.longitude}
-          peakName={ascent.peak.name}
-          zoom={10}
-        />
       </div>
     </>
   );

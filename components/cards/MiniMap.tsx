@@ -5,11 +5,12 @@ import { useEffect, useRef } from "react";
 interface Props {
   latitude: number;
   longitude: number;
-  peakName: string;
+  peakName?: string;
+  label?: string;
   zoom?: number;
 }
 
-export function MiniMap({ latitude, longitude, peakName, zoom = 12 }: Props) {
+export function MiniMap({ latitude, longitude, label, zoom = 12 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<boolean>(false);
 
@@ -23,20 +24,10 @@ export function MiniMap({ latitude, longitude, peakName, zoom = 12 }: Props) {
     import("maplibre-gl").then((maplibre) => {
       if (!containerRef.current) return;
 
-      // Triangle + peak name marker
+      // Triangle marker only
       const el = document.createElement("div");
-      el.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:3px;";
+      el.style.cssText = "display:flex;flex-direction:column;align-items:center;position:absolute;";
       el.innerHTML = `
-        <div style="
-          background:rgba(0,0,0,0.62);
-          color:white;
-          font-size:11px;
-          font-weight:700;
-          padding:2px 7px;
-          border-radius:10px;
-          white-space:nowrap;
-          letter-spacing:0.01em;
-        ">${peakName}</div>
         <svg width="20" height="18" viewBox="0 0 20 18" xmlns="http://www.w3.org/2000/svg">
           <polygon points="10,1 19,17 1,17" fill="#16a34a" stroke="white" stroke-width="2" stroke-linejoin="round"/>
         </svg>`;
@@ -86,7 +77,18 @@ export function MiniMap({ latitude, longitude, peakName, zoom = 12 }: Props) {
 
   return (
     <div style={{ position: "relative" }}>
-      <div ref={containerRef} style={{ width: "100%", height: 107, display: "block" }} />
+      <div ref={containerRef} style={{ width: "100%", height: 55, display: "block" }} />
+      {label && (
+        <div style={{
+          position: "absolute", top: 6, left: 8,
+          fontSize: 10, fontWeight: 700, color: "white",
+          letterSpacing: "0.08em", textTransform: "uppercase",
+          textShadow: "0 1px 3px rgba(0,0,0,0.7)",
+          pointerEvents: "none",
+        }}>
+          {label}
+        </div>
+      )}
       <div style={{
         position: "absolute", bottom: 6, right: 6,
         background: "rgba(255,255,255,0.88)", backdropFilter: "blur(4px)",
