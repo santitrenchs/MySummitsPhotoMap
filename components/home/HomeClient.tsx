@@ -222,10 +222,10 @@ export function HomeClient({ data, locale, t }: {
       {/* ── Hero header ─────────────────────────────────────────────────── */}
       <div style={{
         position: "relative",
-        height: 310,
+        height: 283,
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "space-between",
-        padding: "20px 28px 26px",
+        padding: "24px 28px 26px",
         backgroundImage: "url('https://www.rutaspirineos.org/images/prat-de-cadi-desde-estana/prat-de-cadi-desde-estana-1.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center 60%",
@@ -262,42 +262,39 @@ export function HomeClient({ data, locale, t }: {
           <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 400, color: "rgba(255,255,255,0.72)", textAlign: "center" }}>
             {user.username ? `@${user.username}` : ""}
           </p>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.02em" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, position: "relative", top: "0.5px" }}>
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M12 5 L14.5 12 L9.5 12 Z" fill="rgba(255,255,255,0.88)"/>
-                <path d="M12 19 L14.5 12 L9.5 12 Z"/>
-              </svg>
-              <span>Azimut</span>
-            </div>
-            <p style={{ margin: 0, fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.85)" }}>
-              Tu evolución en la montaña
-            </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, letterSpacing: "-0.01em" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, position: "relative", top: "0.5px" }}>
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 5 L14.5 12 L9.5 12 Z" fill="rgba(255,255,255,0.88)"/>
+              <path d="M12 19 L14.5 12 L9.5 12 Z"/>
+            </svg>
+            <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.88)" }}>Azimut</span>
+            <span style={{ color: "rgba(255,255,255,0.42)", fontWeight: 400 }}>·</span>
+            <span style={{ fontWeight: 400, color: "rgba(255,255,255,0.75)" }}>Tu evolución en la montaña</span>
           </div>
         </div>
 
         {/* Bloque inferior: métricas + progreso */}
-        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", gap: 14, width: "100%", paddingTop: 20, paddingBottom: 26 }}>
+        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", gap: 14, width: "100%", paddingTop: 16, paddingBottom: 17 }}>
 
           {/* Métricas: cimas · ascensiones · alt. máx */}
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <span style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.uniquePeaks}</span>
-              <span style={{ fontSize: 11.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>cimas</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.uniquePeaks}</span>
+              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>cimas</span>
             </div>
             <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)", alignSelf: "center", margin: "0 4px" }} />
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <span style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.totalAscents}</span>
-              <span style={{ fontSize: 11.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>ascensiones</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.totalAscents}</span>
+              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>ascensiones</span>
             </div>
             <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)", alignSelf: "center", margin: "0 4px" }} />
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <span style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>
                 {stats.maxAltitude > 0 ? `${stats.maxAltitude.toLocaleString(locale)}` : "—"}
                 {stats.maxAltitude > 0 && <sup style={{ fontSize: 10, fontWeight: 400, verticalAlign: "super", marginLeft: 1, opacity: 0.55 }}>m</sup>}
               </span>
-              <span style={{ fontSize: 11.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>alt. máx</span>
+              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>alt. máx</span>
             </div>
           </div>
 
