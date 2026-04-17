@@ -87,8 +87,10 @@ export default async function AscentsPage() {
       })
     : [];
 
-  const myAscents = raw.map((a) => enrichAscent(a, true, session.user.name ?? ""));
-  const friendAscents = friendsRaw.map((a) => enrichAscent(a as Parameters<typeof enrichAscent>[0], false, a.user?.name ?? ""));
+  const myAscents = raw
+    .filter((a) => a.createdBy === session.user.id)
+    .map((a) => enrichAscent(a, true, session.user.name ?? ""));
+  const friendAscents = friendsRaw.map((a) => enrichAscent(a as Parameters<typeof enrichAscent>[0], false, (a.user as { name?: string | null } | null)?.name ?? "?"));
 
   // Merge and sort by date desc
   const ascents = [...myAscents, ...friendAscents].sort(
