@@ -13,16 +13,11 @@ type AltReq = { threshold: number; count: number };
 type LevelDef = { idx: number; emoji: string; name: string; minAscents: number; altReqs?: AltReq[] };
 
 const LEVEL_DEFS: LevelDef[] = [
-  { idx: 1,  emoji: "🐣", name: "Trail Seed",       minAscents: 1 },
-  { idx: 2,  emoji: "🌱", name: "Pathling",          minAscents: 3 },
-  { idx: 3,  emoji: "🧭", name: "Ridge Scout",       minAscents: 10 },
-  { idx: 4,  emoji: "🥾", name: "Peak Walker",       minAscents: 15 },
-  { idx: 5,  emoji: "⛰️", name: "Summit Tamer",      minAscents: 25, altReqs: [{ threshold: 1000, count: 1 }] },
-  { idx: 6,  emoji: "❄️", name: "Sky Breaker",       minAscents: 40, altReqs: [{ threshold: 2000, count: 1 }] },
-  { idx: 7,  emoji: "👑", name: "Peak Master",       minAscents: 60, altReqs: [{ threshold: 3000, count: 1 }] },
-  { idx: 8,  emoji: "🔥", name: "Legend Ascender",   minAscents: 80, altReqs: [{ threshold: 4000, count: 1 }] },
-  { idx: 9,  emoji: "🌌", name: "Mythic Summiteer",  minAscents: 100, altReqs: [{ threshold: 5000, count: 1 }] },
-  { idx: 10, emoji: "🏔️", name: "Apex Warden",       minAscents: 120, altReqs: [{ threshold: 3000, count: 3 }, { threshold: 4000, count: 1 }, { threshold: 5000, count: 1 }] },
+  { idx: 1, emoji: "🌱", name: "Iniciado",   minAscents: 1 },
+  { idx: 2, emoji: "🥾", name: "Explorador", minAscents: 5 },
+  { idx: 3, emoji: "🧭", name: "Montañero",  minAscents: 15, altReqs: [{ threshold: 2000, count: 1 }] },
+  { idx: 4, emoji: "🏔️", name: "Alpinista",  minAscents: 30, altReqs: [{ threshold: 3000, count: 1 }] },
+  { idx: 5, emoji: "👑", name: "Leyenda",    minAscents: 60, altReqs: [{ threshold: 3000, count: 2 }, { threshold: 4000, count: 1 }] },
 ];
 
 function getAltCount(stats: HomeData["stats"], threshold: number): number {
@@ -160,7 +155,7 @@ export function HomeClient({ data, locale, t }: {
   const router = useRouter();
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const [progressionExpanded, setProgressionExpanded] = useState(false);
-  const { user, stats, leaderboard, userRank, nextRankName, nextRankGap, recentAscents, friendsActivity } = data;
+  const { user, stats, leaderboard, userRank, nextRankName, nextRankGap, recentAscents } = data;
 
   function navigate(href: string) {
     if (navigatingTo) return;
@@ -172,20 +167,7 @@ export function HomeClient({ data, locale, t }: {
   const firstName = user.name.split(" ")[0];
 
   // Collapsed progression: 1 done before + in-progress + 2 locked (4 total)
-  const visibleIndices: number[] = (() => {
-    if (progressionExpanded) return LEVEL_DEFS.map((_, i) => i);
-    const total = LEVEL_DEFS.length;
-    const next = levelState.currentIdx + 1; // 0 if no level yet
-    if (next >= total) {
-      // Max level: show last 4
-      const s = Math.max(0, total - 4);
-      return Array.from({ length: total - s }, (_, i) => s + i);
-    }
-    let start = Math.max(0, next - 1);
-    const end = Math.min(total - 1, start + 3);
-    if (end - start < 3) start = Math.max(0, end - 3);
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  })();
+
 
   // Altitude breakdown for summit card (only non-zero buckets)
   const fmt = (n: number) => n.toLocaleString(locale);
@@ -239,68 +221,86 @@ export function HomeClient({ data, locale, t }: {
 
       {/* ── Hero header ─────────────────────────────────────────────────── */}
       <div style={{
-        background: "linear-gradient(150deg,#0c4a6e 0%,#0369a1 55%,#0ea5e9 100%)",
-        padding: "28px 20px 22px",
-        position: "relative", overflow: "hidden",
+        position: "relative",
+        height: 310,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "space-between",
+        padding: "20px 28px 26px",
+        backgroundImage: "url('https://www.rutaspirineos.org/images/prat-de-cadi-desde-estana/prat-de-cadi-desde-estana-1.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center 60%",
+        backgroundColor: "#1c2d3f",
+        overflow: "hidden",
       }}>
-        <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-        <div style={{ position: "absolute", bottom: -10, right: 80, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        {/* Overlay */}
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 0,
+          background: "linear-gradient(to bottom, rgba(10,20,35,0.52) 0%, rgba(10,20,35,0.42) 25%, rgba(10,20,35,0.58) 52%, rgba(10,20,35,0.85) 75%, rgba(10,20,35,0.97) 100%)",
+        }} />
 
-        {/* User row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative", marginBottom: 18 }}>
-          <Link href="/profile" style={{ textDecoration: "none" }}>
-            <Avatar name={user.name} url={user.avatarUrl} size={62} />
-          </Link>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.65)", fontWeight: 500 }}>
-              {t.home_greeting.replace("{name}", firstName)}
-            </p>
-            <h1 style={{ margin: "1px 0 6px", fontSize: 20, fontWeight: 800, color: "white", letterSpacing: "-0.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {user.username ? `@${user.username}` : user.name}
-            </h1>
+        {/* Bloque superior: avatar + identidad */}
+        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <Link href="/profile" style={{ textDecoration: "none", marginBottom: 10 }}>
             <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
-              borderRadius: 20, padding: "4px 12px",
+              width: 78, height: 78, borderRadius: "50%",
+              border: "2px solid rgba(255,255,255,0.50)",
+              boxShadow: "0 8px 28px rgba(0,0,0,0.55)",
+              overflow: "hidden",
+              background: "linear-gradient(145deg,#3a7bd5,#1a4a8a)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 26, fontWeight: 700, color: "white",
             }}>
-              <span style={{ fontSize: 14 }}>{levelState.current?.emoji ?? "🎯"}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "white", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                {levelState.current?.name ?? "Newcomer"}
-              </span>
+              {user.avatarUrl
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={user.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : initials(user.name)}
             </div>
+          </Link>
+          <h1 style={{ margin: "0 0 3px", fontSize: 21, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.03em", lineHeight: 1, textAlign: "center", textShadow: "0 1px 2px rgba(0,0,0,0.40)" }}>
+            {user.name}
+          </h1>
+          <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 400, color: "rgba(255,255,255,0.72)", textAlign: "center" }}>
+            {user.username ? `@${user.username}` : ""}
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.02em" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, position: "relative", top: "0.5px" }}>
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 5 L14.5 12 L9.5 12 Z" fill="rgba(255,255,255,0.88)"/>
+                <path d="M12 19 L14.5 12 L9.5 12 Z"/>
+              </svg>
+              <span>Azimut</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.85)" }}>
+              Tu evolución en la montaña
+            </p>
           </div>
         </div>
 
-        {/* Level progress bar */}
-        <div style={{ position: "relative" }}>
-          <div style={{ height: 7, borderRadius: 4, background: "rgba(255,255,255,0.2)", overflow: "hidden" }}>
-            <div style={{
-              height: "100%", borderRadius: 4,
-              width: `${levelState.next ? Math.min(stats.totalAscents / levelState.next.minAscents * 100, 100) : 100}%`,
-              background: levelState.next
-                ? "linear-gradient(90deg,#7dd3fc,#e0f2fe)"
-                : "linear-gradient(90deg,#fde68a,#fbbf24)",
-            }} />
-          </div>
-          {levelState.next ? (
-            <div style={{ marginTop: 5, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
-                {stats.totalAscents}/{levelState.next.minAscents} summits → {levelState.next.emoji} {levelState.next.name}
-              </span>
-              {levelState.next.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
-                <span key={r.threshold} style={{
-                  fontSize: 10, fontWeight: 700, color: "white",
-                  background: "rgba(255,255,255,0.22)", borderRadius: 10, padding: "2px 8px",
-                }}>
-                  +{r.count > 1 ? ` ${r.count}×` : ""} &gt;{r.threshold.toLocaleString()}m
-                </span>
-              ))}
+        {/* Bloque inferior: métricas + progreso */}
+        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", gap: 14, width: "100%", paddingTop: 20, paddingBottom: 26 }}>
+
+          {/* Métricas: cimas · ascensiones · alt. máx */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <span style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.uniquePeaks}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>cimas</span>
             </div>
-          ) : (
-            <p style={{ margin: "5px 0 0", fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
-              {t.home_maxLevel}
-            </p>
-          )}
+            <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)", alignSelf: "center", margin: "0 4px" }} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <span style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.totalAscents}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>ascensiones</span>
+            </div>
+            <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)", alignSelf: "center", margin: "0 4px" }} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <span style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>
+                {stats.maxAltitude > 0 ? `${stats.maxAltitude.toLocaleString(locale)}` : "—"}
+                {stats.maxAltitude > 0 && <sup style={{ fontSize: 10, fontWeight: 400, verticalAlign: "super", marginLeft: 1, opacity: 0.55 }}>m</sup>}
+              </span>
+              <span style={{ fontSize: 11.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>alt. máx</span>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -332,107 +332,23 @@ export function HomeClient({ data, locale, t }: {
         </div>
       )}
 
-      {/* ── Summit hero card ─────────────────────────────────────────────── */}
-      <div style={{ padding: "16px 16px 0" }}>
-        <div
-          onClick={() => navigate("/ascents#hero")}
-          style={{
-            background: "linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 60%,#2563eb 100%)",
-            borderRadius: 20, padding: "20px 24px",
-            cursor: navigatingTo === "/ascents#hero" ? "wait" : "pointer",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            position: "relative", overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(29,78,216,0.35)",
-            opacity: navigatingTo === "/ascents#hero" ? 0.85 : 1,
-            transition: "opacity 0.15s",
-          }}
-        >
-          <div style={{ position: "absolute", top: -30, right: -20, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-          <div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
-              {t.home_statSummits}
-            </div>
-            <div style={{ fontSize: 62, fontWeight: 900, color: "white", lineHeight: 1, letterSpacing: "-0.04em" }}>
-              {stats.totalAscents.toLocaleString(locale)}
-            </div>
-          </div>
-          {navigatingTo === "/ascents#hero" ? (
-            <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
-          ) : altBuckets.length > 0 ? (
-            <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 8, maxWidth: "58%" }}>
-              {altBuckets.map((b) => (
-                <div key={b.name} style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
-                  <span style={{ fontSize: 14, lineHeight: "1.2", flexShrink: 0, marginTop: 1 }}>{b.icon}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", lineHeight: "1.2", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {b.name}
-                      </span>
-                      <span style={{ fontSize: 17, fontWeight: 800, color: "white", flexShrink: 0, letterSpacing: "-0.02em" }}>
-                        {b.count}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginTop: 1 }}>
-                      {b.range}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ fontSize: 56, opacity: 0.85 }}>🏔️</div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Secondary stats (3-col) ──────────────────────────────────────── */}
-      <div style={{ padding: "10px 16px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-          {SECONDARY_STATS.map(({ emoji, value, label, href }) => (
-            <div
-              key={label}
-              onClick={() => navigate(href)}
-              style={{
-                background: "white", border: "1px solid #e5e7eb", borderRadius: 14,
-                padding: "13px 10px", cursor: navigatingTo === href ? "wait" : "pointer",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                opacity: navigatingTo === href ? 0.6 : 1,
-                transition: "opacity 0.15s",
-              }}
-            >
-              {navigatingTo === href ? (
-                <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid #e5e7eb", borderTopColor: "#0369a1", animation: "spin 0.7s linear infinite" }} />
-              ) : (
-                <span style={{ fontSize: 20 }}>{emoji}</span>
-              )}
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#111827", lineHeight: 1 }}>
-                {value.toLocaleString(locale)}
-              </div>
-              <div style={{ fontSize: 10, color: "#6b7280", fontWeight: 500, textAlign: "center" }}>
-                {label}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* ── Progression timeline ────────────────────────────────────────── */}
       <section style={{ padding: "20px 16px 0" }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 14px" }}>
-          {t.home_progression}
-        </h2>
         <div>
           {LEVEL_DEFS.map((def, idx) => {
-            if (!visibleIndices.includes(idx)) return null;
-
-            // "In-progress" = the next level being worked toward (not yet achieved)
             const isDone = idx <= levelState.currentIdx;
             const isInProgress = levelState.next !== null && idx === levelState.currentIdx + 1;
             const isLocked = !isDone && !isInProgress;
-            const isLastVisible = visibleIndices[visibleIndices.length - 1] === idx;
+
+            // Collapsed: show only current level. Expanded: show all.
+            if (!progressionExpanded && !isInProgress) return null;
+
+            const isLastVisible = progressionExpanded
+              ? idx === LEVEL_DEFS.length - 1
+              : true;
 
             return (
-              <div key={def.idx} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <div key={def.idx} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: isLastVisible ? 0 : 16 }}>
                 {/* Left: circle + connector */}
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 30, flexShrink: 0 }}>
                   <div style={{
@@ -448,7 +364,7 @@ export function HomeClient({ data, locale, t }: {
                   </div>
                   {!isLastVisible && (
                     <div style={{
-                      width: 2, flex: 1, minHeight: 10,
+                      width: 2, flex: 1, minHeight: 20,
                       background: idx < levelState.currentIdx ? "#86efac" : "#e5e7eb",
                       margin: "3px 0",
                     }} />
@@ -461,7 +377,7 @@ export function HomeClient({ data, locale, t }: {
                   background: isInProgress ? "linear-gradient(135deg,#eff6ff,#f0f9ff)" : "white",
                   border: isInProgress ? "1.5px solid #bfdbfe" : "1px solid #e5e7eb",
                   borderRadius: 12, padding: "10px 12px",
-                  marginBottom: isLastVisible ? 0 : 8,
+                  marginBottom: 0,
                   opacity: isLocked ? 0.7 : 1,
                 }}>
                   {/* Header row */}
@@ -664,29 +580,6 @@ export function HomeClient({ data, locale, t }: {
         </section>
       )}
 
-      {/* ── Motivation banner ───────────────────────────────────────────── */}
-      {motivationMsg && (
-        <section style={{ padding: "16px 16px 0" }}>
-          <div style={{
-            background: mot.bg, borderRadius: 14, padding: "14px 16px",
-            display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <span style={{ fontSize: 24, flexShrink: 0 }}>{mot.icon}</span>
-            <p style={{ margin: 0, flex: 1, fontSize: 14, fontWeight: 600, lineHeight: 1.4, color: mot.color }}>
-              {motivationMsg}
-            </p>
-            {motivationVariant !== "gold" && (
-              <Link href="/ascents/new" style={{
-                flexShrink: 0, background: mot.color, color: "white",
-                padding: "7px 12px", borderRadius: 9,
-                fontSize: 12, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap",
-              }}>
-                + {t.nav_logAscent}
-              </Link>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* ── Recent Ascents ──────────────────────────────────────────────── */}
       <section style={{ padding: "24px 0 0" }}>
@@ -757,70 +650,6 @@ export function HomeClient({ data, locale, t }: {
         )}
       </section>
 
-      {/* ── Friends Activity ────────────────────────────────────────────── */}
-      <section style={{ padding: "24px 16px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
-            {t.home_friendsActivity}
-          </h2>
-        </div>
-
-        {friendsActivity.length === 0 ? (
-          <div style={{
-            background: "#f9fafb", border: "1.5px dashed #e5e7eb", borderRadius: 14,
-            padding: "22px", textAlign: "center",
-          }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>⛰️</div>
-            <p style={{ margin: "0 0 12px", fontSize: 13, color: "#6b7280", fontWeight: 500 }}>
-              {t.home_noFriendActivity}
-            </p>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-              <Link href="/friends" style={{
-                display: "inline-block", background: "white", color: "#374151",
-                border: "1px solid #d1d5db",
-                padding: "7px 14px", borderRadius: 9, fontSize: 12, fontWeight: 600, textDecoration: "none",
-              }}>
-                {t.home_inviteFriends}
-              </Link>
-              <Link href="/ascents/new" style={{
-                display: "inline-block", background: "#0369a1", color: "white",
-                padding: "7px 14px", borderRadius: 9, fontSize: 12, fontWeight: 600, textDecoration: "none",
-              }}>
-                {t.home_logFirst}
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 16, overflow: "hidden" }}>
-            {friendsActivity.map((a, idx) => (
-              <Link key={a.ascentId} href={`/ascents/${a.ascentId}`} style={{ textDecoration: "none" }}>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 11,
-                  padding: "11px 14px",
-                  borderBottom: idx < friendsActivity.length - 1 ? "1px solid #f3f4f6" : "none",
-                }}>
-                  <Avatar name={a.userName} url={a.userAvatarUrl} size={36} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, color: "#111827", lineHeight: 1.4 }}>
-                      <span style={{ fontWeight: 700 }}>{a.userName}</span>
-                      {" "}{t.home_climbed}{" "}
-                      <span style={{ fontWeight: 600, color: "#0369a1" }}>{a.peakName}</span>
-                    </p>
-                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", marginTop: 1 }}>
-                      {new Date(a.date).toLocaleDateString(locale, { day: "numeric", month: "short" })}
-                      {" · "}{a.altitudeM.toLocaleString(locale)} m
-                    </p>
-                  </div>
-                  {a.photoUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={a.photoUrl} alt="" style={{ width: 42, height: 42, borderRadius: 8, objectFit: "cover", border: "1px solid #e5e7eb", flexShrink: 0 }} />
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
 
       {/* ── Achievements ────────────────────────────────────────────────── */}
       <section style={{ padding: "24px 16px 0" }}>
