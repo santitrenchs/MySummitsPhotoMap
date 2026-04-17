@@ -7,7 +7,7 @@ export type Dict = {
   lang_en: string; lang_es: string; lang_ca: string; lang_fr: string; lang_de: string;
 
   // Nav
-  nav_map: string; nav_ascents: string; nav_people: string;
+  nav_map: string; nav_ascents: string;
   nav_settings: string; nav_signOut: string; nav_profile: string;
   nav_comingSoon: string; nav_logAscent: string;
 
@@ -181,15 +181,6 @@ export type Dict = {
   profile_stat_photos: string;
   profile_timesClimbed: string;
   profile_noAscents: string;
-
-  // Social feed
-  social_subtitle: string;
-  social_noFriends: string;
-  social_noFriendsSub: string;
-  social_addFriends: string;
-  social_noActivity: string;
-  social_noActivitySub: string;
-  social_myActivity: string;
 
   // Home / Dashboard
   nav_home: string;

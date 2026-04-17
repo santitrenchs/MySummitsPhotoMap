@@ -763,11 +763,6 @@ export function HomeClient({ data, locale, t }: {
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
             {t.home_friendsActivity}
           </h2>
-          {friendsActivity.length > 0 && (
-            <Link href="/social" style={{ fontSize: 13, fontWeight: 600, color: "#0369a1", textDecoration: "none" }}>
-              {t.home_seeAll} →
-            </Link>
-          )}
         </div>
 
         {friendsActivity.length === 0 ? (

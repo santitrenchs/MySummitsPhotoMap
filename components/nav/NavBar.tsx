@@ -400,7 +400,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           display: "flex", alignItems: "center", gap: 7, textDecoration: "none",
         }}>
           <LogoIcon size={29} />
-          <span style={{ fontSize: 23, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>
+          <span style={{ fontSize: 23, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em", position: "relative", top: "1.5px" }}>
             AziAtlas
           </span>
         </Link>
@@ -515,7 +515,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         {/* Logo */}
         <Link href="/map" style={{ display: "flex", alignItems: "center", gap: 7, textDecoration: "none", marginRight: 24, flexShrink: 0 }}>
           <LogoIcon />
-          <span style={{ fontSize: 14, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>AziAtlas</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em", position: "relative", top: "1.5px" }}>AziAtlas</span>
         </Link>
 
         {/* Nav links */}
@@ -523,7 +523,6 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           <Link href="/home" className={`nav-link${isActive("/home") ? " active" : ""}`}>{t.nav_home}</Link>
           <Link href="/map" className={`nav-link${isActive("/map") ? " active" : ""}`}>{t.nav_map}</Link>
           <Link href="/ascents" className={`nav-link${isActive("/ascents") ? " active" : ""}`}>{t.nav_ascents}</Link>
-          <Link href="/social" className={`nav-link${isActive("/social") ? " active" : ""}`}>{t.nav_people}</Link>
         </nav>
 
         {/* Avatar + dropdown */}
@@ -617,7 +616,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
 
           <Link href="/home" className={`tab-item${tabActive("/home") ? " active" : ""}`} onClick={() => handleTabClick("/home")}>
             <div className="tab-icon-wrap">
-              <HomeIcon size={22} active={tabActive("/home")} />
+              <CompassIcon size={22} active={tabActive("/home")} />
             </div>
             <span className="tab-label">{t.nav_home}</span>
           </Link>
@@ -636,12 +635,6 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
             <span className="tab-label">{t.nav_ascents}</span>
           </Link>
 
-          <Link href="/social" className={`tab-item${tabActive("/social") ? " active" : ""}`} onClick={() => handleTabClick("/social")}>
-            <div className="tab-icon-wrap">
-              <PeopleIcon size={22} active={tabActive("/social")} />
-            </div>
-            <span className="tab-label">{t.nav_people}</span>
-          </Link>
         </div>
       </nav>
     </>
@@ -681,14 +674,23 @@ function MobileProfileTab({ ini, avatarUrl }: { ini: string; avatarUrl: string |
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 
-function HomeIcon({ size = 18, active = false }: { size?: number; active?: boolean }) {
+function CompassIcon({ size = 18, active = false }: { size?: number; active?: boolean }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round"
       stroke="currentColor" strokeWidth={active ? 2 : 1.8}>
-      {active
-        ? <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" fill="currentColor" opacity="0.15" /><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></>
-        : <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></>
-      }
+      <circle cx="12" cy="12" r="9" />
+      {active ? (
+        <>
+          <path d="M12 5 L14.5 12 L9.5 12 Z" fill="currentColor" opacity="0.15" />
+          <path d="M12 5 L14.5 12 L9.5 12 Z" />
+          <path d="M12 19 L14.5 12 L9.5 12 Z" />
+        </>
+      ) : (
+        <>
+          <path d="M12 5 L14.5 12 L9.5 12 Z" />
+          <path d="M12 19 L14.5 12 L9.5 12 Z" />
+        </>
+      )}
     </svg>
   );
 }

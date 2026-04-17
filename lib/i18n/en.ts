@@ -4,7 +4,7 @@ export const en: Dict = {
   dateLocale: "en-GB",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Logbook", nav_people: "Social",
+  nav_map: "Atlas", nav_ascents: "Logbook",
   nav_settings: "Settings", nav_signOut: "Sign out", nav_profile: "Profile",
   nav_comingSoon: "Soon", nav_logAscent: "Log new ascent",
 
@@ -177,15 +177,9 @@ export const en: Dict = {
   profile_timesClimbed: "×{n}",
   profile_noAscents: "No ascents logged yet",
 
-  social_subtitle: "Recent ascents from your friends",
-  social_noFriends: "You have no friends yet",
-  social_noFriendsSub: "Add friends to see their ascents and compare your progress",
-  social_addFriends: "Add friends",
-  social_noActivity: "Your friends haven't posted yet",
-  social_noActivitySub: "When they log their ascents, they'll appear here",
-  social_myActivity: "Your activity",
 
-  nav_home: "My Progress",
+
+  nav_home: "Azimut",
   home_greeting: "Welcome back, {name} 👋",
   home_statSummits: "Summits", home_statPhotos: "Photos",
   home_statRegions: "Regions", home_statFriends: "Friends",

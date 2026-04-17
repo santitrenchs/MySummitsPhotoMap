@@ -4,7 +4,7 @@ export const de: Dict = {
   dateLocale: "de-DE",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Logbuch", nav_people: "Social",
+  nav_map: "Atlas", nav_ascents: "Logbuch",
   nav_settings: "Einstellungen", nav_signOut: "Abmelden", nav_profile: "Profil",
   nav_comingSoon: "Bald", nav_logAscent: "Besteigung eintragen",
 
@@ -177,15 +177,9 @@ export const de: Dict = {
   profile_timesClimbed: "×{n}",
   profile_noAscents: "Noch keine Besteigungen",
 
-  social_subtitle: "Aktuelle Besteigungen deiner Freunde",
-  social_noFriends: "Noch keine Freunde",
-  social_noFriendsSub: "Füge Freunde hinzu, um ihre Besteigungen zu sehen und euren Fortschritt zu vergleichen",
-  social_addFriends: "Freunde hinzufügen",
-  social_noActivity: "Deine Freunde haben noch nichts veröffentlicht",
-  social_noActivitySub: "Wenn sie ihre Besteigungen eintragen, erscheinen sie hier",
-  social_myActivity: "Deine Aktivität",
 
-  nav_home: "Mein Fortschritt",
+
+  nav_home: "Azimut",
   home_greeting: "Hallo, {name} 👋",
   home_statSummits: "Gipfel", home_statPhotos: "Fotos",
   home_statRegions: "Regionen", home_statFriends: "Freunde",
