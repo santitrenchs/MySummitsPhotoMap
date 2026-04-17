@@ -274,39 +274,6 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           line-height: 1;
         }
 
-        /* Central + button */
-        .tab-plus-wrap {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .tab-plus-btn {
-          width: 52px;
-          height: 52px;
-          border-radius: 50%;
-          background: linear-gradient(145deg, #0284c7 0%, #0369a1 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow:
-            0 0 0 4px rgba(3,105,161,0.10),
-            0 4px 16px rgba(3,105,161,0.50),
-            0 1px 3px rgba(0,0,0,0.15);
-          text-decoration: none;
-          margin-top: -14px;
-          touch-action: manipulation;
-          -webkit-tap-highlight-color: transparent;
-          transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s;
-        }
-        .tab-plus-btn:active {
-          transform: scale(0.90);
-          box-shadow:
-            0 0 0 4px rgba(3,105,161,0.08),
-            0 2px 8px rgba(3,105,161,0.35),
-            0 1px 2px rgba(0,0,0,0.1);
-        }
-
         /* Responsive show/hide */
         @media (max-width: 639px) {
           .desktop-nav { display: none !important; }
@@ -661,13 +628,6 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
             </div>
             <span className="tab-label">{t.nav_map}</span>
           </Link>
-
-          {/* Central + button */}
-          <div className="tab-plus-wrap">
-            <Link href="/ascents/new" className="tab-plus-btn" aria-label={t.nav_logAscent}>
-              <PlusIcon />
-            </Link>
-          </div>
 
           <Link href="/ascents" className={`tab-item${tabActive("/ascents") ? " active" : ""}`} onClick={() => handleTabClick("/ascents")}>
             <div className="tab-icon-wrap">
