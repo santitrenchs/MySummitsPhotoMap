@@ -2,10 +2,10 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
-import { listAscents } from "@/lib/services/ascent.service";
 import { AscentsClient } from "@/components/ascents/AscentsClient";
 import { getServerT } from "@/lib/i18n/server";
 import { prisma } from "@/lib/db/client";
+import { getTenantConnection } from "@/lib/db/tenant-resolver";
 
 const PHOTOS_INCLUDE = {
   orderBy: { createdAt: "asc" as const },
@@ -62,35 +62,50 @@ export default async function AscentsPage() {
   if (!session) redirect("/login");
   const t = await getServerT();
 
-  // Fetch own ascents + accepted friends in parallel
-  const [raw, friendships] = await Promise.all([
-    listAscents(session.user.tenantId),
+  // Fetch friendships + tenant DB in parallel
+  const [friendships, db] = await Promise.all([
     prisma.friendship.findMany({
       where: { status: "ACCEPTED", OR: [{ requesterId: session.user.id }, { addresseeId: session.user.id }] },
       select: { requesterId: true, addresseeId: true },
     }),
+    getTenantConnection(session.user.tenantId),
   ]);
 
   const friendUserIds = friendships.map((f) =>
     f.requesterId === session.user.id ? f.addresseeId : f.requesterId
   );
 
-  const friendsRaw = friendUserIds.length > 0
-    ? await prisma.ascent.findMany({
-        where: { tenantId: session.user.tenantId, createdBy: { in: friendUserIds } },
-        orderBy: { date: "desc" },
-        include: {
-          peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true } },
-          photos: PHOTOS_INCLUDE,
-          user: { select: { name: true } },
-        },
-      })
-    : [];
+  // Own ascents: scoped to own tenant
+  // Friends' ascents: by createdBy only — friends may be in different tenants
+  const [myRaw, friendsRaw] = await Promise.all([
+    db.ascent.findMany({
+      where: { tenantId: session.user.tenantId, createdBy: session.user.id },
+      orderBy: { date: "desc" },
+      include: {
+        peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true } },
+        photos: PHOTOS_INCLUDE,
+        user: { select: { name: true } },
+      },
+    }),
+    friendUserIds.length > 0
+      ? prisma.ascent.findMany({
+          where: { createdBy: { in: friendUserIds } },
+          orderBy: { date: "desc" },
+          include: {
+            peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true } },
+            photos: PHOTOS_INCLUDE,
+            user: { select: { name: true } },
+          },
+        })
+      : Promise.resolve([]),
+  ]);
 
-  const myAscents = raw
-    .filter((a) => a.createdBy === session.user.id)
-    .map((a) => enrichAscent(a, true, session.user.name ?? ""));
-  const friendAscents = friendsRaw.map((a) => enrichAscent(a as Parameters<typeof enrichAscent>[0], false, (a.user as { name?: string | null } | null)?.name ?? "?"));
+  const myAscents = myRaw.map((a) =>
+    enrichAscent(a as Parameters<typeof enrichAscent>[0], true, (a.user as { name?: string | null } | null)?.name ?? session.user.name ?? "")
+  );
+  const friendAscents = friendsRaw.map((a) =>
+    enrichAscent(a as Parameters<typeof enrichAscent>[0], false, (a.user as { name?: string | null } | null)?.name ?? "?")
+  );
 
   // Merge and sort by date desc
   const ascents = [...myAscents, ...friendAscents].sort(
