@@ -50,13 +50,6 @@ export function AscentsClient({
     ? (ascents.find((a) => a.peak.id === peakFilter)?.peak.name ?? "")
     : "";
 
-  const metrics = useMemo(() => ({
-    total: ascents.length,
-    maxElev: ascents.length > 0 ? Math.max(...ascents.map((a) => a.peak.altitudeM)) : 0,
-    uniquePeaks: new Set(ascents.map((a) => a.peak.id)).size,
-    people: new Set(ascents.flatMap((a) => a.persons.map((p) => p.id))).size,
-  }), [ascents]);
-
   const filtered = useMemo(() => {
     let r = ascents;
     if (peakFilter) r = r.filter((a) => a.peak.id === peakFilter);
@@ -109,26 +102,6 @@ export function AscentsClient({
 
 
 
-
-      {/* ── Stats pills ──────────────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
-        {[
-          { e: "🏔", v: metrics.total, l: t.ascents_stat_ascents },
-          { e: "📏", v: `${metrics.maxElev.toLocaleString(t.dateLocale)} m`, l: t.ascents_stat_highest },
-          { e: "⛰️", v: metrics.uniquePeaks, l: t.ascents_stat_peaks },
-          { e: "👥", v: metrics.people, l: t.ascents_stat_people },
-        ].map(({ e, v, l }) => (
-          <div key={l} style={{
-            display: "inline-flex", alignItems: "center", gap: 5,
-            background: "white", border: "1px solid #e5e7eb", borderRadius: 24,
-            padding: "5px 13px", fontSize: 13,
-          }}>
-            <span>{e}</span>
-            <span style={{ fontWeight: 700, color: "#111827" }}>{v}</span>
-            <span style={{ color: "#9ca3af" }}>{l}</span>
-          </div>
-        ))}
-      </div>
 
       {/* ── Peak filter chip (from map) ──────────────────────────── */}
       {peakFilter && peakFilterName && (

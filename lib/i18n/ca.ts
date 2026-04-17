@@ -81,7 +81,7 @@ export const ca: Dict = {
   friends_inviteBtn: "Enviar invitació", friends_inviteSending: "Enviant…",
   friends_inviteSent: "Invitació enviada! Caduca en 7 dies.",
   friends_inviteAlreadyInvited: "Ja té una invitació activa pendent",
-  friends_inviteAlreadyRegistered: "Aquest email ja té compte a AziTracks",
+  friends_inviteAlreadyRegistered: "Aquest email ja té compte a AziAtlas",
   friends_inviteError: "Error en enviar. Torna-ho a intentar.",
   friends_inviteListSection: "Invitacions enviades",
   friends_inviteStatusPending: "Pendent", friends_inviteStatusUsed: "Registrat", friends_inviteStatusExpired: "Caducada",
@@ -224,7 +224,7 @@ export const ca: Dict = {
   home_onboarding_sub: "Registra el teu primer cim per veure el teu progrés i competir amb els teus amics.",
   home_onboarding_cta: "Registrar primera ascensió",
 
-  auth_voucher_title: "AziTracks és només per invitació",
+  auth_voucher_title: "AziAtlas és només per invitació",
   auth_voucher_subtitle: "Introdueix el teu codi d'accés per continuar.",
   auth_voucher_placeholder: "AZIT-XXXX-XXXX",
   auth_voucher_btn: "Verificar codi",

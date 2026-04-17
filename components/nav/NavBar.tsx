@@ -434,7 +434,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         }}>
           <LogoIcon size={29} />
           <span style={{ fontSize: 23, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>
-            AziTracks
+            AziAtlas
           </span>
         </Link>
 
@@ -548,7 +548,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         {/* Logo */}
         <Link href="/map" style={{ display: "flex", alignItems: "center", gap: 7, textDecoration: "none", marginRight: 24, flexShrink: 0 }}>
           <LogoIcon />
-          <span style={{ fontSize: 14, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>AziTracks</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>AziAtlas</span>
         </Link>
 
         {/* Nav links */}

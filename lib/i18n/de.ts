@@ -81,7 +81,7 @@ export const de: Dict = {
   friends_inviteBtn: "Einladung senden", friends_inviteSending: "Senden…",
   friends_inviteSent: "Einladung gesendet! Läuft in 7 Tagen ab.",
   friends_inviteAlreadyInvited: "Hat bereits eine aktive Einladung",
-  friends_inviteAlreadyRegistered: "Diese E-Mail hat bereits ein AziTracks-Konto",
+  friends_inviteAlreadyRegistered: "Diese E-Mail hat bereits ein AziAtlas-Konto",
   friends_inviteError: "Fehler beim Senden. Bitte erneut versuchen.",
   friends_inviteListSection: "Gesendete Einladungen",
   friends_inviteStatusPending: "Ausstehend", friends_inviteStatusUsed: "Registriert", friends_inviteStatusExpired: "Abgelaufen",
@@ -224,7 +224,7 @@ export const de: Dict = {
   home_onboarding_sub: "Erfasse deinen ersten Gipfel, um deinen Fortschritt zu sehen und mit Freunden zu wetteifern.",
   home_onboarding_cta: "Ersten Aufstieg erfassen",
 
-  auth_voucher_title: "AziTracks ist nur auf Einladung",
+  auth_voucher_title: "AziAtlas ist nur auf Einladung",
   auth_voucher_subtitle: "Gib deinen Zugangscode ein um fortzufahren.",
   auth_voucher_placeholder: "AZIT-XXXX-XXXX",
   auth_voucher_btn: "Code prüfen",

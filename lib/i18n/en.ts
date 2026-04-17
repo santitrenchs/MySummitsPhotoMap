@@ -81,7 +81,7 @@ export const en: Dict = {
   friends_inviteBtn: "Send invitation", friends_inviteSending: "Sending…",
   friends_inviteSent: "Invitation sent! Expires in 7 days.",
   friends_inviteAlreadyInvited: "Already has an active invitation pending",
-  friends_inviteAlreadyRegistered: "This email already has an AziTracks account",
+  friends_inviteAlreadyRegistered: "This email already has an AziAtlas account",
   friends_inviteError: "Error sending. Please try again.",
   friends_inviteListSection: "Sent invitations",
   friends_inviteStatusPending: "Pending", friends_inviteStatusUsed: "Registered", friends_inviteStatusExpired: "Expired",
@@ -224,7 +224,7 @@ export const en: Dict = {
   home_altZone3: "High mountain", home_altZone4: "Technical alpine",
   home_altZone5: "Expedition", home_altZone6: "Extreme expedition",
 
-  auth_voucher_title: "AziTracks is invite-only",
+  auth_voucher_title: "AziAtlas is invite-only",
   auth_voucher_subtitle: "Enter your access code to continue.",
   auth_voucher_placeholder: "AZIT-XXXX-XXXX",
   auth_voucher_btn: "Verify code",

@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     return NextResponse.json(
-      { status: "already_registered", message: "Este email ya tiene una cuenta en AziTracks" },
+      { status: "already_registered", message: "Este email ya tiene una cuenta en AziAtlas" },
       { status: 200 },
     );
   }

@@ -44,7 +44,7 @@ function LoginForm() {
             <path d="M17 9.5 L19 6.5" stroke="#0369a1" strokeWidth="1.8" />
             <circle cx="19" cy="6" r="1.2" fill="#0369a1" />
           </svg>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em", margin: 0 }}>AziTracks</h1>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em", margin: 0 }}>AziAtlas</h1>
         </div>
         <p className="mt-3 text-sm text-gray-500">{t.auth_signInDesc}</p>
       </div>

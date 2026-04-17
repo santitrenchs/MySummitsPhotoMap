@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.RESEND_FROM ?? "AziTracks <noreply@mail.azitracks.com>";
+const FROM = process.env.RESEND_FROM ?? "AziAtlas <noreply@mail.azitracks.com>";
 const APP_URL = process.env.NEXTAUTH_URL ?? "https://www.azitracks.com";
 
 export async function sendPasswordResetEmail(to: string, token: string) {
@@ -10,7 +10,7 @@ export async function sendPasswordResetEmail(to: string, token: string) {
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: "Restablece tu contraseña — AziTracks",
+    subject: "Restablece tu contraseña — AziAtlas",
     html: `
 
 <!DOCTYPE html>
@@ -23,7 +23,7 @@ export async function sendPasswordResetEmail(to: string, token: string) {
         <!-- Header -->
         <tr>
           <td style="background:#0369a1;padding:28px 32px;text-align:center;">
-            <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">🏔️ AziTracks</p>
+            <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">🏔️ AziAtlas</p>
           </td>
         </tr>
         <!-- Body -->
@@ -57,7 +57,7 @@ export async function sendPasswordResetEmail(to: string, token: string) {
         <!-- Footer -->
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziTracks · azitracks.com</p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · azitracks.com</p>
           </td>
         </tr>
       </table>
@@ -82,7 +82,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: `¡Bienvenido/a a AziTracks, ${firstName}! 🏔️`,
+    subject: `¡Bienvenido/a a AziAtlas, ${firstName}! 🏔️`,
     html: `
 <!DOCTYPE html>
 <html lang="es">
@@ -94,7 +94,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
         <!-- Header -->
         <tr>
           <td style="background:#0369a1;padding:28px 32px;text-align:center;">
-            <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">🏔️ AziTracks</p>
+            <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">🏔️ AziAtlas</p>
           </td>
         </tr>
         <!-- Body -->
@@ -102,7 +102,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
           <td style="padding:32px;">
             <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">¡Bienvenido/a, ${firstName}!</h1>
             <p style="margin:0 0 16px;font-size:15px;color:#64748b;line-height:1.6;">
-              Ya eres parte de AziTracks. Empieza registrando tu primera cima y construye tu historial de ascensiones.
+              Ya eres parte de AziAtlas. Empieza registrando tu primera cima y construye tu historial de ascensiones.
             </p>
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">
               Explora el mapa, conecta con tus amigos y sube peldaños en la clasificación de tu cordada. 🧗
@@ -113,7 +113,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
                   <a href="${appUrl}"
                      style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
-                    Ir a AziTracks →
+                    Ir a AziAtlas →
                   </a>
                 </td>
               </tr>
@@ -123,7 +123,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
         <!-- Footer -->
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziTracks · <a href="${APP_URL}" style="color:#94a3b8;">azitracks.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">azitracks.com</a></p>
           </td>
         </tr>
       </table>
@@ -151,7 +151,7 @@ export async function sendFriendInvitationEmail(
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: `${inviterName} te invita a AziTracks 🏔️`,
+    subject: `${inviterName} te invita a AziAtlas 🏔️`,
     html: `
 <!DOCTYPE html>
 <html lang="es">
@@ -163,7 +163,7 @@ export async function sendFriendInvitationEmail(
         <!-- Header -->
         <tr>
           <td style="background:#0369a1;padding:28px 32px;text-align:center;">
-            <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">🏔️ AziTracks</p>
+            <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">🏔️ AziAtlas</p>
           </td>
         </tr>
         <!-- Body -->
@@ -171,7 +171,7 @@ export async function sendFriendInvitationEmail(
           <td style="padding:32px;">
             <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${inviterName} te ha invitado</h1>
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">
-              Tu amigo/a <strong>${inviterName}</strong> te invita a unirte a AziTracks, la app para registrar tus ascensiones, explorar cimas y comparar tu progreso con tu cordada.
+              Tu amigo/a <strong>${inviterName}</strong> te invita a unirte a AziAtlas, la app para registrar tus ascensiones, explorar cimas y comparar tu progreso con tu cordada.
             </p>
             <!-- Voucher box -->
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
@@ -201,7 +201,7 @@ export async function sendFriendInvitationEmail(
         <!-- Footer -->
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziTracks · <a href="${APP_URL}" style="color:#94a3b8;">azitracks.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">azitracks.com</a></p>
           </td>
         </tr>
       </table>
