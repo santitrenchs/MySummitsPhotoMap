@@ -134,8 +134,9 @@ export function GroupedAscentCard({
       startXRef.current = e.touches[0].clientX;
       startYRef.current = e.touches[0].clientY;
       draggingRef.current = true;
-      isHorizontalRef.current = null; // reset — direction not yet known
+      isHorizontalRef.current = null;
       if (trackRef.current) trackRef.current.style.transition = "none";
+      console.log("[carousel] touchstart", { x: startXRef.current, y: startYRef.current });
     }
 
     function onTouchMove(e: TouchEvent) {
@@ -143,26 +144,25 @@ export function GroupedAscentCard({
       const dx = e.touches[0].clientX - startXRef.current;
       const dy = e.touches[0].clientY - startYRef.current;
 
-      // Decide direction on first meaningful move
       if (isHorizontalRef.current === null) {
         if (Math.abs(dx) > Math.abs(dy)) {
           isHorizontalRef.current = true;
+          console.log("[carousel] direction: HORIZONTAL");
         } else {
-          // Vertical scroll — hand back to the browser
           isHorizontalRef.current = false;
           draggingRef.current = false;
+          console.log("[carousel] direction: VERTICAL — passing to browser");
           return;
         }
       }
 
       if (!isHorizontalRef.current) return;
 
-      // Prevent iOS from scrolling the page or zooming the image
+      const prevented = e.cancelable;
       e.preventDefault();
+      console.log("[carousel] touchmove dx:", dx, "cancelable:", prevented);
 
-      const pct =
-        -currentRef.current * 100 +
-        (dx / (el.offsetWidth || 1)) * 100;
+      const pct = -currentRef.current * 100 + (dx / (el.offsetWidth || 1)) * 100;
       if (trackRef.current) trackRef.current.style.transform = `translateX(${pct}%)`;
     }
 
@@ -170,6 +170,7 @@ export function GroupedAscentCard({
       if (!draggingRef.current || !isHorizontalRef.current) return;
       draggingRef.current = false;
       const dx = e.changedTouches[0].clientX - startXRef.current;
+      console.log("[carousel] touchend dx:", dx, "→ goTo", currentRef.current + (dx < -50 ? 1 : dx > 50 ? -1 : 0));
       if (dx < -50) goToRef.current(currentRef.current + 1);
       else if (dx > 50) goToRef.current(currentRef.current - 1);
       else goToRef.current(currentRef.current);
