@@ -39,6 +39,7 @@ export type Dict = {
   newAscent_saveWithPhotos: string; newAscent_photoFailed: string;
   newAscent_tagged: string;
   newAscent_duplicate: string;
+  ascents_perspectives: string;
 
   // Edit ascent
   edit_failedToSave: string; edit_saveChanges: string;

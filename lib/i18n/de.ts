@@ -40,6 +40,7 @@ export const de: Dict = {
   newAscent_photoFailed: "Besteigung gespeichert, aber Foto {i} konnte nicht hochgeladen werden.",
   newAscent_tagged: "{n} markiert",
   newAscent_duplicate: "Du hast diesen Gipfel an diesem Tag bereits eingetragen.",
+  ascents_perspectives: "{n} Perspektiven",
 
   edit_failedToSave: "Speichern fehlgeschlagen", edit_saveChanges: "Änderungen speichern",
 

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { AscentData } from "@/components/ascents/AscentsClient";
 import { useT } from "@/components/providers/I18nProvider";
+import { i } from "@/lib/i18n";
 
 // ─── Avatar colors (deterministic by index) ───────────────────────────────────
 
@@ -293,7 +294,7 @@ export function GroupedAscentCard({
             letterSpacing: "0.01em",
             whiteSpace: "nowrap",
           }}>
-            {count} perspectivas
+            {i(t.ascents_perspectives, { n: count })}
           </div>
 
           {/* ⋮ menu — only rendered if current user has an ascent in the group */}
