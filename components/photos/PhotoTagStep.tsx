@@ -45,10 +45,22 @@ export function PhotoTagStep({
   const searchRef = useRef<HTMLInputElement>(null);
   const [drawMode, setDrawMode] = useState(false);
 
-  // Lock body scroll while fullscreen tagging UI is visible
+  // Lock body scroll while fullscreen tagging UI is visible.
+  // On iOS Safari, overflow:hidden alone still allows the page to jump scroll position,
+  // which repositions fixed elements. The position:fixed + top:-scrollY pattern prevents this.
   useEffect(() => {
+    const scrollY = window.scrollY;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollY);
+    };
   }, []);
 
   // Fetch persons list for tagging suggestions
@@ -617,7 +629,7 @@ export function PhotoTagStep({
                 style={{
                   width: "100%", padding: "10px 14px",
                   border: "1.5px solid #e5e7eb", borderRadius: 10,
-                  fontSize: 14, outline: "none",
+                  fontSize: 16, outline: "none",
                   background: "#f9fafb", boxSizing: "border-box",
                 }}
               />
