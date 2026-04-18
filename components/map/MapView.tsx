@@ -339,6 +339,112 @@ export default function MapView({
         },
       });
 
+      // ── OpenFreeMap vector tiles (Parks + Refugios) ──────────────────────
+      map.addSource("ofm-source", {
+        type: "vector",
+        url: "https://tiles.openfreemap.org/planet",
+        attribution: "© OpenStreetMap contributors",
+      });
+
+      const PARK_FILTER: maplibregl.FilterSpecification = [
+        "in", ["get", "class"],
+        ["literal", ["national_park", "nature_reserve", "protected_area"]],
+      ];
+
+      map.addLayer({
+        id: "parks-fill",
+        type: "fill",
+        source: "ofm-source",
+        "source-layer": "park",
+        minzoom: 4,
+        filter: PARK_FILTER,
+        paint: {
+          "fill-color": "#22c55e",
+          "fill-opacity": 0.07,
+        },
+      });
+
+      map.addLayer({
+        id: "parks-outline",
+        type: "line",
+        source: "ofm-source",
+        "source-layer": "park",
+        minzoom: 4,
+        filter: PARK_FILTER,
+        paint: {
+          "line-color": "#16a34a",
+          "line-width": 1.2,
+          "line-opacity": 0.45,
+          "line-dasharray": [3, 2],
+        },
+      });
+
+      map.addLayer({
+        id: "parks-labels",
+        type: "symbol",
+        source: "ofm-source",
+        "source-layer": "park",
+        minzoom: 7,
+        filter: PARK_FILTER,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 11,
+          "text-anchor": "center",
+          "text-optional": true,
+          "text-max-width": 8,
+        },
+        paint: {
+          "text-color": "#166534",
+          "text-halo-color": "rgba(255,255,255,0.85)",
+          "text-halo-width": 1.5,
+        },
+      });
+
+      const REFUGIO_FILTER: maplibregl.FilterSpecification = [
+        "in", ["get", "subclass"],
+        ["literal", ["alpine_hut", "wilderness_hut"]],
+      ];
+
+      map.addLayer({
+        id: "refugios-dots",
+        type: "circle",
+        source: "ofm-source",
+        "source-layer": "poi",
+        minzoom: 11,
+        filter: REFUGIO_FILTER,
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#f59e0b",
+          "circle-stroke-color": "white",
+          "circle-stroke-width": 1.5,
+          "circle-opacity": 0.9,
+        },
+      });
+
+      map.addLayer({
+        id: "refugios-labels",
+        type: "symbol",
+        source: "ofm-source",
+        "source-layer": "poi",
+        minzoom: 12,
+        filter: REFUGIO_FILTER,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 11,
+          "text-offset": [0, 1.2],
+          "text-anchor": "top",
+          "text-optional": true,
+          "text-max-width": 8,
+        },
+        paint: {
+          "text-color": "#92400e",
+          "text-halo-color": "rgba(255,255,255,0.9)",
+          "text-halo-width": 1.5,
+        },
+      });
+
       // ── GeoJSON source for unascended peaks ─────────────────────────────
       const unascentedFeatures = peaks
         .filter((p) => !ascentByPeakId.current.has(p.id))
@@ -513,6 +619,7 @@ export default function MapView({
           e.preventDefault();
           e.stopPropagation();
           justSelectedRef.current = true;
+          setTooltip(null);
           setSelected({ peak, ascent: entry });
         });
 
@@ -719,7 +826,7 @@ const panelStyle: React.CSSProperties = isMobile
       </div>
 
       {/* ── Hover tooltip ───────────────────────────────────────────────── */}
-      {tooltip && (
+      {tooltip && !selected && (
         <div style={{
           position: "absolute",
           left: tooltip.x, top: tooltip.y - 40,
@@ -776,6 +883,14 @@ const panelStyle: React.CSSProperties = isMobile
           <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#60a5fa", border: "2px solid white" }} />
           <span>{t.map_notYet}</span>
         </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#f59e0b", border: "2px solid white" }} />
+          <span>Refugio</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <div style={{ width: 14, height: 14, borderRadius: 3, background: "rgba(34,197,94,0.2)", border: "1.5px dashed #16a34a" }} />
+          <span>Parque natural</span>
+        </div>
       </div>
 
       {/* ── Detail panel ───────────────────────────────────────────────── */}
@@ -795,16 +910,7 @@ const panelStyle: React.CSSProperties = isMobile
             <div style={{ position: "relative", aspectRatio: "3/2", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={selected.ascent.photoUrl} alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              <div style={{
-                position: "absolute", bottom: 10, left: 12,
-                background: "rgba(0,0,0,0.52)", backdropFilter: "blur(6px)",
-                borderRadius: 20, padding: "4px 12px",
-              }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
-                  {selected.peak.altitudeM.toLocaleString(t.dateLocale)} m
-                </span>
-              </div>
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />
             </div>
           )}
 

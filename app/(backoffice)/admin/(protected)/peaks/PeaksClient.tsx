@@ -28,6 +28,7 @@ export function PeaksClient() {
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
   const [inputQ, setInputQ] = useState("");
+  const [gpsFilter, setGpsFilter] = useState<"all" | "yes" | "no">("all");
   const [loading, setLoading] = useState(false);
 
   // Inline edit
@@ -42,12 +43,12 @@ export function PeaksClient() {
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchPeaks = useCallback(async (query: string, pg: number) => {
+  const fetchPeaks = useCallback(async (query: string, pg: number, gps: "all" | "yes" | "no") => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/admin/peaks?q=${encodeURIComponent(query)}&page=${pg}&limit=${LIMIT}`
-      );
+      const params = new URLSearchParams({ q: query, page: String(pg), limit: String(LIMIT) });
+      if (gps !== "all") params.set("gpsVerified", gps);
+      const res = await fetch(`/api/admin/peaks?${params}`);
       const data = await res.json();
       setPeaks(data.peaks);
       setTotal(data.total);
@@ -57,8 +58,8 @@ export function PeaksClient() {
   }, []);
 
   useEffect(() => {
-    fetchPeaks(q, page);
-  }, [q, page, fetchPeaks]);
+    fetchPeaks(q, page, gpsFilter);
+  }, [q, page, gpsFilter, fetchPeaks]);
 
   function handleSearchChange(val: string) {
     setInputQ(val);
@@ -149,8 +150,8 @@ export function PeaksClient() {
         </div>
       </div>
 
-      {/* Search bar */}
-      <div style={{ marginBottom: 16, display: "flex", gap: 10, alignItems: "center" }}>
+      {/* Search bar + GPS filter */}
+      <div style={{ marginBottom: 16, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ position: "relative", flex: 1, maxWidth: 480 }}>
           <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 15 }}>🔍</span>
           <input
@@ -172,6 +173,25 @@ export function PeaksClient() {
             >×</button>
           )}
         </div>
+
+        {/* GPS verified filter chips */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {([ ["all", "Todas"], ["yes", "✅ Verificadas"], ["no", "⬜ Sin verificar"] ] as const).map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => { setGpsFilter(val); setPage(1); }}
+              style={{
+                padding: "6px 12px", borderRadius: 20, border: "1px solid",
+                fontSize: 12, fontWeight: 600, cursor: "pointer",
+                borderColor: gpsFilter === val ? "#0f172a" : "#e2e8f0",
+                background: gpsFilter === val ? "#0f172a" : "white",
+                color: gpsFilter === val ? "white" : "#64748b",
+                whiteSpace: "nowrap",
+              }}
+            >{label}</button>
+          ))}
+        </div>
+
         {loading && <span style={{ fontSize: 13, color: "#94a3b8" }}>Cargando...</span>}
       </div>
 
