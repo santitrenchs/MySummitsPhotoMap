@@ -299,7 +299,7 @@ export function NewAscentForm({
         <input
           id="date" name="date" type="date" required
           defaultValue={suggestedDate ?? new Date().toISOString().split("T")[0]}
-          style={inputStyle}
+          style={{ ...inputStyle, WebkitAppearance: "none", appearance: "none" }}
         />
       </div>
 
@@ -412,9 +412,6 @@ export function NewAscentForm({
       )}
 
       <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", alignItems: "center" }}>
-        {status && (
-          <span style={{ fontSize: 13, color: "#6b7280", flex: 1 }}>{status}</span>
-        )}
         <button
           type="button" onClick={() => router.back()}
           disabled={loading}
@@ -432,10 +429,19 @@ export function NewAscentForm({
           style={{
             padding: "9px 18px", background: "#0369a1", color: "white",
             border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
-            cursor: "pointer", opacity: loading ? 0.6 : 1,
+            cursor: loading ? "default" : "pointer",
+            opacity: loading ? 0.75 : 1,
+            display: "flex", alignItems: "center", gap: 7,
+            minWidth: 90, justifyContent: "center",
           }}
         >
-          {loading ? (status ?? t.saving) : readyItems.length > 0 ? fmt(t.newAscent_saveWithPhotos, { n: readyItems.length }) : t.newAscent_save}
+          {loading && (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+              <style>{`@keyframes naSpin{to{transform:rotate(360deg)}} .na-sp{animation:naSpin 0.75s linear infinite;transform-origin:12px 12px;}`}</style>
+              <g className="na-sp"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 2a10 10 0 0 0-10 10" opacity="0.25"/></g>
+            </svg>
+          )}
+          {t.newAscent_save}
         </button>
       </div>
     </form>}

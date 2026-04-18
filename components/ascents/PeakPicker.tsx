@@ -75,13 +75,15 @@ export function PeakPicker({
           border: "1px solid #bfdbfe", borderRadius: 8,
           background: "#eff6ff", cursor: "default",
         }}>
-          <span style={{ fontSize: 14 }}>📍</span>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#1e40af", flex: 1 }}>
-            {selected.name}
-            <span style={{ fontWeight: 400, color: "#3b82f6" }}>
-              {" · "}{selected.altitudeM} m
-            </span>
-          </span>
+          <span style={{ fontSize: 14, flexShrink: 0 }}>📍</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#1e40af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {selected.name}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 400, color: "#3b82f6", marginTop: 1 }}>
+              {selected.altitudeM} m
+            </div>
+          </div>
           <span style={{
             fontSize: 11, fontWeight: 600, color: "#3b82f6",
             background: "#dbeafe", borderRadius: 4, padding: "1px 6px",
