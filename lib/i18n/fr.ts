@@ -198,8 +198,10 @@ export const fr: Dict = {
   home_badgeRegions: "3 régions", home_badgePhotos: "20 photos",
   home_badgeFriends: "3 amis",
 
-  level_novice: "Novice", level_explorer: "Explorateur", level_hiker: "Randonneur",
-  level_mountaineer: "Alpiniste", level_peakBagger: "Chasseur de sommets", level_summiteer: "Grimpeur de sommets",
+  home_level1: "Initié", home_level2: "Explorateur", home_level3: "Montagnard",
+  home_level4: "Alpiniste", home_level5: "Légende",
+  home_heroSubtitle: "Ton évolution en montagne",
+  home_metricPeaks: "sommets", home_metricAscents: "ascensions", home_metricMaxAlt: "alt. max.",
   home_levelNext: "{current}/{next} sommets pour le niveau suivant",
   home_maxLevel: "Niveau max ! 🏆",
   home_inviteFriends: "Inviter des amis",

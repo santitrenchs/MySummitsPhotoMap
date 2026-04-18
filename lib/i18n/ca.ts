@@ -198,8 +198,10 @@ export const ca: Dict = {
   home_badgeRegions: "3 regions", home_badgePhotos: "20 fotos",
   home_badgeFriends: "3 amics",
 
-  level_novice: "Novell", level_explorer: "Explorador", level_hiker: "Senderista",
-  level_mountaineer: "Muntanyenc", level_peakBagger: "Caçacims", level_summiteer: "Cimista",
+  home_level1: "Iniciat", home_level2: "Explorador", home_level3: "Muntanyenc",
+  home_level4: "Alpinista", home_level5: "Llegenda",
+  home_heroSubtitle: "La teva evolució a la muntanya",
+  home_metricPeaks: "cims", home_metricAscents: "ascensions", home_metricMaxAlt: "alt. màx",
   home_levelNext: "{current}/{next} cims per al proper nivell",
   home_maxLevel: "Nivell màxim! 🏆",
   home_inviteFriends: "Convidar amics",

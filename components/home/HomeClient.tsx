@@ -10,14 +10,14 @@ import { i } from "@/lib/i18n";
 // ─── Level system ─────────────────────────────────────────────────────────────
 
 type AltReq = { threshold: number; count: number };
-type LevelDef = { idx: number; emoji: string; name: string; minAscents: number; altReqs?: AltReq[] };
+type LevelDef = { idx: number; emoji: string; nameKey: keyof Dict; minAscents: number; altReqs?: AltReq[] };
 
 const LEVEL_DEFS: LevelDef[] = [
-  { idx: 1, emoji: "🌱", name: "Iniciado",   minAscents: 1 },
-  { idx: 2, emoji: "🥾", name: "Explorador", minAscents: 5 },
-  { idx: 3, emoji: "🧭", name: "Montañero",  minAscents: 15, altReqs: [{ threshold: 2000, count: 1 }] },
-  { idx: 4, emoji: "🏔️", name: "Alpinista",  minAscents: 30, altReqs: [{ threshold: 3000, count: 1 }] },
-  { idx: 5, emoji: "👑", name: "Leyenda",    minAscents: 60, altReqs: [{ threshold: 3000, count: 2 }, { threshold: 4000, count: 1 }] },
+  { idx: 1, emoji: "🌱", nameKey: "home_level1", minAscents: 1 },
+  { idx: 2, emoji: "🥾", nameKey: "home_level2", minAscents: 5 },
+  { idx: 3, emoji: "🧭", nameKey: "home_level3", minAscents: 15, altReqs: [{ threshold: 2000, count: 1 }] },
+  { idx: 4, emoji: "🏔️", nameKey: "home_level4", minAscents: 30, altReqs: [{ threshold: 3000, count: 1 }] },
+  { idx: 5, emoji: "👑", nameKey: "home_level5", minAscents: 60, altReqs: [{ threshold: 3000, count: 2 }, { threshold: 4000, count: 1 }] },
 ];
 
 function getAltCount(stats: HomeData["stats"], threshold: number): number {
@@ -270,7 +270,7 @@ export function HomeClient({ data, locale, t }: {
             </svg>
             <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.88)" }}>Azimut</span>
             <span style={{ color: "rgba(255,255,255,0.42)", fontWeight: 400 }}>·</span>
-            <span style={{ fontWeight: 400, color: "rgba(255,255,255,0.75)" }}>Tu evolución en la montaña</span>
+            <span style={{ fontWeight: 400, color: "rgba(255,255,255,0.75)" }}>{t.home_heroSubtitle}</span>
           </div>
         </div>
 
@@ -281,12 +281,12 @@ export function HomeClient({ data, locale, t }: {
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
               <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.uniquePeaks}</span>
-              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>cimas</span>
+              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>{t.home_metricPeaks}</span>
             </div>
             <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)", alignSelf: "center", margin: "0 4px" }} />
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
               <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.totalAscents}</span>
-              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>ascensiones</span>
+              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>{t.home_metricAscents}</span>
             </div>
             <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)", alignSelf: "center", margin: "0 4px" }} />
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
@@ -294,7 +294,7 @@ export function HomeClient({ data, locale, t }: {
                 {stats.maxAltitude > 0 ? `${stats.maxAltitude.toLocaleString(locale)}` : "—"}
                 {stats.maxAltitude > 0 && <sup style={{ fontSize: 10, fontWeight: 400, verticalAlign: "super", marginLeft: 1, opacity: 0.55 }}>m</sup>}
               </span>
-              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>alt. máx</span>
+              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>{t.home_metricMaxAlt}</span>
             </div>
           </div>
 
@@ -381,7 +381,7 @@ export function HomeClient({ data, locale, t }: {
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 20 }}>{def.emoji}</span>
                     <span style={{ fontSize: 13, fontWeight: 700, flex: 1, color: isInProgress ? "#0369a1" : isLocked ? "#9ca3af" : "#111827" }}>
-                      {def.name}
+                      {t[def.nameKey] as string}
                     </span>
                     {isDone && (
                       <span style={{ fontSize: 9, fontWeight: 800, background: "#dcfce7", color: "#166534", padding: "2px 7px", borderRadius: 8 }}>

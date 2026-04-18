@@ -200,9 +200,12 @@ export type Dict = {
   home_badgeRegions: string; home_badgePhotos: string;
   home_badgeFriends: string;
 
-  // Level names
-  level_novice: string; level_explorer: string; level_hiker: string;
-  level_mountaineer: string; level_peakBagger: string; level_summiteer: string;
+  // Level names (current 5-level system)
+  home_level1: string; home_level2: string; home_level3: string;
+  home_level4: string; home_level5: string;
+  // Hero metrics
+  home_heroSubtitle: string;
+  home_metricPeaks: string; home_metricAscents: string; home_metricMaxAlt: string;
   // Level progress & gamification
   home_levelNext: string; home_maxLevel: string;
   home_inviteFriends: string; home_motivationDefend: string;
