@@ -12,7 +12,7 @@ export default function AscentsLoading() {
           animation: shimmer 1.4s ease-in-out infinite;
           border-radius: 8px;
         }
-        @media (max-width: 639px) { .ascents-sk-header { display: none; } }
+        @media (max-width: 639px) { .ascents-sk-header { display: none !important; } }
       `}</style>
 
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "28px 12px" }}>
