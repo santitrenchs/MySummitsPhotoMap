@@ -61,7 +61,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         >
           <NavLink href="/admin/users" label="Usuarios" icon="👥" />
           <NavLink href="/admin/vouchers" label="Vouchers" icon="🎟️" />
-          <NavLink href="/admin/usage" label="Consumo" icon="📊" />
+          <NavLink href="/admin/peaks" label="Cimas" icon="⛰️" />
         </nav>
 
         {/* Content */}
