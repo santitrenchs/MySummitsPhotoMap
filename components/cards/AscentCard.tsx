@@ -21,7 +21,7 @@ export type AscentCardData = {
   };
   photoUrl: string | null;
   persons: { id: string; name: string }[];
-  user: { name: string };
+  user: { name: string; avatarUrl?: string | null };
 };
 
 type Props = {
@@ -134,7 +134,11 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
           display: "flex", alignItems: "center", gap: 10,
           padding: "10px 14px 8px",
         }}>
-          <InitialsAvatar name={ascent.user.name} />
+          {ascent.user.avatarUrl
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={ascent.user.avatarUrl} alt="" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover", flexShrink: 0, boxShadow: "0 0 0 2px rgba(255,255,255,0.5)" }} />
+            : <InitialsAvatar name={ascent.user.name} />
+          }
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontWeight: 700, fontSize: 14, color: "#111827", margin: 0 }}>
               {ascent.user.name}

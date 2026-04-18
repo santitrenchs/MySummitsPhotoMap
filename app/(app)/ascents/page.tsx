@@ -33,6 +33,7 @@ function enrichAscent(
   },
   isOwn: boolean,
   userName: string,
+  userAvatarUrl: string | null,
 ) {
   const firstPhoto = a.photos[0] ?? null;
   const personMap = new Map<string, { id: string; name: string; email: string | null }>();
@@ -54,6 +55,7 @@ function enrichAscent(
     persons: Array.from(personMap.values()),
     isOwn,
     userName,
+    userAvatarUrl,
   };
 }
 
@@ -84,7 +86,7 @@ export default async function AscentsPage() {
       include: {
         peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true } },
         photos: PHOTOS_INCLUDE,
-        user: { select: { name: true } },
+        user: { select: { name: true, avatarUrl: true } },
       },
     }),
     friendUserIds.length > 0
@@ -94,18 +96,20 @@ export default async function AscentsPage() {
           include: {
             peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true } },
             photos: PHOTOS_INCLUDE,
-            user: { select: { name: true } },
+            user: { select: { name: true, avatarUrl: true } },
           },
         })
       : Promise.resolve([]),
   ]);
 
-  const myAscents = myRaw.map((a) =>
-    enrichAscent(a as Parameters<typeof enrichAscent>[0], true, (a.user as { name?: string | null } | null)?.name ?? session.user.name ?? "")
-  );
-  const friendAscents = friendsRaw.map((a) =>
-    enrichAscent(a as Parameters<typeof enrichAscent>[0], false, (a.user as { name?: string | null } | null)?.name ?? "?")
-  );
+  const myAscents = myRaw.map((a) => {
+    const u = a.user as { name?: string | null; avatarUrl?: string | null } | null;
+    return enrichAscent(a as Parameters<typeof enrichAscent>[0], true, u?.name ?? session.user.name ?? "", u?.avatarUrl ?? null);
+  });
+  const friendAscents = friendsRaw.map((a) => {
+    const u = a.user as { name?: string | null; avatarUrl?: string | null } | null;
+    return enrichAscent(a as Parameters<typeof enrichAscent>[0], false, u?.name ?? "?", u?.avatarUrl ?? null);
+  });
 
   // Merge and sort by date desc
   const ascents = [...myAscents, ...friendAscents].sort(

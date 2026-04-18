@@ -16,6 +16,7 @@ export type AscentData = {
   persons: { id: string; name: string; email?: string | null }[];
   isOwn: boolean;
   userName: string;
+  userAvatarUrl: string | null;
 };
 
 type Sort = "date-desc" | "date-asc" | "elev-desc" | "name-asc";
@@ -380,7 +381,7 @@ export function AscentsClient({
                   peak: a.peak,
                   photoUrl: a.firstPhotoUrl,
                   persons: others,
-                  user: { name: a.userName },
+                  user: { name: a.userName, avatarUrl: a.userAvatarUrl },
                 }}
               />
             );
