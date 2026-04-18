@@ -344,7 +344,7 @@ export function GroupedAscentCard({
           }}
           onMouseDown={handleMouseDown}
         >
-          <div ref={trackRef} style={{ display: "flex", height: "100%", willChange: "transform" }}>
+          <div ref={trackRef} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", willChange: "transform" }}>
             {ascents.map((a, i) => {
               const dateStr = new Date(a.date).toLocaleDateString(t.dateLocale, {
                 day: "numeric", month: "short", year: "numeric",
@@ -358,13 +358,14 @@ export function GroupedAscentCard({
                     overflow: "hidden", background: "#e2e8f0",
                   }}
                 >
-                  {/* Photo */}
+                  {/* Photo — position absolute so height comes from the slide's positioned context,
+                      not from flex sizing (avoids iOS Safari height:100% in flex bug) */}
                   {a.firstPhotoUrl
                     // eslint-disable-next-line @next/next/no-img-element
                     ? <img
                         src={a.firstPhotoUrl}
                         alt={a.peak.name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
                       />
                     : <MountainPlaceholder />
                   }
