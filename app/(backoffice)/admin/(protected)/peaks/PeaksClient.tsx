@@ -14,10 +14,11 @@ type Peak = {
   tag1: string | null;
   tag2: string | null;
   tag3: string | null;
+  gpsVerified: boolean;
   _count: { ascents: number };
 };
 
-type EditState = Partial<Omit<Peak, "id" | "_count">>;
+type EditState = Partial<Omit<Peak, "id" | "_count" | "gpsVerified">> & { gpsVerified?: boolean };
 
 const LIMIT = 50;
 
@@ -81,6 +82,7 @@ export function PeaksClient() {
       tag1: peak.tag1 ?? "",
       tag2: peak.tag2 ?? "",
       tag3: peak.tag3 ?? "",
+      gpsVerified: peak.gpsVerified,
     });
     setSaveError(null);
   }
@@ -199,6 +201,7 @@ export function PeaksClient() {
                   <Th>Cordillera</Th>
                   <Th>Tags</Th>
                   <Th align="center">Lat / Lon</Th>
+                  <Th align="center">GPS ✓</Th>
                   <Th align="center">Asc.</Th>
                   <Th />
                 </tr>
@@ -225,6 +228,17 @@ export function PeaksClient() {
                       onEdit={() => startEdit(peak)}
                       onDelete={() => handleDelete(peak.id)}
                       deleting={deletingId === peak.id}
+                      onToggleGps={async () => {
+                        const res = await fetch(`/api/admin/peaks/${peak.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ gpsVerified: !peak.gpsVerified }),
+                        });
+                        if (res.ok) {
+                          const updated = await res.json();
+                          setPeaks((prev) => prev.map((p) => p.id === peak.id ? { ...p, gpsVerified: updated.gpsVerified } : p));
+                        }
+                      }}
                     />
                   )
                 )}
@@ -253,13 +267,14 @@ export function PeaksClient() {
 // ── View row ──────────────────────────────────────────────────────────────────
 
 function ViewRow({
-  peak, isLast, onEdit, onDelete, deleting,
+  peak, isLast, onEdit, onDelete, deleting, onToggleGps,
 }: {
   peak: Peak;
   isLast: boolean;
   onEdit: () => void;
   onDelete: () => void;
   deleting: boolean;
+  onToggleGps: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -298,6 +313,15 @@ function ViewRow({
         <span style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>
           {peak.latitude.toFixed(4)}, {peak.longitude.toFixed(4)}
         </span>
+      </td>
+      <td style={{ ...tdStyle, textAlign: "center" }}>
+        <button
+          onClick={onToggleGps}
+          title={peak.gpsVerified ? "GPS verificado — click para desmarcar" : "No verificado — click para marcar"}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 2 }}
+        >
+          {peak.gpsVerified ? "✅" : "⬜"}
+        </button>
       </td>
       <td style={{ ...tdStyle, textAlign: "center" }}>
         {peak._count.ascents > 0 ? (
@@ -357,7 +381,7 @@ function EditRow({
 }: {
   peak: Peak;
   state: EditState;
-  onChange: (k: keyof EditState, v: string | number) => void;
+  onChange: (k: keyof EditState, v: string | number | boolean) => void;
   onSave: () => void;
   onCancel: () => void;
   saving: boolean;
@@ -400,6 +424,14 @@ function EditRow({
             {inp("latitude", "number")}
             {inp("longitude", "number")}
           </div>
+        </td>
+        <td style={{ ...tdStyle, textAlign: "center" }}>
+          <input
+            type="checkbox"
+            checked={state.gpsVerified ?? false}
+            onChange={(e) => onChange("gpsVerified", e.target.checked as unknown as string)}
+            style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#16a34a" }}
+          />
         </td>
         <td style={{ ...tdStyle, textAlign: "center" }}>
           <span style={{ fontSize: 12, color: "#94a3b8" }}>{peak._count.ascents}</span>

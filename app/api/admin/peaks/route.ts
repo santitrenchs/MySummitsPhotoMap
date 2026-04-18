@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
         id: true, name: true, latitude: true, longitude: true,
         altitudeM: true, country: true, mountainRange: true,
         comarca: true, tag1: true, tag2: true, tag3: true,
+        gpsVerified: true,
         _count: { select: { ascents: true } },
       },
     }),

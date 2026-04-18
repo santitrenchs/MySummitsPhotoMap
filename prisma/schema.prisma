@@ -26,6 +26,7 @@ model Peak {
   tag2          String?
   tag3          String?
   country       String   @default("ES")
+  gpsVerified   Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   ascents Ascent[]
