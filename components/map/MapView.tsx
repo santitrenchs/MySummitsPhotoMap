@@ -224,6 +224,10 @@ export default function MapView({
     function applyTerrain() {
       if (!map) return;
       try {
+        // Disable interactions during terrain transition to prevent NaN LngLat errors
+        map.scrollZoom.disable();
+        map.dragPan.disable();
+
         if (terrain3d) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
@@ -233,7 +237,17 @@ export default function MapView({
           (map as any).setTerrain(null);
           map.easeTo({ pitch: 0, duration: 600 });
         }
-      } catch { /* terrain not ready yet */ }
+
+        // Re-enable interactions once map is fully idle after terrain switch
+        map.once("idle", () => {
+          map.scrollZoom.enable();
+          map.dragPan.enable();
+        });
+      } catch {
+        // Fallback: re-enable if something went wrong
+        map.scrollZoom.enable();
+        map.dragPan.enable();
+      }
     }
 
     if (map.isStyleLoaded()) {
