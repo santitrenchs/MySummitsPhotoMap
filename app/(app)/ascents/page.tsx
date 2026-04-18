@@ -128,6 +128,16 @@ export default async function AscentsPage() {
 
   return (
     <div style={{ maxWidth: 520, margin: "0 auto", padding: "28px 12px" }}>
+      <style>{`@media (max-width: 639px) { .ascents-page-header { display: none; } }`}</style>
+      <div className="ascents-page-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: 0 }}>{t.nav_ascents}</h1>
+        <Link
+          href="/ascents/new"
+          style={{ padding: "8px 16px", background: "#0369a1", color: "white", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none" }}
+        >
+          {t.ascents_newAscent}
+        </Link>
+      </div>
 
       {ascents.length === 0 ? (
         <div style={{

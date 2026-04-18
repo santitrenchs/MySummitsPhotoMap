@@ -12,9 +12,16 @@ export default function AscentsLoading() {
           animation: shimmer 1.4s ease-in-out infinite;
           border-radius: 8px;
         }
+        @media (max-width: 639px) { .ascents-sk-header { display: none; } }
       `}</style>
 
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "28px 12px" }}>
+
+        {/* ── Header: título + botón (solo desktop) ────────────────────── */}
+        <div className="ascents-sk-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+          <div className="sk" style={{ height: 22, width: 90, borderRadius: 6 }} />
+          <div className="sk" style={{ height: 34, width: 110, borderRadius: 8 }} />
+        </div>
 
         {/* ── Search input + filter button ───────────────────────────────── */}
         <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
