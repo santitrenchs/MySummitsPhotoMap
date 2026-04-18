@@ -364,7 +364,7 @@ function EditRow({
   error: string | null;
   isLast: boolean;
 }) {
-  function inp(k: keyof EditState, type = "text", width = "100%") {
+  function inp(k: keyof EditState, type = "text", width: number | string = "100%") {
     return (
       <input
         type={type}
