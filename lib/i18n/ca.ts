@@ -39,6 +39,7 @@ export const ca: Dict = {
   newAscent_saveWithPhotos: "Desar + {n} foto(s)",
   newAscent_photoFailed: "Ascensió desada, però la foto {i} no s'ha pogut pujar.",
   newAscent_tagged: "{n} etiquetats",
+  newAscent_duplicate: "Ja tens registrada aquesta cima en aquesta data.",
 
   edit_failedToSave: "No s'ha pogut desar", edit_saveChanges: "Desar canvis",
 

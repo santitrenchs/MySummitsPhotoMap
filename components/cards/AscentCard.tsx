@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { MiniMap } from "./MiniMap";
 import { useT } from "@/components/providers/I18nProvider";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -111,7 +110,8 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
     day: "numeric", month: "short", year: "numeric",
   });
 
-  const location = ascent.route ?? null;
+  const latStr = `${Math.abs(ascent.peak.latitude).toFixed(4)}°${ascent.peak.latitude >= 0 ? "N" : "S"}`;
+  const lngStr = `${Math.abs(ascent.peak.longitude).toFixed(4)}°${ascent.peak.longitude >= 0 ? "E" : "W"}`;
 
   function handleCardClick() {
     if (isProfile && !navigating) {
@@ -247,26 +247,31 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
             </p>
           </div>
 
-          {/* Bottom-right: altitude badge */}
+          {/* Bottom-right: altitud (pill) + lat/lon (texto plano) debajo */}
           <div style={{
             position: "absolute", bottom: 12, right: 12,
-            background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,0.25)",
-            borderRadius: 20, padding: "5px 10px",
+            display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5,
           }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "white", letterSpacing: "0.01em" }}>
-              {ascent.peak.altitudeM.toLocaleString(locale)} m
+            <div style={{
+              background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.25)",
+              borderRadius: 20, padding: "5px 10px",
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "white", letterSpacing: "0.01em" }}>
+                {ascent.peak.altitudeM.toLocaleString(locale)} m
+              </span>
+            </div>
+            <span style={{
+              fontSize: 10, fontWeight: 500,
+              color: "rgba(255,255,255,0.75)",
+              textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+              letterSpacing: "0.02em",
+            }}>
+              {latStr} · {lngStr}
             </span>
           </div>
         </div>
-
-        {/* ── Mini map (flush below photo) ─────────────────────────────── */}
-        <MiniMap
-          latitude={ascent.peak.latitude}
-          longitude={ascent.peak.longitude}
-          zoom={10}
-        />
 
         {/* ── Below image ─────────────────────────────────────────────── */}
         <div style={{ padding: "10px 14px 12px" }} onClick={(e) => e.stopPropagation()}>

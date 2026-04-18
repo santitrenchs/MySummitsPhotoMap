@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
 import { AscentCard } from "@/components/cards/AscentCard";
+import { GroupedAscentCard } from "@/components/cards/GroupedAscentCard";
 
 export type AscentData = {
   id: string;
@@ -172,6 +173,18 @@ export function AscentsClient({
     });
   }, [ascents, peakFilter, search, viewChip, selectedPersonId, yearFilter, sort]);
 
+  // Group filtered ascents by same peak + same day.
+  // Preserves sort order — first ascent per group wins position in the feed.
+  const groups = useMemo(() => {
+    const map = new Map<string, AscentData[]>();
+    for (const a of filtered) {
+      const day = new Date(a.date).toISOString().substring(0, 10);
+      const key = `${a.peak.id}__${day}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(a);
+    }
+    return Array.from(map.values());
+  }, [filtered]);
 
   const summaryChip: React.CSSProperties = {
     display: "inline-flex", alignItems: "center", gap: 6,
@@ -360,29 +373,45 @@ export function AscentsClient({
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
-          {filtered.map((a, i) => {
-            const others = a.isOwn
-              ? a.persons.filter(p =>
-                  (currentUserEmail ? p.email !== currentUserEmail : true) &&
-                  (currentUserName ? p.name !== currentUserName : true)
-                )
-              : a.persons;
+          {groups.map((group, i) => {
+            // Single ascent → card normal sin cambios
+            if (group.length === 1) {
+              const a = group[0];
+              const others = a.isOwn
+                ? a.persons.filter(p =>
+                    (currentUserEmail ? p.email !== currentUserEmail : true) &&
+                    (currentUserName ? p.name !== currentUserName : true)
+                  )
+                : a.persons;
+              return (
+                <AscentCard
+                  key={a.id}
+                  variant={a.isOwn ? "profile" : "social"}
+                  locale={t.dateLocale}
+                  animationIndex={i}
+                  ascent={{
+                    id: a.id,
+                    date: a.date,
+                    route: a.route,
+                    description: a.description,
+                    peak: a.peak,
+                    photoUrl: a.firstPhotoUrl,
+                    persons: others,
+                    user: { name: a.userName, avatarUrl: a.userAvatarUrl },
+                  }}
+                />
+              );
+            }
+
+            // Múltiples ascensiones en la misma cima y día → card agrupada
+            const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
             return (
-              <AscentCard
-                key={a.id}
-                variant={a.isOwn ? "profile" : "social"}
-                locale={t.dateLocale}
+              <GroupedAscentCard
+                key={groupKey}
+                ascents={group}
+                currentUserEmail={currentUserEmail}
+                currentUserName={currentUserName}
                 animationIndex={i}
-                ascent={{
-                  id: a.id,
-                  date: a.date,
-                  route: a.route,
-                  description: a.description,
-                  peak: a.peak,
-                  photoUrl: a.firstPhotoUrl,
-                  persons: others,
-                  user: { name: a.userName, avatarUrl: a.userAvatarUrl },
-                }}
               />
             );
           })}

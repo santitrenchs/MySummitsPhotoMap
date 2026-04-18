@@ -22,9 +22,11 @@ type Peak = {
 export function NewAscentForm({
   peaks,
   defaultPeakId,
+  existingAscents = [],
 }: {
   peaks: Peak[];
   defaultPeakId?: string;
+  existingAscents?: { peakId: string; date: string }[];
 }) {
   const router = useRouter();
   const t = useT();
@@ -106,6 +108,15 @@ export function NewAscentForm({
 
     if (!form.get("peakId")) {
       setError(t.field_peak);
+      setLoading(false);
+      return;
+    }
+
+    // Duplicate check: same user, same peak, same day
+    const peakId = form.get("peakId") as string;
+    const date = form.get("date") as string;
+    if (existingAscents.some((a) => a.peakId === peakId && a.date === date)) {
+      setError(t.newAscent_duplicate);
       setLoading(false);
       return;
     }

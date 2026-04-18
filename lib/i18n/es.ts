@@ -39,6 +39,7 @@ export const es: Dict = {
   newAscent_saveWithPhotos: "Guardar + {n} foto(s)",
   newAscent_photoFailed: "Ascensión guardada, pero la foto {i} no se pudo subir.",
   newAscent_tagged: "{n} etiquetados",
+  newAscent_duplicate: "Ya tienes registrada esta cima en esta fecha.",
 
   edit_failedToSave: "No se pudo guardar", edit_saveChanges: "Guardar cambios",
 

@@ -39,6 +39,7 @@ export const fr: Dict = {
   newAscent_saveWithPhotos: "Enregistrer + {n} photo(s)",
   newAscent_photoFailed: "Ascension enregistrée mais la photo {i} n'a pas pu être envoyée.",
   newAscent_tagged: "{n} identifiés",
+  newAscent_duplicate: "Tu as déjà enregistré ce sommet à cette date.",
 
   edit_failedToSave: "Impossible d'enregistrer", edit_saveChanges: "Enregistrer les modifications",
 

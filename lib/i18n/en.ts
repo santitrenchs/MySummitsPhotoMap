@@ -39,6 +39,7 @@ export const en: Dict = {
   newAscent_saveWithPhotos: "Save + {n} photo(s)",
   newAscent_photoFailed: "Ascent saved but photo {i} failed to upload.",
   newAscent_tagged: "{n} tagged",
+  newAscent_duplicate: "You already have this peak logged for this date.",
 
   edit_failedToSave: "Failed to save", edit_saveChanges: "Save changes",
 
