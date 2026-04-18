@@ -220,18 +220,27 @@ export default function MapView({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    if (!map.isStyleLoaded()) return;
-    try {
-      if (terrain3d) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
-        map.easeTo({ pitch: 45, duration: 600 });
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (map as any).setTerrain(null);
-        map.easeTo({ pitch: 0, duration: 600 });
-      }
-    } catch { /* terrain not ready yet */ }
+
+    function applyTerrain() {
+      if (!map) return;
+      try {
+        if (terrain3d) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
+          map.easeTo({ pitch: 45, duration: 600 });
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (map as any).setTerrain(null);
+          map.easeTo({ pitch: 0, duration: 600 });
+        }
+      } catch { /* terrain not ready yet */ }
+    }
+
+    if (map.isStyleLoaded()) {
+      applyTerrain();
+    } else {
+      map.once("idle", applyTerrain);
+    }
   }, [terrain3d]);
 
   // Map initialisation (runs once)
@@ -278,8 +287,18 @@ export default function MapView({
     map.once("load", () => {
       map.resize();
 
-      // ── Terrain source + 3D + hillshade ────────────────────────────────
+      // ── Terrain sources + 3D + hillshade ───────────────────────────────
+      // Two separate sources to avoid the maplibre warning about sharing
+      // a source between hillshade layer and 3D terrain.
       map.addSource("terrain", {
+        type: "raster-dem",
+        tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+        tileSize: 256,
+        encoding: "terrarium",
+        maxzoom: 15,
+      });
+
+      map.addSource("terrain-hillshade", {
         type: "raster-dem",
         tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
         tileSize: 256,
@@ -296,7 +315,7 @@ export default function MapView({
       map.addLayer({
         id: "hillshading",
         type: "hillshade",
-        source: "terrain",
+        source: "terrain-hillshade",
         paint: {
           "hillshade-exaggeration": 0.7,
           "hillshade-illumination-direction": 315,
