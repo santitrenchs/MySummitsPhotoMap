@@ -284,14 +284,14 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           .mobile-sheet-backdrop { display: none !important; }
         }
 
-        /* ── Mobile header (avatar only) ─────────── */
+        /* ── Mobile header ───────────────────────── */
         .mobile-header {
           position: sticky;
           top: 0;
           z-index: 50;
           display: flex;
           align-items: center;
-          justify-content: flex-end;
+          justify-content: space-between;
           padding: 0 16px;
           height: 52px;
           background: rgba(255,255,255,0.97);
@@ -299,6 +299,21 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           -webkit-backdrop-filter: saturate(180%) blur(16px);
           border-bottom: 1px solid rgba(0,0,0,0.07);
         }
+        .new-ascent-btn {
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          background: #0369a1;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-decoration: none;
+          flex-shrink: 0;
+          -webkit-tap-highlight-color: transparent;
+          transition: opacity 0.15s;
+        }
+        .new-ascent-btn:active { opacity: 0.7; }
 
         /* ── Mobile bottom sheet ─────────────────── */
         .mobile-sheet-backdrop {
@@ -394,7 +409,12 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
 
       {/* ── MOBILE HEADER ───────────────────────────────────────────────────── */}
       <header className="mobile-header">
-        {/* Logo: absolutely centered, unaffected by avatar width */}
+        {/* + New ascent: left side */}
+        <Link href="/ascents/new" className="new-ascent-btn" aria-label="Nueva ascensión">
+          <PlusIcon />
+        </Link>
+
+        {/* Logo: absolutely centered, unaffected by side elements */}
         <Link href="/map" style={{
           position: "absolute", left: "50%", transform: "translateX(-50%)",
           display: "flex", alignItems: "center", gap: 7, textDecoration: "none",
@@ -405,7 +425,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           </span>
         </Link>
 
-        {/* Avatar: right-aligned via header's justify-content: flex-end */}
+        {/* Avatar: right side */}
         <div
           onClick={() => setMobileMenuOpen(true)}
           role="button"

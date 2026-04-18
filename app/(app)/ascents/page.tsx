@@ -128,7 +128,10 @@ export default async function AscentsPage() {
 
   return (
     <div style={{ maxWidth: 520, margin: "0 auto", padding: "28px 12px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <style>{`
+        @media (max-width: 639px) { .ascents-page-header { display: none; } }
+      `}</style>
+      <div className="ascents-page-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: 0 }}>{t.nav_ascents}</h1>
         <Link
           href="/ascents/new"
