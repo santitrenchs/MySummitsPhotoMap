@@ -78,14 +78,18 @@ export function GroupedAscentCard({
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Use ref for current index to avoid stale closures in touch/mouse handlers
+  // Use refs for current index — avoids stale closures in touch/mouse handlers
   const currentRef = useRef(0);
   const [currentDisplay, setCurrentDisplay] = useState(0);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Touch state refs
   const startXRef = useRef(0);
+  const startYRef = useRef(0);
   const draggingRef = useRef(false);
+  const isHorizontalRef = useRef<boolean | null>(null); // null = undecided
 
   const count = ascents.length;
 
@@ -112,31 +116,75 @@ export function GroupedAscentCard({
     }
   }
 
-  // ── Touch ──────────────────────────────────────────────────────────────────
+  // Ref so the touch useEffect can always call the latest goTo without
+  // being included in its dependency array (avoids re-registering listeners).
+  const goToRef = useRef(goTo);
+  goToRef.current = goTo;
 
-  function handleTouchStart(e: React.TouchEvent) {
-    startXRef.current = e.touches[0].clientX;
-    draggingRef.current = true;
-    if (trackRef.current) trackRef.current.style.transition = "none";
-  }
+  // ── Touch — registered as non-passive so we can call preventDefault() ──────
+  // iOS Safari treats React synthetic touch events as passive, which means
+  // the browser interprets a horizontal swipe as image zoom/pan instead of
+  // a slide change. Registering directly with { passive: false } fixes this.
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const el = wrapper; // non-null capture for closures
 
-  function handleTouchMove(e: React.TouchEvent) {
-    if (!draggingRef.current) return;
-    const delta = e.touches[0].clientX - startXRef.current;
-    const pct =
-      -currentRef.current * 100 +
-      (delta / (wrapperRef.current?.offsetWidth ?? 1)) * 100;
-    if (trackRef.current) trackRef.current.style.transform = `translateX(${pct}%)`;
-  }
+    function onTouchStart(e: TouchEvent) {
+      startXRef.current = e.touches[0].clientX;
+      startYRef.current = e.touches[0].clientY;
+      draggingRef.current = true;
+      isHorizontalRef.current = null; // reset — direction not yet known
+      if (trackRef.current) trackRef.current.style.transition = "none";
+    }
 
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    const delta = e.changedTouches[0].clientX - startXRef.current;
-    if (delta < -50) goTo(currentRef.current + 1);
-    else if (delta > 50) goTo(currentRef.current - 1);
-    else goTo(currentRef.current);
-  }
+    function onTouchMove(e: TouchEvent) {
+      if (!draggingRef.current) return;
+      const dx = e.touches[0].clientX - startXRef.current;
+      const dy = e.touches[0].clientY - startYRef.current;
+
+      // Decide direction on first meaningful move
+      if (isHorizontalRef.current === null) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+          isHorizontalRef.current = true;
+        } else {
+          // Vertical scroll — hand back to the browser
+          isHorizontalRef.current = false;
+          draggingRef.current = false;
+          return;
+        }
+      }
+
+      if (!isHorizontalRef.current) return;
+
+      // Prevent iOS from scrolling the page or zooming the image
+      e.preventDefault();
+
+      const pct =
+        -currentRef.current * 100 +
+        (dx / (el.offsetWidth || 1)) * 100;
+      if (trackRef.current) trackRef.current.style.transform = `translateX(${pct}%)`;
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      if (!draggingRef.current || !isHorizontalRef.current) return;
+      draggingRef.current = false;
+      const dx = e.changedTouches[0].clientX - startXRef.current;
+      if (dx < -50) goToRef.current(currentRef.current + 1);
+      else if (dx > 50) goToRef.current(currentRef.current - 1);
+      else goToRef.current(currentRef.current);
+    }
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []); // empty — all state accessed via refs
 
   // ── Mouse drag (desktop) ───────────────────────────────────────────────────
 
@@ -291,10 +339,8 @@ export function GroupedAscentCard({
             position: "relative", aspectRatio: "4/5",
             overflow: "hidden", background: "#e2e8f0",
             cursor: "grab", userSelect: "none",
+            touchAction: "pan-y", // hint: vertical scroll ok, horizontal = ours
           }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
           onMouseDown={handleMouseDown}
         >
           <div ref={trackRef} style={{ display: "flex", height: "100%", willChange: "transform" }}>
