@@ -58,3 +58,35 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ peaks, total, page, limit });
 }
+
+// POST /api/admin/peaks — create a new peak (always gpsVerified: true)
+export async function POST(req: NextRequest) {
+  if (!(await requireAdmin()))
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+  const name = (body.name ?? "").trim();
+  if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
+  const latitude = parseFloat(body.latitude);
+  const longitude = parseFloat(body.longitude);
+  const altitudeM = parseInt(body.altitudeM);
+  if (isNaN(latitude) || isNaN(longitude) || isNaN(altitudeM))
+    return NextResponse.json({ error: "latitude, longitude, altitudeM required" }, { status: 400 });
+
+  const peak = await prisma.peak.create({
+    data: {
+      name,
+      latitude,
+      longitude,
+      altitudeM,
+      country: (body.country ?? "ES").toUpperCase(),
+      mountainRange: body.mountainRange?.trim() || null,
+      comarca: body.comarca?.trim() || null,
+      tag1: body.tag1?.trim() || null,
+      tag2: body.tag2?.trim() || null,
+      tag3: body.tag3?.trim() || null,
+      gpsVerified: true,
+    },
+  });
+  return NextResponse.json(peak, { status: 201 });
+}

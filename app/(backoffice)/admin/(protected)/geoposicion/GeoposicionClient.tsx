@@ -33,6 +33,22 @@ type NominatimResult = {
   type: string;
 };
 
+type CreateForm = {
+  name: string;
+  altitudeM: string;
+  country: string;
+  mountainRange: string;
+  comarca: string;
+  tag1: string;
+  tag2: string;
+  tag3: string;
+};
+
+type OsmSource = "osm" | "nominatim" | "";
+
+// Which form fields were auto-filled from OSM (to show badge)
+type OsmFilled = Partial<Record<keyof CreateForm, OsmSource>>;
+
 // ─── Map style ────────────────────────────────────────────────────────────────
 
 const MAP_STYLE: maplibregl.StyleSpecification = {
@@ -53,6 +69,17 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: "carto-tiles", type: "raster", source: "carto" }],
 };
 
+const EMPTY_FORM: CreateForm = {
+  name: "",
+  altitudeM: "",
+  country: "ES",
+  mountainRange: "",
+  comarca: "",
+  tag1: "",
+  tag2: "",
+  tag3: "",
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function GeoposicionClient() {
@@ -60,14 +87,29 @@ export default function GeoposicionClient() {
   const mapRef = useRef<maplibregl.Map | null>(null);
 
   const [clickedPoint, setClickedPoint] = useState<ClickedPoint | null>(null);
+
+  // ── Link mode state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<DbPeak[]>([]);
   const [selectedPeak, setSelectedPeak] = useState<DbPeak | null>(null);
   const [saving, setSaving] = useState(false);
   const [searching, setSearching] = useState(false);
+
+  // ── Panel mode: "link" = assign existing peak, "create" = new peak from OSM
+  const [panelMode, setPanelMode] = useState<"link" | "create">("link");
+
+  // ── Create mode state
+  const [createForm, setCreateForm] = useState<CreateForm>(EMPTY_FORM);
+  const [osmFilled, setOsmFilled] = useState<OsmFilled>({});
+  const [osmLoading, setOsmLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [showExtraFields, setShowExtraFields] = useState(false);
+
+  // ── Duplicate name warning
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+
   const [toast, setToast] = useState<ToastState>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // OSM map search (Nominatim)
@@ -112,7 +154,7 @@ export default function GeoposicionClient() {
     toastTimer.current = setTimeout(() => setToast(null), 3000);
   }
 
-  // Search our DB peaks
+  // ── Search our DB peaks
   const searchPeaks = useCallback((q: string) => {
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
     if (q.trim().length < 2) {
@@ -144,6 +186,149 @@ export default function GeoposicionClient() {
     setSearchResults([]);
     setSelectedPeak(null);
     setSearching(false);
+    setPanelMode("link");
+    setCreateForm(EMPTY_FORM);
+    setOsmFilled({});
+    setOsmLoading(false);
+    setShowExtraFields(false);
+    setDuplicateWarning(false);
+  }
+
+  // ── Fetch OSM data for "create" mode: Overpass + Nominatim reverse
+  async function fetchOsmData(lat: number, lng: number, osmName: string | null, osmEle: number | null) {
+    setOsmLoading(true);
+    const filled: OsmFilled = {};
+    const form: CreateForm = { ...EMPTY_FORM };
+
+    // Pre-fill from vector tile data (already available)
+    if (osmName) { form.name = osmName; filled.name = "osm"; }
+    if (osmEle) { form.altitudeM = String(osmEle); filled.altitudeM = "osm"; }
+
+    // Parallel: Overpass + Nominatim reverse
+    const [overpassResult, nominatimResult] = await Promise.allSettled([
+      fetchOverpass(lat, lng),
+      fetchNominatimReverse(lat, lng),
+    ]);
+
+    if (overpassResult.status === "fulfilled" && overpassResult.value) {
+      const tags = overpassResult.value;
+      const overpassName = tags["name:es"] || tags["name:ca"] || tags.name;
+      if (overpassName && !form.name) { form.name = overpassName; filled.name = "osm"; }
+      if (overpassName && form.name !== overpassName && !osmName) { form.name = overpassName; filled.name = "osm"; }
+      const ele = tags.ele ? parseInt(tags.ele) : null;
+      if (ele && !isNaN(ele) && !form.altitudeM) { form.altitudeM = String(ele); filled.altitudeM = "osm"; }
+      if (tags.mountain_range) { form.mountainRange = tags.mountain_range; filled.mountainRange = "osm"; }
+    }
+
+    if (nominatimResult.status === "fulfilled" && nominatimResult.value) {
+      const addr = nominatimResult.value;
+      if (addr.countryCode) { form.country = addr.countryCode.toUpperCase(); filled.country = "nominatim"; }
+      const comarca = addr.county || addr.municipality || addr.town || addr.village || "";
+      if (comarca) { form.comarca = comarca; filled.comarca = "nominatim"; }
+      // Use state/region as mountainRange fallback if not already set
+      if (!form.mountainRange && addr.state) {
+        form.mountainRange = addr.state;
+        filled.mountainRange = "nominatim";
+      }
+    }
+
+    setCreateForm(form);
+    setOsmFilled(filled);
+    setOsmLoading(false);
+  }
+
+  async function fetchOverpass(lat: number, lng: number): Promise<Record<string, string> | null> {
+    const query = `[out:json];node["natural"="peak"](around:500,${lat},${lng});out tags;`;
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: `data=${encodeURIComponent(query)}`,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const elements: Array<{ tags: Record<string, string> }> = data.elements ?? [];
+    return elements[0]?.tags ?? null;
+  }
+
+  async function fetchNominatimReverse(lat: number, lng: number): Promise<{
+    countryCode: string; county: string; municipality: string;
+    town: string; village: string; state: string;
+  } | null> {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&zoom=10`;
+    const res = await fetch(url, { headers: { "Accept-Language": "es,ca,en" } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const addr = data.address ?? {};
+    return {
+      countryCode: addr.country_code ?? "",
+      county: addr.county ?? addr.comarca ?? "",
+      municipality: addr.municipality ?? "",
+      town: addr.town ?? addr.city ?? "",
+      village: addr.village ?? addr.suburb ?? "",
+      state: addr.state ?? addr.region ?? "",
+    };
+  }
+
+  // ── Switch to create mode
+  function enterCreateMode() {
+    setPanelMode("create");
+    setDuplicateWarning(false);
+    if (clickedPoint) {
+      fetchOsmData(clickedPoint.lat, clickedPoint.lng, clickedPoint.osmName, clickedPoint.osmEle);
+    }
+  }
+
+  function updateForm(field: keyof CreateForm, value: string) {
+    setCreateForm((f) => ({ ...f, [field]: value }));
+    if (field === "name") setDuplicateWarning(false);
+  }
+
+  // ── Check for duplicate name before creating
+  async function checkDuplicate(name: string): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/admin/peaks?q=${encodeURIComponent(name)}&limit=5`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      return (data.peaks ?? []).some(
+        (p: DbPeak) => p.name.toLowerCase() === name.toLowerCase()
+      );
+    } catch { return false; }
+  }
+
+  async function handleCreate() {
+    if (!clickedPoint || !createForm.name.trim() || !createForm.altitudeM) return;
+    setCreating(true);
+    try {
+      const isDuplicate = await checkDuplicate(createForm.name.trim());
+      if (isDuplicate) {
+        setDuplicateWarning(true);
+        setCreating(false);
+        return;
+      }
+      const res = await fetch("/api/admin/peaks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: createForm.name.trim(),
+          latitude: clickedPoint.lat,
+          longitude: clickedPoint.lng,
+          altitudeM: parseInt(createForm.altitudeM),
+          country: createForm.country.trim() || "ES",
+          mountainRange: createForm.mountainRange.trim() || null,
+          comarca: createForm.comarca.trim() || null,
+          tag1: createForm.tag1.trim() || null,
+          tag2: createForm.tag2.trim() || null,
+          tag3: createForm.tag3.trim() || null,
+        }),
+      });
+      if (!res.ok) throw new Error("Error al crear");
+      showToast(`✓ «${createForm.name.trim()}» creada y verificada`, true);
+      closePanel();
+    } catch {
+      showToast("Error al crear la cima", false);
+    } finally {
+      setCreating(false);
+    }
   }
 
   async function handleSave() {
@@ -169,7 +354,7 @@ export default function GeoposicionClient() {
     }
   }
 
-  // Map init
+  // ── Map init
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -191,7 +376,6 @@ export default function GeoposicionClient() {
     map.once("load", () => {
       map.resize();
 
-      // Terrain + hillshade
       map.addSource("terrain-hillshade", {
         type: "raster-dem",
         tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
@@ -212,7 +396,6 @@ export default function GeoposicionClient() {
         },
       });
 
-      // OSM peaks overlay
       map.addSource("osm-peaks-source", {
         type: "vector",
         url: "https://tiles.openfreemap.org/planet",
@@ -257,7 +440,6 @@ export default function GeoposicionClient() {
         },
       });
 
-      // Click on OSM dot
       map.on("click", "osm-peaks-dots", (e) => {
         e.preventDefault();
         const feature = e.features?.[0];
@@ -271,9 +453,13 @@ export default function GeoposicionClient() {
         });
         setSearchQuery(props.name ?? "");
         searchPeaks(props.name ?? "");
+        setPanelMode("link");
+        setCreateForm(EMPTY_FORM);
+        setOsmFilled({});
+        setShowExtraFields(false);
+        setDuplicateWarning(false);
       });
 
-      // Cursor pointer on hover
       map.on("mouseenter", "osm-peaks-dots", () => {
         map.getCanvas().style.cursor = "pointer";
       });
@@ -289,6 +475,332 @@ export default function GeoposicionClient() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ─── Render helpers ───────────────────────────────────────────────────────
+
+  function OsmBadge({ source }: { source: OsmSource | undefined }) {
+    if (!source) return null;
+    return (
+      <span style={{
+        fontSize: 10, fontWeight: 600, padding: "1px 6px",
+        borderRadius: 4, marginLeft: 6, verticalAlign: "middle",
+        background: source === "osm" ? "#fef3c7" : "#ede9fe",
+        color: source === "osm" ? "#92400e" : "#5b21b6",
+      }}>
+        {source === "osm" ? "OSM" : "Nominatim"}
+      </span>
+    );
+  }
+
+  function FormField({
+    label, field, type = "text", placeholder, readonly,
+  }: {
+    label: string;
+    field: keyof CreateForm;
+    type?: string;
+    placeholder?: string;
+    readonly?: boolean;
+  }) {
+    return (
+      <div style={{ marginBottom: 10 }}>
+        <label style={{
+          fontSize: 11, fontWeight: 600, color: "#374151",
+          display: "flex", alignItems: "center", marginBottom: 4,
+        }}>
+          {label}
+          {osmLoading && !createForm[field] && (
+            <span style={{
+              display: "inline-block", width: 10, height: 10, marginLeft: 6,
+              borderRadius: "50%", border: "1.5px solid #d1d5db", borderTopColor: "#6b7280",
+              animation: "geo-spin-plain 0.7s linear infinite",
+            }} />
+          )}
+          <OsmBadge source={osmFilled[field]} />
+          {readonly && (
+            <span style={{ marginLeft: 6, fontSize: 10, color: "#6b7280" }}>🔒 GPS verificado</span>
+          )}
+        </label>
+        <input
+          type={type}
+          value={createForm[field]}
+          onChange={readonly ? undefined : (e) => updateForm(field, e.target.value)}
+          readOnly={readonly}
+          placeholder={osmLoading ? "Cargando…" : placeholder}
+          style={{
+            width: "100%", padding: "7px 10px", fontSize: 13,
+            border: `1px solid ${readonly ? "#e5e7eb" : "#d1d5db"}`,
+            borderRadius: 7, outline: "none", boxSizing: "border-box",
+            background: readonly ? "#f9fafb" : "white",
+            color: readonly ? "#6b7280" : "#111827",
+          }}
+        />
+      </div>
+    );
+  }
+
+  // ─── Panel content ─────────────────────────────────────────────────────────
+
+  function renderLinkMode() {
+    return (
+      <>
+        {/* Peak search */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>
+            Asignar a cima de la base de datos
+          </label>
+          <div style={{ position: "relative" }}>
+            <input
+              autoFocus
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Buscar cima por nombre…"
+              style={{
+                width: "100%", padding: "8px 36px 8px 12px", fontSize: 14,
+                border: "1px solid #d1d5db", borderRadius: 8,
+                outline: "none", boxSizing: "border-box",
+              }}
+            />
+            {searching && (
+              <div style={{
+                position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                width: 16, height: 16, borderRadius: "50%",
+                border: "2px solid #d1d5db", borderTopColor: "#2563eb",
+                animation: "geo-spin 0.7s linear infinite",
+              }} />
+            )}
+          </div>
+
+          {!searching && searchQuery.trim().length >= 2 && searchResults.length === 0 && !selectedPeak && (
+            <div style={{
+              marginTop: 8, padding: "9px 12px",
+              background: "#fffbeb", border: "1px solid #fde68a",
+              borderRadius: 8, fontSize: 12, color: "#92400e",
+              display: "flex", alignItems: "flex-start", gap: 7,
+            }}>
+              <span style={{ flexShrink: 0, fontSize: 14 }}>⚠️</span>
+              <div>
+                <span style={{ fontWeight: 600 }}>Sin resultados en la base de datos</span>
+                <br />
+                Prueba con el nombre abreviado, en otro idioma o revisa la ortografía.
+              </div>
+            </div>
+          )}
+        </div>
+
+        {searchResults.length > 0 && (
+          <div style={{
+            border: "1px solid #e5e7eb", borderRadius: 8,
+            overflow: "hidden", marginBottom: 14,
+          }}>
+            {searchResults.map((peak) => (
+              <button
+                key={peak.id}
+                onClick={() => { setSelectedPeak(peak); setSearchQuery(peak.name); setSearchResults([]); }}
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "10px 14px", fontSize: 13, cursor: "pointer",
+                  background: selectedPeak?.id === peak.id ? "#eff6ff" : "white",
+                  border: "none", borderBottom: "1px solid #f3f4f6", color: "#111827",
+                }}
+              >
+                <span style={{ fontWeight: 600 }}>{peak.name}</span>
+                <span style={{ color: "#6b7280", marginLeft: 6 }}>{peak.altitudeM} m</span>
+                {peak.mountainRange && (
+                  <span style={{ color: "#9ca3af", marginLeft: 6, fontSize: 12 }}>· {peak.mountainRange}</span>
+                )}
+                {peak.gpsVerified && (
+                  <span style={{ color: "#16a34a", marginLeft: 6, fontSize: 11 }}>✓ Verificada</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {selectedPeak && searchResults.length === 0 && (
+          <div style={{
+            background: "#f0fdf4", border: "1px solid #bbf7d0",
+            borderRadius: 8, padding: "10px 14px", marginBottom: 14,
+            fontSize: 13, color: "#166534",
+          }}>
+            <strong>{selectedPeak.name}</strong> — {selectedPeak.altitudeM} m
+            {selectedPeak.mountainRange && ` · ${selectedPeak.mountainRange}`}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={closePanel} style={{
+            flex: 1, padding: "10px 0", fontSize: 14, fontWeight: 500,
+            background: "white", border: "1px solid #d1d5db",
+            borderRadius: 8, cursor: "pointer", color: "#374151",
+          }}>
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!selectedPeak || saving}
+            style={{
+              flex: 2, padding: "10px 0", fontSize: 14, fontWeight: 600,
+              background: selectedPeak && !saving ? "#2563eb" : "#93c5fd",
+              border: "none", borderRadius: 8,
+              cursor: selectedPeak && !saving ? "pointer" : "not-allowed",
+              color: "white",
+            }}
+          >
+            {saving ? "Guardando…" : "Guardar coordenadas"}
+          </button>
+        </div>
+
+        {/* Divider + create CTA */}
+        <div style={{
+          marginTop: 16, paddingTop: 14,
+          borderTop: "1px solid #f3f4f6",
+          display: "flex", alignItems: "center", gap: 12,
+        }}>
+          <span style={{ fontSize: 12, color: "#6b7280", flex: 1 }}>
+            ¿No existe en la base de datos?
+          </span>
+          <button
+            onClick={enterCreateMode}
+            style={{
+              padding: "8px 14px", fontSize: 12, fontWeight: 600,
+              background: "#f0fdf4", border: "1px solid #bbf7d0",
+              borderRadius: 8, cursor: "pointer", color: "#166534",
+              whiteSpace: "nowrap",
+            }}
+          >
+            + Crear nueva cima
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  function renderCreateMode() {
+    const canSubmit = createForm.name.trim() && createForm.altitudeM && !creating && !osmLoading;
+    return (
+      <>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <button
+              onClick={() => { setPanelMode("link"); setDuplicateWarning(false); }}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                fontSize: 13, color: "#6b7280", padding: 0, display: "flex", alignItems: "center", gap: 4,
+              }}
+            >
+              ← Volver
+            </button>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>Nueva cima</span>
+            {osmLoading && (
+              <span style={{
+                display: "inline-block", width: 14, height: 14,
+                borderRadius: "50%", border: "2px solid #d1d5db", borderTopColor: "#2563eb",
+                animation: "geo-spin-plain 0.7s linear infinite",
+              }} />
+            )}
+          </div>
+
+          {/* Duplicate warning */}
+          {duplicateWarning && (
+            <div style={{
+              marginBottom: 12, padding: "9px 12px",
+              background: "#fffbeb", border: "1px solid #fde68a",
+              borderRadius: 8, fontSize: 12, color: "#92400e",
+              display: "flex", alignItems: "flex-start", gap: 7,
+            }}>
+              <span style={{ flexShrink: 0, fontSize: 14 }}>⚠️</span>
+              <div>
+                <span style={{ fontWeight: 600 }}>Ya existe una cima con este nombre</span>
+                <br />
+                <button
+                  onClick={() => { setPanelMode("link"); setSearchQuery(createForm.name); searchPeaks(createForm.name); setDuplicateWarning(false); }}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "#d97706", fontWeight: 600, padding: 0, fontSize: 12,
+                    textDecoration: "underline",
+                  }}
+                >
+                  Enlazarla en su lugar →
+                </button>
+              </div>
+            </div>
+          )}
+
+          <FormField label="Nombre *" field="name" placeholder="Nombre de la cima" />
+          <FormField label="Altitud (m) *" field="altitudeM" type="number" placeholder="Altitud en metros" />
+
+          {/* Readonly coords */}
+          <div style={{ marginBottom: 10 }}>
+            <label style={{
+              fontSize: 11, fontWeight: 600, color: "#374151",
+              display: "flex", alignItems: "center", marginBottom: 4, gap: 6,
+            }}>
+              Coordenadas
+              <span style={{ fontSize: 10, color: "#6b7280" }}>🔒 GPS verificado</span>
+            </label>
+            <div style={{
+              padding: "7px 10px", fontSize: 12, fontFamily: "monospace",
+              border: "1px solid #e5e7eb", borderRadius: 7,
+              background: "#f9fafb", color: "#6b7280",
+            }}>
+              {clickedPoint?.lat.toFixed(6)}, {clickedPoint?.lng.toFixed(6)}
+            </div>
+          </div>
+
+          <FormField label="País" field="country" placeholder="ES" />
+          <FormField label="Comarca / Zona" field="comarca" placeholder="Comarca o zona" />
+          <FormField label="Serra / Masís" field="mountainRange" placeholder="Cadena montañosa" />
+
+          {/* Extra fields toggle */}
+          <button
+            onClick={() => setShowExtraFields((v) => !v)}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              fontSize: 12, color: "#6b7280", padding: "4px 0",
+              display: "flex", alignItems: "center", gap: 4,
+            }}
+          >
+            {showExtraFields ? "▾" : "▸"} Campos adicionales (tags)
+          </button>
+          {showExtraFields && (
+            <div style={{ marginTop: 8 }}>
+              <FormField label="Tag 1" field="tag1" placeholder="Tag libre" />
+              <FormField label="Tag 2" field="tag2" placeholder="Tag libre" />
+              <FormField label="Tag 3" field="tag3" placeholder="Tag libre" />
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={closePanel} style={{
+            flex: 1, padding: "10px 0", fontSize: 14, fontWeight: 500,
+            background: "white", border: "1px solid #d1d5db",
+            borderRadius: 8, cursor: "pointer", color: "#374151",
+          }}>
+            Cancelar
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={!canSubmit}
+            style={{
+              flex: 2, padding: "10px 0", fontSize: 14, fontWeight: 600,
+              background: canSubmit ? "#16a34a" : "#86efac",
+              border: "none", borderRadius: 8,
+              cursor: canSubmit ? "pointer" : "not-allowed",
+              color: "white",
+            }}
+          >
+            {creating ? "Guardando…" : "Guardar cima"}
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  // ─── Main render ──────────────────────────────────────────────────────────
 
   return (
     <div style={{ position: "relative", height: "calc(100vh - 56px)", overflow: "hidden" }}>
@@ -350,7 +862,7 @@ export default function GeoposicionClient() {
         </div>
 
         <span style={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }}>
-          Clic en punto rojo → asignar coordenadas
+          Clic en punto rojo → asignar o crear
         </span>
       </div>
 
@@ -365,9 +877,9 @@ export default function GeoposicionClient() {
           borderRadius: "16px 16px 0 0",
           boxShadow: "0 -4px 24px rgba(0,0,0,0.12)",
           padding: "20px 20px 32px",
-          maxHeight: "55vh", overflowY: "auto",
+          maxHeight: "65vh", overflowY: "auto",
         }}>
-          {/* OSM info */}
+          {/* OSM info header */}
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
@@ -378,6 +890,12 @@ export default function GeoposicionClient() {
                       {clickedPoint.osmEle} m
                     </span>
                   )}
+                  <span style={{
+                    fontSize: 10, fontWeight: 600, marginLeft: 8, padding: "1px 6px",
+                    borderRadius: 4, background: "#fef3c7", color: "#92400e",
+                  }}>
+                    OSM
+                  </span>
                 </div>
                 <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2, fontFamily: "monospace" }}>
                   {clickedPoint.lat.toFixed(6)}, {clickedPoint.lng.toFixed(6)}
@@ -395,130 +913,19 @@ export default function GeoposicionClient() {
             </div>
           </div>
 
-          {/* Peak search */}
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>
-              Asignar a cima de la base de datos
-            </label>
-            <div style={{ position: "relative" }}>
-              <input
-                autoFocus
-                type="text"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Buscar cima por nombre…"
-                style={{
-                  width: "100%", padding: "8px 36px 8px 12px", fontSize: 14,
-                  border: "1px solid #d1d5db", borderRadius: 8,
-                  outline: "none", boxSizing: "border-box",
-                }}
-              />
-              {searching && (
-                <div style={{
-                  position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-                  width: 16, height: 16, borderRadius: "50%",
-                  border: "2px solid #d1d5db", borderTopColor: "#2563eb",
-                  animation: "geo-spin 0.7s linear infinite",
-                }} />
-              )}
-            </div>
-            <style>{`@keyframes geo-spin { to { transform: translateY(-50%) rotate(360deg); } }`}</style>
+          <style>{`
+            @keyframes geo-spin { to { transform: translateY(-50%) rotate(360deg); } }
+            @keyframes geo-spin-plain { to { transform: rotate(360deg); } }
+          `}</style>
 
-            {/* Sin resultados */}
-            {!searching && searchQuery.trim().length >= 2 && searchResults.length === 0 && !selectedPeak && (
-              <div style={{
-                marginTop: 8, padding: "9px 12px",
-                background: "#fffbeb", border: "1px solid #fde68a",
-                borderRadius: 8, fontSize: 12, color: "#92400e",
-                display: "flex", alignItems: "flex-start", gap: 7,
-              }}>
-                <span style={{ flexShrink: 0, fontSize: 14 }}>⚠️</span>
-                <div>
-                  <span style={{ fontWeight: 600 }}>Sin resultados en la base de datos</span>
-                  <br />
-                  Prueba con el nombre abreviado, en otro idioma o revisa la ortografía.
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Results list */}
-          {searchResults.length > 0 && (
-            <div style={{
-              border: "1px solid #e5e7eb", borderRadius: 8,
-              overflow: "hidden", marginBottom: 14,
-            }}>
-              {searchResults.map((peak) => (
-                <button
-                  key={peak.id}
-                  onClick={() => { setSelectedPeak(peak); setSearchQuery(peak.name); setSearchResults([]); }}
-                  style={{
-                    display: "block", width: "100%", textAlign: "left",
-                    padding: "10px 14px", fontSize: 13, cursor: "pointer",
-                    background: selectedPeak?.id === peak.id ? "#eff6ff" : "white",
-                    border: "none",
-                    borderBottom: "1px solid #f3f4f6",
-                    color: "#111827",
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{peak.name}</span>
-                  <span style={{ color: "#6b7280", marginLeft: 6 }}>{peak.altitudeM} m</span>
-                  {peak.mountainRange && (
-                    <span style={{ color: "#9ca3af", marginLeft: 6, fontSize: 12 }}>· {peak.mountainRange}</span>
-                  )}
-                  {peak.gpsVerified && (
-                    <span style={{ color: "#16a34a", marginLeft: 6, fontSize: 11 }}>✓ Verificada</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Selected summary */}
-          {selectedPeak && searchResults.length === 0 && (
-            <div style={{
-              background: "#f0fdf4", border: "1px solid #bbf7d0",
-              borderRadius: 8, padding: "10px 14px", marginBottom: 14,
-              fontSize: 13, color: "#166534",
-            }}>
-              <strong>{selectedPeak.name}</strong> — {selectedPeak.altitudeM} m
-              {selectedPeak.mountainRange && ` · ${selectedPeak.mountainRange}`}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={closePanel}
-              style={{
-                flex: 1, padding: "10px 0", fontSize: 14, fontWeight: 500,
-                background: "white", border: "1px solid #d1d5db",
-                borderRadius: 8, cursor: "pointer", color: "#374151",
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={!selectedPeak || saving}
-              style={{
-                flex: 2, padding: "10px 0", fontSize: 14, fontWeight: 600,
-                background: selectedPeak && !saving ? "#2563eb" : "#93c5fd",
-                border: "none", borderRadius: 8,
-                cursor: selectedPeak && !saving ? "pointer" : "not-allowed",
-                color: "white",
-              }}
-            >
-              {saving ? "Guardando…" : "Guardar coordenadas"}
-            </button>
-          </div>
+          {panelMode === "link" ? renderLinkMode() : renderCreateMode()}
         </div>
       )}
 
       {/* Toast */}
       {toast && (
         <div style={{
-          position: "absolute", bottom: clickedPoint ? "calc(55vh + 16px)" : 24,
+          position: "absolute", bottom: clickedPoint ? "calc(65vh + 16px)" : 24,
           left: "50%", transform: "translateX(-50%)",
           background: toast.ok ? "#166534" : "#991b1b",
           color: "white", borderRadius: 24,
