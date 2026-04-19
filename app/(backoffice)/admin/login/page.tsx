@@ -52,7 +52,7 @@ function AdminLoginForm() {
           ⚙️
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Backoffice</h1>
-        <p className="mt-1 text-sm text-gray-500">MySummits · Administración</p>
+        <p className="mt-1 text-sm text-gray-500">AziAtlas · Administración</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
