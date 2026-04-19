@@ -398,7 +398,7 @@ export function FriendsClient({
             width: "100%", boxSizing: "border-box",
             padding: "10px 14px 10px 40px",
             border: "1px solid #e5e7eb", borderRadius: 10,
-            fontSize: 14, outline: "none",
+            fontSize: 16, outline: "none",
             background: "#f9fafb",
           }}
           onFocus={(e) => (e.target.style.borderColor = "#0369a1")}
@@ -582,7 +582,7 @@ export function FriendsClient({
                 placeholder={t.friends_searchPlaceholder}
                 style={{
                   width: "100%", boxSizing: "border-box", marginBottom: 10,
-                  padding: "8px 12px", fontSize: 13,
+                  padding: "8px 12px", fontSize: 16,
                   border: "1px solid #e5e7eb", borderRadius: 8, outline: "none",
                   background: "#f9fafb",
                 }}
@@ -676,7 +676,7 @@ export function FriendsClient({
             style={{
               flex: 1, padding: "9px 12px",
               border: "1px solid #e5e7eb", borderRadius: 8,
-              fontSize: 13, outline: "none", background: "#f9fafb",
+              fontSize: 16, outline: "none", background: "#f9fafb",
             }}
             onFocus={(e) => (e.target.style.borderColor = "#0369a1")}
             onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
