@@ -23,6 +23,8 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(100, Math.max(10, parseInt(searchParams.get("limit") ?? "50")));
   const skip = (page - 1) * limit;
   const gpsVerified = searchParams.get("gpsVerified"); // "yes" | "no" | null
+  const ascents = searchParams.get("ascents"); // "with" | "without" | null
+  const sort = searchParams.get("sort") ?? "pending";
 
   const where: Record<string, unknown> = {};
   if (q) {
@@ -38,11 +40,24 @@ export async function GET(req: NextRequest) {
   }
   if (gpsVerified === "yes") where.gpsVerified = true;
   if (gpsVerified === "no") where.gpsVerified = false;
+  if (ascents === "with") where.ascents = { some: {} };
+  if (ascents === "without") where.ascents = { none: {} };
+
+  const orderBy =
+    sort === "name"
+      ? [{ name: "asc" as const }]
+      : sort === "altitude"
+        ? [{ altitudeM: "desc" as const }, { name: "asc" as const }]
+        : sort === "ascents_desc"
+          ? [{ ascents: { _count: "desc" as const } }, { name: "asc" as const }]
+          : sort === "ascents_asc"
+            ? [{ ascents: { _count: "asc" as const } }, { name: "asc" as const }]
+            : [{ gpsVerified: "asc" as const }, { altitudeM: "desc" as const }, { name: "asc" as const }];
 
   const [peaks, total] = await Promise.all([
     prisma.peak.findMany({
       where,
-      orderBy: [{ altitudeM: "desc" }, { name: "asc" }],
+      orderBy,
       skip,
       take: limit,
       select: {

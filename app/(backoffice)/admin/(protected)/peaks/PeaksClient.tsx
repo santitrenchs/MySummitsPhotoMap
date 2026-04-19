@@ -29,6 +29,8 @@ export function PeaksClient() {
   const [q, setQ] = useState("");
   const [inputQ, setInputQ] = useState("");
   const [gpsFilter, setGpsFilter] = useState<"all" | "yes" | "no">("all");
+  const [ascentsFilter, setAscentsFilter] = useState<"all" | "with" | "without">("all");
+  const [sort, setSort] = useState<"pending" | "name" | "altitude" | "ascents_desc" | "ascents_asc">("pending");
   const [loading, setLoading] = useState(false);
 
   // Inline edit
@@ -43,11 +45,19 @@ export function PeaksClient() {
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchPeaks = useCallback(async (query: string, pg: number, gps: "all" | "yes" | "no") => {
+  const fetchPeaks = useCallback(async (
+    query: string,
+    pg: number,
+    gps: "all" | "yes" | "no",
+    ascents: "all" | "with" | "without",
+    sortBy: "pending" | "name" | "altitude" | "ascents_desc" | "ascents_asc"
+  ) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ q: query, page: String(pg), limit: String(LIMIT) });
       if (gps !== "all") params.set("gpsVerified", gps);
+      if (ascents !== "all") params.set("ascents", ascents);
+      params.set("sort", sortBy);
       const res = await fetch(`/api/admin/peaks?${params}`);
       const data = await res.json();
       setPeaks(data.peaks);
@@ -58,8 +68,8 @@ export function PeaksClient() {
   }, []);
 
   useEffect(() => {
-    fetchPeaks(q, page, gpsFilter);
-  }, [q, page, gpsFilter, fetchPeaks]);
+    fetchPeaks(q, page, gpsFilter, ascentsFilter, sort);
+  }, [q, page, gpsFilter, ascentsFilter, sort, fetchPeaks]);
 
   function handleSearchChange(val: string) {
     setInputQ(val);
@@ -68,6 +78,15 @@ export function PeaksClient() {
       setQ(val);
       setPage(1);
     }, 350);
+  }
+
+  function resetFilters() {
+    setInputQ("");
+    setQ("");
+    setGpsFilter("all");
+    setAscentsFilter("all");
+    setSort("pending");
+    setPage(1);
   }
 
   function startEdit(peak: Peak) {
@@ -150,49 +169,169 @@ export function PeaksClient() {
         </div>
       </div>
 
-      {/* Search bar + GPS filter */}
-      <div style={{ marginBottom: 16, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 480 }}>
-          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 15 }}>🔍</span>
-          <input
-            type="text"
-            placeholder="Buscar por nombre, comarca, cordillera, tag, país..."
-            value={inputQ}
-            onChange={(e) => handleSearchChange(e.target.value)}
+      {/* Filters */}
+      <div style={{
+        marginBottom: 16,
+        padding: 14,
+        background: "white",
+        border: "1px solid #e2e8f0",
+        borderRadius: 14,
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+      }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#334155", marginBottom: 4 }}>Filtros</div>
+            <div style={{ fontSize: 12, color: "#94a3b8" }}>Encuentra rápido cimas pendientes de validar o todavía sin uso.</div>
+          </div>
+          <button
+            onClick={resetFilters}
             style={{
-              width: "100%", boxSizing: "border-box",
-              border: "1px solid #e2e8f0", borderRadius: 8,
-              padding: "9px 12px 9px 36px", fontSize: 14,
-              color: "#0f172a", outline: "none",
+              border: "1px solid #e2e8f0",
+              background: "#fff",
+              color: "#64748b",
+              borderRadius: 10,
+              padding: "8px 12px",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
             }}
-          />
-          {inputQ && (
-            <button
-              onClick={() => { setInputQ(""); handleSearchChange(""); }}
-              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 16 }}
-            >×</button>
-          )}
+          >
+            Limpiar filtros
+          </button>
         </div>
 
-        {/* GPS verified filter chips */}
-        <div style={{ display: "flex", gap: 4 }}>
-          {([ ["all", "Todas"], ["yes", "✅ Verificadas"], ["no", "⬜ Sin verificar"] ] as const).map(([val, label]) => (
-            <button
-              key={val}
-              onClick={() => { setGpsFilter(val); setPage(1); }}
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <FilterLabel>Estado</FilterLabel>
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            padding: 4,
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: 999,
+          }}>
+            {([
+              ["all", "Todas"],
+              ["yes", "Verificadas"],
+              ["no", "Sin verificar"],
+            ] as const).map(([val, label]) => (
+              <button
+                key={val}
+                onClick={() => { setGpsFilter(val); setPage(1); }}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 999,
+                  border: "none",
+                  background: gpsFilter === val ? "#0f172a" : "transparent",
+                  color: gpsFilter === val ? "white" : "#64748b",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <FilterLabel>Ascensiones</FilterLabel>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {([
+              ["all", "Todas"],
+              ["with", "Con ascensiones"],
+              ["without", "Sin ascensiones"],
+            ] as const).map(([val, label]) => (
+              <button
+                key={val}
+                onClick={() => { setAscentsFilter(val); setPage(1); }}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 999,
+                  border: "1px solid",
+                  borderColor: ascentsFilter === val ? "#bae6fd" : "#e2e8f0",
+                  background: ascentsFilter === val ? "#eff6ff" : "#fff",
+                  color: ascentsFilter === val ? "#0369a1" : "#64748b",
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 260, maxWidth: 520 }}>
+            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 15 }}>🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar por nombre, comarca, cordillera, tag o país..."
+              value={inputQ}
+              onChange={(e) => handleSearchChange(e.target.value)}
               style={{
-                padding: "6px 12px", borderRadius: 20, border: "1px solid",
-                fontSize: 12, fontWeight: 600, cursor: "pointer",
-                borderColor: gpsFilter === val ? "#0f172a" : "#e2e8f0",
-                background: gpsFilter === val ? "#0f172a" : "white",
-                color: gpsFilter === val ? "white" : "#64748b",
-                whiteSpace: "nowrap",
+                width: "100%", boxSizing: "border-box",
+                border: "1px solid #e2e8f0", borderRadius: 10,
+                padding: "10px 12px 10px 36px", fontSize: 14,
+                color: "#0f172a", outline: "none", background: "#fff",
               }}
-            >{label}</button>
-          ))}
+            />
+            {inputQ && (
+              <button
+                onClick={() => { setInputQ(""); handleSearchChange(""); }}
+                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 16 }}
+              >×</button>
+            )}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <FilterLabel>Ordenar</FilterLabel>
+            <select
+              value={sort}
+              onChange={(e) => { setSort(e.target.value as typeof sort); setPage(1); }}
+              style={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 10,
+                background: "white",
+                color: "#334155",
+                padding: "10px 12px",
+                fontSize: 13,
+                fontWeight: 600,
+                outline: "none",
+              }}
+            >
+              <option value="pending">Pendientes primero</option>
+              <option value="name">Nombre A-Z</option>
+              <option value="altitude">Altitud</option>
+              <option value="ascents_desc">Más ascensiones</option>
+              <option value="ascents_asc">Menos ascensiones</option>
+            </select>
+          </div>
+
+          {loading && <span style={{ fontSize: 13, color: "#94a3b8" }}>Cargando...</span>}
         </div>
 
-        {loading && <span style={{ fontSize: 13, color: "#94a3b8" }}>Cargando...</span>}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>
+            {total.toLocaleString("es-ES")} resultado{total !== 1 ? "s" : ""}
+          </span>
+          <span style={{ fontSize: 12, color: "#94a3b8" }}>·</span>
+          <span style={{ fontSize: 12, color: "#64748b" }}>
+            {gpsFilter === "all" ? "Todas las cimas" : gpsFilter === "yes" ? "Solo verificadas" : "Solo sin verificar"}
+          </span>
+          <span style={{ fontSize: 12, color: "#94a3b8" }}>·</span>
+          <span style={{ fontSize: 12, color: "#64748b" }}>
+            {ascentsFilter === "all" ? "Con y sin ascensiones" : ascentsFilter === "with" ? "Con ascensiones" : "Sin ascensiones"}
+          </span>
+        </div>
       </div>
 
       {/* Delete error */}
@@ -285,6 +424,20 @@ export function PeaksClient() {
 }
 
 // ── View row ──────────────────────────────────────────────────────────────────
+
+function FilterLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{
+      fontSize: 11,
+      fontWeight: 800,
+      letterSpacing: "0.04em",
+      textTransform: "uppercase",
+      color: "#64748b",
+    }}>
+      {children}
+    </span>
+  );
+}
 
 function ViewRow({
   peak, isLast, onEdit, onDelete, deleting, onToggleGps,
