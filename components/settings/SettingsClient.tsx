@@ -213,7 +213,7 @@ export function SettingsClient({
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 8,
-    fontSize: 14, color: "#111827", outline: "none", boxSizing: "border-box", background: "white",
+    fontSize: 16, color: "#111827", outline: "none", boxSizing: "border-box", background: "white",
   };
 
   const usernameIndicator = () => {

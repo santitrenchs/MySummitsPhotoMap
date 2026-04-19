@@ -194,7 +194,7 @@ export function NewAscentForm({
   const inputStyle = {
     width: "100%", padding: "8px 12px",
     border: "1px solid #d1d5db", borderRadius: 8,
-    fontSize: 14, color: "#111827",
+    fontSize: 16, color: "#111827",
     outline: "none", boxSizing: "border-box" as const,
   };
 

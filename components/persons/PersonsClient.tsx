@@ -246,7 +246,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                   onKeyDown={(e) => { if (e.key === "Enter") handleSaveEdit(); if (e.key === "Escape") setEditingPerson(null); }}
                   placeholder={t.people_fullName}
                   style={{
-                    width: "100%", padding: "10px 12px", fontSize: 14, fontWeight: 600,
+                    width: "100%", padding: "10px 12px", fontSize: 16, fontWeight: 600,
                     border: "1.5px solid #e5e7eb", borderRadius: 10, outline: "none",
                     boxSizing: "border-box",
                   }}
@@ -263,7 +263,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                   onKeyDown={(e) => { if (e.key === "Enter") handleSaveEdit(); if (e.key === "Escape") setEditingPerson(null); }}
                   placeholder="name@example.com"
                   style={{
-                    width: "100%", padding: "10px 12px", fontSize: 14,
+                    width: "100%", padding: "10px 12px", fontSize: 16,
                     border: "1.5px solid #e5e7eb", borderRadius: 10, outline: "none",
                     boxSizing: "border-box", color: "#374151",
                   }}
@@ -449,7 +449,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
-            width: "100%", padding: "10px 18px", fontSize: 14,
+            width: "100%", padding: "10px 18px", fontSize: 16,
             border: "1.5px solid #e5e7eb", borderRadius: 24,
             outline: "none", background: "white", boxSizing: "border-box",
           }}

@@ -8,6 +8,30 @@ const APP_URL = (
   "https://www.aziatlas.com"
 ).replace(/\/$/, "");
 
+function renderBrandHeader() {
+  return `
+        <tr>
+          <td style="padding:24px 32px 20px;background:#ffffff;border-bottom:1px solid #f1f5f9;">
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 auto;">
+              <tr>
+                <td style="vertical-align:middle;padding-right:12px;">
+                  <svg width="42" height="42" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M3 19L8.5 7L13 14L17 9.5L21 19Z" fill="#DBEAFE" stroke="#0369A1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M17 9.5L19 6.5" stroke="#0369A1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="19" cy="6" r="1.2" fill="#0369A1"/>
+                  </svg>
+                </td>
+                <td style="vertical-align:middle;">
+                  <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.04em;color:#0369a1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                    AziAtlas
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`;
+}
+
 export async function sendPasswordResetEmail(to: string, token: string) {
   const resetUrl = `${APP_URL}/reset-password?token=${token}`;
 
@@ -25,11 +49,7 @@ export async function sendPasswordResetEmail(to: string, token: string) {
     <tr><td align="center">
       <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
         <!-- Header -->
-        <tr>
-          <td style="background:#0369a1;padding:28px 32px;text-align:center;">
-            <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">🏔️ AziAtlas</p>
-          </td>
-        </tr>
+${renderBrandHeader()}
         <!-- Body -->
         <tr>
           <td style="padding:32px;">
@@ -96,11 +116,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
     <tr><td align="center">
       <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
         <!-- Header -->
-        <tr>
-          <td style="background:#0369a1;padding:28px 32px;text-align:center;">
-            <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">🏔️ AziAtlas</p>
-          </td>
-        </tr>
+${renderBrandHeader()}
         <!-- Body -->
         <tr>
           <td style="padding:32px;">
@@ -165,11 +181,7 @@ export async function sendFriendInvitationEmail(
     <tr><td align="center">
       <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
         <!-- Header -->
-        <tr>
-          <td style="background:#0369a1;padding:28px 32px;text-align:center;">
-            <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">🏔️ AziAtlas</p>
-          </td>
-        </tr>
+${renderBrandHeader()}
         <!-- Body -->
         <tr>
           <td style="padding:32px;">

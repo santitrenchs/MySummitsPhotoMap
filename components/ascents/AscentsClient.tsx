@@ -49,7 +49,7 @@ function PersonPicker({
         value={q}
         onChange={(e) => setQ(e.target.value)}
         style={{
-          width: "100%", padding: "8px 14px", fontSize: 13,
+          width: "100%", padding: "8px 14px", fontSize: 16,
           border: "1.5px solid #e5e7eb", borderRadius: 20,
           outline: "none", background: "#f9fafb", boxSizing: "border-box",
           marginBottom: 8,
@@ -229,7 +229,7 @@ export function AscentsClient({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
-            flex: 1, padding: "10px 18px", fontSize: 14,
+            flex: 1, padding: "10px 18px", fontSize: 16,
             border: "1.5px solid #e5e7eb", borderRadius: 24,
             outline: "none", background: "white", boxSizing: "border-box",
           }}

@@ -336,7 +336,7 @@ export function PhotoFaceTagger({
                     style={{
                       width: "100%", padding: "6px 8px",
                       border: "1px solid #d1d5db", borderRadius: 6,
-                      fontSize: 13, outline: "none", boxSizing: "border-box",
+                      fontSize: 16, outline: "none", boxSizing: "border-box",
                     }}
                   />
                   {suggestions.length > 0 && (

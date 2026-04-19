@@ -594,7 +594,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
                     style={{
                       width: "100%", padding: "7px 10px",
                       border: "1px solid #d1d5db", borderRadius: 8,
-                      fontSize: 14, color: "#111827", outline: "none",
+                      fontSize: 16, color: "#111827", outline: "none",
                       boxSizing: "border-box", background: "white",
                       resize: "vertical", opacity: savingField ? 0.6 : 1,
                     }}
@@ -651,7 +651,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
                     style={{
                       width: "100%", padding: "7px 10px",
                       border: "1px solid #d1d5db", borderRadius: 8,
-                      fontSize: 14, color: "#111827", outline: "none",
+                      fontSize: 16, color: "#111827", outline: "none",
                       boxSizing: "border-box", background: "white",
                       opacity: savingField ? 0.6 : 1,
                     }}
@@ -794,7 +794,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
                       style={{
                         width: "100%", padding: "8px 10px",
                         border: "1px solid #d1d5db", borderRadius: 8,
-                        fontSize: 13, color: "#111827", outline: "none",
+                        fontSize: 16, color: "#111827", outline: "none",
                         boxSizing: "border-box", background: "white",
                       }}
                     />
