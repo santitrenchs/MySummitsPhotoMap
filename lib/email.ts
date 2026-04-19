@@ -1,8 +1,12 @@
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.RESEND_FROM ?? "AziAtlas <noreply@mail.azitracks.com>";
-const APP_URL = process.env.NEXTAUTH_URL ?? "https://www.azitracks.com";
+const FROM = process.env.RESEND_FROM ?? "AziAtlas <noreply@mail.aziatlas.com>";
+const APP_URL = (
+  process.env.NEXTAUTH_URL ??
+  process.env.AUTH_URL ??
+  "https://www.aziatlas.com"
+).replace(/\/$/, "");
 
 export async function sendPasswordResetEmail(to: string, token: string) {
   const resetUrl = `${APP_URL}/reset-password?token=${token}`;
@@ -57,7 +61,7 @@ export async function sendPasswordResetEmail(to: string, token: string) {
         <!-- Footer -->
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · azitracks.com</p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · www.aziatlas.com</p>
           </td>
         </tr>
       </table>
@@ -123,7 +127,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
         <!-- Footer -->
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">azitracks.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
           </td>
         </tr>
       </table>
@@ -201,7 +205,7 @@ export async function sendFriendInvitationEmail(
         <!-- Footer -->
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">azitracks.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
           </td>
         </tr>
       </table>

@@ -74,7 +74,7 @@ export const es: Dict = {
   friends_add: "Añadir", friends_requestSent: "Enviada", friends_alreadyFriends: "Amigos",
   friends_accept: "Aceptar", friends_reject: "Ignorar", friends_remove: "Eliminar amigo",
   friends_cancel: "Cancelar solicitud", friends_pendingSection: "Solicitudes ({n})",
-  friends_noPending: "Sin solicitudes pendientes", friends_noFriends: "Aún no tienes amigos en MySummits",
+  friends_noPending: "Sin solicitudes pendientes", friends_noFriends: "Aún no tienes amigos en AziAtlas",
   friends_noFriendsSub: "Busca a tus compañeros de montaña arriba",
   friends_noResults: "No se encontraron usuarios", friends_since: "Amigos desde",
   friends_block: "Bloquear", friends_blocked: "Bloqueado", friends_unblock: "Desbloquear",

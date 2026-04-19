@@ -6,7 +6,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MySummits — Your Mountain Summit Map",
+  title: "AziAtlas — Your Mountain Summit Map",
   description: "Track your mountain ascents with photos and people",
 };
 

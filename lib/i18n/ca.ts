@@ -74,7 +74,7 @@ export const ca: Dict = {
   friends_add: "Afegir", friends_requestSent: "Enviada", friends_alreadyFriends: "Amics",
   friends_accept: "Acceptar", friends_reject: "Ignorar", friends_remove: "Eliminar amic",
   friends_cancel: "Cancel·lar sol·licitud", friends_pendingSection: "Sol·licituds ({n})",
-  friends_noPending: "Sense sol·licituds pendents", friends_noFriends: "Encara no tens amics a MySummits",
+  friends_noPending: "Sense sol·licituds pendents", friends_noFriends: "Encara no tens amics a AziAtlas",
   friends_noFriendsSub: "Cerca els teus companys de muntanya aquí dalt",
   friends_noResults: "No s'han trobat usuaris", friends_since: "Amics des de",
   friends_block: "Bloquejar", friends_blocked: "Bloquejat", friends_unblock: "Desbloquejar",
