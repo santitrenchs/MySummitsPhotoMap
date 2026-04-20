@@ -43,6 +43,7 @@ export function PhotoTagStep({
   const [persons, setPersons] = useState<Person[]>([]);
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [drawMode, setDrawMode] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerH, setHeaderH] = useState(80);
@@ -69,14 +70,28 @@ export function PhotoTagStep({
     };
   }, []);
 
-  // Fetch persons list for tagging suggestions
+  // Revoke blob URL on unmount
   useEffect(() => {
-    fetch("/api/persons")
-      .then((r) => r.json())
-      .then((d) => setPersons(Array.isArray(d) ? d : []));
     const url = objUrlRef.current;
     return () => URL.revokeObjectURL(url);
   }, []);
+
+  // Debounced server-side search — only friends with linked accounts
+  useEffect(() => {
+    if (!search.trim()) {
+      setPersons([]);
+      return;
+    }
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      fetch(`/api/persons?q=${encodeURIComponent(search.trim())}`)
+        .then((r) => r.json())
+        .then((d) => setPersons(Array.isArray(d) ? d : []));
+    }, 300);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [search]);
 
   // Measure rendered image size via ResizeObserver
   useLayoutEffect(() => {
@@ -204,9 +219,6 @@ export function PhotoTagStep({
   }
 
   const activeFace = faces.find((f) => f.tempId === activeFaceId) ?? null;
-  const filteredPersons = search.trim()
-    ? persons.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
-    : persons;
   // Count confirmed tags + pending suggestions (will be auto-confirmed on continue)
   const taggedCount = faces.filter((f) => f.personName || f.suggestion).length;
 
@@ -662,7 +674,7 @@ export function PhotoTagStep({
                 </div>
               )}
 
-              {filteredPersons.slice(0, 10).map((person) => {
+              {persons.slice(0, 5).map((person) => {
                 const isVerified = !!person.userId;
                 return (
                   <div

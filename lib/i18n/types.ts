@@ -158,6 +158,7 @@ export type Dict = {
   auth_voucher_invalid: string; auth_voucher_verified: string;
   auth_voucher_noCode: string; auth_voucher_tokenExpired: string;
   auth_nameHint: string; auth_emailExists: string; auth_createAccountSubmit: string;
+  auth_username: string; auth_usernameHint: string; auth_usernameTaken: string; auth_usernameInvalid: string;
   auth_haveCode: string;
 
   // Crop modal
@@ -202,9 +203,12 @@ export type Dict = {
   home_badgeRegions: string; home_badgePhotos: string;
   home_badgeFriends: string;
 
-  // Level names (current 5-level system)
+  // Level names
   home_level1: string; home_level2: string; home_level3: string;
-  home_level4: string; home_level5: string;
+  home_level4: string; home_level5: string; home_level6: string;
+  // Level hero card quotes (levels 5 & 6)
+  home_level5Quote: string; home_level6Quote: string;
+  home_maxLevelHint: string;
   // Hero metrics
   home_heroSubtitle: string;
   home_metricPeaks: string; home_metricAscents: string; home_metricMaxAlt: string;

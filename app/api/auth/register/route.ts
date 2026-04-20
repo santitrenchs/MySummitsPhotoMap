@@ -9,6 +9,7 @@ const SECRET = new TextEncoder().encode(process.env.AUTH_SECRET ?? "");
 
 const RegisterSchema = z.object({
   name:              z.string().min(2).max(100),
+  username:          z.string().min(3).max(30).regex(/^[a-z0-9_]+$/, "Invalid username"),
   email:             z.string().email(),
   password:          z.string().min(8),
   registrationToken: z.string().min(1),
@@ -36,7 +37,7 @@ async function uniqueSlug(base: string): Promise<string> {
 export async function POST(req: NextRequest) {
   try {
     const body = RegisterSchema.parse(await req.json());
-    const { name, email, password, registrationToken } = body;
+    const { name, username, email, password, registrationToken } = body;
 
     // ── Verify registration token ──────────────────────────────────────────
     let voucherId: string;
@@ -53,10 +54,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Check email uniqueness before opening transaction ──────────────────
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    // ── Check uniqueness before opening transaction ────────────────────────
+    const [existingEmail, existingUsername] = await Promise.all([
+      prisma.user.findUnique({ where: { email } }),
+      prisma.user.findUnique({ where: { username } }),
+    ]);
+    if (existingEmail) {
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+    }
+    if (existingUsername) {
+      return NextResponse.json({ error: "Username already taken" }, { status: 409 });
     }
 
     const [passwordHash, slug] = await Promise.all([
@@ -81,7 +88,7 @@ export async function POST(req: NextRequest) {
       }
 
       const user = await tx.user.create({
-        data: { email, name, passwordHash, voucherId },
+        data: { email, name, username, passwordHash, voucherId },
       });
 
       const tenant = await tx.tenant.create({

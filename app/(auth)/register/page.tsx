@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
@@ -22,10 +22,24 @@ export default function RegisterPage() {
 
   // Form step state
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameEdited, setUsernameEdited] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Auto-suggest username from name while user hasn't manually edited it
+  useEffect(() => {
+    if (usernameEdited) return;
+    const suggested = name.toLowerCase().trim()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9_]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 30);
+    setUsername(suggested);
+  }, [name, usernameEdited]);
 
   // ── Step A: verify voucher ────────────────────────────────────────────────
   async function handleVerify(e: React.FormEvent) {
@@ -66,7 +80,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, registrationToken }),
+        body: JSON.stringify({ name, username, email, password, registrationToken }),
       });
 
       const data = await res.json();
@@ -80,7 +94,11 @@ export default function RegisterPage() {
           return;
         }
         setFormError(
-          res.status === 409 ? t.auth_emailExists : (data.error ?? t.auth_registrationFailed)
+          res.status === 409 && data.error === "Username already taken"
+            ? t.auth_usernameTaken
+            : res.status === 409
+            ? t.auth_emailExists
+            : (data.error ?? t.auth_registrationFailed)
         );
         return;
       }
@@ -197,6 +215,35 @@ export default function RegisterPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <p className="mt-1 text-xs text-gray-400">{t.auth_nameHint}</p>
+              </div>
+
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t.auth_username}
+                </label>
+                <div style={{ position: "relative" }}>
+                  <span style={{
+                    position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
+                    fontSize: 14, color: "#6b7280", pointerEvents: "none",
+                  }}>@</span>
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => {
+                      setUsernameEdited(true);
+                      setFormError(null);
+                      setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+                    }}
+                    required
+                    autoComplete="username"
+                    minLength={3}
+                    maxLength={30}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    style={{ paddingLeft: 28 }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-400">{t.auth_usernameHint}</p>
               </div>
 
               <div>

@@ -7,7 +7,9 @@ export async function GET(req: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim();
-  const persons = await listPersons(session.user.tenantId, q ?? undefined);
+  const persons = await listPersons(session.user.tenantId, q ?? undefined, {
+    currentUserId: session.user.id,
+  });
   return NextResponse.json(persons);
 }
 

@@ -87,17 +87,52 @@ export async function deletePerson(tenantId: string, personId: string) {
   return db.person.deleteMany({ where: { id: personId, tenantId } });
 }
 
-export async function listPersons(tenantId: string, search?: string) {
+export async function listPersons(
+  tenantId: string,
+  search?: string,
+  options?: { currentUserId?: string },
+) {
+  if (!search) return [];
   const db = await getTenantConnection(tenantId);
-  return db.person.findMany({
+
+  // Fetch friend user IDs for priority sorting
+  let friendUserIds = new Set<string>();
+  if (options?.currentUserId) {
+    const friendships = await prisma.friendship.findMany({
+      where: {
+        OR: [
+          { requesterId: options.currentUserId, status: "ACCEPTED" },
+          { addresseeId: options.currentUserId, status: "ACCEPTED" },
+        ],
+      },
+      select: { requesterId: true, addresseeId: true },
+    });
+    friendUserIds = new Set(
+      friendships.map((f) =>
+        f.requesterId === options.currentUserId ? f.addresseeId : f.requesterId,
+      ),
+    );
+  }
+
+  // Fetch more than needed so we can sort by priority before slicing
+  const rows = await db.person.findMany({
     where: {
       tenantId,
-      ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
+      name: { contains: search, mode: "insensitive" },
     },
     orderBy: { name: "asc" },
     select: { id: true, name: true, email: true, userId: true },
-    take: search ? 10 : undefined,
+    take: 20,
   });
+
+  // Priority: current user (0) → friends (1) → rest (2)
+  const priority = (p: { userId?: string | null }) => {
+    if (p.userId === options?.currentUserId) return 0;
+    if (p.userId && friendUserIds.has(p.userId)) return 1;
+    return 2;
+  };
+
+  return rows.sort((a, b) => priority(a) - priority(b)).slice(0, 5);
 }
 
 export async function findOrCreatePerson(tenantId: string, name: string) {

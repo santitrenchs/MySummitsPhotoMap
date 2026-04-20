@@ -321,6 +321,17 @@ Do NOT use `PhotoFaceTagger` for this flow — it's a lower-level component used
 ### `ImageCropModal` ratios
 Only two ratios are offered: **1:1** and **4:5**. The 16:9 ratio was removed. Both work correctly with the 4:5 feed cards and the detail page hero.
 
+### `ImageCropModal` rotation (implemented 2026-04-20)
+A "↻ Girar 90°" button below the zoom slider allows rotating the photo in 90° CW increments before cropping.
+
+**Key implementation details:**
+- `rotation: 0 | 90 | 180 | 270` state, initialized from `initialRotation` prop (used for re-crop to restore previous rotation).
+- `effectiveDims(rot)` — swaps `naturalWidth`/`naturalHeight` for 90°/270° so `minS` and `clamp()` work correctly on rotated images.
+- `applyCrop()` uses `ctx.translate → ctx.rotate → ctx.translate(offset) → ctx.drawImage` to produce the rotated display JPEG, mirroring the CSS `translate + rotate` transform on the `<img>`.
+- `CropMeta` now includes `rotation: 0|90|180|270`. Persisted as `cropRotation Int?` on `Photo` model in Prisma.
+- `touchmove` is registered as a **native non-passive listener** (`{ passive: false }`) via `useEffect` on `containerRef` so `e.preventDefault()` works. React's `onTouchMove` prop is passive by default and would throw a warning. The handler is kept in a `touchMoveRef` that updates every render so it always sees fresh state.
+- `onTouchStart` / `onTouchEnd` remain as React event handlers (they don't call `preventDefault`).
+
 ---
 
 ## Feed Card Caption Format
@@ -475,6 +486,8 @@ When tapping a climbed peak, the panel shows the hero photo (if any) with altitu
 - **Self-tagging always ACCEPTED**: `setFaceTag()` in `face-detection.service.ts` accepts a `taggerUserId` param. If `taggerUserId === person.userId`, the tag is created as ACCEPTED regardless of `reviewTagsBeforePost`. Always pass `session.user.id` when calling `setFaceTag` from API routes.
 - **Invitations use Vouchers, not a separate model**: Friend invitations create a standard `Voucher` record with `maxUses: 1`, `inviterId`, and `inviteeEmail` set. Admin-created vouchers have these fields null. The invitation flow does NOT create any new token model — it reuses the existing voucher system.
 - **Email before voucher creation**: In `POST /api/invitations`, the email is sent BEFORE creating the Voucher in the DB. This ensures no orphaned vouchers if the email fails. If you reorder this, a failed email will leave an active voucher that blocks re-invitation.
+- **PhotoTagStep header must be outside the zIndex 1100 stacking context**: The face-selection bottom sheet backdrop renders as `position:fixed; inset:0; zIndex:1200`. If the header (skip/done buttons) is inside the `zIndex:1100` container, the backdrop covers it and touches on the buttons are intercepted by the backdrop — the button feels unresponsive. Fix: render the header as a separate `position:fixed; zIndex:1300` div at the top of the JSX, outside the main container. Use a `headerRef` + `useEffect` to measure its height and apply it as `paddingTop` on the main container so the photo area starts below the header.
+- **`ImageCropModal` touchmove must be non-passive**: React registers `onTouchMove` as a passive event listener, so calling `e.preventDefault()` inside it has no effect and logs a warning. Register the touchmove handler as a native listener with `{ passive: false }` via `useEffect` on the container ref. Keep the handler logic in a `useRef` that is reassigned every render (not a dependency of the effect) so the native listener always reads fresh React state without needing to be re-registered.
 
 ---
 
