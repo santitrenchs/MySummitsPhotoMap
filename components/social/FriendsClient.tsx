@@ -129,6 +129,30 @@ export function FriendsClient({
   const [searching, setSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    function handleClick(e: MouseEvent) {
+      if (!(e.target as HTMLElement).closest("[data-friend-menu]")) setOpenMenuId(null);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [openMenuId]);
+
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  useEffect(() => { setVisibleCount(20); }, [query]);
+
+  const filteredFriends = query.trim().length >= 2
+    ? friends.filter((f) =>
+        f.friend.name.toLowerCase().includes(query.toLowerCase()) ||
+        f.friend.username?.toLowerCase().includes(query.toLowerCase())
+      )
+    : friends;
+
+  const visibleFriends = filteredFriends.slice(0, visibleCount);
+
   // ── Build status for quick lookup ──────────────────────────────────────────
   function getStatus(userId: string): { status: SearchResult["status"]; friendshipId?: string } {
     const f = friends.find((x) => x.friend.id === userId);
@@ -387,69 +411,34 @@ export function FriendsClient({
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div>
-      {/* ── Search ── */}
-      <div style={{ position: "relative", marginBottom: 24 }}>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder={t.friends_searchPlaceholder}
-          style={{
-            width: "100%", boxSizing: "border-box",
-            padding: "10px 14px 10px 40px",
-            border: "1px solid #e5e7eb", borderRadius: 10,
-            fontSize: 16, outline: "none",
-            background: "#f9fafb",
-          }}
-          onFocus={(e) => (e.target.style.borderColor = "#0369a1")}
-          onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-        />
-        <svg style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }}
-          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+      {/* ── Add friends (invite + search grouped) ── */}
+      <div style={{ marginBottom: 28, paddingBottom: 24, borderBottom: "1px solid #f3f4f6" }}>
+        <SectionHeader label={t.friends_addSection} />
 
-        {/* Results dropdown */}
-        {query.trim().length >= 2 && (
-          <div style={{
-            position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-            background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.1)", overflow: "hidden",
-          }}>
-            {searching ? (
-              <p style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af", margin: 0 }}>…</p>
-            ) : results.length === 0 ? (
-              <p style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af", margin: 0 }}>{t.friends_noResults}</p>
-            ) : (
-              results.map((user) => (
-                <div key={user.id} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 14px", borderBottom: "1px solid #f3f4f6",
-                }}>
-                  <Avatar name={user.name} size={32} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{user.name}</p>
-                    {user.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{user.username}</p>}
-                  </div>
-                  {user.status === "none" && (
-                    <Btn onClick={() => addFriend(user)}>{t.friends_add}</Btn>
-                  )}
-                  {user.status === "pending_sent" && (
-                    <Btn variant="ghost" onClick={() => remove(user.friendshipId!, user.id)}>{t.friends_requestSent}</Btn>
-                  )}
-                  {user.status === "pending_received" && (
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <Btn onClick={() => accept(incoming.find((r) => r.id === user.friendshipId)!)}>{t.friends_accept}</Btn>
-                      <Btn variant="ghost" onClick={() => reject(user.friendshipId!)}>{t.friends_reject}</Btn>
-                    </div>
-                  )}
-                  {user.status === "accepted" && (
-                    <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 600 }}>✓ {t.friends_alreadyFriends}</span>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
+        {/* Invite by email */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          <input
+            type="email"
+            value={inviteEmail}
+            onChange={(e) => { setInviteEmail(e.target.value); setInviteStatus(null); }}
+            onKeyDown={(e) => { if (e.key === "Enter") sendInvite(); }}
+            placeholder={t.friends_invitePlaceholder}
+            style={{
+              flex: 1, padding: "9px 12px",
+              border: "1px solid #e5e7eb", borderRadius: 8,
+              fontSize: 16, outline: "none", background: "#f9fafb",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "#0369a1")}
+            onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+          />
+          <Btn onClick={sendInvite} disabled={inviteStatus === "sending" || !inviteEmail.trim()}>
+            {inviteStatus === "sending" ? t.friends_inviteSending : t.friends_inviteBtn}
+          </Btn>
+        </div>
+        {inviteStatusMsg() && (
+          <p style={{ fontSize: 12, color: inviteStatusMsg()!.color, margin: "0 0 8px" }}>
+            {inviteStatusMsg()!.text}
+          </p>
         )}
       </div>
 
@@ -508,22 +497,155 @@ export function FriendsClient({
         </div>
       )}
 
+      {/* ── Search (filters friend list) ── */}
+      {friends.length > 0 && (
+        <div style={{ position: "relative", marginBottom: 12 }}>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder={t.friends_searchPlaceholder}
+            style={{
+              width: "100%", boxSizing: "border-box",
+              padding: "9px 14px 9px 38px",
+              border: "1px solid #e5e7eb", borderRadius: 10,
+              fontSize: 16, outline: "none", background: "#f9fafb",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "#0369a1")}
+            onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+          />
+          <svg style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }}
+            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          {query.trim().length >= 2 && (
+            <div style={{
+              position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
+              background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.1)", overflow: "hidden",
+            }}>
+              {searching ? (
+                <p style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af", margin: 0 }}>…</p>
+              ) : results.length === 0 ? (
+                <p style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af", margin: 0 }}>{t.friends_noResults}</p>
+              ) : (
+                results.map((user) => (
+                  <div key={user.id} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px 14px", borderBottom: "1px solid #f3f4f6",
+                  }}>
+                    <Avatar name={user.name} size={32} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{user.name}</p>
+                      {user.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{user.username}</p>}
+                    </div>
+                    {user.status === "none" && (
+                      <Btn onClick={() => addFriend(user)}>{t.friends_add}</Btn>
+                    )}
+                    {user.status === "pending_sent" && (
+                      <Btn variant="ghost" onClick={() => remove(user.friendshipId!, user.id)}>{t.friends_requestSent}</Btn>
+                    )}
+                    {user.status === "pending_received" && (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <Btn onClick={() => accept(incoming.find((r) => r.id === user.friendshipId)!)}>{t.friends_accept}</Btn>
+                        <Btn variant="ghost" onClick={() => reject(user.friendshipId!)}>{t.friends_reject}</Btn>
+                      </div>
+                    )}
+                    {user.status === "accepted" && (
+                      <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 600 }}>✓ {t.friends_alreadyFriends}</span>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Friends management (remove / block) ── */}
       {friends.length > 0 && (
         <div style={{ marginTop: incoming.length > 0 || pendingTags.length > 0 ? 8 : 0 }}>
-          {friends.map((f) => (
-            <UserRow key={f.id}>
-              <Avatar name={f.friend.name} size={38} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{f.friend.name}</p>
-                {f.friend.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{f.friend.username}</p>}
-              </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <Btn variant="danger" onClick={() => remove(f.id, f.friend.id)}>{t.friends_remove}</Btn>
-                <Btn variant="warning" onClick={() => block(f)}>{t.friends_block}</Btn>
-              </div>
-            </UserRow>
-          ))}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+            <SectionHeader label={`${t.friends_friendsSection} · ${friends.length}`} />
+            {query.trim().length >= 2 && filteredFriends.length !== friends.length && (
+              <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                ({filteredFriends.length} resultado{filteredFriends.length !== 1 ? "s" : ""})
+              </span>
+            )}
+          </div>
+          {filteredFriends.length === 0 && query.trim().length >= 2 ? (
+            <p style={{ fontSize: 13, color: "#9ca3af", padding: "12px 0" }}>{t.friends_noResults}</p>
+          ) : (
+            visibleFriends.map((f) => (
+              <UserRow key={f.id}>
+                <Avatar name={f.friend.name} size={38} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{f.friend.name}</p>
+                  {f.friend.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{f.friend.username}</p>}
+                </div>
+                <div data-friend-menu style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setOpenMenuId(openMenuId === f.id ? null : f.id)}
+                    style={{
+                      width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb",
+                      background: openMenuId === f.id ? "#f3f4f6" : "white",
+                      cursor: "pointer", fontSize: 18, color: "#6b7280",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ⋮
+                  </button>
+                  {openMenuId === f.id && (
+                    <div style={{
+                      position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 20,
+                      background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 160, overflow: "hidden",
+                    }}>
+                      <button
+                        onClick={() => { remove(f.id, f.friend.id); setOpenMenuId(null); }}
+                        style={{
+                          display: "block", width: "100%", padding: "11px 16px",
+                          textAlign: "left", border: "none", background: "white",
+                          fontSize: 13, fontWeight: 600, color: "#ef4444", cursor: "pointer",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "#fef2f2")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                      >
+                        {t.friends_remove}
+                      </button>
+                      <button
+                        onClick={() => { block(f); setOpenMenuId(null); }}
+                        style={{
+                          display: "block", width: "100%", padding: "11px 16px",
+                          textAlign: "left", border: "none", background: "white",
+                          fontSize: 13, fontWeight: 600, color: "#ea580c", cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "#fff7ed")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                      >
+                        {t.friends_block}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </UserRow>
+            ))
+          )}
+          {visibleCount < filteredFriends.length && (
+            <button
+              onClick={() => setVisibleCount((c) => c + 20)}
+              style={{
+                display: "block", width: "100%", marginTop: 8, padding: "10px 0",
+                border: "1px solid #e5e7eb", borderRadius: 10,
+                background: "white", fontSize: 13, fontWeight: 600,
+                color: "#0369a1", cursor: "pointer",
+              }}
+            >
+              Ver más ({filteredFriends.length - visibleCount} restantes)
+            </button>
+          )}
         </div>
       )}
 
@@ -663,63 +785,6 @@ export function FriendsClient({
         </div>
       )}
 
-      {/* ── Invite a friend ── */}
-      <div style={{ marginTop: 36, paddingTop: 24, borderTop: "1px solid #f3f4f6" }}>
-        <SectionHeader label={t.friends_inviteSection} />
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <input
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => { setInviteEmail(e.target.value); setInviteStatus(null); }}
-            onKeyDown={(e) => { if (e.key === "Enter") sendInvite(); }}
-            placeholder={t.friends_invitePlaceholder}
-            style={{
-              flex: 1, padding: "9px 12px",
-              border: "1px solid #e5e7eb", borderRadius: 8,
-              fontSize: 16, outline: "none", background: "#f9fafb",
-            }}
-            onFocus={(e) => (e.target.style.borderColor = "#0369a1")}
-            onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-          />
-          <Btn onClick={sendInvite} disabled={inviteStatus === "sending" || !inviteEmail.trim()}>
-            {inviteStatus === "sending" ? t.friends_inviteSending : t.friends_inviteBtn}
-          </Btn>
-        </div>
-        {inviteStatusMsg() && (
-          <p style={{ fontSize: 12, color: inviteStatusMsg()!.color, margin: "0 0 8px" }}>
-            {inviteStatusMsg()!.text}
-          </p>
-        )}
-
-        {/* Sent invitations list */}
-        {invitations.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>
-              {t.friends_inviteListSection}
-            </p>
-            {invitations.map((inv) => {
-              const s = getInviteEntryStatus(inv);
-              return (
-                <div key={inv.id} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "8px 0", borderBottom: "1px solid #f9fafb",
-                }}>
-                  <p style={{ fontSize: 13, color: "#374151", margin: 0, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {inv.inviteeEmail}
-                  </p>
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, color: s.color,
-                    background: `${s.color}15`, borderRadius: 6,
-                    padding: "2px 8px", flexShrink: 0, marginLeft: 8,
-                  }}>
-                    {s.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

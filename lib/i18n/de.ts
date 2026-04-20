@@ -78,7 +78,7 @@ export const de: Dict = {
   friends_noFriendsSub: "Suche oben nach deinen Bergkameraden",
   friends_noResults: "Keine Benutzer gefunden", friends_since: "Freunde seit",
   friends_block: "Blockieren", friends_blocked: "Blockiert", friends_unblock: "Entblocken",
-  friends_blockedSection: "Blockierte Nutzer",
+  friends_blockedSection: "Blockierte Nutzer", friends_friendsSection: "Freunde", friends_addSection: "Freunde hinzufügen",
   friends_inviteSection: "Freund einladen", friends_invitePlaceholder: "email@beispiel.de",
   friends_inviteBtn: "Einladung senden", friends_inviteSending: "Senden…",
   friends_inviteSent: "Einladung gesendet! Läuft in 7 Tagen ab.",

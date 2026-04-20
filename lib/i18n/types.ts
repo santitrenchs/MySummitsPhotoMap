@@ -94,7 +94,7 @@ export type Dict = {
   friends_since: string;
   friends_taggedSection: string;
   friends_block: string; friends_blocked: string; friends_unblock: string;
-  friends_blockedSection: string;
+  friends_blockedSection: string; friends_friendsSection: string; friends_addSection: string;
   friends_inviteSection: string; friends_invitePlaceholder: string;
   friends_inviteBtn: string; friends_inviteSending: string;
   friends_inviteSent: string; friends_inviteAlreadyInvited: string;

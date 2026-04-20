@@ -78,7 +78,7 @@ export const ca: Dict = {
   friends_noFriendsSub: "Cerca els teus companys de muntanya aquí dalt",
   friends_noResults: "No s'han trobat usuaris", friends_since: "Amics des de",
   friends_block: "Bloquejar", friends_blocked: "Bloquejat", friends_unblock: "Desbloquejar",
-  friends_blockedSection: "Bloquejats",
+  friends_blockedSection: "Bloquejats", friends_friendsSection: "Amics", friends_addSection: "Afegir amics",
   friends_inviteSection: "Convidar un amic", friends_invitePlaceholder: "email@exemple.com",
   friends_inviteBtn: "Enviar invitació", friends_inviteSending: "Enviant…",
   friends_inviteSent: "Invitació enviada! Caduca en 7 dies.",
