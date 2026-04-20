@@ -44,6 +44,12 @@ export function PhotoTagStep({
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const [drawMode, setDrawMode] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerH, setHeaderH] = useState(80);
+
+  useEffect(() => {
+    if (headerRef.current) setHeaderH(headerRef.current.getBoundingClientRect().height);
+  }, []);
 
   // Lock body scroll while fullscreen tagging UI is visible.
   // On iOS Safari, overflow:hidden alone still allows the page to jump scroll position,
@@ -281,45 +287,48 @@ export function PhotoTagStep({
         .face-box.ring-active { border-color: #0ea5e9; box-shadow: 0 0 0 2.5px #0ea5e9, 0 4px 18px rgba(14,165,233,0.5); }
       `}</style>
 
+      {/* ── Header — above the face-sheet backdrop (zIndex 1200) ─────────── */}
+      <div ref={headerRef} style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 1300,
+        background: "#000",
+        display: "flex", flexDirection: "column",
+        padding: "16px 20px 10px",
+        paddingTop: "max(16px, env(safe-area-inset-top))",
+        gap: 6,
+      }}>
+        {/* Row 1: actions */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <button
+            onClick={() => onSkip(blob)}
+            style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+          >
+            {t.skip}
+          </button>
+          <button
+            onClick={handleDone}
+            style={{
+              fontSize: 14, fontWeight: 700,
+              color: phase === "ready" ? "#0ea5e9" : "rgba(255,255,255,0.35)",
+              background: "none", border: "none", cursor: "pointer", padding: "4px 0",
+            }}
+            disabled={phase === "detecting"}
+          >
+            {taggedCount > 0 ? `${t.done} (${taggedCount})` : t.done}
+          </button>
+        </div>
+        {/* Row 2: status title */}
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "white", letterSpacing: "-0.01em", textAlign: "center" }}>
+          {phase === "detecting" ? t.tag_detecting : faces.length === 0 ? t.tag_tagPeople : i(t.tag_tagPeopleFound, { n: faces.length })}
+        </p>
+      </div>
+
       {/* ── Full-screen dark container ─────────────────────────────────── */}
       <div style={{
         position: "fixed", inset: 0, zIndex: 1100,
         background: "#000",
         display: "flex", flexDirection: "column",
+        paddingTop: headerH,
       }}>
-
-        {/* Header */}
-        <div style={{
-          display: "flex", flexDirection: "column",
-          padding: "16px 20px 10px",
-          paddingTop: "max(16px, env(safe-area-inset-top))",
-          flexShrink: 0, gap: 6,
-        }}>
-          {/* Row 1: actions */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <button
-              onClick={() => onSkip(blob)}
-              style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
-            >
-              {t.skip}
-            </button>
-            <button
-              onClick={handleDone}
-              style={{
-                fontSize: 14, fontWeight: 700,
-                color: phase === "ready" ? "#0ea5e9" : "rgba(255,255,255,0.35)",
-                background: "none", border: "none", cursor: "pointer", padding: "4px 0",
-              }}
-              disabled={phase === "detecting"}
-            >
-              {taggedCount > 0 ? `${t.done} (${taggedCount})` : t.done}
-            </button>
-          </div>
-          {/* Row 2: status title */}
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "white", letterSpacing: "-0.01em", textAlign: "center" }}>
-            {phase === "detecting" ? t.tag_detecting : faces.length === 0 ? t.tag_tagPeople : i(t.tag_tagPeopleFound, { n: faces.length })}
-          </p>
-        </div>
 
         {/* Photo + face overlays */}
         <div
