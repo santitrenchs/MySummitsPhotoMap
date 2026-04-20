@@ -290,29 +290,15 @@ export default function MapView({
       setSelected(null);
     });
 
-    map.on("zoom", () => {
-      const el = markerEls.current.values().next().value as HTMLElement | undefined;
-      if (el) console.log(`[zoom] z=${map.getZoom().toFixed(2)} marker.transform="${el.style.transform}"`);
-    });
 
     // Suppress map.resize() during active touch gestures — on iOS Safari,
     // pinch-zoom causes the browser chrome to show/hide, changing the
     // viewport height mid-gesture. Calling resize() with transient dimensions
     // repositions all HTML markers incorrectly. We do a final resize on touchend.
     let touchActive = false;
-    const onTouchStart = (e: TouchEvent) => {
-      touchActive = true;
-      const cont = containerRef.current;
-      console.log(`[touch] start touches=${e.touches.length} container=${cont?.offsetWidth}x${cont?.offsetHeight} canvas=${map.getCanvas().offsetWidth}x${map.getCanvas().offsetHeight}`);
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length < 2) return; // only log pinch
-      const cont = containerRef.current;
-      console.log(`[touch] pinch-move container=${cont?.offsetWidth}x${cont?.offsetHeight} canvas=${map.getCanvas().offsetWidth}x${map.getCanvas().offsetHeight}`);
-    };
-    const onTouchEnd = (e: TouchEvent) => {
-      const cont = containerRef.current;
-      console.log(`[touch] end container=${cont?.offsetWidth}x${cont?.offsetHeight} canvas=${map.getCanvas().offsetWidth}x${map.getCanvas().offsetHeight}`);
+    const onTouchStart = () => { touchActive = true; };
+    const onTouchMove = () => {};
+    const onTouchEnd = () => {
       touchActive = false;
       setTimeout(() => { if (mapRef.current) mapRef.current.resize(); }, 50);
     };
@@ -322,8 +308,6 @@ export default function MapView({
     containerRef.current.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
     const ro = new ResizeObserver(() => {
-      const cont = containerRef.current;
-      console.log(`[ResizeObserver] touchActive=${touchActive} container=${cont?.offsetWidth}x${cont?.offsetHeight}`);
       if (!touchActive && mapRef.current) mapRef.current.resize();
     });
     ro.observe(containerRef.current);
