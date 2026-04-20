@@ -633,10 +633,13 @@ export default function MapView({
       // rendered. map.resize() at the top of this handler fires before
       // the canvas has its final CSS size on iOS Safari, causing all
       // HTML markers to be offset downward by exactly the canvas height.
-      // 'idle' fires after the first complete render, guaranteeing layout
-      // is settled — more reliable than rAF on iOS Safari.
+      // A second resize after 300ms covers the case where iOS Safari
+      // hasn't fully committed the layout by the time 'idle' fires.
       map.once("idle", () => {
         map.resize();
+        setTimeout(() => {
+          if (mapRef.current) mapRef.current.resize();
+        }, 300);
       });
     });
 
