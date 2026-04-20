@@ -290,17 +290,26 @@ export default function MapView({
       setSelected(null);
     });
 
-    // Resize map whenever the container changes size (fixes client-side
-    // navigation timing: CSS vars may settle after map init, and the single
-    // map.resize() inside map.once("load") fires too early on mobile).
+    // Suppress map.resize() during active touch gestures — on iOS Safari,
+    // pinch-zoom causes the browser chrome to show/hide, changing the
+    // viewport height mid-gesture. Calling resize() with transient dimensions
+    // repositions all HTML markers incorrectly. We do a final resize on touchend.
+    let touchActive = false;
+    const onTouchStart = () => { touchActive = true; };
+    const onTouchEnd = () => {
+      touchActive = false;
+      setTimeout(() => { if (mapRef.current) mapRef.current.resize(); }, 50);
+    };
+    containerRef.current.addEventListener("touchstart", onTouchStart, { passive: true });
+    containerRef.current.addEventListener("touchend", onTouchEnd, { passive: true });
+    containerRef.current.addEventListener("touchcancel", onTouchEnd, { passive: true });
+
     const ro = new ResizeObserver(() => {
-      if (mapRef.current) mapRef.current.resize();
+      if (!touchActive && mapRef.current) mapRef.current.resize();
     });
     ro.observe(containerRef.current);
 
     map.once("load", () => {
-      const c = map.getCanvas();
-      console.log("[map] load — canvas:", c.offsetWidth, "x", c.offsetHeight, "container:", containerRef.current?.offsetWidth, "x", containerRef.current?.offsetHeight);
       map.resize();
 
       // ── Terrain sources + 3D + hillshade ───────────────────────────────
@@ -638,23 +647,15 @@ export default function MapView({
       // A second resize after 300ms covers the case where iOS Safari
       // hasn't fully committed the layout by the time 'idle' fires.
       map.once("idle", () => {
-        const c = map.getCanvas();
-        console.log("[map] first idle — canvas:", c.offsetWidth, "x", c.offsetHeight);
         map.resize();
-        const c2 = map.getCanvas();
-        console.log("[map] after resize() — canvas:", c2.offsetWidth, "x", c2.offsetHeight);
-        setTimeout(() => {
-          if (mapRef.current) {
-            const c3 = mapRef.current.getCanvas();
-            console.log("[map] 300ms later — canvas:", c3.offsetWidth, "x", c3.offsetHeight);
-            mapRef.current.resize();
-          }
-        }, 300);
       });
     });
 
     return () => {
       ro.disconnect();
+      containerRef.current?.removeEventListener("touchstart", onTouchStart);
+      containerRef.current?.removeEventListener("touchend", onTouchEnd);
+      containerRef.current?.removeEventListener("touchcancel", onTouchEnd);
       map.remove();
       mapRef.current = null;
       markerEls.current.clear();
