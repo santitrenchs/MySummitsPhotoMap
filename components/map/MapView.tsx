@@ -299,6 +299,8 @@ export default function MapView({
     ro.observe(containerRef.current);
 
     map.once("load", () => {
+      const c = map.getCanvas();
+      console.log("[map] load — canvas:", c.offsetWidth, "x", c.offsetHeight, "container:", containerRef.current?.offsetWidth, "x", containerRef.current?.offsetHeight);
       map.resize();
 
       // ── Terrain sources + 3D + hillshade ───────────────────────────────
@@ -636,9 +638,17 @@ export default function MapView({
       // A second resize after 300ms covers the case where iOS Safari
       // hasn't fully committed the layout by the time 'idle' fires.
       map.once("idle", () => {
+        const c = map.getCanvas();
+        console.log("[map] first idle — canvas:", c.offsetWidth, "x", c.offsetHeight);
         map.resize();
+        const c2 = map.getCanvas();
+        console.log("[map] after resize() — canvas:", c2.offsetWidth, "x", c2.offsetHeight);
         setTimeout(() => {
-          if (mapRef.current) mapRef.current.resize();
+          if (mapRef.current) {
+            const c3 = mapRef.current.getCanvas();
+            console.log("[map] 300ms later — canvas:", c3.offsetWidth, "x", c3.offsetHeight);
+            mapRef.current.resize();
+          }
         }, 300);
       });
     });
