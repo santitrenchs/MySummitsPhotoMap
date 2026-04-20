@@ -237,7 +237,9 @@ model Photo {
   cropW      Float?
   cropH      Float?
   /// Aspect ratio of the crop — e.g. "4:5" or "1:1"
-  cropAspect String?
+  cropAspect    String?
+  /// Clockwise rotation applied before cropping — 0, 90, 180 or 270
+  cropRotation  Int?
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ascent         Ascent          @relation(fields: [ascentId], references: [id], onDelete: Cascade)

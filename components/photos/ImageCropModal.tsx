@@ -40,21 +40,24 @@ export function resizeForStorage(file: File): Promise<Blob> {
 }
 
 export type CropMeta = {
-  x: number;      // left edge as fraction [0-1] of original width
-  y: number;      // top edge as fraction [0-1] of original height
-  w: number;      // crop width as fraction [0-1] of original width
-  h: number;      // crop height as fraction [0-1] of original height
+  x: number;      // left edge as fraction [0-1] of effective (rotated) image width
+  y: number;      // top edge as fraction [0-1] of effective (rotated) image height
+  w: number;      // crop width as fraction [0-1] of effective image width
+  h: number;      // crop height as fraction [0-1] of effective image height
   aspect: string; // e.g. "4:5"
+  rotation: 0 | 90 | 180 | 270;
 };
 
 export function ImageCropModal({
   file,
   onCrop,
   onCancel,
+  initialRotation = 0,
 }: {
   file: File;
   onCrop: (blob: Blob, cropMeta: CropMeta) => void;
   onCancel: () => void;
+  initialRotation?: 0 | 90 | 180 | 270;
 }) {
   const t = useT();
   const [src, setSrc] = useState("");
@@ -63,6 +66,7 @@ export function ImageCropModal({
   const [offset, setOffset] = useState({ x: 0, y: 0 }); // pan in display px
   const [ready, setReady] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(initialRotation);
 
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,35 +89,52 @@ export function ImageCropModal({
     return { cropW: W, cropH: W / ratio };
   }
 
+  // Returns the effective (post-rotation) dimensions of the image in natural pixels
+  function effectiveDims(rot: number) {
+    const img = imgRef.current;
+    if (!img) return { ew: 1, eh: 1 };
+    return rot % 180 === 0
+      ? { ew: img.naturalWidth, eh: img.naturalHeight }
+      : { ew: img.naturalHeight, eh: img.naturalWidth };
+  }
+
   // ── Initial scale when image or ratio changes ─────────────────────────────
-  function resetTransform() {
+  function resetTransform(rot?: number) {
     const img = imgRef.current;
     if (!img || img.naturalWidth === 0) return;
+    const r = rot ?? rotation;
+    const { ew, eh } = effectiveDims(r);
     const { cropW, cropH } = getCropSize();
-    const minS = Math.max(cropW / img.naturalWidth, cropH / img.naturalHeight);
+    const minS = Math.max(cropW / ew, cropH / eh);
     setScale(minS);
     setOffset({ x: 0, y: 0 });
     setReady(true);
   }
 
   useEffect(() => {
-    if (ready) resetTransform();
+    if (ready) resetTransform(rotation);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ratio]);
 
   // ── Clamp offset so image always covers the crop frame ────────────────────
-  function clamp(ox: number, oy: number, sc: number): { x: number; y: number } {
-    const img = imgRef.current;
-    if (!img) return { x: ox, y: oy };
+  function clamp(ox: number, oy: number, sc: number, rot?: number): { x: number; y: number } {
+    const r = rot ?? rotation;
+    const { ew, eh } = effectiveDims(r);
+    if (ew === 1 && eh === 1) return { x: ox, y: oy };
     const { cropW, cropH } = getCropSize();
-    const dW = img.naturalWidth * sc;
-    const dH = img.naturalHeight * sc;
-    const maxX = Math.max(0, (dW - cropW) / 2);
-    const maxY = Math.max(0, (dH - cropH) / 2);
+    const maxX = Math.max(0, (ew * sc - cropW) / 2);
+    const maxY = Math.max(0, (eh * sc - cropH) / 2);
     return {
       x: Math.max(-maxX, Math.min(maxX, ox)),
       y: Math.max(-maxY, Math.min(maxY, oy)),
     };
+  }
+
+  // ── Rotate 90° clockwise ──────────────────────────────────────────────────
+  function handleRotate() {
+    const newRot = ((rotation + 90) % 360) as 0 | 90 | 180 | 270;
+    setRotation(newRot);
+    resetTransform(newRot);
   }
 
   // ── Mouse events ──────────────────────────────────────────────────────────
@@ -131,17 +152,16 @@ export function ImageCropModal({
   // ── Wheel zoom ────────────────────────────────────────────────────────────
   function onWheel(e: React.WheelEvent) {
     e.preventDefault();
-    const img = imgRef.current;
-    if (!img) return;
+    const { ew, eh } = effectiveDims(rotation);
     const { cropW, cropH } = getCropSize();
-    const minS = Math.max(cropW / img.naturalWidth, cropH / img.naturalHeight);
+    const minS = Math.max(cropW / ew, cropH / eh);
     const newScale = Math.max(minS, Math.min(6, scale * (1 - e.deltaY * 0.001)));
     setScale(newScale);
     setOffset((prev) => clamp(prev.x, prev.y, newScale));
   }
 
   // ── Touch events (pan + pinch) ────────────────────────────────────────────
-  function touchDist(t: React.TouchList) {
+  function touchDist(t: TouchList | React.TouchList) {
     const dx = t[0].clientX - t[1].clientX;
     const dy = t[0].clientY - t[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
@@ -157,12 +177,14 @@ export function ImageCropModal({
     }
   }
 
-  function onTouchMove(e: React.TouchEvent) {
+  // touchmove is registered as non-passive via useEffect below so preventDefault works.
+  // This ref is updated every render so the handler always sees fresh state/rotation.
+  const touchMoveRef = useRef<(e: TouchEvent) => void>(() => {});
+  touchMoveRef.current = (e: TouchEvent) => {
     e.preventDefault();
-    const img = imgRef.current;
-    if (!img) return;
+    const { ew, eh } = effectiveDims(rotation);
     const { cropW, cropH } = getCropSize();
-    const minS = Math.max(cropW / img.naturalWidth, cropH / img.naturalHeight);
+    const minS = Math.max(cropW / ew, cropH / eh);
 
     if (e.touches.length === 1 && drag.current.active) {
       const ox = drag.current.startOX + (e.touches[0].clientX - drag.current.startX);
@@ -175,7 +197,15 @@ export function ImageCropModal({
       setScale(newScale);
       setOffset((prev) => clamp(prev.x, prev.y, newScale));
     }
-  }
+  };
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: TouchEvent) => touchMoveRef.current(e);
+    el.addEventListener("touchmove", handler, { passive: false });
+    return () => el.removeEventListener("touchmove", handler);
+  }, []);
 
   function onTouchEnd() {
     drag.current.active = false;
@@ -196,23 +226,30 @@ export function ImageCropModal({
     canvas.height = outH;
     const ctx = canvas.getContext("2d")!;
 
-    // Map from display space → natural image coords
-    const dW = img.naturalWidth * scale;
-    const dH = img.naturalHeight * scale;
-    const srcX = ((dW - cropW) / 2 - offset.x) / scale;
-    const srcY = ((dH - cropH) / 2 - offset.y) / scale;
-    const srcW = cropW / scale;
-    const srcH = cropH / scale;
+    // Scale factor: display pixels → output pixels
+    const s = OUTPUT_W / cropW;
 
-    ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, OUTPUT_W, outH);
+    // Mirror the CSS transform: center → rotate → pan → draw image centered
+    ctx.save();
+    ctx.translate(OUTPUT_W / 2, outH / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.translate(offset.x * s, offset.y * s);
+    const dW = img.naturalWidth * scale * s;
+    const dH = img.naturalHeight * scale * s;
+    ctx.drawImage(img, -dW / 2, -dH / 2, dW, dH);
+    ctx.restore();
 
-    // Normalize crop coords to [0-1] fractions of the original image
+    // Normalized crop coords in effective (rotated) image space
+    const { ew, eh } = effectiveDims(rotation);
+    const srcX = ((ew * scale - cropW) / 2 - offset.x) / scale;
+    const srcY = ((eh * scale - cropH) / 2 - offset.y) / scale;
     const cropMeta: CropMeta = {
-      x: srcX / img.naturalWidth,
-      y: srcY / img.naturalHeight,
-      w: srcW / img.naturalWidth,
-      h: srcH / img.naturalHeight,
+      x: srcX / ew,
+      y: srcY / eh,
+      w: cropW / scale / ew,
+      h: cropH / scale / eh,
       aspect: ratio === 1 ? "1:1" : "4:5",
+      rotation,
     };
 
     canvas.toBlob((blob) => {
@@ -274,7 +311,6 @@ export function ImageCropModal({
           onMouseLeave={onMouseUp}
           onWheel={onWheel}
           onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
           {src && (
@@ -283,14 +319,14 @@ export function ImageCropModal({
               ref={imgRef}
               src={src}
               alt=""
-              onLoad={resetTransform}
+              onLoad={() => resetTransform()}
               draggable={false}
               style={{
                 position: "absolute",
                 width: ready ? imgRef.current!.naturalWidth * scale : "auto",
                 height: ready ? imgRef.current!.naturalHeight * scale : "auto",
                 left: "50%", top: "50%",
-                transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`,
+                transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) rotate(${rotation}deg)`,
                 maxWidth: "none",
                 userSelect: "none", pointerEvents: "none",
               }}
@@ -341,8 +377,8 @@ export function ImageCropModal({
         {/* Zoom slider */}
         {ready && imgRef.current && (() => {
           const { cropW: cW, cropH: cH } = getCropSize();
-          const img = imgRef.current!;
-          const minS = Math.max(cW / img.naturalWidth, cH / img.naturalHeight);
+          const { ew, eh } = effectiveDims(rotation);
+          const minS = Math.max(cW / ew, cH / eh);
           const maxS = minS * 4;
           return (
             <div style={{ display: "flex", alignItems: "center", gap: 10, width: "min(360px, 90vw)" }}>
@@ -362,6 +398,20 @@ export function ImageCropModal({
           );
         })()}
 
+        {/* Rotate button */}
+        {ready && (
+          <button
+            onClick={handleRotate}
+            style={{
+              background: "none", border: "1px solid #444", borderRadius: 8,
+              color: "white", fontSize: 13, cursor: "pointer",
+              padding: "6px 16px", display: "flex", alignItems: "center", gap: 6,
+            }}
+          >
+            <span style={{ fontSize: 16, lineHeight: 1 }}>↻</span>
+            Girar 90°
+          </button>
+        )}
       </div>
     </div>
   );

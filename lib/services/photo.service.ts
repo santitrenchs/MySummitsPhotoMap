@@ -16,6 +16,7 @@ export type CropMeta = {
   w: number;
   h: number;
   aspect: string;
+  rotation: 0 | 90 | 180 | 270;
 };
 
 export async function uploadPhoto({
@@ -62,6 +63,7 @@ export async function uploadPhoto({
         cropW: cropMeta.w,
         cropH: cropMeta.h,
         cropAspect: cropMeta.aspect,
+        cropRotation: cropMeta.rotation,
       } : {}),
     },
   });

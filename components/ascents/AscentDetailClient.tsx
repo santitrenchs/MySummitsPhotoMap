@@ -25,7 +25,7 @@ export type AscentDetailProps = {
   description: string | null;
   wikiloc: string | null;
   userName: string;
-  heroPhoto: { id: string; url: string; originalStorageKey: string | null } | null;
+  heroPhoto: { id: string; url: string; originalStorageKey: string | null; cropRotation: number | null } | null;
   persons: Person[];
   ascentId: string;
 };
@@ -321,7 +321,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
         await fetch(`/api/photos/${photo.id}?keepOriginal=${reuseOriginalId ? "1" : "0"}`, { method: "DELETE" });
       }
 
-      setPhoto({ id: newPhoto.id, url: newPhoto.url, originalStorageKey: newPhoto.originalStorageKey ?? null });
+      setPhoto({ id: newPhoto.id, url: newPhoto.url, originalStorageKey: newPhoto.originalStorageKey ?? null, cropRotation: newPhoto.cropRotation ?? null });
       router.refresh();
     } catch {
       // silently ignore — page refresh will show real state
@@ -377,6 +377,9 @@ export function AscentDetailClient(props: AscentDetailProps) {
           file={cropFile}
           onCrop={handleCropDone}
           onCancel={handleCropCancel}
+          initialRotation={recroppingOriginalId && photo?.cropRotation
+            ? (photo.cropRotation as 0 | 90 | 180 | 270)
+            : 0}
         />
       )}
 
