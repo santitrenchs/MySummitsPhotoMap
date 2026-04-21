@@ -46,6 +46,15 @@ type CreateForm = {
 
 type OsmSource = "osm" | "nominatim" | "";
 
+type DbMapPeak = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  altitudeM: number;
+  gpsVerified: boolean;
+};
+
 // Which form fields were auto-filled from OSM (to show badge)
 type OsmFilled = Partial<Record<keyof CreateForm, OsmSource>>;
 
@@ -107,6 +116,13 @@ export default function GeoposicionClient() {
 
   // ── Duplicate name warning
   const [duplicateWarning, setDuplicateWarning] = useState(false);
+
+  // ── DB peaks overlay
+  const [showDbPeaks, setShowDbPeaks] = useState(false);
+  const [dbPeaksFilter, setDbPeaksFilter] = useState<"all" | "verified" | "unverified">("all");
+  const [dbPeaks, setDbPeaks] = useState<DbMapPeak[]>([]);
+  const [dbPeaksLoading, setDbPeaksLoading] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   const [toast, setToast] = useState<ToastState>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -354,6 +370,72 @@ export default function GeoposicionClient() {
     }
   }
 
+  // ── DB peaks fetch (paginated)
+  async function fetchAllDbPeaks() {
+    setDbPeaksLoading(true);
+    try {
+      const all: DbMapPeak[] = [];
+      let page = 1;
+      const limit = 100;
+      while (true) {
+        const res = await fetch(`/api/admin/peaks?limit=${limit}&page=${page}`);
+        if (!res.ok) break;
+        const data = await res.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const peaks: DbMapPeak[] = (data.peaks ?? []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          altitudeM: p.altitudeM,
+          gpsVerified: p.gpsVerified,
+        })).filter((p: DbMapPeak) => p.latitude != null && p.longitude != null);
+        all.push(...peaks);
+        if (all.length >= (data.total ?? 0) || peaks.length < limit) break;
+        page++;
+      }
+      setDbPeaks(all);
+    } catch { /* ignore */ }
+    setDbPeaksLoading(false);
+  }
+
+  // Fetch when toggle is enabled (only once)
+  useEffect(() => {
+    if (showDbPeaks && dbPeaks.length === 0 && !dbPeaksLoading) {
+      fetchAllDbPeaks();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDbPeaks]);
+
+  // Sync DB peaks layer with map
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    const visibility = showDbPeaks ? "visible" : "none";
+    if (map.getLayer("db-peaks-triangles")) map.setLayoutProperty("db-peaks-triangles", "visibility", visibility);
+    if (map.getLayer("db-peaks-labels")) map.setLayoutProperty("db-peaks-labels", "visibility", visibility);
+
+    if (!showDbPeaks) return;
+
+    const source = map.getSource("db-peaks-source") as maplibregl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    const filtered = dbPeaks.filter((p) =>
+      dbPeaksFilter === "all" ? true :
+      dbPeaksFilter === "verified" ? p.gpsVerified : !p.gpsVerified
+    );
+
+    source.setData({
+      type: "FeatureCollection",
+      features: filtered.map((p) => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [p.longitude, p.latitude] },
+        properties: { name: p.name, gpsVerified: p.gpsVerified },
+      })),
+    });
+  }, [mapReady, showDbPeaks, dbPeaks, dbPeaksFilter]);
+
   // ── Map init
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -466,6 +548,54 @@ export default function GeoposicionClient() {
       map.on("mouseleave", "osm-peaks-dots", () => {
         map.getCanvas().style.cursor = "";
       });
+
+      // ── DB peaks overlay source + layers
+      map.addSource("db-peaks-source", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "db-peaks-triangles",
+        type: "symbol",
+        source: "db-peaks-source",
+        minzoom: 6,
+        layout: {
+          "text-field": "▲",
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 14,
+          "text-anchor": "bottom",
+          "text-allow-overlap": true,
+          "visibility": "none",
+        },
+        paint: {
+          "text-color": ["case", ["==", ["get", "gpsVerified"], true], "#16a34a", "#ea580c"],
+          "text-halo-color": "rgba(255,255,255,0.9)",
+          "text-halo-width": 1,
+        },
+      });
+      map.addLayer({
+        id: "db-peaks-labels",
+        type: "symbol",
+        source: "db-peaks-source",
+        minzoom: 9,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 11,
+          "text-anchor": "top",
+          "text-offset": [0, 0.3],
+          "text-optional": true,
+          "text-max-width": 8,
+          "visibility": "none",
+        },
+        paint: {
+          "text-color": "#1e293b",
+          "text-halo-color": "rgba(255,255,255,0.95)",
+          "text-halo-width": 1.5,
+        },
+      });
+
+      setMapReady(true);
     });
 
     return () => {
@@ -860,6 +990,61 @@ export default function GeoposicionClient() {
             </div>
           )}
         </div>
+
+        {/* DB peaks toggle */}
+        <button
+          onClick={() => setShowDbPeaks((v) => !v)}
+          style={{
+            padding: "5px 12px", fontSize: 12, fontWeight: 600,
+            background: showDbPeaks ? "#1e40af" : "white",
+            border: `1px solid ${showDbPeaks ? "#1e40af" : "#d1d5db"}`,
+            borderRadius: 8, cursor: "pointer",
+            color: showDbPeaks ? "white" : "#374151",
+            display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
+          }}
+        >
+          {dbPeaksLoading ? (
+            <span style={{
+              display: "inline-block", width: 10, height: 10,
+              borderRadius: "50%",
+              border: `1.5px solid ${showDbPeaks ? "rgba(255,255,255,0.4)" : "#d1d5db"}`,
+              borderTopColor: showDbPeaks ? "white" : "#2563eb",
+              animation: "geo-spin-plain 0.7s linear infinite",
+            }} />
+          ) : (
+            <span style={{ fontSize: 10, color: showDbPeaks ? "white" : "#6b7280" }}>▲</span>
+          )}
+          Montañas BD
+        </button>
+
+        {showDbPeaks && (
+          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+            {(["all", "verified", "unverified"] as const).map((f) => {
+              const active = dbPeaksFilter === f;
+              const colors = {
+                all:        { bg: "#eff6ff", border: "#93c5fd", text: "#1d4ed8" },
+                verified:   { bg: "#f0fdf4", border: "#86efac", text: "#166534" },
+                unverified: { bg: "#fff7ed", border: "#fdba74", text: "#9a3412" },
+              };
+              const c = colors[f];
+              return (
+                <button
+                  key={f}
+                  onClick={() => setDbPeaksFilter(f)}
+                  style={{
+                    padding: "4px 10px", fontSize: 11, fontWeight: 600,
+                    background: active ? c.bg : "white",
+                    border: `1px solid ${active ? c.border : "#e5e7eb"}`,
+                    borderRadius: 6, cursor: "pointer",
+                    color: active ? c.text : "#9ca3af",
+                  }}
+                >
+                  {f === "all" ? "Todas" : f === "verified" ? "▲ Verificadas" : "▲ Sin verificar"}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <span style={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }}>
           Clic en punto rojo → asignar o crear
