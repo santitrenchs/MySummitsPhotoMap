@@ -8,7 +8,6 @@ import { useT } from "@/components/providers/I18nProvider";
 
 const EXPANDED_W = 240;
 const COLLAPSED_W = 68;
-const LS_KEY = "azisb-v1";
 
 type Props = {
   userName: string | null;
@@ -36,25 +35,13 @@ export function Sidebar({
 }: Props) {
   const pathname = usePathname();
   const t = useT();
-  const [collapsed, setCollapsed] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const abbr = getInitials(userName, userEmail);
   const badge = pendingFriendRequests + pendingTagCount;
 
-  // Restore collapsed state from localStorage (after mount to avoid SSR mismatch)
-  useEffect(() => {
-    if (localStorage.getItem(LS_KEY) === "1") setCollapsed(true);
-  }, []);
-
-  // Sync body class for main content offset + persist preference
-  useEffect(() => {
-    document.body.classList.toggle("azi-sb-collapsed", collapsed);
-    localStorage.setItem(LS_KEY, collapsed ? "1" : "0");
-    return () => {
-      document.body.classList.remove("azi-sb-collapsed");
-    };
-  }, [collapsed]);
+  const collapsed = !hovered && !userMenuOpen;
 
   // Close user menu on outside click
   useEffect(() => {
@@ -78,7 +65,11 @@ export function Sidebar({
   return (
     <>
       <style>{CSS}</style>
-      <aside className={`azisb${collapsed ? " azisb--c" : ""}`}>
+      <aside
+        className={`azisb${collapsed ? " azisb--c" : ""}`}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
 
         {/* ── Brand ─────────────────────────────── */}
         <Link href="/home" className="azisb-brand" data-tip="AziAtlas">
@@ -123,17 +114,6 @@ export function Sidebar({
         </nav>
 
         <div style={{ flex: 1 }} />
-
-        {/* ── Collapse toggle ────────────────────── */}
-        <div className="azisb-colrow">
-          <button
-            className="azisb-colbtn"
-            onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
-          >
-            <SbChevronLeftIcon />
-          </button>
-        </div>
 
         {/* ── User footer ────────────────────────── */}
         <div className="azisb-footer" ref={menuRef}>
@@ -371,32 +351,6 @@ const CSS = `
 .azisb--c [data-tip]:hover::after { opacity: 1; }
 
 
-/* ── Collapse button ────────────────────── */
-.azisb-colrow {
-  display: flex;
-  padding: 4px 8px 8px;
-  justify-content: flex-end;
-  flex-shrink: 0;
-}
-.azisb--c .azisb-colrow { justify-content: center; }
-
-.azisb-colbtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px; height: 28px;
-  border-radius: 8px;
-  background: transparent;
-  border: 1px solid #e9ecef;
-  cursor: pointer;
-  color: #adb5bd;
-  transition: background 140ms, color 140ms, border-color 140ms;
-  flex-shrink: 0;
-}
-.azisb-colbtn:hover { background: #f1f3f5; color: #495057; border-color: #ced4da; }
-.azisb-colbtn svg { transition: transform 220ms cubic-bezier(0.4,0,0.2,1); }
-.azisb--c .azisb-colbtn svg { transform: rotate(180deg); }
-
 /* ── Footer ─────────────────────────────── */
 .azisb-footer {
   padding: 8px;
@@ -581,15 +535,6 @@ function SbPlusIcon() {
       strokeWidth="2.2" strokeLinecap="round">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  );
-}
-
-function SbChevronLeftIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="15 18 9 12 15 6" />
     </svg>
   );
 }

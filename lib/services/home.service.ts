@@ -91,11 +91,11 @@ export async function getHomeData(userId: string): Promise<HomeData> {
 
   // Altitude stats (derived from myAscents, no extra query needed)
   const maxAltitude = myAscents.length > 0 ? Math.max(...myAscents.map((a) => a.peak.altitudeM)) : 0;
-  const peaks1000plus = myAscents.filter((a) => a.peak.altitudeM > 1000).length;
-  const peaks2000plus = myAscents.filter((a) => a.peak.altitudeM > 2000).length;
-  const peaks3000plus = myAscents.filter((a) => a.peak.altitudeM > 3000).length;
-  const peaks4000plus = myAscents.filter((a) => a.peak.altitudeM > 4000).length;
-  const peaks5000plus = myAscents.filter((a) => a.peak.altitudeM > 5000).length;
+  const peaks1000plus = myAscents.filter((a) => a.peak.altitudeM >= 1000).length;
+  const peaks2000plus = myAscents.filter((a) => a.peak.altitudeM >= 2000).length;
+  const peaks3000plus = myAscents.filter((a) => a.peak.altitudeM >= 3000).length;
+  const peaks4000plus = myAscents.filter((a) => a.peak.altitudeM >= 4000).length;
+  const peaks5000plus = myAscents.filter((a) => a.peak.altitudeM >= 5000).length;
 
   // 5. Leaderboard (me + friends)
   const allUserIds = [userId, ...friendUserIds];

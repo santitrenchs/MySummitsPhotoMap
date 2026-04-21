@@ -58,13 +58,9 @@ export default async function AppLayout({
             }
           }
 
-          /* Desktop: offset main content by sidebar width */
+          /* Desktop: sidebar overlays on hover — content always offset by collapsed width */
           @media (min-width: 640px) {
             .azi-main {
-              margin-left: 240px;
-              transition: margin-left 220ms cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            body.azi-sb-collapsed .azi-main {
               margin-left: 68px;
             }
           }

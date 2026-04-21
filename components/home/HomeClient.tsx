@@ -10,14 +10,23 @@ import { i } from "@/lib/i18n";
 // ─── Level system ─────────────────────────────────────────────────────────────
 
 type AltReq = { threshold: number; count: number };
-type LevelDef = { idx: number; emoji: string; nameKey: keyof Dict; minAscents: number; altReqs?: AltReq[] };
+type LevelDef = {
+  idx: number;
+  emoji: string;
+  nameKey: keyof Dict;
+  targetAscents?: number;
+  altReqs?: AltReq[];
+  quoteKey?: keyof Dict;
+  heroBg?: string;
+};
 
 const LEVEL_DEFS: LevelDef[] = [
-  { idx: 1, emoji: "🌱", nameKey: "home_level1", minAscents: 1 },
-  { idx: 2, emoji: "🥾", nameKey: "home_level2", minAscents: 5 },
-  { idx: 3, emoji: "🧭", nameKey: "home_level3", minAscents: 15, altReqs: [{ threshold: 2000, count: 1 }] },
-  { idx: 4, emoji: "🏔️", nameKey: "home_level4", minAscents: 30, altReqs: [{ threshold: 3000, count: 1 }] },
-  { idx: 5, emoji: "👑", nameKey: "home_level5", minAscents: 60, altReqs: [{ threshold: 3000, count: 2 }, { threshold: 4000, count: 1 }] },
+  { idx: 1, emoji: "🌱", nameKey: "home_level1", targetAscents: 5, altReqs: [{ threshold: 1000, count: 1 }] },
+  { idx: 2, emoji: "🥾", nameKey: "home_level2", targetAscents: 15, altReqs: [{ threshold: 2000, count: 1 }] },
+  { idx: 3, emoji: "🧭", nameKey: "home_level3", targetAscents: 40, altReqs: [{ threshold: 3000, count: 1 }] },
+  { idx: 4, emoji: "🏔️", nameKey: "home_level4", targetAscents: 70, altReqs: [{ threshold: 4000, count: 1 }] },
+  { idx: 5, emoji: "👑", nameKey: "home_level5", targetAscents: 100, altReqs: [{ threshold: 5000, count: 1 }], quoteKey: "home_level5Quote", heroBg: "/levels/bonatti.webp" },
+  { idx: 6, emoji: "🧗", nameKey: "home_level6", quoteKey: "home_level6Quote", heroBg: "/levels/messner.jpeg" },
 ];
 
 function getAltCount(stats: HomeData["stats"], threshold: number): number {
@@ -29,18 +38,22 @@ function getAltCount(stats: HomeData["stats"], threshold: number): number {
 }
 
 function meetsLevel(def: LevelDef, n: number, stats: HomeData["stats"]): boolean {
-  if (n < def.minAscents) return false;
+  if (def.targetAscents == null) return true;
+  if (n < def.targetAscents) return false;
   return !def.altReqs || def.altReqs.every((r) => getAltCount(stats, r.threshold) >= r.count);
 }
 
 function getLevelState(stats: HomeData["stats"]) {
-  let currentIdx = -1;
-  for (let i = 0; i < LEVEL_DEFS.length; i++) {
-    if (meetsLevel(LEVEL_DEFS[i], stats.totalAscents, stats)) currentIdx = i;
+  let currentIdx = LEVEL_DEFS.length - 1;
+  for (let i = 0; i < LEVEL_DEFS.length - 1; i++) {
+    if (!meetsLevel(LEVEL_DEFS[i], stats.totalAscents, stats)) {
+      currentIdx = i;
+      break;
+    }
   }
-  const current = currentIdx >= 0 ? LEVEL_DEFS[currentIdx] : null;
+  const current = LEVEL_DEFS[currentIdx];
   const next = currentIdx < LEVEL_DEFS.length - 1 ? LEVEL_DEFS[currentIdx + 1] : null;
-  return { currentIdx, current, next };
+  return { currentIdx, current, next, isMaxLevel: currentIdx === LEVEL_DEFS.length - 1 };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -333,8 +346,8 @@ export function HomeClient({ data, locale, t }: {
       <section style={{ padding: "20px 16px 0" }}>
         <div>
           {LEVEL_DEFS.map((def, idx) => {
-            const isDone = idx <= levelState.currentIdx;
-            const isInProgress = levelState.next !== null && idx === levelState.currentIdx + 1;
+            const isDone = idx < levelState.currentIdx;
+            const isInProgress = idx === levelState.currentIdx;
             const isLocked = !isDone && !isInProgress;
 
             // Collapsed: show only current level. Expanded: show all.
@@ -395,13 +408,15 @@ export function HomeClient({ data, locale, t }: {
 
                   {/* Requirement pills */}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
-                    <span style={{
-                      fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 6,
-                      background: isDone ? "#f0fdf4" : "#f3f4f6",
-                      color: isDone ? "#16a34a" : isLocked ? "#9ca3af" : "#374151",
-                    }}>
-                      {def.minAscents} {t.home_statSummits.toLowerCase()}
-                    </span>
+                    {def.targetAscents != null && (
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 6,
+                        background: isDone ? "#f0fdf4" : "#f3f4f6",
+                        color: isDone ? "#16a34a" : isLocked ? "#9ca3af" : "#374151",
+                      }}>
+                        {def.targetAscents} {t.home_statSummits.toLowerCase()}
+                      </span>
+                    )}
                     {def.altReqs?.map((r) => {
                       const met = getAltCount(stats, r.threshold) >= r.count;
                       const label = r.count === 1
@@ -420,21 +435,21 @@ export function HomeClient({ data, locale, t }: {
                   </div>
 
                   {/* In-progress: show detailed progress */}
-                  {isInProgress && (
+                  {isInProgress && def.targetAscents != null && (
                     <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #dbeafe" }}>
                       <div style={{ height: 4, borderRadius: 2, background: "#dbeafe", overflow: "hidden", marginBottom: 5 }}>
                         <div style={{
                           height: "100%", borderRadius: 2,
-                          width: `${Math.min(stats.totalAscents / def.minAscents * 100, 100)}%`,
+                          width: `${Math.min(stats.totalAscents / def.targetAscents * 100, 100)}%`,
                           background: "#0369a1",
                         }} />
                       </div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#0369a1", marginBottom: 2 }}>
-                        {i(t.home_levelProgress, { current: stats.totalAscents, total: def.minAscents })}
+                        {i(t.home_levelProgress, { current: stats.totalAscents, total: def.targetAscents })}
                       </div>
-                      {stats.totalAscents < def.minAscents && (
+                      {stats.totalAscents < def.targetAscents && (
                         <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>
-                          → {i(t.home_levelNeedSummits, { n: def.minAscents - stats.totalAscents })}
+                          → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.totalAscents })}
                         </div>
                       )}
                       {def.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
@@ -442,6 +457,13 @@ export function HomeClient({ data, locale, t }: {
                           → {i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })}
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {isInProgress && def.targetAscents == null && (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #dbeafe" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>
+                        {t.home_maxLevel}
+                      </div>
                     </div>
                   )}
                 </div>
