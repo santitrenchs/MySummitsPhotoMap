@@ -120,7 +120,7 @@ export const de: Dict = {
   settings_allowTagging: "Anderen erlauben, mich zu markieren",
   settings_notifications: "Benachrichtigungen",
   settings_emailNotif: "E-Mail-Benachrichtigungen", settings_emailNotifDesc: "Updates per E-Mail erhalten",
-  settings_activityNotif: "Aktivitätsbenachrichtigungen", settings_activityNotifDesc: "Likes, Tags und Kommentare",
+  settings_activityNotif: "Aktivitätsbenachrichtigungen", settings_activityNotifDesc: "Wenn jemand dich in einem Foto markiert",
   settings_photosTagging: "Fotos und Markierungen",
   settings_autoDetect: "Gesichter beim Upload erkennen",
   settings_autoDetectDesc: "Gesichter automatisch erkennen, wenn ein Foto hinzugefügt wird",

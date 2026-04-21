@@ -120,7 +120,7 @@ export const es: Dict = {
   settings_allowTagging: "Permitir que otros me etiqueten",
   settings_notifications: "Notificaciones",
   settings_emailNotif: "Notificaciones por correo", settings_emailNotifDesc: "Recibe actualizaciones por correo electrónico",
-  settings_activityNotif: "Notificaciones de actividad", settings_activityNotifDesc: "Me gusta, etiquetas y comentarios",
+  settings_activityNotif: "Notificaciones de actividad", settings_activityNotifDesc: "Cuando alguien te etiqueta en una foto",
   settings_photosTagging: "Fotos y Etiquetado",
   settings_autoDetect: "Detectar caras al subir",
   settings_autoDetectDesc: "Detecta caras automáticamente al añadir una foto",

@@ -525,3 +525,96 @@ ${renderBrandHeader()}
 
   console.log("[email] friend request sent OK, id:", data?.id);
 }
+
+const PHOTO_TAG_COPY: Record<string, { subject: (n: string) => string; h1: (n: string) => string; body: (n: string, peak: string) => string; cta: string }> = {
+  es: {
+    subject: (n) => `${n} te ha etiquetado en una foto`,
+    h1: (n) => `${n} te ha etiquetado`,
+    body: (n, peak) => `<strong>${n}</strong> te ha etiquetado en una foto de la ascensión a <strong>${peak}</strong>.`,
+    cta: "Ver foto →",
+  },
+  ca: {
+    subject: (n) => `${n} t'ha etiquetat en una foto`,
+    h1: (n) => `${n} t'ha etiquetat`,
+    body: (n, peak) => `<strong>${n}</strong> t'ha etiquetat en una foto de l'ascensió a <strong>${peak}</strong>.`,
+    cta: "Veure foto →",
+  },
+  en: {
+    subject: (n) => `${n} tagged you in a photo`,
+    h1: (n) => `${n} tagged you`,
+    body: (n, peak) => `<strong>${n}</strong> tagged you in a photo from the ascent of <strong>${peak}</strong>.`,
+    cta: "View photo →",
+  },
+  fr: {
+    subject: (n) => `${n} t'a tagué(e) dans une photo`,
+    h1: (n) => `${n} t'a tagué(e)`,
+    body: (n, peak) => `<strong>${n}</strong> t'a tagué(e) dans une photo de l'ascension de <strong>${peak}</strong>.`,
+    cta: "Voir la photo →",
+  },
+  de: {
+    subject: (n) => `${n} hat dich in einem Foto markiert`,
+    h1: (n) => `${n} hat dich markiert`,
+    body: (n, peak) => `<strong>${n}</strong> hat dich in einem Foto des Aufstiegs auf <strong>${peak}</strong> markiert.`,
+    cta: "Foto ansehen →",
+  },
+};
+
+export async function sendPhotoTagEmail(
+  to: string,
+  taggerName: string,
+  peakName: string,
+  ascentId: string,
+  locale = "es",
+) {
+  const copy = PHOTO_TAG_COPY[locale] ?? PHOTO_TAG_COPY.es;
+  const photoUrl = `${APP_URL}/ascents/${ascentId}`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject: copy.subject(taggerName),
+    html: `
+<!DOCTYPE html>
+<html lang="${locale}">
+${renderEmailHead()}
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+${renderBrandHeader()}
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1(taggerName)}</h1>
+            <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body(taggerName, peakName)}</p>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center">
+                  <a href="${photoUrl}"
+                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
+                            text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
+                    ${copy.cta}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+
+  if (error) {
+    console.error("[email] photo tag Resend error:", error);
+    throw new Error(`Resend failed: ${JSON.stringify(error)}`);
+  }
+
+  console.log("[email] photo tag sent OK, id:", data?.id);
+}

@@ -120,7 +120,7 @@ export const ca: Dict = {
   settings_allowTagging: "Permetre que altres em etiquetin",
   settings_notifications: "Notificacions",
   settings_emailNotif: "Notificacions per correu", settings_emailNotifDesc: "Rep actualitzacions per correu electrònic",
-  settings_activityNotif: "Notificacions d'activitat", settings_activityNotifDesc: "M'agrada, etiquetes i comentaris",
+  settings_activityNotif: "Notificacions d'activitat", settings_activityNotifDesc: "Quan algú t'etiqueta en una foto",
   settings_photosTagging: "Fotos i Etiquetatge",
   settings_autoDetect: "Detectar cares en pujar",
   settings_autoDetectDesc: "Detecta cares automàticament en afegir una foto",

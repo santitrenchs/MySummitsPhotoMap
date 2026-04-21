@@ -88,7 +88,7 @@ export async function setFaceTag(
 
   return db.faceTag.create({
     data: { tenantId, faceDetectionId, personId, status: "ACCEPTED" },
-    include: { person: { select: { id: true, name: true } } },
+    include: { person: { select: { id: true, name: true, userId: true } } },
   });
 }
 

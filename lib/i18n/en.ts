@@ -120,7 +120,7 @@ export const en: Dict = {
   settings_allowTagging: "Allow others to tag me",
   settings_notifications: "Notifications",
   settings_emailNotif: "Email notifications", settings_emailNotifDesc: "Receive updates by email",
-  settings_activityNotif: "Activity notifications", settings_activityNotifDesc: "Likes, tags, and comments",
+  settings_activityNotif: "Activity notifications", settings_activityNotifDesc: "When someone tags you in a photo",
   settings_photosTagging: "Photos & Tagging",
   settings_autoDetect: "Auto-detect faces on upload",
   settings_autoDetectDesc: "Detect faces automatically when you add a photo",
