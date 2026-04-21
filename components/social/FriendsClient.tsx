@@ -383,26 +383,6 @@ export function FriendsClient({
     }
   }
 
-  // ── Tag approval ─────────────────────────────────────────────────────────────
-  async function approveTag(tagId: string) {
-    const res = await fetch(`/api/face-tags/${tagId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "ACCEPTED" }),
-    });
-    if (!res.ok) return;
-    setPendingTags((prev) => prev.filter((t) => t.id !== tagId));
-  }
-
-  async function rejectTag(tagId: string) {
-    const res = await fetch(`/api/face-tags/${tagId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "REJECTED" }),
-    });
-    if (!res.ok) return;
-    setPendingTags((prev) => prev.filter((t) => t.id !== tagId));
-  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
