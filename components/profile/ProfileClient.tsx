@@ -93,7 +93,7 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
               <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 8px" }}>@{user.username}</p>
             )}
             {/* Stats row — right below username */}
-            <div style={{ display: "flex", gap: 0 }}>
+            <div style={{ display: "flex", gap: 20 }}>
               <StatCell value={stats.uniquePeaks} label={t.ascents_stat_peaks} />
               <StatCell value={stats.totalPhotos} label={t.profile_stat_photos} />
               <StatCell value={stats.friendCount} label={t.ascents_stat_people} />
@@ -178,7 +178,7 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
 
 function StatCell({ value, label }: { value: number; label: string }) {
   return (
-    <div style={{ flex: 1, textAlign: "center", padding: "0 4px" }}>
+    <div style={{ textAlign: "left" }}>
       <div style={{ fontSize: 16, fontWeight: 700, color: "#111827", lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{label}</div>
     </div>
