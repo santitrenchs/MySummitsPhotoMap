@@ -10,7 +10,7 @@ import type { Locale } from "@/lib/i18n/types";
 
 type UserSettings = {
   id: string; name: string; email: string; username: string | null; language: string;
-  appearInSearch: boolean; reviewTagsBeforePost: boolean; allowOthersToTag: boolean;
+  appearInSearch: boolean; allowOthersToTag: boolean;
   emailNotifications: boolean; activityNotifications: boolean;
   autoDetectFaces: boolean; autoSuggestPeople: boolean; reviewFacesBeforeSave: boolean;
 };
@@ -191,22 +191,33 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
       {/* Language */}
       <SectionHeader label={t.settings_language} />
       <Card>
-        <div style={{ padding: "14px 16px" }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {LOCALE_OPTIONS.map(({ value, label }) => (
-              <button key={value} onClick={() => saveLanguage(value)}
-                style={{
-                  padding: "8px 16px", borderRadius: 20, border: "none", cursor: "pointer",
-                  fontSize: 13, fontWeight: 600,
-                  background: locale === value ? "#0369a1" : "#f3f4f6",
-                  color: locale === value ? "white" : "#374151",
-                  transition: "background 0.15s, color 0.15s",
-                }}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {LOCALE_OPTIONS.map(({ value, flagImg, name }, idx) => {
+          const active = locale === value;
+          return (
+            <button key={value} onClick={() => saveLanguage(value)} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              width: "100%", padding: "0 16px", height: 48,
+              background: "none", border: "none", cursor: "pointer",
+              borderBottom: idx < LOCALE_OPTIONS.length - 1 ? "1px solid #f3f4f6" : "none",
+              textAlign: "left",
+              transition: "background 0.1s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
+            onMouseLeave={e => (e.currentTarget.style.background = "none")}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={flagImg} alt={name} style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 14, fontWeight: active ? 600 : 400, color: active ? "#0369a1" : "#111827" }}>
+                {name}
+              </span>
+              {active && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </button>
+          );
+        })}
       </Card>
 
       {/* Account */}
@@ -305,9 +316,6 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
       <Card>
         <SettingsRow label={t.settings_appearInSearch} description={t.settings_appearInSearchDesc}>
           <Toggle value={settings.appearInSearch} onChange={(v) => saveToggle("appearInSearch", v)} />
-        </SettingsRow>
-        <SettingsRow label={t.settings_reviewTags} description={t.settings_reviewTagsDesc}>
-          <Toggle value={settings.reviewTagsBeforePost} onChange={(v) => saveToggle("reviewTagsBeforePost", v)} />
         </SettingsRow>
         <SettingsRow label={t.settings_allowTagging} last>
           <Toggle value={settings.allowOthersToTag} onChange={(v) => saveToggle("allowOthersToTag", v)} />

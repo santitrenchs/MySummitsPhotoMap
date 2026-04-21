@@ -102,11 +102,6 @@ export type Dict = {
   friends_inviteListSection: string;
   friends_inviteStatusPending: string; friends_inviteStatusUsed: string; friends_inviteStatusExpired: string;
 
-  // Tags (face tag approval)
-  tags_title: string; tags_noPending: string;
-  tags_approve: string; tags_reject: string;
-  tags_taggedIn: string; tags_pendingCount: string;
-  tags_in: string;
 
   // Settings
   settings_title: string; settings_subtitle: string; settings_language: string;
@@ -120,8 +115,7 @@ export type Dict = {
   settings_failedToSave: string;
   settings_privacy: string;
   settings_appearInSearch: string; settings_appearInSearchDesc: string;
-  settings_reviewTags: string;
-  settings_reviewTagsDesc: string; settings_allowTagging: string;
+  settings_allowTagging: string;
   settings_notifications: string; settings_emailNotif: string;
   settings_emailNotifDesc: string; settings_activityNotif: string;
   settings_activityNotifDesc: string; settings_photosTagging: string;

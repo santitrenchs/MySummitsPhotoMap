@@ -73,27 +73,21 @@ export async function setFaceTag(
   await db.faceTag.deleteMany({ where: { tenantId, faceDetectionId } });
   if (!personId) return null;
 
-  // Check if tagged person has review preferences via their linked User
-  let status: "ACCEPTED" | "PENDING" = "ACCEPTED";
   const person = await db.person.findFirst({
     where: { id: personId, tenantId },
     select: { userId: true },
   });
   if (person?.userId) {
-    // If the tagger is the same person being tagged, always accept
+    const linkedUser = await prisma.user.findUnique({
+      where: { id: person.userId },
+      select: { allowOthersToTag: true },
+    });
     const isSelf = taggerUserId && taggerUserId === person.userId;
-    if (!isSelf) {
-      const linkedUser = await prisma.user.findUnique({
-        where: { id: person.userId },
-        select: { reviewTagsBeforePost: true, allowOthersToTag: true },
-      });
-      if (linkedUser && !linkedUser.allowOthersToTag) return null;
-      if (linkedUser?.reviewTagsBeforePost) status = "PENDING";
-    }
+    if (!isSelf && linkedUser && !linkedUser.allowOthersToTag) return null;
   }
 
   return db.faceTag.create({
-    data: { tenantId, faceDetectionId, personId, status },
+    data: { tenantId, faceDetectionId, personId, status: "ACCEPTED" },
     include: { person: { select: { id: true, name: true } } },
   });
 }
@@ -103,39 +97,6 @@ export async function removeFaceTag(tenantId: string, faceDetectionId: string) {
   return db.faceTag.deleteMany({ where: { tenantId, faceDetectionId } });
 }
 
-// ─── Pending tag approval (cross-tenant, uses global prisma) ──────────────────
-
-export async function listPendingTagsForUser(userId: string) {
-  return prisma.faceTag.findMany({
-    where: {
-      status: "PENDING",
-      person: { userId },
-    },
-    include: {
-      person: { select: { id: true, name: true } },
-      faceDetection: {
-        include: {
-          photo: {
-            include: {
-              ascent: {
-                include: {
-                  peak: { select: { name: true, altitudeM: true } },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-}
-
-export async function countPendingTagsForUser(userId: string): Promise<number> {
-  return prisma.faceTag.count({
-    where: { status: "PENDING", person: { userId } },
-  });
-}
 
 export async function respondToFaceTag(
   tagId: string,

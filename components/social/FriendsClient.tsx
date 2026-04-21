@@ -12,7 +12,6 @@ type FriendEntry     = { id: string; friend: UserStub; createdAt: string };
 type IncomingRequest = { id: string; requester: UserStub; createdAt: string };
 type SentRequest     = { id: string; addressee: UserStub; createdAt: string };
 type BlockedEntry    = { id: string; user: UserStub; createdAt: string };
-type PendingTag      = { id: string; personName: string; photoUrl: string; peakName: string; ascentId: string; createdAt: string };
 
 type SearchResult = UserStub & {
   status: "none" | "pending_sent" | "pending_received" | "accepted";
@@ -109,20 +108,17 @@ export function FriendsClient({
   initialIncoming,
   initialSent,
   initialBlocked,
-  initialPendingTags,
 }: {
   initialFriends: FriendEntry[];
   initialIncoming: IncomingRequest[];
   initialSent: SentRequest[];
   initialBlocked: BlockedEntry[];
-  initialPendingTags: PendingTag[];
 }) {
   const t = useT();
   const [friends, setFriends] = useState(initialFriends);
   const [incoming, setIncoming] = useState(initialIncoming);
   const [sent, setSent] = useState(initialSent);
   const [blocked, setBlocked] = useState(initialBlocked);
-  const [pendingTags, setPendingTags] = useState(initialPendingTags);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -442,32 +438,6 @@ export function FriendsClient({
         )}
       </div>
 
-      {/* ── Pending tags ── */}
-      {pendingTags.length > 0 && (
-        <div style={{ marginBottom: 28 }}>
-          <SectionHeader label={i(t.tags_pendingCount, { n: pendingTags.length })} />
-          {pendingTags.map((tag) => (
-            <div key={tag.id} style={{
-              display: "flex", alignItems: "center", gap: 12,
-              padding: "10px 0", borderBottom: "1px solid #f3f4f6",
-            }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={tag.photoUrl} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{tag.peakName}</p>
-                <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>
-                  {t.tags_taggedIn}
-                </p>
-              </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <Btn onClick={() => approveTag(tag.id)}>{t.tags_approve}</Btn>
-                <Btn variant="ghost" onClick={() => rejectTag(tag.id)}>{t.tags_reject}</Btn>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* ── Incoming requests ── */}
       {incoming.length > 0 && (
         <div style={{ marginBottom: 28 }}>
@@ -489,7 +459,7 @@ export function FriendsClient({
       )}
 
       {/* ── Empty state (no friends, no requests, no pending tags) ── */}
-      {friends.length === 0 && incoming.length === 0 && pendingTags.length === 0 && sent.length === 0 && (
+      {friends.length === 0 && incoming.length === 0 && sent.length === 0 && (
         <div style={{ textAlign: "center", padding: "48px 0", border: "1px dashed #e5e7eb", borderRadius: 12 }}>
           <p style={{ fontSize: 32, margin: "0 0 8px" }}>🏔</p>
           <p style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", margin: 0 }}>{t.friends_noFriends}</p>
@@ -564,7 +534,7 @@ export function FriendsClient({
 
       {/* ── Friends management (remove / block) ── */}
       {friends.length > 0 && (
-        <div style={{ marginTop: incoming.length > 0 || pendingTags.length > 0 ? 8 : 0 }}>
+        <div style={{ marginTop: incoming.length > 0 ? 8 : 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
             <SectionHeader label={`${t.friends_friendsSection} · ${friends.length}`} />
             {query.trim().length >= 2 && filteredFriends.length !== friends.length && (

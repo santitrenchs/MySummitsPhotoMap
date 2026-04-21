@@ -49,7 +49,6 @@ model User {
 
   // Privacy
   appearInSearch        Boolean @default(true)
-  reviewTagsBeforePost  Boolean @default(false)
   allowOthersToTag      Boolean @default(true)
 
   // Notifications

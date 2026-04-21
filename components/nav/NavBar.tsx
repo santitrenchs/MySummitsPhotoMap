@@ -11,7 +11,6 @@ type NavBarProps = {
   userEmail: string | null;
   userAvatarUrl?: string | null;
   pendingFriendRequests?: number;
-  pendingTagCount?: number;
 };
 
 function initials(name: string | null, email: string | null): string {
@@ -24,13 +23,13 @@ function initials(name: string | null, email: string | null): string {
   return "U";
 }
 
-export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendRequests = 0, pendingTagCount = 0 }: NavBarProps) {
+export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendRequests = 0 }: NavBarProps) {
   const pathname = usePathname();
   const t = useT();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const ini = initials(userName, userEmail);
-  const totalPending = pendingFriendRequests + pendingTagCount;
+  const totalPending = pendingFriendRequests;
 
   useEffect(() => {
     setPendingPath(null);

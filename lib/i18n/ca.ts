@@ -89,10 +89,6 @@ export const ca: Dict = {
   friends_inviteListSection: "Invitacions enviades",
   friends_inviteStatusPending: "Pendent", friends_inviteStatusUsed: "Registrat", friends_inviteStatusExpired: "Caducada",
 
-  tags_title: "Etiquetes pendents", tags_noPending: "No hi ha etiquetes pendents",
-  tags_approve: "Acceptar", tags_reject: "Rebutjar",
-  tags_taggedIn: "T'han etiquetat en una foto",
-  tags_pendingCount: "Etiquetes pendents ({n})", tags_in: "a",
 
 
   people_emptyHint: "Obre una foto i prem Etiquetar per detectar i nomenar cares",
@@ -121,8 +117,6 @@ export const ca: Dict = {
   settings_failedToSave: "No s'ha pogut desar",
   settings_appearInSearch: "Aparèixer a les cerques", settings_appearInSearchDesc: "Permet que altres et trobin per nom o usuari",
   settings_privacy: "Privadesa",
-  settings_reviewTags: "Revisar etiquetes abans de publicar",
-  settings_reviewTagsDesc: "Aprova les etiquetes de cares abans que apareguin",
   settings_allowTagging: "Permetre que altres em etiquetin",
   settings_notifications: "Notificacions",
   settings_emailNotif: "Notificacions per correu", settings_emailNotifDesc: "Rep actualitzacions per correu electrònic",

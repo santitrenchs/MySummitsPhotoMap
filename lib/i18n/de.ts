@@ -89,10 +89,6 @@ export const de: Dict = {
   friends_inviteListSection: "Gesendete Einladungen",
   friends_inviteStatusPending: "Ausstehend", friends_inviteStatusUsed: "Registriert", friends_inviteStatusExpired: "Abgelaufen",
 
-  tags_title: "Ausstehende Tags", tags_noPending: "Keine ausstehenden Tags",
-  tags_approve: "Annehmen", tags_reject: "Ablehnen",
-  tags_taggedIn: "Du wurdest in einem Foto markiert",
-  tags_pendingCount: "Ausstehende Tags ({n})", tags_in: "in",
 
 
   people_emptyHint: "Öffne ein Foto und klicke auf Markieren, um Gesichter zu erkennen und zu benennen",
@@ -121,8 +117,6 @@ export const de: Dict = {
   settings_failedToSave: "Speichern fehlgeschlagen",
   settings_appearInSearch: "In Suche erscheinen", settings_appearInSearchDesc: "Erlaube anderen, dich nach Name oder Benutzername zu finden",
   settings_privacy: "Datenschutz",
-  settings_reviewTags: "Tags vor Veröffentlichung prüfen",
-  settings_reviewTagsDesc: "Gesichts-Tags genehmigen, bevor sie erscheinen",
   settings_allowTagging: "Anderen erlauben, mich zu markieren",
   settings_notifications: "Benachrichtigungen",
   settings_emailNotif: "E-Mail-Benachrichtigungen", settings_emailNotifDesc: "Updates per E-Mail erhalten",

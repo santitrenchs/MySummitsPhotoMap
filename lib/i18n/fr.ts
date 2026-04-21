@@ -89,10 +89,6 @@ export const fr: Dict = {
   friends_inviteListSection: "Invitations envoyées",
   friends_inviteStatusPending: "En attente", friends_inviteStatusUsed: "Inscrit", friends_inviteStatusExpired: "Expirée",
 
-  tags_title: "Tags en attente", tags_noPending: "Aucun tag en attente",
-  tags_approve: "Accepter", tags_reject: "Refuser",
-  tags_taggedIn: "Vous avez été identifié dans une photo",
-  tags_pendingCount: "Tags en attente ({n})", tags_in: "dans",
 
 
   people_emptyHint: "Ouvre une photo et clique sur Identifier pour détecter et nommer les visages",
@@ -121,8 +117,6 @@ export const fr: Dict = {
   settings_failedToSave: "Impossible d'enregistrer",
   settings_appearInSearch: "Apparaître dans les recherches", settings_appearInSearchDesc: "Permet aux autres de te trouver par nom ou pseudo",
   settings_privacy: "Confidentialité",
-  settings_reviewTags: "Vérifier les tags avant publication",
-  settings_reviewTagsDesc: "Approuver les tags de visages avant qu'ils apparaissent",
   settings_allowTagging: "Permettre aux autres de me taguer",
   settings_notifications: "Notifications",
   settings_emailNotif: "Notifications par e-mail", settings_emailNotifDesc: "Recevoir des mises à jour par e-mail",

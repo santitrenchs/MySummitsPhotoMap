@@ -89,10 +89,6 @@ export const es: Dict = {
   friends_inviteListSection: "Invitaciones enviadas",
   friends_inviteStatusPending: "Pendiente", friends_inviteStatusUsed: "Registrado", friends_inviteStatusExpired: "Expirada",
 
-  tags_title: "Etiquetas pendientes", tags_noPending: "No hay etiquetas pendientes",
-  tags_approve: "Aceptar", tags_reject: "Rechazar",
-  tags_taggedIn: "Te han etiquetado en una foto",
-  tags_pendingCount: "Etiquetas pendientes ({n})", tags_in: "en",
 
 
   people_emptyHint: "Abre una foto y pulsa Etiquetar para detectar y nombrar caras",
@@ -121,8 +117,6 @@ export const es: Dict = {
   settings_failedToSave: "No se pudo guardar",
   settings_appearInSearch: "Aparecer en búsquedas", settings_appearInSearchDesc: "Permite que otros te encuentren por nombre o usuario",
   settings_privacy: "Privacidad",
-  settings_reviewTags: "Revisar etiquetas antes de publicar",
-  settings_reviewTagsDesc: "Aprueba las etiquetas de caras antes de que se muestren",
   settings_allowTagging: "Permitir que otros me etiqueten",
   settings_notifications: "Notificaciones",
   settings_emailNotif: "Notificaciones por correo", settings_emailNotifDesc: "Recibe actualizaciones por correo electrónico",

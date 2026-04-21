@@ -10,12 +10,12 @@ export { en };
 
 export const LOCALES: Record<Locale, Dict> = { en, es, ca, fr, de };
 
-export const LOCALE_OPTIONS: { value: Locale; label: string }[] = [
-  { value: "en", label: "🇬🇧 English" },
-  { value: "es", label: "🇪🇸 Español" },
-  { value: "ca", label: "🏴 Català" },
-  { value: "fr", label: "🇫🇷 Français" },
-  { value: "de", label: "🇩🇪 Deutsch" },
+export const LOCALE_OPTIONS: { value: Locale; flagImg: string; name: string }[] = [
+  { value: "en", flagImg: "/flags/en.svg", name: "English" },
+  { value: "es", flagImg: "/flags/es.svg", name: "Español" },
+  { value: "ca", flagImg: "/flags/ca.svg", name: "Català" },
+  { value: "fr", flagImg: "/flags/fr.svg", name: "Français" },
+  { value: "de", flagImg: "/flags/de.svg", name: "Deutsch" },
 ];
 
 export function getT(locale: string): Dict {

@@ -14,7 +14,6 @@ type Props = {
   userEmail: string | null;
   userAvatarUrl?: string | null;
   pendingFriendRequests?: number;
-  pendingTagCount?: number;
 };
 
 function getInitials(name: string | null, email: string | null): string {
@@ -31,7 +30,6 @@ export function Sidebar({
   userEmail,
   userAvatarUrl,
   pendingFriendRequests = 0,
-  pendingTagCount = 0,
 }: Props) {
   const pathname = usePathname();
   const t = useT();
@@ -39,7 +37,7 @@ export function Sidebar({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const abbr = getInitials(userName, userEmail);
-  const badge = pendingFriendRequests + pendingTagCount;
+  const badge = pendingFriendRequests;
 
   const collapsed = !hovered && !userMenuOpen;
 

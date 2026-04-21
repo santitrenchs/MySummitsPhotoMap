@@ -2,7 +2,6 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getServerT } from "@/lib/i18n/server";
 import { listFriends, listIncomingRequests, listSentRequests, listBlockedUsers } from "@/lib/services/friendship.service";
-import { listPendingTagsForUser } from "@/lib/services/face-detection.service";
 import { FriendsClient } from "@/components/social/FriendsClient";
 
 export default async function FriendsPage() {
@@ -10,12 +9,11 @@ export default async function FriendsPage() {
   if (!session) redirect("/login");
   const t = await getServerT();
 
-  const [friends, incoming, sent, blocked, pendingTags] = await Promise.all([
+  const [friends, incoming, sent, blocked] = await Promise.all([
     listFriends(session.user.id),
     listIncomingRequests(session.user.id),
     listSentRequests(session.user.id),
     listBlockedUsers(session.user.id),
-    listPendingTagsForUser(session.user.id),
   ]);
 
   return (
@@ -44,14 +42,7 @@ export default async function FriendsPage() {
           user: b.addressee,
           createdAt: b.createdAt.toISOString(),
         }))}
-        initialPendingTags={pendingTags.map((tag) => ({
-          id: tag.id,
-          personName: tag.person.name,
-          photoUrl: tag.faceDetection.photo.url,
-          peakName: tag.faceDetection.photo.ascent.peak.name,
-          ascentId: tag.faceDetection.photo.ascent.id,
-          createdAt: tag.createdAt.toISOString(),
-        }))}
+
       />
     </div>
   );
