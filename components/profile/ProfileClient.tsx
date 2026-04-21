@@ -84,16 +84,22 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
             )}
           </div>
 
-          {/* Name / username */}
+          {/* Name / username / stats */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: "0 0 2px", lineHeight: 1.2 }}>
               {user.name}
             </h1>
             {user.username && (
-              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 6px" }}>@{user.username}</p>
+              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 8px" }}>@{user.username}</p>
             )}
+            {/* Stats row — right below username */}
+            <div style={{ display: "flex", gap: 0 }}>
+              <StatCell value={stats.uniquePeaks} label={t.ascents_stat_peaks} />
+              <StatCell value={stats.totalPhotos} label={t.profile_stat_photos} />
+              <StatCell value={stats.friendCount} label={t.ascents_stat_people} />
+            </div>
             {user.bio && (
-              <p style={{ fontSize: 13, color: "#374151", margin: 0, lineHeight: 1.5 }}>{user.bio}</p>
+              <p style={{ fontSize: 13, color: "#374151", margin: "8px 0 0", lineHeight: 1.5 }}>{user.bio}</p>
             )}
           </div>
 
@@ -109,13 +115,6 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
           >
             {t.profile_editProfile}
           </button>
-        </div>
-
-        {/* Stats row */}
-        <div style={{ display: "flex", marginTop: 20, gap: 0 }}>
-          <StatCell value={stats.uniquePeaks} label={t.ascents_stat_peaks} />
-          <StatCell value={stats.totalPhotos} label={t.profile_stat_photos} />
-          <StatCell value={stats.friendCount} label={t.ascents_stat_people} />
         </div>
       </div>
 
@@ -179,9 +178,9 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
 
 function StatCell({ value, label }: { value: number; label: string }) {
   return (
-    <div style={{ flex: 1, textAlign: "center" }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>{label}</div>
+    <div style={{ flex: 1, textAlign: "center", padding: "0 4px" }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "#111827", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{label}</div>
     </div>
   );
 }
