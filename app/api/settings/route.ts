@@ -15,7 +15,6 @@ export async function GET() {
       id: true, name: true, email: true, username: true, language: true,
       appearInSearch: true, allowOthersToTag: true,
       emailNotifications: true, activityNotifications: true,
-      autoDetectFaces: true, autoSuggestPeople: true, reviewFacesBeforeSave: true,
     },
   });
 
@@ -33,7 +32,6 @@ export async function PATCH(req: Request) {
     "name", "username", "bio", "language",
     "appearInSearch", "allowOthersToTag",
     "emailNotifications", "activityNotifications",
-    "autoDetectFaces", "autoSuggestPeople", "reviewFacesBeforeSave",
   ];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,7 +66,6 @@ export async function PATCH(req: Request) {
         id: true, name: true, email: true, username: true, language: true,
         appearInSearch: true, allowOthersToTag: true,
         emailNotifications: true, activityNotifications: true,
-        autoDetectFaces: true, autoSuggestPeople: true, reviewFacesBeforeSave: true,
       },
     });
 

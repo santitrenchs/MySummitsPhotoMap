@@ -12,7 +12,6 @@ type UserSettings = {
   id: string; name: string; email: string; username: string | null; language: string;
   appearInSearch: boolean; allowOthersToTag: boolean;
   emailNotifications: boolean; activityNotifications: boolean;
-  autoDetectFaces: boolean; autoSuggestPeople: boolean; reviewFacesBeforeSave: boolean;
 };
 
 type UsernameState = "idle" | "checking" | "available" | "taken" | "invalid";
@@ -330,20 +329,6 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
         </SettingsRow>
         <SettingsRow label={t.settings_activityNotif} description={t.settings_activityNotifDesc} last>
           <Toggle value={settings.activityNotifications} onChange={(v) => saveToggle("activityNotifications", v)} />
-        </SettingsRow>
-      </Card>
-
-      {/* Photos & Tagging */}
-      <SectionHeader label={t.settings_photosTagging} />
-      <Card>
-        <SettingsRow label={t.settings_autoDetect} description={t.settings_autoDetectDesc}>
-          <Toggle value={settings.autoDetectFaces} onChange={(v) => saveToggle("autoDetectFaces", v)} />
-        </SettingsRow>
-        <SettingsRow label={t.settings_autoSuggest} description={t.settings_autoSuggestDesc}>
-          <Toggle value={settings.autoSuggestPeople} onChange={(v) => saveToggle("autoSuggestPeople", v)} />
-        </SettingsRow>
-        <SettingsRow label={t.settings_reviewFaces} description={t.settings_reviewFacesDesc} last>
-          <Toggle value={settings.reviewFacesBeforeSave} onChange={(v) => saveToggle("reviewFacesBeforeSave", v)} />
         </SettingsRow>
       </Card>
 
