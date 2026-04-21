@@ -7,6 +7,13 @@ export async function getProfileData(tenantId: string, userId: string) {
     select: { id: true, name: true, username: true, bio: true, avatarUrl: true },
   });
 
+  const friendCount = await prisma.friendship.count({
+    where: {
+      status: "ACCEPTED",
+      OR: [{ requesterId: userId }, { addresseeId: userId }],
+    },
+  });
+
   const db = await getTenantConnection(tenantId);
   const [ascents, taggedPersons] = await Promise.all([
     db.ascent.findMany({
@@ -107,6 +114,7 @@ export async function getProfileData(tenantId: string, userId: string) {
       totalAscents: ascents.length,
       uniquePeaks: peakMap.size,
       totalPhotos: allPhotos.length,
+      friendCount,
     },
   };
 }

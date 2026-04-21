@@ -40,7 +40,7 @@ type Props = {
   peaks: Peak[];
   photos: Photo[];
   taggedPhotos: Photo[];
-  stats: { totalAscents: number; uniquePeaks: number; totalPhotos: number };
+  stats: { totalAscents: number; uniquePeaks: number; totalPhotos: number; friendCount: number };
 };
 
 type Tab = "ascents" | "peaks" | "photos" | "tagged";
@@ -112,14 +112,10 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
         </div>
 
         {/* Stats row */}
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(2, 1fr)",
-          gap: 1, marginTop: 20,
-          background: "#e5e7eb", border: "1px solid #e5e7eb",
-          borderRadius: 10, overflow: "hidden",
-        }}>
-          <StatCell value={stats.totalAscents} label={t.ascents_stat_ascents} />
+        <div style={{ display: "flex", marginTop: 20, gap: 0 }}>
+          <StatCell value={stats.uniquePeaks} label={t.ascents_stat_peaks} />
           <StatCell value={stats.totalPhotos} label={t.profile_stat_photos} />
+          <StatCell value={stats.friendCount} label={t.ascents_stat_people} />
         </div>
       </div>
 
@@ -183,12 +179,9 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
 
 function StatCell({ value, label }: { value: number; label: string }) {
   return (
-    <div style={{
-      background: "white", textAlign: "center",
-      padding: "12px 8px",
-    }}>
-      <div style={{ fontSize: 20, fontWeight: 700, color: "#111827" }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>{label}</div>
+    <div style={{ flex: 1, textAlign: "center" }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>{label}</div>
     </div>
   );
 }
