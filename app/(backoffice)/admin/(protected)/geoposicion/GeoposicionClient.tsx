@@ -596,32 +596,6 @@ export default function GeoposicionClient() {
         },
       });
 
-      // Click on unverified DB peak → pre-select in panel
-      map.on("click", "db-peaks-triangles", (e) => {
-        const feature = e.features?.[0];
-        if (!feature) return;
-        const props = feature.properties as { id: string; name: string; altitudeM: number; gpsVerified: boolean };
-        if (props.gpsVerified) return;
-        e.preventDefault();
-        const coords = (feature.geometry as { coordinates: [number, number] }).coordinates;
-        setClickedPoint({ lng: coords[0], lat: coords[1], osmName: props.name, osmEle: props.altitudeM });
-        setSelectedPeak({ id: props.id, name: props.name, altitudeM: props.altitudeM, mountainRange: null, comarca: null, gpsVerified: false });
-        setSearchQuery(props.name);
-        setSearchResults([]);
-        setPanelMode("link");
-        setCreateForm(EMPTY_FORM);
-        setOsmFilled({});
-        setShowExtraFields(false);
-        setDuplicateWarning(false);
-      });
-      map.on("mouseenter", "db-peaks-triangles", (e) => {
-        const feature = e.features?.[0];
-        if (feature && !feature.properties?.gpsVerified) map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "db-peaks-triangles", () => {
-        map.getCanvas().style.cursor = "";
-      });
-
       setMapReady(true);
     });
 
