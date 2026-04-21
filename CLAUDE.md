@@ -213,17 +213,18 @@ FaceDetection / FaceTag
 - **`--top-nav-h` CSS variable**: set to `52px` on mobile (in `app/(app)/layout.tsx`) to match the mobile header height. Map and other full-height containers use `calc(100svh - var(--top-nav-h) - var(--bottom-nav-h))` — this variable must stay in sync with the actual `.mobile-header` height (currently `52px`).
 - **Login redirects to `/home`**: after successful login, `app/(auth)/login/page.tsx` pushes to `/home` (Mi Progreso), not `/map`.
 - **Bottom tab bar instant feedback**: `NavBar.tsx` uses a `pendingPath` state to highlight the tapped tab immediately, before Next.js completes navigation. `handleTabClick(href)` sets `pendingPath`; a `useEffect` on `pathname` resets it once navigation completes. `tabActive(href)` checks `pendingPath` first, then falls back to `isActive`. **Do not call `router.push` inside `handleTabClick`** — the `Link` component handles navigation; calling push too causes double navigation and blanks the tab bar.
+- **Desktop sidebar hover-expand** (`components/nav/Sidebar.tsx`): sidebar expands on `mouseenter` and collapses on `mouseleave` — no toggle button. `collapsed = !hovered && !userMenuOpen`. The user menu keeps the sidebar expanded while open. Main content (`azi-main`) always has `margin-left: 68px` — the sidebar overlays on top when expanded. No localStorage persistence. The old collapse button and `LS_KEY` have been removed.
 
 ---
 
 ## Deployment
 
-- **Production URL**: [www.azitracks.com](https://www.azitracks.com) (custom domain via GoDaddy CNAME → Railway)
+- **Production URL**: [www.aziatlas.com](https://www.aziatlas.com) (custom domain via GoDaddy CNAME → Railway)
 - **Platform**: Railway (auto-deploys on push to `main`)
 - **Databases**: Two Railway PostgreSQL instances — sandbox (port 40040) and production (port 10046 / internal `postgres-52e3.railway.internal:5432`)
 - **File storage**: Cloudflare R2, public base URL `https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev`
   - Avatar key pattern: `avatars/{userId}.jpg`
-- **Email**: Resend (`resend` npm package), domain `mail.azitracks.com` (subdomain configured in GoDaddy via Resend auto-setup), region `eu-west-1`. From address: `AziTracks <noreply@mail.azitracks.com>`. API key in env var `RESEND_API_KEY`, from address in `RESEND_FROM`. Email logic in `lib/email.ts`.
+- **Email**: Resend (`resend` npm package), domain `mail.aziatlas.com` (subdomain configured in GoDaddy via Resend auto-setup), region `eu-west-1`. From address: `AziAtlas <noreply@mail.aziatlas.com>`. API key in env var `RESEND_API_KEY`, from address in `RESEND_FROM`. Email logic in `lib/email.ts`.
 
 ---
 
@@ -484,7 +485,7 @@ When tapping a climbed peak, the panel shows the hero photo (if any) with altitu
 - **Display crop aspect ratio is always 4:5**: `ImageCropModal` only offers 4:5. Landscape photos (4:3, 16:9) get cropped heavily. This is a known limitation — adding a 4:3 ratio option is deferred. Users can manually zoom out and center to minimize crop loss.
 - **Prisma client cache after `db push`**: After running `prisma db push`, the dev server must be restarted. If you only run `prisma generate` without restarting, the running server still uses the old client from memory — new fields will appear as `Unknown argument` errors at runtime even though the DB is correct.
 - **`Person.userId` is NOT globally unique**: Changed from `@unique` to `@@unique([tenantId, userId])`. One User can have one linked Person per tenant. This is intentional — the same user can appear as a tag in multiple tenants. Never revert to global `@unique`.
-- **Self-tagging always ACCEPTED**: `setFaceTag()` in `face-detection.service.ts` accepts a `taggerUserId` param. If `taggerUserId === person.userId`, the tag is created as ACCEPTED regardless of `reviewTagsBeforePost`. Always pass `session.user.id` when calling `setFaceTag` from API routes.
+- **All face tags are always ACCEPTED**: `reviewTagsBeforePost` feature was removed (2026-04-21). `setFaceTag()` always creates tags with `status: "ACCEPTED"`. The only remaining check is `allowOthersToTag` — if the tagged user has it disabled, `setFaceTag` returns `null`. Always pass `session.user.id` as `taggerUserId` when calling `setFaceTag` from API routes (self-tagging bypasses the `allowOthersToTag` check).
 - **Invitations use Vouchers, not a separate model**: Friend invitations create a standard `Voucher` record with `maxUses: 1`, `inviterId`, and `inviteeEmail` set. Admin-created vouchers have these fields null. The invitation flow does NOT create any new token model — it reuses the existing voucher system.
 - **Email before voucher creation**: In `POST /api/invitations`, the email is sent BEFORE creating the Voucher in the DB. This ensures no orphaned vouchers if the email fails. If you reorder this, a failed email will leave an active voucher that blocks re-invitation.
 - **PhotoTagStep header must be outside the zIndex 1100 stacking context**: The face-selection bottom sheet backdrop renders as `position:fixed; inset:0; zIndex:1200`. If the header (skip/done buttons) is inside the `zIndex:1100` container, the backdrop covers it and touches on the buttons are intercepted by the backdrop — the button feels unresponsive. Fix: render the header as a separate `position:fixed; zIndex:1300` div at the top of the JSX, outside the main container. Use a `headerRef` + `useEffect` to measure its height and apply it as `paddingTop` on the main container so the photo area starts below the header.
