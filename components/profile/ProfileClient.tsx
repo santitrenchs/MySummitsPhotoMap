@@ -286,35 +286,19 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 1, border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
       {peaks.map((pk) => (
         <div key={pk.id} style={{
-          display: "flex", alignItems: "center", gap: 10,
-          background: "white", border: "1px solid #e5e7eb",
-          borderRadius: 10, padding: "10px 14px",
+          display: "flex", alignItems: "center",
+          background: "white", padding: "11px 14px",
         }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{pk.name}</div>
-            {pk.mountainRange && (
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{pk.mountainRange}</div>
-            )}
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>{pk.altitudeM} m</div>
           </div>
-          <span style={{
-            fontSize: 12, fontWeight: 700, color: "#0369a1",
-            background: "#eff6ff", borderRadius: 20, padding: "2px 8px",
-            flexShrink: 0,
-          }}>
-            {pk.altitudeM.toLocaleString(dateLocale)} m
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#6b7280", flexShrink: 0 }}>
+            ×{pk.count}
           </span>
-          {pk.count > 1 && (
-            <span style={{
-              fontSize: 11, fontWeight: 700, color: "#6b7280",
-              background: "#f3f4f6", borderRadius: 20, padding: "2px 7px",
-              flexShrink: 0,
-            }}>
-              {i(timesClimbed, { n: pk.count })}
-            </span>
-          )}
         </div>
       ))}
     </div>
