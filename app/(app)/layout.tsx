@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { NavBar } from "@/components/nav/NavBar";
+import { Sidebar } from "@/components/nav/Sidebar";
 import { I18nProvider } from "@/components/providers/I18nProvider";
 import { getLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/types";
@@ -23,28 +24,48 @@ export default async function AppLayout({
     prisma.user.findUnique({ where: { id: session.user.id }, select: { avatarUrl: true } }),
   ]);
 
+  const navProps = {
+    userName: session.user.name ?? null,
+    userEmail: session.user.email ?? null,
+    userAvatarUrl: dbUser?.avatarUrl ?? null,
+    pendingFriendRequests,
+    pendingTagCount,
+  };
+
   return (
     <I18nProvider initialLocale={locale as Locale}>
       <div style={{ minHeight: "100svh", display: "flex", flexDirection: "column" }}>
-        <NavBar
-          userName={session.user.name ?? null}
-          userEmail={session.user.email ?? null}
-          userAvatarUrl={dbUser?.avatarUrl ?? null}
-          pendingFriendRequests={pendingFriendRequests}
-          pendingTagCount={pendingTagCount}
-        />
-        <main style={{ flex: 1, paddingBottom: "var(--bottom-nav-h, 0px)" }}>
+        {/* Desktop sidebar (fixed, hidden on mobile via CSS) */}
+        <Sidebar {...navProps} />
+
+        {/* Mobile header + bottom tab bar (hidden on desktop via CSS) */}
+        <NavBar {...navProps} />
+
+        {/* Main content — offset right on desktop via .azi-main CSS class */}
+        <main className="azi-main" style={{ flex: 1, paddingBottom: "var(--bottom-nav-h, 0px)" }}>
           {children}
         </main>
+
         <style>{`
           :root {
-            --top-nav-h: 3rem;
+            --top-nav-h: 0px;
             --bottom-nav-h: 0px;
           }
           @media (max-width: 639px) {
             :root {
               --top-nav-h: 52px;
               --bottom-nav-h: calc(60px + env(safe-area-inset-bottom));
+            }
+          }
+
+          /* Desktop: offset main content by sidebar width */
+          @media (min-width: 640px) {
+            .azi-main {
+              margin-left: 240px;
+              transition: margin-left 220ms cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            body.azi-sb-collapsed .azi-main {
+              margin-left: 68px;
             }
           }
         `}</style>
