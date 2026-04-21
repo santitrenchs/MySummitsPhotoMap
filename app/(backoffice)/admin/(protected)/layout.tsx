@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { signOut } from "@/auth";
+import { AdminNav } from "./AdminNav";
 import { prisma } from "@/lib/db/client";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -51,19 +51,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </header>
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 56px)" }}>
-        {/* Sidebar */}
-        <nav
-          style={{
-            width: 200, background: "white",
-            borderRight: "1px solid #e2e8f0",
-            padding: "24px 0",
-          }}
-        >
-          <NavLink href="/admin/users" label="Usuarios" icon="👥" />
-          <NavLink href="/admin/vouchers" label="Vouchers" icon="🎟️" />
-          <NavLink href="/admin/peaks" label="Cimas" icon="⛰️" />
-          <NavLink href="/admin/geoposicion" label="Geoposición" icon="📍" />
-        </nav>
+        <AdminNav />
 
         {/* Content */}
         <main style={{ flex: 1, padding: 32 }}>
@@ -74,19 +62,3 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   );
 }
 
-function NavLink({ href, label, icon }: { href: string; label: string; icon: string }) {
-  return (
-    <Link
-      href={href}
-      style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: "10px 20px", fontSize: 14, fontWeight: 500,
-        color: "#334155", textDecoration: "none",
-        transition: "background 0.1s",
-      }}
-    >
-      <span>{icon}</span>
-      {label}
-    </Link>
-  );
-}
