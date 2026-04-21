@@ -22,23 +22,10 @@ function renderEmailHead() {
 function renderBrandHeader() {
   return `
         <tr>
-          <td style="padding:24px 32px 20px;background:#ffffff;border-bottom:1px solid #f1f5f9;">
-            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 auto;">
-              <tr>
-                <td style="vertical-align:middle;padding-right:10px;">
-                  <svg width="42" height="42" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M3 19L8.5 7L13 14L17 9.5L21 19Z" fill="#dbeafe" stroke="#0369a1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M17 9.5L19 6.5" stroke="#0369a1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="19" cy="6" r="1.2" fill="#0369a1"/>
-                  </svg>
-                </td>
-                <td style="vertical-align:middle;">
-                  <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#0369a1;font-family:${FONT_STACK};">
-                    AziAtlas
-                  </span>
-                </td>
-              </tr>
-            </table>
+          <td style="padding:24px 32px 20px;background:#ffffff;border-bottom:1px solid #f1f5f9;text-align:center;">
+            <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#0369a1;font-family:${FONT_STACK};">
+              ⛰️ AziAtlas
+            </span>
           </td>
         </tr>`;
 }
@@ -182,7 +169,7 @@ export async function sendFriendInvitationEmail(
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: `${inviterName} te invita a AziAtlas 🏔️`,
+    subject: `${inviterName} te invita a AziAtlas`,
     html: `
 <!DOCTYPE html>
 <html lang="es">
