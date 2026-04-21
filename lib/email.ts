@@ -23,9 +23,16 @@ function renderBrandHeader() {
   return `
         <tr>
           <td style="padding:24px 32px 20px;background:#ffffff;border-bottom:1px solid #f1f5f9;text-align:center;">
-            <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#0369a1;font-family:${FONT_STACK};">
-              ⛰️ AziAtlas
-            </span>
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 auto;">
+              <tr>
+                <td style="vertical-align:middle;padding-right:10px;">
+                  <img src="${APP_URL}/logo-email.png" width="42" height="42" alt="" style="display:block;border:0;">
+                </td>
+                <td style="vertical-align:middle;">
+                  <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#0369a1;font-family:${FONT_STACK};">AziAtlas</span>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>`;
 }
