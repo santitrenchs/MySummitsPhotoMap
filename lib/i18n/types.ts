@@ -33,7 +33,7 @@ export type Dict = {
 
   // New ascent
   newAscent_pickTitle: string; newAscent_skipPhoto: string; newAscent_suggested: string;
-  newAscent_clickOrDrag: string; newAscent_maxSize: string;
+  newAscent_clickOrDrag: string; newAscent_maxSize: string; photo_tooLarge: string;
   newAscent_savingAscent: string; newAscent_uploadingPhoto: string;
   newAscent_savingTags: string; newAscent_save: string;
   newAscent_saveWithPhotos: string; newAscent_photoFailed: string;

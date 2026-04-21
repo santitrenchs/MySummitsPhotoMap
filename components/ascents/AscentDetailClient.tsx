@@ -243,9 +243,14 @@ export function AscentDetailClient(props: AscentDetailProps) {
     }
   }
 
+  const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setCropFile(file);
+    if (file) {
+      if (file.size > MAX_PHOTO_BYTES) { showToast(t.photo_tooLarge); }
+      else setCropFile(file);
+    }
     e.target.value = "";
   }
 

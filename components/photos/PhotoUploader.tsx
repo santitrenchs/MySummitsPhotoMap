@@ -34,9 +34,14 @@ export function PhotoUploader({
   // Re-tag queue for existing photos
   const [retagQueue, setRetagQueue] = useState<RetagItem[]>([]);
 
+  const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+
   function queueFiles(files: FileList | File[]) {
     setError(null);
-    setCropQueue(Array.from(files));
+    const arr = Array.from(files);
+    const oversized = arr.find((f) => f.size > MAX_PHOTO_BYTES);
+    if (oversized) { setError(t.photo_tooLarge); return; }
+    setCropQueue(arr);
   }
 
   // Crop done → move to tag step

@@ -52,8 +52,12 @@ export function NewAscentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+
   function queueFiles(files: FileList | File[]) {
     const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const oversized = arr.find((f) => f.size > MAX_PHOTO_BYTES);
+    if (oversized) { setError(t.photo_tooLarge); return; }
     if (arr.length) setCropQueue((prev) => [...prev, ...arr]);
   }
 
