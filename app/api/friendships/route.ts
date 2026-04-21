@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       select: { email: true, emailNotifications: true, language: true },
     }).then((addressee) => {
       if (addressee?.emailNotifications) {
-        sendFriendRequestEmail(addressee.email, session.user.name ?? session.user.email, addressee.language).catch(
+        sendFriendRequestEmail(addressee.email, session.user.name ?? session.user.email ?? "", addressee.language).catch(
           (e) => console.error("[friendships] email failed:", e),
         );
       }
