@@ -166,7 +166,7 @@ export const es: Dict = {
   profile_editProfile: "Editar perfil",
   profile_bio: "Bio",
   profile_bioPlaceholder: "Breve bio sobre tus aventuras…",
-  profile_tab_peaks: "Cimas",
+  profile_tab_peaks: "Cimas", profile_tab_tagged: "Etiquetado",
   profile_stat_photos: "fotos",
   profile_timesClimbed: "×{n}",
   profile_noAscents: "Aún no hay ascensiones",

@@ -171,7 +171,7 @@ export type Dict = {
   profile_editProfile: string;
   profile_bio: string;
   profile_bioPlaceholder: string;
-  profile_tab_peaks: string;
+  profile_tab_peaks: string; profile_tab_tagged: string;
   profile_stat_photos: string;
   profile_timesClimbed: string;
   profile_noAscents: string;

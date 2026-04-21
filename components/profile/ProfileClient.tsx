@@ -39,10 +39,11 @@ type Props = {
   ascents: Ascent[];
   peaks: Peak[];
   photos: Photo[];
+  taggedPhotos: Photo[];
   stats: { totalAscents: number; uniquePeaks: number; totalPhotos: number };
 };
 
-type Tab = "ascents" | "peaks" | "photos";
+type Tab = "ascents" | "peaks" | "photos" | "tagged";
 
 function initials(name: string): string {
   const parts = name.trim().split(" ");
@@ -50,7 +51,7 @@ function initials(name: string): string {
   return name[0]?.toUpperCase() ?? "?";
 }
 
-export function ProfileClient({ user: initialUser, ascents, peaks, photos, stats }: Props) {
+export function ProfileClient({ user: initialUser, ascents, peaks, photos, taggedPhotos, stats }: Props) {
   const t = useT();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("peaks");
@@ -128,8 +129,8 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, stats
         position: "sticky", top: "var(--top-nav-h, 48px)", zIndex: 10,
         background: "white",
       }}>
-        {(["peaks", "photos"] as Tab[]).map((id) => {
-          const label = id === "peaks" ? t.profile_tab_peaks : t.field_photos;
+        {(["peaks", "photos", "tagged"] as Tab[]).map((id) => {
+          const label = id === "peaks" ? t.profile_tab_peaks : id === "photos" ? t.field_photos : t.profile_tab_tagged;
           return (
             <button
               key={id}
@@ -156,6 +157,9 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, stats
         )}
         {tab === "photos" && (
           <PhotosTab photos={photos} />
+        )}
+        {tab === "tagged" && (
+          <PhotosTab photos={taggedPhotos} />
         )}
       </div>
 

@@ -21,6 +21,7 @@ export default async function ProfilePage() {
       ascents={data.ascents}
       peaks={data.peaks}
       photos={data.allPhotos}
+      taggedPhotos={data.taggedPhotos}
       stats={data.stats}
     />
   );
