@@ -50,7 +50,7 @@ function initials(name: string): string {
 export function ProfileClient({ user: initialUser, ascents, peaks, photos, stats }: Props) {
   const t = useT();
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("ascents");
+  const [tab, setTab] = useState<Tab>("peaks");
   const [editOpen, setEditOpen] = useState(false);
 
   // Local user state so edits show immediately
@@ -109,13 +109,12 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, stats
 
         {/* Stats row */}
         <div style={{
-          display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+          display: "grid", gridTemplateColumns: "repeat(2, 1fr)",
           gap: 1, marginTop: 20,
           background: "#e5e7eb", border: "1px solid #e5e7eb",
           borderRadius: 10, overflow: "hidden",
         }}>
           <StatCell value={stats.totalAscents} label={t.ascents_stat_ascents} />
-          <StatCell value={stats.uniquePeaks} label={t.ascents_stat_peaks} />
           <StatCell value={stats.totalPhotos} label={t.profile_stat_photos} />
         </div>
       </div>
@@ -126,8 +125,8 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, stats
         position: "sticky", top: "var(--top-nav-h, 48px)", zIndex: 10,
         background: "white",
       }}>
-        {(["ascents", "peaks", "photos"] as Tab[]).map((id) => {
-          const label = id === "ascents" ? t.nav_ascents : id === "peaks" ? t.profile_tab_peaks : t.field_photos;
+        {(["peaks", "photos"] as Tab[]).map((id) => {
+          const label = id === "peaks" ? t.profile_tab_peaks : t.field_photos;
           return (
             <button
               key={id}
@@ -149,9 +148,6 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, stats
 
       {/* ── Tab content ── */}
       <div style={{ padding: "16px" }}>
-        {tab === "ascents" && (
-          <AscentsTab ascents={ascents} dateLocale={t.dateLocale} noAscents={t.profile_noAscents} />
-        )}
         {tab === "peaks" && (
           <PeaksTab peaks={peaks} dateLocale={t.dateLocale} timesClimbed={t.profile_timesClimbed} />
         )}
