@@ -150,7 +150,10 @@ export function ImageCropModal({
   function onMouseUp() { drag.current.active = false; }
 
   // ── Wheel zoom ────────────────────────────────────────────────────────────
-  function onWheel(e: React.WheelEvent) {
+  // Registered as a native non-passive listener so preventDefault() works.
+  // Kept in a ref so it always sees fresh state without re-registering.
+  const wheelRef = useRef<(e: WheelEvent) => void>(() => {});
+  wheelRef.current = (e: WheelEvent) => {
     e.preventDefault();
     const { ew, eh } = effectiveDims(rotation);
     const { cropW, cropH } = getCropSize();
@@ -158,7 +161,7 @@ export function ImageCropModal({
     const newScale = Math.max(minS, Math.min(6, scale * (1 - e.deltaY * 0.001)));
     setScale(newScale);
     setOffset((prev) => clamp(prev.x, prev.y, newScale));
-  }
+  };
 
   // ── Touch events (pan + pinch) ────────────────────────────────────────────
   function touchDist(t: TouchList | React.TouchList) {
@@ -205,6 +208,14 @@ export function ImageCropModal({
     const handler = (e: TouchEvent) => touchMoveRef.current(e);
     el.addEventListener("touchmove", handler, { passive: false });
     return () => el.removeEventListener("touchmove", handler);
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => wheelRef.current(e);
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
   }, []);
 
   function onTouchEnd() {
@@ -309,7 +320,6 @@ export function ImageCropModal({
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
-          onWheel={onWheel}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
