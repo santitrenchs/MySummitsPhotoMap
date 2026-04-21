@@ -36,7 +36,10 @@ export async function getProfileData(tenantId: string, userId: string) {
 
   // Flat photos list for the grid (oldest→newest within each ascent, ascents newest→oldest)
   const allPhotos = ascents.flatMap((a) =>
-    a.photos.map((p) => ({ id: p.id, url: p.url, ascentId: a.id }))
+    a.photos.map((p) => ({
+      id: p.id, url: p.url, ascentId: a.id,
+      peakName: a.peak.name, altitudeM: a.peak.altitudeM, date: a.date,
+    }))
   );
 
   return {

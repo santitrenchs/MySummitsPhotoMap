@@ -29,6 +29,9 @@ type Photo = {
   id: string;
   url: string;
   ascentId: string;
+  peakName: string;
+  altitudeM: number;
+  date: Date;
 };
 
 type Props = {
@@ -317,23 +320,42 @@ function PhotosTab({ photos }: { photos: Photo[] }) {
   }
 
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
-      gap: 3,
-    }}>
-      {photos.map((p) => (
-        <Link key={p.id} href={`/ascents/${p.ascentId}`} style={{ textDecoration: "none" }}>
-          <div style={{ aspectRatio: "1", overflow: "hidden", background: "#f3f4f6", borderRadius: 4 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={p.url}
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          </div>
-        </Link>
-      ))}
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 3 }}>
+      {photos.map((p) => {
+        const dateStr = new Date(p.date).toLocaleDateString("ca", { day: "numeric", month: "short", year: "2-digit" });
+        return (
+          <Link key={p.id} href={`/ascents/${p.ascentId}`} style={{ textDecoration: "none" }}>
+            <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden", background: "#f3f4f6", borderRadius: 4 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              {/* Top overlay — peak name + altitude */}
+              <div style={{
+                position: "absolute", top: 0, left: 0, right: 0,
+                background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)",
+                padding: "5px 5px 10px",
+              }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "white", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {p.peakName}
+                </div>
+                <div style={{ fontSize: 8, color: "rgba(255,255,255,0.8)", lineHeight: 1 }}>
+                  {p.altitudeM} m
+                </div>
+              </div>
+              {/* Bottom overlay — date */}
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)",
+                padding: "10px 5px 4px",
+                textAlign: "right",
+              }}>
+                <div style={{ fontSize: 8, color: "rgba(255,255,255,0.85)", lineHeight: 1 }}>
+                  {dateStr}
+                </div>
+              </div>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }
