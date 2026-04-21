@@ -108,9 +108,6 @@ export type Dict = {
   tags_taggedIn: string; tags_pendingCount: string;
   tags_in: string;
 
-  // Profile privacy
-  profile_private: string; profile_privateDesc: string;
-
   // Settings
   settings_title: string; settings_subtitle: string; settings_language: string;
   settings_account: string; settings_username: string;
@@ -121,9 +118,9 @@ export type Dict = {
   settings_confirmPassword: string; settings_passwordChanged: string;
   settings_passwordsDontMatch: string; settings_passwordTooShort: string;
   settings_failedToSave: string;
-  settings_privacy: string; settings_profilePublic: string;
+  settings_privacy: string;
   settings_appearInSearch: string; settings_appearInSearchDesc: string;
-  settings_profilePublicDesc: string; settings_reviewTags: string;
+  settings_reviewTags: string;
   settings_reviewTagsDesc: string; settings_allowTagging: string;
   settings_notifications: string; settings_emailNotif: string;
   settings_emailNotifDesc: string; settings_activityNotif: string;

@@ -48,7 +48,6 @@ model User {
   language     String   @default("en")
 
   // Privacy
-  profilePublic         Boolean @default(true)
   appearInSearch        Boolean @default(true)
   reviewTagsBeforePost  Boolean @default(false)
   allowOthersToTag      Boolean @default(true)

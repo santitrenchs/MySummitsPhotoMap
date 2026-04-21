@@ -13,7 +13,7 @@ export async function GET() {
     where: { id: session.user.id },
     select: {
       id: true, name: true, email: true, username: true, language: true,
-      profilePublic: true, appearInSearch: true, reviewTagsBeforePost: true, allowOthersToTag: true,
+      appearInSearch: true, reviewTagsBeforePost: true, allowOthersToTag: true,
       emailNotifications: true, activityNotifications: true,
       autoDetectFaces: true, autoSuggestPeople: true, reviewFacesBeforeSave: true,
     },
@@ -31,7 +31,7 @@ export async function PATCH(req: Request) {
 
   const allowed = [
     "name", "username", "bio", "language",
-    "profilePublic", "appearInSearch", "reviewTagsBeforePost", "allowOthersToTag",
+    "appearInSearch", "reviewTagsBeforePost", "allowOthersToTag",
     "emailNotifications", "activityNotifications",
     "autoDetectFaces", "autoSuggestPeople", "reviewFacesBeforeSave",
   ];
@@ -66,7 +66,7 @@ export async function PATCH(req: Request) {
       data,
       select: {
         id: true, name: true, email: true, username: true, language: true,
-        profilePublic: true, appearInSearch: true, reviewTagsBeforePost: true, allowOthersToTag: true,
+        appearInSearch: true, reviewTagsBeforePost: true, allowOthersToTag: true,
         emailNotifications: true, activityNotifications: true,
         autoDetectFaces: true, autoSuggestPeople: true, reviewFacesBeforeSave: true,
       },

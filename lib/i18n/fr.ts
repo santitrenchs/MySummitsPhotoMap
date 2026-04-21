@@ -93,8 +93,6 @@ export const fr: Dict = {
   tags_taggedIn: "Vous avez été identifié dans une photo",
   tags_pendingCount: "Tags en attente ({n})", tags_in: "dans",
 
-  profile_private: "Profil privé",
-  profile_privateDesc: "Cet utilisateur a configuré son profil en privé. Seuls ses amis peuvent le voir.",
 
   people_emptyHint: "Ouvre une photo et clique sur Identifier pour détecter et nommer les visages",
   people_title: "Social", people_search: "🔍  Chercher des amis…", friends_taggedSection: "Personnes taguées",
@@ -121,8 +119,7 @@ export const fr: Dict = {
   settings_passwordTooShort: "Le nouveau mot de passe doit comporter au moins 8 caractères",
   settings_failedToSave: "Impossible d'enregistrer",
   settings_appearInSearch: "Apparaître dans les recherches", settings_appearInSearchDesc: "Permet aux autres de te trouver par nom ou pseudo",
-  settings_privacy: "Confidentialité", settings_profilePublic: "Profil public",
-  settings_profilePublicDesc: "N'importe qui peut voir tes ascensions et sommets",
+  settings_privacy: "Confidentialité",
   settings_reviewTags: "Vérifier les tags avant publication",
   settings_reviewTagsDesc: "Approuver les tags de visages avant qu'ils apparaissent",
   settings_allowTagging: "Permettre aux autres de me taguer",

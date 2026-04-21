@@ -93,8 +93,6 @@ export const es: Dict = {
   tags_taggedIn: "Te han etiquetado en una foto",
   tags_pendingCount: "Etiquetas pendientes ({n})", tags_in: "en",
 
-  profile_private: "Perfil privado",
-  profile_privateDesc: "Este usuario ha configurado su perfil como privado. Solo sus amigos pueden verlo.",
 
   people_emptyHint: "Abre una foto y pulsa Etiquetar para detectar y nombrar caras",
   people_title: "Social", people_search: "🔍  Buscar amigos…", friends_taggedSection: "Personas etiquetadas",
@@ -121,8 +119,7 @@ export const es: Dict = {
   settings_passwordTooShort: "La nueva contraseña debe tener al menos 8 caracteres",
   settings_failedToSave: "No se pudo guardar",
   settings_appearInSearch: "Aparecer en búsquedas", settings_appearInSearchDesc: "Permite que otros te encuentren por nombre o usuario",
-  settings_privacy: "Privacidad", settings_profilePublic: "Perfil público",
-  settings_profilePublicDesc: "Cualquiera puede ver tus ascensiones y cimas",
+  settings_privacy: "Privacidad",
   settings_reviewTags: "Revisar etiquetas antes de publicar",
   settings_reviewTagsDesc: "Aprueba las etiquetas de caras antes de que se muestren",
   settings_allowTagging: "Permitir que otros me etiqueten",

@@ -93,8 +93,6 @@ export const de: Dict = {
   tags_taggedIn: "Du wurdest in einem Foto markiert",
   tags_pendingCount: "Ausstehende Tags ({n})", tags_in: "in",
 
-  profile_private: "Privates Profil",
-  profile_privateDesc: "Dieser Nutzer hat sein Profil auf privat gesetzt. Nur seine Freunde können es sehen.",
 
   people_emptyHint: "Öffne ein Foto und klicke auf Markieren, um Gesichter zu erkennen und zu benennen",
   people_title: "Social", people_search: "🔍  Freunde suchen…", friends_taggedSection: "Getaggte Personen",
@@ -121,8 +119,7 @@ export const de: Dict = {
   settings_passwordTooShort: "Das neue Passwort muss mindestens 8 Zeichen lang sein",
   settings_failedToSave: "Speichern fehlgeschlagen",
   settings_appearInSearch: "In Suche erscheinen", settings_appearInSearchDesc: "Erlaube anderen, dich nach Name oder Benutzername zu finden",
-  settings_privacy: "Datenschutz", settings_profilePublic: "Öffentliches Profil",
-  settings_profilePublicDesc: "Jeder kann deine Besteigungen und Gipfel sehen",
+  settings_privacy: "Datenschutz",
   settings_reviewTags: "Tags vor Veröffentlichung prüfen",
   settings_reviewTagsDesc: "Gesichts-Tags genehmigen, bevor sie erscheinen",
   settings_allowTagging: "Anderen erlauben, mich zu markieren",

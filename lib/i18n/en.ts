@@ -93,8 +93,6 @@ export const en: Dict = {
   tags_taggedIn: "You were tagged in a photo",
   tags_pendingCount: "Pending tags ({n})", tags_in: "in",
 
-  profile_private: "Private profile",
-  profile_privateDesc: "This user has set their profile to private. Only their friends can view it.",
 
   people_emptyHint: "Open a photo and click Tag to detect and name faces",
   people_title: "Social", people_search: "🔍  Search friends…", friends_taggedSection: "Tagged people",
@@ -121,8 +119,7 @@ export const en: Dict = {
   settings_passwordTooShort: "New password must be at least 8 characters",
   settings_failedToSave: "Failed to save",
   settings_appearInSearch: "Appear in search", settings_appearInSearchDesc: "Allow others to find you by name or username",
-  settings_privacy: "Privacy", settings_profilePublic: "Public profile",
-  settings_profilePublicDesc: "Anyone can view your ascents and peaks",
+  settings_privacy: "Privacy",
   settings_reviewTags: "Review tags before publishing",
   settings_reviewTagsDesc: "Approve face tags before they appear",
   settings_allowTagging: "Allow others to tag me",

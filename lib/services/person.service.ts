@@ -38,7 +38,7 @@ export async function getPersonDetails(tenantId: string, personId: string) {
   return db.person.findFirst({
     where: { id: personId, tenantId },
     include: {
-      user: { select: { id: true, profilePublic: true } },
+      user: { select: { id: true } },
       faceTags: {
         where: { status: "ACCEPTED" },
         orderBy: { createdAt: "desc" },

@@ -93,8 +93,6 @@ export const ca: Dict = {
   tags_taggedIn: "T'han etiquetat en una foto",
   tags_pendingCount: "Etiquetes pendents ({n})", tags_in: "a",
 
-  profile_private: "Perfil privat",
-  profile_privateDesc: "Aquest usuari ha configurat el seu perfil com a privat. Només els seus amics poden veure'l.",
 
   people_emptyHint: "Obre una foto i prem Etiquetar per detectar i nomenar cares",
   people_title: "Social", people_search: "🔍  Cercar amics…", friends_taggedSection: "Persones etiquetades",
@@ -121,8 +119,7 @@ export const ca: Dict = {
   settings_passwordTooShort: "La nova contrasenya ha de tenir almenys 8 caràcters",
   settings_failedToSave: "No s'ha pogut desar",
   settings_appearInSearch: "Aparèixer a les cerques", settings_appearInSearchDesc: "Permet que altres et trobin per nom o usuari",
-  settings_privacy: "Privadesa", settings_profilePublic: "Perfil públic",
-  settings_profilePublicDesc: "Qualsevol pot veure les teves ascensions i cims",
+  settings_privacy: "Privadesa",
   settings_reviewTags: "Revisar etiquetes abans de publicar",
   settings_reviewTagsDesc: "Aprova les etiquetes de cares abans que apareguin",
   settings_allowTagging: "Permetre que altres em etiquetin",
