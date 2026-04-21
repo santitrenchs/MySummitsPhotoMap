@@ -10,7 +10,10 @@ export async function POST(req: NextRequest) {
   try {
     const { email } = Schema.parse(await req.json());
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, language: true },
+    });
 
     // Always return 200 — never leak whether an email exists
     if (!user) {
@@ -27,7 +30,7 @@ export async function POST(req: NextRequest) {
       data: { email, token, expiresAt },
     });
 
-    await sendPasswordResetEmail(email, token);
+    await sendPasswordResetEmail(email, token, user.language);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

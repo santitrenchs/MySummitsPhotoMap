@@ -116,7 +116,9 @@ export async function POST(req: NextRequest) {
     });
 
     // Fire-and-forget — a failed email must never block registration
-    sendWelcomeEmail(email, name).catch((err) =>
+    const acceptLang = req.headers.get("accept-language") ?? "";
+    const locale = ["es", "ca", "en", "fr", "de"].find((l) => acceptLang.toLowerCase().includes(l)) ?? "es";
+    sendWelcomeEmail(email, name, locale).catch((err) =>
       console.error("[register] welcome email failed:", err)
     );
 

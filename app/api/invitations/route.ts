@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   // Get inviter name
   const inviter = await prisma.user.findUnique({
     where: { id: inviterId },
-    select: { name: true },
+    select: { name: true, language: true },
   });
 
   const inviterName = inviter?.name ?? "Un amigo";
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
 
   // Send email first — only persist the voucher if it succeeds
   try {
-    await sendFriendInvitationEmail(email, inviterName, code);
+    await sendFriendInvitationEmail(email, inviterName, code, inviter?.language ?? "es");
   } catch (err) {
     console.error("[invitations] email send failed:", err);
     return NextResponse.json({ error: "Error al enviar el email" }, { status: 500 });
