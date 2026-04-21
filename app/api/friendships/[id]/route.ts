@@ -1,6 +1,8 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { respondToFriendRequest, removeFriendship, blockUser, unblockUser } from "@/lib/services/friendship.service";
+import { prisma } from "@/lib/db/client";
+import { sendFriendAcceptedEmail } from "@/lib/email";
 
 export async function PATCH(
   req: Request,
@@ -14,7 +16,6 @@ export async function PATCH(
 
   try {
     if (action === "BLOCKED") {
-      // id here is the userId to block
       const result = await blockUser(session.user.id, id);
       return NextResponse.json(result);
     }
@@ -25,7 +26,23 @@ export async function PATCH(
     if (action !== "ACCEPTED" && action !== "REJECTED") {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
+
     const result = await respondToFriendRequest(id, session.user.id, action);
+
+    if (action === "ACCEPTED") {
+      const requester = await prisma.user.findUnique({
+        where: { id: result.requesterId },
+        select: { email: true, emailNotifications: true, language: true },
+      });
+      if (requester?.emailNotifications) {
+        sendFriendAcceptedEmail(
+          requester.email,
+          session.user.name ?? session.user.email ?? "",
+          requester.language,
+        ).catch((e) => console.error("[friendships] accepted email failed:", e));
+      }
+    }
+
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 400 });

@@ -273,6 +273,95 @@ const FRIEND_REQUEST_COPY: Record<string, { subject: (n: string) => string; h1: 
   },
 };
 
+const FRIEND_ACCEPTED_COPY: Record<string, { subject: (n: string) => string; h1: string; body: (n: string) => string; cta: string }> = {
+  es: {
+    subject: (n) => `${n} ha aceptado tu solicitud de amistad`,
+    h1: "¡Ya sois cordada!",
+    body: (n) => `<strong>${n}</strong> ha aceptado tu solicitud. Ya podéis ver vuestras ascensiones y competir juntos en la clasificación.`,
+    cta: "Ver amigos →",
+  },
+  ca: {
+    subject: (n) => `${n} ha acceptat la teva sol·licitud d'amistat`,
+    h1: "Ja sou cordada!",
+    body: (n) => `<strong>${n}</strong> ha acceptat la teva sol·licitud. Ja podeu veure les vostres ascensions i competir junts a la classificació.`,
+    cta: "Veure amics →",
+  },
+  en: {
+    subject: (n) => `${n} accepted your friend request`,
+    h1: "You're on the same rope team!",
+    body: (n) => `<strong>${n}</strong> accepted your request. You can now see each other's ascents and compete together in the rankings.`,
+    cta: "View friends →",
+  },
+  fr: {
+    subject: (n) => `${n} a accepté ta demande d'amitié`,
+    h1: "Vous êtes dans la même cordée !",
+    body: (n) => `<strong>${n}</strong> a accepté ta demande. Vous pouvez maintenant voir vos ascensions et vous affronter dans le classement.`,
+    cta: "Voir les amis →",
+  },
+  de: {
+    subject: (n) => `${n} hat deine Freundschaftsanfrage angenommen`,
+    h1: "Ihr seid jetzt eine Seilschaft!",
+    body: (n) => `<strong>${n}</strong> hat deine Anfrage angenommen. Ihr könnt jetzt gegenseitig eure Aufstiege sehen und in der Rangliste gegeneinander antreten.`,
+    cta: "Freunde ansehen →",
+  },
+};
+
+export async function sendFriendAcceptedEmail(to: string, acceptorName: string, locale = "es") {
+  const copy = FRIEND_ACCEPTED_COPY[locale] ?? FRIEND_ACCEPTED_COPY.es;
+  const friendsUrl = `${APP_URL}/friends`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject: copy.subject(acceptorName),
+    html: `
+<!DOCTYPE html>
+<html lang="${locale}">
+${renderEmailHead()}
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+${renderBrandHeader()}
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1}</h1>
+            <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">
+              ${copy.body(acceptorName)}
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center">
+                  <a href="${friendsUrl}"
+                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
+                            text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
+                    ${copy.cta}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+
+  if (error) {
+    console.error("[email] friend accepted Resend error:", error);
+    throw new Error(`Resend failed: ${JSON.stringify(error)}`);
+  }
+
+  console.log("[email] friend accepted sent OK, id:", data?.id);
+}
+
 export async function sendFriendRequestEmail(to: string, senderName: string, locale = "es") {
   const copy = FRIEND_REQUEST_COPY[locale] ?? FRIEND_REQUEST_COPY.es;
   const friendsUrl = `${APP_URL}/friends`;
