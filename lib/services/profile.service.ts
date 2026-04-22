@@ -24,9 +24,10 @@ export async function getProfileData(tenantId: string, userId: string) {
         photos: { orderBy: { createdAt: "asc" }, select: { id: true, url: true } },
       },
     }),
-    // Photos where this user is tagged by others
-    db.faceTag.findMany({
-      where: { tenantId, userId, status: "ACCEPTED" },
+    // Photos where this user is tagged by others — friends may be in different tenants,
+    // so we query globally (no tenantId filter), same pattern as friends' ascents.
+    prisma.faceTag.findMany({
+      where: { userId, status: "ACCEPTED" },
       select: {
         faceDetection: {
           select: {

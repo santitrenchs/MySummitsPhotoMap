@@ -1,6 +1,5 @@
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
-import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { getServerT } from "@/lib/i18n/server";
 import { AscentDetailClient } from "@/components/ascents/AscentDetailClient";
 import { prisma } from "@/lib/db/client";
@@ -14,10 +13,9 @@ export default async function AscentDetailPage({
   if (!session) redirect("/login");
 
   const { id } = await params;
-  const db = await getTenantConnection(session.user.tenantId);
-
-  const ascent = await db.ascent.findFirst({
-    where: { id, tenantId: session.user.tenantId },
+  // Friends' ascents can be in a different tenant, so we query globally (no tenantId filter).
+  const ascent = await prisma.ascent.findFirst({
+    where: { id },
     include: {
       peak: {
         select: {
