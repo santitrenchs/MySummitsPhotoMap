@@ -659,7 +659,7 @@ export function PhotoTagStep({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && persons.length === 1) tagFace(activeFaceId, persons[0].id, persons[0].username ?? persons[0].name);
+                  if (e.key === "Enter" && persons.length === 1) tagFace(activeFaceId, persons[0].id, persons[0].name);
                 }}
                 placeholder={t.tag_searchOrType}
                 style={{
@@ -683,13 +683,16 @@ export function PhotoTagStep({
                     onClick={() => tagFace(activeFaceId, user.id, label)}
                   >
                     <div className="person-avatar" style={{ background: "linear-gradient(135deg, #dbeafe, #bfdbfe)", color: "#1d4ed8" }}>
-                      {label[0]?.toUpperCase()}
+                      {user.name[0]?.toUpperCase()}
                     </div>
-                    <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0, flex: 1, minWidth: 0 }}>
-                      {label}
-                    </p>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>{user.name}</p>
+                      {user.username && (
+                        <p style={{ fontSize: 11, color: "#9ca3af", margin: "1px 0 0" }}>@{user.username}</p>
+                      )}
+                    </div>
                     {activeFace.userId === user.id && (
-                      <span style={{ marginLeft: "auto", fontSize: 13, color: "#22c55e", fontWeight: 700 }}>✓</span>
+                      <span style={{ fontSize: 13, color: "#22c55e", fontWeight: 700 }}>✓</span>
                     )}
                   </div>
                 );

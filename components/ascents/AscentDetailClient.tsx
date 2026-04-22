@@ -541,8 +541,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
             display: "flex", gap: 5, flexWrap: "wrap",
           }}>
             {persons.map((p) => (
-              <Link key={p.id} href={`/persons/${p.id}`} style={{ textDecoration: "none" }}>
-                <span style={{
+              <span key={p.id} style={{
                   display: "inline-flex", alignItems: "center", gap: 4,
                   fontSize: 12, fontWeight: 600, color: "#374151",
                   background: "#f3f4f6", border: "1px solid #e5e7eb",
@@ -558,7 +557,6 @@ export function AscentDetailClient(props: AscentDetailProps) {
                   </span>
                   {p.name}
                 </span>
-              </Link>
             ))}
           </div>
         )}
