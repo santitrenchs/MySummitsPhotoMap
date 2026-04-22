@@ -59,13 +59,14 @@ export async function getKnownDescriptors(tenantId: string, currentUserId?: stri
   });
 
   // Group descriptors by userId
-  const byUser = new Map<string, { name: string; descriptors: number[][] }>();
+  const byUser = new Map<string, { userId: string; name: string; descriptors: number[][] }>();
   for (const tag of tags) {
     if (!tag.user) continue;
     const desc = tag.faceDetection.descriptor as number[] | null;
     if (!desc || (desc as unknown[]).length === 0) continue;
     if (!byUser.has(tag.user.id)) {
       byUser.set(tag.user.id, {
+        userId: tag.user.id,
         name: tag.user.username ?? tag.user.name,
         descriptors: [],
       });
