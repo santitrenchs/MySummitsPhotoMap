@@ -38,6 +38,7 @@ export async function getProfileData(tenantId: string, userId: string) {
                   select: {
                     id: true, date: true, createdBy: true,
                     peak: { select: { name: true, altitudeM: true } },
+                    user: { select: { name: true, username: true } },
                   },
                 },
               },
@@ -74,6 +75,7 @@ export async function getProfileData(tenantId: string, userId: string) {
   const taggedPhotosMap = new Map<string, {
     id: string; url: string; ascentId: string;
     peakName: string; altitudeM: number; date: Date;
+    creatorName: string;
   }>();
   for (const tag of taggedPersons) {
     const photo = tag.faceDetection.photo;
@@ -84,6 +86,7 @@ export async function getProfileData(tenantId: string, userId: string) {
         id: photo.id, url: photo.url, ascentId: photo.ascentId,
         peakName: photo.ascent.peak.name, altitudeM: photo.ascent.peak.altitudeM,
         date: photo.ascent.date,
+        creatorName: photo.ascent.user?.username ?? photo.ascent.user?.name ?? "",
       });
     }
   }

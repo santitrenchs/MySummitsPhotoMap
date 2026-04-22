@@ -32,6 +32,7 @@ type Photo = {
   peakName: string;
   altitudeM: number;
   date: Date;
+  creatorName?: string;
 };
 
 type Props = {
@@ -154,7 +155,7 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
           <PhotosTab photos={photos} />
         )}
         {tab === "tagged" && (
-          <PhotosTab photos={taggedPhotos} />
+          <PhotosTab photos={taggedPhotos} showCreator />
         )}
       </div>
 
@@ -306,7 +307,7 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
 
 // ── Photos tab ───────────────────────────────────────────────────────────────
 
-function PhotosTab({ photos }: { photos: Photo[] }) {
+function PhotosTab({ photos, showCreator = false }: { photos: Photo[]; showCreator?: boolean }) {
   if (photos.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af", fontSize: 14 }}>
@@ -337,14 +338,26 @@ function PhotosTab({ photos }: { photos: Photo[] }) {
                   {p.altitudeM} m
                 </div>
               </div>
-              {/* Bottom overlay — date */}
+              {/* Bottom overlay — date (+ creator if tagged tab) */}
               <div style={{
                 position: "absolute", bottom: 0, left: 0, right: 0,
                 background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)",
                 padding: "10px 5px 4px",
-                textAlign: "right",
+                ...(showCreator && p.creatorName
+                  ? { display: "flex", alignItems: "flex-end", justifyContent: "space-between" }
+                  : { textAlign: "right" as const }),
               }}>
-                <div style={{ fontSize: 8, color: "rgba(255,255,255,0.85)", lineHeight: 1 }}>
+                {showCreator && p.creatorName && (
+                  <div style={{
+                    fontSize: 8, fontWeight: 700, color: "white", lineHeight: 1,
+                    background: "rgba(3,105,161,0.82)", backdropFilter: "blur(4px)",
+                    borderRadius: 20, padding: "2px 6px",
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "55%",
+                  }}>
+                    @{p.creatorName}
+                  </div>
+                )}
+                <div style={{ fontSize: 8, color: "rgba(255,255,255,0.85)", lineHeight: 1, flexShrink: 0 }}>
                   {dateStr}
                 </div>
               </div>
