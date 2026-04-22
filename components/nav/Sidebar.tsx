@@ -101,14 +101,14 @@ export function Sidebar({
             <span className="azisb-ic"><SbMountainIcon on={active("/ascents")} /></span>
             <span className="azisb-lbl">{t.nav_ascents}</span>
           </Link>
-          <Link
-            href="/ascents/new"
-            className={`azisb-item${active("/ascents/new") ? " azisb-item--on" : ""}`}
+          <button
+            className="azisb-item"
             data-tip="Nueva ascensión"
+            onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal"))}
           >
             <span className="azisb-ic"><SbPlusIcon /></span>
             <span className="azisb-lbl">Nueva ascensión</span>
-          </Link>
+          </button>
         </nav>
 
         <div style={{ flex: 1 }} />
@@ -273,6 +273,11 @@ const CSS = `
   height: 44px;
   border-radius: 10px;
   text-decoration: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
   color: #64748b;
   font-size: 13.5px;
   font-weight: 500;

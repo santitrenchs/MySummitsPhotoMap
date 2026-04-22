@@ -31,6 +31,7 @@ export const en: Dict = {
   newAscent_skipPhoto: "Continue without photo →",
   newAscent_suggested: "suggested",
   newAscent_clickOrDrag: "Click or drag photos here",
+  newAscent_selectFiles: "Select photos",
   newAscent_maxSize: "JPEG, PNG, WebP · max 20 MB each",
   photo_tooLarge: "Photo exceeds the 20 MB limit",
   newAscent_savingAscent: "Saving ascent…",
@@ -41,6 +42,7 @@ export const en: Dict = {
   newAscent_photoFailed: "Ascent saved but photo {i} failed to upload.",
   newAscent_tagged: "{n} tagged",
   newAscent_duplicate: "You already have this peak logged for this date.",
+  newAscent_discardTitle: "Discard ascent?", newAscent_discardMessage: "If you leave, your changes won't be saved.", newAscent_discard: "Discard",
   ascents_perspectives: "{n} perspectives",
 
   edit_failedToSave: "Failed to save", edit_saveChanges: "Save changes",

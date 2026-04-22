@@ -28,14 +28,39 @@ export function PhotoTagStep({
   onDone,
   onSkip,
   initialFaces = [],
+  embedded = false,
+  initialSrc,
+  doneRef,
+  skipRef,
+  toggleDrawModeRef,
+  tagFaceRef,
+  clearActiveFaceRef,
+  confirmSuggestionRef,
+  removeTagRef,
+  onStateChange,
 }: {
   blob: Blob;
   onDone: (blob: Blob, faces: FaceDraft[]) => void;
   onSkip: (blob: Blob) => void;
   initialFaces?: FaceDraft[];
+  /** Embedded mode: fills the left panel instead of covering the screen. */
+  embedded?: boolean;
+  /** Pre-created objectURL for the blob — avoids blank flash on mount */
+  initialSrc?: string;
+  doneRef?: React.MutableRefObject<(() => void) | null>;
+  skipRef?: React.MutableRefObject<(() => void) | null>;
+  toggleDrawModeRef?: React.MutableRefObject<(() => void) | null>;
+  tagFaceRef?: React.MutableRefObject<((faceId: string, userId: string, label: string) => void) | null>;
+  clearActiveFaceRef?: React.MutableRefObject<(() => void) | null>;
+  confirmSuggestionRef?: React.MutableRefObject<((faceId: string) => void) | null>;
+  removeTagRef?: React.MutableRefObject<((faceId: string) => void) | null>;
+  onStateChange?: (state: {
+    faces: FaceDraft[]; phase: "detecting" | "ready"; drawMode: boolean;
+    activeFaceId: string | null; activeFace: FaceDraft | null;
+  }) => void;
 }) {
   const t = useT();
-  const [imgSrc, setImgSrc] = useState("");
+  const [imgSrc, setImgSrc] = useState(initialSrc ?? "");
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [renderedSize, setRenderedSize] = useState({ w: 0, h: 0 });
@@ -54,10 +79,9 @@ export function PhotoTagStep({
     if (headerRef.current) setHeaderH(headerRef.current.getBoundingClientRect().height);
   }, []);
 
-  // Lock body scroll while fullscreen tagging UI is visible.
-  // On iOS Safari, overflow:hidden alone still allows the page to jump scroll position,
-  // which repositions fixed elements. The position:fixed + top:-scrollY pattern prevents this.
+  // Lock body scroll — only in standalone mode (embedded: AscentModal handles it)
   useEffect(() => {
+    if (embedded) return;
     const scrollY = window.scrollY;
     document.body.style.overflow = "hidden";
     document.body.style.position = "fixed";
@@ -70,17 +94,15 @@ export function PhotoTagStep({
       document.body.style.width = "";
       window.scrollTo(0, scrollY);
     };
-  }, []);
+  }, [embedded]);
 
-  // Revoke blob URL on unmount
+  // Create blob URL only if not provided externally via initialSrc
   useEffect(() => {
+    if (initialSrc) return; // parent owns the URL lifecycle
     const url = URL.createObjectURL(blob);
     setImgSrc(url);
-    return () => {
-      URL.revokeObjectURL(url);
-      setImgSrc("");
-    };
-  }, [blob]);
+    return () => { URL.revokeObjectURL(url); setImgSrc(""); };
+  }, [blob, initialSrc]);
 
   // Debounced server-side search — only friends with linked accounts
   useEffect(() => {
@@ -143,7 +165,8 @@ export function PhotoTagStep({
       const suggestionLabels = new Map<number, string>();
       if (results.length > 0) {
         const knownRes = await fetch("/api/persons/descriptors");
-        const known: KnownPerson[] = await knownRes.json();
+        const knownData = await knownRes.json().catch(() => []);
+        const known: KnownPerson[] = Array.isArray(knownData) ? knownData : [];
         if (known.length > 0) {
           const userIdToLabel = new Map(known.map((p) => [p.userId, p.name]));
           const labeled = known.map(
@@ -210,6 +233,8 @@ export function PhotoTagStep({
   }
 
   function tagFace(faceId: string, userId: string, label: string) {
+    // Prevent tagging the same person in two different faces of the same photo
+    if (faces.some((f) => f.tempId !== faceId && f.userId === userId)) return;
     setFaces((prev) =>
       prev.map((f) => (f.tempId === faceId ? { ...f, userId, userLabel: label } : f))
     );
@@ -220,6 +245,8 @@ export function PhotoTagStep({
   function confirmSuggestion(faceId: string) {
     const face = faces.find((f) => f.tempId === faceId);
     if (face?.suggestionUserId && face?.suggestion) {
+      // Also guard against duplicate before confirming suggestion
+      if (faces.some((f) => f.tempId !== faceId && f.userId === face.suggestionUserId)) return;
       tagFace(faceId, face.suggestionUserId, face.suggestion);
     }
   }
@@ -229,8 +256,6 @@ export function PhotoTagStep({
   }
 
   const activeFace = faces.find((f) => f.tempId === activeFaceId) ?? null;
-  // Count confirmed tags + pending suggestions (will be auto-confirmed on continue)
-  const taggedCount = faces.filter((f) => f.userId || f.suggestionUserId).length;
 
   // ── Manual tap-to-place helper ───────────────────────────────────────────────
 
@@ -267,6 +292,27 @@ export function PhotoTagStep({
       userLabel: f.userLabel ?? f.suggestion ?? null,
     })));
   }
+
+  // Update refs every render (refs don't cause re-renders)
+  useEffect(() => {
+    if (doneRef) doneRef.current = handleDone;
+    if (skipRef) skipRef.current = () => onSkip(blob);
+    if (toggleDrawModeRef) toggleDrawModeRef.current = () => { setDrawMode((d) => !d); setActiveFaceId(null); };
+    if (tagFaceRef) tagFaceRef.current = tagFace;
+    if (clearActiveFaceRef) clearActiveFaceRef.current = () => setActiveFaceId(null);
+    if (confirmSuggestionRef) confirmSuggestionRef.current = confirmSuggestion;
+    if (removeTagRef) removeTagRef.current = (faceId) => { removeTag(faceId); setActiveFaceId(null); };
+  });
+
+  // Notify parent when relevant state changes — fixed 4-item deps, always the same size
+  const onStateChangeRef = useRef(onStateChange);
+  onStateChangeRef.current = onStateChange;
+  useEffect(() => {
+    const af = activeFaceId ? (faces.find((f) => f.tempId === activeFaceId) ?? null) : null;
+    onStateChangeRef.current?.({ faces, phase, drawMode, activeFaceId, activeFace: af });
+  }, [faces, phase, drawMode, activeFaceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const taggedCount = faces.filter((f) => f.userId || f.suggestionUserId).length;
 
   return (
     <>
@@ -312,43 +358,48 @@ export function PhotoTagStep({
         .face-box.ring-active { border-color: #0ea5e9; box-shadow: 0 0 0 2.5px #0ea5e9, 0 4px 18px rgba(14,165,233,0.5); }
       `}</style>
 
-      {/* ── Header — above the face-sheet backdrop (zIndex 1200) ─────────── */}
-      <div ref={headerRef} style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 1300,
-        background: "#000",
-        display: "flex", flexDirection: "column",
-        padding: "16px 20px 10px",
-        paddingTop: "max(16px, env(safe-area-inset-top))",
-        gap: 6,
-      }}>
-        {/* Row 1: actions */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <button
-            onClick={() => onSkip(blob)}
-            style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
-          >
-            {t.skip}
-          </button>
-          <button
-            onClick={handleDone}
-            style={{
-              fontSize: 14, fontWeight: 700,
-              color: phase === "ready" ? "#0ea5e9" : "rgba(255,255,255,0.35)",
-              background: "none", border: "none", cursor: "pointer", padding: "4px 0",
-            }}
-            disabled={phase === "detecting"}
-          >
-            {taggedCount > 0 ? `${t.done} (${taggedCount})` : t.done}
-          </button>
+      {/* ── Header — only in standalone (non-embedded) mode ─────────────── */}
+      {!embedded && (
+        <div ref={headerRef} style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 1300,
+          background: "#000",
+          display: "flex", flexDirection: "column",
+          padding: "16px 20px 10px",
+          paddingTop: "max(16px, env(safe-area-inset-top))",
+          gap: 6,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <button
+              onClick={() => onSkip(blob)}
+              style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+            >
+              {t.skip}
+            </button>
+            <button
+              onClick={handleDone}
+              style={{
+                fontSize: 14, fontWeight: 700,
+                color: phase === "ready" ? "#0ea5e9" : "rgba(255,255,255,0.35)",
+                background: "none", border: "none", cursor: "pointer", padding: "4px 0",
+              }}
+              disabled={phase === "detecting"}
+            >
+              {taggedCount > 0 ? `${t.done} (${taggedCount})` : t.done}
+            </button>
+          </div>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "white", letterSpacing: "-0.01em", textAlign: "center" }}>
+            {phase === "detecting" ? t.tag_detecting : faces.length === 0 ? t.tag_tagPeople : i(t.tag_tagPeopleFound, { n: faces.length })}
+          </p>
         </div>
-        {/* Row 2: status title */}
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "white", letterSpacing: "-0.01em", textAlign: "center" }}>
-          {phase === "detecting" ? t.tag_detecting : faces.length === 0 ? t.tag_tagPeople : i(t.tag_tagPeopleFound, { n: faces.length })}
-        </p>
-      </div>
+      )}
 
-      {/* ── Full-screen dark container ─────────────────────────────────── */}
-      <div style={{
+      {/* ── Main container — fixed fullscreen (standalone) or flex (embedded) */}
+      <div style={embedded ? {
+        flex: 1, minHeight: 0, width: "100%",
+        position: "relative",
+        display: "flex", flexDirection: "column",
+        background: "white", overflow: "hidden",
+      } : {
         position: "fixed", inset: 0, zIndex: 1100,
         background: "#000",
         display: "flex", flexDirection: "column",
@@ -376,8 +427,8 @@ export function PhotoTagStep({
                 onLoad={() => setImgLoaded(true)}
                 style={{
                   display: "block",
-                  maxWidth: "100vw",
-                  maxHeight: "calc(100svh - 180px)",
+                  maxWidth: embedded ? "100%" : "100vw",
+                  maxHeight: embedded ? "100%" : "calc(100svh - 180px)",
                   objectFit: "contain",
                   userSelect: "none",
                   WebkitUserSelect: "none",
@@ -533,43 +584,43 @@ export function PhotoTagStep({
           </div>
         </div>
 
-        {/* Draw mode hint / no faces hint */}
-        <div style={{ display: "flex", justifyContent: "center", padding: "8px 0", minHeight: 36, animation: "tagFadeIn 0.3s ease" }}>
-          {drawMode ? (
-            <span style={{
-              fontSize: 12, color: "white",
-              background: "rgba(14,165,233,0.85)", backdropFilter: "blur(6px)",
-              borderRadius: 20, padding: "6px 18px", fontWeight: 600,
-            }}>
-              {t.tag_drawHint}
-            </span>
-          ) : phase === "ready" && faces.length === 0 ? (
-            <span style={{
-              fontSize: 12, color: "rgba(255,255,255,0.5)",
-              background: "rgba(255,255,255,0.08)",
-              borderRadius: 20, padding: "6px 18px",
-            }}>
-              {t.tag_noFaces}
-            </span>
-          ) : null}
-        </div>
+        {/* Draw mode hint / no faces hint — standalone only; embedded shows these in right panel */}
+        {!embedded && (
+          <div style={{ display: "flex", justifyContent: "center", padding: "8px 0", minHeight: 36, animation: "tagFadeIn 0.3s ease" }}>
+            {drawMode ? (
+              <span style={{
+                fontSize: 12, color: "white",
+                background: "rgba(14,165,233,0.85)", backdropFilter: "blur(6px)",
+                borderRadius: 20, padding: "6px 18px", fontWeight: 600,
+              }}>
+                {t.tag_drawHint}
+              </span>
+            ) : phase === "ready" && faces.length === 0 ? (
+              <span style={{
+                fontSize: 12, color: "rgba(255,255,255,0.5)",
+                background: "rgba(255,255,255,0.08)",
+                borderRadius: 20, padding: "6px 18px",
+              }}>
+                {t.tag_noFaces}
+              </span>
+            ) : null}
+          </div>
+        )}
 
-        {/* Add person + Continue buttons */}
-        <div style={{
-          padding: "8px 20px 12px",
-          paddingBottom: "max(20px, env(safe-area-inset-bottom))",
-          flexShrink: 0, display: "flex", flexDirection: "column", gap: 10,
-        }}>
-          {/* Add manually button */}
-          {phase === "ready" && (
+        {/* Bottom controls — standalone mode only; embedded uses right panel */}
+        {!embedded && (
+          <div style={{
+            padding: "8px 20px 12px",
+            paddingBottom: "max(20px, env(safe-area-inset-bottom))",
+            flexShrink: 0, display: "flex", flexDirection: "column", gap: 10,
+          }}>
             <button
               onClick={() => { setDrawMode(!drawMode); setActiveFaceId(null); }}
               style={{
                 width: "100%", padding: "12px",
                 background: drawMode ? "rgba(14,165,233,0.2)" : "rgba(255,255,255,0.1)",
                 border: drawMode ? "1.5px solid rgba(14,165,233,0.6)" : "1.5px solid rgba(255,255,255,0.15)",
-                borderRadius: 14,
-                fontSize: 14, fontWeight: 600,
+                borderRadius: 14, fontSize: 14, fontWeight: 600,
                 color: drawMode ? "#7dd3fc" : "rgba(255,255,255,0.75)",
                 cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -578,32 +629,25 @@ export function PhotoTagStep({
               <span style={{ fontSize: 16 }}>{drawMode ? "✕" : "+"}</span>
               {drawMode ? t.tag_cancelDraw : t.tag_addManual}
             </button>
-          )}
-
-          {/* Continue button */}
-          <button
-            onClick={handleDone}
-            disabled={phase === "detecting"}
-            style={{
-              width: "100%", padding: "15px",
-              background: phase === "detecting" ? "rgba(255,255,255,0.2)" : "white",
-              color: "#111827", border: "none", borderRadius: 14,
-              fontSize: 15, fontWeight: 700,
-              cursor: phase === "detecting" ? "default" : "pointer",
-              transition: "background 0.15s",
-            }}
-          >
-            {phase === "detecting"
-              ? t.tag_detecting2
-              : taggedCount > 0
-              ? i(t.tag_continueTagged, { n: taggedCount })
-              : t.tag_continue}
-          </button>
-        </div>
+            <button
+              onClick={handleDone}
+              disabled={phase === "detecting"}
+              style={{
+                width: "100%", padding: "15px",
+                background: phase === "detecting" ? "rgba(255,255,255,0.2)" : "white",
+                color: "#111827", border: "none", borderRadius: 14,
+                fontSize: 15, fontWeight: 700,
+                cursor: phase === "detecting" ? "default" : "pointer",
+              }}
+            >
+              {phase === "detecting" ? t.tag_detecting2 : taggedCount > 0 ? i(t.tag_continueTagged, { n: taggedCount }) : t.tag_continue}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Bottom sheet for tagging ──────────────────────────────────── */}
-      {activeFaceId && activeFace && (
+      {!embedded && activeFaceId && activeFace && (
         <div
           style={{
             position: "fixed", inset: 0, zIndex: 1200,
