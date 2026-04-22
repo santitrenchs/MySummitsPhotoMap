@@ -35,7 +35,7 @@ export function PhotoTagStep({
   initialFaces?: FaceDraft[];
 }) {
   const t = useT();
-  const objUrlRef = useRef(URL.createObjectURL(blob));
+  const [imgSrc, setImgSrc] = useState("");
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [renderedSize, setRenderedSize] = useState({ w: 0, h: 0 });
@@ -74,9 +74,13 @@ export function PhotoTagStep({
 
   // Revoke blob URL on unmount
   useEffect(() => {
-    const url = objUrlRef.current;
-    return () => URL.revokeObjectURL(url);
-  }, []);
+    const url = URL.createObjectURL(blob);
+    setImgSrc(url);
+    return () => {
+      URL.revokeObjectURL(url);
+      setImgSrc("");
+    };
+  }, [blob]);
 
   // Debounced server-side search — only friends with linked accounts
   useEffect(() => {
@@ -366,7 +370,7 @@ export function PhotoTagStep({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               ref={imgRef}
-              src={objUrlRef.current}
+              src={imgSrc}
               alt="Photo to tag"
               onLoad={() => setImgLoaded(true)}
               style={{
