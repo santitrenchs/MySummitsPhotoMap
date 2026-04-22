@@ -258,7 +258,7 @@ export function PhotoFaceTagger({
                     <g key={det.id} style={{ cursor: "pointer" }} onClick={(e) => {
                       e.stopPropagation();
                       setActiveBox(activeBox === det.id ? null : det.id);
-                      setTagInput(tagged ? (tagged.username ?? tagged.name) : suggested ?? "");
+                      setTagInput(tagged ? (tagged.username ?? tagged.name) : suggested?.label ?? "");
                     }}>
                       <rect
                         x={box.x} y={box.y} width={box.width} height={box.height}
@@ -335,7 +335,7 @@ export function PhotoFaceTagger({
                       fontSize: 16, outline: "none", boxSizing: "border-box",
                     }}
                   />
-                  {suggestions.length > 0 && (
+                  {persons.length > 0 && (
                     <div style={{ marginTop: 4, maxHeight: 120, overflowY: "auto" }}>
                       {persons.slice(0, 5).map((p) => (
                         <div

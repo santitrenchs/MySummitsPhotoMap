@@ -219,12 +219,14 @@ export function AscentDetailClient(props: AscentDetailProps) {
         const file = new File([blob], "original.jpg", { type: blob.type || "image/jpeg" });
 
         const faces: FaceDraft[] = (Array.isArray(facesData) ? facesData : []).map(
-          (det: { id: string; boundingBox: FaceDraft["boundingBox"]; descriptor: number[] | null; faceTags: { status: string; person: { name: string } }[] }) => ({
+          (det: { id: string; boundingBox: FaceDraft["boundingBox"]; descriptor: number[] | null; faceTags: { userId: string | null; user: { name: string; username: string | null } | null }[] }) => ({
             tempId: `existing-${det.id}`,
             boundingBox: det.boundingBox,
             descriptor: det.descriptor ?? [],
-            personName: det.faceTags[0]?.person.name ?? null,
+            userId: det.faceTags[0]?.userId ?? null,
+            userLabel: det.faceTags[0]?.user?.username ?? det.faceTags[0]?.user?.name ?? null,
             suggestion: null,
+            suggestionUserId: null,
           })
         );
 
@@ -315,7 +317,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
             faces: faces.map((f) => ({
               boundingBox: f.boundingBox,
               descriptor: f.descriptor,
-              personName: f.personName ?? null,
+              userId: f.userId ?? null,
             })),
           }),
         });
