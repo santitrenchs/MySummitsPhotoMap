@@ -26,7 +26,7 @@ function renderBrandHeader() {
             <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 auto;">
               <tr>
                 <td style="vertical-align:middle;padding-right:10px;">
-                  <img src="${APP_URL}/logo-email.png" width="42" height="42" alt="" style="display:block;border:0;">
+                  <img src="https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev/logo-email.png" width="42" height="42" alt="" style="display:block;border:0;">
                 </td>
                 <td style="vertical-align:middle;">
                   <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#0369a1;font-family:${FONT_STACK};">AziAtlas</span>
