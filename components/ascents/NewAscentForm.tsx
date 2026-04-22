@@ -43,7 +43,8 @@ export function NewAscentForm({
   // Step 1: crop queue (raw files)
   const [cropQueue, setCropQueue] = useState<File[]>([]);
   // Step 2: tag queue (cropped blobs + metadata waiting for face tagging)
-  const [tagQueue, setTagQueue] = useState<{ blob: Blob; cropMeta: CropMeta; originalFile: File }[]>([]);
+  const [tagQueue, setTagQueue] = useState<{ id: number; blob: Blob; cropMeta: CropMeta; originalFile: File }[]>([]);
+  const tagQueueCounter = useRef(0);
   // Step 3: ready items (tagged, ready to upload on submit)
   const [readyItems, setReadyItems] = useState<{ blob: Blob; cropMeta: CropMeta; originalFile: File; faces: FaceDraft[]; preview: string }[]>([]);
 
@@ -80,7 +81,7 @@ export function NewAscentForm({
   function handleCropDone(blob: Blob, cropMeta: CropMeta) {
     const originalFile = cropQueue[0];
     setCropQueue((q) => q.slice(1));
-    setTagQueue((q) => [...q, { blob, cropMeta, originalFile }]);
+    setTagQueue((q) => [...q, { id: ++tagQueueCounter.current, blob, cropMeta, originalFile }]);
   }
   function handleCropCancel() {
     setCropQueue((q) => q.slice(1));
@@ -221,6 +222,7 @@ export function NewAscentForm({
       {/* Tag step — overlays on top of whichever step is active */}
       {cropQueue.length === 0 && tagQueue.length > 0 && (
         <PhotoTagStep
+          key={tagQueue[0].id}
           blob={tagQueue[0].blob}
           onDone={handleTagDone}
           onSkip={handleTagSkip}

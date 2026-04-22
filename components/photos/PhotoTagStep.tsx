@@ -148,9 +148,10 @@ export function PhotoTagStep({
               p.descriptors.map((d) => new Float32Array(d))
             )
           );
-          const matcher = new faceapi.FaceMatcher(labeled, 0.5);
+          const matcher = new faceapi.FaceMatcher(labeled, 0.6);
           results.forEach((det, i) => {
             const match = matcher.findBestMatch(new Float32Array(det.descriptor));
+            console.log(`[face ${i}] best match label=${userIdToLabel.get(match.label) ?? match.label} distance=${match.distance.toFixed(3)}`);
             if (match.label !== "unknown") {
               suggestionUserIds.set(i, match.label);
               suggestionLabels.set(i, userIdToLabel.get(match.label) ?? match.label);
