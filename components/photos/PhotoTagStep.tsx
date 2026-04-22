@@ -12,12 +12,14 @@ export type FaceDraft = {
   tempId: string;
   boundingBox: { x: number; y: number; width: number; height: number };
   descriptor: number[];
-  personName: string | null;
-  suggestion: string | null;
+  userId: string | null;
+  userLabel: string | null;
+  suggestion: string | null;       // display name suggested by face recognition
+  suggestionUserId: string | null; // userId for that suggestion
 };
 
-type Person = { id: string; name: string; userId?: string | null };
-type KnownPerson = { name: string; descriptors: number[][] };
+type User = { id: string; name: string; username: string | null };
+type KnownPerson = { userId: string; name: string; descriptors: number[][] };
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
@@ -40,7 +42,7 @@ export function PhotoTagStep({
   const [phase, setPhase] = useState<"detecting" | "ready">("detecting");
   const [faces, setFaces] = useState<FaceDraft[]>([]);
   const [activeFaceId, setActiveFaceId] = useState<string | null>(null);
-  const [persons, setPersons] = useState<Person[]>([]);
+  const [persons, setPersons] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -132,22 +134,27 @@ export function PhotoTagStep({
         .withFaceLandmarks(true)
         .withFaceDescriptors();
 
-      // Match against known persons
-      const suggestionMap = new Map<number, string>();
+      // Match against known persons (use userId as face-api label)
+      const suggestionUserIds = new Map<number, string>();
+      const suggestionLabels = new Map<number, string>();
       if (results.length > 0) {
         const knownRes = await fetch("/api/persons/descriptors");
         const known: KnownPerson[] = await knownRes.json();
         if (known.length > 0) {
+          const userIdToLabel = new Map(known.map((p) => [p.userId, p.name]));
           const labeled = known.map(
             (p) => new faceapi.LabeledFaceDescriptors(
-              p.name,
+              p.userId,
               p.descriptors.map((d) => new Float32Array(d))
             )
           );
           const matcher = new faceapi.FaceMatcher(labeled, 0.5);
           results.forEach((det, i) => {
             const match = matcher.findBestMatch(new Float32Array(det.descriptor));
-            if (match.label !== "unknown") suggestionMap.set(i, match.label);
+            if (match.label !== "unknown") {
+              suggestionUserIds.set(i, match.label);
+              suggestionLabels.set(i, userIdToLabel.get(match.label) ?? match.label);
+            }
           });
         }
       }
@@ -162,8 +169,10 @@ export function PhotoTagStep({
           height: det.detection.box.height / img.naturalHeight,
         },
         descriptor: Array.from(det.descriptor),
-        personName: null,
-        suggestion: suggestionMap.get(i) ?? null,
+        userId: null,
+        userLabel: null,
+        suggestion: suggestionLabels.get(i) ?? null,
+        suggestionUserId: suggestionUserIds.get(i) ?? null,
       }));
 
       // Merge with initialFaces: match by bounding box center overlap
@@ -180,7 +189,9 @@ export function PhotoTagStep({
         );
         if (idx !== -1) {
           const match = unmatched.splice(idx, 1)[0];
-          return { ...face, personName: match.personName, suggestion: match.personName ?? face.suggestion };
+          return { ...face, userId: match.userId, userLabel: match.userLabel,
+            suggestion: match.userLabel ?? face.suggestion,
+            suggestionUserId: match.userId ?? face.suggestionUserId };
         }
         return face;
       });
@@ -193,9 +204,9 @@ export function PhotoTagStep({
     setPhase("ready");
   }
 
-  function tagFace(faceId: string, personName: string) {
+  function tagFace(faceId: string, userId: string, label: string) {
     setFaces((prev) =>
-      prev.map((f) => (f.tempId === faceId ? { ...f, personName } : f))
+      prev.map((f) => (f.tempId === faceId ? { ...f, userId, userLabel: label } : f))
     );
     setActiveFaceId(null);
     setSearch("");
@@ -203,16 +214,18 @@ export function PhotoTagStep({
 
   function confirmSuggestion(faceId: string) {
     const face = faces.find((f) => f.tempId === faceId);
-    if (face?.suggestion) tagFace(faceId, face.suggestion);
+    if (face?.suggestionUserId && face?.suggestion) {
+      tagFace(faceId, face.suggestionUserId, face.suggestion);
+    }
   }
 
   function removeTag(faceId: string) {
-    setFaces((prev) => prev.map((f) => (f.tempId === faceId ? { ...f, personName: null } : f)));
+    setFaces((prev) => prev.map((f) => (f.tempId === faceId ? { ...f, userId: null, userLabel: null } : f)));
   }
 
   const activeFace = faces.find((f) => f.tempId === activeFaceId) ?? null;
   // Count confirmed tags + pending suggestions (will be auto-confirmed on continue)
-  const taggedCount = faces.filter((f) => f.personName || f.suggestion).length;
+  const taggedCount = faces.filter((f) => f.userId || f.suggestionUserId).length;
 
   // ── Manual tap-to-place helper ───────────────────────────────────────────────
 
@@ -231,19 +244,22 @@ export function PhotoTagStep({
         height: r * 2,
       },
       descriptor: [],
-      personName: null,
+      userId: null,
+      userLabel: null,
       suggestion: null,
+      suggestionUserId: null,
     };
     setFaces((prev) => [...prev, newFace]);
     setActiveFaceId(newFace.tempId);
     setDrawMode(false);
   }
 
-  // Auto-confirm any pending suggestions before handing off
+  // Auto-confirm pending suggestions before handing off
   function handleDone() {
     onDone(blob, faces.map((f) => ({
       ...f,
-      personName: f.personName ?? f.suggestion ?? null,
+      userId: f.userId ?? f.suggestionUserId ?? null,
+      userLabel: f.userLabel ?? f.suggestion ?? null,
     })));
   }
 
@@ -383,7 +399,7 @@ export function PhotoTagStep({
               const { x, y, width, height } = face.boundingBox;
               const isManual = face.descriptor.length === 0;
               const isActive = activeFaceId === face.tempId;
-              const isTagged = !!face.personName;
+              const isTagged = !!face.userId;
               const hasSuggestion = !!face.suggestion && !isTagged;
 
               if (isManual) {
@@ -411,7 +427,7 @@ export function PhotoTagStep({
                         borderRadius: 20, fontSize: 11, fontWeight: 700, color: "white",
                         pointerEvents: "none", boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
                       }}>
-                        {face.personName}
+                        {face.userLabel}
                       </span>
                     )}
                     {!isTagged && !isActive && (
@@ -473,7 +489,7 @@ export function PhotoTagStep({
                       borderRadius: 20, fontSize: 11, fontWeight: 700, color: "white",
                       pointerEvents: "none", boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
                     }}>
-                      {face.personName}
+                      {face.userLabel}
                     </span>
                   )}
                   {!isTagged && !hasSuggestion && !isActive && (
@@ -607,7 +623,7 @@ export function PhotoTagStep({
               <p style={{ fontSize: 15, fontWeight: 700, color: "#111827", margin: "0 0 12px" }}>{t.tag_whoIsThis}</p>
 
               {/* Auto-suggestion confirm chip */}
-              {activeFace.suggestion && !activeFace.personName && (
+              {activeFace.suggestion && !activeFace.userId && (
                 <button
                   onClick={() => confirmSuggestion(activeFace.tempId)}
                   style={{
@@ -636,7 +652,7 @@ export function PhotoTagStep({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && persons.length === 1) tagFace(activeFaceId, persons[0].name);
+                  if (e.key === "Enter" && persons.length === 1) tagFace(activeFaceId, persons[0].id, persons[0].username ?? persons[0].name);
                 }}
                 placeholder={t.tag_searchOrType}
                 style={{
@@ -651,36 +667,21 @@ export function PhotoTagStep({
             {/* Person list */}
             <div style={{ overflowY: "auto", flex: 1 }}>
 
-              {persons.slice(0, 5).map((person) => {
-                const isVerified = !!person.userId;
+              {persons.slice(0, 5).map((user) => {
+                const label = user.username ?? user.name;
                 return (
                   <div
-                    key={person.id}
+                    key={user.id}
                     className="person-row"
-                    onClick={() => tagFace(activeFaceId, person.name)}
+                    onClick={() => tagFace(activeFaceId, user.id, label)}
                   >
-                    <div className="person-avatar" style={isVerified ? { background: "linear-gradient(135deg, #dbeafe, #bfdbfe)", color: "#1d4ed8" } : undefined}>
-                      {person.name[0]?.toUpperCase()}
+                    <div className="person-avatar" style={{ background: "linear-gradient(135deg, #dbeafe, #bfdbfe)", color: "#1d4ed8" }}>
+                      {label[0]?.toUpperCase()}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0 }}>
-                          {person.name}
-                        </p>
-                        {isVerified && (
-                          <span style={{
-                            display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            width: 16, height: 16, borderRadius: "50%",
-                            background: "#0369a1", flexShrink: 0,
-                          }}>
-                            <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-                              <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {activeFace.personName === person.name && (
+                    <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0, flex: 1, minWidth: 0 }}>
+                      {label}
+                    </p>
+                    {activeFace.userId === user.id && (
                       <span style={{ marginLeft: "auto", fontSize: 13, color: "#22c55e", fontWeight: 700 }}>✓</span>
                     )}
                   </div>
@@ -688,7 +689,7 @@ export function PhotoTagStep({
               })}
 
               {/* Remove existing tag */}
-              {activeFace.personName && (
+              {activeFace.userId && (
                 <>
                   <div style={{ height: 1, background: "#f3f4f6", margin: "4px 0" }} />
                   <div

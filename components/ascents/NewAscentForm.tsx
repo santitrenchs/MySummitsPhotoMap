@@ -184,7 +184,7 @@ export function NewAscentForm({
               faces: item.faces.map((f) => ({
                 boundingBox: f.boundingBox,
                 descriptor: f.descriptor,
-                personName: f.personName ?? null,
+                userId: f.userId ?? null,
               })),
             }),
           });
@@ -371,7 +371,7 @@ export function NewAscentForm({
             gap: 8, marginTop: 12,
           }}>
             {readyItems.map((item, i) => {
-              const taggedCount = item.faces.filter((f) => f.personName).length;
+              const taggedCount = item.faces.filter((f) => f.userId).length;
               return (
                 <div key={i} style={{ position: "relative", aspectRatio: "4/5", borderRadius: 8, overflow: "hidden", background: "#f3f4f6" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}

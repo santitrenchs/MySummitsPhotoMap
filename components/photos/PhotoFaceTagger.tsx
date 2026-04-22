@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { getFaceApi } from "./faceApiSingleton";
 
 type BoundingBox = { x: number; y: number; width: number; height: number };
-type Person = { id: string; name: string };
-type FaceTag = { id: string; person: Person };
+type TaggedUser = { id: string; name: string; username: string | null };
+type FaceTag = { id: string; userId: string | null; user: TaggedUser | null };
 type Detection = { id: string; boundingBox: BoundingBox; faceTags: FaceTag[]; descriptor?: number[] };
-type KnownPerson = { name: string; descriptors: number[][] };
+type KnownPerson = { userId: string; name: string; descriptors: number[][] };
+type SearchUser = { id: string; name: string; username: string | null };
 
 export function PhotoFaceTagger({
   photo,
@@ -22,26 +23,32 @@ export function PhotoFaceTagger({
   const [detections, setDetections] = useState<Detection[]>([]);
   const [activeBox, setActiveBox] = useState<string | null>(null); // faceDetectionId being tagged
   const [tagInput, setTagInput] = useState("");
-  const [persons, setPersons] = useState<Person[]>([]);
+  const [persons, setPersons] = useState<SearchUser[]>([]);
   const [saving, setSaving] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [modelLoaded, setModelLoaded] = useState(false); // kept for future use
   const [status, setStatus] = useState<string | null>(null);
-  const [faceMatches, setFaceMatches] = useState<Map<string, string>>(new Map()); // detectionId → suggested name
+  const [faceMatches, setFaceMatches] = useState<Map<string, { userId: string; label: string }>>(new Map());
   const [loadingInitial, setLoadingInitial] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load existing detections + persons on mount
+  // Load existing detections on mount
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/photos/${photo.id}/faces`).then((r) => r.json()).catch(() => []),
-      fetch("/api/persons").then((r) => r.json()).catch(() => []),
-    ]).then(([facesData, personsData]) => {
-      setDetections(Array.isArray(facesData) ? facesData : []);
-      setPersons(Array.isArray(personsData) ? personsData : []);
-    }).finally(() => {
-      setLoadingInitial(false);
-    });
+    fetch(`/api/photos/${photo.id}/faces`).then((r) => r.json()).catch(() => [])
+      .then((facesData) => setDetections(Array.isArray(facesData) ? facesData : []))
+      .finally(() => setLoadingInitial(false));
   }, [photo.id]);
+
+  // Debounced friend search
+  useEffect(() => {
+    if (!tagInput.trim()) { setPersons([]); return; }
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      fetch(`/api/persons?q=${encodeURIComponent(tagInput.trim())}`)
+        .then((r) => r.json()).then((d) => setPersons(Array.isArray(d) ? d : []));
+    }, 300);
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+  }, [tagInput]);
 
   // Focus input when a box is activated
   useEffect(() => {
@@ -102,21 +109,21 @@ export function PhotoFaceTagger({
         const knownRes = await fetch("/api/persons/descriptors");
         const known: KnownPerson[] = await knownRes.json();
         if (known.length > 0) {
+          const userIdToLabel = new Map(known.map((p) => [p.userId, p.name]));
           const labeled = known.map(
             (p) => new faceapi.LabeledFaceDescriptors(
-              p.name,
+              p.userId,
               p.descriptors.map((d) => new Float32Array(d))
             )
           );
           const matcher = new faceapi.FaceMatcher(labeled, 0.6);
-          const newSuggestions = new Map<string, string>();
+          const newSuggestions = new Map<string, { userId: string; label: string }>();
           (Array.isArray(savedData) ? savedData : []).forEach((det, i) => {
             if (!faces[i]) return;
             const desc = new Float32Array(faces[i].descriptor);
             const match = matcher.findBestMatch(desc);
-            console.log(`Face ${i}: best match="${match.label}" distance=${match.distance.toFixed(3)}`);
             if (match.label !== "unknown") {
-              newSuggestions.set(det.id, match.label);
+              newSuggestions.set(det.id, { userId: match.label, label: userIdToLabel.get(match.label) ?? match.label });
             }
           });
           setFaceMatches(newSuggestions);
@@ -134,27 +141,17 @@ export function PhotoFaceTagger({
     setDetecting(false);
   }
 
-  async function saveTag(faceDetectionId: string) {
-    const name = tagInput.trim();
-    if (!name) { setActiveBox(null); return; }
+  async function saveTag(faceDetectionId: string, userId: string) {
     setSaving(true);
     const res = await fetch(`/api/face-detections/${faceDetectionId}/tag`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ personName: name }),
+      body: JSON.stringify({ userId }),
     });
     const tag: FaceTag = await res.json();
     setDetections((prev) =>
-      prev.map((d) =>
-        d.id === faceDetectionId
-          ? { ...d, faceTags: [tag] }
-          : d
-      )
+      prev.map((d) => d.id === faceDetectionId ? { ...d, faceTags: [tag] } : d)
     );
-    // Update persons list if new
-    if (!persons.find((p) => p.id === tag.person.id)) {
-      setPersons((prev) => [...prev, tag.person].sort((a, b) => a.name.localeCompare(b.name)));
-    }
     setTagInput("");
     setActiveBox(null);
     setSaving(false);
@@ -166,10 +163,6 @@ export function PhotoFaceTagger({
       prev.map((d) => d.id === faceDetectionId ? { ...d, faceTags: [] } : d)
     );
   }
-
-  const suggestions = tagInput.length > 0
-    ? persons.filter((p) => p.name.toLowerCase().includes(tagInput.toLowerCase()))
-    : persons;
 
   return (
     <div
@@ -257,15 +250,15 @@ export function PhotoFaceTagger({
               >
                 {detections.map((det, i) => {
                   const box = det.boundingBox as BoundingBox;
-                  const tagged = det.faceTags[0]?.person;
+                  const tagged = det.faceTags[0]?.user;
                   const suggested = faceMatches.get(det.id);
                   const color = tagged ? "#16a34a" : suggested ? "#1d4ed8" : "#f59e0b";
-                  const label = tagged ? tagged.name : suggested ? `? ${suggested}` : `Face ${i + 1}`;
+                  const label = tagged ? (tagged.username ?? tagged.name) : suggested ? `? ${suggested}` : `Face ${i + 1}`;
                   return (
                     <g key={det.id} style={{ cursor: "pointer" }} onClick={(e) => {
                       e.stopPropagation();
                       setActiveBox(activeBox === det.id ? null : det.id);
-                      setTagInput(tagged?.name ?? suggested ?? "");
+                      setTagInput(tagged ? (tagged.username ?? tagged.name) : suggested ?? "");
                     }}>
                       <rect
                         x={box.x} y={box.y} width={box.width} height={box.height}
@@ -295,7 +288,7 @@ export function PhotoFaceTagger({
               const det = detections.find((d) => d.id === activeBox);
               if (!det) return null;
               const box = det.boundingBox as BoundingBox;
-              const tagged = det.faceTags[0]?.person;
+              const tagged = det.faceTags[0]?.user;
               return (
                 <div
                   style={{
@@ -313,14 +306,17 @@ export function PhotoFaceTagger({
                     <div style={{ marginBottom: 8 }}>
                       <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 4 }}>Recognized as:</div>
                       <button
-                        onClick={() => { setTagInput(faceMatches.get(det.id)!); }}
+                        onClick={() => {
+                          const m = faceMatches.get(det.id)!;
+                          saveTag(det.id, m.userId);
+                        }}
                         style={{
                           width: "100%", padding: "5px 8px", background: "#eff6ff",
                           color: "#1d4ed8", border: "1px solid #bfdbfe", borderRadius: 6,
                           fontSize: 12, fontWeight: 600, cursor: "pointer", textAlign: "left",
                         }}
                       >
-                        ✓ {faceMatches.get(det.id)}
+                        ✓ {faceMatches.get(det.id)!.label}
                       </button>
                     </div>
                   )}
@@ -329,7 +325,7 @@ export function PhotoFaceTagger({
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") saveTag(det.id);
+                      if (e.key === "Enter" && persons.length === 1) saveTag(det.id, persons[0].id);
                       if (e.key === "Escape") setActiveBox(null);
                     }}
                     placeholder="Person name…"
@@ -341,28 +337,28 @@ export function PhotoFaceTagger({
                   />
                   {suggestions.length > 0 && (
                     <div style={{ marginTop: 4, maxHeight: 120, overflowY: "auto" }}>
-                      {suggestions.slice(0, 5).map((p) => (
+                      {persons.slice(0, 5).map((p) => (
                         <div
                           key={p.id}
-                          onClick={() => { setTagInput(p.name); saveTag(det.id); }}
+                          onClick={() => saveTag(det.id, p.id)}
                           style={{ padding: "4px 8px", fontSize: 12, cursor: "pointer", borderRadius: 4, color: "#374151" }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f4f6")}
                           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                         >
-                          {p.name}
+                          {p.username ?? p.name}
                         </div>
                       ))}
                     </div>
                   )}
                   <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                     <button
-                      onClick={() => saveTag(det.id)}
-                      disabled={saving || !tagInput.trim()}
+                      onClick={() => persons.length === 1 && saveTag(det.id, persons[0].id)}
+                      disabled={saving || persons.length !== 1}
                       style={{
                         flex: 1, padding: "5px 8px", background: "#0369a1",
                         color: "white", border: "none", borderRadius: 6,
                         fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        opacity: saving || !tagInput.trim() ? 0.5 : 1,
+                        opacity: saving || persons.length !== 1 ? 0.5 : 1,
                       }}
                     >
                       Save
@@ -403,7 +399,7 @@ export function PhotoFaceTagger({
                     borderRadius: 20, padding: "2px 10px",
                   }}
                 >
-                  {d.faceTags[0].person.name}
+                  {d.faceTags[0].user?.username ?? d.faceTags[0].user?.name ?? ""}
                 </span>
               ))}
           </div>

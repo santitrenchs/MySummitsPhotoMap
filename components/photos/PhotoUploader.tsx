@@ -97,7 +97,7 @@ export function PhotoUploader({
           faces: faces.map((f) => ({
             boundingBox: f.boundingBox,
             descriptor: f.descriptor,
-            personName: f.personName ?? null,
+            userId: f.userId ?? null,
           })),
         }),
       });
@@ -125,13 +125,15 @@ export function PhotoUploader({
       id: string;
       boundingBox: { x: number; y: number; width: number; height: number };
       descriptor: number[] | null;
-      faceTags: { status: string; person: { name: string } }[];
+      faceTags: { userId: string | null; user: { name: string; username: string | null } | null }[];
     }[]).map((det) => ({
       tempId: `existing-${det.id}`,
       boundingBox: det.boundingBox,
       descriptor: det.descriptor ?? [],
-      personName: det.faceTags[0]?.person.name ?? null,
+      userId: det.faceTags[0]?.userId ?? null,
+      userLabel: det.faceTags[0]?.user?.username ?? det.faceTags[0]?.user?.name ?? null,
       suggestion: null,
+      suggestionUserId: null,
     }));
 
     setRetagQueue((q) => [...q, { photoId: photo.id, blob, existingFaces }]);
@@ -149,7 +151,7 @@ export function PhotoUploader({
           faces: faces.map((f) => ({
             boundingBox: f.boundingBox,
             descriptor: f.descriptor,
-            personName: f.personName ?? null,
+            userId: f.userId ?? null,
           })),
         }),
       });
