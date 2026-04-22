@@ -15,7 +15,10 @@ const PHOTOS_INCLUDE = {
     faceDetections: {
       select: {
         faceTags: {
-          select: { person: { select: { id: true, name: true, email: true } } },
+          select: {
+            userId: true,
+            user: { select: { id: true, name: true, username: true } },
+          },
         },
       },
     },
@@ -29,7 +32,7 @@ function enrichAscent(
     route: string | null;
     description: string | null;
     peak: { id: string; name: string; altitudeM: number; mountainRange: string | null; latitude: number; longitude: number };
-    photos: { id: string; url: string; faceDetections: { faceTags: { person: { id: string; name: string; email: string | null } }[] }[] }[];
+    photos: { id: string; url: string; faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[] }[];
   },
   isOwn: boolean,
   userName: string,
@@ -40,7 +43,9 @@ function enrichAscent(
   for (const photo of a.photos) {
     for (const fd of photo.faceDetections) {
       for (const tag of fd.faceTags) {
-        personMap.set(tag.person.id, { id: tag.person.id, name: tag.person.name, email: tag.person.email ?? null });
+        if (tag.userId && tag.user) {
+          personMap.set(tag.userId, { id: tag.userId, name: tag.user.username ?? tag.user.name, email: null });
+        }
       }
     }
   }

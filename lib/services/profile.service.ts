@@ -25,23 +25,18 @@ export async function getProfileData(tenantId: string, userId: string) {
       },
     }),
     // Photos where this user is tagged by others
-    db.person.findMany({
-      where: { tenantId, userId },
+    db.faceTag.findMany({
+      where: { tenantId, userId, status: "ACCEPTED" },
       select: {
-        faceTags: {
-          where: { status: "ACCEPTED" },
+        faceDetection: {
           select: {
-            faceDetection: {
+            photo: {
               select: {
-                photo: {
+                id: true, url: true, ascentId: true,
+                ascent: {
                   select: {
-                    id: true, url: true, ascentId: true,
-                    ascent: {
-                      select: {
-                        id: true, date: true, createdBy: true,
-                        peak: { select: { name: true, altitudeM: true } },
-                      },
-                    },
+                    id: true, date: true, createdBy: true,
+                    peak: { select: { name: true, altitudeM: true } },
                   },
                 },
               },
@@ -79,18 +74,16 @@ export async function getProfileData(tenantId: string, userId: string) {
     id: string; url: string; ascentId: string;
     peakName: string; altitudeM: number; date: Date;
   }>();
-  for (const person of taggedPersons) {
-    for (const tag of person.faceTags) {
-      const photo = tag.faceDetection.photo;
-      if (!photo?.ascent) continue;
-      if (photo.ascent.createdBy === userId) continue; // skip own ascents
-      if (!taggedPhotosMap.has(photo.id)) {
-        taggedPhotosMap.set(photo.id, {
-          id: photo.id, url: photo.url, ascentId: photo.ascentId,
-          peakName: photo.ascent.peak.name, altitudeM: photo.ascent.peak.altitudeM,
-          date: photo.ascent.date,
-        });
-      }
+  for (const tag of taggedPersons) {
+    const photo = tag.faceDetection.photo;
+    if (!photo?.ascent) continue;
+    if (photo.ascent.createdBy === userId) continue;
+    if (!taggedPhotosMap.has(photo.id)) {
+      taggedPhotosMap.set(photo.id, {
+        id: photo.id, url: photo.url, ascentId: photo.ascentId,
+        peakName: photo.ascent.peak.name, altitudeM: photo.ascent.peak.altitudeM,
+        date: photo.ascent.date,
+      });
     }
   }
   const taggedPhotos = Array.from(taggedPhotosMap.values())

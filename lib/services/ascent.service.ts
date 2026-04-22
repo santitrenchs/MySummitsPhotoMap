@@ -26,7 +26,8 @@ export async function listAscents(tenantId: string) {
             select: {
               faceTags: {
                 select: {
-                  person: { select: { id: true, name: true, email: true } },
+                  userId: true,
+                  user: { select: { id: true, name: true, username: true } },
                 },
               },
             },
