@@ -75,7 +75,6 @@ model User {
   ascents                Ascent[]
   sentFriendRequests     Friendship[] @relation("SentFriendRequests")
   receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
-  linkedPersons          Person[]     @relation("PersonUser")
   faceTags               FaceTag[]    @relation("FaceTagUser")
   sentInvitations        Voucher[]    @relation("SentInvitations")
   voucherUse             VoucherUse?
@@ -94,7 +93,6 @@ model Tenant {
   memberships    Membership[]
   ascents        Ascent[]
   photos         Photo[]
-  persons        Person[]
   faceDetections FaceDetection[]
   faceTags       FaceTag[]
 
@@ -248,24 +246,6 @@ model Photo {
   @@map("photos")
 }
 
-model Person {
-  id        String   @id @default(uuid())
-  tenantId  String
-  name      String
-  email     String?
-  avatarUrl String?
-  userId    String?
-  createdAt DateTime @default(now())
-
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user     User?     @relation("PersonUser", fields: [userId], references: [id], onDelete: SetNull)
-  faceTags FaceTag[]
-
-  @@unique([tenantId, userId])
-  @@index([tenantId])
-  @@map("persons")
-}
-
 model FaceDetection {
   id          String   @id @default(uuid())
   tenantId    String
@@ -288,19 +268,15 @@ model FaceTag {
   id              String    @id @default(uuid())
   tenantId        String
   faceDetectionId String
-  personId        String?
   userId          String?
   status          TagStatus @default(ACCEPTED)
   createdAt       DateTime  @default(now())
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   faceDetection FaceDetection  @relation(fields: [faceDetectionId], references: [id], onDelete: Cascade)
-  person        Person?        @relation(fields: [personId], references: [id], onDelete: Cascade)
   user          User?          @relation("FaceTagUser", fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([faceDetectionId, personId])
   @@unique([faceDetectionId, userId])
-  @@index([tenantId, personId])
   @@index([tenantId, userId])
   @@index([tenantId, status])
   @@map("face_tags")

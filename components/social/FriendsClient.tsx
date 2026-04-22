@@ -26,13 +26,6 @@ type InvitationEntry = {
   createdAt: string;
 };
 
-type PersonStub = {
-  id: string;
-  name: string;
-  email: string | null;
-  userId: string | null;
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function Avatar({ name, size = 40 }: { name: string; size?: number }) {
@@ -317,73 +310,6 @@ export function FriendsClient({
     return { label: t.friends_inviteStatusPending, color: "#ea580c" };
   }
 
-  // ── Persons (tagged people) ───────────────────────────────────────────────────
-  const [persons, setPersons] = useState<PersonStub[]>([]);
-
-  useEffect(() => {
-    fetch("/api/persons")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setPersons(data.filter((p: PersonStub) => !p.userId)); })
-      .catch(() => {});
-  }, []);
-
-  // Reconcile modal
-  type FriendStub = { id: string; name: string; username: string | null };
-  const [reconcilingPerson, setReconcilingPerson] = useState<PersonStub | null>(null);
-  const [reconcileFriends, setReconcileFriends] = useState<FriendStub[]>([]);
-  const [loadingReconcileFriends, setLoadingReconcileFriends] = useState(false);
-  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
-  const [reconcileSaving, setReconcileSaving] = useState(false);
-  const [reconcileSearch, setReconcileSearch] = useState("");
-  const [reconcileError, setReconcileError] = useState<string | null>(null);
-
-  async function openReconcile(person: PersonStub) {
-    setReconcilingPerson(person);
-    setSelectedFriendId(null);
-    setReconcileSearch("");
-    setReconcileError(null);
-    setLoadingReconcileFriends(true);
-    try {
-      const res = await fetch("/api/friendships");
-      const data = await res.json();
-      setReconcileFriends((data.friends ?? []).map((f: { friend: FriendStub }) => f.friend));
-    } finally {
-      setLoadingReconcileFriends(false);
-    }
-  }
-
-  async function handleReconcile() {
-    if (!reconcilingPerson || !selectedFriendId) return;
-    setReconcileSaving(true);
-    setReconcileError(null);
-    try {
-      const res = await fetch(`/api/persons/${reconcilingPerson.id}/reconcile`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: selectedFriendId }),
-      });
-      if (res.ok) {
-        setPersons((prev) => prev.filter((p) => p.id !== reconcilingPerson.id));
-        setReconcilingPerson(null);
-      } else {
-        const data = await res.json();
-        const msg = data.error ?? "";
-        if (msg === "Already reconciled") {
-          setReconcileError("Este tag ya está vinculado a un usuario.");
-        } else if (res.status === 403) {
-          setReconcileError("Solo puedes vincular a amigos aceptados.");
-        } else {
-          setReconcileError("Error al vincular. Inténtalo de nuevo.");
-        }
-      }
-    } catch {
-      setReconcileError("Error de conexión. Inténtalo de nuevo.");
-    } finally {
-      setReconcileSaving(false);
-    }
-  }
-
-
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div>
@@ -628,108 +554,6 @@ export function FriendsClient({
                 {b.user.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{b.user.username}</p>}
               </div>
               <Btn variant="ghost" onClick={() => unblock(b)}>{t.friends_unblock}</Btn>
-            </UserRow>
-          ))}
-        </div>
-      )}
-
-      {/* ── Reconcile modal ── */}
-      {reconcilingPerson && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "white", borderRadius: 18, padding: 28, width: "100%", maxWidth: 380, boxShadow: "0 24px 64px rgba(0,0,0,0.22)" }}>
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>
-              {t.people_reconcileTitle}
-            </h3>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 18px" }}>&ldquo;{reconcilingPerson.name}&rdquo;</p>
-            {loadingReconcileFriends ? (
-              <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "16px 0" }}>…</p>
-            ) : reconcileFriends.length === 0 ? (
-              <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "16px 0" }}>{t.people_reconcileNoFriends}</p>
-            ) : (
-              <>
-              <input
-                type="text"
-                value={reconcileSearch}
-                onChange={(e) => setReconcileSearch(e.target.value)}
-                placeholder={t.friends_searchPlaceholder}
-                style={{
-                  width: "100%", boxSizing: "border-box", marginBottom: 10,
-                  padding: "8px 12px", fontSize: 16,
-                  border: "1px solid #e5e7eb", borderRadius: 8, outline: "none",
-                  background: "#f9fafb",
-                }}
-              />
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20, maxHeight: 220, overflowY: "auto" }}>
-                {reconcileFriends
-                  .filter((f) => !reconcileSearch.trim() || f.name.toLowerCase().includes(reconcileSearch.toLowerCase()) || f.username?.toLowerCase().includes(reconcileSearch.toLowerCase()))
-                  .map((f) => (
-                  <button key={f.id} onClick={() => setSelectedFriendId(f.id)} style={{
-                    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-                    borderRadius: 10, border: "1.5px solid", cursor: "pointer", textAlign: "left",
-                    borderColor: selectedFriendId === f.id ? "#0369a1" : "#e5e7eb",
-                    background: selectedFriendId === f.id ? "#eff6ff" : "white",
-                  }}>
-                    <Avatar name={f.name} size={32} />
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{f.name}</p>
-                      {f.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{f.username}</p>}
-                    </div>
-                    {selectedFriendId === f.id && <span style={{ marginLeft: "auto", color: "#0369a1", fontWeight: 700 }}>✓</span>}
-                  </button>
-                ))}
-              </div>
-              </>
-            )}
-            {reconcileError && (
-              <p style={{ fontSize: 12, color: "#ef4444", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", margin: "0 0 12px" }}>
-                {reconcileError}
-              </p>
-            )}
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => setReconcilingPerson(null)} disabled={reconcileSaving}
-                style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
-                {t.cancel}
-              </button>
-              <button onClick={handleReconcile} disabled={!selectedFriendId || reconcileSaving}
-                style={{ padding: "9px 18px", background: "#0369a1", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer", opacity: !selectedFriendId || reconcileSaving ? 0.5 : 1 }}>
-                {reconcileSaving ? "…" : t.people_reconcileConfirm}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Tagged persons ── */}
-      {persons.length > 0 && (
-        <div style={{ marginTop: 36, paddingTop: 24, borderTop: "1px solid #f3f4f6" }}>
-          <SectionHeader label={t.friends_taggedSection} />
-          {persons.map((p) => (
-            <UserRow key={p.id}>
-              <div style={{
-                width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
-                background: p.userId
-                  ? "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)"
-                  : "linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 15, fontWeight: 700,
-                color: p.userId ? "white" : "#9ca3af",
-              }}>
-                {p.name[0]?.toUpperCase()}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{p.name}</p>
-                  {p.userId && (
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#0369a1", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "1px 6px", flexShrink: 0 }}>
-                      ✓ {t.people_reconcileLinked}
-                    </span>
-                  )}
-                </div>
-                {p.email && <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>{p.email}</p>}
-              </div>
-              {!p.userId && (
-                <Btn onClick={() => openReconcile(p)}>{t.people_reconcile}</Btn>
-              )}
             </UserRow>
           ))}
         </div>

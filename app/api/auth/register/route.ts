@@ -99,11 +99,6 @@ export async function POST(req: NextRequest) {
         data: { userId: user.id, tenantId: tenant.id, role: "OWNER" },
       });
 
-      // Auto-create a Person linked to this user so their name appears in tagging
-      await tx.person.create({
-        data: { tenantId: tenant.id, name, userId: user.id },
-      });
-
       // Consume voucher
       await tx.voucher.update({
         where: { id: voucherId },
