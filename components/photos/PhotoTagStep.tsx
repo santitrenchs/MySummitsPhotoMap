@@ -368,20 +368,22 @@ export function PhotoTagStep({
             style={{ position: "relative", cursor: drawMode ? "crosshair" : "default" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              ref={imgRef}
-              src={imgSrc}
-              alt="Photo to tag"
-              onLoad={() => setImgLoaded(true)}
-              style={{
-                display: "block",
-                maxWidth: "100vw",
-                maxHeight: "calc(100svh - 180px)",
-                objectFit: "contain",
-                userSelect: "none",
-                WebkitUserSelect: "none",
-              }}
-            />
+            {imgSrc && (
+              <img
+                ref={imgRef}
+                src={imgSrc}
+                alt="Photo to tag"
+                onLoad={() => setImgLoaded(true)}
+                style={{
+                  display: "block",
+                  maxWidth: "100vw",
+                  maxHeight: "calc(100svh - 180px)",
+                  objectFit: "contain",
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                }}
+              />
+            )}
             {/* Detecting overlay — spinner over the image, not a black screen */}
             {phase === "detecting" && (
               <div style={{
