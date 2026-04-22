@@ -114,22 +114,27 @@ export async function listPersons(
     );
   }
 
-  // Fetch more than needed so we can sort by priority before slicing
+  // Only return persons linked to the current user or their friends
+  const allowedUserIds = [
+    ...(options?.currentUserId ? [options.currentUserId] : []),
+    ...Array.from(friendUserIds),
+  ];
+
   const rows = await db.person.findMany({
     where: {
       tenantId,
       name: { contains: search, mode: "insensitive" },
+      userId: { in: allowedUserIds },
     },
     orderBy: { name: "asc" },
     select: { id: true, name: true, email: true, userId: true },
-    take: 20,
+    take: 10,
   });
 
-  // Priority: current user (0) → friends (1) → rest (2)
+  // Priority: current user (0) → friends (1)
   const priority = (p: { userId?: string | null }) => {
     if (p.userId === options?.currentUserId) return 0;
-    if (p.userId && friendUserIds.has(p.userId)) return 1;
-    return 2;
+    return 1;
   };
 
   return rows.sort((a, b) => priority(a) - priority(b)).slice(0, 5);

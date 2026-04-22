@@ -28,11 +28,32 @@ export async function saveFaceDetections(
   );
 }
 
-export async function getKnownDescriptors(tenantId: string) {
+export async function getKnownDescriptors(tenantId: string, currentUserId?: string) {
   const db = await getTenantConnection(tenantId);
+
+  // Only suggest friends (and self) — get allowed userIds first
+  let allowedUserIds: string[] | undefined;
+  if (currentUserId) {
+    const friendships = await prisma.friendship.findMany({
+      where: {
+        status: "ACCEPTED",
+        OR: [{ requesterId: currentUserId }, { addresseeId: currentUserId }],
+      },
+      select: { requesterId: true, addresseeId: true },
+    });
+    const friendIds = friendships.map((f) =>
+      f.requesterId === currentUserId ? f.addresseeId : f.requesterId
+    );
+    allowedUserIds = [currentUserId, ...friendIds];
+  }
+
   // Only use ACCEPTED tags for face recognition model
   const tags = await db.faceTag.findMany({
-    where: { tenantId, status: "ACCEPTED" },
+    where: {
+      tenantId,
+      status: "ACCEPTED",
+      ...(allowedUserIds ? { person: { userId: { in: allowedUserIds } } } : {}),
+    },
     include: {
       person: { select: { id: true, name: true } },
       faceDetection: { select: { descriptor: true } },

@@ -197,14 +197,6 @@ export function PhotoTagStep({
     setFaces((prev) =>
       prev.map((f) => (f.tempId === faceId ? { ...f, personName } : f))
     );
-    // Update local persons list if new
-    if (!persons.some((p) => p.name.toLowerCase() === personName.toLowerCase())) {
-      setPersons((prev) =>
-        [...prev, { id: `pending-${personName}`, name: personName }].sort((a, b) =>
-          a.name.localeCompare(b.name)
-        )
-      );
-    }
     setActiveFaceId(null);
     setSearch("");
   }
@@ -644,7 +636,7 @@ export function PhotoTagStep({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && search.trim()) tagFace(activeFaceId, search.trim());
+                  if (e.key === "Enter" && persons.length === 1) tagFace(activeFaceId, persons[0].name);
                 }}
                 placeholder={t.tag_searchOrType}
                 style={{
@@ -658,21 +650,6 @@ export function PhotoTagStep({
 
             {/* Person list */}
             <div style={{ overflowY: "auto", flex: 1 }}>
-              {/* Create new if not in list */}
-              {search.trim() && !persons.some((p) => p.name.toLowerCase() === search.trim().toLowerCase()) && (
-                <div
-                  className="person-row"
-                  onClick={() => tagFace(activeFaceId, search.trim())}
-                >
-                  <div className="person-avatar" style={{ background: "linear-gradient(135deg, #fef3c7, #fde68a)", color: "#92400e" }}>+</div>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
-                      &ldquo;{search.trim()}&rdquo;
-                    </p>
-                    <p style={{ fontSize: 12, color: "#9ca3af", margin: "1px 0 0" }}>{t.tag_createNew}</p>
-                  </div>
-                </div>
-              )}
 
               {persons.slice(0, 5).map((person) => {
                 const isVerified = !!person.userId;
