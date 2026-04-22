@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { useT } from "@/components/providers/I18nProvider";
+import { AscentModal } from "@/components/ascents/AscentModal";
+import { NewAscentModalContent, type ModalHeaderConfig } from "@/components/ascents/NewAscentModalContent";
 
 type NavBarProps = {
   userName: string | null;
@@ -27,6 +29,8 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   const pathname = usePathname();
   const t = useT();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [ascentModalOpen, setAscentModalOpen] = useState(false);
+  const [modalHeader, setModalHeader] = useState<ModalHeaderConfig>({ title: "Nueva ascensión", size: "photo" });
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const ini = initials(userName, userEmail);
   const totalPending = pendingFriendRequests;
@@ -34,6 +38,16 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   useEffect(() => {
     setPendingPath(null);
   }, [pathname]);
+
+  // Listen for the cross-component event dispatched by Sidebar's + button
+  useEffect(() => {
+    const handler = () => {
+      setAscentModalOpen(true);
+      setModalHeader({ title: "Nueva ascensión", size: "photo" });
+    };
+    document.addEventListener("open-ascent-modal", handler);
+    return () => document.removeEventListener("open-ascent-modal", handler);
+  }, []);
 
   useEffect(() => {
     if (mobileMenuOpen) {
@@ -246,9 +260,13 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
 
       {/* ── MOBILE HEADER ───────────────────────────────────────────────────── */}
       <header className="mobile-header">
-        <Link href="/ascents/new" className="new-ascent-btn" aria-label="Nueva ascensión">
+        <button
+          className="new-ascent-btn"
+          aria-label="Nueva ascensión"
+          onClick={() => { setAscentModalOpen(true); setModalHeader({ title: "Nueva ascensión", size: "photo" }); }}
+        >
           <PlusIcon />
-        </Link>
+        </button>
 
         <Link href="/map" style={{
           position: "absolute", left: "50%", transform: "translateX(-50%)",
@@ -346,6 +364,23 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           </div>
         </div>
       )}
+
+      {/* ── NEW ASCENT MODAL ─────────────────────────────────────────────────── */}
+      <AscentModal
+        open={ascentModalOpen}
+        onClose={() => setAscentModalOpen(false)}
+        title={modalHeader.title}
+        leftAction={modalHeader.leftAction}
+        rightAction={modalHeader.rightAction}
+        size={modalHeader.size ?? "split"}
+      >
+        {ascentModalOpen && (
+          <NewAscentModalContent
+            onClose={() => setAscentModalOpen(false)}
+            onHeaderChange={setModalHeader}
+          />
+        )}
+      </AscentModal>
 
       {/* ── MOBILE BOTTOM TAB BAR ────────────────────────────────────────────── */}
       <nav className="bottom-tab-bar" aria-label="Main navigation">

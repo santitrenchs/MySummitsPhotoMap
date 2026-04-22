@@ -31,6 +31,7 @@ export const de: Dict = {
   newAscent_skipPhoto: "Ohne Foto weiter →",
   newAscent_suggested: "vorgeschlagen",
   newAscent_clickOrDrag: "Fotos hier klicken oder ablegen",
+  newAscent_selectFiles: "Fotos auswählen",
   newAscent_maxSize: "JPEG, PNG, WebP · max. 20 MB pro Bild",
   photo_tooLarge: "Das Foto überschreitet das 20 MB-Limit",
   newAscent_savingAscent: "Besteigung wird gespeichert…",
@@ -41,6 +42,7 @@ export const de: Dict = {
   newAscent_photoFailed: "Besteigung gespeichert, aber Foto {i} konnte nicht hochgeladen werden.",
   newAscent_tagged: "{n} markiert",
   newAscent_duplicate: "Du hast diesen Gipfel an diesem Tag bereits eingetragen.",
+  newAscent_discardTitle: "Besteigung verwerfen?", newAscent_discardMessage: "Wenn du gehst, werden die Änderungen nicht gespeichert.", newAscent_discard: "Verwerfen",
   ascents_perspectives: "{n} Perspektiven",
 
   edit_failedToSave: "Speichern fehlgeschlagen", edit_saveChanges: "Änderungen speichern",

@@ -31,6 +31,7 @@ export const es: Dict = {
   newAscent_skipPhoto: "Continuar sin foto →",
   newAscent_suggested: "sugerido",
   newAscent_clickOrDrag: "Haz clic o arrastra fotos aquí",
+  newAscent_selectFiles: "Seleccionar fotos",
   newAscent_maxSize: "JPEG, PNG, WebP · máx. 20 MB cada una",
   photo_tooLarge: "La foto supera el máximo de 20 MB",
   newAscent_savingAscent: "Guardando ascensión…",
@@ -41,6 +42,7 @@ export const es: Dict = {
   newAscent_photoFailed: "Ascensión guardada, pero la foto {i} no se pudo subir.",
   newAscent_tagged: "{n} etiquetados",
   newAscent_duplicate: "Ya tienes registrada esta cima en esta fecha.",
+  newAscent_discardTitle: "¿Descartar ascensión?", newAscent_discardMessage: "Si sales, no se guardarán los cambios.", newAscent_discard: "Descartar",
   ascents_perspectives: "{n} perspectivas",
 
   edit_failedToSave: "No se pudo guardar", edit_saveChanges: "Guardar cambios",

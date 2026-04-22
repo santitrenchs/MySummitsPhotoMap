@@ -31,6 +31,7 @@ export const ca: Dict = {
   newAscent_skipPhoto: "Continuar sense foto →",
   newAscent_suggested: "suggerit",
   newAscent_clickOrDrag: "Fes clic o arrossega fotos aquí",
+  newAscent_selectFiles: "Seleccionar fotos",
   newAscent_maxSize: "JPEG, PNG, WebP · màx. 20 MB cadascuna",
   photo_tooLarge: "La foto supera el màxim de 20 MB",
   newAscent_savingAscent: "Desant ascensió…",
@@ -41,6 +42,7 @@ export const ca: Dict = {
   newAscent_photoFailed: "Ascensió desada, però la foto {i} no s'ha pogut pujar.",
   newAscent_tagged: "{n} etiquetats",
   newAscent_duplicate: "Ja tens registrada aquesta cima en aquesta data.",
+  newAscent_discardTitle: "Descartar ascensió?", newAscent_discardMessage: "Si surts, els canvis no es desaran.", newAscent_discard: "Descartar",
   ascents_perspectives: "{n} perspectives",
 
   edit_failedToSave: "No s'ha pogut desar", edit_saveChanges: "Desar canvis",
