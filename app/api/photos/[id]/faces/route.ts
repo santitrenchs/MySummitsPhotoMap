@@ -29,13 +29,11 @@ export async function POST(
     const created = await saveFaceDetections(session.user.tenantId, id, faces);
 
     // Tag faces in parallel — use created[i].id to guarantee alignment
-    const { findOrCreatePerson } = await import("@/lib/services/person.service");
     const { setFaceTag } = await import("@/lib/services/face-detection.service");
     const tags = await Promise.all(faces.map(async (face, i) => {
-      const personName = face?.personName?.trim();
-      if (personName && created[i]) {
-        const person = await findOrCreatePerson(session.user.tenantId, personName);
-        return setFaceTag(session.user.tenantId, created[i].id, person.id, session.user.id);
+      const userId = face?.userId?.trim();
+      if (userId && created[i]) {
+        return setFaceTag(session.user.tenantId, created[i].id, userId, session.user.id);
       }
       return null;
     }));
@@ -48,7 +46,7 @@ export async function POST(
     if (photo?.ascent) {
       const taggerName = session.user.name ?? session.user.email ?? "";
       const notifyIds = [...new Set(
-        tags.flatMap((t) => t?.person?.userId && t.person.userId !== session.user.id ? [t.person.userId] : [])
+        tags.flatMap((t) => t?.userId && t.userId !== session.user.id ? [t.userId] : [])
       )];
       for (const userId of notifyIds) {
         prisma.user.findUnique({

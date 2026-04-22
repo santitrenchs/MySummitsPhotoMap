@@ -76,6 +76,7 @@ model User {
   sentFriendRequests     Friendship[] @relation("SentFriendRequests")
   receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
   linkedPersons          Person[]     @relation("PersonUser")
+  faceTags               FaceTag[]    @relation("FaceTagUser")
   sentInvitations        Voucher[]    @relation("SentInvitations")
   voucherUse             VoucherUse?
 
@@ -287,16 +288,20 @@ model FaceTag {
   id              String    @id @default(uuid())
   tenantId        String
   faceDetectionId String
-  personId        String
+  personId        String?
+  userId          String?
   status          TagStatus @default(ACCEPTED)
   createdAt       DateTime  @default(now())
 
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  faceDetection FaceDetection @relation(fields: [faceDetectionId], references: [id], onDelete: Cascade)
-  person        Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  faceDetection FaceDetection  @relation(fields: [faceDetectionId], references: [id], onDelete: Cascade)
+  person        Person?        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  user          User?          @relation("FaceTagUser", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([faceDetectionId, personId])
+  @@unique([faceDetectionId, userId])
   @@index([tenantId, personId])
+  @@index([tenantId, userId])
   @@index([tenantId, status])
   @@map("face_tags")
 }

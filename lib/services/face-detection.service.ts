@@ -12,7 +12,6 @@ export async function saveFaceDetections(
 ) {
   const db = await getTenantConnection(tenantId);
   await db.faceDetection.deleteMany({ where: { tenantId, photoId } });
-  // Return created records in insertion order (same order as input `faces`)
   return db.$transaction(
     faces.map((f) =>
       db.faceDetection.create({
@@ -31,7 +30,7 @@ export async function saveFaceDetections(
 export async function getKnownDescriptors(tenantId: string, currentUserId?: string) {
   const db = await getTenantConnection(tenantId);
 
-  // Only suggest friends (and self) — get allowed userIds first
+  // Only suggest self + accepted friends
   let allowedUserIds: string[] | undefined;
   if (currentUserId) {
     const friendships = await prisma.friendship.findMany({
@@ -47,29 +46,33 @@ export async function getKnownDescriptors(tenantId: string, currentUserId?: stri
     allowedUserIds = [currentUserId, ...friendIds];
   }
 
-  // Only use ACCEPTED tags for face recognition model
   const tags = await db.faceTag.findMany({
     where: {
       tenantId,
       status: "ACCEPTED",
-      ...(allowedUserIds ? { person: { userId: { in: allowedUserIds } } } : {}),
+      userId: { not: null, ...(allowedUserIds ? { in: allowedUserIds } : {}) },
     },
     include: {
-      person: { select: { id: true, name: true } },
+      user: { select: { id: true, name: true, username: true } },
       faceDetection: { select: { descriptor: true } },
     },
   });
-  // Group descriptors by person
-  const byPerson = new Map<string, { name: string; descriptors: number[][] }>();
+
+  // Group descriptors by userId
+  const byUser = new Map<string, { name: string; descriptors: number[][] }>();
   for (const tag of tags) {
+    if (!tag.user) continue;
     const desc = tag.faceDetection.descriptor as number[] | null;
     if (!desc || (desc as unknown[]).length === 0) continue;
-    if (!byPerson.has(tag.person.id)) {
-      byPerson.set(tag.person.id, { name: tag.person.name, descriptors: [] });
+    if (!byUser.has(tag.user.id)) {
+      byUser.set(tag.user.id, {
+        name: tag.user.username ?? tag.user.name,
+        descriptors: [],
+      });
     }
-    byPerson.get(tag.person.id)!.descriptors.push(desc);
+    byUser.get(tag.user.id)!.descriptors.push(desc);
   }
-  return Array.from(byPerson.values());
+  return Array.from(byUser.values());
 }
 
 export async function getFaceDetections(tenantId: string, photoId: string) {
@@ -77,7 +80,9 @@ export async function getFaceDetections(tenantId: string, photoId: string) {
   return db.faceDetection.findMany({
     where: { tenantId, photoId },
     include: {
-      faceTags: { include: { person: { select: { id: true, name: true } } } },
+      faceTags: {
+        include: { user: { select: { id: true, name: true, username: true } } },
+      },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -86,30 +91,41 @@ export async function getFaceDetections(tenantId: string, photoId: string) {
 export async function setFaceTag(
   tenantId: string,
   faceDetectionId: string,
-  personId: string,
+  userId: string,
   taggerUserId?: string,
 ) {
   const db = await getTenantConnection(tenantId);
-  // Remove any existing tag on this detection first (one person per box)
+  // One tag per detection
   await db.faceTag.deleteMany({ where: { tenantId, faceDetectionId } });
-  if (!personId) return null;
+  if (!userId) return null;
 
-  const person = await db.person.findFirst({
-    where: { id: personId, tenantId },
-    select: { userId: true },
+  // Check allowOthersToTag + friendship
+  const taggedUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { allowOthersToTag: true },
   });
-  if (person?.userId) {
-    const linkedUser = await prisma.user.findUnique({
-      where: { id: person.userId },
-      select: { allowOthersToTag: true },
-    });
-    const isSelf = taggerUserId && taggerUserId === person.userId;
-    if (!isSelf && linkedUser && !linkedUser.allowOthersToTag) return null;
+  if (!taggedUser) return null;
+
+  const isSelf = taggerUserId === userId;
+  if (!isSelf) {
+    if (!taggedUser.allowOthersToTag) return null;
+    if (taggerUserId) {
+      const friendship = await prisma.friendship.findFirst({
+        where: {
+          status: "ACCEPTED",
+          OR: [
+            { requesterId: taggerUserId, addresseeId: userId },
+            { requesterId: userId, addresseeId: taggerUserId },
+          ],
+        },
+      });
+      if (!friendship) return null;
+    }
   }
 
   return db.faceTag.create({
-    data: { tenantId, faceDetectionId, personId, status: "ACCEPTED" },
-    include: { person: { select: { id: true, name: true, userId: true } } },
+    data: { tenantId, faceDetectionId, userId, status: "ACCEPTED" },
+    include: { user: { select: { id: true, name: true, username: true } } },
   });
 }
 
@@ -118,19 +134,14 @@ export async function removeFaceTag(tenantId: string, faceDetectionId: string) {
   return db.faceTag.deleteMany({ where: { tenantId, faceDetectionId } });
 }
 
-
 export async function respondToFaceTag(
   tagId: string,
   userId: string,
   action: "ACCEPTED" | "REJECTED"
 ) {
-  // Verify the tag belongs to a person linked to this user
-  const tag = await prisma.faceTag.findUnique({
-    where: { id: tagId },
-    include: { person: { select: { userId: true } } },
-  });
+  const tag = await prisma.faceTag.findUnique({ where: { id: tagId } });
   if (!tag) throw new Error("Not found");
-  if (tag.person.userId !== userId) throw new Error("Forbidden");
+  if (tag.userId !== userId) throw new Error("Forbidden");
   if (tag.status !== "PENDING") throw new Error("Tag is not pending");
 
   if (action === "REJECTED") {

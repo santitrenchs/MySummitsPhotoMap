@@ -33,7 +33,7 @@ export default async function AscentDetailPage({
           faceDetections: {
             select: {
               faceTags: {
-                select: { person: { select: { id: true, name: true, email: true } } },
+                select: { userId: true, user: { select: { id: true, name: true, username: true } } },
               },
             },
           },
@@ -55,23 +55,21 @@ export default async function AscentDetailPage({
   // ── Derived data ──────────────────────────────────────────────────────────
   const heroPhoto = ascent.photos[0] ?? null;
 
-  // Deduplicated persons from the photo, excluding the current user
-  const personMap = new Map<string, { name: string; email: string | null }>();
+  // Deduplicated tagged users from the hero photo, excluding the current user
+  const personMap = new Map<string, { name: string }>();
   if (heroPhoto) {
     for (const fd of heroPhoto.faceDetections) {
       for (const tag of fd.faceTags) {
-        personMap.set(tag.person.id, { name: tag.person.name, email: tag.person.email });
+        if (tag.user && tag.userId !== session.user.id) {
+          personMap.set(tag.userId!, { name: tag.user.username ?? tag.user.name });
+        }
       }
     }
   }
-  const currentUserName = user?.name ?? session.user.name ?? "";
   const persons = Array.from(personMap.entries())
-    .map(([pid, p]) => ({ id: pid, ...p }))
-    .filter(p =>
-      (session.user.email ? p.email !== session.user.email : true) &&
-      (currentUserName ? p.name !== currentUserName : true)
-    );
+    .map(([uid, p]) => ({ id: uid, name: p.name, email: null }));
 
+  const currentUserName = user?.name ?? session.user.name ?? "";
   const dateStr = new Date(ascent.date).toLocaleDateString(t.dateLocale, {
     day: "numeric", month: "long", year: "numeric",
   });
