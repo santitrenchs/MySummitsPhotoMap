@@ -93,12 +93,6 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
             {user.username && (
               <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 8px" }}>@{user.username}</p>
             )}
-            {/* Stats row — right below username */}
-            <div style={{ display: "flex", gap: 20 }}>
-              <StatCell value={stats.uniquePeaks} label={t.ascents_stat_peaks} />
-              <StatCell value={stats.totalPhotos} label={t.profile_stat_photos} />
-              <StatCell value={stats.friendCount} label={t.ascents_stat_people} />
-            </div>
             {user.bio && (
               <p style={{ fontSize: 13, color: "#374151", margin: "8px 0 0", lineHeight: 1.5 }}>{user.bio}</p>
             )}
@@ -277,6 +271,10 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
   dateLocale: string;
   timesClimbed: string;
 }) {
+  const PAGE = 20;
+  const [visible, setVisible] = useState(PAGE);
+  const seeMoreLabel = ({ ca: "Veure més", es: "Ver más", en: "See more", fr: "Voir plus", de: "Mehr" } as Record<string, string>)[dateLocale] ?? "Ver más";
+
   if (peaks.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af", fontSize: 14 }}>
@@ -285,22 +283,40 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
     );
   }
 
+  const shown = peaks.slice(0, visible);
+  const hasMore = visible < peaks.length;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 1, border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
-      {peaks.map((pk) => (
-        <div key={pk.id} style={{
-          display: "flex", alignItems: "center",
-          background: "white", padding: "11px 14px",
-        }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{pk.name}</div>
-            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>{pk.altitudeM} m</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+      <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
+        {shown.map((pk) => (
+          <div key={pk.id} style={{
+            display: "flex", alignItems: "center",
+            background: "white", padding: "11px 14px",
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{pk.name}</div>
+              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>{pk.altitudeM} m</div>
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#6b7280", flexShrink: 0 }}>
+              ×{pk.count}
+            </span>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#6b7280", flexShrink: 0 }}>
-            ×{pk.count}
-          </span>
-        </div>
-      ))}
+        ))}
+      </div>
+      {hasMore && (
+        <button
+          onClick={() => setVisible((v) => v + PAGE)}
+          style={{
+            marginTop: 8, padding: "10px",
+            background: "white", border: "1px solid #e5e7eb",
+            borderRadius: 10, fontSize: 13, fontWeight: 600,
+            color: "#0369a1", cursor: "pointer", width: "100%",
+          }}
+        >
+          {seeMoreLabel} ({peaks.length - visible})
+        </button>
+      )}
     </div>
   );
 }
