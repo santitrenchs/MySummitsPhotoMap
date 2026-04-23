@@ -270,12 +270,10 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
 
         <Link href="/map" style={{
           position: "absolute", left: "50%", transform: "translateX(-50%)",
-          display: "flex", alignItems: "center", gap: 7, textDecoration: "none",
+          display: "flex", alignItems: "center", textDecoration: "none",
         }}>
-          <LogoIcon size={29} />
-          <span style={{ fontSize: 23, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em", position: "relative", top: "1.5px" }}>
-            AziAtlas
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo.png" alt="peakadex" height={44} style={{ display: "block" }} />
         </Link>
 
         <div
@@ -428,16 +426,6 @@ function CompassIcon({ size = 18, active = false }: { size?: number; active?: bo
           <path d="M12 19 L14.5 12 L9.5 12 Z" />
         </>
       )}
-    </svg>
-  );
-}
-
-function LogoIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 19 L8.5 7 L13 14 L17 9.5 L21 19 Z" fill="#dbeafe" stroke="#0369a1" strokeWidth="1.8" />
-      <path d="M17 9.5 L19 6.5" stroke="#0369a1" strokeWidth="1.8" />
-      <circle cx="19" cy="6" r="1.2" fill="#0369a1" />
     </svg>
   );
 }

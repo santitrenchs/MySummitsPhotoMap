@@ -70,9 +70,11 @@ export function Sidebar({
       >
 
         {/* ── Brand ─────────────────────────────── */}
-        <Link href="/home" className="azisb-brand" data-tip="AziAtlas">
-          <SbLogoIcon />
-          <span className="azisb-brand-text">AziAtlas</span>
+        <Link href="/home" className="azisb-brand" data-tip="peakadex">
+          <span className="azisb-brand-wrap">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/logo.png" alt="peakadex" height={44} style={{ display: "block", width: 111, minWidth: 111, maxWidth: "none", flexShrink: 0 }} />
+          </span>
         </Link>
 
         {/* ── Nav ───────────────────────────────── */}
@@ -209,7 +211,7 @@ export function Sidebar({
 // ── CSS ────────────────────────────────────────────────────────────────────────
 
 const CSS = `
-/* AziAtlas Sidebar — desktop only (≥640px) */
+/* peakadex Sidebar — desktop only (≥640px) */
 .azisb {
   position: fixed;
   left: 0; top: 0;
@@ -231,29 +233,22 @@ const CSS = `
 .azisb-brand {
   display: flex;
   align-items: center;
-  gap: 7px;
   padding: 20px 20px 16px;
   text-decoration: none;
   flex-shrink: 0;
-  overflow: hidden;
   white-space: nowrap;
 }
 .azisb--c .azisb-brand { padding: 20px 0 16px; justify-content: center; }
 
-.azisb-brand-text {
-  font-size: 23px;
-  font-weight: 800;
-  color: #0369a1;
-  letter-spacing: -0.03em;
-  position: relative;
-  top: 1.5px;
-  white-space: nowrap;
+/* Clip the logo to icon-only (44px) when collapsed, full width when expanded. */
+.azisb-brand-wrap {
+  display: block;
   overflow: hidden;
-  max-width: 180px;
-  opacity: 1;
-  transition: opacity 80ms ease, max-width 80ms ease;
+  flex-shrink: 0;
+  max-width: 111px;
+  transition: max-width 220ms cubic-bezier(0.4,0,0.2,1);
 }
-.azisb--c .azisb-brand-text { opacity: 0; max-width: 0; }
+.azisb--c .azisb-brand-wrap { max-width: 44px; }
 
 /* ── Nav ────────────────────────────────── */
 .azisb-nav {
@@ -482,18 +477,6 @@ const CSS = `
 .azisb-umenu-item--danger { color: #ef4444; }
 .azisb-umenu-item--danger:hover { background: #fef2f2; }
 `;
-
-// ── Icons ──────────────────────────────────────────────────────────────────────
-
-function SbLogoIcon() {
-  return (
-    <svg width="29" height="29" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-      <path d="M3 19 L8.5 7 L13 14 L17 9.5 L21 19 Z" fill="#dbeafe" stroke="#0369a1" strokeWidth="1.8" />
-      <path d="M17 9.5 L19 6.5" stroke="#0369a1" strokeWidth="1.8" />
-      <circle cx="19" cy="6" r="1.2" fill="#0369a1" />
-    </svg>
-  );
-}
 
 function SbCompassIcon({ on = false }: { on?: boolean }) {
   return (
