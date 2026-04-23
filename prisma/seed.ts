@@ -162,7 +162,31 @@ const PEAKS = [
   { name: "Moixeró",                     latitude: 42.2997, longitude:  1.8219, altitudeM: 2083, mountainRange: "Cerdanya",               country: "ES" },
 ];
 
+// ── Rarities ──────────────────────────────────────────────────────────────────
+// ep is null for Mythic — computed at runtime from altitude tier.
+// crains is a bonus on top of EP (only Mythic currently).
+
+const RARITIES = [
+  { id: "daisy",     name: "Daisy",     emoji: "🟢", order: 1, ep: 10,  crains: 0  },
+  { id: "lavender",  name: "Lavender",  emoji: "🔵", order: 2, ep: 25,  crains: 0  },
+  { id: "gentian",   name: "Gentian",   emoji: "🟣", order: 3, ep: 50,  crains: 0  },
+  { id: "edelweiss", name: "Edelweiss", emoji: "🟠", order: 4, ep: 100, crains: 0  },
+  { id: "saxifrage", name: "Saxifrage", emoji: "🟡", order: 5, ep: 200, crains: 0  },
+  { id: "mythic",    name: "Mythic",    emoji: "🔴", order: 6, ep: null, crains: 20 },
+] as const;
+
 async function main() {
+  // ── Rarities ──────────────────────────────────────────────────────────────
+  console.log("Seeding rarities…");
+  for (const r of RARITIES) {
+    await prisma.rarity.upsert({
+      where:  { id: r.id },
+      update: { name: r.name, emoji: r.emoji, order: r.order, ep: r.ep, crains: r.crains },
+      create: { ...r },
+    });
+    console.log(`  ✓ ${r.emoji} ${r.name}`);
+  }
+
   console.log("Seeding peaks…");
 
   // Upsert by name — safe to rerun, won't break existing ascent references

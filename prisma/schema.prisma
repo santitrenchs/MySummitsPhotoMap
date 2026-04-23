@@ -14,6 +14,22 @@ datasource db {
 // GLOBAL — shared catalog, never duplicated per tenant
 // ─────────────────────────────────────────────────────────
 
+/// Fixed rarity catalog — seeded once, never translated.
+/// ep is null for Mythic (computed at runtime from altitude tier).
+/// crains is a bonus on top of ep (only Mythic uses it currently).
+model Rarity {
+  id     String @id  // "daisy" | "lavender" | "gentian" | "edelweiss" | "saxifrage" | "mythic"
+  name   String
+  emoji  String
+  order  Int         // display sort order 1–6
+  ep     Int?        // elevation points awarded — null = computed at runtime
+  crains Int         @default(0)  // cairns bonus points
+
+  peaks Peak[]
+
+  @@map("rarities")
+}
+
 model Peak {
   id            String   @id @default(uuid())
   name          String
@@ -27,10 +43,13 @@ model Peak {
   tag3          String?
   country       String   @default("ES")
   gpsVerified   Boolean  @default(false)
+  rarityId      String?
   createdAt     DateTime @default(now())
 
+  rarity  Rarity? @relation(fields: [rarityId], references: [id])
   ascents Ascent[]
 
+  @@index([rarityId])
   @@map("peaks")
 }
 

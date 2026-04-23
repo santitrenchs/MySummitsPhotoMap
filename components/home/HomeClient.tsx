@@ -21,12 +21,11 @@ type LevelDef = {
 };
 
 const LEVEL_DEFS: LevelDef[] = [
-  { idx: 1, emoji: "🌱", nameKey: "home_level1", targetAscents: 5, altReqs: [{ threshold: 1000, count: 1 }] },
+  { idx: 1, emoji: "🌱", nameKey: "home_level1", targetAscents: 5,  altReqs: [{ threshold: 1000, count: 1 }] },
   { idx: 2, emoji: "🥾", nameKey: "home_level2", targetAscents: 15, altReqs: [{ threshold: 2000, count: 1 }] },
   { idx: 3, emoji: "🧭", nameKey: "home_level3", targetAscents: 40, altReqs: [{ threshold: 3000, count: 1 }] },
   { idx: 4, emoji: "🏔️", nameKey: "home_level4", targetAscents: 70, altReqs: [{ threshold: 4000, count: 1 }] },
-  { idx: 5, emoji: "👑", nameKey: "home_level5", targetAscents: 100, altReqs: [{ threshold: 5000, count: 1 }], quoteKey: "home_level5Quote", heroBg: "/levels/bonatti.webp" },
-  { idx: 6, emoji: "🧗", nameKey: "home_level6", quoteKey: "home_level6Quote", heroBg: "/levels/messner.jpeg" },
+  { idx: 5, emoji: "👑", nameKey: "home_level5", quoteKey: "home_level5Quote", heroBg: "/levels/messner.jpeg" },
 ];
 
 function getAltCount(stats: HomeData["stats"], threshold: number): number {
@@ -72,19 +71,20 @@ function initials(name: string): string {
 }
 
 type Badge = {
-  id: string; emoji: string; labelKey: keyof Dict;
-  earned: boolean; progress: number; current: number; target: number;
+  id: string; emoji: string;
+  titleKey: keyof Dict; subKey: keyof Dict;
+  howTo: string; rarity: string; cairns: number;
+  earned: boolean; current: number; target: number;
 };
 
 function computeBadges(stats: HomeData["stats"]): Badge[] {
   return [
-    { id: "first",   emoji: "🏔️", labelKey: "home_badgeFirst",  earned: stats.totalAscents >= 1,   progress: Math.min(1, stats.totalAscents / 1),  current: stats.totalAscents, target: 1 },
-    { id: "ten",     emoji: "🥉", labelKey: "home_badge10",      earned: stats.totalAscents >= 10,  progress: Math.min(1, stats.totalAscents / 10), current: stats.totalAscents, target: 10 },
-    { id: "twenty5", emoji: "🥈", labelKey: "home_badge25",      earned: stats.totalAscents >= 25,  progress: Math.min(1, stats.totalAscents / 25), current: stats.totalAscents, target: 25 },
-    { id: "fifty",   emoji: "🥇", labelKey: "home_badge50",      earned: stats.totalAscents >= 50,  progress: Math.min(1, stats.totalAscents / 50), current: stats.totalAscents, target: 50 },
-    { id: "regions", emoji: "🗺️", labelKey: "home_badgeRegions", earned: stats.totalRegions >= 3,   progress: Math.min(1, stats.totalRegions / 3),  current: stats.totalRegions, target: 3 },
-    { id: "photos",  emoji: "📸", labelKey: "home_badgePhotos",  earned: stats.totalPhotos >= 20,   progress: Math.min(1, stats.totalPhotos / 20),  current: stats.totalPhotos, target: 20 },
-    { id: "social",  emoji: "👥", labelKey: "home_badgeFriends", earned: stats.friendsCount >= 3,   progress: Math.min(1, stats.friendsCount / 3),  current: stats.friendsCount, target: 3 },
+    { id: "first_capture",       emoji: "📍", titleKey: "home_badge1Title", subKey: "home_badge1Sub", howTo: "Capture your first summit",         rarity: "Any",          cairns: 3,  earned: stats.totalAscents  >= 1, current: stats.totalAscents,  target: 1 },
+    { id: "trail_starter",       emoji: "🌿", titleKey: "home_badge2Title", subKey: "home_badge2Sub", howTo: "Capture 3 summits",                 rarity: "🟢 Daisy",     cairns: 5,  earned: stats.totalAscents  >= 3, current: stats.totalAscents,  target: 3 },
+    { id: "ridge_seeker",        emoji: "⛰️", titleKey: "home_badge3Title", subKey: "home_badge3Sub", howTo: "Capture 3 summits above 1000 m",    rarity: "🔵 Lavender",  cairns: 8,  earned: stats.peaks1000plus >= 3, current: stats.peaks1000plus, target: 3 },
+    { id: "alpine_breakthrough", emoji: "🧊", titleKey: "home_badge4Title", subKey: "home_badge4Sub", howTo: "Capture your first 2000 m summit",  rarity: "🟣 Gentian",   cairns: 12, earned: stats.peaks2000plus >= 1, current: stats.peaks2000plus, target: 1 },
+    { id: "summit_hunter",       emoji: "🏔️", titleKey: "home_badge5Title", subKey: "home_badge5Sub", howTo: "Capture your first 3000 m summit",  rarity: "🟠 Edelweiss", cairns: 20, earned: stats.peaks3000plus >= 1, current: stats.peaks3000plus, target: 1 },
+    { id: "sky_chaser",          emoji: "🌌", titleKey: "home_badge6Title", subKey: "home_badge6Sub", howTo: "Capture a 4000+ m summit",          rarity: "🟡 Saxifrage", cairns: 35, earned: stats.peaks4000plus >= 1, current: stats.peaks4000plus, target: 1 },
   ];
 }
 
@@ -108,52 +108,55 @@ function Avatar({ name, url, size = 44 }: { name: string; url: string | null; si
   );
 }
 
-// ─── Badge with progress ring ─────────────────────────────────────────────────
+// ─── Badge card ───────────────────────────────────────────────────────────────
 
-function BadgeCircle({ emoji, label, earned, progress, current, target }: {
-  emoji: string; label: string; earned: boolean; progress: number; current: number; target: number;
+function BadgeCard({ emoji, title, sub, howTo, rarity, cairns, earned, current, target, isLast }: {
+  emoji: string; title: string; sub: string; howTo: string; rarity: string;
+  cairns: number; earned: boolean; current: number; target: number; isLast: boolean;
 }) {
-  const sz = 60;
-  const r = 25;
-  const circ = 2 * Math.PI * r;
-  const trackColor = earned ? "#fde68a" : progress > 0 ? "#bfdbfe" : "#f3f4f6";
-  const fillColor  = earned ? "#f59e0b" : progress > 0 ? "#0369a1" : "#d1d5db";
-
+  const progress = Math.min(1, current / target);
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0, width: 76 }}>
-      <div style={{ position: "relative", width: sz, height: sz }}>
-        <svg width={sz} height={sz} style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
-          <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={trackColor} strokeWidth={4} />
-          <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={fillColor} strokeWidth={4}
-            strokeDasharray={circ} strokeDashoffset={circ * (1 - progress)} strokeLinecap="round" />
-        </svg>
-        <div style={{
-          position: "absolute", inset: 5,
-          background: earned ? "#fef3c7" : "#f9fafb",
-          borderRadius: "50%",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 22,
-          filter: earned ? "none" : progress > 0 ? "grayscale(0.2) opacity(0.85)" : "grayscale(1) opacity(0.4)",
-        }}>
-          {emoji}
-        </div>
+    <div style={{
+      display: "flex", gap: 12, padding: "14px 0",
+      borderBottom: isLast ? "none" : "1px solid #f3f4f6",
+    }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 22, position: "relative",
+        background: earned ? "#fef3c7" : "#f3f4f6",
+        filter: earned ? "none" : "grayscale(0.8) opacity(0.5)",
+      }}>
+        {emoji}
         {earned && (
           <div style={{
-            position: "absolute", top: 0, right: 0,
-            width: 16, height: 16, borderRadius: "50%",
+            position: "absolute", top: -3, right: -3,
+            width: 14, height: 14, borderRadius: "50%",
             background: "#f59e0b", border: "2px solid white",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 8, color: "white", fontWeight: 900,
+            fontSize: 7, color: "white", fontWeight: 900,
           }}>✓</div>
         )}
       </div>
-      <span style={{
-        fontSize: 10, fontWeight: 700, textAlign: "center", lineHeight: 1.2,
-        color: earned ? "#92400e" : "#6b7280",
-      }}>{label}</span>
-      {!earned && (
-        <span style={{ fontSize: 9, color: "#9ca3af", fontWeight: 600 }}>{current}/{target}</span>
-      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 4 }}>
+          <span style={{ fontWeight: 700, fontSize: 13, color: earned ? "#92400e" : "#111827" }}>{title}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", flexShrink: 0 }}>+{cairns} 🪨</span>
+        </div>
+        <div style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 2px" }}>{sub}</div>
+        <div style={{ fontSize: 10, color: "#9ca3af" }}>{howTo}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+          <span style={{ fontSize: 10, color: "#c4b5a5" }}>{rarity}</span>
+          {!earned && target > 1 && (
+            <span style={{ fontSize: 10, color: "#d1d5db" }}>{current} / {target}</span>
+          )}
+        </div>
+        {!earned && target > 1 && (
+          <div style={{ height: 3, borderRadius: 99, background: "#f3f4f6", marginTop: 3 }}>
+            <div style={{ height: "100%", width: `${progress * 100}%`, borderRadius: 99, background: "#0369a1" }} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -677,19 +680,21 @@ export function HomeClient({ data, locale, t }: {
         </h2>
         <div style={{
           background: "white", border: "1px solid #e5e7eb", borderRadius: 16,
-          padding: "16px 10px",
-          display: "flex", gap: 4, overflowX: "auto", scrollbarWidth: "none",
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any}>
-          {badges.map((b) => (
-            <BadgeCircle
+          padding: "0 16px",
+        }}>
+          {badges.map((b, i) => (
+            <BadgeCard
               key={b.id}
               emoji={b.emoji}
-              label={t[b.labelKey] as string}
+              title={t[b.titleKey] as string}
+              sub={t[b.subKey] as string}
+              howTo={b.howTo}
+              rarity={b.rarity}
+              cairns={b.cairns}
               earned={b.earned}
-              progress={b.progress}
               current={b.current}
               target={b.target}
+              isLast={i === badges.length - 1}
             />
           ))}
         </div>

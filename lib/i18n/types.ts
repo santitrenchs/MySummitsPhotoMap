@@ -190,16 +190,18 @@ export type Dict = {
   home_friendsActivity: string; home_noFriendActivity: string;
   home_noAscents: string; home_logFirst: string;
   home_badges: string; home_climbed: string;
-  home_badgeFirst: string; home_badge10: string;
-  home_badge25: string; home_badge50: string;
-  home_badgeRegions: string; home_badgePhotos: string;
-  home_badgeFriends: string;
+  home_badge1Title: string; home_badge1Sub: string;
+  home_badge2Title: string; home_badge2Sub: string;
+  home_badge3Title: string; home_badge3Sub: string;
+  home_badge4Title: string; home_badge4Sub: string;
+  home_badge5Title: string; home_badge5Sub: string;
+  home_badge6Title: string; home_badge6Sub: string;
 
-  // Level names
+  // Level names (same in all languages)
   home_level1: string; home_level2: string; home_level3: string;
-  home_level4: string; home_level5: string; home_level6: string;
-  // Level hero card quotes (levels 5 & 6)
-  home_level5Quote: string; home_level6Quote: string;
+  home_level4: string; home_level5: string;
+  // Level hero card quote (level 5 — Legendary)
+  home_level5Quote: string;
   home_maxLevelHint: string;
   // Hero metrics
   home_heroSubtitle: string;
