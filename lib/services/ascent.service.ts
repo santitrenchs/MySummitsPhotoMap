@@ -61,7 +61,10 @@ export async function getAscentMapData(tenantId: string) {
       photos: {
         take: 1,
         orderBy: { createdAt: "asc" },
-        select: { url: true },
+        select: {
+          url: true,
+          faceDetections: { select: { boundingBox: true } },
+        },
       },
     },
   });
@@ -73,14 +76,30 @@ export async function getAscentMapData(tenantId: string) {
   const seen = new Set<string>();
   return rows
     .filter((r) => { if (seen.has(r.peakId)) return false; seen.add(r.peakId); return true; })
-    .map((r) => ({
-      peakId: r.peakId,
-      ascentId: r.id,
-      photoUrl: r.photos[0]?.url ?? null,
-      date: r.date.toISOString(),
-      route: r.route,
-      ascentCount: countMap.get(r.peakId) ?? 1,
-    }));
+    .map((r) => {
+      const photo = r.photos[0] ?? null;
+      let faceCenterX: number | null = null;
+      let faceCenterY: number | null = null;
+      try {
+        if (photo && photo.faceDetections.length > 0) {
+          const boxes = photo.faceDetections.map(
+            (fd) => fd.boundingBox as { x: number; y: number; width: number; height: number }
+          );
+          faceCenterX = boxes.reduce((sum, b) => sum + b.x + b.width / 2, 0) / boxes.length;
+          faceCenterY = boxes.reduce((sum, b) => sum + b.y + b.height / 2, 0) / boxes.length;
+        }
+      } catch { /* non-critical */ }
+      return {
+        peakId: r.peakId,
+        ascentId: r.id,
+        photoUrl: photo?.url ?? null,
+        date: r.date.toISOString(),
+        route: r.route,
+        ascentCount: countMap.get(r.peakId) ?? 1,
+        faceCenterX,
+        faceCenterY,
+      };
+    });
 }
 
 export async function createAscent(

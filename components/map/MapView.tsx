@@ -25,6 +25,8 @@ export type AscentMapEntry = {
   date: string;
   route: string | null;
   ascentCount: number;
+  faceCenterX: number | null;
+  faceCenterY: number | null;
 };
 
 type Filter = "all" | "climbed" | "not-climbed";
@@ -928,7 +930,19 @@ const panelStyle: React.CSSProperties = isMobile
             <div style={{ position: "relative", aspectRatio: "3/2", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={selected.ascent.photoUrl} alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />
+                style={{
+                  width: "100%", height: "100%", objectFit: "cover", display: "block",
+                  objectPosition: (() => {
+                    const cx = selected.ascent.faceCenterX;
+                    const cy = selected.ascent.faceCenterY;
+                    if (cx == null || cy == null) return "50% 20%";
+                    // Place faces at 38% of panel height (upper area, sky above)
+                    // r = image height / container height for a 4:5 image in 3:2 panel
+                    const r = 1.875;
+                    const py = Math.max(0, Math.min(1, (0.38 - cy * r) / (1 - r)));
+                    return `${cx * 100}% ${py * 100}%`;
+                  })(),
+                }} />
             </div>
           )}
 
@@ -1015,30 +1029,25 @@ const panelStyle: React.CSSProperties = isMobile
                 <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 16px" }}>
                   {t.map_notYetClimbed}
                 </p>
-                {(() => {
-                  const href = `/ascents/new?peakId=${selected.peak.id}`;
-                  const loading = navigatingTo === href;
-                  return (
-                    <button
-                      className="panel-action-btn"
-                      onClick={() => navigate(href)}
-                      disabled={!!navigatingTo}
-                      style={{
-                        width: "100%", padding: "11px",
-                        background: "#0369a1", color: "white",
-                        border: "none", borderRadius: 12,
-                        fontSize: 13, fontWeight: 700,
-                        cursor: loading ? "wait" : "pointer",
-                        opacity: loading ? 0.7 : 1,
-                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                        transition: "opacity 0.15s",
-                      }}
-                    >
-                      {loading && <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />}
-                      {t.map_logAscent}
-                    </button>
-                  );
-                })()}
+                <button
+                  className="panel-action-btn"
+                  onClick={() => {
+                    document.dispatchEvent(
+                      new CustomEvent("open-ascent-modal", { detail: { peakId: selected.peak.id } })
+                    );
+                  }}
+                  style={{
+                    width: "100%", padding: "11px",
+                    background: "#0369a1", color: "white",
+                    border: "none", borderRadius: 12,
+                    fontSize: 13, fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    transition: "opacity 0.15s",
+                  }}
+                >
+                  {t.map_logAscent}
+                </button>
               </>
             )}
           </div>
