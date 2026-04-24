@@ -2,6 +2,40 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+
+// Sprite: /public/brand/iconos.png — 40×200px, 4 icons of 40×50px each
+// Order: 0=Peakadex, 1=Azimut, 2=Actividad, 3=+
+function SpriteIcon({ index, size = 20, active = false }: { index: number; size?: number; active?: boolean }) {
+  return (
+    <div style={{
+      width: size, height: size, flexShrink: 0,
+      backgroundImage: "url('/brand/iconos.png')",
+      backgroundSize: `${size}px ${size * 5}px`,
+      backgroundPosition: `0 ${-(index * size * 1.25 + size * 0.125)}px`,
+      backgroundRepeat: "no-repeat",
+      opacity: active ? 1 : 0.55,
+      transition: "opacity 150ms ease",
+    }} />
+  );
+}
+
+function PeakadexLogo({ height = 44 }: { height?: number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/brand/icon.png" alt="" height={height} width={height} style={{ display: "block", flexShrink: 0 }} />
+      <span style={{
+        fontFamily: "var(--font-baloo2), 'Baloo 2', cursive",
+        fontSize: height * 0.75,
+        fontWeight: 800,
+        lineHeight: 1,
+        letterSpacing: "-0.01em",
+      }}>
+        <span style={{ color: "#F25A2B" }}>peak</span><span style={{ color: "#0D2538" }}>adex</span>
+      </span>
+    </div>
+  );
+}
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useT } from "@/components/providers/I18nProvider";
@@ -70,19 +104,21 @@ export function Sidebar({
       >
 
         {/* ── Brand ─────────────────────────────── */}
-        <Link href="/home" className="azisb-brand" data-tip="AziAtlas">
-          <SbLogoIcon />
-          <span className="azisb-brand-text">AziAtlas</span>
+        <Link href="/home" className="azisb-brand" data-tip="peakadex">
+          <span className="azisb-brand-wrap">
+            <PeakadexLogo height={32} />
+          </span>
         </Link>
 
         {/* ── Nav ───────────────────────────────── */}
+        <div className="azisb-divider" />
         <nav className="azisb-nav">
           <Link
             href="/home"
             className={`azisb-item${active("/home") ? " azisb-item--on" : ""}`}
             data-tip={t.nav_home}
           >
-            <span className="azisb-ic"><SbCompassIcon on={active("/home")} /></span>
+            <span className="azisb-ic"><SpriteIcon index={0} size={24} active={active("/home")} /></span>
             <span className="azisb-lbl">{t.nav_home}</span>
           </Link>
           <Link
@@ -90,7 +126,7 @@ export function Sidebar({
             className={`azisb-item${active("/map") ? " azisb-item--on" : ""}`}
             data-tip={t.nav_map}
           >
-            <span className="azisb-ic"><SbMapIcon on={active("/map")} /></span>
+            <span className="azisb-ic"><SpriteIcon index={1} size={24} active={active("/map")} /></span>
             <span className="azisb-lbl">{t.nav_map}</span>
           </Link>
           <Link
@@ -98,7 +134,7 @@ export function Sidebar({
             className={`azisb-item${active("/ascents") ? " azisb-item--on" : ""}`}
             data-tip={t.nav_ascents}
           >
-            <span className="azisb-ic"><SbMountainIcon on={active("/ascents")} /></span>
+            <span className="azisb-ic"><SpriteIcon index={2} size={24} active={active("/ascents")} /></span>
             <span className="azisb-lbl">{t.nav_ascents}</span>
           </Link>
           <button
@@ -110,8 +146,6 @@ export function Sidebar({
             <span className="azisb-lbl">Nueva ascensión</span>
           </button>
         </nav>
-
-        <div style={{ flex: 1 }} />
 
         {/* ── User footer ────────────────────────── */}
         <div className="azisb-footer" ref={menuRef}>
@@ -209,7 +243,7 @@ export function Sidebar({
 // ── CSS ────────────────────────────────────────────────────────────────────────
 
 const CSS = `
-/* AziAtlas Sidebar — desktop only (≥640px) */
+/* peakadex Sidebar — desktop only (≥640px) */
 .azisb {
   position: fixed;
   left: 0; top: 0;
@@ -231,33 +265,32 @@ const CSS = `
 .azisb-brand {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 20px 20px 16px;
+  padding: 30px 20px 16px;
   text-decoration: none;
   flex-shrink: 0;
-  overflow: hidden;
   white-space: nowrap;
 }
-.azisb--c .azisb-brand { padding: 20px 0 16px; justify-content: center; }
+.azisb--c .azisb-brand { padding: 30px 0 16px; justify-content: center; }
 
-.azisb-brand-text {
-  font-size: 23px;
-  font-weight: 800;
-  color: #0369a1;
-  letter-spacing: -0.03em;
-  position: relative;
-  top: 1.5px;
-  white-space: nowrap;
+/* Clip to icon-only (36px) when collapsed, full logo when expanded. */
+.azisb-brand-wrap {
+  display: block;
   overflow: hidden;
-  max-width: 180px;
-  opacity: 1;
-  transition: opacity 80ms ease, max-width 80ms ease;
+  flex-shrink: 0;
+  max-width: 200px;
+  transition: max-width 220ms cubic-bezier(0.4,0,0.2,1);
 }
-.azisb--c .azisb-brand-text { opacity: 0; max-width: 0; }
+.azisb--c .azisb-brand-wrap { max-width: 32px; }
 
 /* ── Nav ────────────────────────────────── */
+.azisb-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 24px 16px 0;
+}
 .azisb-nav {
   padding: 4px 8px;
+  margin-top: 48px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -290,7 +323,8 @@ const CSS = `
 }
 .azisb--c .azisb-item { padding: 0; justify-content: center; overflow: visible; }
 .azisb-item:hover { background: #f8fafc; color: #0f172a; }
-.azisb-item--on { background: #eff6ff; color: #0369a1; font-weight: 600; }
+.azisb-item--on { background: #eff6ff; color: #0369a1; }
+.azisb-item--on .azisb-lbl { font-weight: 600; }
 
 /* Active pill bar */
 .azisb-item--on::before {
@@ -314,6 +348,7 @@ const CSS = `
   justify-content: center;
 }
 .azisb-lbl {
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   max-width: 180px;
@@ -366,8 +401,9 @@ const CSS = `
 .azisb-user {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px;
+  gap: 12px;
+  padding: 0 12px;
+  height: 44px;
   border-radius: 10px;
   cursor: pointer;
   transition: background 140ms;
@@ -375,16 +411,16 @@ const CSS = `
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
 }
-.azisb--c .azisb-user { justify-content: center; padding: 6px; overflow: visible; }
+.azisb--c .azisb-user { overflow: visible; }
 .azisb-user:hover { background: #f8fafc; }
 
 /* Avatar */
 .azisb-avatar {
-  width: 32px; height: 32px; min-width: 32px;
+  width: 24px; height: 24px; min-width: 24px;
   border-radius: 50%;
   background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
   color: #fff;
-  font-size: 12px; font-weight: 700;
+  font-size: 9px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   border: 1.5px solid rgba(255,255,255,0.8);
   box-shadow: 0 0 0 1.5px #e0e7ef;
@@ -482,18 +518,6 @@ const CSS = `
 .azisb-umenu-item--danger { color: #ef4444; }
 .azisb-umenu-item--danger:hover { background: #fef2f2; }
 `;
-
-// ── Icons ──────────────────────────────────────────────────────────────────────
-
-function SbLogoIcon() {
-  return (
-    <svg width="29" height="29" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-      <path d="M3 19 L8.5 7 L13 14 L17 9.5 L21 19 Z" fill="#dbeafe" stroke="#0369a1" strokeWidth="1.8" />
-      <path d="M17 9.5 L19 6.5" stroke="#0369a1" strokeWidth="1.8" />
-      <circle cx="19" cy="6" r="1.2" fill="#0369a1" />
-    </svg>
-  );
-}
 
 function SbCompassIcon({ on = false }: { on?: boolean }) {
   return (

@@ -4,7 +4,7 @@ export const fr: Dict = {
   dateLocale: "fr-FR",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Carnet",
+  nav_map: "Azimut", nav_ascents: "Activité",
   nav_settings: "Paramètres", nav_signOut: "Se déconnecter", nav_profile: "Profil",
   nav_comingSoon: "Bientôt", nav_logAscent: "Enregistrer une ascension",
 
@@ -175,7 +175,7 @@ export const fr: Dict = {
 
 
 
-  nav_home: "Azimut",
+  nav_home: "Peakadex",
   home_greeting: "Bonjour, {name} 👋",
   home_statSummits: "Sommets", home_statPhotos: "Photos",
   home_statRegions: "Régions", home_statFriends: "Amis",
