@@ -1,6 +1,39 @@
 "use client";
 
 import Link from "next/link";
+
+function SpriteIcon({ index, size = 22, active = false }: { index: number; size?: number; active?: boolean }) {
+  return (
+    <div style={{
+      width: size, height: size, flexShrink: 0,
+      backgroundImage: "url('/brand/iconos.png')",
+      backgroundSize: `${size}px ${size * 5}px`,
+      backgroundPosition: `0 ${-(index * size * 1.25 + size * 0.125)}px`,
+      backgroundRepeat: "no-repeat",
+      opacity: active ? 1 : 0.5,
+      transition: "opacity 150ms ease",
+    }} />
+  );
+}
+
+function PeakadexLogo({ height = 44 }: { height?: number }) {
+  const iconSize = height;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/brand/icon.png" alt="" height={iconSize} width={iconSize} style={{ display: "block" }} />
+      <span style={{
+        fontFamily: "var(--font-baloo2), 'Baloo 2', cursive",
+        fontSize: height * 0.75,
+        fontWeight: 800,
+        lineHeight: 1,
+        letterSpacing: "-0.01em",
+      }}>
+        <span style={{ color: "#F25A2B" }}>peak</span><span style={{ color: "#0D2538" }}>adex</span>
+      </span>
+    </div>
+  );
+}
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
@@ -104,6 +137,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           transition: color 0.15s;
         }
         .tab-item.active { color: #0369a1; }
+        .tab-item.active .tab-label { font-weight: 600; }
         .tab-item:active { opacity: 0.65; transform: scale(0.88); transition: transform 0.1s; }
         .tab-icon-wrap {
           position: relative;
@@ -126,7 +160,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         }
         .tab-label {
           font-size: 9.5px;
-          font-weight: 600;
+          font-weight: 500;
           letter-spacing: 0.02em;
           line-height: 1;
         }
@@ -269,11 +303,10 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         </button>
 
         <Link href="/map" style={{
-          position: "absolute", left: "50%", transform: "translateX(-50%)",
+          position: "absolute", left: "50%", transform: "translateX(calc(-50% - 3vw))",
           display: "flex", alignItems: "center", textDecoration: "none",
         }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/logo.png" alt="peakadex" height={44} style={{ display: "block" }} />
+          <PeakadexLogo height={34} />
         </Link>
 
         <div
@@ -385,19 +418,19 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         <div className="tab-inner">
           <Link href="/home" className={`tab-item${tabActive("/home") ? " active" : ""}`} onClick={() => handleTabClick("/home")}>
             <div className="tab-icon-wrap">
-              <CompassIcon size={22} active={tabActive("/home")} />
+              <SpriteIcon index={0} size={26} active={tabActive("/home")} />
             </div>
             <span className="tab-label">{t.nav_home}</span>
           </Link>
           <Link href="/map" className={`tab-item${tabActive("/map") ? " active" : ""}`} onClick={() => handleTabClick("/map")}>
             <div className="tab-icon-wrap">
-              <MapIcon size={22} active={tabActive("/map")} />
+              <SpriteIcon index={1} size={26} active={tabActive("/map")} />
             </div>
             <span className="tab-label">{t.nav_map}</span>
           </Link>
           <Link href="/ascents" className={`tab-item${tabActive("/ascents") ? " active" : ""}`} onClick={() => handleTabClick("/ascents")}>
             <div className="tab-icon-wrap">
-              <MountainIcon size={22} active={tabActive("/ascents")} />
+              <SpriteIcon index={2} size={26} active={tabActive("/ascents")} />
             </div>
             <span className="tab-label">{t.nav_ascents}</span>
           </Link>
