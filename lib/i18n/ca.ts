@@ -179,7 +179,7 @@ export const ca: Dict = {
   home_greeting: "Hola, {name} 👋",
   home_statSummits: "Cims", home_statPhotos: "Fotos",
   home_statRegions: "Regions", home_statFriends: "Amics",
-  home_ranking: "La teva posició a la cordada", home_youAre: "tu",
+  home_ranking: "La teva cordada", home_youAre: "tu", home_ropeTeamSub: "Pugeu junts. Guanyeu EP. Col·leccioneu cairns.", home_yourPosition: "La teva posició", home_epToSecure: "→ {n} EP per assegurar el #1", home_epToBeat: "→ {n} EP per superar {name}", home_epBehind: "{n} EP per darrere",
   home_motivationBeat: "Et falten {n} cim{n,plural,=1{}other{s}} per superar {name}",
   home_motivationFirst: "Ets el #1 🏆! Continua escalant!",
   home_motivationNoFriends: "Repte els teus amics!",

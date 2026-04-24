@@ -179,7 +179,7 @@ export const en: Dict = {
   home_greeting: "Welcome back, {name} 👋",
   home_statSummits: "Summits", home_statPhotos: "Photos",
   home_statRegions: "Regions", home_statFriends: "Friends",
-  home_ranking: "Your spot in the rope team", home_youAre: "you",
+  home_ranking: "Your rope team", home_youAre: "you", home_ropeTeamSub: "Climb together. Earn EP. Collect cairns.", home_yourPosition: "Your position", home_epToSecure: "→ {n} EP to secure #1", home_epToBeat: "→ {n} EP to beat {name}", home_epBehind: "{n} EP behind you",
   home_motivationBeat: "{n} more summit{n,plural,=1{}other{s}} to beat {name}",
   home_motivationFirst: "You're #1 🏆 Keep climbing!",
   home_motivationNoFriends: "Challenge your friends!",

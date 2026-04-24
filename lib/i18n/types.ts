@@ -183,6 +183,8 @@ export type Dict = {
   home_statSummits: string; home_statPhotos: string;
   home_statRegions: string; home_statFriends: string;
   home_ranking: string; home_youAre: string;
+  home_ropeTeamSub: string; home_yourPosition: string;
+  home_epToSecure: string; home_epToBeat: string; home_epBehind: string;
   home_motivationBeat: string; home_motivationFirst: string;
   home_motivationNoFriends: string; home_motivationNoFriendsSub: string;
   home_addFriends: string;

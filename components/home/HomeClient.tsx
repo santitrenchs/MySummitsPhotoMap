@@ -108,6 +108,174 @@ function Avatar({ name, url, size = 44 }: { name: string; url: string | null; si
   );
 }
 
+// ─── Level color palette (one entry per level, index = def.idx - 1) ──────────
+
+const LEVEL_COLORS = [
+  { accent: "#16a34a", light: "#f0fdf4", mid: "#dcfce7", dark: "#166534" }, // 1 Scout    — green
+  { accent: "#d97706", light: "#fffbeb", mid: "#fef3c7", dark: "#92400e" }, // 2 Guide    — amber
+  { accent: "#ea580c", light: "#fff7ed", mid: "#ffedd5", dark: "#9a3412" }, // 3 Explorer — orange
+  { accent: "#1d4ed8", light: "#eff6ff", mid: "#dbeafe", dark: "#1e40af" }, // 4 Master   — blue
+  { accent: "#7c3aed", light: "#faf5ff", mid: "#ede9fe", dark: "#5b21b6" }, // 5 Legendary — purple
+];
+
+// ─── Level icon (sprite sheet: /brand/Niveles Peakadex.png, 230×64, 5 slots × 46px) ──
+
+const LEVEL_SPRITE_SLOT = 46;
+
+function LevelIcon({ idx }: { idx: number }) {
+  const x = -(idx - 1) * LEVEL_SPRITE_SLOT;
+  return (
+    <div style={{
+      width: LEVEL_SPRITE_SLOT, height: 64, flexShrink: 0,
+      backgroundImage: "url('/brand/Niveles Peakadex.png')",
+      backgroundSize: "230px 64px",
+      backgroundPosition: `${x}px 0`,
+      backgroundRepeat: "no-repeat",
+    }} />
+  );
+}
+
+// ─── Level card ───────────────────────────────────────────────────────────────
+
+function LevelCard({ def, status, stats, t, locale }: {
+  def: LevelDef;
+  status: "completed" | "current" | "locked";
+  stats: HomeData["stats"];
+  t: Dict;
+  locale: string;
+}) {
+  const isCompleted = status === "completed";
+  const isCurrent   = status === "current";
+  const color       = LEVEL_COLORS[def.idx - 1];
+  const ascentPct   = def.targetAscents
+    ? Math.min(stats.totalAscents / def.targetAscents * 100, 100)
+    : 100;
+
+  return (
+    <div style={{
+      display: "flex", gap: 12, alignItems: "flex-start",
+      padding: "16px 14px",
+      background: isCurrent ? "#eff6ff" : isCompleted ? color.light : "white",
+      borderTop:    `1.5px solid ${isCompleted ? color.mid : isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
+      borderRight:  `1.5px solid ${isCompleted ? color.mid : isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
+      borderBottom: `1.5px solid ${isCompleted ? color.mid : isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
+      borderLeft:   isCurrent ? `4px solid #0369a1` : `1.5px solid ${isCompleted ? color.mid : "#e5e7eb"}`,
+      borderRadius: 16,
+      boxShadow: isCurrent ? "0 2px 12px rgba(3,105,161,0.10)" : "0 1px 3px rgba(0,0,0,0.04)",
+      opacity: status === "locked" ? 0.5 : 1,
+      marginBottom: 10,
+    }}>
+
+      {/* Left badge: ✓ (level color) or number (blue / gray) */}
+      <div style={{
+        width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+        marginTop: 18,
+        background: isCompleted ? color.accent : isCurrent ? "#0369a1" : "#d1d5db",
+        color: "white",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: isCompleted ? 13 : 11, fontWeight: 800,
+      }}>
+        {isCompleted ? "✓" : def.idx}
+      </div>
+
+      {/* Sprite icon — locked keeps natural colors, card opacity does the dimming */}
+      <LevelIcon idx={def.idx} />
+
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+
+        {/* Name + status tag */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginBottom: 7 }}>
+          <span style={{
+            fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em",
+            color: isCurrent ? "#0369a1" : "#111827",
+          }}>
+            {t[def.nameKey] as string}
+          </span>
+          {isCompleted && (
+            <span style={{
+              fontSize: 11, fontWeight: 700, flexShrink: 0,
+              background: color.mid, color: color.dark,
+              padding: "3px 10px", borderRadius: 20,
+            }}>✓ Completed</span>
+          )}
+          {isCurrent && (
+            <span style={{
+              fontSize: 11, fontWeight: 700, flexShrink: 0,
+              background: "#dbeafe", color: "#0369a1",
+              padding: "3px 10px", borderRadius: 20,
+            }}>Current Level</span>
+          )}
+          {status === "locked" && (
+            <span style={{ fontSize: 18, color: "#d1d5db", flexShrink: 0, lineHeight: 1 }}>🔒</span>
+          )}
+        </div>
+
+        {/* Requirement pills */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: isCurrent ? 12 : 0 }}>
+          {def.targetAscents != null && (
+            <span style={{
+              fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8,
+              background: isCompleted ? color.mid : "#f3f4f6",
+              color: isCompleted ? color.dark : "#374151",
+            }}>
+              {def.targetAscents} {t.home_statSummits.toLowerCase()}
+            </span>
+          )}
+          {def.altReqs?.map((r) => {
+            const met = getAltCount(stats, r.threshold) >= r.count;
+            const label = r.count === 1
+              ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
+              : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
+            return (
+              <span key={r.threshold} style={{
+                fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8,
+                background: isCompleted ? color.mid : met ? "#f0fdf4" : "#f3f4f6",
+                color: isCompleted ? color.dark : met ? "#16a34a" : "#374151",
+              }}>
+                {label}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Progress (current only) */}
+        {isCurrent && def.targetAscents != null && (
+          <>
+            <div style={{ height: 6, borderRadius: 99, background: "#dbeafe", overflow: "hidden", marginBottom: 6 }}>
+              <div style={{
+                height: "100%", borderRadius: 99, width: `${ascentPct}%`,
+                background: "linear-gradient(90deg,#0369a1,#0ea5e9)",
+              }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
+                {i(t.home_levelProgress, { current: stats.totalAscents, total: def.targetAscents })}
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
+                {Math.round(ascentPct)}%
+              </span>
+            </div>
+            {stats.totalAscents < def.targetAscents && (
+              <div style={{ fontSize: 12, color: "#6b7280" }}>
+                → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.totalAscents })}
+              </div>
+            )}
+            {def.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
+              <div key={r.threshold} style={{ fontSize: 12, color: "#6b7280" }}>
+                → {i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })}
+              </div>
+            ))}
+          </>
+        )}
+        {isCurrent && def.targetAscents == null && (
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{t.home_maxLevel}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Badge card ───────────────────────────────────────────────────────────────
 
 function BadgeCard({ emoji, title, sub, howTo, rarity, cairns, earned, current, target, isLast }: {
@@ -345,142 +513,31 @@ export function HomeClient({ data, locale, t }: {
         </div>
       )}
 
-      {/* ── Progression timeline ────────────────────────────────────────── */}
+      {/* ── Progression ─────────────────────────────────────────────────── */}
       <section style={{ padding: "20px 16px 0" }}>
-        <div>
-          {LEVEL_DEFS.map((def, idx) => {
-            const isDone = idx < levelState.currentIdx;
-            const isInProgress = idx === levelState.currentIdx;
-            const isLocked = !isDone && !isInProgress;
-
-            // Collapsed: show only current level. Expanded: show all.
-            if (!progressionExpanded && !isInProgress) return null;
-
-            const isLastVisible = progressionExpanded
-              ? idx === LEVEL_DEFS.length - 1
-              : true;
-
-            return (
-              <div key={def.idx} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: isLastVisible ? 0 : 16 }}>
-                {/* Left: circle + connector */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 30, flexShrink: 0 }}>
-                  <div style={{
-                    width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                    background: isDone ? "#16a34a" : isInProgress ? "#0369a1" : "#e5e7eb",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: isDone ? 13 : 11,
-                    color: isDone || isInProgress ? "white" : "#9ca3af",
-                    fontWeight: 800,
-                    boxShadow: isInProgress ? "0 0 0 3px #bfdbfe" : "none",
-                  }}>
-                    {isDone ? "✓" : def.idx}
-                  </div>
-                  {!isLastVisible && (
-                    <div style={{
-                      width: 2, flex: 1, minHeight: 20,
-                      background: idx < levelState.currentIdx ? "#86efac" : "#e5e7eb",
-                      margin: "3px 0",
-                    }} />
-                  )}
-                </div>
-
-                {/* Right: level card */}
-                <div style={{
-                  flex: 1,
-                  background: isInProgress ? "linear-gradient(135deg,#eff6ff,#f0f9ff)" : "white",
-                  border: isInProgress ? "1.5px solid #bfdbfe" : "1px solid #e5e7eb",
-                  borderRadius: 12, padding: "10px 12px",
-                  marginBottom: 0,
-                  opacity: isLocked ? 0.7 : 1,
-                }}>
-                  {/* Header row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 20 }}>{def.emoji}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, flex: 1, color: isInProgress ? "#0369a1" : isLocked ? "#9ca3af" : "#111827" }}>
-                      {t[def.nameKey] as string}
-                    </span>
-                    {isDone && (
-                      <span style={{ fontSize: 9, fontWeight: 800, background: "#dcfce7", color: "#166534", padding: "2px 7px", borderRadius: 8 }}>
-                        ✓
-                      </span>
-                    )}
-                    {isLocked && (
-                      <span style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1 }}>🔒</span>
-                    )}
-                  </div>
-
-                  {/* Requirement pills */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
-                    {def.targetAscents != null && (
-                      <span style={{
-                        fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 6,
-                        background: isDone ? "#f0fdf4" : "#f3f4f6",
-                        color: isDone ? "#16a34a" : isLocked ? "#9ca3af" : "#374151",
-                      }}>
-                        {def.targetAscents} {t.home_statSummits.toLowerCase()}
-                      </span>
-                    )}
-                    {def.altReqs?.map((r) => {
-                      const met = getAltCount(stats, r.threshold) >= r.count;
-                      const label = r.count === 1
-                        ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
-                        : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
-                      return (
-                        <span key={r.threshold} style={{
-                          fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 6,
-                          background: met ? "#f0fdf4" : "#f3f4f6",
-                          color: met ? "#16a34a" : isLocked ? "#9ca3af" : "#374151",
-                        }}>
-                          {label}
-                        </span>
-                      );
-                    })}
-                  </div>
-
-                  {/* In-progress: show detailed progress */}
-                  {isInProgress && def.targetAscents != null && (
-                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #dbeafe" }}>
-                      <div style={{ height: 4, borderRadius: 2, background: "#dbeafe", overflow: "hidden", marginBottom: 5 }}>
-                        <div style={{
-                          height: "100%", borderRadius: 2,
-                          width: `${Math.min(stats.totalAscents / def.targetAscents * 100, 100)}%`,
-                          background: "#0369a1",
-                        }} />
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0369a1", marginBottom: 2 }}>
-                        {i(t.home_levelProgress, { current: stats.totalAscents, total: def.targetAscents })}
-                      </div>
-                      {stats.totalAscents < def.targetAscents && (
-                        <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>
-                          → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.totalAscents })}
-                        </div>
-                      )}
-                      {def.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
-                        <div key={r.threshold} style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>
-                          → {i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {isInProgress && def.targetAscents == null && (
-                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #dbeafe" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>
-                        {t.home_maxLevel}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {LEVEL_DEFS.map((def, idx) => {
+          const isDone       = idx < levelState.currentIdx;
+          const isInProgress = idx === levelState.currentIdx;
+          if (!progressionExpanded && !isInProgress) return null;
+          const status = isDone ? "completed" : isInProgress ? "current" : "locked";
+          return (
+            <LevelCard
+              key={def.idx}
+              def={def}
+              status={status}
+              stats={stats}
+              t={t}
+              locale={locale}
+            />
+          );
+        })}
 
         {/* Expand / collapse CTA */}
         {!progressionExpanded ? (
           <button
             onClick={() => setProgressionExpanded(true)}
             style={{
-              width: "100%", marginTop: 12,
+              width: "100%", marginTop: 2,
               background: "none", border: "1.5px solid #e5e7eb", borderRadius: 10,
               padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#374151",
               cursor: "pointer",
@@ -492,7 +549,7 @@ export function HomeClient({ data, locale, t }: {
           <button
             onClick={() => setProgressionExpanded(false)}
             style={{
-              width: "100%", marginTop: 10,
+              width: "100%", marginTop: 2,
               background: "none", border: "none",
               padding: "6px", fontSize: 13, fontWeight: 600, color: "#9ca3af",
               cursor: "pointer",
@@ -506,61 +563,142 @@ export function HomeClient({ data, locale, t }: {
       {/* ── Leaderboard ─────────────────────────────────────────────────── */}
       {leaderboard.length > 1 && (
         <section style={{ padding: "20px 16px 0" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
-              {t.home_ranking}
-            </h2>
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12, gap: 8 }}>
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 2px" }}>
+                {t.home_ranking}
+              </h2>
+              <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>{t.home_ropeTeamSub}</p>
+            </div>
             <span style={{
-              background: userRank === 1 ? "#fef9c3" : userRank <= 3 ? "#eff6ff" : "#f3f4f6",
-              color: userRank === 1 ? "#854d0e" : userRank <= 3 ? "#0369a1" : "#6b7280",
-              fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
+              display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
+              background: userRank === 1 ? "#fef9c3" : "#f3f4f6",
+              color: userRank === 1 ? "#854d0e" : "#6b7280",
+              fontSize: 12, fontWeight: 700, padding: "5px 10px", borderRadius: 20,
             }}>
-              {rankMedal(userRank)} #{userRank}
+              <span style={{ fontSize: 14 }}>⛰️</span> #{userRank} {t.home_yourPosition}
             </span>
           </div>
 
-          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 16, overflow: "hidden" }}>
+          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
             {leaderboard.slice(0, 5).map((entry, idx) => {
               const rank = idx + 1;
               const isMe = entry.isCurrentUser;
-              const diff = entry.ascentCount - myCount;
+              const myEp2 = leaderboard.find((e) => e.isCurrentUser)?.ep ?? 0;
+              const epDiff = entry.ep - myEp2;
+              const lvlColor = LEVEL_COLORS[(entry.levelIdx - 1) % LEVEL_COLORS.length];
+              const levelName = t[LEVEL_DEFS[(entry.levelIdx - 1) % LEVEL_DEFS.length].nameKey];
+              const progressPct = entry.nextLevelTarget
+                ? Math.min(100, Math.round((entry.ep / entry.nextLevelTarget) * 100))
+                : 100;
 
+              // Hint for current user
+              let hint: string | null = null;
+              if (isMe) {
+                if (userRank === 1 && nextRankGap > 0 && nextRankName) {
+                  hint = i(t.home_epToSecure, { n: nextRankGap });
+                } else if (userRank > 1 && nextRankGap > 0 && nextRankName) {
+                  hint = i(t.home_epToBeat, { n: nextRankGap, name: nextRankName });
+                }
+              }
+
+              if (isMe) {
+                // ── Current user card ──────────────────────────────────────
+                return (
+                  <div key={entry.userId} style={{
+                    padding: "16px 16px 14px",
+                    background: "linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%)",
+                    borderBottom: idx < Math.min(leaderboard.length, 5) - 1 ? "1px solid #dbeafe" : "none",
+                    borderLeft: "3px solid #0369a1",
+                  }}>
+                    {/* Row: rank + avatar + name/level + metrics */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0369a1", flexShrink: 0 }}>
+                        {rank}
+                      </div>
+                      <Avatar name={entry.name} url={entry.avatarUrl} size={38} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {entry.name} <span style={{ fontWeight: 400, color: "#64748b", fontSize: 12 }}>({t.home_youAre})</span>
+                        </p>
+                        <span style={{
+                          display: "inline-block", marginTop: 2,
+                          fontSize: 10, fontWeight: 700, color: lvlColor.dark,
+                          background: lvlColor.mid, borderRadius: 6, padding: "1px 6px",
+                        }}>{levelName}</span>
+                      </div>
+                      {/* EP + Cairns */}
+                      <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
+                        </div>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    {entry.nextLevelTarget && (
+                      <div style={{ marginTop: 10, paddingLeft: 70 }}>
+                        <div style={{ height: 5, background: "#dbeafe", borderRadius: 99, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${progressPct}%`, background: "#0369a1", borderRadius: 99, transition: "width 0.4s" }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                          <span style={{ fontSize: 10, color: "#64748b", fontWeight: 600 }}>
+                            {entry.ep} / {entry.nextLevelTarget} EP
+                          </span>
+                          {hint && (
+                            <span style={{ fontSize: 10, color: "#0369a1", fontWeight: 700 }}>{hint}</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // ── Other users row ────────────────────────────────────────
               return (
                 <div key={entry.userId} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  padding: "12px 14px",
-                  background: isMe ? "linear-gradient(90deg,#eff6ff,#f0f9ff)" : "white",
+                  padding: "12px 16px",
+                  background: "white",
                   borderBottom: idx < Math.min(leaderboard.length, 5) - 1 ? "1px solid #f3f4f6" : "none",
-                  borderLeft: isMe ? "3px solid #0369a1" : "3px solid transparent",
                 }}>
-                  <div style={{ width: 26, textAlign: "center", fontSize: rank <= 3 ? 18 : 13, fontWeight: rank > 3 ? 700 : undefined, color: rank > 3 ? "#9ca3af" : undefined, flexShrink: 0 }}>
-                    {rankMedal(rank)}
+                  <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#d1d5db", flexShrink: 0 }}>
+                    {rank}
                   </div>
-
-                  <Avatar name={entry.name} url={entry.avatarUrl} size={34} />
-
+                  <Avatar name={entry.name} url={entry.avatarUrl} size={36} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: isMe ? 700 : 600, color: isMe ? "#0369a1" : "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {isMe ? `${entry.name} (${t.home_youAre})` : entry.name}
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {entry.name}
                     </p>
-                  </div>
-
-                  {/* Diff badge */}
-                  {!isMe && diff !== 0 && (
                     <span style={{
-                      fontSize: 11, fontWeight: 700,
-                      padding: "2px 7px", borderRadius: 10,
-                      background: diff > 0 ? "#fef2f2" : "#f0fdf4",
-                      color: diff > 0 ? "#dc2626" : "#16a34a",
-                      flexShrink: 0,
-                    }}>
-                      {diff > 0 ? `+${diff}` : diff}
-                    </span>
-                  )}
-
-                  <span style={{ fontSize: 14, fontWeight: 800, color: isMe ? "#0369a1" : "#374151", flexShrink: 0, minWidth: 32, textAlign: "right" }}>
-                    {entry.ascentCount}
-                  </span>
+                      display: "inline-block", marginTop: 1,
+                      fontSize: 10, fontWeight: 700, color: lvlColor.dark,
+                      background: lvlColor.mid, borderRadius: 6, padding: "1px 6px",
+                    }}>{levelName}</span>
+                  </div>
+                  {/* EP + Cairns */}
+                  <div style={{ display: "flex", gap: 12, flexShrink: 0, alignItems: "center" }}>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep} <span style={{ fontSize: 10, fontWeight: 400, color: "#9ca3af" }}>EP</span></div>
+                      <div style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>{entry.cairns} <span style={{ fontSize: 10, fontWeight: 400, color: "#9ca3af" }}>Cairns</span></div>
+                    </div>
+                    {epDiff !== 0 && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 10, flexShrink: 0,
+                        background: epDiff > 0 ? "#fef2f2" : "#f0fdf4",
+                        color: epDiff > 0 ? "#dc2626" : "#16a34a",
+                      }}>
+                        {epDiff > 0 ? `+${epDiff}` : i(t.home_epBehind, { n: Math.abs(epDiff) })}
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}

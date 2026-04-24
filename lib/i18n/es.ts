@@ -177,7 +177,7 @@ export const es: Dict = {
   home_greeting: "Hola, {name} 👋",
   home_statSummits: "Cimas", home_statPhotos: "Fotos",
   home_statRegions: "Regiones", home_statFriends: "Amigos",
-  home_ranking: "Tu posición en la cordada", home_youAre: "tú",
+  home_ranking: "Tu cordada", home_youAre: "tú", home_ropeTeamSub: "Escalad juntos. Ganad EP. Coleccionad cairns.", home_yourPosition: "Tu posición", home_epToSecure: "→ {n} EP para asegurar el #1", home_epToBeat: "→ {n} EP para superar a {name}", home_epBehind: "{n} EP por detrás",
   home_motivationBeat: "Te faltan {n} cima{n,plural,=1{}other{s}} para superar a {name}",
   home_motivationFirst: "¡Eres el #1 🏆! ¡Sigue escalando!",
   home_motivationNoFriends: "¡Reta a tus amigos!",
