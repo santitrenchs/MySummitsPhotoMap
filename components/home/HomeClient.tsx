@@ -187,7 +187,7 @@ function LevelCard({ def, status, stats, t, locale }: {
         {/* Name + status tag */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginBottom: 7 }}>
           <span style={{
-            fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em",
+            fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
             color: isCurrent ? "#0369a1" : "#111827",
           }}>
             {t[def.nameKey] as string}
@@ -404,86 +404,114 @@ export function HomeClient({ data, locale, t }: {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── Hero header ─────────────────────────────────────────────────── */}
-      <div style={{
-        position: "relative",
-        height: 283,
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "space-between",
-        padding: "24px 28px 26px",
-        backgroundImage: "url('https://www.rutaspirineos.org/images/prat-de-cadi-desde-estana/prat-de-cadi-desde-estana-1.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center 60%",
-        backgroundColor: "#1c2d3f",
-        overflow: "hidden",
-      }}>
-        {/* Overlay */}
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 0,
-          background: "linear-gradient(to bottom, rgba(10,20,35,0.52) 0%, rgba(10,20,35,0.42) 25%, rgba(10,20,35,0.58) 52%, rgba(10,20,35,0.85) 75%, rgba(10,20,35,0.97) 100%)",
-        }} />
-
-        {/* Bloque superior: avatar + identidad */}
-        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <Link href="/profile" style={{ textDecoration: "none", marginBottom: 10 }}>
+      {(() => {
+        const meEntry = leaderboard.find((e) => e.isCurrentUser);
+        const myEp = meEntry?.ep ?? 0;
+        const myCairns = meEntry?.cairns ?? 0;
+        const lvlColor = LEVEL_COLORS[levelState.currentIdx];
+        const lvlName = t[levelState.current.nameKey];
+        return (
+          <div style={{
+            position: "relative",
+            borderRadius: 20,
+            overflow: "hidden",
+            margin: "12px 12px 0",
+            backgroundImage: "url('/brand/hero.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center 60%",
+            backgroundColor: "#1c2d3f",
+          }}>
+            {/* Overlay */}
             <div style={{
-              width: 78, height: 78, borderRadius: "50%",
-              border: "2px solid rgba(255,255,255,0.50)",
-              boxShadow: "0 8px 28px rgba(0,0,0,0.55)",
-              overflow: "hidden",
-              background: "linear-gradient(145deg,#3a7bd5,#1a4a8a)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 26, fontWeight: 700, color: "white",
-            }}>
-              {user.avatarUrl
-                // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={user.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : initials(user.name)}
+              position: "absolute", inset: 0, zIndex: 0,
+              background: "linear-gradient(to bottom, rgba(10,20,35,0.15) 0%, rgba(10,20,35,0.45) 55%, rgba(10,20,35,0.85) 100%)",
+            }} />
+
+            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "28px 24px 24px", gap: 10 }}>
+              {/* Avatar */}
+              <Link href="/profile" style={{ textDecoration: "none" }}>
+                <div style={{
+                  width: 68, height: 68, borderRadius: "50%",
+                  border: "2.5px solid rgba(255,255,255,0.55)",
+                  boxShadow: "0 6px 24px rgba(0,0,0,0.50)",
+                  overflow: "hidden",
+                  background: "linear-gradient(145deg,#3a7bd5,#1a4a8a)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 24, fontWeight: 700, color: "white",
+                }}>
+                  {user.avatarUrl
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={user.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : initials(user.name)}
+                </div>
+              </Link>
+
+              {/* Name */}
+              <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.03em", lineHeight: 1.1, textAlign: "center", textShadow: "0 1px 3px rgba(0,0,0,0.45)" }}>
+                {user.name}
+              </h1>
+
+              {/* Level pill */}
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "2px 11px 2px 5px", borderRadius: 20,
+                background: "#eff6ff",
+                fontSize: 12, fontWeight: 700, color: "#0369a1",
+                letterSpacing: "0.01em",
+              }}>
+                <div style={{
+                  width: Math.round(LEVEL_SPRITE_SLOT * (24 / 64)), height: 24, flexShrink: 0,
+                  backgroundImage: "url('/brand/Niveles Peakadex.png')",
+                  backgroundSize: `${Math.round(230 * (24 / 64))}px 24px`,
+                  backgroundPosition: `${-Math.round((levelState.current.idx - 1) * LEVEL_SPRITE_SLOT * (24 / 64))}px 0`,
+                  backgroundRepeat: "no-repeat",
+                }} />
+                {lvlName}
+              </div>
+
+              {/* Metrics */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", marginTop: 6 }}>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.totalAscents}</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.65)" }}>{t.home_metricAscents}</span>
+                </div>
+                <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.uniquePeaks}</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.65)" }}>{t.home_metricPeaks}</span>
+                </div>
+                <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>
+                    {stats.maxAltitude > 0 ? stats.maxAltitude.toLocaleString(locale) : "—"}
+                    {stats.maxAltitude > 0 && <sup style={{ fontSize: 10, fontWeight: 400, verticalAlign: "super", marginLeft: 1, opacity: 0.55 }}>m</sup>}
+                  </span>
+                  <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.65)" }}>{t.home_metricMaxAlt}</span>
+                </div>
+              </div>
+
+              {/* EP · Cairns */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 6,
+                fontSize: 12.5, letterSpacing: "-0.01em", marginTop: 6,
+                background: "rgba(255,255,255,0.15)",
+                borderRadius: 20, padding: "5px 14px",
+              }}>
+                <span style={{ fontWeight: 700, color: "#ffffff" }}>+{myEp} EP</span>
+                <span style={{ fontSize: 18, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>·</span>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="#fbbf24">
+                  <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
+                  <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
+                  <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
+                  <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
+                </svg>
+                <span style={{ fontWeight: 700, color: "#fbbf24" }}>{myCairns}</span>
+                <span style={{ fontWeight: 400, color: "#fbbf24" }}>Cairns</span>
+              </div>
             </div>
-          </Link>
-          <h1 style={{ margin: "0 0 3px", fontSize: 21, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.03em", lineHeight: 1, textAlign: "center", textShadow: "0 1px 2px rgba(0,0,0,0.40)" }}>
-            {user.name}
-          </h1>
-          <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 400, color: "rgba(255,255,255,0.72)", textAlign: "center" }}>
-            {user.username ? `@${user.username}` : ""}
-          </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, letterSpacing: "-0.01em" }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, position: "relative", top: "0.5px" }}>
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M12 5 L14.5 12 L9.5 12 Z" fill="rgba(255,255,255,0.88)"/>
-              <path d="M12 19 L14.5 12 L9.5 12 Z"/>
-            </svg>
-            <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.88)" }}>Azimut</span>
-            <span style={{ color: "rgba(255,255,255,0.42)", fontWeight: 400 }}>·</span>
-            <span style={{ fontWeight: 400, color: "rgba(255,255,255,0.75)" }}>{t.home_heroSubtitle}</span>
           </div>
-        </div>
-
-        {/* Bloque inferior: métricas + progreso */}
-        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", gap: 14, width: "100%", paddingTop: 16, paddingBottom: 17 }}>
-
-          {/* Métricas: cimas · ascensiones · alt. máx */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.uniquePeaks}</span>
-              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>{t.home_metricPeaks}</span>
-            </div>
-            <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)", alignSelf: "center", margin: "0 4px" }} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.totalAscents}</span>
-              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>{t.home_metricAscents}</span>
-            </div>
-            <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)", alignSelf: "center", margin: "0 4px" }} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>
-                {stats.maxAltitude > 0 ? `${stats.maxAltitude.toLocaleString(locale)}` : "—"}
-                {stats.maxAltitude > 0 && <sup style={{ fontSize: 10, fontWeight: 400, verticalAlign: "super", marginLeft: 1, opacity: 0.55 }}>m</sup>}
-              </span>
-              <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.70)" }}>{t.home_metricMaxAlt}</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
+        );
+      })()}
 
       {/* ── Onboarding banner (new users only) ──────────────────────────── */}
       {stats.totalAscents === 0 && (
@@ -564,21 +592,10 @@ export function HomeClient({ data, locale, t }: {
       {leaderboard.length > 1 && (
         <section style={{ padding: "20px 16px 0" }}>
           {/* Header */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12, gap: 8 }}>
-            <div>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 2px" }}>
-                {t.home_ranking}
-              </h2>
-              <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>{t.home_ropeTeamSub}</p>
-            </div>
-            <span style={{
-              display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
-              background: userRank === 1 ? "#fef9c3" : "#f3f4f6",
-              color: userRank === 1 ? "#854d0e" : "#6b7280",
-              fontSize: 12, fontWeight: 700, padding: "5px 10px", borderRadius: 20,
-            }}>
-              <span style={{ fontSize: 14 }}>⛰️</span> #{userRank} {t.home_yourPosition}
-            </span>
+          <div style={{ marginBottom: 12 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
+              {t.home_ranking}
+            </h2>
           </div>
 
           <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
@@ -641,22 +658,6 @@ export function HomeClient({ data, locale, t }: {
                       </div>
                     </div>
 
-                    {/* Progress bar */}
-                    {entry.nextLevelTarget && (
-                      <div style={{ marginTop: 10, paddingLeft: 70 }}>
-                        <div style={{ height: 5, background: "#dbeafe", borderRadius: 99, overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${progressPct}%`, background: "#0369a1", borderRadius: 99, transition: "width 0.4s" }} />
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                          <span style={{ fontSize: 10, color: "#64748b", fontWeight: 600 }}>
-                            {entry.ep} / {entry.nextLevelTarget} EP
-                          </span>
-                          {hint && (
-                            <span style={{ fontSize: 10, color: "#0369a1", fontWeight: 700 }}>{hint}</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               }
@@ -684,20 +685,15 @@ export function HomeClient({ data, locale, t }: {
                     }}>{levelName}</span>
                   </div>
                   {/* EP + Cairns */}
-                  <div style={{ display: "flex", gap: 12, flexShrink: 0, alignItems: "center" }}>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep} <span style={{ fontSize: 10, fontWeight: 400, color: "#9ca3af" }}>EP</span></div>
-                      <div style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>{entry.cairns} <span style={{ fontSize: 10, fontWeight: 400, color: "#9ca3af" }}>Cairns</span></div>
+                  <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
                     </div>
-                    {epDiff !== 0 && (
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 10, flexShrink: 0,
-                        background: epDiff > 0 ? "#fef2f2" : "#f0fdf4",
-                        color: epDiff > 0 ? "#dc2626" : "#16a34a",
-                      }}>
-                        {epDiff > 0 ? `+${epDiff}` : i(t.home_epBehind, { n: Math.abs(epDiff) })}
-                      </span>
-                    )}
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
+                    </div>
                   </div>
                 </div>
               );
@@ -811,32 +807,7 @@ export function HomeClient({ data, locale, t }: {
       </section>
 
 
-      {/* ── Achievements ────────────────────────────────────────────────── */}
-      <section style={{ padding: "24px 16px 0" }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 10px" }}>
-          {t.home_badges}
-        </h2>
-        <div style={{
-          background: "white", border: "1px solid #e5e7eb", borderRadius: 16,
-          padding: "0 16px",
-        }}>
-          {badges.map((b, i) => (
-            <BadgeCard
-              key={b.id}
-              emoji={b.emoji}
-              title={t[b.titleKey] as string}
-              sub={t[b.subKey] as string}
-              howTo={b.howTo}
-              rarity={b.rarity}
-              cairns={b.cairns}
-              earned={b.earned}
-              current={b.current}
-              target={b.target}
-              isLast={i === badges.length - 1}
-            />
-          ))}
-        </div>
-      </section>
+      {/* ── Achievements ── hidden ───────────────────────────────────────── */}
 
     </div>
   );

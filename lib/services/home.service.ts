@@ -113,6 +113,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
         peak: {
           select: {
             altitudeM: true,
+            isMythic: true,
             rarity: { select: { ep: true } },
           },
         },
@@ -125,15 +126,16 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   ]);
 
   // Aggregate per-user stats
-  type LbUserStats = { count: number; ep: number; a1000: number; a2000: number; a3000: number; a4000: number };
+  type LbUserStats = { count: number; ep: number; mythic: number; a1000: number; a2000: number; a3000: number; a4000: number };
   const lbMap = new Map<string, LbUserStats>(
-    allUserIds.map((uid) => [uid, { count: 0, ep: 0, a1000: 0, a2000: 0, a3000: 0, a4000: 0 }])
+    allUserIds.map((uid) => [uid, { count: 0, ep: 0, mythic: 0, a1000: 0, a2000: 0, a3000: 0, a4000: 0 }])
   );
   for (const a of lbAscents) {
     const s = lbMap.get(a.createdBy);
     if (!s) continue;
     s.count++;
     s.ep += a.peak.rarity?.ep ?? 1;
+    if (a.peak.isMythic) s.mythic++;
     if (a.peak.altitudeM >= 1000) s.a1000++;
     if (a.peak.altitudeM >= 2000) s.a2000++;
     if (a.peak.altitudeM >= 3000) s.a3000++;
@@ -141,14 +143,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   }
 
   function lbCairns(s: LbUserStats): number {
-    let c = 0;
-    if (s.count >= 1) c += 3;
-    if (s.count >= 3) c += 5;
-    if (s.a1000 >= 3) c += 8;
-    if (s.a2000 >= 1) c += 12;
-    if (s.a3000 >= 1) c += 20;
-    if (s.a4000 >= 1) c += 35;
-    return c;
+    return s.mythic; // +1 cairn per mythic peak ascent
   }
 
   // Level thresholds (EP targets per level idx 1-5)
@@ -165,7 +160,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
 
   const leaderboard: LeaderboardEntry[] = allUserIds
     .map((uid) => {
-      const s = lbMap.get(uid) ?? { count: 0, ep: 0, a1000: 0, a2000: 0, a3000: 0, a4000: 0 };
+      const s = lbMap.get(uid) ?? { count: 0, ep: 0, mythic: 0, a1000: 0, a2000: 0, a3000: 0, a4000: 0 };
       const lvl = levelIdx(s.ep);
       const isMe = uid === userId;
       return {

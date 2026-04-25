@@ -17,20 +17,13 @@ function SpriteIcon({ index, size = 22, active = false }: { index: number; size?
 }
 
 function PeakadexLogo({ height = 44 }: { height?: number }) {
-  const iconSize = height;
+  const iconSize = Math.round(height * 1.21);
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 0, fontFamily: "var(--font-manrope), 'Manrope', sans-serif", fontSize: height * 0.72, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1 }}>
+      <span style={{ color: "#0D2538", marginRight: Math.round(8 * 1.12) }}>peak</span>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/brand/icon.png" alt="" height={iconSize} width={iconSize} style={{ display: "block" }} />
-      <span style={{
-        fontFamily: "var(--font-baloo2), 'Baloo 2', cursive",
-        fontSize: height * 0.75,
-        fontWeight: 800,
-        lineHeight: 1,
-        letterSpacing: "-0.01em",
-      }}>
-        <span style={{ color: "#F25A2B" }}>peak</span><span style={{ color: "#0D2538" }}>adex</span>
-      </span>
+      <img src="/brand/icon.png" alt="" height={iconSize} width={iconSize} style={{ display: "block", transform: "translateY(2px)" }} />
+      <span style={{ color: "#8a9bb0", marginLeft: 7 }}>adex</span>
     </div>
   );
 }

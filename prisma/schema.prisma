@@ -43,6 +43,7 @@ model Peak {
   tag3          String?
   country       String   @default("ES")
   gpsVerified   Boolean  @default(false)
+  isMythic      Boolean  @default(false)
   rarityId      String?
   createdAt     DateTime @default(now())
 
