@@ -248,4 +248,12 @@ export const ca: Dict = {
   auth_resetSuccess: "Contrasenya actualitzada. Ja pots iniciar sessió.",
   auth_invalidResetToken: "L'enllaç no és vàlid o ha caducat.",
   auth_backToLogin: "Tornar a l'inici de sessió",
+
+  card_capturedSummit: "ha capturat un cim", card_capturedMythicSummit: "ha capturat una cima mítica",
+  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
+  card_rarity: "Raresa", card_altitude: "Altitud", card_reward: "Recompensa",
+  card_backDesc_daisy: "Cim accessible i perfecte per començar el teu Peakadex.",
+  card_backDesc_gentian: "Territori de muntanya real: ascensos exigents i millors recompenses.",
+  card_backDesc_edelweiss: "Altures poc freqüents: alta muntanya amb altitud seriosa.",
+  card_backDesc_saxifrage: "Altitud extrema. Una captura mítica reservada als sostres del món.",
 };

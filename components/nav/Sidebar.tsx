@@ -258,12 +258,13 @@ const CSS = `
 .azisb-brand {
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 30px 20px 16px;
   text-decoration: none;
   flex-shrink: 0;
   white-space: nowrap;
 }
-.azisb--c .azisb-brand { padding: 30px 0 16px; justify-content: center; }
+.azisb--c .azisb-brand { padding: 30px 0 16px; }
 
 /* Show full logo when expanded, icon-only when collapsed. */
 .azisb-brand-wrap { display: block; flex-shrink: 0; }

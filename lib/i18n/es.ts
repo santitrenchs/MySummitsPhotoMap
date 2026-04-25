@@ -246,4 +246,12 @@ export const es: Dict = {
   auth_resetSuccess: "Contraseña actualizada. Ya puedes iniciar sesión.",
   auth_invalidResetToken: "El enlace no es válido o ha caducado.",
   auth_backToLogin: "Volver al inicio de sesión",
+
+  card_capturedSummit: "ha conquistado una cima", card_capturedMythicSummit: "ha conquistado una cima mítica",
+  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
+  card_rarity: "Rareza", card_altitude: "Altitud", card_reward: "Recompensa",
+  card_backDesc_daisy: "Cima accesible y perfecta para empezar tu Peakadex.",
+  card_backDesc_gentian: "Territorio de montaña real: ascensos exigentes y mejores recompensas.",
+  card_backDesc_edelweiss: "Alturas poco frecuentes: alta montaña con altitud seria.",
+  card_backDesc_saxifrage: "Altitud extrema. Una captura mítica reservada a los techos del mundo.",
 };

@@ -32,6 +32,38 @@ type Props = {
   animationIndex?: number;
 };
 
+// ─── Rarity system ───────────────────────────────────────────────────────────
+
+type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage";
+
+function getRarity(altitudeM: number): Rarity {
+  if (altitudeM >= 5000) return "saxifrage";
+  if (altitudeM >= 3000) return "edelweiss";
+  if (altitudeM >= 1500) return "gentian";
+  return "daisy";
+}
+
+const RARITY_LABEL: Record<Rarity, string> = {
+  daisy:     "Daisy",
+  gentian:   "Gentian",
+  edelweiss: "Edelweiss",
+  saxifrage: "Saxifrage",
+};
+
+const RARITY_EP: Record<Rarity, number> = {
+  daisy:     8,
+  gentian:   16,
+  edelweiss: 20,
+  saxifrage: 100,
+};
+
+const RARITY_PILL: Record<Rarity, string> = {
+  daisy:     "< 1.500 m",
+  gentian:   "1.500 – 3.000 m",
+  edelweiss: "3.000 – 5.000 m",
+  saxifrage: "> 5.000 m",
+};
+
 // ─── Mountain placeholder ────────────────────────────────────────────────────
 
 function MountainPlaceholder() {
@@ -83,7 +115,6 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
       background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)",
       color: "white", fontSize: size * 0.38, fontWeight: 700,
       display: "flex", alignItems: "center", justifyContent: "center",
-      boxShadow: "0 0 0 2px rgba(255,255,255,0.5)",
     }}>
       {initials}
     </div>
@@ -92,11 +123,13 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 
 // ─── AscentCard ───────────────────────────────────────────────────────────────
 
-export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, animationIndex = 0 }: Props) {
+export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Props) {
   const router = useRouter();
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [navigating, setNavigating] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  const isProfile = variant === "profile";
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -105,205 +138,166 @@ export function AscentCard({ variant, ascent, locale, onDelete, isDeleting, anim
     return () => document.removeEventListener("click", close);
   }, [menuOpen]);
 
-  const isProfile = variant === "profile";
+  const rarity = getRarity(ascent.peak.altitudeM);
+  const isMythic = rarity === "saxifrage";
+  const cardNum = String(animationIndex + 1).padStart(3, "0");
+
   const dateStr = new Date(ascent.date).toLocaleDateString(locale, {
     day: "numeric", month: "short", year: "numeric",
   });
-
   const latStr = `${Math.abs(ascent.peak.latitude).toFixed(4)}°${ascent.peak.latitude >= 0 ? "N" : "S"}`;
   const lngStr = `${Math.abs(ascent.peak.longitude).toFixed(4)}°${ascent.peak.longitude >= 0 ? "E" : "W"}`;
 
-  function handleCardClick() {
-    if (isProfile && !navigating) {
-      setNavigating(true);
-      router.push(`/ascents/${ascent.id}`);
-    }
-  }
+  const backDescs: Record<Rarity, string> = {
+    daisy:     t.card_backDesc_daisy,
+    gentian:   t.card_backDesc_gentian,
+    edelweiss: t.card_backDesc_edelweiss,
+    saxifrage: t.card_backDesc_saxifrage,
+  };
 
   return (
-    <>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <div
-        className="ascent-card"
+    <div
+      className={`flip-card${isFlipped ? " is-flipped" : ""}`}
+      onClick={() => setIsFlipped(f => !f)}
+    >
+      <article
+        className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
         // @ts-expect-error CSS custom property
-        style={{ "--card-i": Math.min(animationIndex, 8), cursor: navigating ? "wait" : undefined }}
-        onClick={handleCardClick}
+        style={{ "--card-i": Math.min(animationIndex, 8) }}
       >
-        {/* ── Header (both variants) ──────────────────────────────────── */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 14px 8px",
-        }}>
-          {ascent.user.avatarUrl
-            // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={ascent.user.avatarUrl} alt="" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover", flexShrink: 0, boxShadow: "0 0 0 2px rgba(255,255,255,0.5)" }} />
-            : <InitialsAvatar name={ascent.user.name} />
-          }
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontWeight: 700, fontSize: 14, color: "#111827", margin: 0 }}>
-              {ascent.user.name}
-            </p>
-          </div>
-          {isProfile && (
-            <div onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-                style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  width: 30, height: 30, borderRadius: "50%",
-                  color: "#6b7280", fontSize: 20, lineHeight: 1,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >⋮</button>
-              {menuOpen && (
-                <div style={{
-                  position: "absolute", right: 14, zIndex: 50,
-                  background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
-                }} onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => { setMenuOpen(false); setNavigating(true); router.push(`/ascents/${ascent.id}`); }}
-                    style={{
-                      display: "block", width: "100%", padding: "10px 16px",
-                      textAlign: "left", background: "none", border: "none",
-                      fontSize: 13, color: "#111827", cursor: "pointer",
-                    }}
-                  >
-                    {t.edit}
-                  </button>
+        {/* ── Front ─────────────────────────────────────────────────── */}
+        <div className="card-face card-front">
+
+          {/* User header */}
+          <header className="card-user">
+            {ascent.user.avatarUrl
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={ascent.user.avatarUrl} alt="" className="pc-avatar" style={{ objectFit: "cover" }} />
+              : <InitialsAvatar name={ascent.user.name} size={32} />
+            }
+            <div className="user-copy">
+              <div className="user-name">{ascent.user.name}</div>
+              <div className="user-action">
+                {isMythic ? t.card_capturedMythicSummit : t.card_capturedSummit}
+              </div>
+            </div>
+            {isProfile ? (
+              <div onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    width: 30, height: 30, borderRadius: "50%",
+                    color: "#9CA3AF", fontSize: 20, lineHeight: 1,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >⋮</button>
+                {menuOpen && (
+                  <div style={{
+                    position: "absolute", right: 14, zIndex: 50,
+                    background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
+                  }} onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => { setMenuOpen(false); router.push(`/ascents/${ascent.id}`); }}
+                      style={{
+                        display: "block", width: "100%", padding: "10px 16px",
+                        textAlign: "left", background: "none", border: "none",
+                        fontSize: 13, color: "#111827", cursor: "pointer",
+                      }}
+                    >{t.edit}</button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span style={{ color: "#9CA3AF", fontSize: 20 }}>⋮</span>
+            )}
+          </header>
+
+          {/* Inner frame */}
+          <section className="capture-frame">
+
+            {/* Topbar */}
+            <div className="capture-topbar">
+              <span className="capture-label">{t.card_peakCapture}</span>
+              <span className="capture-id">
+                #{cardNum}{isMythic ? ` · ${t.card_mythic}` : ""}
+              </span>
+            </div>
+
+            {/* Image */}
+            <div className="image-frame">
+              {ascent.photoUrl
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={ascent.photoUrl} alt={ascent.peak.name} />
+                : <MountainPlaceholder />
+              }
+              <div className="image-overlay" />
+              {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
+              <div className="peak-info">
+                <div className="peak-name">{ascent.peak.name}</div>
+                {ascent.route && <div className="peak-route">{ascent.route}</div>}
+                <div className="peak-meta">
+                  <span>{dateStr}</span>
+                  <span>{latStr} · {lngStr}</span>
                 </div>
-              )}
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* ── Hero image with full overlay ────────────────────────────── */}
-        <div style={{ position: "relative", aspectRatio: "4/5", overflow: "hidden", background: "#e2e8f0" }}>
-          {/* Image */}
-          {ascent.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={ascent.photoUrl}
-              alt={ascent.peak.name}
-              className="ascent-card-img"
-            />
-          ) : (
-            <MountainPlaceholder />
-          )}
-
-          {/* Loading overlay */}
-          {navigating && (
-            <div style={{
-              position: "absolute", inset: 0, zIndex: 30,
-              background: "rgba(0,0,0,0.35)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: "50%",
-                border: "3px solid rgba(255,255,255,0.3)",
-                borderTopColor: "white",
-                animation: "spin 0.7s linear infinite",
-              }} />
+            {/* Stat band */}
+            <div className="stat-band">
+              <div className="stat-item">
+                <span className="stat-label">{t.card_rarity}</span>
+                <div className="stat-value rarity-value">
+                  <span className="rarity-icon">✿</span>
+                  {RARITY_LABEL[rarity]}
+                </div>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">{t.card_altitude}</span>
+                <div className="stat-value">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">{t.card_reward}</span>
+                <div className="stat-value ep">+{RARITY_EP[rarity]} EP</div>
+              </div>
             </div>
-          )}
 
-
-          {/* Bottom gradient (for peak name readability) */}
-          <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0, height: 140,
-            background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)",
-            pointerEvents: "none",
-          }} />
-
-
-
-          {/* Bottom-left: peak name + route + date */}
-          <div style={{
-            position: "absolute", bottom: 12, left: 12, right: 72,
-          }}>
-            <p style={{
-              margin: 0, fontSize: 18, fontWeight: 800, color: "white",
-              lineHeight: 1.2, letterSpacing: "-0.01em",
-              textShadow: "0 1px 4px rgba(0,0,0,0.4)",
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            }}>
-              {ascent.peak.name}
-            </p>
-            {ascent.route && (
-              <p style={{
-                margin: "2px 0 0", fontSize: 12, fontWeight: 600,
-                color: "rgba(255,255,255,0.85)",
-                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                textShadow: "0 1px 3px rgba(0,0,0,0.4)",
-              }}>
-                {ascent.route}
+            {/* Caption */}
+            <footer className="capture-note">
+              <p className="note-byline">
+                <strong>{ascent.user.name}</strong>
+                {ascent.persons.length > 0 && (
+                  <>
+                    {" "}{t.detail_with.toLowerCase()}{" "}
+                    {ascent.persons.map((p, i) => (
+                      <span key={p.id}>
+                        {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
+                        <strong>{p.name}</strong>
+                      </span>
+                    ))}
+                  </>
+                )}
               </p>
-            )}
-            <p style={{
-              margin: "3px 0 0", fontSize: 12, fontWeight: 500,
-              color: "rgba(255,255,255,0.75)",
-            }}>
-              {dateStr}
-            </p>
-          </div>
+              {ascent.description && (
+                <p className="note-text">{ascent.description}</p>
+              )}
+            </footer>
 
-          {/* Bottom-right: altitud (pill) + lat/lon (texto plano) debajo */}
-          <div style={{
-            position: "absolute", bottom: 12, right: 12,
-            display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5,
-          }}>
-            <div style={{
-              background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-              border: "1px solid rgba(255,255,255,0.25)",
-              borderRadius: 20, padding: "5px 10px",
-            }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "white", letterSpacing: "0.01em" }}>
-                {ascent.peak.altitudeM.toLocaleString(locale)} m
-              </span>
-            </div>
-            <span style={{
-              fontSize: 10, fontWeight: 500,
-              color: "rgba(255,255,255,0.75)",
-              textShadow: "0 1px 3px rgba(0,0,0,0.6)",
-              letterSpacing: "0.02em",
-            }}>
-              {latStr} · {lngStr}
-            </span>
-          </div>
+          </section>
         </div>
 
-        {/* ── Below image ─────────────────────────────────────────────── */}
-        <div style={{ padding: "10px 14px 12px" }} onClick={(e) => e.stopPropagation()}>
-
-          {/* Line 1: bold username + "amb" companions (same format as detail page) */}
-          <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.5, margin: 0 }}>
-            <span style={{ fontWeight: 700 }}>{ascent.user.name}</span>
-            {ascent.persons.length > 0 && (
-              <span style={{ fontWeight: 400 }}>
-                {" "}{t.detail_with.toLowerCase()}{" "}
-                {ascent.persons.map((p, i) => (
-                  <span key={p.id}>
-                    {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
-                    <span style={{ fontWeight: 600 }}>{p.name}</span>
-                  </span>
-                ))}
-              </span>
-            )}
-          </p>
-
-          {/* Line 2: description */}
-          {ascent.description && (
-            <p style={{
-              fontSize: 14, color: "#374151", margin: "4px 0 0", lineHeight: 1.5,
-              display: "-webkit-box", WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical", overflow: "hidden",
-            }}>
-              {ascent.description}
-            </p>
-          )}
+        {/* ── Back ──────────────────────────────────────────────────── */}
+        <div className="card-face card-back">
+          <span className="back-pill">{RARITY_LABEL[rarity]} · {RARITY_PILL[rarity]}</span>
+          <h3>{ascent.peak.name}</h3>
+          <p>{t.card_altitude}: {ascent.peak.altitudeM.toLocaleString(locale)} m</p>
+          <p>{t.card_reward}: +{RARITY_EP[rarity]} EP</p>
+          <p>#{cardNum}</p>
+          <p>{backDescs[rarity]}</p>
         </div>
-      </div>
-    </>
+
+      </article>
+    </div>
   );
 }

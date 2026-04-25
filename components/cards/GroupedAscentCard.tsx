@@ -6,6 +6,31 @@ import type { AscentData } from "@/components/ascents/AscentsClient";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 
+// ─── Rarity (shared logic with AscentCard) ────────────────────────────────────
+
+type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage";
+
+function getRarity(altitudeM: number): Rarity {
+  if (altitudeM >= 5000) return "saxifrage";
+  if (altitudeM >= 3000) return "edelweiss";
+  if (altitudeM >= 1500) return "gentian";
+  return "daisy";
+}
+
+const RARITY_LABEL: Record<Rarity, string> = {
+  daisy:     "Daisy",
+  gentian:   "Gentian",
+  edelweiss: "Edelweiss",
+  saxifrage: "Saxifrage",
+};
+
+const RARITY_EP: Record<Rarity, number> = {
+  daisy:     8,
+  gentian:   16,
+  edelweiss: 20,
+  saxifrage: 100,
+};
+
 // ─── Avatar colors (deterministic by index) ───────────────────────────────────
 
 const AVATAR_GRADIENTS = [
@@ -22,7 +47,7 @@ function initials(name: string): string {
   return name[0]?.toUpperCase() ?? "?";
 }
 
-// ─── Mountain placeholder (same SVG as AscentCard) ────────────────────────────
+// ─── Mountain placeholder ────────────────────────────────────────────────────
 
 function MountainPlaceholder() {
   return (
@@ -79,26 +104,24 @@ export function GroupedAscentCard({
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Use refs for current index — avoids stale closures in touch/mouse handlers
   const currentRef = useRef(0);
   const [currentDisplay, setCurrentDisplay] = useState(0);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Touch state refs
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const draggingRef = useRef(false);
-  const isHorizontalRef = useRef<boolean | null>(null); // null = undecided
+  const isHorizontalRef = useRef<boolean | null>(null);
 
   const count = ascents.length;
-
-  // The current user's own ascent in the group (if any) — used for the ⋮ menu.
-  // If null, no ⋮ is shown (group is all friends' ascents).
   const ownAscent = ascents.find((a) => a.isOwn) ?? null;
 
-  // Close menu when clicking outside
+  const rarity = getRarity(ascents[0].peak.altitudeM);
+  const isMythic = rarity === "saxifrage";
+  const cardNum = String(animationIndex + 1).padStart(3, "0");
+
   useEffect(() => {
     if (!menuOpen) return;
     const close = () => setMenuOpen(false);
@@ -117,19 +140,14 @@ export function GroupedAscentCard({
     }
   }
 
-  // Ref so the touch useEffect can always call the latest goTo without
-  // being included in its dependency array (avoids re-registering listeners).
   const goToRef = useRef(goTo);
   goToRef.current = goTo;
 
-  // ── Touch — registered as non-passive so we can call preventDefault() ──────
-  // iOS Safari treats React synthetic touch events as passive, which means
-  // the browser interprets a horizontal swipe as image zoom/pan instead of
-  // a slide change. Registering directly with { passive: false } fixes this.
+  // ── Touch — non-passive so we can preventDefault on horizontal swipe ─────────
   useEffect(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
-    const el = wrapper; // non-null capture for closures
+    const el = wrapper;
 
     function onTouchStart(e: TouchEvent) {
       startXRef.current = e.touches[0].clientX;
@@ -137,7 +155,6 @@ export function GroupedAscentCard({
       draggingRef.current = true;
       isHorizontalRef.current = null;
       if (trackRef.current) trackRef.current.style.transition = "none";
-      console.log("[carousel] touchstart", { x: startXRef.current, y: startYRef.current });
     }
 
     function onTouchMove(e: TouchEvent) {
@@ -148,20 +165,15 @@ export function GroupedAscentCard({
       if (isHorizontalRef.current === null) {
         if (Math.abs(dx) > Math.abs(dy)) {
           isHorizontalRef.current = true;
-          console.log("[carousel] direction: HORIZONTAL");
         } else {
           isHorizontalRef.current = false;
           draggingRef.current = false;
-          console.log("[carousel] direction: VERTICAL — passing to browser");
           return;
         }
       }
 
       if (!isHorizontalRef.current) return;
-
-      const prevented = e.cancelable;
       e.preventDefault();
-      console.log("[carousel] touchmove dx:", dx, "cancelable:", prevented);
 
       const pct = -currentRef.current * 100 + (dx / (el.offsetWidth || 1)) * 100;
       if (trackRef.current) trackRef.current.style.transform = `translateX(${pct}%)`;
@@ -171,7 +183,6 @@ export function GroupedAscentCard({
       if (!draggingRef.current || !isHorizontalRef.current) return;
       draggingRef.current = false;
       const dx = e.changedTouches[0].clientX - startXRef.current;
-      console.log("[carousel] touchend dx:", dx, "→ goTo", currentRef.current + (dx < -50 ? 1 : dx > 50 ? -1 : 0));
       if (dx < -50) goToRef.current(currentRef.current + 1);
       else if (dx > 50) goToRef.current(currentRef.current - 1);
       else goToRef.current(currentRef.current);
@@ -186,10 +197,9 @@ export function GroupedAscentCard({
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
     };
-  }, []); // empty — all state accessed via refs
+  }, []);
 
-  // ── Mouse drag (desktop) ───────────────────────────────────────────────────
-
+  // ── Mouse drag (desktop) ─────────────────────────────────────────────────────
   function handleMouseDown(e: React.MouseEvent) {
     const capturedCurrent = currentRef.current;
     startXRef.current = e.clientX;
@@ -199,9 +209,7 @@ export function GroupedAscentCard({
 
     function onMouseMove(ev: MouseEvent) {
       const delta = ev.clientX - startXRef.current;
-      const pct =
-        -capturedCurrent * 100 +
-        (delta / (wrapperRef.current?.offsetWidth ?? 1)) * 100;
+      const pct = -capturedCurrent * 100 + (delta / (wrapperRef.current?.offsetWidth ?? 1)) * 100;
       if (trackRef.current) trackRef.current.style.transform = `translateX(${pct}%)`;
     }
 
@@ -219,11 +227,8 @@ export function GroupedAscentCard({
     window.addEventListener("mouseup", onMouseUp);
   }
 
-  // ── Current slide data ─────────────────────────────────────────────────────
-
   const slide = ascents[currentDisplay];
 
-  // If the current slide is the user's own ascent, exclude themselves from persons
   const slidePersons = slide.isOwn
     ? slide.persons.filter(
         (p) =>
@@ -233,123 +238,118 @@ export function GroupedAscentCard({
     : slide.persons;
 
   return (
-    <>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <div
-        className="ascent-card"
-        // @ts-expect-error CSS custom property
-        style={{ "--card-i": Math.min(animationIndex, 8) }}
-      >
+    <article
+      className={`peak-card ${rarity}${isMythic ? " mythic" : ""}`}
+      // @ts-expect-error CSS custom property
+      style={{ "--card-i": Math.min(animationIndex, 8) }}
+    >
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <header className="card-user">
 
-        {/* ── Header ────────────────────────────────────────────────────── */}
-        {/*
-          Avatar stack (circles only, no names — too much text).
-          Badge "N perspectivas" without icon.
-          ⋮ menu ONLY if current user has an ascent in this group.
-          If the group is entirely friends' ascents → no ⋮.
-        */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px 8px" }}>
-
-          {/* Overlapping avatar stack — up to 4 shown */}
-          <div style={{ display: "flex", flexShrink: 0 }}>
-            {ascents.slice(0, 4).map((a, i) => (
-              <div
-                key={a.id}
-                style={{
-                  width: 34, height: 34,
-                  borderRadius: "50%",
-                  border: "2px solid white",
-                  marginLeft: i === 0 ? 0 : -10,
-                  background: AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 12, fontWeight: 700, color: "white",
-                  flexShrink: 0,
-                  zIndex: ascents.length - i,
-                  position: "relative",
-                }}
-              >
-                {a.userAvatarUrl
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={a.userAvatarUrl} alt="" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
-                  : initials(a.userName)
-                }
-              </div>
-            ))}
-          </div>
-
-          <div style={{ flex: 1 }} />
-
-          {/* "N perspectivas" badge — amber, no icon */}
-          <div style={{
-            flexShrink: 0,
-            display: "inline-flex",
-            alignItems: "center",
-            background: "#fef3c7",
-            border: "1px solid #fde68a",
-            color: "#92400e",
-            fontSize: 10,
-            fontWeight: 800,
-            padding: "3px 9px",
-            borderRadius: 20,
-            letterSpacing: "0.01em",
-            whiteSpace: "nowrap",
-          }}>
-            {i(t.ascents_perspectives, { n: count })}
-          </div>
-
-          {/* ⋮ menu — only rendered if current user has an ascent in the group */}
-          {ownAscent && (
-            <div onClick={(e) => e.stopPropagation()} style={{ position: "relative" }}>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-                style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  width: 30, height: 30, borderRadius: "50%",
-                  color: "#6b7280", fontSize: 20, lineHeight: 1,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >⋮</button>
-              {menuOpen && (
-                <div
-                  style={{
-                    position: "absolute", right: 0, top: 34, zIndex: 50,
-                    background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    onClick={() => { setMenuOpen(false); router.push(`/ascents/${ownAscent.id}`); }}
-                    style={{
-                      display: "block", width: "100%", padding: "10px 16px",
-                      textAlign: "left", background: "none", border: "none",
-                      fontSize: 13, color: "#111827", cursor: "pointer",
-                    }}
-                  >
-                    {t.edit}
-                  </button>
-                </div>
-              )}
+        {/* Overlapping avatar stack — up to 4 */}
+        <div style={{ display: "flex", flexShrink: 0 }}>
+          {ascents.slice(0, 4).map((a, idx) => (
+            <div
+              key={a.id}
+              style={{
+                width: 32, height: 32,
+                borderRadius: "50%",
+                border: "2px solid white",
+                marginLeft: idx === 0 ? 0 : -10,
+                background: AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, fontWeight: 700, color: "white",
+                flexShrink: 0, position: "relative",
+                zIndex: ascents.length - idx,
+                overflow: "hidden",
+              }}
+            >
+              {a.userAvatarUrl
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={a.userAvatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : initials(a.userName)
+              }
             </div>
-          )}
+          ))}
         </div>
 
-        {/* ── Carousel ─────────────────────────────────────────────────────── */}
+        <div style={{ flex: 1 }} />
+
+        {/* Perspectives badge */}
+        <div style={{
+          flexShrink: 0,
+          display: "inline-flex", alignItems: "center",
+          background: "#fef3c7", border: "1px solid #fde68a",
+          color: "#92400e", fontSize: 10, fontWeight: 800,
+          padding: "3px 9px", borderRadius: 20,
+          letterSpacing: "0.01em", whiteSpace: "nowrap",
+        }}>
+          {i(t.ascents_perspectives, { n: count })}
+        </div>
+
+        {/* ⋮ menu — only if current user has an ascent in the group */}
+        {ownAscent && (
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "relative" }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                width: 30, height: 30, borderRadius: "50%",
+                color: "#9CA3AF", fontSize: 20, lineHeight: 1,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >⋮</button>
+            {menuOpen && (
+              <div
+                style={{
+                  position: "absolute", right: 0, top: 34, zIndex: 50,
+                  background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => { setMenuOpen(false); router.push(`/ascents/${ownAscent.id}`); }}
+                  style={{
+                    display: "block", width: "100%", padding: "10px 16px",
+                    textAlign: "left", background: "none", border: "none",
+                    fontSize: 13, color: "#111827", cursor: "pointer",
+                  }}
+                >
+                  {t.edit}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </header>
+
+      {/* ── Inner frame ─────────────────────────────────────────────────── */}
+      <section className="capture-frame">
+
+        {/* Topbar */}
+        <div className="capture-topbar">
+          <span className="capture-label">{t.card_peakCapture}</span>
+          <span className="capture-id">#{cardNum} · {i(t.ascents_perspectives, { n: count })}</span>
+        </div>
+
+        {/* Carousel inside image-frame */}
         <div
           ref={wrapperRef}
-          style={{
-            position: "relative", aspectRatio: "4/5",
-            overflow: "hidden", background: "#e2e8f0",
-            cursor: "grab", userSelect: "none",
-            touchAction: "pan-y", // hint: vertical scroll ok, horizontal = ours
-          }}
+          className="image-frame"
+          style={{ cursor: "grab", userSelect: "none", touchAction: "pan-y" }}
           onMouseDown={handleMouseDown}
         >
-          <div ref={trackRef} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", willChange: "transform" }}>
-            {ascents.map((a, i) => {
+          <div
+            ref={trackRef}
+            style={{ position: "absolute", inset: 0, display: "flex", willChange: "transform" }}
+          >
+            {ascents.map((a, idx) => {
               const dateStr = new Date(a.date).toLocaleDateString(t.dateLocale, {
                 day: "numeric", month: "short", year: "numeric",
               });
+              const latStr = `${Math.abs(a.peak.latitude).toFixed(4)}°${a.peak.latitude >= 0 ? "N" : "S"}`;
+              const lngStr = `${Math.abs(a.peak.longitude).toFixed(4)}°${a.peak.longitude >= 0 ? "E" : "W"}`;
               return (
                 <div
                   key={a.id}
@@ -359,8 +359,6 @@ export function GroupedAscentCard({
                     overflow: "hidden", background: "#e2e8f0",
                   }}
                 >
-                  {/* Photo — position absolute so height comes from the slide's positioned context,
-                      not from flex sizing (avoids iOS Safari height:100% in flex bug) */}
                   {a.firstPhotoUrl
                     // eslint-disable-next-line @next/next/no-img-element
                     ? <img
@@ -371,133 +369,95 @@ export function GroupedAscentCard({
                     : <MountainPlaceholder />
                   }
 
-                  {/* Bottom gradient — exact values from AscentCard */}
-                  <div style={{
-                    position: "absolute", bottom: 0, left: 0, right: 0, height: 140,
-                    background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)",
-                    pointerEvents: "none",
-                  }} />
+                  <div className="image-overlay" />
 
-                  {/* Slide counter — top right */}
+                  {/* Slide counter */}
                   <div style={{
                     position: "absolute", top: 12, right: 12,
-                    background: "rgba(0,0,0,0.42)",
-                    backdropFilter: "blur(8px)",
+                    background: "rgba(0,0,0,0.42)", backdropFilter: "blur(8px)",
                     WebkitBackdropFilter: "blur(8px)",
                     color: "white", fontSize: 11, fontWeight: 700,
                     padding: "4px 10px", borderRadius: 20,
                     border: "1px solid rgba(255,255,255,0.18)",
                     letterSpacing: "0.03em",
                   }}>
-                    {i + 1} / {count}
+                    {idx + 1} / {count}
                   </div>
 
-                  {/* Peak name + route + date — bottom left, exact styles from AscentCard */}
-                  <div style={{ position: "absolute", bottom: 12, left: 12, right: 72 }}>
-                    <p style={{
-                      margin: 0, fontSize: 18, fontWeight: 800, color: "white",
-                      lineHeight: 1.2, letterSpacing: "-0.01em",
-                      textShadow: "0 1px 4px rgba(0,0,0,0.4)",
-                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                    }}>
-                      {a.peak.name}
-                    </p>
-                    {a.route && (
-                      <p style={{
-                        margin: "2px 0 0", fontSize: 12, fontWeight: 600,
-                        color: "rgba(255,255,255,0.85)",
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                        textShadow: "0 1px 3px rgba(0,0,0,0.4)",
-                      }}>
-                        {a.route}
-                      </p>
-                    )}
-                    <p style={{ margin: "3px 0 0", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.75)" }}>
-                      {dateStr}
-                    </p>
+                  <div className="peak-info">
+                    <div className="peak-name">{a.peak.name}</div>
+                    {a.route && <div className="peak-route">{a.route}</div>}
+                    <div className="peak-meta">
+                      <span>{dateStr}</span>
+                      <span>{latStr} · {lngStr}</span>
+                    </div>
                   </div>
-
-                  {/* Bottom-right: altitud (pill) + lat/lon (texto plano) debajo */}
-                  {(() => {
-                    const latStr = `${Math.abs(a.peak.latitude).toFixed(4)}°${a.peak.latitude >= 0 ? "N" : "S"}`;
-                    const lngStr = `${Math.abs(a.peak.longitude).toFixed(4)}°${a.peak.longitude >= 0 ? "E" : "W"}`;
-                    return (
-                      <div style={{
-                        position: "absolute", bottom: 12, right: 12,
-                        display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5,
-                      }}>
-                        <div style={{
-                          background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
-                          WebkitBackdropFilter: "blur(8px)",
-                          border: "1px solid rgba(255,255,255,0.25)",
-                          borderRadius: 20, padding: "5px 10px",
-                        }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "white", letterSpacing: "0.01em" }}>
-                            {a.peak.altitudeM.toLocaleString(t.dateLocale)} m
-                          </span>
-                        </div>
-                        <span style={{
-                          fontSize: 10, fontWeight: 500,
-                          color: "rgba(255,255,255,0.75)",
-                          textShadow: "0 1px 3px rgba(0,0,0,0.6)",
-                          letterSpacing: "0.02em",
-                        }}>
-                          {latStr} · {lngStr}
-                        </span>
-                      </div>
-                    );
-                  })()}
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* ── Dots ─────────────────────────────────────────────────────────── */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 5, padding: "10px 0 6px" }}>
-          {ascents.map((_, i) => (
+        {/* Dots */}
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 5, padding: "10px 0 4px" }}>
+          {ascents.map((_, idx) => (
             <div
-              key={i}
+              key={idx}
+              onClick={() => goTo(idx)}
               style={{
                 height: 6,
-                width: i === currentDisplay ? 20 : 6,
+                width: idx === currentDisplay ? 20 : 6,
                 borderRadius: 3,
-                background: i === currentDisplay ? "#0369a1" : "#e5e7eb",
+                background: idx === currentDisplay ? "#0369a1" : "#e5e7eb",
                 transition: "width 0.22s ease, background 0.22s ease",
                 flexShrink: 0,
+                cursor: "pointer",
               }}
             />
           ))}
         </div>
 
-        {/* ── Caption — current slide, exact styles from AscentCard ─────── */}
-        <div style={{ padding: "10px 14px 12px" }}>
-          <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.5, margin: 0 }}>
-            <span style={{ fontWeight: 700 }}>{slide.userName}</span>
+        {/* Stat band */}
+        <div className="stat-band">
+          <div className="stat-item">
+            <span className="stat-label">{t.card_rarity}</span>
+            <div className="stat-value rarity-value">
+              <span className="rarity-icon">✿</span>
+              {RARITY_LABEL[rarity]}
+            </div>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">{t.card_altitude}</span>
+            <div className="stat-value">{ascents[0].peak.altitudeM.toLocaleString(t.dateLocale)} m</div>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">{t.card_reward}</span>
+            <div className="stat-value ep">+{RARITY_EP[rarity]} EP</div>
+          </div>
+        </div>
+
+        {/* Caption */}
+        <footer className="capture-note">
+          <p className="note-byline">
+            <strong>{slide.userName}</strong>
             {slidePersons.length > 0 && (
-              <span style={{ fontWeight: 400 }}>
+              <>
                 {" "}{t.detail_with.toLowerCase()}{" "}
-                {slidePersons.map((p, i) => (
+                {slidePersons.map((p, idx) => (
                   <span key={p.id}>
-                    {i > 0 && (i === slidePersons.length - 1 ? ` ${t.detail_and} ` : ", ")}
-                    <span style={{ fontWeight: 600 }}>{p.name}</span>
+                    {idx > 0 && (idx === slidePersons.length - 1 ? ` ${t.detail_and} ` : ", ")}
+                    <strong>{p.name}</strong>
                   </span>
                 ))}
-              </span>
+              </>
             )}
           </p>
           {slide.description && (
-            <p style={{
-              fontSize: 14, color: "#374151", margin: "4px 0 0", lineHeight: 1.5,
-              display: "-webkit-box", WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical", overflow: "hidden",
-            }}>
-              {slide.description}
-            </p>
+            <p className="note-text">{slide.description}</p>
           )}
-        </div>
+        </footer>
 
-      </div>
-    </>
+      </section>
+    </article>
   );
 }

@@ -248,4 +248,12 @@ export const de: Dict = {
   auth_resetSuccess: "Passwort aktualisiert. Du kannst dich jetzt anmelden.",
   auth_invalidResetToken: "Dieser Link ist ungültig oder abgelaufen.",
   auth_backToLogin: "Zurück zur Anmeldung",
+
+  card_capturedSummit: "hat einen Gipfel erklommen", card_capturedMythicSummit: "hat einen mythischen Gipfel erklommen",
+  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
+  card_rarity: "Seltenheit", card_altitude: "Höhe", card_reward: "Belohnung",
+  card_backDesc_daisy: "Zugänglicher Gipfel, perfekt um dein Peakadex zu beginnen.",
+  card_backDesc_gentian: "Echtes Berggebiet: anspruchsvollere Aufstiege, bessere Belohnungen.",
+  card_backDesc_edelweiss: "Seltene Höhen: Hochgebirge mit ernsthafter Altitude.",
+  card_backDesc_saxifrage: "Extreme Höhe. Eine mythische Besteigung der höchsten Gipfel der Welt.",
 };
