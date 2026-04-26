@@ -242,7 +242,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           </div>
           <div className="stat-item" style={{ textAlign: "right" }}>
             <span className="stat-label">{t.card_reward}</span>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5, whiteSpace: "nowrap" }}>
               <span className="stat-value ep">+{RARITY_EP[rarity]} EP</span>
               {isMythic && (
                 <>
