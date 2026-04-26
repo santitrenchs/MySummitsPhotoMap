@@ -57,6 +57,51 @@ export function PeakMiniMap({
     });
 
     map.on("load", () => {
+      // Add current peak immediately — no fetch needed, data is in props
+      map.addSource("current-peak", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: [{
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: [lng, lat] },
+            properties: { name: peakName, alt: altitudeM },
+          }],
+        },
+      });
+
+      map.addLayer({
+        id: "current-peak-dot",
+        type: "circle",
+        source: "current-peak",
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#dc2626",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "white",
+        },
+      });
+
+      map.addLayer({
+        id: "current-peak-label",
+        type: "symbol",
+        source: "current-peak",
+        layout: {
+          "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 10,
+          "text-offset": [0, 1.2],
+          "text-anchor": "top",
+          "text-max-width": 8,
+        },
+        paint: {
+          "text-color": "#dc2626",
+          "text-halo-color": "rgba(255,255,255,0.9)",
+          "text-halo-width": 1.5,
+        },
+      });
+
+      // Fetch nearby peaks in parallel — non-critical, appears after
       fetch("/api/peaks")
         .then((r) => r.json())
         .then((peaks: NearbyPeak[]) => {
@@ -68,96 +113,51 @@ export function PeakMiniMap({
               Math.abs(p.longitude - lng) < RADIUS
           );
 
-          if (!map.getSource("nearby-peaks")) {
-            map.addSource("nearby-peaks", {
-              type: "geojson",
-              data: {
-                type: "FeatureCollection",
-                features: nearby.map((p) => ({
-                  type: "Feature" as const,
-                  geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
-                  properties: { name: p.name, alt: p.altitudeM },
-                })),
-              },
-            });
+          if (map.getSource("nearby-peaks")) return;
 
-            map.addLayer({
-              id: "peak-dots",
-              type: "circle",
-              source: "nearby-peaks",
-              paint: {
-                "circle-radius": 3.5,
-                "circle-color": "#1e293b",
-                "circle-stroke-width": 1.5,
-                "circle-stroke-color": "white",
-              },
-            });
+          map.addSource("nearby-peaks", {
+            type: "geojson",
+            data: {
+              type: "FeatureCollection",
+              features: nearby.map((p) => ({
+                type: "Feature" as const,
+                geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
+                properties: { name: p.name, alt: p.altitudeM },
+              })),
+            },
+          });
 
-            map.addLayer({
-              id: "peak-labels",
-              type: "symbol",
-              source: "nearby-peaks",
-              minzoom: 7,
-              layout: {
-                "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
-                "text-font": ["Noto Sans Regular"],
-                "text-size": 10,
-                "text-offset": [0, 1.2],
-                "text-anchor": "top",
-                "text-max-width": 8,
-              },
-              paint: {
-                "text-color": "#1e293b",
-                "text-halo-color": "rgba(255,255,255,0.9)",
-                "text-halo-width": 1.5,
-              },
-            });
-          }
+          map.addLayer({
+            id: "peak-dots",
+            type: "circle",
+            source: "nearby-peaks",
+            paint: {
+              "circle-radius": 3.5,
+              "circle-color": "#1e293b",
+              "circle-stroke-width": 1.5,
+              "circle-stroke-color": "white",
+            },
+          });
 
-          if (!map.getSource("current-peak")) {
-            map.addSource("current-peak", {
-              type: "geojson",
-              data: {
-                type: "FeatureCollection",
-                features: [{
-                  type: "Feature" as const,
-                  geometry: { type: "Point" as const, coordinates: [lng, lat] },
-                  properties: { name: peakName, alt: altitudeM },
-                }],
-              },
-            });
-
-            map.addLayer({
-              id: "current-peak-dot",
-              type: "circle",
-              source: "current-peak",
-              paint: {
-                "circle-radius": 5,
-                "circle-color": "#dc2626",
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "white",
-              },
-            });
-
-            map.addLayer({
-              id: "current-peak-label",
-              type: "symbol",
-              source: "current-peak",
-              layout: {
-                "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
-                "text-font": ["Noto Sans Regular"],
-                "text-size": 10,
-                "text-offset": [0, 1.2],
-                "text-anchor": "top",
-                "text-max-width": 8,
-              },
-              paint: {
-                "text-color": "#dc2626",
-                "text-halo-color": "rgba(255,255,255,0.9)",
-                "text-halo-width": 1.5,
-              },
-            });
-          }
+          map.addLayer({
+            id: "peak-labels",
+            type: "symbol",
+            source: "nearby-peaks",
+            minzoom: 7,
+            layout: {
+              "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
+              "text-font": ["Noto Sans Regular"],
+              "text-size": 10,
+              "text-offset": [0, 1.2],
+              "text-anchor": "top",
+              "text-max-width": 8,
+            },
+            paint: {
+              "text-color": "#1e293b",
+              "text-halo-color": "rgba(255,255,255,0.9)",
+              "text-halo-width": 1.5,
+            },
+          });
         })
         .catch(() => { /* non-critical */ });
     });
