@@ -645,14 +645,18 @@ export function HomeClient({ data, locale, t }: {
                           background: lvlColor.mid, borderRadius: 6, padding: "1px 6px",
                         }}>{levelName}</span>
                       </div>
-                      {/* EP + Cairns */}
-                      <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
+                      {/* Cimas + EP + Cairns */}
+                      <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
                         <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 18, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ascentCount}</div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
+                        </div>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
                           <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
                         </div>
                         <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 18, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
                           <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
                         </div>
                       </div>
@@ -684,14 +688,18 @@ export function HomeClient({ data, locale, t }: {
                       background: lvlColor.mid, borderRadius: 6, padding: "1px 6px",
                     }}>{levelName}</span>
                   </div>
-                  {/* EP + Cairns */}
-                  <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
+                  {/* Cimas + EP + Cairns */}
+                  <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ascentCount}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
                     </div>
                     <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
                     </div>
                   </div>

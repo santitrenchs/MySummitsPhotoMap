@@ -9,8 +9,8 @@ export type LeaderboardEntry = {
   ascentCount: number;
   ep: number;              // elevation points (rarity-based, fallback 1/ascent)
   cairns: number;          // total cairns earned from badges
-  levelIdx: number;        // 1–5 (current level working toward)
-  nextLevelTarget: number | null; // EP needed for next level (null = max level)
+  levelIdx: number;        // 1–5, matches hero card logic (first unmet milestone)
+  nextLevelTarget: number | null; // ascent count for current goal level (null = Legendary)
   isCurrentUser: boolean;
 };
 
@@ -146,13 +146,11 @@ export async function getHomeData(userId: string): Promise<HomeData> {
     return s.mythic; // +1 cairn per mythic peak ascent
   }
 
-  // Level thresholds (EP targets per level idx 1-5)
-  const LEVEL_EP = [5, 15, 40, 70, null] as const;
-  function levelIdx(ep: number): number {
-    if (ep >= 70) return 5;
-    if (ep >= 40) return 4;
-    if (ep >= 15) return 3;
-    if (ep >= 5) return 2;
+  function computeLevelIdx(s: LbUserStats): number {
+    if (s.count >= 70 && s.a4000 >= 1) return 5;
+    if (s.count >= 40 && s.a3000 >= 1) return 4;
+    if (s.count >= 15 && s.a2000 >= 1) return 3;
+    if (s.count >= 5  && s.a1000 >= 1) return 2;
     return 1;
   }
 
@@ -161,7 +159,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   const leaderboard: LeaderboardEntry[] = allUserIds
     .map((uid) => {
       const s = lbMap.get(uid) ?? { count: 0, ep: 0, mythic: 0, a1000: 0, a2000: 0, a3000: 0, a4000: 0 };
-      const lvl = levelIdx(s.ep);
+      const lvl = computeLevelIdx(s);
       const isMe = uid === userId;
       return {
         userId: uid,
@@ -171,7 +169,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
         ep: s.ep,
         cairns: lbCairns(s),
         levelIdx: lvl,
-        nextLevelTarget: LEVEL_EP[lvl - 1] ?? null,
+        nextLevelTarget: ([5, 15, 40, 70, null] as const)[lvl - 1] ?? null,
         isCurrentUser: isMe,
       };
     })
