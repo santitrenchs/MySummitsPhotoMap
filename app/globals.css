@@ -232,7 +232,6 @@
   border-radius: 22px;
   overflow: hidden;
   background: white;
-  border: 1px solid rgba(13, 37, 56, 0.08);
 }
 
 /* Topbar */
@@ -356,13 +355,11 @@
 /* ── Stat band ────────────────────────────────────────────────────────── */
 .stat-band {
   margin: 0 10px 10px;
-  border: 1px solid rgba(13, 37, 56, 0.08);
   border-radius: 16px;
   padding: 10px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  box-shadow: 0 6px 18px rgba(13, 37, 56, 0.06);
 }
 
 .stat-item {
