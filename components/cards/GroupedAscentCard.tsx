@@ -156,7 +156,6 @@ export function GroupedAscentCard({
 
   const rarity = getRarity(ascents[0].peak.altitudeM);
   const isMythic = ascents[0].peak.isMythic ?? false;
-  const cardNum = String(animationIndex + 1).padStart(3, "0");
 
   const peak = ascents[0].peak;
 
@@ -290,7 +289,10 @@ export function GroupedAscentCard({
         {/* Topbar */}
         <div className="capture-topbar">
           <span className="capture-label">{t.card_peakCapture}</span>
-          <span className="capture-id">#{cardNum} · {i(t.ascents_perspectives, { n: count })}</span>
+          <span className="capture-rarity-inline">
+            <span className="rarity-icon">✿</span>
+            <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
+          </span>
         </div>
 
         {/* Image area */}
@@ -401,19 +403,26 @@ export function GroupedAscentCard({
         {/* Stat band */}
         <div className="stat-band">
           <div className="stat-item">
-            <span className="stat-label">{t.card_rarity}</span>
-            <div className="stat-value rarity-value">
-              <span className="rarity-icon">✿</span>
-              {RARITY_LABEL[rarity]}
-            </div>
-          </div>
-          <div className="stat-item">
             <span className="stat-label">{t.card_altitude}</span>
             <div className="stat-value">{ascents[0].peak.altitudeM.toLocaleString(t.dateLocale)} m</div>
           </div>
-          <div className="stat-item">
+          <div className="stat-item" style={{ textAlign: "right" }}>
             <span className="stat-label">{t.card_reward}</span>
-            <div className="stat-value ep">+{RARITY_EP[rarity]} EP</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5, flexWrap: "wrap" }}>
+              <span className="stat-value ep">+{RARITY_EP[rarity]} EP</span>
+              {isMythic && (
+                <>
+                  <span style={{ color: "#d1d5db", fontSize: 12 }}>·</span>
+                  <svg width="13" height="13" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
+                    <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
+                    <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
+                    <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
+                    <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
+                  </svg>
+                  <span className="stat-value" style={{ color: "#f59e0b" }}>1 Cairn</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
