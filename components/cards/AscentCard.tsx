@@ -162,9 +162,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
         }
         <div className="user-copy">
           <div className="user-name">{ascent.user.name}</div>
-          <div className="user-action">
-            {isMythic ? t.card_capturedMythicSummit : t.card_capturedSummit}
-          </div>
         </div>
         {isProfile ? (
           <div onClick={(e) => e.stopPropagation()}>
