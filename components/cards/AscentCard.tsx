@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
+import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -12,6 +13,7 @@ export type AscentCardData = {
   route: string | null;
   description?: string | null;
   peak: {
+    id: string;
     name: string;
     altitudeM: number;
     mountainRange?: string | null;
@@ -148,12 +150,120 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   const latStr = `${Math.abs(ascent.peak.latitude).toFixed(4)}°${ascent.peak.latitude >= 0 ? "N" : "S"}`;
   const lngStr = `${Math.abs(ascent.peak.longitude).toFixed(4)}°${ascent.peak.longitude >= 0 ? "E" : "W"}`;
 
-  const backDescs: Record<Rarity, string> = {
-    daisy:     t.card_backDesc_daisy,
-    gentian:   t.card_backDesc_gentian,
-    edelweiss: t.card_backDesc_edelweiss,
-    saxifrage: t.card_backDesc_saxifrage,
-  };
+  const buildFace = (showMap: boolean) => (
+    <>
+      {/* User header */}
+      <header className="card-user">
+        {ascent.user.avatarUrl
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={ascent.user.avatarUrl} alt="" className="pc-avatar" style={{ objectFit: "cover" }} />
+          : <InitialsAvatar name={ascent.user.name} size={32} />
+        }
+        <div className="user-copy">
+          <div className="user-name">{ascent.user.name}</div>
+          <div className="user-action">
+            {isMythic ? t.card_capturedMythicSummit : t.card_capturedSummit}
+          </div>
+        </div>
+        {isProfile ? (
+          <div onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                width: 30, height: 30, borderRadius: "50%",
+                color: "#9CA3AF", fontSize: 20, lineHeight: 1,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >⋮</button>
+            {menuOpen && (
+              <div style={{
+                position: "absolute", right: 14, zIndex: 50,
+                background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+                boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
+              }} onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => { setMenuOpen(false); router.push(`/ascents/${ascent.id}`); }}
+                  style={{
+                    display: "block", width: "100%", padding: "10px 16px",
+                    textAlign: "left", background: "none", border: "none",
+                    fontSize: 13, color: "#111827", cursor: "pointer",
+                  }}
+                >{t.edit}</button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <span style={{ color: "#9CA3AF", fontSize: 20 }}>⋮</span>
+        )}
+      </header>
+
+      {/* Inner frame */}
+      <section className="capture-frame">
+        <div className="capture-topbar">
+          <span className="capture-label">{t.card_peakCapture}</span>
+          <span className="capture-id">
+            #{cardNum}{isMythic ? ` · ${t.card_mythic}` : ""}
+          </span>
+        </div>
+        <div className="image-frame">
+          {showMap && isFlipped
+            ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={ascent.peak.name} altitudeM={ascent.peak.altitudeM} />
+            : ascent.photoUrl
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={ascent.photoUrl} alt={ascent.peak.name} />
+              : <MountainPlaceholder />
+          }
+          <div className="image-overlay" />
+          {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
+          <div className="peak-info">
+            <div className="peak-name">{ascent.peak.name}</div>
+            {ascent.route && <div className="peak-route">{ascent.route}</div>}
+            <div className="peak-meta">
+              <span>{dateStr}</span>
+              <span>{latStr} · {lngStr}</span>
+            </div>
+          </div>
+        </div>
+        <div className="stat-band">
+          <div className="stat-item">
+            <span className="stat-label">{t.card_rarity}</span>
+            <div className="stat-value rarity-value">
+              <span className="rarity-icon">✿</span>
+              {RARITY_LABEL[rarity]}
+            </div>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">{t.card_altitude}</span>
+            <div className="stat-value">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">{t.card_reward}</span>
+            <div className="stat-value ep">+{RARITY_EP[rarity]} EP</div>
+          </div>
+        </div>
+        <footer className="capture-note">
+          <p className="note-byline">
+            <strong>{ascent.user.name}</strong>
+            {ascent.persons.length > 0 && (
+              <>
+                {" "}{t.detail_with.toLowerCase()}{" "}
+                {ascent.persons.map((p, i) => (
+                  <span key={p.id}>
+                    {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
+                    <strong>{p.name}</strong>
+                  </span>
+                ))}
+              </>
+            )}
+          </p>
+          {ascent.description && (
+            <p className="note-text">{ascent.description}</p>
+          )}
+        </footer>
+      </section>
+    </>
+  );
 
   return (
     <div
@@ -165,138 +275,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
         // @ts-expect-error CSS custom property
         style={{ "--card-i": Math.min(animationIndex, 8) }}
       >
-        {/* ── Front ─────────────────────────────────────────────────── */}
-        <div className="card-face card-front">
-
-          {/* User header */}
-          <header className="card-user">
-            {ascent.user.avatarUrl
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={ascent.user.avatarUrl} alt="" className="pc-avatar" style={{ objectFit: "cover" }} />
-              : <InitialsAvatar name={ascent.user.name} size={32} />
-            }
-            <div className="user-copy">
-              <div className="user-name">{ascent.user.name}</div>
-              <div className="user-action">
-                {isMythic ? t.card_capturedMythicSummit : t.card_capturedSummit}
-              </div>
-            </div>
-            {isProfile ? (
-              <div onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-                  style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    width: 30, height: 30, borderRadius: "50%",
-                    color: "#9CA3AF", fontSize: 20, lineHeight: 1,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}
-                >⋮</button>
-                {menuOpen && (
-                  <div style={{
-                    position: "absolute", right: 14, zIndex: 50,
-                    background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
-                  }} onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => { setMenuOpen(false); router.push(`/ascents/${ascent.id}`); }}
-                      style={{
-                        display: "block", width: "100%", padding: "10px 16px",
-                        textAlign: "left", background: "none", border: "none",
-                        fontSize: 13, color: "#111827", cursor: "pointer",
-                      }}
-                    >{t.edit}</button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <span style={{ color: "#9CA3AF", fontSize: 20 }}>⋮</span>
-            )}
-          </header>
-
-          {/* Inner frame */}
-          <section className="capture-frame">
-
-            {/* Topbar */}
-            <div className="capture-topbar">
-              <span className="capture-label">{t.card_peakCapture}</span>
-              <span className="capture-id">
-                #{cardNum}{isMythic ? ` · ${t.card_mythic}` : ""}
-              </span>
-            </div>
-
-            {/* Image */}
-            <div className="image-frame">
-              {ascent.photoUrl
-                // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={ascent.photoUrl} alt={ascent.peak.name} />
-                : <MountainPlaceholder />
-              }
-              <div className="image-overlay" />
-              {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
-              <div className="peak-info">
-                <div className="peak-name">{ascent.peak.name}</div>
-                {ascent.route && <div className="peak-route">{ascent.route}</div>}
-                <div className="peak-meta">
-                  <span>{dateStr}</span>
-                  <span>{latStr} · {lngStr}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Stat band */}
-            <div className="stat-band">
-              <div className="stat-item">
-                <span className="stat-label">{t.card_rarity}</span>
-                <div className="stat-value rarity-value">
-                  <span className="rarity-icon">✿</span>
-                  {RARITY_LABEL[rarity]}
-                </div>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">{t.card_altitude}</span>
-                <div className="stat-value">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">{t.card_reward}</span>
-                <div className="stat-value ep">+{RARITY_EP[rarity]} EP</div>
-              </div>
-            </div>
-
-            {/* Caption */}
-            <footer className="capture-note">
-              <p className="note-byline">
-                <strong>{ascent.user.name}</strong>
-                {ascent.persons.length > 0 && (
-                  <>
-                    {" "}{t.detail_with.toLowerCase()}{" "}
-                    {ascent.persons.map((p, i) => (
-                      <span key={p.id}>
-                        {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
-                        <strong>{p.name}</strong>
-                      </span>
-                    ))}
-                  </>
-                )}
-              </p>
-              {ascent.description && (
-                <p className="note-text">{ascent.description}</p>
-              )}
-            </footer>
-
-          </section>
-        </div>
-
-        {/* ── Back ──────────────────────────────────────────────────── */}
-        <div className="card-face card-back">
-          <span className="back-pill">{RARITY_LABEL[rarity]} · {RARITY_PILL[rarity]}</span>
-          <h3>{ascent.peak.name}</h3>
-          <p>{t.card_altitude}: {ascent.peak.altitudeM.toLocaleString(locale)} m</p>
-          <p>{t.card_reward}: +{RARITY_EP[rarity]} EP</p>
-          <p>#{cardNum}</p>
-          <p>{backDescs[rarity]}</p>
-        </div>
-
+        <div className="card-face card-front">{buildFace(false)}</div>
+        <div className="card-face card-back">{buildFace(true)}</div>
       </article>
     </div>
   );

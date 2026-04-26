@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { AscentData } from "@/components/ascents/AscentsClient";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
+import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
 
 // ─── Rarity (shared logic with AscentCard) ────────────────────────────────────
 
@@ -85,6 +86,49 @@ function MountainPlaceholder() {
   );
 }
 
+// ─── Nav arrow button ────────────────────────────────────────────────────────
+
+function NavArrow({
+  direction,
+  onClick,
+  disabled,
+}: {
+  direction: "left" | "right";
+  onClick: (e: React.MouseEvent) => void;
+  disabled: boolean;
+}) {
+  if (disabled) return null;
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        position: "absolute",
+        top: "50%",
+        transform: "translateY(-50%)",
+        [direction === "left" ? "left" : "right"]: 10,
+        zIndex: 10,
+        background: "rgba(0,0,0,0.38)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+        border: "1px solid rgba(255,255,255,0.2)",
+        borderRadius: "50%",
+        width: 34,
+        height: 34,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "white",
+        fontSize: 20,
+        lineHeight: 1,
+        cursor: "pointer",
+        padding: 0,
+      }}
+    >
+      {direction === "left" ? "‹" : "›"}
+    </button>
+  );
+}
+
 // ─── GroupedAscentCard ────────────────────────────────────────────────────────
 
 type Props = {
@@ -103,17 +147,11 @@ export function GroupedAscentCard({
   const router = useRouter();
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const currentRef = useRef(0);
+  const [isFlipped, setIsFlipped] = useState(false);
   const [currentDisplay, setCurrentDisplay] = useState(0);
 
+  const currentRef = useRef(0);
   const trackRef = useRef<HTMLDivElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const startXRef = useRef(0);
-  const startYRef = useRef(0);
-  const draggingRef = useRef(false);
-  const isHorizontalRef = useRef<boolean | null>(null);
 
   const count = ascents.length;
   const ownAscent = ascents.find((a) => a.isOwn) ?? null;
@@ -121,6 +159,8 @@ export function GroupedAscentCard({
   const rarity = getRarity(ascents[0].peak.altitudeM);
   const isMythic = rarity === "saxifrage";
   const cardNum = String(animationIndex + 1).padStart(3, "0");
+
+  const peak = ascents[0].peak;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -134,101 +174,12 @@ export function GroupedAscentCard({
     currentRef.current = next;
     setCurrentDisplay(next);
     if (trackRef.current) {
-      trackRef.current.style.transition =
-        "transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+      trackRef.current.style.transition = "transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
       trackRef.current.style.transform = `translateX(-${next * 100}%)`;
     }
   }
 
-  const goToRef = useRef(goTo);
-  goToRef.current = goTo;
-
-  // ── Touch — non-passive so we can preventDefault on horizontal swipe ─────────
-  useEffect(() => {
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-    const el = wrapper;
-
-    function onTouchStart(e: TouchEvent) {
-      startXRef.current = e.touches[0].clientX;
-      startYRef.current = e.touches[0].clientY;
-      draggingRef.current = true;
-      isHorizontalRef.current = null;
-      if (trackRef.current) trackRef.current.style.transition = "none";
-    }
-
-    function onTouchMove(e: TouchEvent) {
-      if (!draggingRef.current) return;
-      const dx = e.touches[0].clientX - startXRef.current;
-      const dy = e.touches[0].clientY - startYRef.current;
-
-      if (isHorizontalRef.current === null) {
-        if (Math.abs(dx) > Math.abs(dy)) {
-          isHorizontalRef.current = true;
-        } else {
-          isHorizontalRef.current = false;
-          draggingRef.current = false;
-          return;
-        }
-      }
-
-      if (!isHorizontalRef.current) return;
-      e.preventDefault();
-
-      const pct = -currentRef.current * 100 + (dx / (el.offsetWidth || 1)) * 100;
-      if (trackRef.current) trackRef.current.style.transform = `translateX(${pct}%)`;
-    }
-
-    function onTouchEnd(e: TouchEvent) {
-      if (!draggingRef.current || !isHorizontalRef.current) return;
-      draggingRef.current = false;
-      const dx = e.changedTouches[0].clientX - startXRef.current;
-      if (dx < -50) goToRef.current(currentRef.current + 1);
-      else if (dx > 50) goToRef.current(currentRef.current - 1);
-      else goToRef.current(currentRef.current);
-    }
-
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    el.addEventListener("touchend", onTouchEnd, { passive: true });
-
-    return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-    };
-  }, []);
-
-  // ── Mouse drag (desktop) ─────────────────────────────────────────────────────
-  function handleMouseDown(e: React.MouseEvent) {
-    const capturedCurrent = currentRef.current;
-    startXRef.current = e.clientX;
-    draggingRef.current = true;
-    if (trackRef.current) trackRef.current.style.transition = "none";
-    e.preventDefault();
-
-    function onMouseMove(ev: MouseEvent) {
-      const delta = ev.clientX - startXRef.current;
-      const pct = -capturedCurrent * 100 + (delta / (wrapperRef.current?.offsetWidth ?? 1)) * 100;
-      if (trackRef.current) trackRef.current.style.transform = `translateX(${pct}%)`;
-    }
-
-    function onMouseUp(ev: MouseEvent) {
-      draggingRef.current = false;
-      const delta = ev.clientX - startXRef.current;
-      if (delta < -50) goTo(capturedCurrent + 1);
-      else if (delta > 50) goTo(capturedCurrent - 1);
-      else goTo(capturedCurrent);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    }
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-  }
-
   const slide = ascents[currentDisplay];
-
   const slidePersons = slide.isOwn
     ? slide.persons.filter(
         (p) =>
@@ -237,15 +188,10 @@ export function GroupedAscentCard({
       )
     : slide.persons;
 
-  return (
-    <article
-      className={`peak-card ${rarity}${isMythic ? " mythic" : ""}`}
-      // @ts-expect-error CSS custom property
-      style={{ "--card-i": Math.min(animationIndex, 8) }}
-    >
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+  const buildFace = (showMap: boolean) => (
+    <>
+      {/* User header */}
       <header className="card-user">
-
         {/* Overlapping avatar stack — up to 4 */}
         <div style={{ display: "flex", flexShrink: 0 }}>
           {ascents.slice(0, 4).map((a, idx) => (
@@ -324,78 +270,98 @@ export function GroupedAscentCard({
         )}
       </header>
 
-      {/* ── Inner frame ─────────────────────────────────────────────────── */}
+      {/* Inner frame */}
       <section className="capture-frame">
-
         {/* Topbar */}
         <div className="capture-topbar">
           <span className="capture-label">{t.card_peakCapture}</span>
           <span className="capture-id">#{cardNum} · {i(t.ascents_perspectives, { n: count })}</span>
         </div>
 
-        {/* Carousel inside image-frame */}
-        <div
-          ref={wrapperRef}
-          className="image-frame"
-          style={{ cursor: "grab", userSelect: "none", touchAction: "pan-y" }}
-          onMouseDown={handleMouseDown}
-        >
-          <div
-            ref={trackRef}
-            style={{ position: "absolute", inset: 0, display: "flex", willChange: "transform" }}
-          >
-            {ascents.map((a, idx) => {
-              const dateStr = new Date(a.date).toLocaleDateString(t.dateLocale, {
-                day: "numeric", month: "short", year: "numeric",
-              });
-              const latStr = `${Math.abs(a.peak.latitude).toFixed(4)}°${a.peak.latitude >= 0 ? "N" : "S"}`;
-              const lngStr = `${Math.abs(a.peak.longitude).toFixed(4)}°${a.peak.longitude >= 0 ? "E" : "W"}`;
-              return (
-                <div
-                  key={a.id}
-                  style={{
-                    minWidth: "100%", height: "100%",
-                    position: "relative", flexShrink: 0,
-                    overflow: "hidden", background: "#e2e8f0",
-                  }}
-                >
-                  {a.firstPhotoUrl
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img
-                        src={a.firstPhotoUrl}
-                        alt={a.peak.name}
-                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
-                      />
-                    : <MountainPlaceholder />
-                  }
-
-                  <div className="image-overlay" />
-
-                  {/* Slide counter */}
-                  <div style={{
-                    position: "absolute", top: 12, right: 12,
-                    background: "rgba(0,0,0,0.42)", backdropFilter: "blur(8px)",
-                    WebkitBackdropFilter: "blur(8px)",
-                    color: "white", fontSize: 11, fontWeight: 700,
-                    padding: "4px 10px", borderRadius: 20,
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    letterSpacing: "0.03em",
-                  }}>
-                    {idx + 1} / {count}
-                  </div>
-
-                  <div className="peak-info">
-                    <div className="peak-name">{a.peak.name}</div>
-                    {a.route && <div className="peak-route">{a.route}</div>}
-                    <div className="peak-meta">
-                      <span>{dateStr}</span>
-                      <span>{latStr} · {lngStr}</span>
+        {/* Image area */}
+        <div className="image-frame">
+          {showMap ? (
+            <PeakMiniMap
+              lat={peak.latitude}
+              lng={peak.longitude}
+              peakId={peak.id}
+              peakName={peak.name}
+              altitudeM={peak.altitudeM}
+            />
+          ) : (
+            <>
+              {/* Carousel track */}
+              <div
+                ref={trackRef}
+                style={{ position: "absolute", inset: 0, display: "flex", willChange: "transform" }}
+              >
+                {ascents.map((a, idx) => {
+                  const dateStr = new Date(a.date).toLocaleDateString(t.dateLocale, {
+                    day: "numeric", month: "short", year: "numeric",
+                  });
+                  const latStr = `${Math.abs(a.peak.latitude).toFixed(4)}°${a.peak.latitude >= 0 ? "N" : "S"}`;
+                  const lngStr = `${Math.abs(a.peak.longitude).toFixed(4)}°${a.peak.longitude >= 0 ? "E" : "W"}`;
+                  return (
+                    <div
+                      key={a.id}
+                      style={{
+                        minWidth: "100%", height: "100%",
+                        position: "relative", flexShrink: 0,
+                        overflow: "hidden", background: "#e2e8f0",
+                      }}
+                    >
+                      {a.firstPhotoUrl
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img
+                            src={a.firstPhotoUrl}
+                            alt={a.peak.name}
+                            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
+                          />
+                        : <MountainPlaceholder />
+                      }
+                      <div className="image-overlay" />
+                      {/* Slide counter */}
+                      <div style={{
+                        position: "absolute", top: 12, right: 12,
+                        background: "rgba(0,0,0,0.42)", backdropFilter: "blur(8px)",
+                        WebkitBackdropFilter: "blur(8px)",
+                        color: "white", fontSize: 11, fontWeight: 700,
+                        padding: "4px 10px", borderRadius: 20,
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        letterSpacing: "0.03em",
+                      }}>
+                        {idx + 1} / {count}
+                      </div>
+                      <div className="peak-info">
+                        <div className="peak-name">{a.peak.name}</div>
+                        {a.route && <div className="peak-route">{a.route}</div>}
+                        <div className="peak-meta">
+                          <span>{dateStr}</span>
+                          <span>{latStr} · {lngStr}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+
+              {/* Navigation arrows */}
+              {count > 1 && (
+                <>
+                  <NavArrow
+                    direction="left"
+                    disabled={currentDisplay === 0}
+                    onClick={(e) => { e.stopPropagation(); goTo(currentDisplay - 1); }}
+                  />
+                  <NavArrow
+                    direction="right"
+                    disabled={currentDisplay === count - 1}
+                    onClick={(e) => { e.stopPropagation(); goTo(currentDisplay + 1); }}
+                  />
+                </>
+              )}
+            </>
+          )}
         </div>
 
         {/* Dots */}
@@ -403,7 +369,7 @@ export function GroupedAscentCard({
           {ascents.map((_, idx) => (
             <div
               key={idx}
-              onClick={() => goTo(idx)}
+              onClick={(e) => { e.stopPropagation(); goTo(idx); }}
               style={{
                 height: 6,
                 width: idx === currentDisplay ? 20 : 6,
@@ -456,8 +422,23 @@ export function GroupedAscentCard({
             <p className="note-text">{slide.description}</p>
           )}
         </footer>
-
       </section>
-    </article>
+    </>
+  );
+
+  return (
+    <div
+      className={`flip-card${isFlipped ? " is-flipped" : ""}`}
+      onClick={() => setIsFlipped((f) => !f)}
+    >
+      <article
+        className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
+        // @ts-expect-error CSS custom property
+        style={{ "--card-i": Math.min(animationIndex, 8) }}
+      >
+        <div className="card-face card-front">{buildFace(false)}</div>
+        <div className="card-face card-back">{buildFace(true)}</div>
+      </article>
+    </div>
   );
 }

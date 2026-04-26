@@ -115,21 +115,18 @@
 
 .card-front {
   position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  animation: cardFadeUp 0.4s ease both;
+  animation-delay: calc(var(--card-i, 0) * 55ms);
 }
 
 .card-back {
   position: absolute;
-  inset: 10px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  border: 1px solid rgba(13, 37, 56, 0.08);
-  padding: 22px;
+  inset: 0;
   transform: rotateY(180deg);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 12px;
-  min-height: calc(100% - 20px);
+  overflow: hidden;
+  border-radius: 20px;
 }
 
 .card-back h3 {
@@ -160,10 +157,7 @@
   background: #fff;
   border-radius: 28px;
   padding: 10px;
-  overflow: hidden;
   box-shadow: 0 20px 50px rgba(13, 37, 56, 0.12);
-  animation: cardFadeUp 0.4s ease both;
-  animation-delay: calc(var(--card-i, 0) * 55ms);
 }
 
 .peak-card.daisy {
@@ -193,8 +187,8 @@
 }
 
 .peak-card.mythic {
-  animation: cardFadeUp 0.4s ease both, mythicGlow 3.6s ease-in-out 0.4s infinite;
-  animation-delay: calc(var(--card-i, 0) * 55ms), calc(var(--card-i, 0) * 55ms + 0.4s);
+  animation: mythicGlow 3.6s ease-in-out infinite;
+  animation-delay: calc(var(--card-i, 0) * 55ms + 0.4s);
 }
 
 /* ── User header ──────────────────────────────────────────────────────── */
