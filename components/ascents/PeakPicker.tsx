@@ -31,6 +31,17 @@ export function PeakPicker({
   const [showChip, setShowChip] = useState(suggested && !!defaultPeak);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Sync selection when peaks load after initial render (e.g. edit mode where defaultPeakId
+  // is provided but the peaks array arrives asynchronously)
+  useEffect(() => {
+    if (!defaultPeakId || selected) return;
+    const found = peaks.find((p) => p.id === defaultPeakId);
+    if (found) {
+      setSelected(found);
+      setQuery(found.name);
+    }
+  }, [peaks, defaultPeakId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
       if (!containerRef.current?.contains(e.target as Node)) {
