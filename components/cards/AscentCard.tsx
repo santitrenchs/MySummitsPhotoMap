@@ -61,6 +61,10 @@ const RARITY_EP: Record<Rarity, number> = {
   saxifrage: 100,
 };
 
+const RARITY_CAIRNS: Record<Rarity, number> = {
+  daisy: 0, gentian: 0, edelweiss: 0, saxifrage: 1,
+};
+
 const RARITY_PILL: Record<Rarity, string> = {
   daisy:     "< 1.500 m",
   gentian:   "1.500 – 3.000 m",
@@ -248,7 +252,21 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           </div>
           <div className="stat-item" style={{ textAlign: "right" }}>
             <span className="stat-label">{t.card_reward}</span>
-            <div className="stat-value ep">+{RARITY_EP[rarity]} EP</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5, flexWrap: "wrap" }}>
+              <span className="stat-value ep">+{RARITY_EP[rarity]} EP</span>
+              {RARITY_CAIRNS[rarity] > 0 && (
+                <>
+                  <span style={{ color: "#d1d5db", fontSize: 12 }}>·</span>
+                  <svg width="13" height="13" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
+                    <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
+                    <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
+                    <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
+                    <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
+                  </svg>
+                  <span className="stat-value" style={{ color: "#f59e0b" }}>{RARITY_CAIRNS[rarity]} Cairn</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <footer className="capture-note">
