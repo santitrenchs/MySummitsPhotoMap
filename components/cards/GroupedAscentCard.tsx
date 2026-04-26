@@ -155,7 +155,7 @@ export function GroupedAscentCard({
   const ownAscent = ascents.find((a) => a.isOwn) ?? null;
 
   const rarity = getRarity(ascents[0].peak.altitudeM);
-  const isMythic = rarity === "saxifrage";
+  const isMythic = ascents[0].peak.isMythic ?? false;
   const cardNum = String(animationIndex + 1).padStart(3, "0");
 
   const peak = ascents[0].peak;

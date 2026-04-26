@@ -16,6 +16,7 @@ export type AscentCardData = {
     id: string;
     name: string;
     altitudeM: number;
+    isMythic?: boolean;
     mountainRange?: string | null;
     latitude: number;
     longitude: number;
@@ -146,7 +147,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   }, [menuOpen]);
 
   const rarity = getRarity(ascent.peak.altitudeM);
-  const isMythic = rarity === "saxifrage";
+  const isMythic = ascent.peak.isMythic ?? false;
   const cardNum = String(animationIndex + 1).padStart(3, "0");
 
   const dateStr = new Date(ascent.date).toLocaleDateString(locale, {

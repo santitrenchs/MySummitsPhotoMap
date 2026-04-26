@@ -34,7 +34,7 @@ function enrichAscent(
     description: string | null;
     wikiloc: string | null;
     createdBy: string;
-    peak: { id: string; name: string; altitudeM: number; mountainRange: string | null; latitude: number; longitude: number };
+    peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number };
     photos: { id: string; url: string; originalStorageKey: string | null; faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[] }[];
   },
   isOwn: boolean,
@@ -95,7 +95,7 @@ export default async function AscentsPage() {
       where: { tenantId: session.user.tenantId, createdBy: session.user.id },
       orderBy: { date: "desc" },
       include: {
-        peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true } },
+        peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true } },
         photos: PHOTOS_INCLUDE,
         user: { select: { id: true, name: true, avatarUrl: true } },
       },
@@ -105,7 +105,7 @@ export default async function AscentsPage() {
           where: { createdBy: { in: friendUserIds } },
           orderBy: { date: "desc" },
           include: {
-            peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true } },
+            peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true } },
             photos: PHOTOS_INCLUDE,
             user: { select: { id: true, name: true, avatarUrl: true } },
           },
