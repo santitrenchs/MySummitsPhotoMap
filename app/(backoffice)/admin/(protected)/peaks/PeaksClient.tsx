@@ -15,10 +15,11 @@ type Peak = {
   tag2: string | null;
   tag3: string | null;
   gpsVerified: boolean;
+  isMythic: boolean;
   _count: { ascents: number };
 };
 
-type EditState = Partial<Omit<Peak, "id" | "_count" | "gpsVerified">> & { gpsVerified?: boolean };
+type EditState = Partial<Omit<Peak, "id" | "_count" | "gpsVerified" | "isMythic">> & { gpsVerified?: boolean; isMythic?: boolean };
 
 const LIMIT = 50;
 
@@ -103,6 +104,7 @@ export function PeaksClient() {
       tag2: peak.tag2 ?? "",
       tag3: peak.tag3 ?? "",
       gpsVerified: peak.gpsVerified,
+      isMythic: peak.isMythic,
     });
     setSaveError(null);
   }
@@ -361,6 +363,7 @@ export function PeaksClient() {
                   <Th>Tags</Th>
                   <Th align="center">Lat / Lon</Th>
                   <Th align="center">GPS ✓</Th>
+                  <Th align="center">Mythic</Th>
                   <Th align="center">Asc.</Th>
                   <Th />
                 </tr>
@@ -396,6 +399,17 @@ export function PeaksClient() {
                         if (res.ok) {
                           const updated = await res.json();
                           setPeaks((prev) => prev.map((p) => p.id === peak.id ? { ...p, gpsVerified: updated.gpsVerified } : p));
+                        }
+                      }}
+                      onToggleMythic={async () => {
+                        const res = await fetch(`/api/admin/peaks/${peak.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ isMythic: !peak.isMythic }),
+                        });
+                        if (res.ok) {
+                          const updated = await res.json();
+                          setPeaks((prev) => prev.map((p) => p.id === peak.id ? { ...p, isMythic: updated.isMythic } : p));
                         }
                       }}
                     />
@@ -440,7 +454,7 @@ function FilterLabel({ children }: { children: React.ReactNode }) {
 }
 
 function ViewRow({
-  peak, isLast, onEdit, onDelete, deleting, onToggleGps,
+  peak, isLast, onEdit, onDelete, deleting, onToggleGps, onToggleMythic,
 }: {
   peak: Peak;
   isLast: boolean;
@@ -448,6 +462,7 @@ function ViewRow({
   onDelete: () => void;
   deleting: boolean;
   onToggleGps: () => void;
+  onToggleMythic: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -494,6 +509,15 @@ function ViewRow({
           style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 2 }}
         >
           {peak.gpsVerified ? "✅" : "⬜"}
+        </button>
+      </td>
+      <td style={{ ...tdStyle, textAlign: "center" }}>
+        <button
+          onClick={onToggleMythic}
+          title={peak.isMythic ? "Mythic — click para desmarcar" : "Normal — click para marcar como Mythic"}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 2 }}
+        >
+          {peak.isMythic ? "⭐" : "⬜"}
         </button>
       </td>
       <td style={{ ...tdStyle, textAlign: "center" }}>
@@ -607,6 +631,14 @@ function EditRow({
           />
         </td>
         <td style={{ ...tdStyle, textAlign: "center" }}>
+          <input
+            type="checkbox"
+            checked={state.isMythic ?? false}
+            onChange={(e) => onChange("isMythic", e.target.checked as unknown as string)}
+            style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#f59e0b" }}
+          />
+        </td>
+        <td style={{ ...tdStyle, textAlign: "center" }}>
           <span style={{ fontSize: 12, color: "#94a3b8" }}>{peak._count.ascents}</span>
         </td>
         <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
@@ -635,7 +667,7 @@ function EditRow({
       </tr>
       {error && (
         <tr style={{ background: "#fef2f2", borderBottom: isLast ? "none" : "1px solid #fecaca" }}>
-          <td colSpan={9} style={{ padding: "6px 16px", fontSize: 12, color: "#b91c1c" }}>
+          <td colSpan={10} style={{ padding: "6px 16px", fontSize: 12, color: "#b91c1c" }}>
             {error}
           </td>
         </tr>
