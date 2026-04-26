@@ -18,6 +18,7 @@ export async function PATCH(
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const data: Record<string, unknown> = {};
+  if ("peakId" in body)      data.peakId      = body.peakId;
   if ("route" in body)       data.route       = body.route ?? null;
   if ("description" in body) data.description = body.description ?? null;
   if ("wikiloc" in body)     data.wikiloc     = body.wikiloc ?? null;

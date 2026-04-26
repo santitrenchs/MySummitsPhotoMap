@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { ImageCropModal, resizeForStorage, type CropMeta } from "@/components/photos/ImageCropModal";
 import { PhotoTagStep, type FaceDraft } from "@/components/photos/PhotoTagStep";
 import { PeakPicker } from "@/components/ascents/PeakPicker";
@@ -26,31 +27,52 @@ export type ModalHeaderConfig = {
   size?: "photo" | "split";
 };
 
+export type EditAscent = {
+  id: string;
+  peakId: string;
+  date: string;
+  route: string | null;
+  description: string | null;
+  wikiloc: string | null;
+  photoUrl: string | null;
+  photoId: string | null;
+  originalStorageKey: string | null;
+};
+
 type Props = {
   onClose: () => void;
   onHeaderChange: (config: ModalHeaderConfig) => void;
   defaultPeakId?: string;
+  editAscent?: EditAscent;
 };
 
 type ModalStep = "pick" | "crop" | "tag" | "form";
 
-export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }: Props) {
+export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, editAscent }: Props) {
   const [isMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
+  const router = useRouter();
   const t = useT();
+  const isEditMode = !!editAscent;
 
   const [peaks, setPeaks] = useState<Peak[]>([]);
   useEffect(() => {
     fetch("/api/peaks").then((r) => r.json()).then(setPeaks).catch(() => {});
   }, []);
 
-  const [modalStep, setModalStep] = useState<ModalStep>("pick");
+  const [modalStep, setModalStep] = useState<ModalStep>(isEditMode ? "form" : "pick");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [cropApplying, setCropApplying] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [suggestedDate, setSuggestedDate] = useState<string | null>(null);
   const [suggestedPeakId, setSuggestedPeakId] = useState<string | null>(null);
+  const [pendingPhoto, setPendingPhoto] = useState<{ blob: Blob; faces: FaceDraft[]; preview: string } | null>(null);
+  const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(editAscent?.photoUrl ?? null);
+  const [editPhotoId, setEditPhotoId] = useState<string | null>(editAscent?.photoId ?? null);
+  const [editOrigKey, setEditOrigKey] = useState<string | null>(editAscent?.originalStorageKey ?? null);
+  const isEditPhotoReplaceRef = useRef(false);
 
   const cropApplyRef = useRef<(() => void) | null>(null);
   const tagDoneRef = useRef<(() => void) | null>(null);
@@ -154,9 +176,13 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
       });
     } else if (modalStep === "form") {
       onHeaderChange({
-        title: "Nueva ascensión",
+        title: isEditMode ? "Editar ascensión" : "Nueva ascensión",
         size: "split",
-        leftAction: (
+        leftAction: isEditMode ? (
+          <button onClick={onClose} style={headerBtnStyle} aria-label="Cerrar">
+            <CloseIcon />
+          </button>
+        ) : (
           <button onClick={() => setShowDiscardConfirm(true)} style={headerBtnStyle} aria-label="Atrás">
             <BackIcon />
           </button>
@@ -180,7 +206,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalStep, loading, status, cropApplying]);
+  }, [modalStep, loading, status, cropApplying, isEditMode]);
 
   // ── File handling ────────────────────────────────────────────────────────
 
@@ -246,8 +272,16 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
 
   function handleTagDone(blob: Blob, faces: FaceDraft[]) {
     const current = tagQueue[0];
-    // Reuse the previewUrl created in handleCropDone — no new objectURL needed
     const preview = current.previewUrl;
+    if (isEditPhotoReplaceRef.current) {
+      // Edit mode photo replacement — hold as pending, return to form
+      isEditPhotoReplaceRef.current = false;
+      setPendingPhoto({ blob, faces, preview });
+      setEditPhotoUrl(preview);
+      setTagQueue((q) => q.slice(1));
+      setModalStep("form");
+      return;
+    }
     setReadyItems((prev) => [...prev, {
       blob, cropMeta: current.cropMeta,
       originalFile: current.originalFile, faces, preview,
@@ -257,6 +291,119 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
     else setModalStep("form");
   }
   function handleTagSkip(blob: Blob) { handleTagDone(blob, []); }
+
+  async function handleEditPhotoClick() {
+    if (editOrigKey && editPhotoId) {
+      // Fetch resized original for re-crop
+      try {
+        const res = await fetch(`/api/photos/${editPhotoId}/original`);
+        if (res.ok) {
+          const blob = await res.blob();
+          const file = new File([blob], "original.jpg", { type: "image/jpeg" });
+          isEditPhotoReplaceRef.current = true;
+          setCropQueue([file]);
+          setTagQueue([]);
+          setModalStep("crop");
+          return;
+        }
+      } catch { /* fall through to file picker */ }
+    }
+    // No original or fetch failed — open file picker
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (!f) return;
+      isEditPhotoReplaceRef.current = true;
+      setCropQueue([f]);
+      setTagQueue([]);
+      setModalStep("crop");
+    };
+    input.click();
+  }
+
+  async function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editAscent) return;
+    setError(null);
+    setLoading(true);
+
+    const form = new FormData(e.currentTarget);
+    if (!form.get("peakId")) {
+      setError(t.field_peak);
+      setLoading(false);
+      return;
+    }
+
+    setStatus(t.newAscent_savingAscent);
+    const patchRes = await fetch(`/api/ascents/${editAscent.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        peakId: form.get("peakId"),
+        date: form.get("date"),
+        route: form.get("route") || null,
+        description: form.get("description") || null,
+        wikiloc: form.get("wikiloc") || null,
+      }),
+    });
+
+    if (!patchRes.ok) {
+      const data = await patchRes.json().catch(() => ({}));
+      setError(typeof data.error === "string" ? data.error : "Error al guardar");
+      setLoading(false);
+      setStatus(null);
+      return;
+    }
+
+    if (pendingPhoto) {
+      setStatus(fmt(t.newAscent_uploadingPhoto, { i: 1, n: 1 }));
+      const fd = new FormData();
+      fd.append("file", pendingPhoto.blob, "photo.jpg");
+      fd.append("ascentId", editAscent.id);
+      if (editOrigKey) {
+        fd.append("reuseOriginalPhotoId", editPhotoId ?? "");
+      } else {
+        const cropMeta: CropMeta = { x: 0, y: 0, w: 1, h: 1, aspect: "4:5", rotation: 0 };
+        fd.append("cropMeta", JSON.stringify(cropMeta));
+      }
+      const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
+      if (photoRes.ok && pendingPhoto.faces.length > 0) {
+        const photo = await photoRes.json();
+        setStatus(fmt(t.newAscent_savingTags, { i: 1 }));
+        await fetch(`/api/photos/${photo.id}/faces`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            faces: pendingPhoto.faces.map((f) => ({
+              boundingBox: f.boundingBox,
+              descriptor: f.descriptor,
+              userId: f.userId ?? null,
+            })),
+          }),
+        });
+      }
+      // Delete old photo
+      if (editPhotoId && !editOrigKey) {
+        await fetch(`/api/photos/${editPhotoId}`, { method: "DELETE" }).catch(() => {});
+      } else if (editAscent.photoId && editAscent.photoId !== editPhotoId) {
+        await fetch(`/api/photos/${editAscent.photoId}?keepOriginal=1`, { method: "DELETE" }).catch(() => {});
+      }
+    }
+
+    setLoading(false);
+    setStatus(null);
+    router.refresh();
+    onClose();
+  }
+
+  async function handleDelete() {
+    if (!editAscent) return;
+    setLoading(true);
+    await fetch(`/api/ascents/${editAscent.id}`, { method: "DELETE" });
+    window.location.href = "/ascents";
+  }
 
   // ── Submit ───────────────────────────────────────────────────────────────
 
@@ -311,7 +458,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
         setError(fmt(t.newAscent_photoFailed, { i: i + 1 }));
         setLoading(false);
         setStatus(null);
-        window.location.href = `/ascents/${ascent.id}`;
+        router.refresh(); onClose(); return;
         return;
       }
       if (item.faces.length > 0) {
@@ -653,16 +800,17 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
   }
 
   if (modalStep === "form") {
-    const preview = readyItems[0]?.preview;
+    const preview = isEditMode ? (editPhotoUrl ?? null) : (readyItems[0]?.preview ?? null);
     return (
       <>
       <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
-        {/* Left: photo preview — same 500px as crop step */}
+        {/* Left: photo preview */}
         {!isMobile && (
           <div style={{
             flex: "0 0 500px", minWidth: 0, minHeight: 0,
             background: "#111", display: "flex", alignItems: "center", justifyContent: "center",
             borderRight: "1px solid #e5e7eb", overflow: "hidden",
+            position: "relative",
           }}>
             {preview && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -671,6 +819,20 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
                 alt=""
                 style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }}
               />
+            )}
+            {isEditMode && (
+              <button
+                type="button"
+                onClick={handleEditPhotoClick}
+                style={{
+                  position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
+                  background: "rgba(0,0,0,0.6)", color: "white", border: "none",
+                  borderRadius: 20, padding: "8px 18px", fontSize: 13, fontWeight: 600,
+                  cursor: "pointer", backdropFilter: "blur(4px)",
+                }}
+              >
+                ✏️ Editar foto
+              </button>
             )}
           </div>
         )}
@@ -682,19 +844,33 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
         }}>
           {/* Photo thumbnail on mobile */}
           {isMobile && preview && (
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 20, position: "relative" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={preview}
                 alt=""
                 style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 10, display: "block" }}
               />
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={handleEditPhotoClick}
+                  style={{
+                    position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
+                    background: "rgba(0,0,0,0.6)", color: "white", border: "none",
+                    borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  ✏️ Editar foto
+                </button>
+              )}
             </div>
           )}
 
           <form
             id="ascent-modal-form"
-            onSubmit={handleSubmit}
+            onSubmit={isEditMode ? handleEditSubmit : handleSubmit}
             style={{ display: "flex", flexDirection: "column", gap: 18 }}
           >
             {/* Peak */}
@@ -702,10 +878,10 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
               <label style={labelStyle}>{t.field_peak} *</label>
               <PeakPicker
                 peaks={peaks}
-                defaultPeakId={defaultPeakId ?? suggestedPeakId ?? undefined}
+                defaultPeakId={isEditMode ? editAscent!.peakId : (defaultPeakId ?? suggestedPeakId ?? undefined)}
                 name="peakId"
                 placeholder={t.field_selectPeak}
-                suggested={!defaultPeakId && !!suggestedPeakId}
+                suggested={!isEditMode && !defaultPeakId && !!suggestedPeakId}
               />
             </div>
 
@@ -714,7 +890,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
               <label htmlFor="modal-date" style={labelStyle}>{t.field_date} *</label>
               <input
                 id="modal-date" name="date" type="date" required
-                defaultValue={suggestedDate ?? new Date().toISOString().split("T")[0]}
+                defaultValue={isEditMode ? editAscent!.date : (suggestedDate ?? new Date().toISOString().split("T")[0])}
                 style={{ ...inputStyle, WebkitAppearance: "none", appearance: "none" }}
               />
             </div>
@@ -726,6 +902,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
               </label>
               <input
                 id="modal-route" name="route" type="text"
+                defaultValue={isEditMode ? (editAscent!.route ?? "") : undefined}
                 placeholder={t.field_routePlaceholder}
                 maxLength={500} style={inputStyle}
               />
@@ -738,11 +915,27 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
               </label>
               <textarea
                 id="modal-description" name="description" rows={3}
+                defaultValue={isEditMode ? (editAscent!.description ?? "") : undefined}
                 placeholder={t.field_notesPlaceholder}
                 maxLength={2000}
                 style={{ ...inputStyle, resize: "vertical" }}
               />
             </div>
+
+            {/* Wikiloc (edit mode only) */}
+            {isEditMode && (
+              <div>
+                <label htmlFor="modal-wikiloc" style={labelStyle}>
+                  Wikiloc <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
+                </label>
+                <input
+                  id="modal-wikiloc" name="wikiloc" type="url"
+                  defaultValue={editAscent!.wikiloc ?? ""}
+                  placeholder="https://www.wikiloc.com/…"
+                  style={inputStyle}
+                />
+              </div>
+            )}
 
             {error && (
               <p style={{
@@ -753,12 +946,29 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
                 {error}
               </p>
             )}
+
+            {/* Delete button (edit mode only) */}
+            {isEditMode && (
+              <div style={{ marginTop: 12, paddingTop: 16, borderTop: "1px solid #f3f4f6" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    width: "100%", padding: "12px",
+                    background: "none", border: "1px solid #fecaca",
+                    borderRadius: 8, fontSize: 14, fontWeight: 600,
+                    color: "#dc2626", cursor: "pointer",
+                  }}
+                >
+                  🗑 Eliminar ascensión
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>
 
-      {/* Discard confirmation dialog */}
-
+      {/* Discard confirmation dialog (create mode only) */}
       {showDiscardConfirm && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 600,
@@ -800,6 +1010,56 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId }
                   background: "none", border: "none",
                   fontSize: 16, fontWeight: 400, color: "#111827",
                   cursor: "pointer",
+                }}
+              >
+                {t.cancel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation sheet (edit mode only) */}
+      {showDeleteConfirm && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 600,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "flex-end", justifyContent: "center",
+        }}>
+          <div style={{
+            background: "white", borderRadius: "20px 20px 0 0",
+            width: "100%", maxWidth: 520,
+            paddingBottom: "env(safe-area-inset-bottom)",
+            animation: "aModalSlideUp 0.25s cubic-bezier(0.32,0.72,0,1)",
+          }}>
+            <div style={{ padding: "24px 20px 8px", textAlign: "center" }}>
+              <p style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 700, color: "#111827" }}>
+                Eliminar ascensión
+              </p>
+              <p style={{ margin: 0, fontSize: 14, color: "#6b7280", lineHeight: 1.5 }}>
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div style={{ padding: "8px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                onClick={handleDelete}
+                disabled={loading}
+                style={{
+                  width: "100%", padding: "14px",
+                  background: "#dc2626", border: "none",
+                  borderRadius: 12, fontSize: 16, fontWeight: 600,
+                  color: "white", cursor: "pointer",
+                }}
+              >
+                {loading ? "Eliminando…" : "Eliminar"}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{
+                  width: "100%", padding: "14px",
+                  background: "none", border: "1px solid #e5e7eb",
+                  borderRadius: 12, fontSize: 16, fontWeight: 400,
+                  color: "#111827", cursor: "pointer",
                 }}
               >
                 {t.cancel}

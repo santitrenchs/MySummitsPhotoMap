@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
 
@@ -12,6 +11,7 @@ export type AscentCardData = {
   date: string;
   route: string | null;
   description?: string | null;
+  wikiloc?: string | null;
   peak: {
     id: string;
     name: string;
@@ -21,6 +21,8 @@ export type AscentCardData = {
     longitude: number;
   };
   photoUrl: string | null;
+  photoId?: string | null;
+  originalStorageKey?: string | null;
   persons: { id: string; name: string }[];
   user: { name: string; avatarUrl?: string | null };
 };
@@ -126,7 +128,6 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 // ─── AscentCard ───────────────────────────────────────────────────────────────
 
 export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Props) {
-  const router = useRouter();
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -183,7 +184,24 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
               }} onClick={(e) => e.stopPropagation()}>
                 <button
-                  onClick={() => { setMenuOpen(false); router.push(`/ascents/${ascent.id}`); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    document.dispatchEvent(new CustomEvent("open-ascent-modal", {
+                      detail: {
+                        editAscent: {
+                          id: ascent.id,
+                          peakId: ascent.peak.id,
+                          date: ascent.date.slice(0, 10),
+                          route: ascent.route ?? null,
+                          description: ascent.description ?? null,
+                          wikiloc: ascent.wikiloc ?? null,
+                          photoUrl: ascent.photoUrl ?? null,
+                          photoId: ascent.photoId ?? null,
+                          originalStorageKey: ascent.originalStorageKey ?? null,
+                        },
+                      },
+                    }));
+                  }}
                   style={{
                     display: "block", width: "100%", padding: "10px 16px",
                     textAlign: "left", background: "none", border: "none",

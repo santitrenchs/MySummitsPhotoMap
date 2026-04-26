@@ -12,6 +12,7 @@ const PHOTOS_INCLUDE = {
   select: {
     id: true,
     url: true,
+    originalStorageKey: true,
     faceDetections: {
       select: {
         faceTags: {
@@ -31,8 +32,10 @@ function enrichAscent(
     date: Date;
     route: string | null;
     description: string | null;
+    wikiloc: string | null;
+    createdBy: string;
     peak: { id: string; name: string; altitudeM: number; mountainRange: string | null; latitude: number; longitude: number };
-    photos: { id: string; url: string; faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[] }[];
+    photos: { id: string; url: string; originalStorageKey: string | null; faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[] }[];
   },
   isOwn: boolean,
   userName: string,
@@ -54,9 +57,12 @@ function enrichAscent(
     date: a.date.toISOString(),
     route: a.route,
     description: a.description,
+    wikiloc: a.wikiloc,
+    createdByUserId: a.createdBy,
     peak: a.peak,
     firstPhotoId: firstPhoto?.id ?? null,
     firstPhotoUrl: firstPhoto?.url ?? null,
+    firstPhotoOriginalKey: firstPhoto?.originalStorageKey ?? null,
     persons: Array.from(personMap.values()),
     isOwn,
     userName,
@@ -91,7 +97,7 @@ export default async function AscentsPage() {
       include: {
         peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true } },
         photos: PHOTOS_INCLUDE,
-        user: { select: { name: true, avatarUrl: true } },
+        user: { select: { id: true, name: true, avatarUrl: true } },
       },
     }),
     friendUserIds.length > 0
@@ -101,7 +107,7 @@ export default async function AscentsPage() {
           include: {
             peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true } },
             photos: PHOTOS_INCLUDE,
-            user: { select: { name: true, avatarUrl: true } },
+            user: { select: { id: true, name: true, avatarUrl: true } },
           },
         })
       : Promise.resolve([]),
@@ -121,9 +127,10 @@ export default async function AscentsPage() {
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  // All unique persons across all ascents, sorted by name
+  // All unique persons across all ascents (authors + face-tagged), sorted by name
   const allPersonsMap = new Map<string, { id: string; name: string }>();
   for (const a of ascents) {
+    allPersonsMap.set(a.createdByUserId, { id: a.createdByUserId, name: a.userName });
     for (const p of a.persons) allPersonsMap.set(p.id, p);
   }
   const allPersons = Array.from(allPersonsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -163,7 +170,7 @@ export default async function AscentsPage() {
         </div>
       ) : (
         <Suspense>
-          <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} currentUserName={session.user.name ?? ""} />
+          <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} currentUserName={session.user.name ?? ""} currentUserId={session.user.id} />
         </Suspense>
       )}
     </div>

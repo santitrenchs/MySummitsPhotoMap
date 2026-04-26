@@ -32,7 +32,7 @@ import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { useT } from "@/components/providers/I18nProvider";
 import { AscentModal } from "@/components/ascents/AscentModal";
-import { NewAscentModalContent, type ModalHeaderConfig } from "@/components/ascents/NewAscentModalContent";
+import { NewAscentModalContent, type ModalHeaderConfig, type EditAscent } from "@/components/ascents/NewAscentModalContent";
 
 type NavBarProps = {
   userName: string | null;
@@ -58,6 +58,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   const [ascentModalOpen, setAscentModalOpen] = useState(false);
   const [modalHeader, setModalHeader] = useState<ModalHeaderConfig>({ title: "Nueva ascensión", size: "photo" });
   const [defaultPeakId, setDefaultPeakId] = useState<string | undefined>(undefined);
+  const [editAscent, setEditAscent] = useState<EditAscent | null>(null);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const ini = initials(userName, userEmail);
   const totalPending = pendingFriendRequests;
@@ -69,10 +70,12 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   // Listen for the cross-component event dispatched by Sidebar's + button and MapView
   useEffect(() => {
     const handler = (e: Event) => {
-      const peakId = (e as CustomEvent<{ peakId?: string }>).detail?.peakId;
-      setDefaultPeakId(peakId ?? undefined);
+      const detail = (e as CustomEvent).detail ?? {};
+      const ea: EditAscent | null = detail.editAscent ?? null;
+      setDefaultPeakId(ea ? undefined : (detail.peakId ?? undefined));
+      setEditAscent(ea);
       setAscentModalOpen(true);
-      setModalHeader({ title: "Nueva ascensión", size: "photo" });
+      setModalHeader({ title: ea ? "Editar ascensión" : "Nueva ascensión", size: ea ? "split" : "photo" });
     };
     document.addEventListener("open-ascent-modal", handler);
     return () => document.removeEventListener("open-ascent-modal", handler);
@@ -395,7 +398,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
       {/* ── NEW ASCENT MODAL ─────────────────────────────────────────────────── */}
       <AscentModal
         open={ascentModalOpen}
-        onClose={() => { setAscentModalOpen(false); setDefaultPeakId(undefined); }}
+        onClose={() => { setAscentModalOpen(false); setDefaultPeakId(undefined); setEditAscent(null); }}
         title={modalHeader.title}
         leftAction={modalHeader.leftAction}
         rightAction={modalHeader.rightAction}
@@ -403,9 +406,10 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
       >
         {ascentModalOpen && (
           <NewAscentModalContent
-            onClose={() => { setAscentModalOpen(false); setDefaultPeakId(undefined); }}
+            onClose={() => { setAscentModalOpen(false); setDefaultPeakId(undefined); setEditAscent(null); }}
             onHeaderChange={setModalHeader}
             defaultPeakId={defaultPeakId}
+            editAscent={editAscent ?? undefined}
           />
         )}
       </AscentModal>

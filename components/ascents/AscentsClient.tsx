@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
 import { AscentCard } from "@/components/cards/AscentCard";
@@ -11,88 +11,42 @@ export type AscentData = {
   date: string;
   route: string | null;
   description: string | null;
+  wikiloc?: string | null;
+  createdByUserId: string;
   peak: { id: string; name: string; altitudeM: number; mountainRange: string | null; latitude: number; longitude: number };
   firstPhotoId: string | null;
   firstPhotoUrl: string | null;
+  firstPhotoOriginalKey?: string | null;
   persons: { id: string; name: string; email?: string | null }[];
   isOwn: boolean;
   userName: string;
   userAvatarUrl: string | null;
 };
 
-type Sort = "date-desc" | "date-asc" | "elev-desc" | "name-asc";
-type ViewChip = "all" | "mine" | "with-someone" | "person";
+type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage";
+type ViewChip = "all" | "mine" | "person" | "with-me";
+type TimeRange = "all" | "month" | "year";
+type Sort = "date-desc" | "elev-desc" | "rarity-desc";
 
-// ─── Person picker (searchable, fixed-height scrollable list) ────────────────
-
-function PersonPicker({
-  persons,
-  selectedId,
-  onSelect,
-  onClear,
-}: {
-  persons: { id: string; name: string }[];
-  selectedId: string;
-  onSelect: (id: string) => void;
-  onClear: () => void;
-}) {
-  const [q, setQ] = useState("");
-  const matches = q.trim()
-    ? persons.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()))
-    : persons;
-
-  return (
-    <div>
-      <input
-        type="text"
-        placeholder="Buscar persona…"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        style={{
-          width: "100%", padding: "8px 14px", fontSize: 16,
-          border: "1.5px solid #e5e7eb", borderRadius: 20,
-          outline: "none", background: "#f9fafb", boxSizing: "border-box",
-          marginBottom: 8,
-        }}
-      />
-      <div style={{ height: 180, overflowY: "auto", borderRadius: 12, border: "1px solid #f3f4f6" }}>
-        {selectedId && (
-          <button
-            onClick={onClear}
-            style={{
-              width: "100%", padding: "10px 14px", textAlign: "left",
-              background: "none", border: "none", borderBottom: "1px solid #f3f4f6",
-              fontSize: 13, color: "#ef4444", fontWeight: 600, cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 6,
-            }}
-          >
-            ✕ Quitar filtro de persona
-          </button>
-        )}
-        {matches.length === 0 && (
-          <p style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af", margin: 0 }}>Sin resultados</p>
-        )}
-        {matches.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => onSelect(p.id)}
-            style={{
-              width: "100%", padding: "11px 14px", textAlign: "left",
-              background: selectedId === p.id ? "#eff6ff" : "none",
-              border: "none", borderBottom: "1px solid #f9fafb",
-              fontSize: 14, color: selectedId === p.id ? "#0369a1" : "#111827",
-              fontWeight: selectedId === p.id ? 700 : 400, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}
-          >
-            {p.name}
-            {selectedId === p.id && <span style={{ fontSize: 12 }}>✓</span>}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+function getRarity(altitudeM: number): Rarity {
+  if (altitudeM >= 5000) return "saxifrage";
+  if (altitudeM >= 3000) return "edelweiss";
+  if (altitudeM >= 1500) return "gentian";
+  return "daisy";
 }
+
+const RARITY_ORDER: Record<Rarity, number> = { saxifrage: 3, edelweiss: 2, gentian: 1, daisy: 0 };
+
+const RARITY_COLORS: Record<Rarity, { bg: string; border: string; text: string; dot: string }> = {
+  daisy:     { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d", dot: "#16a34a" },
+  gentian:   { bg: "#f5f3ff", border: "#ddd6fe", text: "#6d28d9", dot: "#7c3aed" },
+  edelweiss: { bg: "#fff7ed", border: "#fed7aa", text: "#c2410c", dot: "#ea580c" },
+  saxifrage: { bg: "#fefce8", border: "#fde68a", text: "#92400e", dot: "#b45309" },
+};
+
+const RARITY_LABELS: Record<Rarity, string> = {
+  daisy: "Daisy", gentian: "Gentian", edelweiss: "Edelweiss", saxifrage: "Saxifrage",
+};
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -102,12 +56,14 @@ export function AscentsClient({
   allYears,
   currentUserEmail,
   currentUserName,
+  currentUserId,
 }: {
   ascents: AscentData[];
   allPersons: { id: string; name: string }[];
   allYears: number[];
   currentUserEmail?: string | null;
   currentUserName?: string;
+  currentUserId?: string;
 }) {
   const t = useT();
   const searchParams = useSearchParams();
@@ -115,9 +71,13 @@ export function AscentsClient({
   const [search, setSearch] = useState("");
   const [viewChip, setViewChip] = useState<ViewChip>("all");
   const [selectedPersonId, setSelectedPersonId] = useState("");
+  const [personSearch, setPersonSearch] = useState("");
+  const [rarity, setRarity] = useState<Rarity | null>(null);
+  const [timeRange, setTimeRange] = useState<TimeRange>("all");
   const [sort, setSort] = useState<Sort>("date-desc");
-  const [yearFilter, setYearFilter] = useState<number | "">("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef(0);
 
   // Peak filter seeded from ?peak= URL param
   const [peakFilter, setPeakFilter] = useState<string>(() => searchParams.get("peak") ?? "");
@@ -125,56 +85,57 @@ export function AscentsClient({
     ? (ascents.find((a) => a.peak.id === peakFilter)?.peak.name ?? "")
     : "";
 
-
   const selectedPerson = allPersons.find((p) => p.id === selectedPersonId);
 
-  const SORT_LABELS: Record<Sort, string> = {
-    "date-desc": t.ascents_sort_newest,
-    "date-asc": t.ascents_sort_oldest,
-    "elev-desc": t.ascents_sort_highest,
-    "name-asc": t.ascents_sort_az,
-  };
-
-  const activeFilterCount = [
-    viewChip !== "all",
-    yearFilter !== "",
-  ].filter(Boolean).length;
+  // Lock body scroll when sheet open
+  useEffect(() => {
+    if (filtersOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [filtersOpen]);
 
   const filtered = useMemo(() => {
     let r = ascents;
 
-    // Peak filter (from map URL param)
     if (peakFilter) r = r.filter((a) => a.peak.id === peakFilter);
 
-    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
-      r = r.filter(
-        (a) =>
-          a.peak.name.toLowerCase().includes(q) ||
-          (a.route ?? "").toLowerCase().includes(q) ||
-          a.persons.some((p) => p.name.toLowerCase().includes(q))
+      r = r.filter((a) =>
+        a.peak.name.toLowerCase().includes(q) ||
+        (a.route ?? "").toLowerCase().includes(q) ||
+        a.persons.some((p) => p.name.toLowerCase().includes(q))
       );
     }
 
-    // View chip
     if (viewChip === "mine") r = r.filter((a) => a.isOwn);
-    else if (viewChip === "with-someone") r = r.filter((a) => a.persons.length > 0);
-    else if (viewChip === "person" && selectedPersonId) r = r.filter((a) => a.persons.some((p) => p.id === selectedPersonId));
+    else if (viewChip === "with-me" && currentUserId) r = r.filter((a) => !a.isOwn && a.persons.some((p) => p.id === currentUserId));
+    else if (viewChip === "person" && selectedPersonId) r = r.filter((a) => a.createdByUserId === selectedPersonId || a.persons.some((p) => p.id === selectedPersonId));
 
-    // Advanced: year
-    if (yearFilter !== "") r = r.filter((a) => new Date(a.date).getFullYear() === yearFilter);
+    if (rarity) r = r.filter((a) => getRarity(a.peak.altitudeM) === rarity);
+
+    if (timeRange === "month") {
+      const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      r = r.filter((a) => new Date(a.date).getTime() >= cutoff);
+    } else if (timeRange === "year") {
+      const yr = new Date().getFullYear();
+      r = r.filter((a) => new Date(a.date).getFullYear() === yr);
+    }
 
     return [...r].sort((a, b) => {
-      if (sort === "date-desc") return new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (sort === "date-asc") return new Date(a.date).getTime() - new Date(b.date).getTime();
-      if (sort === "elev-desc") return b.peak.altitudeM - a.peak.altitudeM;
-      return a.peak.name.localeCompare(b.peak.name);
+      if (sort === "date-desc")   return new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (sort === "elev-desc")   return b.peak.altitudeM - a.peak.altitudeM;
+      if (sort === "rarity-desc") {
+        const rd = RARITY_ORDER[getRarity(b.peak.altitudeM)] - RARITY_ORDER[getRarity(a.peak.altitudeM)];
+        return rd !== 0 ? rd : b.peak.altitudeM - a.peak.altitudeM;
+      }
+      return 0;
     });
-  }, [ascents, peakFilter, search, viewChip, selectedPersonId, yearFilter, sort]);
+  }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, timeRange, sort, currentUserId]);
 
-  // Group filtered ascents by same peak + same day.
-  // Preserves sort order — first ascent per group wins position in the feed.
   const groups = useMemo(() => {
     const map = new Map<string, AscentData[]>();
     for (const a of filtered) {
@@ -186,43 +147,121 @@ export function AscentsClient({
     return Array.from(map.values());
   }, [filtered]);
 
-  const summaryChip: React.CSSProperties = {
-    display: "inline-flex", alignItems: "center", gap: 6,
-    background: "#eff6ff", border: "1px solid #bfdbfe",
-    borderRadius: 20, padding: "4px 10px 4px 12px",
-    fontSize: 13, fontWeight: 600, color: "#0369a1",
+  const uniquePeaks = useMemo(
+    () => new Set(filtered.map((a) => a.peak.id)).size,
+    [filtered]
+  );
+
+  const isDirty =
+    viewChip !== "all" || rarity !== null || timeRange !== "all" ||
+    sort !== "date-desc" || peakFilter !== "";
+
+  function resetFilters() {
+    setViewChip("all");
+    setSelectedPersonId("");
+    setPersonSearch("");
+    setRarity(null);
+    setTimeRange("all");
+    setSort("date-desc");
+  }
+
+  // ── Active chips data ────────────────────────────────────────────────────────
+
+  const activeChips = useMemo(() => {
+    const chips: { key: string; label: string; color: { bg: string; border: string; text: string } }[] = [];
+    if (viewChip === "mine")    chips.push({ key: "view", label: "👤 Mis cimas", color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    if (viewChip === "with-me") chips.push({ key: "view", label: "👥 Conmigo", color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    if (viewChip === "person" && selectedPerson) chips.push({ key: "view", label: `👤 ${selectedPerson.name}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    if (rarity) {
+      const c = RARITY_COLORS[rarity];
+      chips.push({ key: "rarity", label: `✿ ${RARITY_LABELS[rarity]}`, color: { bg: c.bg, border: c.border, text: c.text } });
+    }
+    if (timeRange === "month") chips.push({ key: "time", label: "📅 Último mes", color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    if (timeRange === "year")  chips.push({ key: "time", label: `📅 ${new Date().getFullYear()}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    if (sort === "elev-desc")   chips.push({ key: "sort", label: "⛰ Más altas", color: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" } });
+    if (sort === "rarity-desc") chips.push({ key: "sort", label: "✿ Más raras", color: { bg: "#f5f3ff", border: "#ddd6fe", text: "#6d28d9" } });
+    if (peakFilter && peakFilterName) chips.push({ key: "peak", label: `⛰️ ${peakFilterName}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    return chips;
+  }, [viewChip, selectedPerson, rarity, timeRange, sort, peakFilter, peakFilterName]);
+
+  function clearChip(key: string) {
+    if (key === "view") { setViewChip("all"); setSelectedPersonId(""); setPersonSearch(""); }
+    if (key === "rarity") setRarity(null);
+    if (key === "time") setTimeRange("all");
+    if (key === "sort") setSort("date-desc");
+    if (key === "peak") {
+      setPeakFilter("");
+      const u = new URL(window.location.href);
+      u.searchParams.delete("peak");
+      window.history.replaceState(null, "", u.toString());
+    }
+  }
+
+  const filteredPersons = personSearch.trim()
+    ? allPersons.filter((p) => p.name.toLowerCase().includes(personSearch.toLowerCase()))
+    : allPersons;
+
+  // ── Drag-to-close ────────────────────────────────────────────────────────────
+
+  function onTouchStart(e: React.TouchEvent) { dragStartY.current = e.touches[0].clientY; }
+  function onTouchMove(e: React.TouchEvent) {
+    const dy = e.touches[0].clientY - dragStartY.current;
+    if (dy > 0 && sheetRef.current) sheetRef.current.style.transform = `translateY(${dy}px)`;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const dy = e.changedTouches[0].clientY - dragStartY.current;
+    if (sheetRef.current) sheetRef.current.style.transform = "";
+    if (dy > 80) setFiltersOpen(false);
+  }
+
+  // ── Styles ───────────────────────────────────────────────────────────────────
+
+  const fchip = (active: boolean, extra?: React.CSSProperties): React.CSSProperties => ({
+    display: "inline-flex", alignItems: "center", gap: 5,
+    padding: "8px 14px", borderRadius: 20,
+    border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
+    background: active ? "#eff6ff" : "#f9fafb",
+    color: active ? "#0369a1" : "#6b7280",
+    fontSize: 13, fontWeight: 600, cursor: "pointer",
+    whiteSpace: "nowrap", WebkitTapHighlightColor: "transparent",
+    ...extra,
+  });
+
+  const rarityChip = (r: Rarity, active: boolean): React.CSSProperties => {
+    const c = RARITY_COLORS[r];
+    return {
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "8px 14px", borderRadius: 20,
+      border: `1.5px solid ${active ? c.border : "#e5e7eb"}`,
+      background: active ? c.bg : "#f9fafb",
+      color: active ? c.text : "#6b7280",
+      fontSize: 13, fontWeight: 600, cursor: "pointer",
+      whiteSpace: "nowrap", WebkitTapHighlightColor: "transparent",
+    };
   };
-  const chipX: React.CSSProperties = {
-    cursor: "pointer", fontSize: 11, fontWeight: 700,
-    background: "#bfdbfe", borderRadius: "50%",
-    width: 16, height: 16, display: "inline-flex",
-    alignItems: "center", justifyContent: "center",
-  };
+
   const sectionLabel: React.CSSProperties = {
-    fontSize: 11, fontWeight: 700, color: "#9ca3af",
-    textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px",
+    fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
+    color: "#9ca3af", textTransform: "uppercase", marginBottom: 10,
   };
-  const chipRow: React.CSSProperties = {
-    display: "flex", gap: 8, flexWrap: "wrap",
-  };
+
+  const chipRow: React.CSSProperties = { display: "flex", gap: 8, flexWrap: "wrap" };
 
   return (
     <>
       <style>{`
-        .asc-chip {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 8px 16px; border-radius: 24px; border: 1.5px solid #e5e7eb;
-          background: white; color: #6b7280; font-size: 13px; font-weight: 600;
-          cursor: pointer; white-space: nowrap; flex-shrink: 0;
-          transition: background 0.12s, color 0.12s, border-color 0.12s;
-          -webkit-tap-highlight-color: transparent;
+        .asc-fchip { transition: opacity 0.1s; }
+        .asc-fchip:active { opacity: 0.7; transform: scale(0.97); }
+        .asc-sheet { transition: transform 0.34s cubic-bezier(0.32,0.72,0,1); }
+        @keyframes chipIn {
+          from { opacity:0; transform:scale(0.85); }
+          to   { opacity:1; transform:scale(1); }
         }
-        .asc-chip.active { background: #0369a1; color: white; border-color: #0369a1; }
-        .asc-chip:active { opacity: 0.8; }
+        .asc-chip-in { animation: chipIn 0.18s ease forwards; }
       `}</style>
 
-      {/* ── Search + filter button ────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+      {/* ── Search + filter button ──────────────────────────────────────── */}
+      <div style={{ display: "flex", gap: 8, marginBottom: activeChips.length ? 10 : 16 }}>
         <input
           type="text"
           placeholder={t.ascents_search}
@@ -235,136 +274,292 @@ export function AscentsClient({
           }}
         />
         <button
+          className="asc-fchip"
           onClick={() => setFiltersOpen(true)}
           style={{
-            padding: "10px 16px", borderRadius: 24, border: "1.5px solid #e5e7eb",
-            background: activeFilterCount > 0 ? "#0369a1" : "white",
-            color: activeFilterCount > 0 ? "white" : "#6b7280",
-            fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink: 0,
             display: "flex", alignItems: "center", gap: 6,
+            padding: "10px 16px", borderRadius: 24,
+            border: `1.5px solid ${isDirty ? "#bfdbfe" : "#e5e7eb"}`,
+            background: isDirty ? "#eff6ff" : "white",
+            color: isDirty ? "#0369a1" : "#6b7280",
+            fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink: 0,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
           }}
         >
-          ⚙️ {t.ascents_filters}{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ""}
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+          Filtrar
+          {isDirty && (
+            <span style={{
+              width: 16, height: 16, borderRadius: "50%",
+              background: "#0369a1", color: "white",
+              fontSize: 9, fontWeight: 800,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {activeChips.length}
+            </span>
+          )}
         </button>
       </div>
 
-      {/* ── Active filter summary chips ───────────────────────────── */}
-      {(viewChip !== "all" || yearFilter !== "" || peakFilter) && (
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-          {viewChip === "mine" && (
-            <div style={summaryChip}>Mías <span onClick={() => setViewChip("all")} style={chipX}>✕</span></div>
-          )}
-          {viewChip === "with-someone" && (
-            <div style={summaryChip}>Con alguien <span onClick={() => setViewChip("all")} style={chipX}>✕</span></div>
-          )}
-          {viewChip === "person" && selectedPerson && (
-            <div style={summaryChip}>{selectedPerson.name} <span onClick={() => { setViewChip("all"); setSelectedPersonId(""); }} style={chipX}>✕</span></div>
-          )}
-          {yearFilter !== "" && (
-            <div style={summaryChip}>{yearFilter} <span onClick={() => setYearFilter("")} style={chipX}>✕</span></div>
-          )}
-          {peakFilter && peakFilterName && (
-            <div style={summaryChip}>⛰️ {peakFilterName} <span onClick={() => { setPeakFilter(""); const u = new URL(window.location.href); u.searchParams.delete("peak"); window.history.replaceState(null,"",u.toString()); }} style={chipX}>✕</span></div>
-          )}
+      {/* ── Active filter chips ─────────────────────────────────────────── */}
+      {activeChips.length > 0 && (
+        <div style={{
+          display: "flex", gap: 6, flexWrap: "nowrap",
+          overflowX: "auto", scrollbarWidth: "none",
+          marginBottom: 14, paddingBottom: 2,
+        }}>
+          {activeChips.map((chip) => (
+            <div
+              key={chip.key + chip.label}
+              className="asc-chip-in"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "5px 10px 5px 12px", borderRadius: 20,
+                background: chip.color.bg, border: `1px solid ${chip.color.border}`,
+                color: chip.color.text, fontSize: 12, fontWeight: 600,
+                whiteSpace: "nowrap", flexShrink: 0, cursor: "pointer",
+              }}
+              onClick={() => clearChip(chip.key)}
+            >
+              {chip.label}
+              <span style={{
+                width: 14, height: 14, borderRadius: "50%",
+                background: chip.color.border,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 9, fontWeight: 800, opacity: 0.8,
+              }}>✕</span>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* ── Filter bottom sheet ───────────────────────────────────── */}
+      {/* ── Filter bottom sheet ─────────────────────────────────────────── */}
       {filtersOpen && (
         <div
-          style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end" }}
+          style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.45)" }}
           onClick={() => setFiltersOpen(false)}
-        >
-          <div
-            style={{ width: "100%", background: "white", borderRadius: "20px 20px 0 0", padding: "20px 20px 44px", boxSizing: "border-box" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e5e7eb", margin: "0 auto 20px" }} />
+        />
+      )}
+      <div
+        ref={sheetRef}
+        className="asc-sheet"
+        style={{
+          position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 201,
+          background: "white", borderRadius: "24px 24px 0 0",
+          maxHeight: "92svh", display: "flex", flexDirection: "column",
+          paddingBottom: "env(safe-area-inset-bottom)",
+          transform: filtersOpen ? "translateY(0)" : "translateY(110%)",
+          boxShadow: "0 -4px 40px rgba(0,0,0,0.14)",
+        }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Handle */}
+        <div style={{ width: 36, height: 4, background: "#e5e7eb", borderRadius: 2, margin: "12px auto 0", flexShrink: 0 }} />
 
-            {/* Vista */}
-            <p style={sectionLabel}>Vista</p>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px 12px", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
+          <span style={{ fontSize: 17, fontWeight: 800, color: "#111827", letterSpacing: "-0.3px" }}>
+            Explorar ascensiones
+          </span>
+          {isDirty ? (
+            <button
+              onClick={resetFilters}
+              style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#0369a1", cursor: "pointer", padding: "4px 0" }}
+            >
+              Borrar todo
+            </button>
+          ) : (
+            <button
+              onClick={() => setFiltersOpen(false)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, lineHeight: 1 }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Body */}
+        <div style={{ overflowY: "auto", flex: 1, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
+
+          {/* EXPLORAR */}
+          <div>
+            <p style={sectionLabel}>Explorar</p>
             <div style={chipRow}>
               {([
-                { v: "all", label: "Todos" },
-                { v: "mine", label: "Mías" },
-                { v: "with-someone", label: "Con alguien" },
+                { v: "all",     label: "Todo" },
+                { v: "mine",    label: "Mis cimas" },
+                { v: "person",  label: "De una persona" },
+                { v: "with-me", label: "Conmigo" },
               ] as { v: ViewChip; label: string }[]).map(({ v, label }) => (
-                <button key={v} className={`asc-chip${viewChip === v ? " active" : ""}`} onClick={() => setViewChip(v)}>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Persona — lista buscable con scroll fijo */}
-            {allPersons.length > 0 && (
-              <>
-                <p style={{ ...sectionLabel, marginTop: 18 }}>Persona</p>
-                <PersonPicker
-                  persons={allPersons}
-                  selectedId={viewChip === "person" ? selectedPersonId : ""}
-                  onSelect={(id) => { setSelectedPersonId(id); setViewChip("person"); }}
-                  onClear={() => { setSelectedPersonId(""); setViewChip("all"); }}
-                />
-              </>
-            )}
-
-            {/* Año — selector nativo */}
-            {allYears.length > 0 && (
-              <>
-                <p style={{ ...sectionLabel, marginTop: 18 }}>Año</p>
-                <select
-                  value={yearFilter}
-                  onChange={(e) => setYearFilter(e.target.value === "" ? "" : Number(e.target.value))}
-                  style={{
-                    width: "100%", padding: "11px 16px 11px 16px", fontSize: 14, fontWeight: 600,
-                    border: "1.5px solid", borderColor: yearFilter !== "" ? "#0369a1" : "#e5e7eb",
-                    borderRadius: 12, backgroundColor: yearFilter !== "" ? "#eff6ff" : "white",
-                    color: yearFilter !== "" ? "#0369a1" : "#374151",
-                    outline: "none", cursor: "pointer", appearance: "none",
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center",
-                    paddingRight: 36,
+                <div
+                  key={v}
+                  className="asc-fchip"
+                  style={fchip(viewChip === v)}
+                  onClick={() => {
+                    setViewChip(v);
+                    if (v !== "person") { setSelectedPersonId(""); setPersonSearch(""); }
                   }}
                 >
-                  <option value="">{t.ascents_allYears}</option>
-                  {allYears.map((y) => <option key={y} value={y}>{y}</option>)}
-                </select>
-              </>
-            )}
-
-            {/* Orden — grid 2×2 */}
-            <p style={{ ...sectionLabel, marginTop: 18 }}>Orden</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {(Object.entries(SORT_LABELS) as [Sort, string][]).map(([v, label]) => (
-                <button key={v} className={`asc-chip${sort === v ? " active" : ""}`} onClick={() => setSort(v)}
-                  style={{ justifyContent: "center" }}>
                   {label}
-                </button>
+                </div>
               ))}
             </div>
 
-            {/* Actions */}
-            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={() => { setViewChip("all"); setYearFilter(""); setSelectedPersonId(""); }}
-                  style={{ flex: 1, padding: "12px", borderRadius: 12, border: "1.5px solid #fca5a5", background: "white", color: "#ef4444", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
-                >
-                  {t.ascents_clearAll}
-                </button>
-              )}
-              <button
-                onClick={() => setFiltersOpen(false)}
-                style={{ flex: 2, padding: "12px", borderRadius: 12, border: "none", background: "#0369a1", color: "white", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+            {/* Person search — visible when "De una persona" */}
+            {viewChip === "person" && allPersons.length > 0 && (
+              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                <input
+                  type="text"
+                  placeholder="Buscar persona…"
+                  value={personSearch}
+                  onChange={(e) => setPersonSearch(e.target.value)}
+                  autoFocus
+                  style={{
+                    width: "100%", padding: "10px 14px", fontSize: 16,
+                    border: "1.5px solid #e5e7eb", borderRadius: 10,
+                    outline: "none", background: "#f9fafb", boxSizing: "border-box",
+                    fontFamily: "inherit",
+                  }}
+                />
+                {filteredPersons.length > 0 && (
+                  <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", background: "white" }}>
+                    {filteredPersons.slice(0, 8).map((p) => (
+                      <div
+                        key={p.id}
+                        className="asc-fchip"
+                        onClick={() => setSelectedPersonId(p.id)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 10,
+                          padding: "10px 14px", cursor: "pointer",
+                          background: selectedPersonId === p.id ? "#eff6ff" : "white",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        <div style={{
+                          width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                          background: "linear-gradient(135deg, #dbeafe, #bfdbfe)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 12, fontWeight: 700, color: "#1d4ed8",
+                        }}>
+                          {p.name[0]?.toUpperCase()}
+                        </div>
+                        <span style={{ fontSize: 14, fontWeight: selectedPersonId === p.id ? 700 : 500, color: selectedPersonId === p.id ? "#0369a1" : "#111827", flex: 1 }}>
+                          {p.name}
+                        </span>
+                        {selectedPersonId === p.id && (
+                          <span style={{ fontSize: 13, color: "#0369a1", fontWeight: 700 }}>✓</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* RAREZA */}
+          <div>
+            <p style={sectionLabel}>Rareza</p>
+            <div style={chipRow}>
+              <div
+                className="asc-fchip"
+                style={fchip(rarity === null)}
+                onClick={() => setRarity(null)}
               >
-                Ver {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
-              </button>
+                Todas
+              </div>
+              {(["daisy", "gentian", "edelweiss", "saxifrage"] as Rarity[]).map((r) => (
+                <div
+                  key={r}
+                  className="asc-fchip"
+                  style={rarityChip(r, rarity === r)}
+                  onClick={() => setRarity(rarity === r ? null : r)}
+                >
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: RARITY_COLORS[r].dot, display: "inline-block", flexShrink: 0 }} />
+                  {RARITY_LABELS[r]}
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      )}
 
-      {/* ── Feed ─────────────────────────────────────────────────── */}
+          {/* CUÁNDO */}
+          <div>
+            <p style={sectionLabel}>Cuándo</p>
+            <div style={chipRow}>
+              {([
+                { v: "month", label: "Último mes" },
+                { v: "year",  label: "Este año" },
+                { v: "all",   label: "Todo" },
+              ] as { v: TimeRange; label: string }[]).map(({ v, label }) => (
+                <div
+                  key={v}
+                  className="asc-fchip"
+                  style={fchip(timeRange === v)}
+                  onClick={() => setTimeRange(v)}
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ORDENAR POR */}
+          <div>
+            <p style={sectionLabel}>Ordenar por</p>
+            <div style={chipRow}>
+              <div className="asc-fchip" style={fchip(sort === "date-desc")} onClick={() => setSort("date-desc")}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.6"/>
+                  <path d="M8 5v3l2 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                </svg>
+                Recientes
+              </div>
+              <div className="asc-fchip" style={fchip(sort === "elev-desc", sort === "elev-desc" ? { borderColor: "#bfdbfe", background: "#eff6ff", color: "#1d4ed8" } : {})} onClick={() => setSort("elev-desc")}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 2L13 12H3L8 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
+                </svg>
+                Más altas
+              </div>
+              <div className="asc-fchip" style={fchip(sort === "rarity-desc", sort === "rarity-desc" ? { borderColor: "#ddd6fe", background: "#f5f3ff", color: "#6d28d9" } : {})} onClick={() => setSort("rarity-desc")}>
+                <span style={{ fontSize: 13, lineHeight: 1 }}>✿</span>
+                Más raras
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* CTA */}
+        <div style={{ padding: "12px 20px 16px", borderTop: "1px solid #f3f4f6", flexShrink: 0 }}>
+          <button
+            onClick={() => setFiltersOpen(false)}
+            style={{
+              width: "100%", padding: "16px",
+              background: "#0369a1", color: "white", border: "none",
+              borderRadius: 14, fontFamily: "inherit",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              boxShadow: "0 4px 14px rgba(3,105,161,0.32)",
+              cursor: "pointer",
+            }}
+          >
+            <span style={{ fontSize: 15, fontWeight: 800 }}>
+              Explorar {filtered.length} ascensión{filtered.length !== 1 ? "es" : ""}
+            </span>
+            <span style={{ opacity: 0.45, fontSize: 14 }}>·</span>
+            <span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>
+              {uniquePeaks} cima{uniquePeaks !== 1 ? "s" : ""} única{uniquePeaks !== 1 ? "s" : ""}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Feed ──────────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
           <p style={{ fontSize: 48, margin: "0 0 12px" }}>🔍</p>
@@ -374,11 +569,10 @@ export function AscentsClient({
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
           {groups.map((group, i) => {
-            // Single ascent → card normal sin cambios
             if (group.length === 1) {
               const a = group[0];
               const others = a.isOwn
-                ? a.persons.filter(p =>
+                ? a.persons.filter((p) =>
                     (currentUserEmail ? p.email !== currentUserEmail : true) &&
                     (currentUserName ? p.name !== currentUserName : true)
                   )
@@ -394,8 +588,11 @@ export function AscentsClient({
                     date: a.date,
                     route: a.route,
                     description: a.description,
+                    wikiloc: a.wikiloc,
                     peak: a.peak,
                     photoUrl: a.firstPhotoUrl,
+                    photoId: a.firstPhotoId,
+                    originalStorageKey: a.firstPhotoOriginalKey,
                     persons: others,
                     user: { name: a.userName, avatarUrl: a.userAvatarUrl },
                   }}
@@ -403,7 +600,6 @@ export function AscentsClient({
               );
             }
 
-            // Múltiples ascensiones en la misma cima y día → card agrupada
             const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
             return (
               <GroupedAscentCard

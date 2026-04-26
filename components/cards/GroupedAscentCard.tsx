@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import type { AscentData } from "@/components/ascents/AscentsClient";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
@@ -144,7 +143,6 @@ export function GroupedAscentCard({
   currentUserName,
   animationIndex = 0,
 }: Props) {
-  const router = useRouter();
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -255,7 +253,24 @@ export function GroupedAscentCard({
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
-                  onClick={() => { setMenuOpen(false); router.push(`/ascents/${ownAscent.id}`); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    document.dispatchEvent(new CustomEvent("open-ascent-modal", {
+                      detail: {
+                        editAscent: {
+                          id: ownAscent.id,
+                          peakId: ownAscent.peak.id,
+                          date: ownAscent.date.slice(0, 10),
+                          route: ownAscent.route ?? null,
+                          description: ownAscent.description ?? null,
+                          wikiloc: ownAscent.wikiloc ?? null,
+                          photoUrl: ownAscent.firstPhotoUrl ?? null,
+                          photoId: ownAscent.firstPhotoId ?? null,
+                          originalStorageKey: ownAscent.firstPhotoOriginalKey ?? null,
+                        },
+                      },
+                    }));
+                  }}
                   style={{
                     display: "block", width: "100%", padding: "10px 16px",
                     textAlign: "left", background: "none", border: "none",
