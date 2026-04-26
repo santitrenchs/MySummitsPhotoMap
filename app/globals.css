@@ -360,7 +360,7 @@
   border-radius: 16px;
   padding: 10px;
   display: grid;
-  grid-template-columns: 1.15fr 1fr 0.9fr;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   box-shadow: 0 6px 18px rgba(13, 37, 56, 0.06);
 }
@@ -415,6 +415,24 @@
 .saxifrage .rarity-icon { background: var(--pc-saxifrage-soft); color: var(--pc-saxifrage); }
 
 .ep { color: var(--pc-orange); }
+
+/* ── Inline rarity in topbar ──────────────────────────────────────────── */
+.capture-rarity-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.capture-rarity-inline .rarity-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+}
+.capture-rarity-inline .rarity-value {
+  font-size: 11px;
+  font-weight: 700;
+}
 
 /* ── Footer / caption ─────────────────────────────────────────────────── */
 .capture-note {

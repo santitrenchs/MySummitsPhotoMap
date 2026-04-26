@@ -220,9 +220,15 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
       <section className="capture-frame">
         <div className="capture-topbar">
           <span className="capture-label">{t.card_peakCapture}</span>
-          <span className="capture-id">
-            #{cardNum}{isMythic ? ` · ${t.card_mythic}` : ""}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="capture-rarity-inline">
+              <span className="rarity-icon">✿</span>
+              <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
+            </span>
+            <span className="capture-id">
+              #{cardNum}{isMythic ? ` · ${t.card_mythic}` : ""}
+            </span>
+          </div>
         </div>
         <div className="image-frame">
           {showMap && isFlipped
@@ -245,17 +251,10 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
         </div>
         <div className="stat-band">
           <div className="stat-item">
-            <span className="stat-label">{t.card_rarity}</span>
-            <div className="stat-value rarity-value">
-              <span className="rarity-icon">✿</span>
-              {RARITY_LABEL[rarity]}
-            </div>
-          </div>
-          <div className="stat-item">
             <span className="stat-label">{t.card_altitude}</span>
             <div className="stat-value">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
           </div>
-          <div className="stat-item">
+          <div className="stat-item" style={{ textAlign: "right" }}>
             <span className="stat-label">{t.card_reward}</span>
             <div className="stat-value ep">+{RARITY_EP[rarity]} EP</div>
           </div>
