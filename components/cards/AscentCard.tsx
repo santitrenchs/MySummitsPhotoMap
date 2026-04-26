@@ -220,15 +220,10 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
       <section className="capture-frame">
         <div className="capture-topbar">
           <span className="capture-label">{t.card_peakCapture}</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span className="capture-rarity-inline">
-              <span className="rarity-icon">✿</span>
-              <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
-            </span>
-            <span className="capture-id">
-              #{cardNum}{isMythic ? ` · ${t.card_mythic}` : ""}
-            </span>
-          </div>
+          <span className="capture-rarity-inline">
+            <span className="rarity-icon">✿</span>
+            <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
+          </span>
         </div>
         <div className="image-frame">
           {showMap && isFlipped
