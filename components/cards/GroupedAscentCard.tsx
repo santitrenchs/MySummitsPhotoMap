@@ -409,10 +409,8 @@ export function GroupedAscentCard({
           <div className="stat-item" style={{ textAlign: "right" }}>
             <span className="stat-label">{t.card_reward}</span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5, whiteSpace: "nowrap" }}>
-              <span className="stat-value ep">+{RARITY_EP[rarity]} EP</span>
               {isMythic && (
                 <>
-                  <span style={{ color: "#d1d5db", fontSize: 12 }}>·</span>
                   <svg width="13" height="13" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
                     <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
                     <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
@@ -420,8 +418,10 @@ export function GroupedAscentCard({
                     <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
                   </svg>
                   <span className="stat-value" style={{ color: "#f59e0b" }}>1 Cairn</span>
+                  <span style={{ color: "#d1d5db", fontSize: 12 }}>·</span>
                 </>
               )}
+              <span className="stat-value ep">+{RARITY_EP[rarity]} EP</span>
             </div>
           </div>
         </div>
