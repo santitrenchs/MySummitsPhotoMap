@@ -73,6 +73,7 @@ export function AscentsClient({
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [personSearch, setPersonSearch] = useState("");
   const [rarity, setRarity] = useState<Rarity | null>(null);
+  const [mythicFilter, setMythicFilter] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
   const [sort, setSort] = useState<Sort>("date-desc");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -115,7 +116,8 @@ export function AscentsClient({
     else if (viewChip === "with-me" && currentUserId) r = r.filter((a) => !a.isOwn && a.persons.some((p) => p.id === currentUserId));
     else if (viewChip === "person" && selectedPersonId) r = r.filter((a) => a.createdByUserId === selectedPersonId || a.persons.some((p) => p.id === selectedPersonId));
 
-    if (rarity) r = r.filter((a) => getRarity(a.peak.altitudeM) === rarity);
+    if (mythicFilter) r = r.filter((a) => a.peak.isMythic);
+    else if (rarity) r = r.filter((a) => getRarity(a.peak.altitudeM) === rarity);
 
     if (timeRange === "month") {
       const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
@@ -134,7 +136,7 @@ export function AscentsClient({
       }
       return 0;
     });
-  }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, timeRange, sort, currentUserId]);
+  }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, sort, currentUserId]);
 
   const groups = useMemo(() => {
     const map = new Map<string, AscentData[]>();
@@ -153,7 +155,7 @@ export function AscentsClient({
   );
 
   const isDirty =
-    viewChip !== "all" || rarity !== null || timeRange !== "all" ||
+    viewChip !== "all" || rarity !== null || mythicFilter || timeRange !== "all" ||
     sort !== "date-desc" || peakFilter !== "";
 
   function resetFilters() {
@@ -161,6 +163,7 @@ export function AscentsClient({
     setSelectedPersonId("");
     setPersonSearch("");
     setRarity(null);
+    setMythicFilter(false);
     setTimeRange("all");
     setSort("date-desc");
   }
@@ -172,7 +175,9 @@ export function AscentsClient({
     if (viewChip === "mine")    chips.push({ key: "view", label: "👤 Mis cimas", color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
     if (viewChip === "with-me") chips.push({ key: "view", label: "👥 Conmigo", color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
     if (viewChip === "person" && selectedPerson) chips.push({ key: "view", label: `👤 ${selectedPerson.name}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
-    if (rarity) {
+    if (mythicFilter) {
+      chips.push({ key: "rarity", label: "⭐ Mythic", color: { bg: "#fffbeb", border: "#fde68a", text: "#92400e" } });
+    } else if (rarity) {
       const c = RARITY_COLORS[rarity];
       chips.push({ key: "rarity", label: `✿ ${RARITY_LABELS[rarity]}`, color: { bg: c.bg, border: c.border, text: c.text } });
     }
@@ -182,11 +187,11 @@ export function AscentsClient({
     if (sort === "rarity-desc") chips.push({ key: "sort", label: "✿ Más raras", color: { bg: "#f5f3ff", border: "#ddd6fe", text: "#6d28d9" } });
     if (peakFilter && peakFilterName) chips.push({ key: "peak", label: `⛰️ ${peakFilterName}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
     return chips;
-  }, [viewChip, selectedPerson, rarity, timeRange, sort, peakFilter, peakFilterName]);
+  }, [viewChip, selectedPerson, rarity, mythicFilter, timeRange, sort, peakFilter, peakFilterName]);
 
   function clearChip(key: string) {
     if (key === "view") { setViewChip("all"); setSelectedPersonId(""); setPersonSearch(""); }
-    if (key === "rarity") setRarity(null);
+    if (key === "rarity") { setRarity(null); setMythicFilter(false); }
     if (key === "time") setTimeRange("all");
     if (key === "sort") setSort("date-desc");
     if (key === "peak") {
@@ -469,8 +474,8 @@ export function AscentsClient({
             <div style={chipRow}>
               <div
                 className="asc-fchip"
-                style={fchip(rarity === null)}
-                onClick={() => setRarity(null)}
+                style={fchip(rarity === null && !mythicFilter)}
+                onClick={() => { setRarity(null); setMythicFilter(false); }}
               >
                 Todas
               </div>
@@ -478,13 +483,23 @@ export function AscentsClient({
                 <div
                   key={r}
                   className="asc-fchip"
-                  style={rarityChip(r, rarity === r)}
-                  onClick={() => setRarity(rarity === r ? null : r)}
+                  style={rarityChip(r, !mythicFilter && rarity === r)}
+                  onClick={() => { setMythicFilter(false); setRarity(rarity === r ? null : r); }}
                 >
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: RARITY_COLORS[r].dot, display: "inline-block", flexShrink: 0 }} />
                   {RARITY_LABELS[r]}
                 </div>
               ))}
+              <div
+                className="asc-fchip"
+                style={{
+                  ...fchip(mythicFilter),
+                  ...(mythicFilter ? { background: "#fffbeb", border: "1.5px solid #f59e0b", color: "#92400e" } : {}),
+                }}
+                onClick={() => { setMythicFilter(!mythicFilter); setRarity(null); }}
+              >
+                ⭐ Mythic
+              </div>
             </div>
           </div>
 
