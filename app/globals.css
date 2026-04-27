@@ -127,6 +127,7 @@
   transform: rotateY(180deg);
   overflow: hidden;
   border-radius: 20px;
+  padding: 10px;
 }
 
 .card-back h3 {
@@ -158,22 +159,6 @@
   border-radius: 28px;
   padding: 10px;
   box-shadow: 0 20px 50px rgba(13, 37, 56, 0.12);
-}
-
-.peak-card.daisy {
-  border: 3px solid rgba(0, 153, 92, 0.35);
-  box-shadow: 0 20px 50px rgba(0, 153, 92, 0.15);
-}
-.peak-card.gentian {
-  border: 3px solid rgba(123, 91, 166, 0.40);
-  box-shadow: 0 20px 50px rgba(123, 91, 166, 0.20);
-}
-.peak-card.edelweiss {
-  border: 3px solid rgba(249, 115, 22, 0.40);
-  box-shadow: 0 20px 50px rgba(249, 115, 22, 0.18);
-}
-.peak-card.saxifrage {
-  border: 3px solid rgba(234, 179, 8, 0.50);
 }
 
 /* Mythic glow */
@@ -229,8 +214,6 @@
 
 /* ── Inner frame ──────────────────────────────────────────────────────── */
 .capture-frame {
-  border-radius: 22px;
-  overflow: hidden;
   background: white;
 }
 
@@ -239,8 +222,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 11px 12px;
-  border-bottom: 1px solid rgba(13, 37, 56, 0.08);
+  padding: 11px 14px;
 }
 
 .daisy     .capture-topbar { background: linear-gradient(90deg, var(--pc-daisy-soft), #fff); }

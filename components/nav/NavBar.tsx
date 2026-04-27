@@ -305,7 +305,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           position: "absolute", left: "50%", transform: "translateX(calc(-50% - 3vw))",
           display: "flex", alignItems: "center", textDecoration: "none",
         }}>
-          <PeakadexLogo height={34} />
+          <PeakadexLogo height={41} />
         </Link>
 
         <div
