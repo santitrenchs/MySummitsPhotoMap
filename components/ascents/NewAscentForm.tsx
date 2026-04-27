@@ -142,6 +142,7 @@ export function NewAscentForm({
         date: form.get("date"),
         route: form.get("route") || undefined,
         description: form.get("description") || undefined,
+        photoCount: readyItems.length,
       }),
     });
 

@@ -25,6 +25,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const input = CreateSchema.parse(body);
+
+    // photoCount is required — ascents must have at least one photo queued for upload
+    const photoCount = typeof body.photoCount === "number" ? body.photoCount : 0;
+    if (photoCount < 1) {
+      return NextResponse.json({ error: "photo_required" }, { status: 422 });
+    }
+
     const ascent = await createAscent(session.user.tenantId, {
       ...input,
       createdBy: session.user.id,

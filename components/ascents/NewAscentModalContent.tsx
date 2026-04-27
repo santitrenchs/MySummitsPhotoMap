@@ -336,6 +336,13 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       return;
     }
 
+    // Photo is required — either the existing photo is kept or a new one is pending
+    if (!editPhotoUrl && !editPhotoId && !pendingPhoto) {
+      setError(t.field_photos);
+      setLoading(false);
+      return;
+    }
+
     setStatus(t.newAscent_savingAscent);
     const patchRes = await fetch(`/api/ascents/${editAscent.id}`, {
       method: "PATCH",
@@ -430,6 +437,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         date: form.get("date"),
         route: form.get("route") || undefined,
         description: form.get("description") || undefined,
+        photoCount: readyItems.length,
       }),
     });
 
