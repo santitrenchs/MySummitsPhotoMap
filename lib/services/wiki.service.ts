@@ -4,7 +4,9 @@ type WikiLang = (typeof LANGS)[number];
 export type WikiTextResult = {
   lang: WikiLang;
   title: string;
-  extract: string;
+  body: string;
+  wikiUrl: string;
+  confidence: number;
 };
 
 async function fetchOneWikiText(
@@ -16,26 +18,26 @@ async function fetchOneWikiText(
     const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(peakName)}&limit=1&format=json&origin=*`;
     const searchRes = await fetch(searchUrl, {
       headers: { "User-Agent": "AziAtlas/1.0 (https://www.aziatlas.com)" },
-      next: { revalidate: 0 },
     });
     if (!searchRes.ok) return null;
     const searchData = await searchRes.json();
     const titles: string[] = searchData[1] ?? [];
+    const urls: string[] = searchData[3] ?? [];
     if (titles.length === 0) return null;
     const title = titles[0];
+    const wikiUrl = urls[0] ?? `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}`;
 
-    // 2. REST summary endpoint for clean plain-text extract
+    // 2. REST summary for plain-text extract
     const summaryUrl = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
     const summaryRes = await fetch(summaryUrl, {
       headers: { "User-Agent": "AziAtlas/1.0 (https://www.aziatlas.com)" },
-      next: { revalidate: 0 },
     });
     if (!summaryRes.ok) return null;
     const summaryData = await summaryRes.json();
-    const extract: string = summaryData.extract ?? "";
-    if (!extract) return null;
+    const body: string = summaryData.extract ?? "";
+    if (!body) return null;
 
-    return { lang, title: summaryData.title ?? title, extract };
+    return { lang, title: summaryData.title ?? title, body, wikiUrl, confidence: 1.0 };
   } catch {
     return null;
   }

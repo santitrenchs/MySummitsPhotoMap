@@ -56,17 +56,21 @@ model Peak {
 }
 
 model PeakWikiText {
-  id        String   @id @default(uuid())
-  peakId    String
-  lang      String   // "en" | "es" | "ca" | "fr" | "de"
-  title     String
-  extract   String
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  peakId     String
+  lang       String
+  title      String
+  body       String
+  wikiUrl    String
+  confidence Float
+  status     String
+  fetchedAt  DateTime @default(now())
 
   peak Peak @relation(fields: [peakId], references: [id], onDelete: Cascade)
 
   @@unique([peakId, lang])
-  @@map("peak_wiki_texts")
+  @@index([peakId])
+  @@map("peak_wiki_descriptions")
 }
 
 // ─────────────────────────────────────────────────────────

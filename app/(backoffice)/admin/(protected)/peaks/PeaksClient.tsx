@@ -721,7 +721,7 @@ const tdStyle: React.CSSProperties = { padding: "10px 16px", verticalAlign: "mid
 
 // ── Wiki row ──────────────────────────────────────────────────────────────────
 
-type WikiText = { id: string; lang: string; title: string; extract: string };
+type WikiText = { id: string; lang: string; title: string; body: string; wikiUrl: string };
 
 function WikiRow({ peakId, isLast }: { peakId: string; isLast: boolean }) {
   const [wikiTexts, setWikiTexts] = useState<WikiText[]>([]);
@@ -791,13 +791,16 @@ function WikiRow({ peakId, isLast }: { peakId: string; isLast: boolean }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                   <span style={{ fontSize: 16 }}>{langEmoji[wt.lang] ?? "🌐"}</span>
                   <span style={{ fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{wt.lang}</span>
-                  <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 2 }}>· {wt.title}</span>
+                  <a href={wt.wikiUrl} target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: 11, color: "#2563eb", marginLeft: 2, textDecoration: "none" }}>
+                    {wt.title} ↗
+                  </a>
                 </div>
                 <p style={{
                   fontSize: 12, color: "#374151", margin: 0, lineHeight: 1.55,
                   display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden",
                 }}>
-                  {wt.extract}
+                  {wt.body}
                 </p>
               </div>
             ))}

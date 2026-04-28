@@ -13,7 +13,7 @@ async function requireAdmin() {
   return dbUser?.isAdmin ? session : null;
 }
 
-// GET /api/admin/peaks/[id]/wiki — returns stored wiki texts
+// GET /api/admin/peaks/[id]/wiki
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -53,8 +53,15 @@ export async function POST(
       results.map((r) =>
         prisma.peakWikiText.upsert({
           where: { peakId_lang: { peakId: id, lang: r.lang } },
-          create: { peakId: id, lang: r.lang, title: r.title, extract: r.extract },
-          update: { title: r.title, extract: r.extract },
+          create: {
+            peakId: id, lang: r.lang, title: r.title,
+            body: r.body, wikiUrl: r.wikiUrl, confidence: r.confidence,
+            status: "auto", fetchedAt: new Date(),
+          },
+          update: {
+            title: r.title, body: r.body, wikiUrl: r.wikiUrl,
+            confidence: r.confidence, status: "auto", fetchedAt: new Date(),
+          },
         })
       )
     );
