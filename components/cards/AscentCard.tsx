@@ -20,6 +20,7 @@ export type AscentCardData = {
     mountainRange?: string | null;
     latitude: number;
     longitude: number;
+    wikiUrl?: string | null;
   };
   photoUrl: string | null;
   photoId?: string | null;
@@ -126,6 +127,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [preloading, setPreloading] = useState(false);
 
   const isProfile = variant === "profile";
 
@@ -144,6 +146,67 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   });
   const latStr = `${Math.abs(ascent.peak.latitude).toFixed(4)}°${ascent.peak.latitude >= 0 ? "N" : "S"}`;
   const lngStr = `${Math.abs(ascent.peak.longitude).toFixed(4)}°${ascent.peak.longitude >= 0 ? "E" : "W"}`;
+
+  const buildBack = () => {
+    const barPct = Math.min(100, (ascent.peak.altitudeM / 8849) * 100).toFixed(1);
+    return (
+      <>
+        <section className="capture-frame">
+          <div className="capture-topbar">
+            <span className="capture-label">{t.card_peakCapture}</span>
+            <span className="capture-rarity-inline">
+              <span className="rarity-icon">✿</span>
+              <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
+            </span>
+          </div>
+          <div className="image-frame">
+            {(isFlipped || preloading) && (
+              <PeakMiniMap
+                lat={ascent.peak.latitude}
+                lng={ascent.peak.longitude}
+                peakId={ascent.peak.id}
+                peakName={ascent.peak.name}
+                altitudeM={ascent.peak.altitudeM}
+              />
+            )}
+            <div className="back-map-gradient" />
+            {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
+            <div className="back-map-data">
+              <div className="back-map-geo">📍 {latStr} · {lngStr}</div>
+              <div className="back-map-name">{ascent.peak.name}</div>
+              <div className="back-map-alt">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+              {ascent.peak.mountainRange && (
+                <div className="back-map-zone">{ascent.peak.mountainRange}</div>
+              )}
+              <div className="back-bar-wrap">
+                <div className="back-bar-track">
+                  <div className="back-bar-fill" style={{ width: `${barPct}%` }} />
+                </div>
+                <div className="back-bar-labels"><span>0 m</span><span>8.849 m</span></div>
+              </div>
+            </div>
+          </div>
+          {ascent.peak.wikiUrl && (
+            <div className="back-info">
+              <a
+                href={ascent.peak.wikiUrl}
+                target="_blank"
+                rel="noopener"
+                className="wiki-btn"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="8" cy="8" r="7.5" stroke="#a0aec0" />
+                  <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#1a1a1a">W</text>
+                </svg>
+                Wikipedia
+              </a>
+            </div>
+          )}
+        </section>
+      </>
+    );
+  };
 
   const buildFace = (showMap: boolean) => (
     <>
@@ -286,6 +349,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
     <div
       className={`flip-card${isFlipped ? " is-flipped" : ""}`}
       onClick={() => setIsFlipped(f => !f)}
+      onMouseEnter={() => setPreloading(true)}
+      onTouchStart={() => setPreloading(true)}
     >
       <article
         className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
@@ -293,7 +358,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
         style={{ "--card-i": Math.min(animationIndex, 8) }}
       >
         <div className="card-face card-front">{buildFace(false)}</div>
-        <div className="card-face card-back">{buildFace(true)}</div>
+        <div className="card-face card-back">{buildBack()}</div>
       </article>
     </div>
   );

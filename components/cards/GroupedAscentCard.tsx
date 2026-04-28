@@ -146,6 +146,7 @@ export function GroupedAscentCard({
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [preloading, setPreloading] = useState(false);
   const [currentDisplay, setCurrentDisplay] = useState(0);
 
   const currentRef = useRef(0);
@@ -184,6 +185,80 @@ export function GroupedAscentCard({
           (currentUserName ? p.name !== currentUserName : true)
       )
     : slide.persons;
+
+  const buildBack = () => {
+    const barPct = Math.min(100, (peak.altitudeM / 8849) * 100).toFixed(1);
+    const latStr = `${Math.abs(peak.latitude).toFixed(4)}°${peak.latitude >= 0 ? "N" : "S"}`;
+    const lngStr = `${Math.abs(peak.longitude).toFixed(4)}°${peak.longitude >= 0 ? "E" : "W"}`;
+    return (
+      <section className="capture-frame">
+        <div className="capture-topbar">
+          <span className="capture-label">{t.card_peakCapture}</span>
+          <span className="capture-rarity-inline">
+            <span className="rarity-icon">✿</span>
+            <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
+          </span>
+        </div>
+        <div className="image-frame">
+          {(isFlipped || preloading) && (
+            <PeakMiniMap
+              lat={peak.latitude}
+              lng={peak.longitude}
+              peakId={peak.id}
+              peakName={peak.name}
+              altitudeM={peak.altitudeM}
+            />
+          )}
+          <div className="back-map-gradient" />
+          {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
+          <div className="back-map-data">
+            <div className="back-map-geo">📍 {latStr} · {lngStr}</div>
+            <div className="back-map-name">{peak.name}</div>
+            <div className="back-map-alt">{peak.altitudeM.toLocaleString(t.dateLocale)} m</div>
+            {peak.mountainRange && (
+              <div className="back-map-zone">{peak.mountainRange}</div>
+            )}
+            <div className="back-bar-wrap">
+              <div className="back-bar-track">
+                <div className="back-bar-fill" style={{ width: `${barPct}%` }} />
+              </div>
+              <div className="back-bar-labels"><span>0 m</span><span>8.849 m</span></div>
+            </div>
+          </div>
+        </div>
+        <div className="back-info">
+          {peak.wikiUrl && (
+            <a
+              href={peak.wikiUrl}
+              target="_blank"
+              rel="noopener"
+              className="wiki-btn"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="8" cy="8" r="7.5" stroke="#a0aec0" />
+                <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#1a1a1a">W</text>
+              </svg>
+              Wikipedia
+            </a>
+          )}
+          <div className="back-stats">
+            <div className="back-stats-eyebrow">en Peakadex</div>
+            <div className="back-stats-row">
+              <div className="back-stat">
+                <span className="back-stat-num">{ascents.length}</span>
+                <span className="back-stat-label">Ascensiones</span>
+              </div>
+              <div className="back-stat">
+                <span className="back-stat-num">{ascents.length}</span>
+                <span className="back-stat-label">Alpinistas</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  };
 
   const buildFace = (showMap: boolean) => (
     <>
@@ -454,6 +529,8 @@ export function GroupedAscentCard({
     <div
       className={`flip-card${isFlipped ? " is-flipped" : ""}`}
       onClick={() => setIsFlipped((f) => !f)}
+      onMouseEnter={() => setPreloading(true)}
+      onTouchStart={() => setPreloading(true)}
     >
       <article
         className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
@@ -461,7 +538,7 @@ export function GroupedAscentCard({
         style={{ "--card-i": Math.min(animationIndex, 8) }}
       >
         <div className="card-face card-front">{buildFace(false)}</div>
-        <div className="card-face card-back">{buildFace(true)}</div>
+        <div className="card-face card-back">{buildBack()}</div>
       </article>
     </div>
   );

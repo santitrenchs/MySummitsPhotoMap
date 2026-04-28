@@ -456,3 +456,125 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ── Card back — map hero ─────────────────────────────────────────────── */
+
+.back-map-gradient {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 55%;
+  background: linear-gradient(to top, rgba(7,18,31,.88) 0%, rgba(7,18,31,.48) 55%, transparent 100%);
+  pointer-events: none;
+}
+
+.back-map-data {
+  position: absolute; bottom: 14px; left: 14px; right: 14px;
+  pointer-events: none;
+}
+
+.back-map-geo {
+  font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,.7);
+  text-shadow: 0 1px 4px rgba(0,0,0,.4);
+  margin-bottom: 5px;
+}
+
+.back-map-name {
+  font-size: 22px; font-weight: 900; color: white;
+  letter-spacing: -0.03em; line-height: 1.1;
+  text-shadow: 0 2px 8px rgba(0,0,0,.5);
+  margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.back-map-alt {
+  font-size: 28px; font-weight: 900; color: white;
+  letter-spacing: -0.04em; line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+
+.back-map-zone {
+  font-size: 12px; font-weight: 600;
+  color: rgba(255,255,255,.85);
+  margin-top: 3px;
+  text-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+
+.back-bar-wrap {
+  margin-top: 8px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+
+.back-bar-track {
+  height: 4px; border-radius: 999px;
+  background: rgba(255,255,255,.25); overflow: hidden;
+}
+
+.back-bar-fill {
+  height: 100%; border-radius: 999px;
+}
+
+.daisy     .back-bar-fill { background: var(--pc-daisy); }
+.gentian   .back-bar-fill { background: var(--pc-gentian); }
+.edelweiss .back-bar-fill { background: var(--pc-edelweiss); }
+.saxifrage .back-bar-fill { background: var(--pc-saxifrage); }
+
+.back-bar-labels {
+  display: flex; justify-content: space-between;
+  font-size: 9px; font-weight: 700;
+  color: rgba(255,255,255,.45); letter-spacing: .04em;
+}
+
+/* ── Below-map section ────────────────────────────────────────────────── */
+
+.back-info {
+  padding: 12px 14px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+
+.wiki-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: #374151;
+  text-decoration: none;
+  background: #F8FAFC; border: 1px solid #E5E7EB;
+  border-radius: 999px; padding: 6px 12px;
+  flex-shrink: 0;
+}
+
+.wiki-btn:hover { background: #F1F5F9; }
+
+/* ── Back stats ───────────────────────────────────────────────────────── */
+
+.back-stats { display: flex; flex-direction: column; gap: 4px; }
+
+.back-stats-eyebrow {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: #94a3b8; display: flex; align-items: center; gap: 5px;
+}
+
+.back-stats-eyebrow::before {
+  content: ""; display: inline-block;
+  width: 5px; height: 5px; border-radius: 50%;
+}
+.daisy     .back-stats-eyebrow::before { background: var(--pc-daisy); }
+.gentian   .back-stats-eyebrow::before { background: var(--pc-gentian); }
+.edelweiss .back-stats-eyebrow::before { background: var(--pc-edelweiss); }
+.saxifrage .back-stats-eyebrow::before { background: var(--pc-saxifrage); }
+
+.back-stats-row { display: flex; gap: 0; }
+
+.back-stat { display: flex; flex-direction: column; gap: 1px; padding-right: 12px; }
+.back-stat + .back-stat { border-left: 1px solid #E5E7EB; padding-left: 12px; padding-right: 0; }
+
+.back-stat-num {
+  font-size: 22px; font-weight: 900;
+  letter-spacing: -0.05em; line-height: 1;
+  color: #111827;
+}
+
+.back-stat-label {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: #94a3b8;
+}

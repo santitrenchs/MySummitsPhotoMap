@@ -34,7 +34,7 @@ function enrichAscent(
     description: string | null;
     wikiloc: string | null;
     createdBy: string;
-    peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number };
+    peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number; wikiTexts?: { wikiUrl: string }[] };
     photos: { id: string; url: string; originalStorageKey: string | null; faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[] }[];
   },
   isOwn: boolean,
@@ -59,7 +59,7 @@ function enrichAscent(
     description: a.description,
     wikiloc: a.wikiloc,
     createdByUserId: a.createdBy,
-    peak: a.peak,
+    peak: { ...a.peak, wikiTexts: undefined, wikiUrl: a.peak.wikiTexts?.[0]?.wikiUrl ?? null },
     firstPhotoId: firstPhoto?.id ?? null,
     firstPhotoUrl: firstPhoto?.url ?? null,
     firstPhotoOriginalKey: firstPhoto?.originalStorageKey ?? null,
@@ -95,7 +95,7 @@ export default async function AscentsPage() {
       where: { tenantId: session.user.tenantId, createdBy: session.user.id },
       orderBy: { date: "desc" },
       include: {
-        peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true } },
+        peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { wikiUrl: true }, take: 1 } } },
         photos: PHOTOS_INCLUDE,
         user: { select: { id: true, name: true, avatarUrl: true } },
       },
@@ -105,7 +105,7 @@ export default async function AscentsPage() {
           where: { createdBy: { in: friendUserIds } },
           orderBy: { date: "desc" },
           include: {
-            peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true } },
+            peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { wikiUrl: true }, take: 1 } } },
             photos: PHOTOS_INCLUDE,
             user: { select: { id: true, name: true, avatarUrl: true } },
           },
