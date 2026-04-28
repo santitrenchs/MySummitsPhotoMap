@@ -20,6 +20,7 @@ type ClickedPoint = {
   lat: number;
   osmName: string | null;
   osmEle: number | null;
+  osmId: string | null;
 };
 
 type ToastState = { msg: string; ok: boolean } | null;
@@ -227,7 +228,11 @@ export default function GeoposicionClient() {
     ]);
 
     if (overpassResult.status === "fulfilled" && overpassResult.value) {
-      const tags = overpassResult.value;
+      const { tags, osmId: overpassOsmId } = overpassResult.value;
+      // Prefer the Overpass node ID over the vector tile feature ID (more reliable)
+      if (overpassOsmId) {
+        setClickedPoint((prev) => prev ? { ...prev, osmId: overpassOsmId } : prev);
+      }
       const overpassName = tags["name:es"] || tags["name:ca"] || tags.name;
       if (overpassName && !form.name) { form.name = overpassName; filled.name = "osm"; }
       if (overpassName && form.name !== overpassName && !osmName) { form.name = overpassName; filled.name = "osm"; }
@@ -253,8 +258,8 @@ export default function GeoposicionClient() {
     setOsmLoading(false);
   }
 
-  async function fetchOverpass(lat: number, lng: number): Promise<Record<string, string> | null> {
-    const query = `[out:json];node["natural"="peak"](around:500,${lat},${lng});out tags;`;
+  async function fetchOverpass(lat: number, lng: number): Promise<{ tags: Record<string, string>; osmId: string | null } | null> {
+    const query = `[out:json];node["natural"="peak"](around:500,${lat},${lng});out body;`;
     const res = await fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",
       body: `data=${encodeURIComponent(query)}`,
@@ -262,8 +267,12 @@ export default function GeoposicionClient() {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const elements: Array<{ tags: Record<string, string> }> = data.elements ?? [];
-    return elements[0]?.tags ?? null;
+    const elements: Array<{ id?: number; tags: Record<string, string> }> = data.elements ?? [];
+    if (!elements[0]) return null;
+    return {
+      tags: elements[0].tags ?? {},
+      osmId: elements[0].id != null ? String(elements[0].id) : null,
+    };
   }
 
   async function fetchNominatimReverse(lat: number, lng: number): Promise<{
@@ -335,6 +344,7 @@ export default function GeoposicionClient() {
           tag1: createForm.tag1.trim() || null,
           tag2: createForm.tag2.trim() || null,
           tag3: createForm.tag3.trim() || null,
+          osmId: clickedPoint.osmId ?? null,
         }),
       });
       if (!res.ok) throw new Error("Error al crear");
@@ -363,6 +373,7 @@ export default function GeoposicionClient() {
           latitude: clickedPoint.lat,
           longitude: clickedPoint.lng,
           gpsVerified: true,
+          osmId: clickedPoint.osmId ?? null,
         }),
       });
       if (!res.ok) throw new Error("Error al guardar");
@@ -533,11 +544,15 @@ export default function GeoposicionClient() {
         const feature = e.features?.[0];
         const props = feature?.properties ?? {};
         const ele = props.ele ? Number(props.ele) : null;
+        // OSM node ID: available as feature.id in vector tiles
+        const rawId = feature?.id ?? props["@id"] ?? props.osm_id ?? null;
+        const osmId = rawId != null ? String(rawId) : null;
         setClickedPoint({
           lng: e.lngLat.lng,
           lat: e.lngLat.lat,
           osmName: props.name ?? null,
           osmEle: isNaN(ele as number) ? null : ele,
+          osmId,
         });
         setSearchQuery(props.name ?? "");
         searchPeaks(props.name ?? "");

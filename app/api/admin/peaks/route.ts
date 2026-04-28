@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
       tag2: body.tag2?.trim() || null,
       tag3: body.tag3?.trim() || null,
       gpsVerified: true,
+      osmId: body.osmId?.trim() || null,
     },
   });
   return NextResponse.json(peak, { status: 201 });

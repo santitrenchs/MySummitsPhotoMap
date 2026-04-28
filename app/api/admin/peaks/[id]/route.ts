@@ -36,6 +36,7 @@ export async function PATCH(
   if ("tag3"          in body) data.tag3          = body.tag3          ?? null;
   if ("gpsVerified"   in body) data.gpsVerified   = Boolean(body.gpsVerified);
   if ("isMythic"      in body) data.isMythic      = Boolean(body.isMythic);
+  if ("osmId"         in body) data.osmId         = body.osmId?.trim() || null;
 
   const peak = await prisma.peak.update({ where: { id }, data });
   return NextResponse.json(peak);

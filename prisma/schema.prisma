@@ -47,6 +47,8 @@ model Peak {
   rarityId      String?
   createdAt     DateTime @default(now())
 
+  osmId     String?        @unique
+
   rarity    Rarity?        @relation(fields: [rarityId], references: [id])
   ascents   Ascent[]
   wikiTexts PeakWikiText[]
