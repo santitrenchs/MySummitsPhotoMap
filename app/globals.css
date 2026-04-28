@@ -128,6 +128,21 @@
   overflow: hidden;
   border-radius: 20px;
   padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-back .capture-frame {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.card-back .image-frame {
+  flex: 1;
+  aspect-ratio: auto;
+  min-height: 0;
 }
 
 .card-back h3 {
