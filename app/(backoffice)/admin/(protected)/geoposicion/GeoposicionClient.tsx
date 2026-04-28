@@ -338,6 +338,11 @@ export default function GeoposicionClient() {
         }),
       });
       if (!res.ok) throw new Error("Error al crear");
+      const created = await res.json();
+      // Fire-and-forget: fetch Wikipedia texts in background
+      if (created?.id) {
+        fetch(`/api/admin/peaks/${created.id}/wiki`, { method: "POST" }).catch(() => {});
+      }
       showToast(`✓ «${createForm.name.trim()}» creada y verificada`, true);
       closePanel();
     } catch {

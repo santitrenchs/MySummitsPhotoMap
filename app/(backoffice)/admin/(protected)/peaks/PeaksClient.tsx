@@ -371,7 +371,7 @@ export function PeaksClient() {
               <tbody>
                 {peaks.map((peak, i) =>
                   editingId === peak.id ? (
-                    <EditRow
+                    <EditRowWithWiki
                       key={peak.id}
                       peak={peak}
                       state={editState}
@@ -571,6 +571,17 @@ function ViewRow({
   );
 }
 
+// ── Edit row + Wiki row (combined, because tbody can't use fragments in all contexts) ─
+
+function EditRowWithWiki(props: Parameters<typeof EditRow>[0]) {
+  return (
+    <>
+      <EditRow {...props} isLast={false} />
+      <WikiRow peakId={props.peak.id} isLast={props.isLast} />
+    </>
+  );
+}
+
 // ── Edit row ──────────────────────────────────────────────────────────────────
 
 function EditRow({
@@ -707,3 +718,88 @@ function PagBtn({ children, disabled, onClick }: { children: React.ReactNode; di
 }
 
 const tdStyle: React.CSSProperties = { padding: "10px 16px", verticalAlign: "middle" };
+
+// ── Wiki row ──────────────────────────────────────────────────────────────────
+
+type WikiText = { id: string; lang: string; title: string; extract: string };
+
+function WikiRow({ peakId, isLast }: { peakId: string; isLast: boolean }) {
+  const [wikiTexts, setWikiTexts] = useState<WikiText[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/admin/peaks/${peakId}/wiki`)
+      .then((r) => r.json())
+      .then((d) => setWikiTexts(d.wikiTexts ?? []))
+      .catch(() => setError("Error al cargar textos"))
+      .finally(() => setLoading(false));
+  }, [peakId]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/peaks/${peakId}/wiki`, { method: "POST" });
+      const d = await res.json();
+      setWikiTexts(d.wikiTexts ?? []);
+    } catch {
+      setError("Error al actualizar desde Wikipedia");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  const langEmoji: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", ca: "🏴󠁥󠁳󠁣󠁴󠁿", fr: "🇫🇷", de: "🇩🇪" };
+
+  return (
+    <tr style={{ background: "#f8fafc", borderBottom: isLast ? "none" : "1px solid #bfdbfe" }}>
+      <td colSpan={11} style={{ padding: "12px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Textos Wikipedia
+          </span>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            style={{
+              border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff",
+              color: "#334155", fontSize: 12, fontWeight: 600, padding: "4px 10px",
+              cursor: refreshing ? "not-allowed" : "pointer", opacity: refreshing ? 0.6 : 1,
+              display: "flex", alignItems: "center", gap: 4,
+            }}
+          >
+            {refreshing ? "Buscando…" : "🔄 Actualizar desde Wikipedia"}
+          </button>
+        </div>
+        {loading ? (
+          <span style={{ fontSize: 12, color: "#94a3b8" }}>Cargando…</span>
+        ) : error ? (
+          <span style={{ fontSize: 12, color: "#b91c1c" }}>{error}</span>
+        ) : wikiTexts.length === 0 ? (
+          <span style={{ fontSize: 12, color: "#94a3b8" }}>Sin textos guardados — pulsa "Actualizar desde Wikipedia" para buscar.</span>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+            {wikiTexts.map((wt) => (
+              <div key={wt.lang} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <span style={{ fontSize: 16 }}>{langEmoji[wt.lang] ?? "🌐"}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{wt.lang}</span>
+                  <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 2 }}>· {wt.title}</span>
+                </div>
+                <p style={{
+                  fontSize: 12, color: "#374151", margin: 0, lineHeight: 1.55,
+                  display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden",
+                }}>
+                  {wt.extract}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+}

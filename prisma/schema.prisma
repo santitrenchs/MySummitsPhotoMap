@@ -47,11 +47,26 @@ model Peak {
   rarityId      String?
   createdAt     DateTime @default(now())
 
-  rarity  Rarity? @relation(fields: [rarityId], references: [id])
-  ascents Ascent[]
+  rarity    Rarity?        @relation(fields: [rarityId], references: [id])
+  ascents   Ascent[]
+  wikiTexts PeakWikiText[]
 
   @@index([rarityId])
   @@map("peaks")
+}
+
+model PeakWikiText {
+  id        String   @id @default(uuid())
+  peakId    String
+  lang      String   // "en" | "es" | "ca" | "fr" | "de"
+  title     String
+  extract   String
+  updatedAt DateTime @updatedAt
+
+  peak Peak @relation(fields: [peakId], references: [id], onDelete: Cascade)
+
+  @@unique([peakId, lang])
+  @@map("peak_wiki_texts")
 }
 
 // ─────────────────────────────────────────────────────────
