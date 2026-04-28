@@ -732,9 +732,12 @@ function WikiRow({ peakId, isLast }: { peakId: string; isLast: boolean }) {
   useEffect(() => {
     setLoading(true);
     fetch(`/api/admin/peaks/${peakId}/wiki`)
-      .then((r) => r.json())
-      .then((d) => setWikiTexts(d.wikiTexts ?? []))
-      .catch(() => setError("Error al cargar textos"))
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+        setWikiTexts(d.wikiTexts ?? []);
+      })
+      .catch((e) => setError(`Error al cargar textos: ${e.message}`))
       .finally(() => setLoading(false));
   }, [peakId]);
 
@@ -744,9 +747,10 @@ function WikiRow({ peakId, isLast }: { peakId: string; isLast: boolean }) {
     try {
       const res = await fetch(`/api/admin/peaks/${peakId}/wiki`, { method: "POST" });
       const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? `HTTP ${res.status}`);
       setWikiTexts(d.wikiTexts ?? []);
-    } catch {
-      setError("Error al actualizar desde Wikipedia");
+    } catch (e) {
+      setError(`Error: ${(e as Error).message}`);
     } finally {
       setRefreshing(false);
     }
