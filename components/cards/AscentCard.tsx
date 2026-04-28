@@ -187,11 +187,9 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               </div>
             </div>
           </div>
-          {(ascent.peak.wikiBody || ascent.peak.wikiUrl) && (
+          {ascent.peak.wikiBody && (
             <div className="back-info">
-              {ascent.peak.wikiBody && (
-                <p className="back-wiki-text">{ascent.peak.wikiBody}</p>
-              )}
+              <p className="back-wiki-text">{ascent.peak.wikiBody}</p>
               {ascent.peak.wikiUrl && (
                 <a
                   href={ascent.peak.wikiUrl}

@@ -226,36 +226,36 @@ export function GroupedAscentCard({
             </div>
           </div>
         </div>
-        <div className="back-info">
-          {peak.wikiUrl && (
-            <a
-              href={peak.wikiUrl}
-              target="_blank"
-              rel="noopener"
-              className="wiki-btn"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="8" cy="8" r="7.5" stroke="#a0aec0" />
-                <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#1a1a1a">W</text>
-              </svg>
-              Wikipedia
-            </a>
-          )}
-          <div className="back-stats">
-            <div className="back-stats-eyebrow">en Peakadex</div>
-            <div className="back-stats-row">
-              <div className="back-stat">
-                <span className="back-stat-num">{ascents.length}</span>
-                <span className="back-stat-label">Ascensiones</span>
-              </div>
-              <div className="back-stat">
-                <span className="back-stat-num">{ascents.length}</span>
-                <span className="back-stat-label">Alpinistas</span>
-              </div>
-            </div>
+        <div className="stat-band">
+          <div className="stat-item">
+            <span className="stat-label">Ascensiones</span>
+            <div className="stat-value">{ascents.length}</div>
+          </div>
+          <div className="stat-item" style={{ textAlign: "right" }}>
+            <span className="stat-label">Alpinistas</span>
+            <div className="stat-value">{ascents.length}</div>
           </div>
         </div>
+        {peak.wikiBody && (
+          <div className="back-info">
+            <p className="back-wiki-text">{peak.wikiBody}</p>
+            {peak.wikiUrl && (
+              <a
+                href={peak.wikiUrl}
+                target="_blank"
+                rel="noopener"
+                className="wiki-btn"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="8" cy="8" r="7.5" stroke="#a0aec0" />
+                  <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#1a1a1a">W</text>
+                </svg>
+                Wikipedia
+              </a>
+            )}
+          </div>
+        )}
       </section>
     );
   };
