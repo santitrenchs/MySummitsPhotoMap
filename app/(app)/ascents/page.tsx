@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AscentsClient } from "@/components/ascents/AscentsClient";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getLocale } from "@/lib/i18n/server";
 import { prisma } from "@/lib/db/client";
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 
@@ -34,12 +34,13 @@ function enrichAscent(
     description: string | null;
     wikiloc: string | null;
     createdBy: string;
-    peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number; wikiTexts?: { wikiUrl: string }[] };
+    peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number; wikiTexts?: { lang: string; wikiUrl: string; body: string }[] };
     photos: { id: string; url: string; originalStorageKey: string | null; faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[] }[];
   },
   isOwn: boolean,
   userName: string,
   userAvatarUrl: string | null,
+  locale: string,
 ) {
   const firstPhoto = a.photos[0] ?? null;
   const personMap = new Map<string, { id: string; name: string; email: string | null }>();
@@ -52,6 +53,8 @@ function enrichAscent(
       }
     }
   }
+  const wikiTexts = a.peak.wikiTexts ?? [];
+  const wikiText = wikiTexts.find(w => w.lang === locale) ?? wikiTexts.find(w => w.lang === "en") ?? wikiTexts[0] ?? null;
   return {
     id: a.id,
     date: a.date.toISOString(),
@@ -59,7 +62,7 @@ function enrichAscent(
     description: a.description,
     wikiloc: a.wikiloc,
     createdByUserId: a.createdBy,
-    peak: { ...a.peak, wikiTexts: undefined, wikiUrl: a.peak.wikiTexts?.[0]?.wikiUrl ?? null },
+    peak: { ...a.peak, wikiTexts: undefined, wikiUrl: wikiText?.wikiUrl ?? null, wikiBody: wikiText?.body ?? null },
     firstPhotoId: firstPhoto?.id ?? null,
     firstPhotoUrl: firstPhoto?.url ?? null,
     firstPhotoOriginalKey: firstPhoto?.originalStorageKey ?? null,
@@ -73,7 +76,7 @@ function enrichAscent(
 export default async function AscentsPage() {
   const session = await auth();
   if (!session) redirect("/login");
-  const t = await getServerT();
+  const [t, locale] = await Promise.all([getServerT(), getLocale()]);
 
   // Fetch friendships + tenant DB in parallel
   const [friendships, db] = await Promise.all([
@@ -95,7 +98,7 @@ export default async function AscentsPage() {
       where: { tenantId: session.user.tenantId, createdBy: session.user.id },
       orderBy: { date: "desc" },
       include: {
-        peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { wikiUrl: true }, take: 1 } } },
+        peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { lang: true, wikiUrl: true, body: true } } } },
         photos: PHOTOS_INCLUDE,
         user: { select: { id: true, name: true, avatarUrl: true } },
       },
@@ -105,7 +108,7 @@ export default async function AscentsPage() {
           where: { createdBy: { in: friendUserIds } },
           orderBy: { date: "desc" },
           include: {
-            peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { wikiUrl: true }, take: 1 } } },
+            peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { lang: true, wikiUrl: true, body: true } } } },
             photos: PHOTOS_INCLUDE,
             user: { select: { id: true, name: true, avatarUrl: true } },
           },
@@ -115,11 +118,11 @@ export default async function AscentsPage() {
 
   const myAscents = myRaw.map((a) => {
     const u = a.user as { name?: string | null; avatarUrl?: string | null } | null;
-    return enrichAscent(a as Parameters<typeof enrichAscent>[0], true, u?.name ?? session.user.name ?? "", u?.avatarUrl ?? null);
+    return enrichAscent(a as Parameters<typeof enrichAscent>[0], true, u?.name ?? session.user.name ?? "", u?.avatarUrl ?? null, locale);
   });
   const friendAscents = friendsRaw.map((a) => {
     const u = a.user as { name?: string | null; avatarUrl?: string | null } | null;
-    return enrichAscent(a as Parameters<typeof enrichAscent>[0], false, u?.name ?? "?", u?.avatarUrl ?? null);
+    return enrichAscent(a as Parameters<typeof enrichAscent>[0], false, u?.name ?? "?", u?.avatarUrl ?? null, locale);
   });
 
   // Merge and sort by date desc

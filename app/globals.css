@@ -547,6 +547,17 @@
   gap: 12px;
 }
 
+.back-wiki-text {
+  font-size: 11px;
+  color: #374151;
+  line-height: 1.5;
+  margin: 0 0 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .wiki-btn {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 600; color: #374151;

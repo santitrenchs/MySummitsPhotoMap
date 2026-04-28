@@ -21,6 +21,7 @@ export type AscentCardData = {
     latitude: number;
     longitude: number;
     wikiUrl?: string | null;
+    wikiBody?: string | null;
   };
   photoUrl: string | null;
   photoId?: string | null;
@@ -186,21 +187,26 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               </div>
             </div>
           </div>
-          {ascent.peak.wikiUrl && (
+          {(ascent.peak.wikiBody || ascent.peak.wikiUrl) && (
             <div className="back-info">
-              <a
-                href={ascent.peak.wikiUrl}
-                target="_blank"
-                rel="noopener"
-                className="wiki-btn"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="8" cy="8" r="7.5" stroke="#a0aec0" />
-                  <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#1a1a1a">W</text>
-                </svg>
-                Wikipedia
-              </a>
+              {ascent.peak.wikiBody && (
+                <p className="back-wiki-text">{ascent.peak.wikiBody}</p>
+              )}
+              {ascent.peak.wikiUrl && (
+                <a
+                  href={ascent.peak.wikiUrl}
+                  target="_blank"
+                  rel="noopener"
+                  className="wiki-btn"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8" cy="8" r="7.5" stroke="#a0aec0" />
+                    <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#1a1a1a">W</text>
+                  </svg>
+                  Wikipedia
+                </a>
+              )}
             </div>
           )}
         </section>
