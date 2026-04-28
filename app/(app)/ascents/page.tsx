@@ -52,6 +52,7 @@ function enrichAscent(
       }
     }
   }
+  console.log('[wiki-debug]', a.peak.name, JSON.stringify(a.peak.wikiTexts));
   return {
     id: a.id,
     date: a.date.toISOString(),
