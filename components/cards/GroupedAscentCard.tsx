@@ -226,6 +226,7 @@ export function GroupedAscentCard({
             </div>
           </div>
         </div>
+        <div className="back-stats-eyebrow">Estadísticas Peakadex</div>
         <div className="stat-band">
           <div className="stat-item">
             <span className="stat-label">Ascensiones</span>

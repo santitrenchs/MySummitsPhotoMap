@@ -187,6 +187,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               </div>
             </div>
           </div>
+          <div className="back-stats-eyebrow">Estadísticas Peakadex</div>
           <div className="stat-band">
             <div className="stat-item">
               <span className="stat-label">Ascensiones</span>
