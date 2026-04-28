@@ -550,24 +550,23 @@
 .back-wiki-text {
   font-size: 11px;
   color: #374151;
-  line-height: 1.5;
-  margin: 0 0 8px;
+  line-height: 1.6;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.wiki-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600; color: #374151;
+.wiki-source-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0.65;
   text-decoration: none;
-  background: #F8FAFC; border: 1px solid #E5E7EB;
-  border-radius: 999px; padding: 6px 12px;
   flex-shrink: 0;
 }
-
-.wiki-btn:hover { background: #F1F5F9; }
 
 /* ── Back stats ───────────────────────────────────────────────────────── */
 

@@ -238,22 +238,23 @@ export function GroupedAscentCard({
         </div>
         {peak.wikiBody && (
           <div className="back-info">
-            <p className="back-wiki-text">{peak.wikiBody}</p>
-            {peak.wikiUrl && (
-              <a
-                href={peak.wikiUrl}
-                target="_blank"
-                rel="noopener"
-                className="wiki-btn"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="8" cy="8" r="7.5" stroke="#a0aec0" />
-                  <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#1a1a1a">W</text>
-                </svg>
-                Wikipedia
-              </a>
-            )}
+            <p className="back-wiki-text">
+              {peak.wikiBody}
+              {peak.wikiUrl && (
+                <a
+                  href={peak.wikiUrl}
+                  target="_blank"
+                  rel="noopener"
+                  className="wiki-source-icon"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8" cy="8" r="7.5" stroke="#9ca3af" />
+                    <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#6b7280">W</text>
+                  </svg>
+                </a>
+              )}
+            </p>
           </div>
         )}
       </section>
