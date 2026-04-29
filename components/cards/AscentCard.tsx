@@ -206,23 +206,21 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           </div>
           {ascent.peak.wikiBody && (
             <div className="back-info">
-              <p className="back-wiki-text">
-                {ascent.peak.wikiBody}
-                {ascent.peak.wikiUrl && (
-                  <a
-                    href={ascent.peak.wikiUrl}
-                    target="_blank"
-                    rel="noopener"
-                    className="wiki-source-icon"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="8" cy="8" r="7.5" stroke="#9ca3af" />
-                      <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#6b7280">W</text>
-                    </svg>
-                  </a>
-                )}
-              </p>
+              <p className="back-wiki-text">{ascent.peak.wikiBody}</p>
+              {ascent.peak.wikiUrl && (
+                <a
+                  href={ascent.peak.wikiUrl}
+                  target="_blank"
+                  rel="noopener"
+                  className="wiki-source-icon"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8" cy="8" r="7.5" stroke="#9ca3af" />
+                    <text x="8" y="12" textAnchor="middle" fontFamily="Linux Libertine,Georgia,serif" fontSize="11" fontWeight="700" fill="#6b7280">W</text>
+                  </svg>
+                </a>
+              )}
             </div>
           )}
         </section>
