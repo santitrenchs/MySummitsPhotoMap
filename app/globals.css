@@ -26,6 +26,11 @@
   button, [role="button"] { font-weight: 500; }
 }
 
+@keyframes ball-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* ── AscentCard shared styles ─────────────────────────────────────────── */
 @keyframes cardFadeUp {
   from { opacity: 0; transform: translateY(20px); }
