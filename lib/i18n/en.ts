@@ -216,6 +216,7 @@ export const en: Dict = {
   home_onboarding_title: "Your adventure starts here 🏔️",
   home_onboarding_sub: "Log your first summit to unlock your progress and compete with friends.",
   home_onboarding_cta: "Log first ascent",
+  home_chartTitle: "Last 6 months", home_chartMeters: "meters ascended",
   home_altZone1: "Low mountain", home_altZone2: "Mid mountain",
   home_altZone3: "High mountain", home_altZone4: "Technical alpine",
   home_altZone5: "Expedition", home_altZone6: "Extreme expedition",

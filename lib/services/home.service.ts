@@ -23,6 +23,12 @@ export type RecentAscent = {
   photoUrl: string | null;
 };
 
+export type MonthlyBar = {
+  isoMonth: string;       // "YYYY-MM"
+  summits: number;
+  metersAscended: number;
+};
+
 export type FriendActivity = {
   ascentId: string;
   userName: string;
@@ -54,6 +60,8 @@ export type HomeData = {
   nextRankGap: number; // summits needed to beat next rank up
   recentAscents: RecentAscent[];
   friendsActivity: FriendActivity[];
+  monthlyStats: MonthlyBar[];
+  totalMetersAscended: number;
 };
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -183,7 +191,27 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   const nextRankName = personAhead?.name ?? null;
   const nextRankGap = personAhead ? personAhead.ep - myEp + 1 : 0;
 
-  // 6. Recent ascents (last 5)
+  // 6. Monthly stats — last 6 months, derived from myAscents (no extra query)
+  const totalMetersAscended = myAscents.reduce((sum, a) => sum + a.peak.altitudeM, 0);
+  const now = new Date();
+  const monthlyStats: MonthlyBar[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const isoMonth = `${y}-${String(m + 1).padStart(2, "0")}`;
+    const bucket = myAscents.filter((a) => {
+      const ad = new Date(a.date);
+      return ad.getFullYear() === y && ad.getMonth() === m;
+    });
+    monthlyStats.push({
+      isoMonth,
+      summits: bucket.length,
+      metersAscended: bucket.reduce((s, a) => s + a.peak.altitudeM, 0),
+    });
+  }
+
+  // 7. Recent ascents (last 5)
   const recentAscents: RecentAscent[] = myAscents.slice(0, 5).map((a) => ({
     id: a.id,
     date: a.date.toISOString(),
@@ -193,7 +221,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
     photoUrl: a.photos[0]?.url ?? null,
   }));
 
-  // 7. Friends activity (last 5 from friends)
+  // 8. Friends activity (last 5 from friends)
   const friendsActivity: FriendActivity[] = [];
   if (friendUserIds.length > 0) {
     const activityRows = await prisma.ascent.findMany({
@@ -228,5 +256,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
     nextRankGap,
     recentAscents,
     friendsActivity,
+    monthlyStats,
+    totalMetersAscended,
   };
 }

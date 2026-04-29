@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { HomeData } from "@/lib/services/home.service";
+import type { HomeData, MonthlyBar } from "@/lib/services/home.service";
 import type { Dict } from "@/lib/i18n/types";
 import { i } from "@/lib/i18n";
 
@@ -118,22 +118,6 @@ const LEVEL_COLORS = [
   { accent: "#7c3aed", light: "#faf5ff", mid: "#ede9fe", dark: "#5b21b6" }, // 5 Legendary — purple
 ];
 
-// ─── Level icon (sprite sheet: /brand/Niveles Peakadex.png, 230×64, 5 slots × 46px) ──
-
-const LEVEL_SPRITE_SLOT = 46;
-
-function LevelIcon({ idx }: { idx: number }) {
-  const x = -(idx - 1) * LEVEL_SPRITE_SLOT;
-  return (
-    <div style={{
-      width: LEVEL_SPRITE_SLOT, height: 64, flexShrink: 0,
-      backgroundImage: "url('/brand/Niveles Peakadex.png')",
-      backgroundSize: "230px 64px",
-      backgroundPosition: `${x}px 0`,
-      backgroundRepeat: "no-repeat",
-    }} />
-  );
-}
 
 // ─── Level card ───────────────────────────────────────────────────────────────
 
@@ -154,12 +138,12 @@ function LevelCard({ def, status, stats, t, locale }: {
   return (
     <div style={{
       display: "flex", gap: 12, alignItems: "flex-start",
-      padding: "16px 14px",
-      background: isCurrent ? "#eff6ff" : isCompleted ? color.light : "white",
-      borderTop:    `1.5px solid ${isCompleted ? color.mid : isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
-      borderRight:  `1.5px solid ${isCompleted ? color.mid : isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
-      borderBottom: `1.5px solid ${isCompleted ? color.mid : isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
-      borderLeft:   isCurrent ? `4px solid #0369a1` : `1.5px solid ${isCompleted ? color.mid : "#e5e7eb"}`,
+      padding: "10px 14px",
+      background: isCurrent ? "#eff6ff" : "#F9FAFB",
+      borderTop:    `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
+      borderRight:  `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
+      borderBottom: `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
+      borderLeft:   isCurrent ? `4px solid #0369a1` : `1.5px solid #e5e7eb`,
       borderRadius: 16,
       boxShadow: isCurrent ? "0 2px 12px rgba(3,105,161,0.10)" : "0 1px 3px rgba(0,0,0,0.04)",
       opacity: status === "locked" ? 0.5 : 1,
@@ -169,8 +153,7 @@ function LevelCard({ def, status, stats, t, locale }: {
       {/* Left badge: ✓ (level color) or number (blue / gray) */}
       <div style={{
         width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-        marginTop: 18,
-        background: isCompleted ? color.accent : isCurrent ? "#0369a1" : "#d1d5db",
+        background: isCompleted ? "#16a34a" : isCurrent ? "#0369a1" : "#d1d5db",
         color: "white",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: isCompleted ? 13 : 11, fontWeight: 800,
@@ -178,8 +161,15 @@ function LevelCard({ def, status, stats, t, locale }: {
         {isCompleted ? "✓" : def.idx}
       </div>
 
-      {/* Sprite icon — locked keeps natural colors, card opacity does the dimming */}
-      <LevelIcon idx={def.idx} />
+      {/* Emoji icon */}
+      <div style={{
+        width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+        background: isCurrent ? "#dbeafe" : "#f3f4f6",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 15,
+      }}>
+        {def.emoji}
+      </div>
 
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -195,7 +185,7 @@ function LevelCard({ def, status, stats, t, locale }: {
           {isCompleted && (
             <span style={{
               fontSize: 11, fontWeight: 700, flexShrink: 0,
-              background: color.mid, color: color.dark,
+              background: "#dcfce7", color: "#16a34a",
               padding: "3px 10px", borderRadius: 20,
             }}>✓ Completed</span>
           )}
@@ -216,8 +206,8 @@ function LevelCard({ def, status, stats, t, locale }: {
           {def.targetAscents != null && (
             <span style={{
               fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8,
-              background: isCompleted ? color.mid : "#f3f4f6",
-              color: isCompleted ? color.dark : "#374151",
+              background: "#f3f4f6",
+              color: "#374151",
             }}>
               {def.targetAscents} {t.home_statSummits.toLowerCase()}
             </span>
@@ -230,8 +220,8 @@ function LevelCard({ def, status, stats, t, locale }: {
             return (
               <span key={r.threshold} style={{
                 fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8,
-                background: isCompleted ? color.mid : met ? "#f0fdf4" : "#f3f4f6",
-                color: isCompleted ? color.dark : met ? "#16a34a" : "#374151",
+                background: met ? "#f0fdf4" : "#f3f4f6",
+                color: met ? "#16a34a" : "#374151",
               }}>
                 {label}
               </span>
@@ -325,6 +315,38 @@ function BadgeCard({ emoji, title, sub, howTo, rarity, cairns, earned, current, 
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Monthly chart ────────────────────────────────────────────────────────────
+
+function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) {
+  const max = Math.max(...data.map((d) => d.summits), 1);
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
+      {data.map((d) => {
+        const barH = d.summits > 0 ? Math.max(Math.round((d.summits / max) * 64), 8) : 3;
+        const label = new Intl.DateTimeFormat(locale, { month: "short" }).format(
+          new Date(`${d.isoMonth}-15`)
+        );
+        return (
+          <div key={d.isoMonth} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, lineHeight: 1,
+              color: d.summits > 0 ? "#0369a1" : "transparent",
+            }}>
+              {d.summits || "0"}
+            </span>
+            <div style={{
+              width: "100%", height: barH,
+              background: d.summits > 0 ? "#0369a1" : "#e5e7eb",
+              borderRadius: "3px 3px 0 0",
+            }} />
+            <span style={{ fontSize: 10, color: "#94a3b8", textTransform: "capitalize" }}>{label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -459,13 +481,7 @@ export function HomeClient({ data, locale, t }: {
                 fontSize: 12, fontWeight: 700, color: "#0369a1",
                 letterSpacing: "0.01em",
               }}>
-                <div style={{
-                  width: Math.round(LEVEL_SPRITE_SLOT * (24 / 64)), height: 24, flexShrink: 0,
-                  backgroundImage: "url('/brand/Niveles Peakadex.png')",
-                  backgroundSize: `${Math.round(230 * (24 / 64))}px 24px`,
-                  backgroundPosition: `${-Math.round((levelState.current.idx - 1) * LEVEL_SPRITE_SLOT * (24 / 64))}px 0`,
-                  backgroundRepeat: "no-repeat",
-                }} />
+                <span style={{ fontSize: 14, lineHeight: 1 }}>{levelState.current.emoji}</span>
                 {lvlName}
               </div>
 
@@ -588,6 +604,45 @@ export function HomeClient({ data, locale, t }: {
         )}
       </section>
 
+      {/* ── Monthly chart ───────────────────────────────────────────────── */}
+      {stats.totalAscents >= 3 && (
+        <section style={{ padding: "20px 16px 0" }}>
+          <div style={{
+            background: "white", border: "1px solid #e5e7eb",
+            borderRadius: 16, padding: "16px 16px 12px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}>
+            {(() => {
+              const periodMeters = data.monthlyStats.reduce((s, m) => s + m.metersAscended, 0);
+              const periodSummits = data.monthlyStats.reduce((s, m) => s + m.summits, 0);
+              return (
+                <div style={{ marginBottom: 16 }}>
+                  <h2 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: "#111827" }}>
+                    {t.home_chartTitle}
+                  </h2>
+                  <div style={{ display: "flex", gap: 16 }}>
+                    <span style={{ fontSize: 13, color: "#6b7280" }}>
+                      <span style={{ fontWeight: 700, color: "#0369a1" }}>{periodSummits}</span>
+                      {" "}{t.home_statSummits.toLowerCase()}
+                    </span>
+                    {periodMeters > 0 && (
+                      <span style={{ fontSize: 13, color: "#6b7280" }}>
+                        <span style={{ fontWeight: 700, color: "#111827" }}>
+                          {periodMeters.toLocaleString(locale)}
+                        </span>
+                        {" m "}
+                        {t.home_chartMeters}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+            <MonthlyChart data={data.monthlyStats} locale={locale} />
+          </div>
+        </section>
+      )}
+
       {/* ── Leaderboard ─────────────────────────────────────────────────── */}
       {leaderboard.length > 1 && (
         <section style={{ padding: "20px 16px 0" }}>
@@ -629,33 +684,32 @@ export function HomeClient({ data, locale, t }: {
                     borderBottom: idx < Math.min(leaderboard.length, 5) - 1 ? "1px solid #dbeafe" : "none",
                     borderLeft: "3px solid #0369a1",
                   }}>
-                    {/* Row: rank + avatar + name/level + metrics */}
+                    {/* Row: rank + name/level + metrics */}
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0369a1", flexShrink: 0 }}>
                         {rank}
                       </div>
-                      <Avatar name={entry.name} url={entry.avatarUrl} size={38} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {entry.name} <span style={{ fontWeight: 400, color: "#64748b", fontSize: 12 }}>({t.home_youAre})</span>
                         </p>
                         <span style={{
                           display: "inline-block", marginTop: 2,
-                          fontSize: 10, fontWeight: 700, color: lvlColor.dark,
-                          background: lvlColor.mid, borderRadius: 6, padding: "1px 6px",
+                          fontSize: 10, fontWeight: 700, color: "#374151",
+                          background: "#f3f4f6", borderRadius: 6, padding: "1px 6px",
                         }}>{levelName}</span>
                       </div>
                       {/* Cimas + EP + Cairns */}
-                      <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-                        <div style={{ textAlign: "center" }}>
+                      <div style={{ display: "flex", gap: 0, flexShrink: 0 }}>
+                        <div style={{ textAlign: "center", width: 52 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ascentCount}</div>
                           <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
                         </div>
-                        <div style={{ textAlign: "center" }}>
+                        <div style={{ textAlign: "center", width: 44 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
                           <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
                         </div>
-                        <div style={{ textAlign: "center" }}>
+                        <div style={{ textAlign: "center", width: 52 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
                           <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
                         </div>
@@ -677,28 +731,27 @@ export function HomeClient({ data, locale, t }: {
                   <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#d1d5db", flexShrink: 0 }}>
                     {rank}
                   </div>
-                  <Avatar name={entry.name} url={entry.avatarUrl} size={36} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {entry.name}
                     </p>
                     <span style={{
                       display: "inline-block", marginTop: 1,
-                      fontSize: 10, fontWeight: 700, color: lvlColor.dark,
-                      background: lvlColor.mid, borderRadius: 6, padding: "1px 6px",
+                      fontSize: 10, fontWeight: 700, color: "#374151",
+                      background: "#f3f4f6", borderRadius: 6, padding: "1px 6px",
                     }}>{levelName}</span>
                   </div>
                   {/* Cimas + EP + Cairns */}
-                  <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-                    <div style={{ textAlign: "center" }}>
+                  <div style={{ display: "flex", gap: 0, flexShrink: 0 }}>
+                    <div style={{ textAlign: "center", width: 52 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ascentCount}</div>
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
                     </div>
-                    <div style={{ textAlign: "center" }}>
+                    <div style={{ textAlign: "center", width: 44 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
                     </div>
-                    <div style={{ textAlign: "center" }}>
+                    <div style={{ textAlign: "center", width: 52 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
                     </div>

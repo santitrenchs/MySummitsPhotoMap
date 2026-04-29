@@ -219,6 +219,7 @@ export const ca: Dict = {
   home_onboarding_title: "La teva aventura comença aquí 🏔️",
   home_onboarding_sub: "Registra el teu primer cim per veure el teu progrés i competir amb els teus amics.",
   home_onboarding_cta: "Registrar primera ascensió",
+  home_chartTitle: "Últims 6 mesos", home_chartMeters: "metres ascendits",
 
   auth_voucher_title: "AziAtlas és només per invitació",
   auth_voucher_subtitle: "Introdueix el teu codi d'accés per continuar.",
