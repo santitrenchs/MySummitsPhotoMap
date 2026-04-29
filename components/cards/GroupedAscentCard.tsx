@@ -8,9 +8,11 @@ import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
 
 // ─── Rarity (shared logic with AscentCard) ────────────────────────────────────
 
-type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage";
+type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
 
 function getRarity(altitudeM: number): Rarity {
+  if (altitudeM >= 8000) return "snow_lotus";
+  if (altitudeM >= 7000) return "cinquefoil";
   if (altitudeM >= 5000) return "saxifrage";
   if (altitudeM >= 3000) return "edelweiss";
   if (altitudeM >= 1500) return "gentian";
@@ -18,17 +20,21 @@ function getRarity(altitudeM: number): Rarity {
 }
 
 const RARITY_LABEL: Record<Rarity, string> = {
-  daisy:     "Daisy",
-  gentian:   "Gentian",
-  edelweiss: "Edelweiss",
-  saxifrage: "Saxifrage",
+  daisy:      "Daisy",
+  gentian:    "Gentian",
+  edelweiss:  "Edelweiss",
+  saxifrage:  "Saxifrage",
+  cinquefoil: "Cinquefoil",
+  snow_lotus: "Snow Lotus",
 };
 
 const RARITY_EP: Record<Rarity, number> = {
-  daisy:     8,
-  gentian:   16,
-  edelweiss: 20,
-  saxifrage: 100,
+  daisy:      8,
+  gentian:    16,
+  edelweiss:  20,
+  saxifrage:  100,
+  cinquefoil: 500,
+  snow_lotus: 1000,
 };
 
 // ─── Avatar colors (deterministic by index) ───────────────────────────────────

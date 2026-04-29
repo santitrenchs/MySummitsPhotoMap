@@ -255,5 +255,7 @@ export const de: Dict = {
   card_backDesc_daisy: "Zugänglicher Gipfel, perfekt um dein Peakadex zu beginnen.",
   card_backDesc_gentian: "Echtes Berggebiet: anspruchsvollere Aufstiege, bessere Belohnungen.",
   card_backDesc_edelweiss: "Seltene Höhen: Hochgebirge mit ernsthafter Altitude.",
-  card_backDesc_saxifrage: "Extreme Höhe. Eine mythische Besteigung der höchsten Gipfel der Welt.",
+  card_backDesc_saxifrage: "Extreme Höhe. Gipfel zwischen 5000 und 6999 Metern, für echte Expeditionsalpinisten.",
+  card_backDesc_cinquefoil: "Gebiet der Giganten. Zwischen 7000 und 7999 Metern, an der Grenze des Möglichen.",
+  card_backDesc_snow_lotus: "Das Dach der Welt. Nur Gipfel über 8000 Meter tragen diese Seltenheit.",
 };

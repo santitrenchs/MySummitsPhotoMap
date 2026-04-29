@@ -23,29 +23,34 @@ export type AscentData = {
   userAvatarUrl: string | null;
 };
 
-type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage";
+type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
 type ViewChip = "all" | "mine" | "person" | "with-me";
 type TimeRange = "all" | "month" | "year";
 type Sort = "date-desc" | "elev-desc" | "rarity-desc";
 
 function getRarity(altitudeM: number): Rarity {
+  if (altitudeM >= 8000) return "snow_lotus";
+  if (altitudeM >= 7000) return "cinquefoil";
   if (altitudeM >= 5000) return "saxifrage";
   if (altitudeM >= 3000) return "edelweiss";
   if (altitudeM >= 1500) return "gentian";
   return "daisy";
 }
 
-const RARITY_ORDER: Record<Rarity, number> = { saxifrage: 3, edelweiss: 2, gentian: 1, daisy: 0 };
+const RARITY_ORDER: Record<Rarity, number> = { snow_lotus: 5, cinquefoil: 4, saxifrage: 3, edelweiss: 2, gentian: 1, daisy: 0 };
 
 const RARITY_COLORS: Record<Rarity, { bg: string; border: string; text: string; dot: string }> = {
-  daisy:     { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d", dot: "#16a34a" },
-  gentian:   { bg: "#f5f3ff", border: "#ddd6fe", text: "#6d28d9", dot: "#7c3aed" },
-  edelweiss: { bg: "#fff7ed", border: "#fed7aa", text: "#c2410c", dot: "#ea580c" },
-  saxifrage: { bg: "#fefce8", border: "#fde68a", text: "#92400e", dot: "#b45309" },
+  daisy:      { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d",  dot: "#16a34a" },
+  gentian:    { bg: "#f5f3ff", border: "#ddd6fe", text: "#6d28d9",  dot: "#7c3aed" },
+  edelweiss:  { bg: "#fff7ed", border: "#fed7aa", text: "#c2410c",  dot: "#ea580c" },
+  saxifrage:  { bg: "#fefce8", border: "#fde68a", text: "#92400e",  dot: "#b45309" },
+  cinquefoil: { bg: "#fef2f2", border: "#fecaca", text: "#b91c1c",  dot: "#dc2626" },
+  snow_lotus: { bg: "#f9fafb", border: "#e5e7eb", text: "#6b7280",  dot: "#9ca3af" },
 };
 
 const RARITY_LABELS: Record<Rarity, string> = {
   daisy: "Daisy", gentian: "Gentian", edelweiss: "Edelweiss", saxifrage: "Saxifrage",
+  cinquefoil: "Cinquefoil", snow_lotus: "Snow Lotus",
 };
 
 // ─── Main component ──────────────────────────────────────────────────────────
@@ -479,7 +484,7 @@ export function AscentsClient({
               >
                 Todas
               </div>
-              {(["daisy", "gentian", "edelweiss", "saxifrage"] as Rarity[]).map((r) => (
+              {(["daisy", "gentian", "edelweiss", "saxifrage", "cinquefoil", "snow_lotus"] as Rarity[]).map((r) => (
                 <div
                   key={r}
                   className="asc-fchip"

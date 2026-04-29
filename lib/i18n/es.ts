@@ -253,5 +253,7 @@ export const es: Dict = {
   card_backDesc_daisy: "Cima accesible y perfecta para empezar tu Peakadex.",
   card_backDesc_gentian: "Territorio de montaña real: ascensos exigentes y mejores recompensas.",
   card_backDesc_edelweiss: "Alturas poco frecuentes: alta montaña con altitud seria.",
-  card_backDesc_saxifrage: "Altitud extrema. Una captura mítica reservada a los techos del mundo.",
+  card_backDesc_saxifrage: "Altitud extrema. Cimas entre 5000 y 6999 metros, reservadas para expedicionarios.",
+  card_backDesc_cinquefoil: "Territorio de los gigantes. Entre 7000 y 7999 metros, el límite del posible.",
+  card_backDesc_snow_lotus: "El techo del mundo. Solo las cimas de más de 8000 metros ostentan esta rareza.",
 };

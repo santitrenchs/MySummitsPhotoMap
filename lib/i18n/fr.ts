@@ -255,5 +255,7 @@ export const fr: Dict = {
   card_backDesc_daisy: "Sommet accessible, parfait pour commencer ton Peakadex.",
   card_backDesc_gentian: "Vraie montagne : ascensions exigeantes et meilleures récompenses.",
   card_backDesc_edelweiss: "Altitudes rares : haute montagne avec sérieux dénivelé.",
-  card_backDesc_saxifrage: "Altitude extrême. Une capture mythique réservée aux toits du monde.",
+  card_backDesc_saxifrage: "Altitude extrême. Sommets entre 5000 et 6999 mètres, pour vrais expéditionnaires.",
+  card_backDesc_cinquefoil: "Territoire des géants. Entre 7000 et 7999 mètres, à la limite du possible.",
+  card_backDesc_snow_lotus: "Le toit du monde. Seuls les sommets de plus de 8000 mètres portent cette rareté.",
 };

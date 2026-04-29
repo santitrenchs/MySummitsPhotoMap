@@ -167,12 +167,14 @@ const PEAKS = [
 // crains is a bonus on top of EP (only Mythic currently).
 
 const RARITIES = [
-  { id: "daisy",     name: "Daisy",     emoji: "🟢", order: 1, ep: 10,  crains: 0  },
-  { id: "lavender",  name: "Lavender",  emoji: "🔵", order: 2, ep: 25,  crains: 0  },
-  { id: "gentian",   name: "Gentian",   emoji: "🟣", order: 3, ep: 50,  crains: 0  },
-  { id: "edelweiss", name: "Edelweiss", emoji: "🟠", order: 4, ep: 100, crains: 0  },
-  { id: "saxifrage", name: "Saxifrage", emoji: "🟡", order: 5, ep: 200, crains: 0  },
-  { id: "mythic",    name: "Mythic",    emoji: "🔴", order: 6, ep: null, crains: 20 },
+  { id: "daisy",      name: "Daisy",      emoji: "🟢", order: 1, ep: 10,   crains: 0  },
+  { id: "lavender",   name: "Lavender",   emoji: "🔵", order: 2, ep: 25,   crains: 0  },
+  { id: "gentian",    name: "Gentian",    emoji: "🟣", order: 3, ep: 50,   crains: 0  },
+  { id: "edelweiss",  name: "Edelweiss",  emoji: "🟠", order: 4, ep: 100,  crains: 0  },
+  { id: "saxifrage",  name: "Saxifrage",  emoji: "🟡", order: 5, ep: 200,  crains: 0  },
+  { id: "cinquefoil", name: "Cinquefoil", emoji: "🔴", order: 6, ep: 500,  crains: 0  },
+  { id: "snow_lotus", name: "Snow Lotus", emoji: "⚪", order: 7, ep: 1000, crains: 0  },
+  { id: "mythic",     name: "Mythic",     emoji: "✨", order: 8, ep: null,  crains: 20 },
 ] as const;
 
 async function main() {

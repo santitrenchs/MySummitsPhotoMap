@@ -255,5 +255,7 @@ export const en: Dict = {
   card_backDesc_daisy: "Common and accessible peak, perfect to start your Peakadex journey.",
   card_backDesc_gentian: "Real mountain territory: higher climbs, stronger rewards.",
   card_backDesc_edelweiss: "Rare heights: high mountain climbs with serious altitude.",
-  card_backDesc_saxifrage: "Extreme altitude. A mythic capture reserved for the highest peaks.",
+  card_backDesc_saxifrage: "Extreme altitude. Peaks between 5000 and 6999 metres, for true expeditioners.",
+  card_backDesc_cinquefoil: "Giant territory. Between 7000 and 7999 metres, the edge of the possible.",
+  card_backDesc_snow_lotus: "The roof of the world. Only summits above 8000 metres earn this rarity.",
 };

@@ -89,8 +89,12 @@
   --pc-gentian-soft:    #F2ECFA;
   --pc-edelweiss:       #F97316;
   --pc-edelweiss-soft:  #FFF0E8;
-  --pc-saxifrage:       #EAB308;
-  --pc-saxifrage-soft:  #FFF8DB;
+  --pc-saxifrage:         #EAB308;
+  --pc-saxifrage-soft:    #FFF8DB;
+  --pc-cinquefoil:        #DC2626;
+  --pc-cinquefoil-soft:   #FEF2F2;
+  --pc-snow-lotus:        #6b7280;
+  --pc-snow-lotus-soft:   #F9FAFB;
 }
 
 /* ── Flip wrapper ─────────────────────────────────────────────────────── */
@@ -255,10 +259,12 @@
   padding: 13px 14px;
 }
 
-.daisy     .capture-topbar { background: linear-gradient(90deg, var(--pc-daisy-soft), #fff); }
-.gentian   .capture-topbar { background: linear-gradient(90deg, var(--pc-gentian-soft), #fff); }
-.edelweiss .capture-topbar { background: linear-gradient(90deg, var(--pc-edelweiss-soft), #fff); }
-.saxifrage .capture-topbar { background: linear-gradient(90deg, var(--pc-saxifrage-soft), #fff); }
+.daisy      .capture-topbar { background: linear-gradient(90deg, var(--pc-daisy-soft), #fff); }
+.gentian    .capture-topbar { background: linear-gradient(90deg, var(--pc-gentian-soft), #fff); }
+.edelweiss  .capture-topbar { background: linear-gradient(90deg, var(--pc-edelweiss-soft), #fff); }
+.saxifrage  .capture-topbar { background: linear-gradient(90deg, var(--pc-saxifrage-soft), #fff); }
+.cinquefoil .capture-topbar { background: linear-gradient(90deg, var(--pc-cinquefoil-soft), #fff); }
+.snow_lotus .capture-topbar { background: linear-gradient(90deg, var(--pc-snow-lotus-soft), #fff); }
 
 .capture-label {
   font-size: 10px;
@@ -266,10 +272,12 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
-.daisy     .capture-label { color: var(--pc-daisy); }
-.gentian   .capture-label { color: var(--pc-gentian); }
-.edelweiss .capture-label { color: var(--pc-edelweiss); }
-.saxifrage .capture-label { color: var(--pc-saxifrage); }
+.daisy      .capture-label { color: var(--pc-daisy); }
+.gentian    .capture-label { color: var(--pc-gentian); }
+.edelweiss  .capture-label { color: var(--pc-edelweiss); }
+.saxifrage  .capture-label { color: var(--pc-saxifrage); }
+.cinquefoil .capture-label { color: var(--pc-cinquefoil); }
+.snow_lotus .capture-label { color: var(--pc-snow-lotus); }
 
 .capture-id {
   font-size: 11px;
@@ -404,10 +412,12 @@
   align-items: center;
   gap: 8px;
 }
-.daisy     .rarity-value { color: var(--pc-daisy); }
-.gentian   .rarity-value { color: var(--pc-gentian); }
-.edelweiss .rarity-value { color: var(--pc-edelweiss); }
-.saxifrage .rarity-value { color: var(--pc-saxifrage); }
+.daisy      .rarity-value { color: var(--pc-daisy); }
+.gentian    .rarity-value { color: var(--pc-gentian); }
+.edelweiss  .rarity-value { color: var(--pc-edelweiss); }
+.saxifrage  .rarity-value { color: var(--pc-saxifrage); }
+.cinquefoil .rarity-value { color: var(--pc-cinquefoil); }
+.snow_lotus .rarity-value { color: var(--pc-snow-lotus); }
 
 .rarity-icon {
   width: 22px;
@@ -419,10 +429,12 @@
   font-size: 14px;
   flex-shrink: 0;
 }
-.daisy     .rarity-icon { background: var(--pc-daisy-soft);     color: var(--pc-daisy); }
-.gentian   .rarity-icon { background: var(--pc-gentian-soft);   color: var(--pc-gentian); }
-.edelweiss .rarity-icon { background: var(--pc-edelweiss-soft); color: var(--pc-edelweiss); }
-.saxifrage .rarity-icon { background: var(--pc-saxifrage-soft); color: var(--pc-saxifrage); }
+.daisy      .rarity-icon { background: var(--pc-daisy-soft);       color: var(--pc-daisy); }
+.gentian    .rarity-icon { background: var(--pc-gentian-soft);     color: var(--pc-gentian); }
+.edelweiss  .rarity-icon { background: var(--pc-edelweiss-soft);   color: var(--pc-edelweiss); }
+.saxifrage  .rarity-icon { background: var(--pc-saxifrage-soft);   color: var(--pc-saxifrage); }
+.cinquefoil .rarity-icon { background: var(--pc-cinquefoil-soft);  color: var(--pc-cinquefoil); }
+.snow_lotus .rarity-icon { background: var(--pc-snow-lotus-soft);  color: var(--pc-snow-lotus); }
 
 .ep { color: var(--pc-orange); }
 

@@ -255,5 +255,7 @@ export const ca: Dict = {
   card_backDesc_daisy: "Cim accessible i perfecte per començar el teu Peakadex.",
   card_backDesc_gentian: "Territori de muntanya real: ascensos exigents i millors recompenses.",
   card_backDesc_edelweiss: "Altures poc freqüents: alta muntanya amb altitud seriosa.",
-  card_backDesc_saxifrage: "Altitud extrema. Una captura mítica reservada als sostres del món.",
+  card_backDesc_saxifrage: "Altitud extrema. Cims entre 5000 i 6999 metres, per a veritables expedicionaris.",
+  card_backDesc_cinquefoil: "Territori dels gegants. Entre 7000 i 7999 metres, al límit del possible.",
+  card_backDesc_snow_lotus: "El sostre del món. Només les cimes de més de 8000 metres ostenten aquesta raresa.",
 };

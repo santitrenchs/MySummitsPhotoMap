@@ -228,4 +228,5 @@ export type Dict = {
   card_rarity: string; card_altitude: string; card_reward: string;
   card_backDesc_daisy: string; card_backDesc_gentian: string;
   card_backDesc_edelweiss: string; card_backDesc_saxifrage: string;
+  card_backDesc_cinquefoil: string; card_backDesc_snow_lotus: string;
 };
