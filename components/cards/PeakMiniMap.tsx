@@ -60,8 +60,12 @@ function getRarityColors(altitudeM: number): { main: string; dark: string } {
 
 function createBallMarker(main: string, dark: string): HTMLDivElement {
   const el = document.createElement("div");
-  el.style.cssText = "width:26px;height:26px;position:absolute;pointer-events:none";
-  el.innerHTML = `<svg width="26" height="26" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+  el.style.cssText = "width:76px;height:76px;position:absolute;pointer-events:none";
+  el.innerHTML = `<svg width="76" height="76" viewBox="-29 -29 88 88" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="15" cy="15" r="44" fill="none" stroke="${dark}" stroke-width="1.2" opacity="0.12"/>
+    <circle cx="15" cy="15" r="38" fill="none" stroke="${dark}" stroke-width="1.2" opacity="0.22"/>
+    <circle cx="15" cy="15" r="32" fill="none" stroke="${dark}" stroke-width="1.2" opacity="0.38"/>
+    <circle cx="15" cy="15" r="26" fill="none" stroke="${dark}" stroke-width="1.2" opacity="0.55"/>
     <ellipse cx="15" cy="27" rx="8" ry="2.5" fill="rgba(0,0,0,.2)"/>
     <circle cx="15" cy="15" r="13" fill="white"/>
     <path d="M 2,15 A 13,13 0 0,1 28,15 Z" fill="${main}"/>
