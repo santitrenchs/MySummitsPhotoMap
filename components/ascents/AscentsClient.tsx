@@ -21,6 +21,7 @@ export type AscentData = {
   isOwn: boolean;
   userName: string;
   userAvatarUrl: string | null;
+  peakStats?: { totalAscents: number; uniqueClimbers: number };
 };
 
 type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
@@ -615,6 +616,7 @@ export function AscentsClient({
                     originalStorageKey: a.firstPhotoOriginalKey,
                     persons: others,
                     user: { name: a.userName, avatarUrl: a.userAvatarUrl },
+                    peakStats: a.peakStats,
                   }}
                 />
               );
@@ -628,6 +630,7 @@ export function AscentsClient({
                 currentUserEmail={currentUserEmail}
                 currentUserName={currentUserName}
                 animationIndex={i}
+                peakStats={group[0].peakStats}
               />
             );
           })}

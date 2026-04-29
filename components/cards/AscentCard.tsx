@@ -28,6 +28,7 @@ export type AscentCardData = {
   originalStorageKey?: string | null;
   persons: { id: string; name: string }[];
   user: { name: string; avatarUrl?: string | null };
+  peakStats?: { totalAscents: number; uniqueClimbers: number };
 };
 
 type Props = {
@@ -197,11 +198,11 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           <div className="stat-band">
             <div className="stat-item">
               <span className="stat-label">Ascensiones</span>
-              <div className="stat-value">1</div>
+              <div className="stat-value">{ascent.peakStats?.totalAscents ?? "—"}</div>
             </div>
             <div className="stat-item" style={{ textAlign: "right" }}>
               <span className="stat-label">Alpinistas</span>
-              <div className="stat-value">{1 + ascent.persons.length}</div>
+              <div className="stat-value">{ascent.peakStats?.uniqueClimbers ?? "—"}</div>
             </div>
           </div>
           {ascent.peak.wikiBody && (

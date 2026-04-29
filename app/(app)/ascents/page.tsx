@@ -6,6 +6,7 @@ import { AscentsClient } from "@/components/ascents/AscentsClient";
 import { getServerT, getLocale } from "@/lib/i18n/server";
 import { prisma } from "@/lib/db/client";
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
+import { getPeakStats } from "@/lib/services/peak.service";
 
 const PHOTOS_INCLUDE = {
   orderBy: { createdAt: "asc" as const },
@@ -116,13 +117,17 @@ export default async function AscentsPage() {
       : Promise.resolve([]),
   ]);
 
+  const allRaw = [...myRaw, ...friendsRaw];
+  const uniquePeakIds = [...new Set(allRaw.map((a) => a.peakId))];
+  const peakStatsMap = await getPeakStats(uniquePeakIds);
+
   const myAscents = myRaw.map((a) => {
     const u = a.user as { name?: string | null; avatarUrl?: string | null } | null;
-    return enrichAscent(a as Parameters<typeof enrichAscent>[0], true, u?.name ?? session.user.name ?? "", u?.avatarUrl ?? null, locale);
+    return { ...enrichAscent(a as Parameters<typeof enrichAscent>[0], true, u?.name ?? session.user.name ?? "", u?.avatarUrl ?? null, locale), peakStats: peakStatsMap.get(a.peakId) };
   });
   const friendAscents = friendsRaw.map((a) => {
     const u = a.user as { name?: string | null; avatarUrl?: string | null } | null;
-    return enrichAscent(a as Parameters<typeof enrichAscent>[0], false, u?.name ?? "?", u?.avatarUrl ?? null, locale);
+    return { ...enrichAscent(a as Parameters<typeof enrichAscent>[0], false, u?.name ?? "?", u?.avatarUrl ?? null, locale), peakStats: peakStatsMap.get(a.peakId) };
   });
 
   // Merge and sort by date desc

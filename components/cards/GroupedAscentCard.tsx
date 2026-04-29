@@ -141,6 +141,7 @@ type Props = {
   currentUserEmail?: string | null;
   currentUserName?: string;
   animationIndex?: number;
+  peakStats?: { totalAscents: number; uniqueClimbers: number };
 };
 
 export function GroupedAscentCard({
@@ -148,6 +149,7 @@ export function GroupedAscentCard({
   currentUserEmail,
   currentUserName,
   animationIndex = 0,
+  peakStats,
 }: Props) {
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -236,11 +238,11 @@ export function GroupedAscentCard({
         <div className="stat-band">
           <div className="stat-item">
             <span className="stat-label">Ascensiones</span>
-            <div className="stat-value">{ascents.length}</div>
+            <div className="stat-value">{peakStats?.totalAscents ?? "—"}</div>
           </div>
           <div className="stat-item" style={{ textAlign: "right" }}>
             <span className="stat-label">Alpinistas</span>
-            <div className="stat-value">{ascents.length}</div>
+            <div className="stat-value">{peakStats?.uniqueClimbers ?? "—"}</div>
           </div>
         </div>
         {peak.wikiBody && (
