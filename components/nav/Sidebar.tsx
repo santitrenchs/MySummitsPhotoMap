@@ -419,12 +419,12 @@ const CSS = `
   height: 44px;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 140ms;
+  transition: background 140ms, padding 220ms cubic-bezier(0.4,0,0.2,1);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
 }
-.azisb--c .azisb-user { overflow: visible; padding: 0; justify-content: center; }
+.azisb--c .azisb-user { overflow: visible; padding: 0 18px; }
 .azisb-user:hover { background: #f8fafc; }
 
 /* Avatar */
