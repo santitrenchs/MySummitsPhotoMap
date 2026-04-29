@@ -404,7 +404,7 @@ const CSS = `
 /* ── Footer ─────────────────────────────── */
 .azisb-footer {
   padding: 10px 8px;
-  margin-top: 10px;
+  margin-top: 48px;
   border-top: 1px solid #f0f2f5;
   position: relative;
   flex-shrink: 0;
@@ -424,7 +424,7 @@ const CSS = `
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
 }
-.azisb--c .azisb-user { overflow: visible; }
+.azisb--c .azisb-user { overflow: visible; padding: 0; justify-content: center; }
 .azisb-user:hover { background: #f8fafc; }
 
 /* Avatar */
