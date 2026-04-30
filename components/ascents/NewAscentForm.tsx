@@ -172,7 +172,7 @@ export function NewAscentForm({
           setError(fmt(t.newAscent_photoFailed, { i: i + 1 }));
           setLoading(false);
           setStatus(null);
-          window.location.href = `/ascents/${ascent.id}`;
+          window.location.href = `/ascents?highlight=${ascent.id}`;
           return;
         }
         // Save face detections + tags in one shot
@@ -194,7 +194,7 @@ export function NewAscentForm({
       }
     }
 
-    window.location.href = `/ascents/${ascent.id}`;
+    window.location.href = `/ascents?highlight=${ascent.id}`;
   }
 
   const inputStyle = {

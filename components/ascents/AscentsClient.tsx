@@ -94,6 +94,18 @@ export function AscentsClient({
 
   const selectedPerson = allPersons.find((p) => p.id === selectedPersonId);
 
+  // Highlight + scroll to newly created ascent from ?highlight= URL param
+  const [highlightId, setHighlightId] = useState<string | null>(() => searchParams.get("highlight"));
+  useEffect(() => {
+    if (!highlightId) return;
+    const el = document.getElementById(`ascent-${highlightId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const timer = setTimeout(() => setHighlightId(null), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightId]);
+
   // Lock body scroll when sheet open
   useEffect(() => {
     if (filtersOpen) {
@@ -599,8 +611,16 @@ export function AscentsClient({
                   )
                 : a.persons;
               return (
-                <AscentCard
+                <div
                   key={a.id}
+                  id={`ascent-${a.id}`}
+                  style={{
+                    borderRadius: 16,
+                    transition: "box-shadow 0.4s ease, outline 0.4s ease",
+                    ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
+                  }}
+                >
+                <AscentCard
                   variant={a.isOwn ? "profile" : "social"}
                   locale={t.dateLocale}
                   animationIndex={i}
@@ -619,6 +639,7 @@ export function AscentsClient({
                     peakStats: a.peakStats,
                   }}
                 />
+                </div>
               );
             }
 
