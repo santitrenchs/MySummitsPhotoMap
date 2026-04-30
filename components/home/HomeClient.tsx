@@ -182,13 +182,6 @@ function LevelCard({ def, status, stats, t, locale }: {
           }}>
             {t[def.nameKey] as string}
           </span>
-          {isCompleted && (
-            <span style={{
-              fontSize: 11, fontWeight: 700, flexShrink: 0,
-              background: "#dcfce7", color: "#16a34a",
-              padding: "3px 10px", borderRadius: 20,
-            }}>✓ Completed</span>
-          )}
           {isCurrent && (
             <span style={{
               fontSize: 11, fontWeight: 700, flexShrink: 0,
@@ -220,8 +213,8 @@ function LevelCard({ def, status, stats, t, locale }: {
             return (
               <span key={r.threshold} style={{
                 fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8,
-                background: met ? "#f0fdf4" : "#f3f4f6",
-                color: met ? "#16a34a" : "#374151",
+                background: "#f3f4f6",
+                color: "#374151",
               }}>
                 {label}
               </span>
