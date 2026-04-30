@@ -851,7 +851,7 @@ export function HomeClient({ data, locale, t }: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any}>
             {recentAscents.map((a) => (
-              <Link key={a.id} href={`/ascents/${a.id}`} style={{ textDecoration: "none", flexShrink: 0 }}>
+              <Link key={a.id} href={`/ascents?highlight=${a.id}`} style={{ textDecoration: "none", flexShrink: 0 }}>
                 <div style={{
                   width: 150, borderRadius: 14,
                   border: "1px solid #e5e7eb", overflow: "hidden",
