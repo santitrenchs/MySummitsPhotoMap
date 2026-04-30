@@ -337,7 +337,7 @@ export function ImageCropModal({
         display: "flex", flexDirection: "column",
         background: "white", overflow: "hidden",
       } : {
-        position: "fixed", inset: 0, zIndex: 200,
+        position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 1100,
         background: "#000",
         display: "flex", flexDirection: "column",
       }}
@@ -374,7 +374,7 @@ export function ImageCropModal({
       )}
 
       {/* ── Crop canvas ──────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", background: embedded ? "#f3f4f6" : undefined }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", background: embedded ? "#f3f4f6" : "#000" }}>
         <div
           ref={containerRef}
           style={{
@@ -518,6 +518,7 @@ export function ImageCropModal({
           padding: "16px 0 28px",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 14,
           borderTop: "1px solid #262626", flexShrink: 0,
+          background: "#000",
         }}>
           {ready && imgRef.current && (() => {
             const { cropW: cW, cropH: cH } = getCropSize();
