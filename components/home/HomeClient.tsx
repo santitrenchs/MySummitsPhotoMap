@@ -182,27 +182,26 @@ function LevelCard({ def, status, stats, t, locale }: {
           }}>
             {t[def.nameKey] as string}
           </span>
-          {status === "locked" ? (
-            <span style={{ fontSize: 18, color: "#d1d5db", flexShrink: 0, lineHeight: 1 }}>🔒</span>
-          ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "flex-end", flexShrink: 0 }}>
-              {def.targetAscents != null && (
-                <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
-                  {def.targetAscents} {t.home_statSummits.toLowerCase()}
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, justifyContent: "flex-end", flexShrink: 0 }}>
+            {def.targetAscents != null && (
+              <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
+                {def.targetAscents} {t.home_statSummits.toLowerCase()}
+              </span>
+            )}
+            {def.altReqs?.map((r) => {
+              const label = r.count === 1
+                ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
+                : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
+              return (
+                <span key={r.threshold} style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
+                  {label}
                 </span>
-              )}
-              {def.altReqs?.map((r) => {
-                const label = r.count === 1
-                  ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
-                  : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
-                return (
-                  <span key={r.threshold} style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
-                    {label}
-                  </span>
-                );
-              })}
-            </div>
-          )}
+              );
+            })}
+            {status === "locked" && (
+              <span style={{ fontSize: 18, color: "#d1d5db", flexShrink: 0, lineHeight: 1 }}>🔒</span>
+            )}
+          </div>
         </div>
 
         {/* Progress (current only) */}
