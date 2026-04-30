@@ -137,7 +137,7 @@ function LevelCard({ def, status, stats, t, locale }: {
 
   return (
     <div style={{
-      display: "flex", gap: 12, alignItems: "flex-start",
+      display: "flex", gap: 12, alignItems: "center",
       padding: "10px 14px",
       background: isCurrent ? "#eff6ff" : "#F9FAFB",
       borderTop:    `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
