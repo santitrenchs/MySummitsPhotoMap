@@ -53,6 +53,7 @@ export type HomeData = {
     peaks3000plus: number;
     peaks4000plus: number;
     peaks5000plus: number;
+    rarityBreakdown: { daisy: number; gentian: number; edelweiss: number; saxifrage: number; cinquefoil: number; snow_lotus: number };
   };
   leaderboard: LeaderboardEntry[];
   userRank: number; // 1-based
@@ -108,6 +109,24 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   const peaks3000plus = myAscents.filter((a) => a.peak.altitudeM >= 3000).length;
   const peaks4000plus = myAscents.filter((a) => a.peak.altitudeM >= 4000).length;
   const peaks5000plus = myAscents.filter((a) => a.peak.altitudeM >= 5000).length;
+
+  // Unique peaks by rarity tier (altitude-based thresholds)
+  function altToRarity(m: number): keyof typeof rarityBreakdown {
+    if (m >= 8000) return "snow_lotus";
+    if (m >= 7000) return "cinquefoil";
+    if (m >= 5000) return "saxifrage";
+    if (m >= 3000) return "edelweiss";
+    if (m >= 1500) return "gentian";
+    return "daisy";
+  }
+  const rarityBreakdown = { daisy: 0, gentian: 0, edelweiss: 0, saxifrage: 0, cinquefoil: 0, snow_lotus: 0 };
+  const seenPeakIds = new Set<string>();
+  for (const a of myAscents) {
+    if (!seenPeakIds.has(a.peakId)) {
+      seenPeakIds.add(a.peakId);
+      rarityBreakdown[altToRarity(a.peak.altitudeM)]++;
+    }
+  }
 
   // 5. Leaderboard (me + friends)
   const allUserIds = [userId, ...friendUserIds];
@@ -249,7 +268,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
 
   return {
     user: { name: user?.name ?? "", username: user?.username ?? null, avatarUrl: user?.avatarUrl ?? null },
-    stats: { totalAscents, uniquePeaks, totalPhotos, totalRegions, friendsCount, maxAltitude, peaks1000plus, peaks2000plus, peaks3000plus, peaks4000plus, peaks5000plus },
+    stats: { totalAscents, uniquePeaks, totalPhotos, totalRegions, friendsCount, maxAltitude, peaks1000plus, peaks2000plus, peaks3000plus, peaks4000plus, peaks5000plus, rarityBreakdown },
     leaderboard,
     userRank,
     nextRankName,

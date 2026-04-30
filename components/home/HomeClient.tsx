@@ -344,6 +344,39 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
   );
 }
 
+// ─── Rarity chart ─────────────────────────────────────────────────────────────
+
+const RARITY_BARS: { key: keyof HomeData["stats"]["rarityBreakdown"]; color: string; label: string }[] = [
+  { key: "daisy",      color: "#00995C", label: "Daisy" },
+  { key: "gentian",    color: "#7B5BA6", label: "Gentian" },
+  { key: "edelweiss",  color: "#F97316", label: "Edelweiss" },
+  { key: "saxifrage",  color: "#EAB308", label: "Saxifrage" },
+  { key: "cinquefoil", color: "#DC2626", label: "Cinquefoil" },
+  { key: "snow_lotus", color: "#6b7280", label: "Snow Lotus" },
+];
+
+function RarityChart({ breakdown }: { breakdown: HomeData["stats"]["rarityBreakdown"] }) {
+  const values = RARITY_BARS.map((b) => breakdown[b.key]);
+  const max = Math.max(...values, 1);
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
+      {RARITY_BARS.map((b, i) => {
+        const val = values[i];
+        const barH = val > 0 ? Math.max(Math.round((val / max) * 64), 8) : 3;
+        return (
+          <div key={b.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, lineHeight: 1, color: val > 0 ? b.color : "transparent" }}>
+              {val || "0"}
+            </span>
+            <div style={{ width: "100%", height: barH, background: val > 0 ? b.color : "#e5e7eb", borderRadius: "3px 3px 0 0" }} />
+            <span style={{ fontSize: 9, color: "#94a3b8", textAlign: "center", lineHeight: 1.2 }}>{b.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function HomeClient({ data, locale, t }: {
@@ -632,6 +665,18 @@ export function HomeClient({ data, locale, t }: {
               );
             })()}
             <MonthlyChart data={data.monthlyStats} locale={locale} />
+          </div>
+        </section>
+      )}
+
+      {/* ── Rarity chart ────────────────────────────────────────────────── */}
+      {stats.totalAscents >= 1 && (
+        <section style={{ padding: "16px 16px 0" }}>
+          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 16, padding: "16px 16px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <h2 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#111827" }}>
+              {t.home_rarityChartTitle}
+            </h2>
+            <RarityChart breakdown={stats.rarityBreakdown} />
           </div>
         </section>
       )}
