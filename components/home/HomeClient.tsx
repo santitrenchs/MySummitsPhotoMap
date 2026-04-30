@@ -135,9 +135,12 @@ function LevelCard({ def, status, stats, t, locale }: {
     ? Math.min(stats.totalAscents / def.targetAscents * 100, 100)
     : 100;
 
+  // badge + emoji + name + pills always on one centered row; progress below indented
+  const leftW = 28 + 12 + 32 + 12; // badge + gap + emoji + gap = 84px indent for progress row
+
   return (
     <div style={{
-      display: "flex", gap: 12, alignItems: "center",
+      display: "flex", flexDirection: "column",
       padding: "10px 14px",
       background: isCurrent ? "#eff6ff" : "#F9FAFB",
       borderTop:    `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
@@ -150,32 +153,32 @@ function LevelCard({ def, status, stats, t, locale }: {
       marginBottom: 10,
     }}>
 
-      {/* Left badge: ✓ (completed) / 🔒 (locked) / number (current) */}
-      <div style={{
-        width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-        background: isCompleted ? "#16a34a" : isCurrent ? "#0369a1" : "#d1d5db",
-        color: "white",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: isCompleted ? 13 : status === "locked" ? 13 : 11, fontWeight: 800,
-      }}>
-        {isCompleted ? "✓" : status === "locked" ? "🔒" : def.idx}
-      </div>
+      {/* ── Top row: badge · emoji · name · pills (always centered) ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
 
-      {/* Emoji icon */}
-      <div style={{
-        width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-        background: isCurrent ? "#dbeafe" : "#f3f4f6",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 15,
-      }}>
-        {def.emoji}
-      </div>
+        {/* Badge: ✓ / 🔒 / number */}
+        <div style={{
+          width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+          background: isCompleted ? "#16a34a" : isCurrent ? "#0369a1" : "#d1d5db",
+          color: "white",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: isCompleted ? 13 : status === "locked" ? 13 : 11, fontWeight: 800,
+        }}>
+          {isCompleted ? "✓" : status === "locked" ? "🔒" : def.idx}
+        </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Emoji */}
+        <div style={{
+          width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+          background: isCurrent ? "#dbeafe" : "#f3f4f6",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 15,
+        }}>
+          {def.emoji}
+        </div>
 
-        {/* Name + pills on same row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: isCurrent ? 12 : 0 }}>
+        {/* Name + pills */}
+        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <span style={{
             fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
             color: isCurrent ? "#0369a1" : "#111827",
@@ -200,40 +203,37 @@ function LevelCard({ def, status, stats, t, locale }: {
             })}
           </div>
         </div>
-
-        {/* Progress (current only) */}
-        {isCurrent && def.targetAscents != null && (
-          <>
-            <div style={{ height: 6, borderRadius: 99, background: "#dbeafe", overflow: "hidden", marginBottom: 6 }}>
-              <div style={{
-                height: "100%", borderRadius: 99, width: `${ascentPct}%`,
-                background: "linear-gradient(90deg,#0369a1,#0ea5e9)",
-              }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
-                {i(t.home_levelProgress, { current: stats.totalAscents, total: def.targetAscents })}
-              </span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
-                {Math.round(ascentPct)}%
-              </span>
-            </div>
-            {stats.totalAscents < def.targetAscents && (
-              <div style={{ fontSize: 12, color: "#6b7280" }}>
-                → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.totalAscents })}
-              </div>
-            )}
-            {def.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
-              <div key={r.threshold} style={{ fontSize: 12, color: "#6b7280" }}>
-                → {i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })}
-              </div>
-            ))}
-          </>
-        )}
-        {isCurrent && def.targetAscents == null && (
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{t.home_maxLevel}</div>
-        )}
       </div>
+
+      {/* ── Progress row (current only, indented to align with name) ── */}
+      {isCurrent && def.targetAscents != null && (
+        <div style={{ paddingLeft: leftW, marginTop: 12 }}>
+          <div style={{ height: 6, borderRadius: 99, background: "#dbeafe", overflow: "hidden", marginBottom: 6 }}>
+            <div style={{ height: "100%", borderRadius: 99, width: `${ascentPct}%`, background: "linear-gradient(90deg,#0369a1,#0ea5e9)" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
+              {i(t.home_levelProgress, { current: stats.totalAscents, total: def.targetAscents })}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
+              {Math.round(ascentPct)}%
+            </span>
+          </div>
+          {stats.totalAscents < def.targetAscents && (
+            <div style={{ fontSize: 12, color: "#6b7280" }}>
+              → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.totalAscents })}
+            </div>
+          )}
+          {def.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
+            <div key={r.threshold} style={{ fontSize: 12, color: "#6b7280" }}>
+              → {i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })}
+            </div>
+          ))}
+        </div>
+      )}
+      {isCurrent && def.targetAscents == null && (
+        <div style={{ paddingLeft: leftW, marginTop: 6, fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{t.home_maxLevel}</div>
+      )}
     </div>
   );
 }
