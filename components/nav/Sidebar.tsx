@@ -424,7 +424,7 @@ const CSS = `
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
 }
-.azisb--c .azisb-user { overflow: visible; padding: 0; justify-content: center; gap: 0; }
+.azisb--c .azisb-user { overflow: visible; padding: 0 0 0 10px; gap: 0; }
 .azisb-user:hover { background: #f8fafc; }
 
 /* Avatar */
