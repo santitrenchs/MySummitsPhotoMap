@@ -116,16 +116,11 @@ export function PeakMiniMap({
         .addTo(map);
 
       // Fetch nearby peaks — ghost dots only, no labels
-      fetch("/api/peaks")
+      const RADIUS = 0.8;
+      fetch(`/api/peaks?lat=${lat}&lng=${lng}&radius=${RADIUS}`)
         .then((r) => r.json())
         .then((peaks: NearbyPeak[]) => {
-          const RADIUS = 0.8;
-          const nearby = peaks.filter(
-            (p) =>
-              p.id !== peakId &&
-              Math.abs(p.latitude - lat) < RADIUS &&
-              Math.abs(p.longitude - lng) < RADIUS
-          );
+          const nearby = peaks.filter((p) => p.id !== peakId);
 
           if (map.getSource("nearby-peaks")) return;
 
