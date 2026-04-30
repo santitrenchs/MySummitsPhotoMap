@@ -134,7 +134,10 @@ export function ImageCropModal({
       const availH = panelDims.h;
       const byHeight = { cropW: Math.round(availH * ratio), cropH: availH };
       const byWidth  = { cropW: availW, cropH: Math.round(availW / ratio) };
-      return byHeight.cropW <= availW ? byHeight : byWidth;
+      const chosen = byHeight.cropW <= availW ? byHeight : byWidth;
+      // Snap to fill available height if rounding leaves a tiny gap (≤ 8px)
+      if (chosen.cropH < availH && availH - chosen.cropH <= 8) chosen.cropH = availH;
+      return chosen;
     }
     const W = Math.min(typeof window !== "undefined" ? window.innerWidth : 400, 520);
     return { cropW: W, cropH: Math.round(W / ratio) };
