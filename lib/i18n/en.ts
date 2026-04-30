@@ -160,6 +160,7 @@ export const en: Dict = {
   tag_continue: "Continue ›", tag_continueTagged: "Continue · {n} tagged ›",
   tag_detecting2: "Detecting…",
   tag_addManual: "Add person", tag_drawHint: "Tap where the person is", tag_cancelDraw: "Cancel",
+  tag_notThisPerson: "Not this person",
 
   photo_clickOrDrag: "Click or drag photos here", photo_uploading: "Uploading…",
   photo_maxSize: "JPEG, PNG, WebP · max 10 MB each",

@@ -163,6 +163,7 @@ export type Dict = {
   tag_noFaces: string; tag_continue: string; tag_continueTagged: string;
   tag_detecting2: string;
   tag_addManual: string; tag_drawHint: string; tag_cancelDraw: string;
+  tag_notThisPerson: string;
 
   // Photo uploader
   photo_clickOrDrag: string; photo_uploading: string;

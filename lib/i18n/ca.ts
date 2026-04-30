@@ -160,6 +160,7 @@ export const ca: Dict = {
   tag_continue: "Continuar ›", tag_continueTagged: "Continuar · {n} etiquetats ›",
   tag_detecting2: "Detectant…",
   tag_addManual: "Afegir persona", tag_drawHint: "Toca on és la persona", tag_cancelDraw: "Cancel·lar",
+  tag_notThisPerson: "No és aquesta persona",
 
   photo_clickOrDrag: "Fes clic o arrossega fotos aquí", photo_uploading: "Pujant…",
   photo_maxSize: "JPEG, PNG, WebP · màx. 10 MB cadascuna",

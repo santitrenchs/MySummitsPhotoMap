@@ -160,6 +160,7 @@ export const de: Dict = {
   tag_continue: "Weiter ›", tag_continueTagged: "Weiter · {n} markiert ›",
   tag_detecting2: "Erkennung…",
   tag_addManual: "Person hinzufügen", tag_drawHint: "Tippe auf die Person im Bild", tag_cancelDraw: "Abbrechen",
+  tag_notThisPerson: "Nicht diese Person",
 
   photo_clickOrDrag: "Fotos hier klicken oder ablegen", photo_uploading: "Hochladen…",
   photo_maxSize: "JPEG, PNG, WebP · max. 10 MB pro Bild",

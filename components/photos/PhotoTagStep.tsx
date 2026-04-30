@@ -37,6 +37,7 @@ export function PhotoTagStep({
   clearActiveFaceRef,
   confirmSuggestionRef,
   removeTagRef,
+  dismissSuggestionRef,
   onStateChange,
 }: {
   blob: Blob;
@@ -54,6 +55,7 @@ export function PhotoTagStep({
   clearActiveFaceRef?: React.MutableRefObject<(() => void) | null>;
   confirmSuggestionRef?: React.MutableRefObject<((faceId: string) => void) | null>;
   removeTagRef?: React.MutableRefObject<((faceId: string) => void) | null>;
+  dismissSuggestionRef?: React.MutableRefObject<((faceId: string) => void) | null>;
   onStateChange?: (state: {
     faces: FaceDraft[]; phase: "detecting" | "ready"; drawMode: boolean;
     activeFaceId: string | null; activeFace: FaceDraft | null;
@@ -176,14 +178,27 @@ export function PhotoTagStep({
             )
           );
           const matcher = new faceapi.FaceMatcher(labeled, 0.6);
+
+          // Pass 1: collect all matches with distances
+          type MatchResult = { faceIdx: number; userId: string; label: string; distance: number };
+          const allMatches: MatchResult[] = [];
           results.forEach((det, i) => {
             const match = matcher.findBestMatch(new Float32Array(det.descriptor));
-            console.log(`[face ${i}] best match label=${userIdToLabel.get(match.label) ?? match.label} distance=${match.distance.toFixed(3)}`);
             if (match.label !== "unknown") {
-              suggestionUserIds.set(i, match.label);
-              suggestionLabels.set(i, userIdToLabel.get(match.label) ?? match.label);
+              allMatches.push({ faceIdx: i, userId: match.label, label: userIdToLabel.get(match.label) ?? match.label, distance: match.distance });
             }
           });
+
+          // Pass 2: deduplicate — per userId keep only the lowest-distance face
+          const bestByUserId = new Map<string, MatchResult>();
+          for (const m of allMatches) {
+            const prev = bestByUserId.get(m.userId);
+            if (!prev || m.distance < prev.distance) bestByUserId.set(m.userId, m);
+          }
+          for (const m of bestByUserId.values()) {
+            suggestionUserIds.set(m.faceIdx, m.userId);
+            suggestionLabels.set(m.faceIdx, m.label);
+          }
         }
       }
 
@@ -255,6 +270,12 @@ export function PhotoTagStep({
     setFaces((prev) => prev.map((f) => (f.tempId === faceId ? { ...f, userId: null, userLabel: null } : f)));
   }
 
+  function dismissSuggestion(faceId: string) {
+    setFaces((prev) => prev.map((f) =>
+      f.tempId === faceId ? { ...f, suggestion: null, suggestionUserId: null } : f
+    ));
+  }
+
   const activeFace = faces.find((f) => f.tempId === activeFaceId) ?? null;
 
   // ── Manual tap-to-place helper ───────────────────────────────────────────────
@@ -302,6 +323,7 @@ export function PhotoTagStep({
     if (clearActiveFaceRef) clearActiveFaceRef.current = () => setActiveFaceId(null);
     if (confirmSuggestionRef) confirmSuggestionRef.current = confirmSuggestion;
     if (removeTagRef) removeTagRef.current = (faceId) => { removeTag(faceId); setActiveFaceId(null); };
+    if (dismissSuggestionRef) dismissSuggestionRef.current = (faceId) => { dismissSuggestion(faceId); setActiveFaceId(null); };
   });
 
   // Notify parent when relevant state changes — fixed 4-item deps, always the same size
@@ -521,22 +543,39 @@ export function PhotoTagStep({
                   onClick={(e) => { e.stopPropagation(); setActiveFaceId(isActive ? null : face.tempId); }}
                 >
                   {hasSuggestion && !isActive && (
-                    <button
+                    <div
                       style={{
                         position: "absolute", top: -32, left: "50%",
                         transform: "translateX(-50%)",
-                        whiteSpace: "nowrap", padding: "4px 10px",
-                        background: "rgba(14,165,233,0.88)", backdropFilter: "blur(6px)",
-                        borderRadius: 20, border: "none", cursor: "pointer",
-                        fontSize: 11, fontWeight: 700, color: "white",
-                        display: "flex", alignItems: "center", gap: 4,
-                        animation: "tagFadeIn 0.2s ease",
+                        display: "flex", borderRadius: 20, overflow: "hidden",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                        animation: "tagFadeIn 0.2s ease",
                       }}
-                      onClick={(e) => { e.stopPropagation(); confirmSuggestion(face.tempId); }}
                     >
-                      ✓ {face.suggestion}
-                    </button>
+                      <button
+                        style={{
+                          whiteSpace: "nowrap", padding: "5px 10px",
+                          background: "rgba(14,165,233,0.88)", backdropFilter: "blur(6px)",
+                          border: "none", cursor: "pointer",
+                          fontSize: 11, fontWeight: 700, color: "white",
+                        }}
+                        onClick={(e) => { e.stopPropagation(); confirmSuggestion(face.tempId); }}
+                      >
+                        ✓ {face.suggestion}
+                      </button>
+                      <button
+                        style={{
+                          padding: "5px 9px",
+                          background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)",
+                          border: "none", borderLeft: "1px solid rgba(255,255,255,0.2)",
+                          cursor: "pointer", fontSize: 12, fontWeight: 700,
+                          color: "rgba(255,255,255,0.8)",
+                        }}
+                        onClick={(e) => { e.stopPropagation(); dismissSuggestion(face.tempId); }}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   )}
                   {isTagged && (
                     <span style={{
@@ -675,26 +714,38 @@ export function PhotoTagStep({
 
               {/* Auto-suggestion confirm chip */}
               {activeFace.suggestion && !activeFace.userId && (
-                <button
-                  onClick={() => confirmSuggestion(activeFace.tempId)}
-                  style={{
-                    width: "100%", padding: "12px 16px",
-                    background: "#eff6ff", border: "1.5px solid #bfdbfe",
-                    borderRadius: 12, cursor: "pointer", marginBottom: 10,
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    textAlign: "left",
-                  }}
-                >
-                  <div>
-                    <p style={{ fontSize: 11, color: "#0369a1", margin: "0 0 1px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.tag_looksLike}</p>
-                    <p style={{ fontSize: 15, fontWeight: 700, color: "#0369a1", margin: 0 }}>{activeFace.suggestion}</p>
-                  </div>
-                  <span style={{
-                    fontSize: 12, fontWeight: 700, color: "white",
-                    background: "#0369a1", borderRadius: 20, padding: "5px 14px",
-                    flexShrink: 0,
-                  }}>{t.tag_confirmCta}</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => confirmSuggestion(activeFace.tempId)}
+                    style={{
+                      width: "100%", padding: "12px 16px",
+                      background: "#eff6ff", border: "1.5px solid #bfdbfe",
+                      borderRadius: 12, cursor: "pointer", marginBottom: 6,
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      textAlign: "left",
+                    }}
+                  >
+                    <div>
+                      <p style={{ fontSize: 11, color: "#0369a1", margin: "0 0 1px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t.tag_looksLike}</p>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: "#0369a1", margin: 0 }}>{activeFace.suggestion}</p>
+                    </div>
+                    <span style={{
+                      fontSize: 12, fontWeight: 700, color: "white",
+                      background: "#0369a1", borderRadius: 20, padding: "5px 14px",
+                      flexShrink: 0,
+                    }}>{t.tag_confirmCta}</span>
+                  </button>
+                  <button
+                    onClick={() => { dismissSuggestion(activeFaceId); setActiveFaceId(null); }}
+                    style={{
+                      width: "100%", padding: "6px 16px", marginBottom: 8,
+                      background: "none", border: "none", cursor: "pointer",
+                      fontSize: 13, color: "#9ca3af", textAlign: "center",
+                    }}
+                  >
+                    {t.tag_notThisPerson}
+                  </button>
+                </>
               )}
 
               {/* Search / type new */}
