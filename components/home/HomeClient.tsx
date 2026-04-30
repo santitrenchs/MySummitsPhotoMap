@@ -174,52 +174,35 @@ function LevelCard({ def, status, stats, t, locale }: {
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
 
-        {/* Name + status tag */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginBottom: 7 }}>
+        {/* Name + pills on same row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: isCurrent ? 12 : 0 }}>
           <span style={{
             fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
             color: isCurrent ? "#0369a1" : "#111827",
           }}>
             {t[def.nameKey] as string}
           </span>
-          {isCurrent && (
-            <span style={{
-              fontSize: 11, fontWeight: 700, flexShrink: 0,
-              background: "#dbeafe", color: "#0369a1",
-              padding: "3px 10px", borderRadius: 20,
-            }}>Current Level</span>
-          )}
-          {status === "locked" && (
+          {status === "locked" ? (
             <span style={{ fontSize: 18, color: "#d1d5db", flexShrink: 0, lineHeight: 1 }}>🔒</span>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "flex-end", flexShrink: 0 }}>
+              {def.targetAscents != null && (
+                <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
+                  {def.targetAscents} {t.home_statSummits.toLowerCase()}
+                </span>
+              )}
+              {def.altReqs?.map((r) => {
+                const label = r.count === 1
+                  ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
+                  : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
+                return (
+                  <span key={r.threshold} style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
+                    {label}
+                  </span>
+                );
+              })}
+            </div>
           )}
-        </div>
-
-        {/* Requirement pills */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: isCurrent ? 12 : 0 }}>
-          {def.targetAscents != null && (
-            <span style={{
-              fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8,
-              background: "#f3f4f6",
-              color: "#374151",
-            }}>
-              {def.targetAscents} {t.home_statSummits.toLowerCase()}
-            </span>
-          )}
-          {def.altReqs?.map((r) => {
-            const met = getAltCount(stats, r.threshold) >= r.count;
-            const label = r.count === 1
-              ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
-              : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
-            return (
-              <span key={r.threshold} style={{
-                fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8,
-                background: "#f3f4f6",
-                color: "#374151",
-              }}>
-                {label}
-              </span>
-            );
-          })}
         </div>
 
         {/* Progress (current only) */}
