@@ -150,15 +150,15 @@ function LevelCard({ def, status, stats, t, locale }: {
       marginBottom: 10,
     }}>
 
-      {/* Left badge: ✓ (level color) or number (blue / gray) */}
+      {/* Left badge: ✓ (completed) / 🔒 (locked) / number (current) */}
       <div style={{
         width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
         background: isCompleted ? "#16a34a" : isCurrent ? "#0369a1" : "#d1d5db",
         color: "white",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: isCompleted ? 13 : 11, fontWeight: 800,
+        fontSize: isCompleted ? 13 : status === "locked" ? 13 : 11, fontWeight: 800,
       }}>
-        {isCompleted ? "✓" : def.idx}
+        {isCompleted ? "✓" : status === "locked" ? "🔒" : def.idx}
       </div>
 
       {/* Emoji icon */}
@@ -198,9 +198,6 @@ function LevelCard({ def, status, stats, t, locale }: {
                 </span>
               );
             })}
-            {status === "locked" && (
-              <span style={{ fontSize: 18, color: "#d1d5db", flexShrink: 0, lineHeight: 1 }}>🔒</span>
-            )}
           </div>
         </div>
 
