@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { MapPeak, AscentMapEntry } from "./MapView";
+import type { MapPeak, AscentMapEntry, RarityDef } from "./MapView";
 
 const MapView = dynamic(() => import("./MapView"), {
   ssr: false,
@@ -18,9 +18,11 @@ const MapView = dynamic(() => import("./MapView"), {
 export default function MapContainer({
   peaks,
   ascentData = [],
+  rarities = [],
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
+  rarities?: RarityDef[];
 }) {
-  return <MapView peaks={peaks} ascentData={ascentData} />;
+  return <MapView peaks={peaks} ascentData={ascentData} rarities={rarities} />;
 }
