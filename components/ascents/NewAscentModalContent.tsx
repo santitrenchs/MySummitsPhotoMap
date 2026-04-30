@@ -486,7 +486,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       }
     }
 
-    window.location.href = `/ascents/${ascent.id}`;
+    window.location.href = `/ascents?highlight=${ascent.id}`;
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
