@@ -186,13 +186,7 @@ export function GroupedAscentCard({
   }
 
   const slide = ascents[currentDisplay];
-  const slidePersons = slide.isOwn
-    ? slide.persons.filter(
-        (p) =>
-          (currentUserEmail ? p.email !== currentUserEmail : true) &&
-          (currentUserName ? p.name !== currentUserName : true)
-      )
-    : slide.persons;
+  const slidePersons = slide.persons.filter((p) => p.id !== slide.createdByUserId);
 
   const buildBack = () => {
     const barPct = Math.min(100, (peak.altitudeM / 8849) * 100).toFixed(1);

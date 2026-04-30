@@ -604,12 +604,7 @@ export function AscentsClient({
           {groups.map((group, i) => {
             if (group.length === 1) {
               const a = group[0];
-              const others = a.isOwn
-                ? a.persons.filter((p) =>
-                    (currentUserEmail ? p.email !== currentUserEmail : true) &&
-                    (currentUserName ? p.name !== currentUserName : true)
-                  )
-                : a.persons;
+              const others = a.persons.filter((p) => p.id !== a.createdByUserId);
               return (
                 <div
                   key={a.id}
