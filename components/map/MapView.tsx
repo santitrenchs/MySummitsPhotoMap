@@ -59,7 +59,7 @@ export const RARITY_COLORS: Record<string, string> = {
 
 // ─── Rarity scoring weights (used in adaptive score computation) ─────────────
 
-const RARITY_SCORE_WEIGHTS: Record<string, number> = {
+export const RARITY_SCORE_WEIGHTS: Record<string, number> = {
   daisy:     0.2,
   lavender:  0.3,
   gentian:   0.4,
