@@ -26,32 +26,32 @@ export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClic
         transition: "background 0.12s",
       }}
     >
-      {/* Thumbnail */}
-      <div style={{
-        width: 60, height: 60, borderRadius: 10, flexShrink: 0,
-        overflow: "hidden", position: "relative",
-        background: ascent?.photoUrl
-          ? undefined
-          : `linear-gradient(135deg, ${rarityColor}22 0%, ${rarityColor}44 100%)`,
-        border: selected ? `2px solid ${rarityColor}` : "2px solid #e5e7eb",
-      }}>
-        {ascent?.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={ascent.photoUrl}
-            alt=""
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-        ) : (
-          <span style={{
-            position: "absolute", inset: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: peak.rarity ? 22 : 18,
-          }}>
-            {peak.rarity?.emoji ?? "🏔"}
-          </span>
-        )}
-      </div>
+      {/* Thumbnail — only when ascent exists */}
+      {ascent && (
+        <div style={{
+          width: 60, height: 60, borderRadius: 10, flexShrink: 0,
+          overflow: "hidden", position: "relative",
+          border: selected ? `2px solid ${rarityColor}` : "2px solid #e5e7eb",
+        }}>
+          {ascent.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={ascent.photoUrl}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          ) : (
+            <span style={{
+              position: "absolute", inset: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: peak.rarity ? 22 : 18,
+              background: `linear-gradient(135deg, ${rarityColor}22 0%, ${rarityColor}44 100%)`,
+            }}>
+              {peak.rarity?.emoji ?? "🏔"}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -70,25 +70,21 @@ export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClic
         {peak.mountainRange && (
           <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {peak.mountainRange}
-            {peak.rarity && (
-              <span style={{ marginLeft: 5, color: rarityColor, fontWeight: 600 }}>
-                · {peak.rarity.emoji} {peak.rarity.name}
-              </span>
-            )}
           </p>
+        )}
+        {peak.rarity && (
+          <span className={`capture-rarity-inline ${peak.rarityId ?? ""}`} style={{ marginTop: 3 }}>
+            <span className="rarity-icon" style={{ background: "none" }}>✿</span>
+            <span className="rarity-value">{peak.rarity.name}</span>
+          </span>
         )}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-          {ascent ? (
+          {ascent && (
             <span style={{
               fontSize: 10, fontWeight: 700, color: "#16a34a",
               background: "#dcfce7", borderRadius: 20, padding: "2px 7px",
             }}>✓ Escalada</span>
-          ) : (
-            <span style={{
-              fontSize: 10, fontWeight: 600, color: "#6b7280",
-              background: "#f3f4f6", borderRadius: 20, padding: "2px 7px",
-            }}>Por conquistar</span>
           )}
           {distanceKm !== null && (
             <span style={{ fontSize: 10, color: "#9ca3af" }}>

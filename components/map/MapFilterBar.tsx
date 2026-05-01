@@ -156,17 +156,14 @@ export default function MapFilterBar({
                   background: checked ? "#f8fafc" : "none",
                   border: "none", cursor: "pointer", textAlign: "left",
                   fontSize: 13, fontWeight: checked ? 700 : 500,
-                  color: "#111827",
+                  color,
                 }}
               >
                 <span style={{
-                  width: 20, height: 20, borderRadius: "50%",
-                  background: color,
-                  flexShrink: 0, display: "flex", alignItems: "center",
-                  justifyContent: "center", fontSize: 11,
-                  boxShadow: checked ? `0 0 0 2px white, 0 0 0 3.5px ${color}` : "none",
-                  transition: "box-shadow 0.15s",
-                }} />
+                  fontSize: 18, color, flexShrink: 0, lineHeight: 1,
+                  opacity: checked ? 1 : 0.65,
+                  transition: "opacity 0.15s",
+                }}>✿</span>
                 <span style={{ flex: 1 }}>{r.name}</span>
                 {checked && <span style={{ fontSize: 11, color }}>✓</span>}
               </button>

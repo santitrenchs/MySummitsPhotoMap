@@ -169,11 +169,15 @@ export default function MapPeaksSidebar({
         animation: "panelInMobile 0.28s ease both",
       }
     : {
-        width: 320, flexShrink: 0,
+        position: "absolute",
+        top: 12, right: 12, bottom: 12,
+        width: 320,
         display: "flex", flexDirection: "column",
-        borderLeft: "1px solid #e5e7eb",
-        background: "#fafafa",
-        overflowY: "auto",
+        borderRadius: 16,
+        background: "white",
+        boxShadow: "0 2px 20px rgba(0,0,0,0.14)",
+        overflow: "hidden",
+        zIndex: 10,
       };
 
   return (

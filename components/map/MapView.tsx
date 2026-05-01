@@ -49,11 +49,11 @@ export type MapBounds = { north: number; south: number; east: number; west: numb
 // ─── Rarity color map ────────────────────────────────────────────────────────
 
 export const RARITY_COLORS: Record<string, string> = {
-  daisy:     "#F59E0B",
+  daisy:     "#00995C",
   lavender:  "#A855F7",
-  gentian:   "#3B82F6",
-  edelweiss: "#EC4899",
-  saxifrage: "#F97316",
+  gentian:   "#7B5BA6",
+  edelweiss: "#F97316",
+  saxifrage: "#EAB308",
   mythic:    "#FFD700",
 };
 
@@ -194,6 +194,7 @@ export default function MapView({
   const CACHE_MAX = 3000; // evict oldest entries beyond this to keep iteration fast
 
   const [selected, setSelected] = useState<Selected>(null);
+  const [panelScreenPos, setPanelScreenPos] = useState<{ x: number; y: number } | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [rarityFilter, setRarityFilter] = useState<string[]>([]);
   const [mythicOnly, setMythicOnly] = useState(false);
@@ -405,6 +406,21 @@ export default function MapView({
     if (!map) return;
     applyRarityLayerFilter(map, rarityFilter, mythicOnly);
   }, [rarityFilter, mythicOnly]);
+
+  // Track screen position of selected peak so panel floats above it
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selected || isMobile) { setPanelScreenPos(null); return; }
+    function update() {
+      const m = mapRef.current;
+      if (!m || !selected) return;
+      const pt = m.project([selected.peak.longitude, selected.peak.latitude]);
+      setPanelScreenPos({ x: Math.round(pt.x), y: Math.round(pt.y) });
+    }
+    update();
+    map.on("move", update);
+    return () => { map.off("move", update); };
+  }, [selected, isMobile]);
 
   // Remove highlight marker when panel is closed
   useEffect(() => {
@@ -734,11 +750,11 @@ export default function MapView({
             1.0, 15,
           ],
           "circle-color": ["match", ["get", "rarityId"],
-            "daisy",     "#F59E0B",
+            "daisy",     "#00995C",
             "lavender",  "#A855F7",
-            "gentian",   "#3B82F6",
-            "edelweiss", "#EC4899",
-            "saxifrage", "#F97316",
+            "gentian",   "#7B5BA6",
+            "edelweiss", "#F97316",
+            "saxifrage", "#EAB308",
             "mythic",    "#FFD700",
             "#60a5fa",
           ],
@@ -780,14 +796,10 @@ export default function MapView({
       });
 
       map.on("click", "unclustered-peaks", (e) => {
-        justSelectedRef.current = true;
         const props = e.features?.[0]?.properties;
         if (!props) return;
         const peak = peaksCacheRef.current.get(props.id);
-        if (peak) {
-          setSelected({ peak, ascent: ascentByPeakId.current.get(peak.id) ?? null });
-          showHighlight(peak);
-        }
+        if (peak) flyToPeak(peak);
       });
 
       map.on("mousemove", "unclustered-peaks", (e) => {
@@ -806,8 +818,9 @@ export default function MapView({
         const peak = peaks.find((p) => p.id === entry.peakId);
         if (!peak) continue;
 
-        const RING = "0 0 0 3.5px #22c55e, 0 4px 16px rgba(0,0,0,0.32)";
-        const RING_HOVER = "0 0 0 5px #22c55e, 0 6px 22px rgba(0,0,0,0.4)";
+        const ringColor = RARITY_COLORS[peak.rarityId ?? ""] ?? "#22c55e";
+        const RING = `0 0 0 3.5px ${ringColor}, 0 4px 16px rgba(0,0,0,0.32)`;
+        const RING_HOVER = `0 0 0 5px ${ringColor}, 0 6px 22px rgba(0,0,0,0.4)`;
 
         const el = document.createElement("div");
         el.setAttribute("aria-label", `${peak.name} ${peak.altitudeM}m (climbed)`);
@@ -850,10 +863,8 @@ export default function MapView({
         el.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          justSelectedRef.current = true;
           setTooltip(null);
-          setSelected({ peak, ascent: entry });
-          showHighlight(peak);
+          flyToPeak(peak);
         });
 
         markerEls.current.set(peak.id, el);
@@ -894,16 +905,31 @@ export default function MapView({
 
   // ── Derived counts ────────────────────────────────────────────────────────
   const climbedCount = ascentData.length;
+  const PANEL_W = 300;
+  const containerW = containerRef.current?.clientWidth ?? 800;
+  const containerH = containerRef.current?.clientHeight ?? 600;
   const panelStyle: React.CSSProperties = isMobile
     ? { bottom: 0, left: 0, right: 0, borderRadius: "20px 20px 0 0", maxHeight: "70vh" }
-    : { top: 12, right: 12, width: 300, maxHeight: "calc(100% - 80px)", borderRadius: 18 };
+    : panelScreenPos
+    ? (() => {
+        const gap = 28;
+        const clampedLeft = Math.max(8, Math.min(panelScreenPos.x - PANEL_W / 2, containerW - PANEL_W - 8));
+        const spaceAbove = panelScreenPos.y - gap - 8;
+        const spaceBelow = containerH - panelScreenPos.y - gap - 8;
+        if (spaceAbove >= 220 || spaceAbove >= spaceBelow) {
+          // Panel arriba del pico
+          return { left: clampedLeft, bottom: containerH - panelScreenPos.y + gap, width: PANEL_W, maxHeight: Math.max(120, spaceAbove), borderRadius: 18 };
+        } else {
+          // Panel debajo del pico (cuando está cerca del borde superior)
+          return { left: clampedLeft, top: panelScreenPos.y + gap, width: PANEL_W, maxHeight: Math.max(120, spaceBelow), borderRadius: 18 };
+        }
+      })()
+    : { top: 12, left: "50%", transform: "translateX(-50%)", width: PANEL_W, maxHeight: "calc(100% - 80px)", borderRadius: 18 };
 
   return (
-    // Outer: flex row — map area left, sidebar right
     <div style={{
-      display: "flex",
+      position: "relative",
       height: "calc(100svh - var(--top-nav-h, 3.5rem) - var(--bottom-nav-h, 0px))",
-      background: "#e2e8f0",
     }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -936,8 +962,8 @@ export default function MapView({
         .search-result:hover { background: #f3f4f6; }
       `}</style>
 
-        {/* Map area — flex:1, contains containerRef and all overlays */}
-        <div style={{ position: "relative", flex: 1, minWidth: 0, minHeight: 0 }}>
+        {/* Map area — full bleed behind floating sidebar */}
+        <div style={{ position: "absolute", inset: 0 }}>
 
           {/* Map canvas — UNCHANGED: position:absolute; inset:0 */}
           {/* pointerEvents:none when sheet is open to isolate touch from map */}
