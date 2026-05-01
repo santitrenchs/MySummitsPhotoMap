@@ -825,7 +825,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               <img
                 src={preview}
                 alt=""
-                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             )}
             {isEditMode && (
