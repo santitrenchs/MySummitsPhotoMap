@@ -938,7 +938,7 @@ export default function MapView({
           {/* ── Filter pills overlay — right of search (desktop), below search (mobile) */}
           <div style={{
             position: "absolute",
-            top: isMobile ? 74 : 12,
+            top: isMobile ? 86 : 12,
             left: isMobile ? 12 : 344,
             right: isMobile ? 12 : undefined,
             zIndex: 20,

@@ -143,16 +143,13 @@ export default function MapFilterBar({
       {/* Rareza */}
       <Dropdown label={rarityLabel} active={rarityActive || mythicOnly}>
         <div style={{ padding: "8px 0" }}>
-          {rarities.map((r) => {
-            const checked = mythicOnly ? r.id === "mythic" : rarityFilter.includes(r.id);
+          {rarities.filter((r) => r.id !== "mythic").map((r) => {
+            const checked = rarityFilter.includes(r.id);
             const color = RARITY_COLORS[r.id] ?? "#6b7280";
             return (
               <button
                 key={r.id}
-                onClick={() => {
-                  if (mythicOnly && r.id === "mythic") { onMythicToggle(); return; }
-                  toggleRarity(r.id);
-                }}
+                onClick={() => toggleRarity(r.id)}
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
                   width: "100%", padding: "9px 16px",
