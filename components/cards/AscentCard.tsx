@@ -247,6 +247,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                         editAscent: {
                           id: ascent.id,
                           peakId: ascent.peak.id,
+                          peakName: ascent.peak.name,
                           date: ascent.date.slice(0, 10),
                           route: ascent.route ?? null,
                           description: ascent.description ?? null,

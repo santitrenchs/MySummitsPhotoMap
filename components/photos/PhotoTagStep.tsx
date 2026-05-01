@@ -430,7 +430,7 @@ export function PhotoTagStep({
 
         {/* Photo + face overlays */}
         <div
-          style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", padding: "4px 0" }}
+          style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}
           onClick={(e) => {
             if (drawMode) handleImageTap(e.clientX, e.clientY);
             else setActiveFaceId(null);

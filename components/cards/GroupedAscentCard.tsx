@@ -317,6 +317,7 @@ export function GroupedAscentCard({
                         editAscent: {
                           id: ownAscent.id,
                           peakId: ownAscent.peak.id,
+                          peakName: ownAscent.peak.name,
                           date: ownAscent.date.slice(0, 10),
                           route: ownAscent.route ?? null,
                           description: ownAscent.description ?? null,

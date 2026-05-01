@@ -127,6 +127,7 @@ export function AscentModal({
             width: 100%;
             height: 100svh;
             border-radius: 0;
+            padding-bottom: env(safe-area-inset-bottom);
             animation: aModalSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
           }
           @keyframes aModalSlideUp {

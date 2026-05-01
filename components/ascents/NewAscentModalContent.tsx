@@ -30,6 +30,7 @@ export type ModalHeaderConfig = {
 export type EditAscent = {
   id: string;
   peakId: string;
+  peakName: string;
   date: string;
   route: string | null;
   description: string | null;
@@ -825,7 +826,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               <img
                 src={preview}
                 alt=""
-                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             )}
             {isEditMode && (
@@ -887,6 +888,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               <PeakPicker
                 peaks={peaks}
                 defaultPeakId={isEditMode ? editAscent!.peakId : (defaultPeakId ?? suggestedPeakId ?? undefined)}
+                defaultPeakName={isEditMode ? editAscent!.peakName : undefined}
                 name="peakId"
                 placeholder={t.field_selectPeak}
                 suggested={!isEditMode && !defaultPeakId && !!suggestedPeakId}

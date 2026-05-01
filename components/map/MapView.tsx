@@ -5,8 +5,17 @@ import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
+import MapFilterBar from "./MapFilterBar";
+import MapPeaksSidebar from "./MapPeaksSidebar";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+
+export type RarityDef = {
+  id: string;
+  name: string;
+  emoji: string;
+  order: number;
+};
 
 export type MapPeak = {
   id: string;
@@ -16,6 +25,9 @@ export type MapPeak = {
   altitudeM: number;
   mountainRange: string | null;
   country: string;
+  rarityId: string | null;
+  isMythic: boolean;
+  rarity: { id: string; name: string; emoji: string; order: number } | null;
 };
 
 export type AscentMapEntry = {
@@ -32,6 +44,48 @@ export type AscentMapEntry = {
 type Filter = "all" | "climbed" | "not-climbed";
 type Tooltip = { text: string; x: number; y: number } | null;
 type Selected = { peak: MapPeak; ascent: AscentMapEntry | null } | null;
+export type MapBounds = { north: number; south: number; east: number; west: number };
+
+// ─── Rarity color map ────────────────────────────────────────────────────────
+
+export const RARITY_COLORS: Record<string, string> = {
+  daisy:     "#F59E0B",
+  lavender:  "#A855F7",
+  gentian:   "#3B82F6",
+  edelweiss: "#EC4899",
+  saxifrage: "#F97316",
+  mythic:    "#FFD700",
+};
+
+// ─── Rarity scoring weights (used in adaptive score computation) ─────────────
+
+export const RARITY_SCORE_WEIGHTS: Record<string, number> = {
+  daisy:     0.2,
+  lavender:  0.3,
+  gentian:   0.4,
+  edelweiss: 0.7,
+  saxifrage: 1.0,
+  mythic:    1.0,
+};
+
+// ─── Apply rarity layer filter (safe for iOS — uses setFilter, not setData) ──
+
+function applyRarityLayerFilter(
+  map: maplibregl.Map,
+  rarityFilter: string[],
+  mythicOnly: boolean,
+) {
+  const active = mythicOnly ? ["mythic"] : rarityFilter;
+  const filter: maplibregl.FilterSpecification | null = active.length > 0
+    ? ["in", ["get", "rarityId"], ["literal", active]]
+    : null;
+  for (const layer of ["unclustered-peaks", "mythic-glow", "peak-labels"]) {
+    if (map.getLayer(layer)) {
+      if (filter) map.setFilter(layer, filter);
+      else map.setFilter(layer, undefined as unknown as maplibregl.FilterSpecification);
+    }
+  }
+}
 
 // ─── Map tile style ───────────────────────────────────────────────────────────
 
@@ -115,9 +169,11 @@ function resolveInitialView(
 export default function MapView({
   peaks,
   ascentData = [],
+  rarities = [],
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
+  rarities?: RarityDef[];
 }) {
   const router = useRouter();
   const t = useT();
@@ -129,9 +185,23 @@ export default function MapView({
   const ascentByPeakId = useRef(new Map(ascentData.map((a) => [a.peakId, a])));
   const markerEls = useRef(new Map<string, HTMLElement>());
   const justSelectedRef = useRef(false);
+  const highlightMarkerRef = useRef<maplibregl.Marker | null>(null);
+
+  // Viewport loading: accumulates all fetched peaks (climbed + unclimbed from API)
+  const peaksCacheRef = useRef(new Map<string, MapPeak>(peaks.map((p) => [p.id, p])));
+  const fetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const boundsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const CACHE_MAX = 3000; // evict oldest entries beyond this to keep iteration fast
 
   const [selected, setSelected] = useState<Selected>(null);
   const [filter, setFilter] = useState<Filter>("all");
+  const [rarityFilter, setRarityFilter] = useState<string[]>([]);
+  const [mythicOnly, setMythicOnly] = useState(false);
+  const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // allPeaks grows as the user pans: starts with climbed peaks, gains viewport peaks from API
+  const [allPeaks, setAllPeaks] = useState<MapPeak[]>(peaks);
+  const [loadingPeaks, setLoadingPeaks] = useState(false);
   const [hillshade, setHillshade] = useState(true);
   const [terrain3d, setTerrain3d] = useState(() => window.innerWidth >= 640);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
@@ -156,14 +226,134 @@ export default function MapView({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Search results — filter peaks by name
+  // Search results — search across all loaded peaks (cache grows as user pans)
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (q.length < 2) return [];
-    return peaks
+    return allPeaks
       .filter((p) => p.name.toLowerCase().includes(q) || (p.mountainRange ?? "").toLowerCase().includes(q))
       .slice(0, 8);
-  }, [searchQuery, peaks]);
+  }, [searchQuery, allPeaks]);
+
+  // Compute adaptive scores for peaks in the current viewport and update the
+  // GeoJSON source. Called after every pan/zoom and after each viewport fetch.
+  //
+  // Algorithm:
+  //   1. Collect unclimbed peaks inside current map bounds
+  //   2. Normalize altitude locally (relative to viewport max)
+  //   3. Score = 0.5 * norm_alt + 0.3 * rarity_weight + 0.2 * captured_bonus
+  //   4. Keep top N% based on zoom level (10% → 25% → 50% → 100%)
+  //   5. Encode score as circle-radius / circle-opacity via GeoJSON property
+  function computeViewportScores(zoom: number) {
+    const map = mapRef.current;
+    const source = map?.getSource("unascended-peaks") as maplibregl.GeoJSONSource | undefined;
+    if (!source || !map) return;
+
+    const bounds = map.getBounds();
+    const viewportPeaks = Array.from(peaksCacheRef.current.values()).filter(
+      (p) =>
+        !ascentByPeakId.current.has(p.id) &&
+        p.latitude  >= bounds.getSouth() && p.latitude  <= bounds.getNorth() &&
+        p.longitude >= bounds.getWest()  && p.longitude <= bounds.getEast(),
+    );
+
+    if (viewportPeaks.length === 0) {
+      source.setData({ type: "FeatureCollection", features: [] });
+      return;
+    }
+
+    // Step 1 — local normalization (reduce avoids spread stack overflow on large arrays)
+    let maxAlt = 0;
+    for (const p of viewportPeaks) if (p.altitudeM > maxAlt) maxAlt = p.altitudeM;
+
+    // Step 2 — score
+    const scored = viewportPeaks.map((p) => {
+      const normAlt      = maxAlt > 0 ? p.altitudeM / maxAlt : 0;
+      const rarityWeight = RARITY_SCORE_WEIGHTS[p.rarityId ?? ""] ?? 0.1;
+      const score        = normAlt * 0.5 + rarityWeight * 0.3;
+      return { p, score };
+    });
+
+    // Step 3 — percentile filter
+    scored.sort((a, b) => b.score - a.score);
+    const pct =
+      zoom < 6  ? 0.10 :
+      zoom < 8  ? 0.25 :
+      zoom < 10 ? 0.50 : 1.0;
+    const keep = Math.max(1, Math.ceil(scored.length * pct));
+    const visible = scored.slice(0, keep);
+
+    // Build GeoJSON — score stored as property so paint expressions can read it
+    const features = visible.map(({ p, score }) => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
+      properties: {
+        id: p.id, name: p.name, alt: p.altitudeM,
+        rarityId: p.rarityId ?? "",
+        isMythic: p.isMythic ? 1 : 0,
+        score,
+      },
+    }));
+
+    source.setData({ type: "FeatureCollection", features });
+  }
+
+  // Fetch peaks for the given viewport bounds from the API, merge into cache,
+  // then recompute adaptive scores for the new data set.
+  async function fetchPeaksForViewport(bounds: MapBounds) {
+    const zoom = mapRef.current?.getZoom() ?? 0;
+    if (zoom < 5) return;
+    setLoadingPeaks(true);
+    try {
+      const { north, south, east, west } = bounds;
+      const res = await fetch(`/api/peaks?north=${north}&south=${south}&east=${east}&west=${west}`);
+      if (!res.ok) return;
+      const data: MapPeak[] = await res.json();
+      let hasNew = false;
+      for (const p of data) {
+        if (!peaksCacheRef.current.has(p.id)) {
+          peaksCacheRef.current.set(p.id, p);
+          hasNew = true;
+        }
+      }
+      // Evict oldest entries if cache grows too large — keeps iteration O(CACHE_MAX)
+      if (peaksCacheRef.current.size > CACHE_MAX) {
+        const toDelete = peaksCacheRef.current.size - CACHE_MAX;
+        let deleted = 0;
+        for (const key of peaksCacheRef.current.keys()) {
+          if (deleted++ >= toDelete) break;
+          peaksCacheRef.current.delete(key);
+        }
+      }
+      if (hasNew) setAllPeaks(Array.from(peaksCacheRef.current.values()));
+      computeViewportScores(zoom);
+    } catch { /* ignore network errors */ } finally {
+      setLoadingPeaks(false);
+    }
+  }
+
+  // Place or move a pulsing ring at the selected peak's coordinates
+  function showHighlight(peak: MapPeak) {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (highlightMarkerRef.current) {
+      highlightMarkerRef.current.remove();
+      highlightMarkerRef.current = null;
+    }
+
+    const el = document.createElement("div");
+    el.style.cssText = [
+      "position:absolute",
+      "width:52px", "height:52px", "border-radius:50%",
+      "pointer-events:none",
+      "animation:peakPulse 1.6s ease-out infinite",
+    ].join(";");
+
+    highlightMarkerRef.current = new maplibregl.Marker({ element: el, anchor: "center" })
+      .setLngLat([peak.longitude, peak.latitude])
+      .addTo(map);
+  }
 
   // Fly to peak with cinematic 3D tour
   function flyToPeak(peak: MapPeak) {
@@ -176,6 +366,7 @@ export default function MapView({
     const ascent = ascentByPeakId.current.get(peak.id) ?? null;
     setSelected({ peak, ascent });
     justSelectedRef.current = true;
+    showHighlight(peak);
 
     map.flyTo({
       center: [peak.longitude, peak.latitude],
@@ -188,20 +379,40 @@ export default function MapView({
     });
   }
 
-  // Apply filter
+  // Apply status filter (climbed / not-climbed / all)
   useEffect(() => {
     const showAscended = filter !== "not-climbed";
     const showUnascended = filter !== "climbed";
-    markerEls.current.forEach((el) => { el.style.display = showAscended ? "block" : "none"; });
+    const activeRarity = mythicOnly ? ["mythic"] : rarityFilter;
+    markerEls.current.forEach((el, peakId) => {
+      const peak = peaksCacheRef.current.get(peakId);
+      const passesRarity = activeRarity.length === 0 || activeRarity.includes(peak?.rarityId ?? "");
+      el.style.display = showAscended && passesRarity ? "block" : "none";
+    });
     const map = mapRef.current;
     if (map) {
-      for (const layer of ["clusters", "cluster-count", "unclustered-peaks", "peak-labels"]) {
+      for (const layer of ["unclustered-peaks", "mythic-glow", "peak-labels"]) {
         if (map.getLayer(layer)) {
           map.setLayoutProperty(layer, "visibility", showUnascended ? "visible" : "none");
         }
       }
     }
-  }, [filter]);
+  }, [filter, rarityFilter, mythicOnly, peaks]);
+
+  // Apply rarity filter to GeoJSON layers via setFilter (safe for iOS — no setData)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    applyRarityLayerFilter(map, rarityFilter, mythicOnly);
+  }, [rarityFilter, mythicOnly]);
+
+  // Remove highlight marker when panel is closed
+  useEffect(() => {
+    if (!selected && highlightMarkerRef.current) {
+      highlightMarkerRef.current.remove();
+      highlightMarkerRef.current = null;
+    }
+  }, [selected]);
 
   // Clear selection if hidden by filter
   useEffect(() => {
@@ -209,7 +420,9 @@ export default function MapView({
     const isAscended = ascentByPeakId.current.has(selected.peak.id);
     if (filter === "not-climbed" && isAscended) setSelected(null);
     if (filter === "climbed" && !isAscended) setSelected(null);
-  }, [filter, selected]);
+    const activeRarity = mythicOnly ? ["mythic"] : rarityFilter;
+    if (activeRarity.length > 0 && !activeRarity.includes(selected.peak.rarityId ?? "")) setSelected(null);
+  }, [filter, rarityFilter, mythicOnly, selected]);
 
   // Hillshade toggle
   useEffect(() => {
@@ -275,6 +488,11 @@ export default function MapView({
     mapRef.current = map;
 
     // Save map position on every move so we can restore it next session
+    // Also update mapBounds state so the sidebar list stays in sync
+    const updateBounds = () => {
+      const b = map.getBounds();
+      setMapBounds({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
+    };
     map.on("moveend", () => {
       try {
         const c = map.getCenter();
@@ -283,7 +501,22 @@ export default function MapView({
           zoom: map.getZoom(),
         }));
       } catch { /* ignore */ }
+      // Debounce sidebar bounds update — avoids re-sorting the sidebar list on
+      // every frame of a flyTo animation (which fires moveend repeatedly).
+      if (boundsDebounceRef.current) clearTimeout(boundsDebounceRef.current);
+      boundsDebounceRef.current = setTimeout(updateBounds, 300);
+
+      // Debounced viewport update — 500ms after the user stops panning.
+      // First recompute scores from cache (instant), then fetch any missing peaks.
+      if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
+      fetchDebounceRef.current = setTimeout(() => {
+        const b = map.getBounds();
+        const z = map.getZoom();
+        computeViewportScores(z); // immediate update from cache
+        fetchPeaksForViewport({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
+      }, 500);
     });
+    map.on("zoomend", updateBounds);
 
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
 
@@ -316,6 +549,7 @@ export default function MapView({
 
     map.once("load", () => {
       map.resize();
+      updateBounds();
 
       // ── Terrain sources + 3D + hillshade ───────────────────────────────
       // Two separate sources to avoid the maplibre warning about sharing
@@ -462,82 +696,76 @@ export default function MapView({
       });
 
       // ── GeoJSON source for unascended peaks ─────────────────────────────
-      const unascentedFeatures = peaks
-        .filter((p) => !ascentByPeakId.current.has(p.id))
-        .map((p) => ({
-          type: "Feature" as const,
-          geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
-          properties: { id: p.id, name: p.name, alt: p.altitudeM },
-        }));
-
+      // Starts empty — peaks loaded progressively per viewport via /api/peaks.
+      // No clustering: adaptive percentile filtering replaces cluster logic.
       map.addSource("unascended-peaks", {
         type: "geojson",
-        cluster: true,
-        clusterMaxZoom: 10,
-        clusterRadius: 55,
-        data: { type: "FeatureCollection", features: unascentedFeatures },
+        data: { type: "FeatureCollection", features: [] },
       });
 
+      // Glow ring for mythic peaks — blurred outer circle drawn underneath
       map.addLayer({
-        id: "clusters",
+        id: "mythic-glow",
         type: "circle",
         source: "unascended-peaks",
-        filter: ["has", "point_count"],
+        filter: ["==", ["get", "isMythic"], 1],
         paint: {
-          "circle-color": ["step", ["get", "point_count"], "#60a5fa", 5, "#3b82f6", 15, "#1d4ed8"],
-          "circle-radius": ["step", ["get", "point_count"], 16, 5, 22, 15, 28],
-          "circle-stroke-width": 2.5,
-          "circle-stroke-color": "white",
-          "circle-opacity": 0.92,
+          "circle-radius": ["interpolate", ["linear"], ["get", "score"], 0, 22, 1, 36],
+          "circle-color": "#FFD700",
+          "circle-opacity": 0.22,
+          "circle-blur": 1,
           "circle-pitch-alignment": "map",
         },
       });
 
-      map.addLayer({
-        id: "cluster-count",
-        type: "symbol",
-        source: "unascended-peaks",
-        filter: ["has", "point_count"],
-        layout: {
-          "text-field": "{point_count_abbreviated}",
-          "text-font": ["Noto Sans Regular"],
-          "text-size": 11,
-        },
-        paint: { "text-color": "white" },
-      });
-
+      // Main adaptive peaks layer:
+      //   circle-radius ∝ score  (5px low-score → 15px top-score)
+      //   circle-color  = rarity color
+      //   circle-opacity fades with lower score so top peaks pop
       map.addLayer({
         id: "unclustered-peaks",
         type: "circle",
         source: "unascended-peaks",
-        filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-color": ["step", ["get", "alt"],
-            "#00995C",
-            1500, "#7B5BA6",
-            3000, "#F97316",
-            5000, "#EAB308",
-            7000, "#DC2626",
-            8000, "#6b7280",
+          "circle-radius": ["interpolate", ["linear"], ["get", "score"],
+            0,   5,
+            0.4, 8,
+            0.7, 11,
+            1.0, 15,
           ],
-          "circle-radius": 7,
-          "circle-stroke-width": 2.5,
+          "circle-color": ["match", ["get", "rarityId"],
+            "daisy",     "#F59E0B",
+            "lavender",  "#A855F7",
+            "gentian",   "#3B82F6",
+            "edelweiss", "#EC4899",
+            "saxifrage", "#F97316",
+            "mythic",    "#FFD700",
+            "#60a5fa",
+          ],
+          "circle-opacity": ["interpolate", ["linear"], ["get", "score"],
+            0,   0.55,
+            0.5, 0.80,
+            1.0, 0.95,
+          ],
+          "circle-stroke-width": ["interpolate", ["linear"], ["get", "score"],
+            0,   1.5,
+            1.0, 2.5,
+          ],
           "circle-stroke-color": "white",
-          "circle-opacity": 0.9,
           "circle-pitch-alignment": "map",
         },
       });
 
+      // Labels appear only at high zoom, sized by score
       map.addLayer({
         id: "peak-labels",
         type: "symbol",
         source: "unascended-peaks",
-        filter: ["!", ["has", "point_count"]],
         minzoom: 10,
         layout: {
           "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
           "text-font": ["Noto Sans Regular"],
-          "text-size": 10,
+          "text-size": ["interpolate", ["linear"], ["get", "score"], 0, 9, 1, 12],
           "text-offset": [0, 1.2],
           "text-anchor": "top",
           "text-optional": true,
@@ -551,24 +779,15 @@ export default function MapView({
         },
       });
 
-      map.on("click", "clusters", (e) => {
-        justSelectedRef.current = true;
-        const features = map.queryRenderedFeatures(e.point, { layers: ["clusters"] });
-        const clusterId = features[0]?.properties?.cluster_id;
-        if (clusterId == null) return;
-        const coords = (features[0].geometry as GeoJSON.Point).coordinates as [number, number];
-        const src = map.getSource("unascended-peaks") as maplibregl.GeoJSONSource;
-        Promise.resolve(src.getClusterExpansionZoom(clusterId)).then((zoom) => {
-          if (typeof zoom === "number") map.easeTo({ center: coords, zoom, duration: 500 });
-        });
-      });
-
       map.on("click", "unclustered-peaks", (e) => {
         justSelectedRef.current = true;
         const props = e.features?.[0]?.properties;
         if (!props) return;
-        const peak = peaks.find((p) => p.id === props.id);
-        if (peak) setSelected({ peak, ascent: null });
+        const peak = peaksCacheRef.current.get(props.id);
+        if (peak) {
+          setSelected({ peak, ascent: ascentByPeakId.current.get(peak.id) ?? null });
+          showHighlight(peak);
+        }
       });
 
       map.on("mousemove", "unclustered-peaks", (e) => {
@@ -579,32 +798,22 @@ export default function MapView({
       });
       map.on("mouseleave", "unclustered-peaks", () => setTooltip(null));
 
-      map.on("mousemove", "clusters", (e) => {
-        const props = e.features?.[0]?.properties;
-        if (!props || !containerRef.current) return;
-        const pt = map.project(e.lngLat);
-        setTooltip({ text: i(tRef.current.map_unclimbedPeaks, { n: props.point_count }), x: pt.x, y: pt.y });
-      });
-      map.on("mouseleave", "clusters", () => setTooltip(null));
-
-      for (const layer of ["clusters", "unclustered-peaks"]) {
-        map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
-        map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
-      }
+      map.on("mouseenter", "unclustered-peaks", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "unclustered-peaks", () => { map.getCanvas().style.cursor = ""; });
 
       // ── Ascended peaks: circular photo HTML markers ─────────────────────
       for (const entry of ascentData) {
         const peak = peaks.find((p) => p.id === entry.peakId);
         if (!peak) continue;
 
-        const RING = "0 0 0 2.5px #22c55e, 0 3px 14px rgba(0,0,0,0.28)";
-        const RING_HOVER = "0 0 0 4px #22c55e, 0 5px 20px rgba(0,0,0,0.36)";
+        const RING = "0 0 0 3.5px #22c55e, 0 4px 16px rgba(0,0,0,0.32)";
+        const RING_HOVER = "0 0 0 5px #22c55e, 0 6px 22px rgba(0,0,0,0.4)";
 
         const el = document.createElement("div");
         el.setAttribute("aria-label", `${peak.name} ${peak.altitudeM}m (climbed)`);
         el.style.cssText = [
           "position:absolute",  // explicit — maplibre-gl.css may not apply on iOS Safari
-          "width:42px", "height:42px", "border-radius:50%",
+          "width:44px", "height:44px", "border-radius:50%",
           "overflow:hidden", "cursor:pointer",
           "border:2.5px solid white",
           `box-shadow:${RING}`,
@@ -644,6 +853,7 @@ export default function MapView({
           justSelectedRef.current = true;
           setTooltip(null);
           setSelected({ peak, ascent: entry });
+          showHighlight(peak);
         });
 
         markerEls.current.set(peak.id, el);
@@ -660,6 +870,8 @@ export default function MapView({
       // hasn't fully committed the layout by the time 'idle' fires.
       map.once("idle", () => {
         map.resize();
+        const b = map.getBounds();
+        fetchPeaksForViewport({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
       });
     });
 
@@ -669,6 +881,10 @@ export default function MapView({
       containerRef.current?.removeEventListener("touchmove", onTouchMove);
       containerRef.current?.removeEventListener("touchend", onTouchEnd);
       containerRef.current?.removeEventListener("touchcancel", onTouchEnd);
+      if (boundsDebounceRef.current) clearTimeout(boundsDebounceRef.current);
+      if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
+      highlightMarkerRef.current?.remove();
+      highlightMarkerRef.current = null;
       map.remove();
       mapRef.current = null;
       markerEls.current.clear();
@@ -678,14 +894,24 @@ export default function MapView({
 
   // ── Derived counts ────────────────────────────────────────────────────────
   const climbedCount = ascentData.length;
-const panelStyle: React.CSSProperties = isMobile
+  const panelStyle: React.CSSProperties = isMobile
     ? { bottom: 0, left: 0, right: 0, borderRadius: "20px 20px 0 0", maxHeight: "70vh" }
     : { top: 12, right: 12, width: 300, maxHeight: "calc(100% - 80px)", borderRadius: 18 };
 
   return (
-    <div style={{ position: "relative", height: "calc(100svh - var(--top-nav-h, 3.5rem) - var(--bottom-nav-h, 0px))", background: "#e2e8f0" }}>
+    // Outer: flex row — map area left, sidebar right
+    <div style={{
+      display: "flex",
+      height: "calc(100svh - var(--top-nav-h, 3.5rem) - var(--bottom-nav-h, 0px))",
+      background: "#e2e8f0",
+    }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes peakPulse {
+          0%   { box-shadow: 0 0 0 0px rgba(251,191,36,0.9), 0 0 0 6px rgba(251,191,36,0.5); opacity: 1; }
+          70%  { box-shadow: 0 0 0 18px rgba(251,191,36,0), 0 0 0 24px rgba(251,191,36,0); opacity: 0.6; }
+          100% { box-shadow: 0 0 0 0px rgba(251,191,36,0), 0 0 0 0px rgba(251,191,36,0); opacity: 0; }
+        }
         @keyframes panelIn {
           from { opacity: 0; transform: translateY(12px) scale(0.98); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -710,356 +936,376 @@ const panelStyle: React.CSSProperties = isMobile
         .search-result:hover { background: #f3f4f6; }
       `}</style>
 
-      {/* Map canvas */}
-      <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+        {/* Map area — flex:1, contains containerRef and all overlays */}
+        <div style={{ position: "relative", flex: 1, minWidth: 0, minHeight: 0 }}>
 
-      {/* ── Unified search + filter panel ── top ──────────────────────── */}
-      <div style={{
-        position: "absolute", top: 12,
-        left: 12, right: 12,
-        ...(isMobile ? {} : { right: "auto", width: 380 }),
-        zIndex: 20,
-        background: "rgba(255,255,255,0.97)",
-        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-        borderRadius: 16,
-        boxShadow: "0 2px 16px rgba(0,0,0,0.2)",
-        overflow: "hidden",
-      }}>
-        {/* Row 1: Search input */}
-        <div style={{ position: "relative", padding: "10px 12px 8px" }}>
-          <span style={{
-            position: "absolute", left: 22, top: "50%", transform: "translateY(-50%)",
-            fontSize: 14, pointerEvents: "none", color: "#9ca3af",
-          }}>🔍</span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
-            onFocus={() => setSearchOpen(true)}
-            onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
-            placeholder="Buscar cima…"
-            style={{
-              width: "100%", padding: "8px 30px 8px 32px",
-              borderRadius: 10, border: "none",
-              fontSize: 16, fontWeight: 500, color: "#111827",
-              background: "#f3f4f6",
-              outline: "none", boxSizing: "border-box",
-            }}
+          {/* Map canvas — UNCHANGED: position:absolute; inset:0 */}
+          {/* pointerEvents:none when sheet is open to isolate touch from map */}
+          <div
+            ref={containerRef}
+            style={{ position: "absolute", inset: 0, pointerEvents: sheetOpen ? "none" : "auto" }}
           />
-          {searchQuery && (
-            <button
-              onMouseDown={() => setSearchQuery("")}
-              style={{
-                position: "absolute", right: 18, top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", cursor: "pointer",
-                color: "#9ca3af", fontSize: 14, lineHeight: 1, padding: 2,
-              }}
-            >✕</button>
-          )}
-        </div>
 
-        {/* Row 2: Filter chips + toggles */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 5,
-          padding: "0 10px 10px",
-          borderTop: "1px solid #f3f4f6",
-          paddingTop: 8,
-        }}>
-          <div style={{ display: "flex", gap: 5, flex: 1, minWidth: 0, flexWrap: "nowrap", overflow: "hidden" }}>
-            {[
-              { value: "all" as Filter,         label: t.map_all },
-              { value: "climbed" as Filter,      label: i(t.map_myCount, { n: climbedCount }) },
-              { value: "not-climbed" as Filter,  label: t.map_notYet },
-            ].map(({ value, label }) => (
-              <button
-                key={value}
-                className="filter-chip"
-                onClick={() => setFilter(value)}
+          {/* ── Filter pills overlay — right of search (desktop), below search (mobile) */}
+          <div style={{
+            position: "absolute",
+            top: isMobile ? 86 : 12,
+            left: isMobile ? 12 : 344,
+            right: isMobile ? 12 : undefined,
+            zIndex: 20,
+            display: "flex", alignItems: "center", gap: 8,
+            overflowX: isMobile ? "auto" : "visible",
+            WebkitOverflowScrolling: "touch",
+            // Hide scrollbar on mobile but keep scrollability
+            msOverflowStyle: "none",
+          }}>
+            <MapFilterBar
+              filter={filter}
+              onFilterChange={setFilter}
+              rarityFilter={rarityFilter}
+              onRarityChange={setRarityFilter}
+              mythicOnly={mythicOnly}
+              onMythicToggle={() => {
+                setMythicOnly((v) => !v);
+                if (!mythicOnly) setRarityFilter([]);
+              }}
+              rarities={rarities}
+              climbedCount={climbedCount}
+              hillshade={hillshade}
+              onHillshadeToggle={() => setHillshade((v) => !v)}
+              terrain3d={terrain3d}
+              onTerrain3dToggle={() => setTerrain3d((v) => !v)}
+            />
+          </div>
+
+          {/* ── Search panel overlay ──────────────────────────────────── */}
+          <div style={{
+            position: "absolute", top: 12,
+            left: 12, right: 12,
+            ...(isMobile ? {} : { right: "auto", width: 320 }),
+            zIndex: 20,
+            background: "rgba(255,255,255,0.97)",
+            backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+            borderRadius: 16,
+            boxShadow: "0 2px 16px rgba(0,0,0,0.2)",
+            overflow: "hidden",
+          }}>
+            <div style={{ position: "relative", padding: "10px 12px" }}>
+              <span style={{
+                position: "absolute", left: 22, top: "50%", transform: "translateY(-50%)",
+                fontSize: 14, pointerEvents: "none", color: "#9ca3af",
+              }}>🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+                onFocus={() => setSearchOpen(true)}
+                onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+                placeholder="Buscar cima…"
                 style={{
-                  padding: "5px 10px", borderRadius: 20, border: "none",
-                  fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  background: filter === value ? "#111827" : "#f3f4f6",
-                  color: filter === value ? "white" : "#374151",
-                  whiteSpace: "nowrap", flexShrink: 0,
+                  width: "100%", padding: "8px 30px 8px 32px",
+                  borderRadius: 10, border: "none",
+                  fontSize: 16, fontWeight: 500, color: "#111827",
+                  background: "#f3f4f6",
+                  outline: "none", boxSizing: "border-box",
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onMouseDown={() => setSearchQuery("")}
+                  style={{
+                    position: "absolute", right: 18, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "#9ca3af", fontSize: 14, lineHeight: 1, padding: 2,
+                  }}
+                >✕</button>
+              )}
+            </div>
+            {searchOpen && searchResults.length > 0 && (
+              <div style={{
+                borderTop: "1px solid #f3f4f6",
+                maxHeight: 260, overflowY: "auto",
+                animation: "searchDrop 0.15s ease both",
+              }}>
+                {searchResults.map((peak) => {
+                  const isClimbed = ascentByPeakId.current.has(peak.id);
+                  return (
+                    <button
+                      key={peak.id}
+                      className="search-result"
+                      onMouseDown={() => flyToPeak(peak)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10,
+                        width: "100%", padding: "10px 14px",
+                        background: "none", border: "none", cursor: "pointer",
+                        textAlign: "left", borderBottom: "1px solid #f3f4f6",
+                      }}
+                    >
+                      <span style={{ fontSize: 16, flexShrink: 0 }}>{isClimbed ? "✅" : "🏔"}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827" }}>
+                          {peak.name}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                          {peak.altitudeM.toLocaleString(t.dateLocale)} m
+                          {peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ── Hover tooltip ──────────────────────────────────────────── */}
+          {tooltip && !selected && (
+            <div style={{
+              position: "absolute",
+              left: tooltip.x, top: tooltip.y - 40,
+              transform: "translateX(-50%)",
+              pointerEvents: "none", zIndex: 30,
+              background: "rgba(17,24,39,0.78)", backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              color: "white", fontSize: 12, fontWeight: 600,
+              padding: "5px 13px", borderRadius: 20,
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            }}>
+              {tooltip.text}
+            </div>
+          )}
+
+          {/* ── Zoom controls ── bottom right ──────────────────────────── */}
+          <div style={{
+            position: "absolute", bottom: 100, right: 12, zIndex: 10,
+            display: "flex", flexDirection: "column",
+            borderRadius: 10, overflow: "hidden",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
+          }}>
+            {([{ label: "+", fn: () => mapRef.current?.zoomIn() }, { label: "−", fn: () => mapRef.current?.zoomOut() }] as const).map(({ label, fn }) => (
+              <button
+                key={label}
+                onClick={fn}
+                aria-label={label === "+" ? t.map_zoomIn : t.map_zoomOut}
+                style={{
+                  width: 36, height: 36,
+                  background: "rgba(17,24,39,0.78)",
+                  backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+                  border: "none",
+                  borderTop: label === "−" ? "1px solid rgba(255,255,255,0.12)" : "none",
+                  fontSize: 20, fontWeight: 300, color: "white", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >{label}</button>
             ))}
           </div>
 
-          <div style={{ width: 1, height: 18, background: "#e5e7eb", flexShrink: 0 }} />
-
-          <button
-            className="filter-chip"
-            onClick={() => setHillshade((v) => !v)}
-            title={t.map_relief}
-            style={{
-              padding: "5px 9px", borderRadius: 20, border: "none",
-              fontSize: 13, fontWeight: 700, cursor: "pointer",
-              background: hillshade ? "#0369a1" : "#f3f4f6",
-              color: hillshade ? "white" : "#374151",
-              flexShrink: 0,
-            }}
-          >⛰️</button>
-
-          <button
-            className="filter-chip"
-            onClick={() => setTerrain3d((v) => !v)}
-            style={{
-              padding: "5px 9px", borderRadius: 20, border: "none",
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.02em", cursor: "pointer",
-              background: terrain3d ? "#7c3aed" : "#f3f4f6",
-              color: terrain3d ? "white" : "#374151",
-              flexShrink: 0,
-            }}
-          >3D</button>
-        </div>
-
-        {/* Search results (inline, extends panel) */}
-        {searchOpen && searchResults.length > 0 && (
-          <div style={{
-            borderTop: "1px solid #f3f4f6",
-            maxHeight: 260, overflowY: "auto",
-            animation: "searchDrop 0.15s ease both",
-          }}>
-            {searchResults.map((peak) => {
-              const isClimbed = ascentByPeakId.current.has(peak.id);
-              return (
-                <button
-                  key={peak.id}
-                  className="search-result"
-                  onMouseDown={() => flyToPeak(peak)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    width: "100%", padding: "10px 14px",
-                    background: "none", border: "none", cursor: "pointer",
-                    textAlign: "left", borderBottom: "1px solid #f3f4f6",
-                  }}
-                >
-                  <span style={{ fontSize: 16, flexShrink: 0 }}>{isClimbed ? "✅" : "🏔"}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827" }}>
-                      {peak.name}
-                    </p>
-                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                      {peak.altitudeM.toLocaleString(t.dateLocale)} m
-                      {peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ── Hover tooltip ───────────────────────────────────────────────── */}
-      {tooltip && !selected && (
-        <div style={{
-          position: "absolute",
-          left: tooltip.x, top: tooltip.y - 40,
-          transform: "translateX(-50%)",
-          pointerEvents: "none", zIndex: 30,
-          background: "rgba(17,24,39,0.78)", backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          color: "white", fontSize: 12, fontWeight: 600,
-          padding: "5px 13px", borderRadius: 20,
-          whiteSpace: "nowrap",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-        }}>
-          {tooltip.text}
-        </div>
-      )}
-
-
-      {/* ── Zoom controls ── bottom right ─────────────────────────────── */}
-      <div style={{
-        position: "absolute", bottom: 100, right: 12, zIndex: 10,
-        display: "flex", flexDirection: "column", gap: 1,
-      }}>
-        {([{ label: "+", fn: () => mapRef.current?.zoomIn() }, { label: "−", fn: () => mapRef.current?.zoomOut() }] as const).map(({ label, fn }) => (
-          <button
-            key={label}
-            onClick={fn}
-            aria-label={label === "+" ? t.map_zoomIn : t.map_zoomOut}
-            style={{
-              width: 32, height: 32,
-              background: "rgba(255,255,255,0.96)", border: "1px solid #d1d5db",
-              borderRadius: label === "+" ? "8px 8px 0 0" : "0 0 8px 8px",
-              fontSize: 18, color: "#374151", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
-            }}
-          >{label}</button>
-        ))}
-      </div>
-
-      {/* ── Legend ── bottom right ─────────────────────────────────────── */}
-      <div style={{
-        position: "absolute", bottom: 28, right: 12, zIndex: 10,
-        background: "rgba(255,255,255,0.92)", borderRadius: 10,
-        padding: "8px 12px", fontSize: 11, color: "#6b7280",
-        pointerEvents: "none", display: "flex", flexDirection: "column", gap: 5,
-        backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
-        boxShadow: "0 1px 6px rgba(0,0,0,0.12)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <div style={{ width: 14, height: 14, borderRadius: "50%", background: "linear-gradient(135deg,#dbeafe,#eff6ff)", border: "2px solid white", boxShadow: "0 0 0 2px #22c55e" }} />
-          <span>{t.map_climbed}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#60a5fa", border: "2px solid white" }} />
-          <span>{t.map_notYet}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#f59e0b", border: "2px solid white" }} />
-          <span>Refugio</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <div style={{ width: 14, height: 14, borderRadius: 3, background: "rgba(34,197,94,0.2)", border: "1.5px dashed #16a34a" }} />
-          <span>Parque natural</span>
-        </div>
-      </div>
-
-      {/* ── Detail panel ───────────────────────────────────────────────── */}
-      {selected && (
-        <div
-          className={isMobile ? "map-panel-mobile" : "map-panel"}
-          style={{
-            position: "absolute",
-            ...panelStyle,
-            background: "white",
-            zIndex: 20,
-            overflowY: "auto",
-            boxShadow: "0 12px 48px rgba(0,0,0,0.2)",
-          }}
-        >
-          {selected.ascent?.photoUrl && (
-            <div style={{ position: "relative", aspectRatio: "3/2", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={selected.ascent.photoUrl} alt=""
-                style={{
-                  width: "100%", height: "100%", objectFit: "cover", display: "block",
-                  objectPosition: (() => {
-                    const cx = selected.ascent.faceCenterX;
-                    const cy = selected.ascent.faceCenterY;
-                    if (cx == null || cy == null) return "50% 20%";
-                    // Place faces at 38% of panel height (upper area, sky above)
-                    // r = image height / container height for a 4:5 image in 3:2 panel
-                    const r = 1.875;
-                    const py = Math.max(0, Math.min(1, (0.38 - cy * r) / (1 - r)));
-                    return `${cx * 100}% ${py * 100}%`;
-                  })(),
-                }} />
-            </div>
+          {/* ── Lista button — mobile only, bottom-left ────────────────── */}
+          {isMobile && !sheetOpen && (
+            <button
+              onClick={() => setSheetOpen(true)}
+              style={{
+                position: "absolute", bottom: 100, left: 12, zIndex: 10,
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 16px", borderRadius: 999,
+                background: "rgba(17,24,39,0.78)",
+                backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+                border: "none",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
+                fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer",
+              }}
+            >
+              📋 Lista
+            </button>
           )}
 
-          {/* Close button — always visible */}
-          <button
-            onClick={() => setSelected(null)}
-            aria-label="Close"
-            style={{
-              position: "absolute", top: 10, right: 10,
-              width: 28, height: 28, borderRadius: "50%",
-              background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
-              border: "none", cursor: "pointer",
-              color: "white", fontSize: 13,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >✕</button>
-
-          <div style={{ padding: "16px 16px 22px" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111827", margin: "0 0 2px", lineHeight: 1.25 }}>
-              {selected.peak.name}
-              <span style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", marginLeft: 8 }}>
-                · {selected.peak.altitudeM.toLocaleString(t.dateLocale)} m
-              </span>
-            </h2>
-            {selected.peak.mountainRange && (
-              <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 14px" }}>
-                {selected.peak.mountainRange}
-              </p>
-            )}
-
-            {selected.ascent ? (
-              <>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-                  <span style={{
-                    background: "#dcfce7", color: "#16a34a",
-                    borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700,
-                  }}>
-                    ✓ {selected.ascent.ascentCount > 1
-                      ? i(t.map_ascentsBadge, { n: selected.ascent.ascentCount })
-                      : t.map_climbedBadge}
-                  </span>
-                  <span style={{ fontSize: 12, color: "#6b7280" }}>
-                    {selected.ascent.ascentCount > 1 ? `${t.map_last} ` : ""}
-                    {new Date(selected.ascent.date).toLocaleDateString(t.dateLocale, {
-                      day: "numeric", month: "short", year: "numeric",
-                    })}
-                  </span>
+          {/* ── Detail panel — inside map area ─────────────────────────── */}
+          {selected && (
+            <div
+              className={isMobile ? "map-panel-mobile" : "map-panel"}
+              style={{
+                position: "absolute",
+                ...panelStyle,
+                background: "white",
+                zIndex: 20,
+                overflowY: "auto",
+                boxShadow: "0 12px 48px rgba(0,0,0,0.2)",
+              }}
+            >
+              {selected.ascent?.photoUrl && (
+                <div style={{ position: "relative", aspectRatio: "3/2", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={selected.ascent.photoUrl} alt=""
+                    style={{
+                      width: "100%", height: "100%", objectFit: "cover", display: "block",
+                      objectPosition: (() => {
+                        const cx = selected.ascent.faceCenterX;
+                        const cy = selected.ascent.faceCenterY;
+                        if (cx == null || cy == null) return "50% 20%";
+                        const r = 1.875;
+                        const py = Math.max(0, Math.min(1, (0.38 - cy * r) / (1 - r)));
+                        return `${cx * 100}% ${py * 100}%`;
+                      })(),
+                    }} />
                 </div>
-                {selected.ascent.route && (
-                  <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 5 }}>
-                    <span>🧭</span> {selected.ascent.route}
+              )}
+
+              <button
+                onClick={() => setSelected(null)}
+                aria-label="Close"
+                style={{
+                  position: "absolute", top: 10, right: 10,
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
+                  border: "none", cursor: "pointer",
+                  color: "white", fontSize: 13,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >✕</button>
+
+              <div style={{ padding: "16px 16px 22px" }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111827", margin: "0 0 2px", lineHeight: 1.25 }}>
+                  {selected.peak.name}
+                  <span style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", marginLeft: 8 }}>
+                    · {selected.peak.altitudeM.toLocaleString(t.dateLocale)} m
+                  </span>
+                </h2>
+                {selected.peak.mountainRange && (
+                  <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 14px" }}>
+                    {selected.peak.mountainRange}
                   </p>
                 )}
-                {(() => {
-                  const a = selected.ascent!;
-                  const href = a.ascentCount > 1 ? `/ascents?peak=${a.peakId}` : `/ascents/${a.ascentId}`;
-                  const loading = navigatingTo === href;
-                  return (
+
+                {selected.ascent ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                      <span style={{
+                        background: "#dcfce7", color: "#16a34a",
+                        borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700,
+                      }}>
+                        ✓ {selected.ascent.ascentCount > 1
+                          ? i(t.map_ascentsBadge, { n: selected.ascent.ascentCount })
+                          : t.map_climbedBadge}
+                      </span>
+                      <span style={{ fontSize: 12, color: "#6b7280" }}>
+                        {selected.ascent.ascentCount > 1 ? `${t.map_last} ` : ""}
+                        {new Date(selected.ascent.date).toLocaleDateString(t.dateLocale, {
+                          day: "numeric", month: "short", year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    {selected.ascent.route && (
+                      <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 5 }}>
+                        <span>🧭</span> {selected.ascent.route}
+                      </p>
+                    )}
+                    {(() => {
+                      const a = selected.ascent!;
+                      const href = a.ascentCount > 1 ? `/ascents?peak=${a.peakId}` : `/ascents/${a.ascentId}`;
+                      const loading = navigatingTo === href;
+                      return (
+                        <button
+                          className="panel-action-btn"
+                          onClick={() => navigate(href)}
+                          disabled={!!navigatingTo}
+                          style={{
+                            width: "100%", padding: "11px",
+                            background: "#111827", color: "white",
+                            border: "none", borderRadius: 12,
+                            fontSize: 13, fontWeight: 700,
+                            cursor: loading ? "wait" : "pointer",
+                            opacity: loading ? 0.7 : 1,
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                            transition: "opacity 0.15s",
+                          }}
+                        >
+                          {loading && <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />}
+                          {a.ascentCount > 1
+                            ? i(t.map_viewAscents, { n: a.ascentCount })
+                            : t.map_viewAscent}
+                        </button>
+                      );
+                    })()}
+                  </>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 16px" }}>
+                      {t.map_notYetClimbed}
+                    </p>
                     <button
                       className="panel-action-btn"
-                      onClick={() => navigate(href)}
-                      disabled={!!navigatingTo}
+                      onClick={() => {
+                        document.dispatchEvent(
+                          new CustomEvent("open-ascent-modal", { detail: { peakId: selected.peak.id } })
+                        );
+                      }}
                       style={{
                         width: "100%", padding: "11px",
-                        background: "#111827", color: "white",
+                        background: "#0369a1", color: "white",
                         border: "none", borderRadius: 12,
                         fontSize: 13, fontWeight: 700,
-                        cursor: loading ? "wait" : "pointer",
-                        opacity: loading ? 0.7 : 1,
+                        cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                         transition: "opacity 0.15s",
                       }}
                     >
-                      {loading && <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />}
-                      {a.ascentCount > 1
-                        ? i(t.map_viewAscents, { n: a.ascentCount })
-                        : t.map_viewAscent}
+                      {t.map_logAscent}
                     </button>
-                  );
-                })()}
-              </>
-            ) : (
-              <>
-                <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 16px" }}>
-                  {t.map_notYetClimbed}
-                </p>
-                <button
-                  className="panel-action-btn"
-                  onClick={() => {
-                    document.dispatchEvent(
-                      new CustomEvent("open-ascent-modal", { detail: { peakId: selected.peak.id } })
-                    );
-                  }}
-                  style={{
-                    width: "100%", padding: "11px",
-                    background: "#0369a1", color: "white",
-                    border: "none", borderRadius: 12,
-                    fontSize: 13, fontWeight: 700,
-                    cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    transition: "opacity 0.15s",
-                  }}
-                >
-                  {t.map_logAscent}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Loading indicator — when fetching viewport peaks ──────────── */}
+          {loadingPeaks && (
+            <div style={{
+              position: "absolute", top: isMobile ? 130 : 70, left: "50%", transform: "translateX(-50%)",
+              zIndex: 25, pointerEvents: "none",
+              background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)",
+              padding: "6px 14px", borderRadius: 999,
+              display: "flex", alignItems: "center", gap: 7,
+              fontSize: 12, fontWeight: 600, color: "#374151",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+            }}>
+              <span style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid #d1d5db", borderTopColor: "#374151", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
+              Cargando cimas…
+            </div>
+          )}
+
+          {/* ── Mobile bottom sheet — OUTSIDE containerRef, touch-isolated ── */}
+          {isMobile && sheetOpen && (
+            <MapPeaksSidebar
+              peaks={allPeaks}
+              ascentByPeakId={ascentByPeakId.current}
+              mapBounds={mapBounds}
+              filter={filter}
+              rarityFilter={rarityFilter}
+              mythicOnly={mythicOnly}
+              selectedPeakId={selected?.peak.id ?? null}
+              onSelectPeak={(peak) => { flyToPeak(peak); setSheetOpen(false); }}
+              asSheet
+              onClose={() => setSheetOpen(false)}
+            />
+          )}
+
+        </div>{/* end map area */}
+
+        {/* ── Desktop sidebar — OUTSIDE containerRef, next to map ─────── */}
+        {!isMobile && (
+          <MapPeaksSidebar
+            peaks={allPeaks}
+            ascentByPeakId={ascentByPeakId.current}
+            mapBounds={mapBounds}
+            filter={filter}
+            rarityFilter={rarityFilter}
+            mythicOnly={mythicOnly}
+            selectedPeakId={selected?.peak.id ?? null}
+            onSelectPeak={flyToPeak}
+          />
+        )}
+
     </div>
   );
 }
