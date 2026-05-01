@@ -57,6 +57,17 @@ export const RARITY_COLORS: Record<string, string> = {
   mythic:    "#FFD700",
 };
 
+// ─── Rarity scoring weights (used in adaptive score computation) ─────────────
+
+const RARITY_SCORE_WEIGHTS: Record<string, number> = {
+  daisy:     0.2,
+  lavender:  0.3,
+  gentian:   0.4,
+  edelweiss: 0.7,
+  saxifrage: 1.0,
+  mythic:    1.0,
+};
+
 // ─── Apply rarity layer filter (safe for iOS — uses setFilter, not setData) ──
 
 function applyRarityLayerFilter(
@@ -64,13 +75,15 @@ function applyRarityLayerFilter(
   rarityFilter: string[],
   mythicOnly: boolean,
 ) {
-  const notClustered: maplibregl.FilterSpecification = ["!", ["has", "point_count"]];
   const active = mythicOnly ? ["mythic"] : rarityFilter;
-  const finalFilter: maplibregl.FilterSpecification = active.length > 0
-    ? ["all", notClustered, ["in", ["get", "rarityId"], ["literal", active]]]
-    : notClustered;
-  for (const layer of ["unclustered-peaks", "peak-labels"]) {
-    if (map.getLayer(layer)) map.setFilter(layer, finalFilter);
+  const filter: maplibregl.FilterSpecification | null = active.length > 0
+    ? ["in", ["get", "rarityId"], ["literal", active]]
+    : null;
+  for (const layer of ["unclustered-peaks", "mythic-glow", "peak-labels"]) {
+    if (map.getLayer(layer)) {
+      if (filter) map.setFilter(layer, filter);
+      else map.setFilter(layer, undefined as unknown as maplibregl.FilterSpecification);
+    }
   }
 }
 
@@ -220,42 +233,84 @@ export default function MapView({
       .slice(0, 8);
   }, [searchQuery, allPeaks]);
 
-  // Update GeoJSON source from cache (called after fetch, not during render)
-  function updateUnclimbedSource() {
+  // Compute adaptive scores for peaks in the current viewport and update the
+  // GeoJSON source. Called after every pan/zoom and after each viewport fetch.
+  //
+  // Algorithm:
+  //   1. Collect unclimbed peaks inside current map bounds
+  //   2. Normalize altitude locally (relative to viewport max)
+  //   3. Score = 0.5 * norm_alt + 0.3 * rarity_weight + 0.2 * captured_bonus
+  //   4. Keep top N% based on zoom level (10% → 25% → 50% → 100%)
+  //   5. Encode score as circle-radius / circle-opacity via GeoJSON property
+  function computeViewportScores(zoom: number) {
     const map = mapRef.current;
     const source = map?.getSource("unascended-peaks") as maplibregl.GeoJSONSource | undefined;
-    if (!source) return;
-    const features = Array.from(peaksCacheRef.current.values())
-      .filter((p) => !ascentByPeakId.current.has(p.id))
-      .map((p) => ({
-        type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
-        properties: { id: p.id, name: p.name, alt: p.altitudeM, rarityId: p.rarityId ?? "" },
-      }));
+    if (!source || !map) return;
+
+    const bounds = map.getBounds();
+    const viewportPeaks = Array.from(peaksCacheRef.current.values()).filter(
+      (p) =>
+        !ascentByPeakId.current.has(p.id) &&
+        p.latitude  >= bounds.getSouth() && p.latitude  <= bounds.getNorth() &&
+        p.longitude >= bounds.getWest()  && p.longitude <= bounds.getEast(),
+    );
+
+    if (viewportPeaks.length === 0) {
+      source.setData({ type: "FeatureCollection", features: [] });
+      return;
+    }
+
+    // Step 1 — local normalization
+    const maxAlt = Math.max(...viewportPeaks.map((p) => p.altitudeM));
+
+    // Step 2 — score
+    const scored = viewportPeaks.map((p) => {
+      const normAlt      = maxAlt > 0 ? p.altitudeM / maxAlt : 0;
+      const rarityWeight = RARITY_SCORE_WEIGHTS[p.rarityId ?? ""] ?? 0.1;
+      const score        = normAlt * 0.5 + rarityWeight * 0.3;
+      return { p, score };
+    });
+
+    // Step 3 — percentile filter
+    scored.sort((a, b) => b.score - a.score);
+    const pct =
+      zoom < 6  ? 0.10 :
+      zoom < 8  ? 0.25 :
+      zoom < 10 ? 0.50 : 1.0;
+    const keep = Math.max(1, Math.ceil(scored.length * pct));
+    const visible = scored.slice(0, keep);
+
+    // Build GeoJSON — score stored as property so paint expressions can read it
+    const features = visible.map(({ p, score }) => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
+      properties: {
+        id: p.id, name: p.name, alt: p.altitudeM,
+        rarityId: p.rarityId ?? "",
+        isMythic: p.isMythic ? 1 : 0,
+        score,
+      },
+    }));
+
     source.setData({ type: "FeatureCollection", features });
   }
 
-  // Fetch peaks for the given viewport bounds from the API, merge into cache
+  // Fetch peaks for the given viewport bounds from the API, merge into cache,
+  // then recompute adaptive scores for the new data set.
   async function fetchPeaksForViewport(bounds: MapBounds) {
     const zoom = mapRef.current?.getZoom() ?? 0;
-    if (zoom < 5) return; // skip when very zoomed out
+    if (zoom < 5) return;
     setLoadingPeaks(true);
     try {
       const { north, south, east, west } = bounds;
       const res = await fetch(`/api/peaks?north=${north}&south=${south}&east=${east}&west=${west}`);
       if (!res.ok) return;
       const data: MapPeak[] = await res.json();
-      let hasNew = false;
       for (const p of data) {
-        if (!peaksCacheRef.current.has(p.id)) {
-          peaksCacheRef.current.set(p.id, p);
-          hasNew = true;
-        }
+        if (!peaksCacheRef.current.has(p.id)) peaksCacheRef.current.set(p.id, p);
       }
-      if (hasNew) {
-        setAllPeaks(Array.from(peaksCacheRef.current.values()));
-        updateUnclimbedSource();
-      }
+      setAllPeaks(Array.from(peaksCacheRef.current.values()));
+      computeViewportScores(zoom);
     } catch { /* ignore network errors */ } finally {
       setLoadingPeaks(false);
     }
@@ -320,7 +375,7 @@ export default function MapView({
     });
     const map = mapRef.current;
     if (map) {
-      for (const layer of ["peaks-heatmap-layer", "clusters", "cluster-count", "unclustered-peaks", "peak-labels"]) {
+      for (const layer of ["unclustered-peaks", "mythic-glow", "peak-labels"]) {
         if (map.getLayer(layer)) {
           map.setLayoutProperty(layer, "visibility", showUnascended ? "visible" : "none");
         }
@@ -431,10 +486,13 @@ export default function MapView({
         }));
       } catch { /* ignore */ }
       updateBounds();
-      // Debounced viewport fetch — 500ms after the user stops panning
+      // Debounced viewport update — 500ms after the user stops panning.
+      // First recompute scores from cache (instant), then fetch any missing peaks.
       if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
       fetchDebounceRef.current = setTimeout(() => {
         const b = map.getBounds();
+        const z = map.getZoom();
+        computeViewportScores(z); // immediate update from cache
         fetchPeaksForViewport({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
       }, 500);
     });
@@ -617,87 +675,44 @@ export default function MapView({
         },
       });
 
-      // ── Heatmap source — all peaks, loaded once, coordinates only ────────
-      map.addSource("peaks-heatmap", {
-        type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
-      });
-
-      map.addLayer({
-        id: "peaks-heatmap-layer",
-        type: "heatmap",
-        source: "peaks-heatmap",
-        maxzoom: 10,
-        paint: {
-          // More weight as zoom increases so individual peaks stand out
-          "heatmap-weight": 1,
-          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 0.6, 9, 2.5],
-          // Mountain blue → warm orange gradient
-          "heatmap-color": [
-            "interpolate", ["linear"], ["heatmap-density"],
-            0,   "rgba(33,102,172,0)",
-            0.15, "rgba(103,169,207,0.6)",
-            0.4,  "rgba(209,229,240,0.8)",
-            0.6,  "rgba(253,219,199,0.9)",
-            0.8,  "rgba(239,138,98,0.95)",
-            1,   "rgba(178,24,43,1)",
-          ],
-          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 3, 6, 14, 9, 22],
-          // Fade out quickly — gone by zoom 8 so clusters take over cleanly
-          "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 6.5, 1, 8, 0],
-        },
-      });
-
       // ── GeoJSON source for unascended peaks ─────────────────────────────
-      // Starts empty — peaks are loaded progressively per viewport via /api/peaks
+      // Starts empty — peaks loaded progressively per viewport via /api/peaks.
+      // No clustering: adaptive percentile filtering replaces cluster logic.
       map.addSource("unascended-peaks", {
         type: "geojson",
-        cluster: true,
-        clusterMaxZoom: 10,
-        clusterRadius: 55,
         data: { type: "FeatureCollection", features: [] },
       });
 
+      // Glow ring for mythic peaks — blurred outer circle drawn underneath
       map.addLayer({
-        id: "clusters",
+        id: "mythic-glow",
         type: "circle",
         source: "unascended-peaks",
-        minzoom: 7.5,
-        filter: ["has", "point_count"],
+        filter: ["==", ["get", "isMythic"], 1],
         paint: {
-          // AziAtlas dark navy — coherent with app brand, not generic Maps blue
-          "circle-color": "#1e293b",
-          "circle-radius": ["step", ["get", "point_count"], 16, 5, 22, 15, 28],
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "rgba(255,255,255,0.25)",
-          "circle-opacity": ["interpolate", ["linear"], ["zoom"], 7.5, 0, 8.5, 0.92],
+          "circle-radius": ["interpolate", ["linear"], ["get", "score"], 0, 22, 1, 36],
+          "circle-color": "#FFD700",
+          "circle-opacity": 0.22,
+          "circle-blur": 1,
           "circle-pitch-alignment": "map",
         },
       });
 
-      map.addLayer({
-        id: "cluster-count",
-        type: "symbol",
-        source: "unascended-peaks",
-        minzoom: 7.5,
-        filter: ["has", "point_count"],
-        layout: {
-          "text-field": "{point_count_abbreviated}",
-          "text-font": ["Noto Sans Regular"],
-          "text-size": 11,
-        },
-        paint: {
-          "text-color": "white",
-          "text-opacity": ["interpolate", ["linear"], ["zoom"], 7.5, 0, 8.5, 1],
-        },
-      });
-
+      // Main adaptive peaks layer:
+      //   circle-radius ∝ score  (5px low-score → 15px top-score)
+      //   circle-color  = rarity color
+      //   circle-opacity fades with lower score so top peaks pop
       map.addLayer({
         id: "unclustered-peaks",
         type: "circle",
         source: "unascended-peaks",
-        filter: ["!", ["has", "point_count"]],
         paint: {
+          "circle-radius": ["interpolate", ["linear"], ["get", "score"],
+            0,   5,
+            0.4, 8,
+            0.7, 11,
+            1.0, 15,
+          ],
           "circle-color": ["match", ["get", "rarityId"],
             "daisy",     "#F59E0B",
             "lavender",  "#A855F7",
@@ -705,26 +720,32 @@ export default function MapView({
             "edelweiss", "#EC4899",
             "saxifrage", "#F97316",
             "mythic",    "#FFD700",
-            /* fallback for peaks without rarity */ "#60a5fa",
+            "#60a5fa",
           ],
-          "circle-radius": 7,
-          "circle-stroke-width": 2.5,
+          "circle-opacity": ["interpolate", ["linear"], ["get", "score"],
+            0,   0.55,
+            0.5, 0.80,
+            1.0, 0.95,
+          ],
+          "circle-stroke-width": ["interpolate", ["linear"], ["get", "score"],
+            0,   1.5,
+            1.0, 2.5,
+          ],
           "circle-stroke-color": "white",
-          "circle-opacity": 0.9,
           "circle-pitch-alignment": "map",
         },
       });
 
+      // Labels appear only at high zoom, sized by score
       map.addLayer({
         id: "peak-labels",
         type: "symbol",
         source: "unascended-peaks",
-        filter: ["!", ["has", "point_count"]],
         minzoom: 10,
         layout: {
           "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
           "text-font": ["Noto Sans Regular"],
-          "text-size": 10,
+          "text-size": ["interpolate", ["linear"], ["get", "score"], 0, 9, 1, 12],
           "text-offset": [0, 1.2],
           "text-anchor": "top",
           "text-optional": true,
@@ -736,18 +757,6 @@ export default function MapView({
           "text-halo-color": "rgba(255,255,255,0.92)",
           "text-halo-width": 1.5,
         },
-      });
-
-      map.on("click", "clusters", (e) => {
-        justSelectedRef.current = true;
-        const features = map.queryRenderedFeatures(e.point, { layers: ["clusters"] });
-        const clusterId = features[0]?.properties?.cluster_id;
-        if (clusterId == null) return;
-        const coords = (features[0].geometry as GeoJSON.Point).coordinates as [number, number];
-        const src = map.getSource("unascended-peaks") as maplibregl.GeoJSONSource;
-        Promise.resolve(src.getClusterExpansionZoom(clusterId)).then((zoom) => {
-          if (typeof zoom === "number") map.easeTo({ center: coords, zoom, duration: 500 });
-        });
       });
 
       map.on("click", "unclustered-peaks", (e) => {
@@ -769,18 +778,8 @@ export default function MapView({
       });
       map.on("mouseleave", "unclustered-peaks", () => setTooltip(null));
 
-      map.on("mousemove", "clusters", (e) => {
-        const props = e.features?.[0]?.properties;
-        if (!props || !containerRef.current) return;
-        const pt = map.project(e.lngLat);
-        setTooltip({ text: i(tRef.current.map_unclimbedPeaks, { n: props.point_count }), x: pt.x, y: pt.y });
-      });
-      map.on("mouseleave", "clusters", () => setTooltip(null));
-
-      for (const layer of ["clusters", "unclustered-peaks"]) {
-        map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
-        map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
-      }
+      map.on("mouseenter", "unclustered-peaks", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "unclustered-peaks", () => { map.getCanvas().style.cursor = ""; });
 
       // ── Ascended peaks: circular photo HTML markers ─────────────────────
       for (const entry of ascentData) {
@@ -851,18 +850,8 @@ export default function MapView({
       // hasn't fully committed the layout by the time 'idle' fires.
       map.once("idle", () => {
         map.resize();
-        // Fetch peaks for the initial viewport
         const b = map.getBounds();
         fetchPeaksForViewport({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
-        // Load heatmap data (all peaks, coordinates only — one-time fetch)
-        fetch("/api/peaks/heatmap")
-          .then((r) => r.ok ? r.json() : null)
-          .then((geojson) => {
-            if (!geojson) return;
-            const src = map.getSource("peaks-heatmap") as maplibregl.GeoJSONSource | undefined;
-            src?.setData(geojson);
-          })
-          .catch(() => { /* ignore */ });
       });
     });
 
