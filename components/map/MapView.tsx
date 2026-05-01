@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import { useT } from "@/components/providers/I18nProvider";
@@ -227,14 +227,21 @@ export default function MapView({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Search results — search across all loaded peaks (cache grows as user pans)
-  const searchResults = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return allPeaks
-      .filter((p) => p.name.toLowerCase().includes(q) || (p.mountainRange ?? "").toLowerCase().includes(q))
-      .slice(0, 8);
-  }, [searchQuery, allPeaks]);
+  // Search results — fetched from API on every keystroke (debounced 300ms)
+  const [searchResults, setSearchResults] = useState<MapPeak[]>([]);
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) { setSearchResults([]); return; }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/peaks?q=${encodeURIComponent(q)}`);
+        if (!res.ok) return;
+        const data: MapPeak[] = await res.json();
+        setSearchResults(data.slice(0, 8));
+      } catch { /* ignore */ }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Compute adaptive scores for peaks in the current viewport and update the
   // GeoJSON source. Called after every pan/zoom and after each viewport fetch.
@@ -363,18 +370,28 @@ export default function MapView({
 
     setSearchQuery("");
     setSearchOpen(false);
+    setSearchResults([]);
+
+    // Ensure the peak is in the local cache so highlight/panel work after flying
+    if (!peaksCacheRef.current.has(peak.id)) {
+      peaksCacheRef.current.set(peak.id, peak);
+      setAllPeaks(Array.from(peaksCacheRef.current.values()));
+    }
 
     const ascent = ascentByPeakId.current.get(peak.id) ?? null;
     setSelected({ peak, ascent });
     justSelectedRef.current = true;
     showHighlight(peak);
 
+    const mapH = map.getContainer().clientHeight;
     map.flyTo({
       center: [peak.longitude, peak.latitude],
       zoom: 13,
       pitch: terrain3d ? 65 : 0,
       bearing: 20,
       duration: 2200,
+      // top padding pushes the effective center down so peak lands at ~30% from bottom
+      padding: { top: Math.round(mapH * 0.4), bottom: 0, left: 0, right: 0 },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       easing: (t: number) => 1 - Math.pow(1 - t, 3), // ease-out cubic
     });
@@ -1206,29 +1223,26 @@ export default function MapView({
                 {selected.ascent ? (
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-                      <span style={{
-                        background: "#dcfce7", color: "#16a34a",
-                        borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700,
-                      }}>
-                        ✓ {selected.ascent.ascentCount > 1
-                          ? i(t.map_ascentsBadge, { n: selected.ascent.ascentCount })
-                          : t.map_climbedBadge}
-                      </span>
-                      <span style={{ fontSize: 12, color: "#6b7280" }}>
-                        {selected.ascent.ascentCount > 1 ? `${t.map_last} ` : ""}
-                        {new Date(selected.ascent.date).toLocaleDateString(t.dateLocale, {
-                          day: "numeric", month: "short", year: "numeric",
-                        })}
-                      </span>
+                      {selected.ascent.ascentCount > 1 && (
+                        <span style={{
+                          background: "#dcfce7", color: "#16a34a",
+                          borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700,
+                        }}>
+                          {i(t.map_ascentsBadge, { n: selected.ascent.ascentCount })}
+                        </span>
+                      )}
+                      {selected.peak.rarity && (() => {
+                        const color = RARITY_COLORS[selected.peak.rarityId ?? ""] ?? "#9ca3af";
+                        return (
+                          <span style={{ fontSize: 12, fontWeight: 700, color }}>
+                            ✿ {selected.peak.rarity.name}
+                          </span>
+                        );
+                      })()}
                     </div>
-                    {selected.ascent.route && (
-                      <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 5 }}>
-                        <span>🧭</span> {selected.ascent.route}
-                      </p>
-                    )}
                     {(() => {
                       const a = selected.ascent!;
-                      const href = a.ascentCount > 1 ? `/ascents?peak=${a.peakId}` : `/ascents/${a.ascentId}`;
+                      const href = `/ascents?peak=${a.peakId}&highlight=${a.ascentId}`;
                       const loading = navigatingTo === href;
                       return (
                         <button
@@ -1247,9 +1261,7 @@ export default function MapView({
                           }}
                         >
                           {loading && <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />}
-                          {a.ascentCount > 1
-                            ? i(t.map_viewAscents, { n: a.ascentCount })
-                            : t.map_viewAscent}
+                          {t.map_viewAscent}
                         </button>
                       );
                     })()}

@@ -14,9 +14,9 @@ export const en: Dict = {
 
   map_all: "All", map_climbed: "Climbed", map_notYet: "Not yet", map_myCount: "My {n}",
   map_relief: "🏔 Relief", map_loadingMap: "Loading map…",
-  map_viewAscent: "View ascent →", map_viewAscents: "View {n} ascents →",
+  map_viewAscent: "View capture", map_viewAscents: "View capture",
   map_logAscent: "+ Log ascent", map_notYetClimbed: "Not yet climbed",
-  map_climbedBadge: "Climbed", map_ascentsBadge: "{n} ascents", map_last: "Last:",
+  map_climbedBadge: "Captured", map_ascentsBadge: "{n} ascents", map_last: "Last:",
   map_zoomIn: "Zoom in", map_zoomOut: "Zoom out",
   map_unclimbedPeaks: "{n} unclimbed peaks · click to zoom",
 

@@ -76,6 +76,8 @@ export function PhotoTagStep({
   const [drawMode, setDrawMode] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerH, setHeaderH] = useState(80);
+  const photoAreaRef = useRef<HTMLDivElement>(null);
+  const [photoAreaDims, setPhotoAreaDims] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     if (headerRef.current) setHeaderH(headerRef.current.getBoundingClientRect().height);
@@ -122,6 +124,29 @@ export function PhotoTagStep({
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
   }, [search]);
+
+  // Measure photo area dims in embedded mode to fill the container exactly
+  useLayoutEffect(() => {
+    const el = photoAreaRef.current;
+    if (!el || !embedded) return;
+    const obs = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      setPhotoAreaDims({ w: width, h: height });
+    });
+    obs.observe(el);
+    setPhotoAreaDims({ w: el.offsetWidth, h: el.offsetHeight });
+    return () => obs.disconnect();
+  }, [embedded]);
+
+  function getDisplaySize() {
+    const { w: availW, h: availH } = photoAreaDims;
+    if (availW === 0 || availH === 0) return null;
+    const img = imgRef.current;
+    const ratio = img && img.naturalWidth > 0 ? img.naturalWidth / img.naturalHeight : 4 / 5;
+    const byHeight = { dW: Math.round(availH * ratio), dH: availH };
+    const byWidth  = { dW: availW, dH: Math.round(availW / ratio) };
+    return byHeight.dW <= availW ? byHeight : byWidth;
+  }
 
   // Measure rendered image size via ResizeObserver
   useLayoutEffect(() => {
@@ -420,7 +445,7 @@ export function PhotoTagStep({
         flex: 1, minHeight: 0, width: "100%",
         position: "relative",
         display: "flex", flexDirection: "column",
-        background: "white", overflow: "hidden",
+        overflow: "hidden",
       } : {
         position: "fixed", inset: 0, zIndex: 1100,
         background: "#000",
@@ -430,15 +455,30 @@ export function PhotoTagStep({
 
         {/* Photo + face overlays */}
         <div
-          style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}
+          ref={photoAreaRef}
+          style={{ flex: 1, minHeight: 0, position: "relative", overflow: "hidden" }}
           onClick={(e) => {
             if (drawMode) handleImageTap(e.clientX, e.clientY);
             else setActiveFaceId(null);
           }}
           onTouchEnd={drawMode ? (e) => { e.preventDefault(); const t = e.changedTouches[0]; handleImageTap(t.clientX, t.clientY); } : undefined}
         >
+          {(() => {
+            const ds = embedded ? getDisplaySize() : null;
+            return (
           <div
-            style={{ position: "relative", cursor: drawMode ? "crosshair" : "default" }}
+            style={ds ? {
+              position: "absolute",
+              width: ds.dW, height: ds.dH,
+              top: "50%", left: "50%",
+              transform: "translate(-50%, -50%)",
+              cursor: drawMode ? "crosshair" : "default",
+            } : {
+              position: "relative",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "100%", height: "100%",
+              cursor: drawMode ? "crosshair" : "default",
+            }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {imgSrc && (
@@ -447,10 +487,13 @@ export function PhotoTagStep({
                 src={imgSrc}
                 alt="Photo to tag"
                 onLoad={() => setImgLoaded(true)}
-                style={{
+                style={ds ? {
+                  display: "block", width: "100%", height: "100%",
+                  userSelect: "none", WebkitUserSelect: "none",
+                } : {
                   display: "block",
-                  maxWidth: embedded ? "100%" : "100vw",
-                  maxHeight: embedded ? "100%" : "calc(100svh - 180px)",
+                  maxWidth: "100vw",
+                  maxHeight: "calc(100svh - 180px)",
                   objectFit: "contain",
                   userSelect: "none",
                   WebkitUserSelect: "none",
@@ -621,6 +664,8 @@ export function PhotoTagStep({
               </div>
             )}
           </div>
+            );
+          })()}
         </div>
 
         {/* Draw mode hint / no faces hint — standalone only; embedded shows these in right panel */}
