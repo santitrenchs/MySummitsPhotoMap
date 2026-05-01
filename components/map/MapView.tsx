@@ -390,8 +390,9 @@ export default function MapView({
       pitch: terrain3d ? 65 : 0,
       bearing: 20,
       duration: 2200,
-      // top padding pushes the effective center down so peak lands at ~30% from bottom
-      padding: { top: Math.round(mapH * 0.4), bottom: 0, left: 0, right: 0 },
+      // offset [0, +Y] shifts the target peak Y pixels below viewport center
+      // → peak at 50% + 20% = 70% from top = 30% from bottom
+      offset: [0, Math.round(mapH * 0.2)],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       easing: (t: number) => 1 - Math.pow(1 - t, 3), // ease-out cubic
     });
