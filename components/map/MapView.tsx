@@ -190,6 +190,8 @@ export default function MapView({
   // Viewport loading: accumulates all fetched peaks (climbed + unclimbed from API)
   const peaksCacheRef = useRef(new Map<string, MapPeak>(peaks.map((p) => [p.id, p])));
   const fetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const boundsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const CACHE_MAX = 3000; // evict oldest entries beyond this to keep iteration fast
 
   const [selected, setSelected] = useState<Selected>(null);
   const [filter, setFilter] = useState<Filter>("all");
@@ -260,8 +262,9 @@ export default function MapView({
       return;
     }
 
-    // Step 1 — local normalization
-    const maxAlt = Math.max(...viewportPeaks.map((p) => p.altitudeM));
+    // Step 1 — local normalization (reduce avoids spread stack overflow on large arrays)
+    let maxAlt = 0;
+    for (const p of viewportPeaks) if (p.altitudeM > maxAlt) maxAlt = p.altitudeM;
 
     // Step 2 — score
     const scored = viewportPeaks.map((p) => {
@@ -306,10 +309,23 @@ export default function MapView({
       const res = await fetch(`/api/peaks?north=${north}&south=${south}&east=${east}&west=${west}`);
       if (!res.ok) return;
       const data: MapPeak[] = await res.json();
+      let hasNew = false;
       for (const p of data) {
-        if (!peaksCacheRef.current.has(p.id)) peaksCacheRef.current.set(p.id, p);
+        if (!peaksCacheRef.current.has(p.id)) {
+          peaksCacheRef.current.set(p.id, p);
+          hasNew = true;
+        }
       }
-      setAllPeaks(Array.from(peaksCacheRef.current.values()));
+      // Evict oldest entries if cache grows too large — keeps iteration O(CACHE_MAX)
+      if (peaksCacheRef.current.size > CACHE_MAX) {
+        const toDelete = peaksCacheRef.current.size - CACHE_MAX;
+        let deleted = 0;
+        for (const key of peaksCacheRef.current.keys()) {
+          if (deleted++ >= toDelete) break;
+          peaksCacheRef.current.delete(key);
+        }
+      }
+      if (hasNew) setAllPeaks(Array.from(peaksCacheRef.current.values()));
       computeViewportScores(zoom);
     } catch { /* ignore network errors */ } finally {
       setLoadingPeaks(false);
@@ -485,7 +501,11 @@ export default function MapView({
           zoom: map.getZoom(),
         }));
       } catch { /* ignore */ }
-      updateBounds();
+      // Debounce sidebar bounds update — avoids re-sorting the sidebar list on
+      // every frame of a flyTo animation (which fires moveend repeatedly).
+      if (boundsDebounceRef.current) clearTimeout(boundsDebounceRef.current);
+      boundsDebounceRef.current = setTimeout(updateBounds, 300);
+
       // Debounced viewport update — 500ms after the user stops panning.
       // First recompute scores from cache (instant), then fetch any missing peaks.
       if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
@@ -861,6 +881,8 @@ export default function MapView({
       containerRef.current?.removeEventListener("touchmove", onTouchMove);
       containerRef.current?.removeEventListener("touchend", onTouchEnd);
       containerRef.current?.removeEventListener("touchcancel", onTouchEnd);
+      if (boundsDebounceRef.current) clearTimeout(boundsDebounceRef.current);
+      if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
       highlightMarkerRef.current?.remove();
       highlightMarkerRef.current = null;
       map.remove();
