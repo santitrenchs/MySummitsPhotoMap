@@ -13,12 +13,14 @@ type Peak = {
 export function PeakPicker({
   peaks,
   defaultPeakId,
+  defaultPeakName,
   name,
   placeholder,
   suggested = false,
 }: {
   peaks: Peak[];
   defaultPeakId?: string;
+  defaultPeakName?: string;
   name: string;
   placeholder?: string;
   suggested?: boolean;
@@ -26,7 +28,9 @@ export function PeakPicker({
   const t = useT();
   const defaultPeak = peaks.find((p) => p.id === defaultPeakId) ?? null;
   const [selected, setSelected] = useState<Peak | null>(defaultPeak);
-  const [query, setQuery] = useState(defaultPeak?.name ?? "");
+  // Use defaultPeakName as initial query so the name appears immediately in edit mode
+  // even before the peaks array loads from the API.
+  const [query, setQuery] = useState(defaultPeak?.name ?? defaultPeakName ?? "");
   const [open, setOpen] = useState(false);
   const [showChip, setShowChip] = useState(suggested && !!defaultPeak);
   const containerRef = useRef<HTMLDivElement>(null);
