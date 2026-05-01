@@ -338,7 +338,7 @@ export function ImageCropModal({
       style={embedded ? {
         flex: 1, minHeight: 0, width: "100%",
         display: "flex", flexDirection: "column",
-        background: "white", overflow: "hidden",
+        background: "#f3f4f6", overflow: "hidden",
       } : {
         position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 1100,
         background: "#000",
