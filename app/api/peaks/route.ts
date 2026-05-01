@@ -37,7 +37,8 @@ export async function GET(request: Request) {
   const peaks = await prisma.peak.findMany({
     where,
     orderBy: { altitudeM: "desc" },
-    take: 600,
+    // Limit only when a geo filter is active — unbounded queries (e.g. modal peak picker) need all peaks
+    ...(where ? { take: 600 } : {}),
     select: {
       id: true,
       name: true,
