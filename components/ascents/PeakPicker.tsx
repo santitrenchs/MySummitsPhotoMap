@@ -50,12 +50,13 @@ export function PeakPicker({
     function onMouseDown(e: MouseEvent) {
       if (!containerRef.current?.contains(e.target as Node)) {
         setOpen(false);
-        if (!selected) setQuery("");
+        // Only clear the query if nothing is selected AND no defaultPeakId is pending load
+        if (!selected && !defaultPeakId) setQuery("");
       }
     }
     document.addEventListener("mousedown", onMouseDown);
     return () => document.removeEventListener("mousedown", onMouseDown);
-  }, [selected]);
+  }, [selected, defaultPeakId]);
 
   const filtered =
     query.trim().length === 0
