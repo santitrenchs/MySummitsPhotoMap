@@ -16,7 +16,7 @@ export const de: Dict = {
   map_relief: "🏔 Relief", map_loadingMap: "Karte wird geladen…",
   map_viewAscent: "Besteigung anzeigen →", map_viewAscents: "{n} Besteigungen anzeigen →",
   map_logAscent: "+ Besteigung eintragen", map_notYetClimbed: "Noch nicht bestiegen",
-  map_climbedBadge: "Bestiegen", map_ascentsBadge: "{n} Besteigungen", map_last: "Zuletzt:",
+  map_climbedBadge: "Erfasst", map_ascentsBadge: "{n} Besteigungen", map_last: "Zuletzt:",
   map_zoomIn: "Vergrößern", map_zoomOut: "Verkleinern",
   map_unclimbedPeaks: "{n} nicht bestiegene Gipfel · klicken zum Vergrößern",
 

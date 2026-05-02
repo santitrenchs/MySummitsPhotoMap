@@ -21,24 +21,37 @@ export async function GET(request: Request) {
   const lng    = parseFloat(searchParams.get("lng")    ?? "");
   const radius = parseFloat(searchParams.get("radius") ?? "");
 
+  const q = searchParams.get("q")?.trim() ?? "";
+
   let where: Record<string, unknown> | undefined;
-  if (!isNaN(north) && !isNaN(south) && !isNaN(east) && !isNaN(west)) {
+  let take: number | undefined;
+
+  if (q.length >= 2) {
+    where = {
+      OR: [
+        { name:          { contains: q, mode: "insensitive" } },
+        { mountainRange: { contains: q, mode: "insensitive" } },
+      ],
+    };
+    take = 10;
+  } else if (!isNaN(north) && !isNaN(south) && !isNaN(east) && !isNaN(west)) {
     where = {
       latitude:  { gte: south, lte: north },
       longitude: { gte: west,  lte: east  },
     };
+    take = 600;
   } else if (!isNaN(lat) && !isNaN(lng) && !isNaN(radius)) {
     where = {
       latitude:  { gte: lat - radius, lte: lat + radius },
       longitude: { gte: lng - radius, lte: lng + radius },
     };
+    take = 600;
   }
 
   const peaks = await prisma.peak.findMany({
     where,
     orderBy: { altitudeM: "desc" },
-    // Limit only when a geo filter is active — unbounded queries (e.g. modal peak picker) need all peaks
-    ...(where ? { take: 600 } : {}),
+    ...(take ? { take } : {}),
     select: {
       id: true,
       name: true,

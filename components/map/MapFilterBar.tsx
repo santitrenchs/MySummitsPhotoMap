@@ -16,10 +16,6 @@ interface MapFilterBarProps {
   onMythicToggle: () => void;
   rarities: RarityDef[];
   climbedCount: number;
-  hillshade: boolean;
-  onHillshadeToggle: () => void;
-  terrain3d: boolean;
-  onTerrain3dToggle: () => void;
 }
 
 // ─── Dropdown wrapper ────────────────────────────────────────────────────────
@@ -30,6 +26,7 @@ function Dropdown({ label, active, children }: { label: string; active: boolean;
   const [open, setOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   function openMenu() {
     if (!btnRef.current) return;
@@ -41,7 +38,8 @@ function Dropdown({ label, active, children }: { label: string; active: boolean;
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (btnRef.current && btnRef.current.contains(e.target as Node)) return;
+      if (btnRef.current?.contains(e.target as Node)) return;
+      if (menuRef.current?.contains(e.target as Node)) return;
       setOpen(false);
     };
     document.addEventListener("mousedown", handler);
@@ -70,7 +68,7 @@ function Dropdown({ label, active, children }: { label: string; active: boolean;
       </button>
 
       {open && menuPos && createPortal(
-        <div style={{
+        <div ref={menuRef} style={{
           position: "fixed", top: menuPos.top, left: menuPos.left,
           background: "white", borderRadius: 12,
           boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
@@ -93,13 +91,11 @@ export default function MapFilterBar({
   rarityFilter, onRarityChange,
   mythicOnly, onMythicToggle,
   rarities, climbedCount,
-  hillshade, onHillshadeToggle,
-  terrain3d, onTerrain3dToggle,
 }: MapFilterBarProps) {
   const statusOptions: { value: Filter; label: string; color?: string }[] = [
-    { value: "all",         label: "Todas las cimas" },
-    { value: "climbed",     label: `Escaladas (${climbedCount})`, color: "#16a34a" },
-    { value: "not-climbed", label: "No escaladas" },
+    { value: "all",         label: "Todas" },
+    { value: "climbed",     label: `Capturadas (${climbedCount})`, color: "#16a34a" },
+    { value: "not-climbed", label: "No Capturadas" },
   ];
 
   const rarityActive = rarityFilter.length > 0;
@@ -117,7 +113,7 @@ export default function MapFilterBar({
     <div style={{ display: "contents" }}>
       {/* Estado */}
       <Dropdown
-        label={filter === "all" ? "Estado" : filter === "climbed" ? `✓ Escaladas (${climbedCount})` : "No escaladas"}
+        label={filter === "all" ? "Estado" : filter === "climbed" ? `✓ Capturadas (${climbedCount})` : "No Capturadas"}
         active={filter !== "all"}
       >
         {statusOptions.map((opt) => (
@@ -190,37 +186,6 @@ export default function MapFilterBar({
         ✨ Mythic
       </button>
 
-      {/* Relieve — pill style */}
-      <button
-        onClick={onHillshadeToggle}
-        style={{
-          display: "flex", alignItems: "center", gap: 5,
-          padding: "7px 13px", borderRadius: 999, flexShrink: 0,
-          border: `1.5px solid ${hillshade ? "#1e293b" : "#d1d5db"}`,
-          fontSize: 13, fontWeight: 500, cursor: "pointer",
-          background: hillshade ? "#1e293b" : "white",
-          color: hillshade ? "white" : "#374151",
-          whiteSpace: "nowrap",
-          transition: "background 0.15s, color 0.15s",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-        }}
-      >Relieve</button>
-
-      {/* 3D — pill style */}
-      <button
-        onClick={onTerrain3dToggle}
-        style={{
-          display: "flex", alignItems: "center", gap: 5,
-          padding: "7px 13px", borderRadius: 999, flexShrink: 0,
-          border: `1.5px solid ${terrain3d ? "#1e293b" : "#d1d5db"}`,
-          fontSize: 13, fontWeight: 500, cursor: "pointer",
-          background: terrain3d ? "#1e293b" : "white",
-          color: terrain3d ? "white" : "#374151",
-          whiteSpace: "nowrap",
-          transition: "background 0.15s, color 0.15s",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-        }}
-      >3D</button>
     </div>
   );
 }

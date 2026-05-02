@@ -16,7 +16,7 @@ export const fr: Dict = {
   map_relief: "🏔 Relief", map_loadingMap: "Chargement de la carte…",
   map_viewAscent: "Voir l'ascension →", map_viewAscents: "Voir {n} ascensions →",
   map_logAscent: "+ Enregistrer une ascension", map_notYetClimbed: "Pas encore gravi",
-  map_climbedBadge: "Gravi", map_ascentsBadge: "{n} ascensions", map_last: "Dernière :",
+  map_climbedBadge: "Capturé", map_ascentsBadge: "{n} ascensions", map_last: "Dernière :",
   map_zoomIn: "Zoom avant", map_zoomOut: "Zoom arrière",
   map_unclimbedPeaks: "{n} sommets non gravis · cliquer pour zoomer",
 
