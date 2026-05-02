@@ -255,6 +255,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                           photoUrl: ascent.photoUrl ?? null,
                           photoId: ascent.photoId ?? null,
                           originalStorageKey: ascent.originalStorageKey ?? null,
+                          persons: ascent.persons.map((p) => ({ id: p.id, name: p.name })),
                         },
                       },
                     }));

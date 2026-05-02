@@ -325,6 +325,7 @@ export function GroupedAscentCard({
                           photoUrl: ownAscent.firstPhotoUrl ?? null,
                           photoId: ownAscent.firstPhotoId ?? null,
                           originalStorageKey: ownAscent.firstPhotoOriginalKey ?? null,
+                          persons: ownAscent.persons.map((p) => ({ id: p.id, name: p.name })),
                         },
                       },
                     }));

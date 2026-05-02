@@ -37,6 +37,7 @@ export type EditAscent = {
   photoUrl: string | null;
   photoId: string | null;
   originalStorageKey: string | null;
+  persons: { id: string; name: string }[];
 };
 
 type Props = {
@@ -71,7 +72,9 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const [suggestedDate, setSuggestedDate] = useState<string | null>(null);
   const [suggestedPeakId, setSuggestedPeakId] = useState<string | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<{ blob: Blob; preview: string } | null>(null);
-  const [selectedPersons, setSelectedPersons] = useState<Person[]>([]);
+  const [selectedPersons, setSelectedPersons] = useState<Person[]>(
+    editAscent?.persons.map((p) => ({ id: p.id, name: p.name, username: null })) ?? []
+  );
   const [personSearch, setPersonSearch] = useState("");
   const [personResults, setPersonResults] = useState<Person[]>([]);
   const personSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -297,6 +300,12 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       return;
     }
 
+    const facesPayload = selectedPersons.map((p) => ({
+      boundingBox: { x: 0, y: 0, width: 1, height: 1 },
+      descriptor: [],
+      userId: p.id,
+    }));
+
     if (pendingPhoto) {
       setStatus(fmt(t.newAscent_uploadingPhoto, { i: 1, n: 1 }));
       const fd = new FormData();
@@ -309,19 +318,13 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         fd.append("cropMeta", JSON.stringify(cropMeta));
       }
       const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
-      if (photoRes.ok && selectedPersons.length > 0) {
+      if (photoRes.ok) {
         const photo = await photoRes.json();
         setStatus(fmt(t.newAscent_savingTags, { i: 1 }));
         await fetch(`/api/photos/${photo.id}/faces`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            faces: selectedPersons.map((p) => ({
-              boundingBox: { x: 0, y: 0, width: 1, height: 1 },
-              descriptor: [],
-              userId: p.id,
-            })),
-          }),
+          body: JSON.stringify({ faces: facesPayload }),
         });
       }
       // Delete old photo
@@ -330,6 +333,14 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       } else if (editAscent.photoId && editAscent.photoId !== editPhotoId) {
         await fetch(`/api/photos/${editAscent.photoId}?keepOriginal=1`, { method: "DELETE" }).catch(() => {});
       }
+    } else if (editAscent.photoId) {
+      // No new photo — update person tags on the existing photo
+      setStatus(fmt(t.newAscent_savingTags, { i: 1 }));
+      await fetch(`/api/photos/${editAscent.photoId}/faces`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ faces: facesPayload }),
+      });
     }
 
     setLoading(false);
@@ -568,8 +579,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
             </div>
 
             {/* Personas */}
-            {!isEditMode && (
-              <div>
+            <div>
                 <label style={labelStyle}>
                   {t.tag_tagPeople} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
                 </label>
@@ -635,8 +645,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                       ))}
                   </div>
                 )}
-              </div>
-            )}
+            </div>
 
             {/* Wikiloc (edit mode only) */}
             {isEditMode && (
