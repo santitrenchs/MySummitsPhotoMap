@@ -39,33 +39,6 @@ export default function MapPeakCard({
           cursor: "pointer", textAlign: "left",
         }}
       >
-        {/* Thumbnail */}
-        {ascent && (
-          <div style={{
-            width: 60, height: 60, borderRadius: 10, flexShrink: 0,
-            overflow: "hidden", position: "relative",
-            border: `2px solid ${(selected || expanded) ? rarityColor : "#e5e7eb"}`,
-          }}>
-            {ascent.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={ascent.photoUrl}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              />
-            ) : (
-              <span style={{
-                position: "absolute", inset: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: peak.rarity ? 22 : 18,
-                background: `linear-gradient(135deg, ${rarityColor}22 0%, ${rarityColor}44 100%)`,
-              }}>
-                {peak.rarity?.emoji ?? "🏔"}
-              </span>
-            )}
-          </div>
-        )}
-
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 4 }}>
@@ -80,17 +53,18 @@ export default function MapPeakCard({
             </span>
           </div>
 
-          {peak.mountainRange && (
-            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {peak.mountainRange}
-            </p>
-          )}
-          {peak.rarity && (
-            <span className={`capture-rarity-inline ${peak.rarityId ?? ""}`} style={{ marginTop: 3 }}>
-              <span className="rarity-icon" style={{ background: "none" }}>✿</span>
-              <span className="rarity-value">{peak.rarity.name}</span>
-            </span>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, minWidth: 0 }}>
+            {peak.mountainRange && (
+              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>
+                {peak.mountainRange}
+              </p>
+            )}
+            {peak.rarity && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: rarityColor, flexShrink: 0, whiteSpace: "nowrap" }}>
+                ✿ {peak.rarity.name}
+              </span>
+            )}
+          </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
             {ascent && (
