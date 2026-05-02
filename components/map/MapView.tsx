@@ -158,6 +158,7 @@ export default function MapView({
   const ascentByPeakId = useRef(new Map(ascentData.map((a) => [a.peakId, a])));
   const markerEls = useRef(new Map<string, HTMLElement>());
   const justSelectedRef = useRef(false);
+  const lastSelectionTimeRef = useRef<number>(0);
   const highlightMarkerRef = useRef<maplibregl.Marker | null>(null);
 
   // Viewport loading: accumulates all fetched peaks (climbed + unclimbed from API)
@@ -345,14 +346,17 @@ export default function MapView({
     const ascent = ascentByPeakId.current.get(peak.id) ?? null;
     setSelected({ peak, ascent });
     justSelectedRef.current = true;
+    lastSelectionTimeRef.current = Date.now();
     showHighlight(peak);
 
+    const mapH = containerRef.current?.clientHeight ?? 600;
     map.flyTo({
       center: [peak.longitude, peak.latitude],
       zoom: 13,
       pitch: terrain3d ? 65 : 0,
       bearing: 20,
       duration: 2200,
+      offset: [0, Math.round(mapH * 0.2)],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       easing: (t: number) => 1 - Math.pow(1 - t, 3), // ease-out cubic
     });
@@ -504,8 +508,14 @@ export default function MapView({
 
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
 
-    map.on("click", () => {
+    map.on("click", (e) => {
       if (justSelectedRef.current) { justSelectedRef.current = false; return; }
+      // Ignore events that aren't direct canvas clicks (synthetic/delayed maplibre events
+      // after flyTo can fire here and incorrectly clear selection while hovering)
+      const canvas = mapRef.current?.getCanvas();
+      if (canvas && e.originalEvent?.target !== canvas) return;
+      // Grace period: ignore clicks within 600ms of selection being set
+      if (Date.now() - lastSelectionTimeRef.current < 600) return;
       setSelected(null);
     });
 
