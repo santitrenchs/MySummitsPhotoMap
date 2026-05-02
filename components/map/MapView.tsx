@@ -161,6 +161,7 @@ export default function MapView({
   const lastSelectionTimeRef = useRef<number>(0);
   const highlightMarkerRef = useRef<maplibregl.Marker | null>(null);
   const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const userLocationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Viewport loading: accumulates all fetched peaks (climbed + unclimbed from API)
   const peaksCacheRef = useRef(new Map<string, MapPeak>(peaks.map((p) => [p.id, p])));
@@ -1075,7 +1076,8 @@ export default function MapView({
               const map = mapRef.current;
               if (!map) return;
               map.flyTo({ center: [lng, lat], zoom: 14, duration: 1400 });
-              // Remove previous user location marker
+              // Remove previous marker and cancel pending timer
+              if (userLocationTimerRef.current) clearTimeout(userLocationTimerRef.current);
               userLocationMarkerRef.current?.remove();
               const el = document.createElement("div");
               el.style.cssText = [
@@ -1090,6 +1092,10 @@ export default function MapView({
               userLocationMarkerRef.current = new maplibregl.Marker({ element: el, anchor: "center" })
                 .setLngLat([lng, lat])
                 .addTo(map);
+              userLocationTimerRef.current = setTimeout(() => {
+                userLocationMarkerRef.current?.remove();
+                userLocationMarkerRef.current = null;
+              }, 5000);
             }}
           />
 
