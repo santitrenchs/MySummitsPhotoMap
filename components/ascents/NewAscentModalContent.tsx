@@ -154,8 +154,8 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
           </button>
         ),
         rightAction: loading ? (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9ca3af", fontSize: 14 }}>
-            <Spinner /> {status ?? "…"}
+          <span style={{ display: "flex", alignItems: "center", color: "#9ca3af" }}>
+            <Spinner />
           </span>
         ) : isEditMode ? (
           <button
