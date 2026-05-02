@@ -893,9 +893,9 @@ export default function MapView({
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes locationPulse {
-          0%   { box-shadow: 0 0 0 0 rgba(37,99,235,0.45); }
-          70%  { box-shadow: 0 0 0 14px rgba(37,99,235,0); }
-          100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+          0%   { box-shadow: 0 0 0 0 rgba(37,99,235,0.5), 0 1px 4px rgba(0,0,0,0.3); }
+          70%  { box-shadow: 0 0 0 14px rgba(37,99,235,0), 0 1px 4px rgba(0,0,0,0.3); }
+          100% { box-shadow: 0 0 0 0 rgba(37,99,235,0), 0 1px 4px rgba(0,0,0,0.3); }
         }
         @keyframes peakPulse {
           0%   { box-shadow: 0 0 0 0px rgba(251,191,36,0.9), 0 0 0 6px rgba(251,191,36,0.5); opacity: 1; }
@@ -1077,31 +1077,17 @@ export default function MapView({
               map.flyTo({ center: [lng, lat], zoom: 14, duration: 1400 });
               // Remove previous user location marker
               userLocationMarkerRef.current?.remove();
-              // Outer pulsing ring
-              const outer = document.createElement("div");
-              outer.style.cssText = [
+              const el = document.createElement("div");
+              el.style.cssText = [
                 "position:absolute",
-                "width:36px", "height:36px",
+                "width:16px", "height:16px",
                 "border-radius:50%",
-                "background:rgba(37,99,235,0.15)",
+                "background:#2563eb",
+                "border:3px solid white",
                 "animation:locationPulse 2s ease-out infinite",
                 "pointer-events:none",
               ].join(";");
-              // Inner blue dot
-              const inner = document.createElement("div");
-              inner.style.cssText = [
-                "position:absolute",
-                "width:14px", "height:14px",
-                "border-radius:50%",
-                "background:#2563eb",
-                "border:2.5px solid white",
-                "box-shadow:0 1px 4px rgba(0,0,0,0.3)",
-                "top:50%", "left:50%",
-                "transform:translate(-50%,-50%)",
-                "pointer-events:none",
-              ].join(";");
-              outer.appendChild(inner);
-              userLocationMarkerRef.current = new maplibregl.Marker({ element: outer, anchor: "center" })
+              userLocationMarkerRef.current = new maplibregl.Marker({ element: el, anchor: "center" })
                 .setLngLat([lng, lat])
                 .addTo(map);
             }}
