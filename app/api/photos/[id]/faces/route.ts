@@ -1,8 +1,19 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { getFaceDetections, saveFaceDetections } from "@/lib/services/face-detection.service";
 import { prisma } from "@/lib/db/client";
 import { sendPhotoTagEmail } from "@/lib/email";
+
+const BoundingBoxSchema = z.object({
+  x: z.number(), y: z.number(), width: z.number(), height: z.number(),
+});
+const FaceSchema = z.object({
+  boundingBox: BoundingBoxSchema,
+  descriptor: z.array(z.number()),
+  userId: z.string().optional(),
+});
+const FacesBodySchema = z.object({ faces: z.array(FaceSchema) });
 
 export async function GET(
   _req: Request,
@@ -22,8 +33,9 @@ export async function POST(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const { faces } = await req.json();
-  if (!Array.isArray(faces)) return NextResponse.json({ error: "faces required" }, { status: 400 });
+  const parsed = FacesBodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const { faces } = parsed.data;
   try {
     // created[] is in the same order as faces[] (insertion order from $transaction)
     const created = await saveFaceDetections(session.user.tenantId, id, faces);

@@ -1,5 +1,8 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+const SendRequestSchema = z.object({ addresseeId: z.string().min(1) });
 import {
   listFriends,
   listIncomingRequests,
@@ -28,8 +31,9 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { addresseeId } = await req.json();
-  if (!addresseeId) return NextResponse.json({ error: "addresseeId required" }, { status: 400 });
+  const parsed = SendRequestSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const { addresseeId } = parsed.data;
 
   try {
     const friendship = await sendFriendRequest(session.user.id, addresseeId);

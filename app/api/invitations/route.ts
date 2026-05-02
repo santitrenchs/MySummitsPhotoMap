@@ -1,7 +1,10 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { sendFriendInvitationEmail } from "@/lib/email";
+
+const InvitationSchema = z.object({ email: z.string().email() });
 
 const ALPHABET = "BCDFGHJKLMNPQRSTVWXYZ23456789";
 
@@ -28,12 +31,9 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const email: string = (body.email ?? "").trim().toLowerCase();
-
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ error: "Email inválido" }, { status: 400 });
-  }
+  const parsed = InvitationSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const email = parsed.data.email.trim().toLowerCase();
 
   const inviterId = session.user.id;
 

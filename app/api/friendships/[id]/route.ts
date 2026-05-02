@@ -1,5 +1,10 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+const FriendshipActionSchema = z.object({
+  action: z.enum(["ACCEPTED", "REJECTED", "BLOCKED", "UNBLOCKED"]),
+});
 import { respondToFriendRequest, removeFriendship, blockUser, unblockUser } from "@/lib/services/friendship.service";
 import { prisma } from "@/lib/db/client";
 import { sendFriendAcceptedEmail } from "@/lib/email";
@@ -12,7 +17,9 @@ export async function PATCH(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { action } = await req.json();
+  const parsed = FriendshipActionSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const { action } = parsed.data;
 
   try {
     if (action === "BLOCKED") {
@@ -23,9 +30,7 @@ export async function PATCH(
       await unblockUser(session.user.id, id);
       return NextResponse.json({ ok: true });
     }
-    if (action !== "ACCEPTED" && action !== "REJECTED") {
-      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-    }
+
 
     const result = await respondToFriendRequest(id, session.user.id, action);
 

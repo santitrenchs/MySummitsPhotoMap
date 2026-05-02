@@ -1,9 +1,21 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { isValidLocale } from "@/lib/i18n";
 
 const USERNAME_RE = /^[a-zA-Z0-9_.]{3,20}$/;
+
+const SettingsPatchSchema = z.object({
+  name:                  z.string().min(1).max(100).optional(),
+  username:              z.string().max(20).nullable().optional(),
+  bio:                   z.string().max(500).nullable().optional(),
+  language:              z.string().optional(),
+  appearInSearch:        z.boolean().optional(),
+  allowOthersToTag:      z.boolean().optional(),
+  emailNotifications:    z.boolean().optional(),
+  activityNotifications: z.boolean().optional(),
+});
 
 export async function GET() {
   const session = await auth();
@@ -26,22 +38,15 @@ export async function PATCH(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-
-  const allowed = [
-    "name", "username", "bio", "language",
-    "appearInSearch", "allowOthersToTag",
-    "emailNotifications", "activityNotifications",
-  ];
+  const parsed = SettingsPatchSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const body = parsed.data;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data: Record<string, any> = {};
-  for (const key of allowed) {
-    if (key in body) data[key] = body[key];
-  }
+  const data: Record<string, any> = { ...body };
 
-  if ("username" in data) {
-    const u = (data.username as string)?.trim() ?? "";
+  if ("username" in data && data.username != null) {
+    const u = (data.username as string).trim();
     if (u && !USERNAME_RE.test(u)) {
       return NextResponse.json({ error: "Invalid username format" }, { status: 400 });
     }
@@ -49,9 +54,7 @@ export async function PATCH(req: Request) {
   }
 
   if ("name" in data) {
-    const n = (data.name as string).trim();
-    if (!n) return NextResponse.json({ error: "Name is required" }, { status: 400 });
-    data.name = n;
+    data.name = (data.name as string).trim();
   }
 
   if ("language" in data && !isValidLocale(data.language)) {
