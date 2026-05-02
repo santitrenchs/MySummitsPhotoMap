@@ -688,16 +688,13 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
             {/* Delete (edit mode only) — low-emphasis text action */}
             {isEditMode && (
               <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #f3f4f6" }}>
-                <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Zona de peligro
-                </p>
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
                   style={{
                     background: "none", border: "none", padding: "2px 0",
-                    fontSize: 13, fontWeight: 500,
-                    color: "#ef4444", cursor: "pointer",
+                    fontSize: 13, fontWeight: 400,
+                    color: "#f87171", cursor: "pointer",
                   }}
                 >
                   Eliminar ascensión
