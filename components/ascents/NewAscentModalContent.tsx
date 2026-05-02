@@ -157,6 +157,19 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
           <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9ca3af", fontSize: 14 }}>
             <Spinner /> {status ?? "…"}
           </span>
+        ) : isEditMode ? (
+          <button
+            form="ascent-modal-form"
+            type="submit"
+            style={{
+              background: "#111827", border: "none", borderRadius: 20,
+              cursor: "pointer", color: "white",
+              fontSize: 13, fontWeight: 700,
+              padding: "6px 14px", lineHeight: 1,
+            }}
+          >
+            Guardar cambios
+          </button>
         ) : (
           <button
             form="ascent-modal-form"
@@ -672,20 +685,22 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               </p>
             )}
 
-            {/* Delete button (edit mode only) */}
+            {/* Delete (edit mode only) — low-emphasis text action */}
             {isEditMode && (
-              <div style={{ marginTop: 12, paddingTop: 16, borderTop: "1px solid #f3f4f6" }}>
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #f3f4f6" }}>
+                <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Zona de peligro
+                </p>
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
                   style={{
-                    width: "100%", padding: "12px",
-                    background: "none", border: "1px solid #fecaca",
-                    borderRadius: 8, fontSize: 14, fontWeight: 600,
-                    color: "#dc2626", cursor: "pointer",
+                    background: "none", border: "none", padding: "2px 0",
+                    fontSize: 13, fontWeight: 500,
+                    color: "#ef4444", cursor: "pointer",
                   }}
                 >
-                  🗑 Eliminar ascensión
+                  Eliminar ascensión
                 </button>
               </div>
             )}
