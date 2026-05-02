@@ -37,13 +37,9 @@ export default function MapControls({
 }: MapControlsProps) {
   const [layersOpen, setLayersOpen] = useState(false);
   const [geoState, setGeoState] = useState<GeoState>("idle");
-  const [geoErrorMsg, setGeoErrorMsg] = useState<string | null>(null);
-  const [geoBtnPos, setGeoBtnPos] = useState<{ top: number; left: number } | null>(null);
   const layersBtnRef = useRef<HTMLButtonElement>(null);
-  const geoBtnRef = useRef<HTMLButtonElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function openLayers() {
     if (!layersBtnRef.current) return;
@@ -63,50 +59,17 @@ export default function MapControls({
     return () => document.removeEventListener("mousedown", handler);
   }, [layersOpen]);
 
-  function showGeoError(msg: string) {
-    if (!geoBtnRef.current) return;
-    const r = geoBtnRef.current.getBoundingClientRect();
-    setGeoBtnPos({ top: r.top, left: r.left });
-    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-    setGeoErrorMsg(msg);
-    errorTimerRef.current = setTimeout(() => setGeoErrorMsg(null), 5000);
-  }
-
   function handleGeolocate() {
     if (geoState === "locating") return;
-    if (!navigator.geolocation) {
-      setGeoState("error");
-      showGeoError("Tu navegador no soporta geolocalización.");
-      return;
-    }
+    if (!navigator.geolocation) { setGeoState("error"); return; }
     setGeoState("locating");
-    setGeoErrorMsg(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setGeoState("idle");
         onGeolocate(pos.coords.latitude, pos.coords.longitude);
       },
-      (err) => {
-        // Permission denied — no point retrying with triangulation
-        if (err.code === 1) {
-          setGeoState("error");
-          showGeoError("Permite el acceso a tu ubicación en Ajustes > Safari > Ubicación.");
-          return;
-        }
-        // GPS timeout or unavailable — fall back to network triangulation
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            setGeoState("idle");
-            onGeolocate(pos.coords.latitude, pos.coords.longitude);
-          },
-          () => {
-            setGeoState("error");
-            showGeoError("No se pudo obtener tu ubicación.");
-          },
-          { enableHighAccuracy: false, maximumAge: 30000, timeout: 10000 }
-        );
-      },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+      () => setGeoState("error"),
+      { timeout: 8000 }
     );
   }
 
@@ -160,7 +123,6 @@ export default function MapControls({
 
         {/* Geolocate */}
         <button
-          ref={geoBtnRef}
           style={{ ...BTN(), color: geoColor }}
           onClick={handleGeolocate}
           aria-label="Mi ubicación"
@@ -179,29 +141,6 @@ export default function MapControls({
           )}
         </button>
       </div>
-
-      {/* Geo error tooltip */}
-      {geoErrorMsg && geoBtnPos && createPortal(
-        <div style={{
-          position: "fixed",
-          top: geoBtnPos.top + 8,
-          right: window.innerWidth - geoBtnPos.left + 8,
-          background: "white",
-          borderRadius: 10,
-          boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
-          border: "1px solid #fecaca",
-          padding: "8px 12px",
-          fontSize: 13,
-          color: "#dc2626",
-          zIndex: 9999,
-          maxWidth: 220,
-          lineHeight: 1.4,
-          pointerEvents: "none",
-        }}>
-          {geoErrorMsg}
-        </div>,
-        document.body
-      )}
 
       {/* Layers popup */}
       {layersOpen && menuPos && createPortal(
