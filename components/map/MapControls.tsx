@@ -81,42 +81,46 @@ export default function MapControls({
     }
     setGeoState("locating");
     setGeoErrorMsg(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGeoState("idle");
-        onGeolocate(pos.coords.latitude, pos.coords.longitude);
-      },
-      (err) => {
-        // Permission denied — no point retrying with triangulation
-        if (err.code === 1) {
-          setGeoState("error");
-          const ua = navigator.userAgent;
-          const browserName = /CriOS/.test(ua) ? "Chrome"
-            : /FxiOS/.test(ua) ? "Firefox"
-            : /EdgiOS/.test(ua) ? "Edge"
-            : /Safari/.test(ua) ? "Safari"
-            : null;
-          const msg = browserName
-            ? `Permite el acceso a tu ubicación en Ajustes > ${browserName} > Ubicación.`
-            : "Permite el acceso a tu ubicación en los ajustes del navegador.";
-          showGeoError(msg);
-          return;
-        }
-        // GPS timeout or unavailable — fall back to network triangulation
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            setGeoState("idle");
-            onGeolocate(pos.coords.latitude, pos.coords.longitude);
-          },
-          () => {
-            setGeoState("error");
-            showGeoError("No se pudo obtener tu ubicación.");
-          },
-          { enableHighAccuracy: false, maximumAge: 30000, timeout: 10000 }
-        );
-      },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
-    );
+
+    const onSuccess = (pos: GeolocationPosition) => {
+      setGeoState("idle");
+      onGeolocate(pos.coords.latitude, pos.coords.longitude);
+    };
+
+    const onError = (err: GeolocationPositionError) => {
+      setGeoState("error");
+      if (err.code === 1) {
+        const ua = navigator.userAgent;
+        const browserName = /CriOS/.test(ua) ? "Chrome"
+          : /FxiOS/.test(ua) ? "Firefox"
+          : /EdgiOS/.test(ua) ? "Edge"
+          : /Safari/.test(ua) ? "Safari"
+          : null;
+        const msg = browserName
+          ? `Permite el acceso a tu ubicación en Ajustes > ${browserName} > Ubicación.`
+          : "Permite el acceso a tu ubicación en los ajustes del navegador.";
+        showGeoError(msg);
+      } else {
+        showGeoError("No se pudo obtener tu ubicación.");
+      }
+    };
+
+    if (isMobile) {
+      // Mobile: try GPS first, fall back to network triangulation
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+          if (err.code === 1) { onError(err); return; }
+          navigator.geolocation.getCurrentPosition(onSuccess, onError,
+            { enableHighAccuracy: false, maximumAge: 30000, timeout: 10000 });
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+      );
+    } else {
+      // Desktop: go straight to network-based location (no GPS hardware)
+      navigator.geolocation.getCurrentPosition(onSuccess, onError,
+        { enableHighAccuracy: false, maximumAge: 0, timeout: 10000 });
+    }
   }
 
   // Desktop: right of map, left of sidebar (right: 344px)
