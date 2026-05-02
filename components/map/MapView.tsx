@@ -176,8 +176,8 @@ export default function MapView({
   // allPeaks grows as the user pans: starts with climbed peaks, gains viewport peaks from API
   const [allPeaks, setAllPeaks] = useState<MapPeak[]>(peaks);
   const [loadingPeaks, setLoadingPeaks] = useState(false);
-  const [hillshade, setHillshade] = useState(true);
-  const [terrain3d, setTerrain3d] = useState(() => window.innerWidth >= 640);
+  const [hillshade, setHillshade] = useState(false);
+  const [terrain3d, setTerrain3d] = useState(false);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   // Search state
