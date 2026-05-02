@@ -783,7 +783,7 @@ function WikiRow({ peakId, isLast }: { peakId: string; isLast: boolean }) {
         ) : error ? (
           <span style={{ fontSize: 12, color: "#b91c1c" }}>{error}</span>
         ) : wikiTexts.length === 0 ? (
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>Sin textos guardados — pulsa "Actualizar desde Wikipedia" para buscar.</span>
+          <span style={{ fontSize: 12, color: "#94a3b8" }}>{'Sin textos guardados — pulsa "Actualizar desde Wikipedia" para buscar.'}</span>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
             {wikiTexts.map((wt) => (
