@@ -160,6 +160,7 @@ export default function MapView({
   const justSelectedRef = useRef(false);
   const lastSelectionTimeRef = useRef<number>(0);
   const highlightMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null);
 
   // Viewport loading: accumulates all fetched peaks (climbed + unclimbed from API)
   const peaksCacheRef = useRef(new Map<string, MapPeak>(peaks.map((p) => [p.id, p])));
@@ -891,6 +892,11 @@ export default function MapView({
     }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes locationPulse {
+          0%   { box-shadow: 0 0 0 0 rgba(37,99,235,0.45); }
+          70%  { box-shadow: 0 0 0 14px rgba(37,99,235,0); }
+          100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+        }
         @keyframes peakPulse {
           0%   { box-shadow: 0 0 0 0px rgba(251,191,36,0.9), 0 0 0 6px rgba(251,191,36,0.5); opacity: 1; }
           70%  { box-shadow: 0 0 0 18px rgba(251,191,36,0), 0 0 0 24px rgba(251,191,36,0); opacity: 0.6; }
@@ -1066,7 +1072,38 @@ export default function MapView({
             onZoomIn={() => mapRef.current?.zoomIn()}
             onZoomOut={() => mapRef.current?.zoomOut()}
             onGeolocate={(lat, lng) => {
-              mapRef.current?.flyTo({ center: [lng, lat], zoom: 12, duration: 1400 });
+              const map = mapRef.current;
+              if (!map) return;
+              map.flyTo({ center: [lng, lat], zoom: 14, duration: 1400 });
+              // Remove previous user location marker
+              userLocationMarkerRef.current?.remove();
+              // Outer pulsing ring
+              const outer = document.createElement("div");
+              outer.style.cssText = [
+                "position:absolute",
+                "width:36px", "height:36px",
+                "border-radius:50%",
+                "background:rgba(37,99,235,0.15)",
+                "animation:locationPulse 2s ease-out infinite",
+                "pointer-events:none",
+              ].join(";");
+              // Inner blue dot
+              const inner = document.createElement("div");
+              inner.style.cssText = [
+                "position:absolute",
+                "width:14px", "height:14px",
+                "border-radius:50%",
+                "background:#2563eb",
+                "border:2.5px solid white",
+                "box-shadow:0 1px 4px rgba(0,0,0,0.3)",
+                "top:50%", "left:50%",
+                "transform:translate(-50%,-50%)",
+                "pointer-events:none",
+              ].join(";");
+              outer.appendChild(inner);
+              userLocationMarkerRef.current = new maplibregl.Marker({ element: outer, anchor: "center" })
+                .setLngLat([lng, lat])
+                .addTo(map);
             }}
           />
 
