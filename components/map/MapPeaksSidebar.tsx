@@ -142,18 +142,14 @@ export default function MapPeaksSidebar({
     return m;
   }, [visiblePeaks, centerLat, centerLng]);
 
-  // Auto-scroll to selected card when selection changes
+  // Auto-scroll: always center the selected card in the visible list area
   useEffect(() => {
     if (!selectedPeak || !listRef.current || !selectedCardRef.current) return;
     const list = listRef.current;
     const card = selectedCardRef.current;
-    const cardTop = card.offsetTop;
-    const cardBottom = cardTop + card.offsetHeight;
-    const listTop = list.scrollTop;
-    const listBottom = listTop + list.clientHeight;
-    if (cardTop < listTop || cardBottom > listBottom) {
-      list.scrollTo({ top: Math.max(0, cardTop - 12), behavior: "smooth" });
-    }
+    const cardMid = card.offsetTop + card.offsetHeight / 2;
+    const target = Math.max(0, cardMid - list.clientHeight / 2);
+    list.scrollTo({ top: target, behavior: "smooth" });
   }, [selectedPeak]);
 
   const sortLabels: Record<SortMode, string> = {
