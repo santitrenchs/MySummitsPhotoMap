@@ -535,6 +535,90 @@ When tapping a climbed peak, the panel shows the hero photo (if any) with altitu
 
 ---
 
+## Create / Edit Ascent Flow — Contract
+
+This section is the authoritative specification for the create and edit ascent flow. Any change to `NewAscentModalContent`, `PeakPicker`, `PickStep`, or related API routes must remain consistent with this contract.
+
+### Components involved
+- `components/ascents/NewAscentModalContent.tsx` — main state machine, form, submit logic
+- `components/ascents/PeakPicker.tsx` — peak search input with keyboard navigation
+- `components/ascents/PickStep.tsx` — photo upload/drag-drop step
+- `components/photos/ImageCropModal.tsx` — crop + rotate step
+- `components/nav/NavBar.tsx` — hosts the modal; listens for `open-ascent-modal` custom DOM event
+
+### State machine
+
+```
+CREATE mode:  pick → crop → form → (submit) → /ascents?highlight={id}
+EDIT mode:    form  (starts here directly)    → (submit) → router.refresh() + onClose()
+```
+
+- **`pick`**: PickStep. User selects ≥1 image. Validates size ≤ 10 MB. Triggers EXIF extraction for date + GPS peak suggestion (skipped if `defaultPeakId` is present).
+- **`crop`**: ImageCropModal for each queued file. Ratios: 1:1 or 4:5. Supports 90° rotation. Produces `{ blob, cropMeta, originalFile }` per photo. In edit mode re-crop fetches the original via `GET /api/photos/{id}/original`.
+- **`form`**: Fields: peak (required), date (required, default today or EXIF date), route (optional, max 500), notes (optional, max 2000), persons (optional), wikiloc (edit mode only, optional).
+
+### Validation rules (enforced before any API call)
+
+| Rule | Create | Edit |
+|---|---|---|
+| Peak selected | ✅ required | ✅ required |
+| Photo present | ✅ ≥1 readyItem required | ✅ existing photo OR pending new photo required |
+| Photo size | ≤ 10 MB per file | ≤ 10 MB if replacing |
+| Date format | YYYY-MM-DD | YYYY-MM-DD |
+
+### Create submit sequence (handleSubmit)
+
+1. `POST /api/ascents` — creates the ascent record
+2. For each photo: `POST /api/photos/upload` with `file` + `originalFile` + `cropMeta` + `ascentId`
+3. If persons selected: `POST /api/photos/{id}/faces` with manual bounding box covering full image
+4. On success: `window.location.href = /ascents?highlight={ascentId}` (full reload to reset state)
+5. On photo upload failure: show error, close modal, refresh list (ascent record already created)
+
+### Edit submit sequence (handleEditSubmit)
+
+1. `PATCH /api/ascents/{id}` — updates peakId, date, route, description, wikiloc
+2. **If new photo pending**: `POST /api/photos/upload` → `POST /api/photos/{id}/faces` → delete old photo
+   - If old photo had `originalStorageKey`: delete with `?keepOriginal=1`, pass `reuseOriginalPhotoId`
+   - If old photo had no `originalStorageKey` (legacy): delete normally
+3. **If no new photo**: `POST /api/photos/{existingPhotoId}/faces` to update person tags in place
+4. On success: `router.refresh()` + `onClose()` (no full reload — modal closes, list refreshes in background)
+
+### PeakPicker contract
+
+- Hidden input `name="peakId"` holds the selected peak ID.
+- While `peaks` array is still loading (async), falls back to `defaultPeakId` in the hidden input **unless** user has explicitly cleared the field (`userCleared = true`).
+- `defaultPeakName` pre-fills the query text immediately so the field isn't blank while peaks load.
+- Keyboard: ArrowUp/Down navigate, Enter selects, Escape closes dropdown.
+- Suggestion chip (blue): shown when `suggested=true` and a peak was pre-selected from GPS. User can dismiss it.
+- Dropdown: max 60 results shown; footer shows count of hidden results.
+- Empty state: `t.peak_notFound` (i18n, all 5 locales).
+
+### Open-from-map integration
+
+The map fires a custom DOM event to open the modal with a pre-selected peak:
+```ts
+document.dispatchEvent(new CustomEvent("open-ascent-modal", {
+  detail: { peakId: string, peakName: string }
+}));
+```
+`NavBar.tsx` listens for this event and sets `defaultPeakId` + `defaultPeakName` on the modal. The `pick` step GPS suggestion is **skipped** when `defaultPeakId` is present.
+
+### i18n
+
+All visible strings use `t.*` keys — no hardcoded text in any language. Keys used:
+`ascents_logTitle`, `ascents_editTitle`, `field_peak`, `field_selectPeak`, `field_date`, `field_route`, `field_routePlaceholder`, `field_notes`, `field_notesPlaceholder`, `tag_tagPeople`, `tag_searchOrType`, `optional`, `crop_title`, `crop_next`, `newAscent_save`, `newAscent_saveChanges`, `newAscent_delete`, `newAscent_discardTitle`, `newAscent_discardMessage`, `newAscent_discard`, `newAscent_clickOrDrag`, `newAscent_maxSize`, `newAscent_selectFiles`, `photo_tooLarge`, `newAscent_photoFailed`, `ascents_delete_title`, `ascents_delete_body`, `delete`, `deleting`, `cancel`, `detail_editPhoto`, `edit_failedToSave`, `peak_notFound`, `peak_moreResults`.
+
+### What must NOT change without updating this contract
+
+- The `pick → crop → form` step order in create mode
+- Photo being required in both create and edit mode
+- The `userCleared` guard in PeakPicker (prevents wiping `defaultPeakId` during async load)
+- The `open-ascent-modal` custom event signature (`{ peakId, peakName }`)
+- The edit submit calling faces API even when no new photo is uploaded (updates person tags)
+- `window.location.href` for create success (full reload) vs `router.refresh()` for edit (soft refresh)
+
+---
+
 ## Future Direction
 
 Keep these in mind but do not over-engineer for them in the MVP:
