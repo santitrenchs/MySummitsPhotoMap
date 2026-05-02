@@ -28,11 +28,14 @@ export function PeakPicker({
   const t = useT();
   const defaultPeak = peaks.find((p) => p.id === defaultPeakId) ?? null;
   const [selected, setSelected] = useState<Peak | null>(defaultPeak);
-  // Use defaultPeakName as initial query so the name appears immediately in edit mode
-  // even before the peaks array loads from the API.
+  // Use defaultPeakName as initial query so the name appears immediately even before
+  // the peaks array loads from the API.
   const [query, setQuery] = useState(defaultPeak?.name ?? defaultPeakName ?? "");
   const [open, setOpen] = useState(false);
   const [showChip, setShowChip] = useState(suggested && !!defaultPeak);
+  // Track whether the user has explicitly cleared the field so we don't fall back to
+  // defaultPeakId in the hidden input while peaks are still loading.
+  const [userCleared, setUserCleared] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Sync selection when peaks load after initial render (e.g. edit mode where defaultPeakId
@@ -69,6 +72,7 @@ export function PeakPicker({
 
   function handleSelect(peak: Peak) {
     setSelected(peak);
+    setUserCleared(false);
     setQuery(peak.name);
     setOpen(false);
   }
@@ -76,12 +80,14 @@ export function PeakPicker({
   function dismissChip() {
     setShowChip(false);
     setSelected(null);
+    setUserCleared(true);
     setQuery("");
   }
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
-      <input type="hidden" name={name} value={selected?.id ?? ""} />
+      {/* Fall back to defaultPeakId while peaks are still loading and user hasn't cleared */}
+      <input type="hidden" name={name} value={selected?.id ?? (!userCleared && defaultPeakId ? defaultPeakId : "")} />
 
       {/* Suggestion chip */}
       {showChip && selected ? (
@@ -127,6 +133,7 @@ export function PeakPicker({
             autoComplete="off"
             onChange={(e) => {
               setSelected(null);
+              setUserCleared(true);
               setQuery(e.target.value);
               setOpen(true);
             }}

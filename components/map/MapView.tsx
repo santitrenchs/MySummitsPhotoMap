@@ -1117,8 +1117,8 @@ export default function MapView({
               selectedPeakId={selected?.peak.id ?? null}
               onSelectPeak={(peak) => { flyToPeak(peak); }}
               selectedPeak={selected ?? undefined}
-              onActionCapture={(peakId) => {
-                document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId } }));
+              onActionCapture={(peakId, peakName) => {
+                document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId, peakName } }));
               }}
               onActionView={(href) => router.push(href)}
               asSheet
@@ -1140,8 +1140,8 @@ export default function MapView({
             selectedPeakId={selected?.peak.id ?? null}
             onSelectPeak={flyToPeak}
             selectedPeak={selected ?? undefined}
-            onActionCapture={(peakId) => {
-              document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId } }));
+            onActionCapture={(peakId, peakName) => {
+              document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId, peakName } }));
             }}
             onActionView={(href) => router.push(href)}
           />

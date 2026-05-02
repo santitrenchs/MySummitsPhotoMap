@@ -21,7 +21,7 @@ interface Props {
   onSelectPeak: (peak: MapPeak) => void;
   // Expanded detail card
   selectedPeak?: { peak: MapPeak; ascent: AscentMapEntry | null };
-  onActionCapture?: (peakId: string) => void;
+  onActionCapture?: (peakId: string, peakName: string) => void;
   onActionView?: (href: string) => void;
   // Sheet mode (mobile)
   asSheet?: boolean;
@@ -318,7 +318,7 @@ export default function MapPeaksSidebar({
                   if (ascent) {
                     onActionView?.(`/ascents?peak=${ascent.peakId}&highlight=${ascent.ascentId}`);
                   } else {
-                    onActionCapture?.(peak.id);
+                    onActionCapture?.(peak.id, peak.name);
                   }
                 }
               : undefined;

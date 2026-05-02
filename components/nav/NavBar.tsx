@@ -70,6 +70,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   const [ascentModalOpen, setAscentModalOpen] = useState(false);
   const [modalHeader, setModalHeader] = useState<ModalHeaderConfig>({ title: "Nueva ascensión", size: "photo" });
   const [defaultPeakId, setDefaultPeakId] = useState<string | undefined>(undefined);
+  const [defaultPeakName, setDefaultPeakName] = useState<string | undefined>(undefined);
   const [editAscent, setEditAscent] = useState<EditAscent | null>(null);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const ini = initials(userName, userEmail);
@@ -85,6 +86,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
       const detail = (e as CustomEvent).detail ?? {};
       const ea: EditAscent | null = detail.editAscent ?? null;
       setDefaultPeakId(ea ? undefined : (detail.peakId ?? undefined));
+      setDefaultPeakName(ea ? undefined : (detail.peakName ?? undefined));
       setEditAscent(ea);
       setAscentModalOpen(true);
       setModalHeader({ title: ea ? "Editar ascensión" : "Nueva ascensión", size: ea ? "split" : "photo" });
@@ -410,7 +412,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
       {/* ── NEW ASCENT MODAL ─────────────────────────────────────────────────── */}
       <AscentModal
         open={ascentModalOpen}
-        onClose={() => { setAscentModalOpen(false); setDefaultPeakId(undefined); setEditAscent(null); }}
+        onClose={() => { setAscentModalOpen(false); setDefaultPeakId(undefined); setDefaultPeakName(undefined); setEditAscent(null); }}
         title={modalHeader.title}
         leftAction={modalHeader.leftAction}
         rightAction={modalHeader.rightAction}
@@ -418,9 +420,10 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
       >
         {ascentModalOpen && (
           <NewAscentModalContent
-            onClose={() => { setAscentModalOpen(false); setDefaultPeakId(undefined); setEditAscent(null); }}
+            onClose={() => { setAscentModalOpen(false); setDefaultPeakId(undefined); setDefaultPeakName(undefined); setEditAscent(null); }}
             onHeaderChange={setModalHeader}
             defaultPeakId={defaultPeakId}
+            defaultPeakName={defaultPeakName}
             editAscent={editAscent ?? undefined}
           />
         )}

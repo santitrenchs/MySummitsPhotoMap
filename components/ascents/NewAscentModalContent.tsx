@@ -43,13 +43,14 @@ type Props = {
   onClose: () => void;
   onHeaderChange: (config: ModalHeaderConfig) => void;
   defaultPeakId?: string;
+  defaultPeakName?: string;
   editAscent?: EditAscent;
 };
 
 type ModalStep = "pick" | "crop" | "form";
 type Person = { id: string; name: string; username: string | null };
 
-export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, editAscent }: Props) {
+export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, defaultPeakName, editAscent }: Props) {
   const [isMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
   const router = useRouter();
   const t = useT();
@@ -522,7 +523,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               <PeakPicker
                 peaks={peaks}
                 defaultPeakId={isEditMode ? editAscent!.peakId : (defaultPeakId ?? suggestedPeakId ?? undefined)}
-                defaultPeakName={isEditMode ? editAscent!.peakName : undefined}
+                defaultPeakName={isEditMode ? editAscent!.peakName : (defaultPeakName ?? undefined)}
                 name="peakId"
                 placeholder={t.field_selectPeak}
                 suggested={!isEditMode && !defaultPeakId && !!suggestedPeakId}
