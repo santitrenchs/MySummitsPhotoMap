@@ -53,12 +53,12 @@ export default function MapPeakCard({
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, minWidth: 0 }}>
-            {peak.mountainRange && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginTop: 2, minWidth: 0 }}>
+            {peak.mountainRange ? (
               <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>
                 {peak.mountainRange}
               </p>
-            )}
+            ) : <span />}
             {peak.rarity && (
               <span style={{ fontSize: 11, fontWeight: 600, color: rarityColor, flexShrink: 0, whiteSpace: "nowrap" }}>
                 ✿ {peak.rarity.name}
@@ -66,19 +66,13 @@ export default function MapPeakCard({
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-            {ascent && (
-              <span style={{
-                fontSize: 10, fontWeight: 700, color: "#16a34a",
-                background: "#dcfce7", borderRadius: 20, padding: "2px 7px",
-              }}>✓ Capturada</span>
-            )}
-            {distanceKm !== null && (
+          {distanceKm !== null && (
+            <div style={{ marginTop: 4 }}>
               <span style={{ fontSize: 10, color: "#9ca3af" }}>
                 {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`}
               </span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </button>
 
