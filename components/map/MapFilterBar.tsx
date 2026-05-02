@@ -16,10 +16,6 @@ interface MapFilterBarProps {
   onMythicToggle: () => void;
   rarities: RarityDef[];
   climbedCount: number;
-  hillshade: boolean;
-  onHillshadeToggle: () => void;
-  terrain3d: boolean;
-  onTerrain3dToggle: () => void;
 }
 
 // ─── Dropdown wrapper ────────────────────────────────────────────────────────
@@ -95,8 +91,6 @@ export default function MapFilterBar({
   rarityFilter, onRarityChange,
   mythicOnly, onMythicToggle,
   rarities, climbedCount,
-  hillshade, onHillshadeToggle,
-  terrain3d, onTerrain3dToggle,
 }: MapFilterBarProps) {
   const statusOptions: { value: Filter; label: string; color?: string }[] = [
     { value: "all",         label: "Todas" },
@@ -192,37 +186,6 @@ export default function MapFilterBar({
         ✨ Mythic
       </button>
 
-      {/* Relieve — pill style */}
-      <button
-        onClick={onHillshadeToggle}
-        style={{
-          display: "flex", alignItems: "center", gap: 5,
-          padding: "7px 13px", borderRadius: 999, flexShrink: 0,
-          border: `1.5px solid ${hillshade ? "#1e293b" : "#d1d5db"}`,
-          fontSize: 13, fontWeight: 500, cursor: "pointer",
-          background: hillshade ? "#1e293b" : "white",
-          color: hillshade ? "white" : "#374151",
-          whiteSpace: "nowrap",
-          transition: "background 0.15s, color 0.15s",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-        }}
-      >Relieve</button>
-
-      {/* 3D — pill style */}
-      <button
-        onClick={onTerrain3dToggle}
-        style={{
-          display: "flex", alignItems: "center", gap: 5,
-          padding: "7px 13px", borderRadius: 999, flexShrink: 0,
-          border: `1.5px solid ${terrain3d ? "#1e293b" : "#d1d5db"}`,
-          fontSize: 13, fontWeight: 500, cursor: "pointer",
-          background: terrain3d ? "#1e293b" : "white",
-          color: terrain3d ? "white" : "#374151",
-          whiteSpace: "nowrap",
-          transition: "background 0.15s, color 0.15s",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-        }}
-      >3D</button>
     </div>
   );
 }

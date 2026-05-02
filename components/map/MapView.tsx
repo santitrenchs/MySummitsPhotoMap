@@ -7,6 +7,7 @@ import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import MapFilterBar from "./MapFilterBar";
 import MapPeaksSidebar from "./MapPeaksSidebar";
+import MapControls from "./MapControls";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1015,10 +1016,6 @@ export default function MapView({
               }}
               rarities={rarities}
               climbedCount={climbedCount}
-              hillshade={hillshade}
-              onHillshadeToggle={() => setHillshade((v) => !v)}
-              terrain3d={terrain3d}
-              onTerrain3dToggle={() => setTerrain3d((v) => !v)}
             />
           </div>
 
@@ -1120,30 +1117,19 @@ export default function MapView({
             </div>
           )}
 
-          {/* ── Zoom controls ── bottom right ──────────────────────────── */}
-          <div style={{
-            position: "absolute", bottom: 100, right: 12, zIndex: 10,
-            display: "flex", flexDirection: "column",
-            borderRadius: 10, overflow: "hidden",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
-          }}>
-            {([{ label: "+", fn: () => mapRef.current?.zoomIn() }, { label: "−", fn: () => mapRef.current?.zoomOut() }] as const).map(({ label, fn }) => (
-              <button
-                key={label}
-                onClick={fn}
-                aria-label={label === "+" ? t.map_zoomIn : t.map_zoomOut}
-                style={{
-                  width: 36, height: 36,
-                  background: "rgba(17,24,39,0.78)",
-                  backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-                  border: "none",
-                  borderTop: label === "−" ? "1px solid rgba(255,255,255,0.12)" : "none",
-                  fontSize: 20, fontWeight: 300, color: "white", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >{label}</button>
-            ))}
-          </div>
+          {/* ── Map controls (layers, 3D, zoom, geolocate) ─────────────── */}
+          <MapControls
+            isMobile={isMobile}
+            hillshade={hillshade}
+            onHillshadeToggle={() => setHillshade((v) => !v)}
+            terrain3d={terrain3d}
+            onTerrain3dToggle={() => setTerrain3d((v) => !v)}
+            onZoomIn={() => mapRef.current?.zoomIn()}
+            onZoomOut={() => mapRef.current?.zoomOut()}
+            onGeolocate={(lat, lng) => {
+              mapRef.current?.flyTo({ center: [lng, lat], zoom: 13, duration: 1500 });
+            }}
+          />
 
           {/* ── Lista button — mobile only, bottom-left ────────────────── */}
           {isMobile && !sheetOpen && (
