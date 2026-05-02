@@ -90,16 +90,7 @@ export default function MapControls({
         // Permission denied — no point retrying with triangulation
         if (err.code === 1) {
           setGeoState("error");
-          const ua = navigator.userAgent;
-          const browserName = /CriOS/.test(ua) ? "Chrome"
-            : /FxiOS/.test(ua) ? "Firefox"
-            : /EdgiOS/.test(ua) ? "Edge"
-            : /Safari/.test(ua) ? "Safari"
-            : null;
-          const msg = browserName
-            ? `Permite el acceso a tu ubicación en Ajustes > ${browserName} > Ubicación.`
-            : "Permite el acceso a tu ubicación en los ajustes del navegador.";
-          showGeoError(msg);
+          showGeoError("Permite el acceso a tu ubicación en Ajustes > Safari > Ubicación.");
           return;
         }
         // GPS timeout or unavailable — fall back to network triangulation
