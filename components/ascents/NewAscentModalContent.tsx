@@ -95,7 +95,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+  const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
   // ── Header management ────────────────────────────────────────────────────
 
@@ -384,6 +384,12 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       return;
     }
 
+    if (readyItems.length === 0) {
+      setError(t.field_photos);
+      setLoading(false);
+      return;
+    }
+
     // Step 1 — create ascent
     setStatus(t.newAscent_savingAscent);
     const ascentRes = await fetch("/api/ascents", {
@@ -424,7 +430,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         setLoading(false);
         setStatus(null);
         router.refresh(); onClose(); return;
-        return;
       }
       if (selectedPersons.length > 0) {
         const photo = await photoRes.json();

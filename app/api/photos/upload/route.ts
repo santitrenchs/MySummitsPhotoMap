@@ -50,11 +50,19 @@ export async function POST(req: NextRequest) {
       });
       if (sourcePhoto?.originalStorageKey) {
         reuseOriginalStorageKey = sourcePhoto.originalStorageKey;
-        cropMeta = JSON.parse(cropMetaRaw) as CropMeta;
+        try {
+          cropMeta = JSON.parse(cropMetaRaw) as CropMeta;
+        } catch {
+          return NextResponse.json({ error: "Invalid cropMeta JSON" }, { status: 400 });
+        }
       }
     } else if (originalFile && cropMetaRaw) {
       originalBuffer = Buffer.from(await originalFile.arrayBuffer());
-      cropMeta = JSON.parse(cropMetaRaw) as CropMeta;
+      try {
+        cropMeta = JSON.parse(cropMetaRaw) as CropMeta;
+      } catch {
+        return NextResponse.json({ error: "Invalid cropMeta JSON" }, { status: 400 });
+      }
     }
 
     const photo = await uploadPhoto({
