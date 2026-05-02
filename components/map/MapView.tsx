@@ -1074,22 +1074,25 @@ export default function MapView({
             onGeolocate={(lat, lng) => {
               const map = mapRef.current;
               if (!map) return;
-              map.flyTo({ center: [lng, lat], zoom: 14, duration: 1400 });
-              // Remove previous user location marker
               userLocationMarkerRef.current?.remove();
-              const el = document.createElement("div");
-              el.style.cssText = [
-                "position:absolute",
-                "width:16px", "height:16px",
-                "border-radius:50%",
-                "background:#2563eb",
-                "border:3px solid white",
-                "animation:locationPulse 2s ease-out infinite",
-                "pointer-events:none",
-              ].join(";");
-              userLocationMarkerRef.current = new maplibregl.Marker({ element: el, anchor: "center" })
-                .setLngLat([lng, lat])
-                .addTo(map);
+              userLocationMarkerRef.current = null;
+              map.flyTo({ center: [lng, lat], zoom: 14, duration: 1400 });
+              // Wait for flyTo to finish and canvas to be stable before adding marker
+              map.once("idle", () => {
+                const el = document.createElement("div");
+                el.style.cssText = [
+                  "position:absolute",
+                  "width:16px", "height:16px",
+                  "border-radius:50%",
+                  "background:#2563eb",
+                  "border:3px solid white",
+                  "animation:locationPulse 2s ease-out infinite",
+                  "pointer-events:none",
+                ].join(";");
+                userLocationMarkerRef.current = new maplibregl.Marker({ element: el, anchor: "center" })
+                  .setLngLat([lng, lat])
+                  .addTo(map);
+              });
             }}
           />
 
