@@ -107,7 +107,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   useEffect(() => {
     if (modalStep === "pick") {
       onHeaderChange({
-        title: "Nueva ascensión",
+        title: t.ascents_logTitle,
         size: "photo",
         leftAction: (
           <button onClick={onClose} style={headerBtnStyle}>
@@ -142,7 +142,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       });
     } else if (modalStep === "form") {
       onHeaderChange({
-        title: isEditMode ? "Editar ascensión" : "Nueva ascensión",
+        title: isEditMode ? t.ascents_editTitle : t.ascents_logTitle,
         size: "split",
         leftAction: isEditMode ? (
           <button onClick={onClose} style={headerBtnStyle} aria-label="Cerrar">
@@ -168,7 +168,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               padding: "6px 14px", lineHeight: 1,
             }}
           >
-            Guardar cambios
+            {t.newAscent_saveChanges}
           </button>
         ) : (
           <button
@@ -702,7 +702,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                     color: "#f87171", cursor: "pointer",
                   }}
                 >
-                  Eliminar ascensión
+                  {t.newAscent_delete}
                 </button>
               </div>
             )}

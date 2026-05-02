@@ -36,7 +36,9 @@ export function PeakPicker({
   // Track whether the user has explicitly cleared the field so we don't fall back to
   // defaultPeakId in the hidden input while peaks are still loading.
   const [userCleared, setUserCleared] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Sync selection when peaks load after initial render (e.g. edit mode where defaultPeakId
   // is provided but the peaks array arrives asynchronously)
@@ -48,6 +50,13 @@ export function PeakPicker({
       setQuery(found.name);
     }
   }, [peaks, defaultPeakId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll active item into view when navigating with keyboard
+  useEffect(() => {
+    if (activeIndex < 0 || !listRef.current) return;
+    const item = listRef.current.children[activeIndex] as HTMLElement | undefined;
+    item?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
 
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
@@ -135,9 +144,27 @@ export function PeakPicker({
               setSelected(null);
               setUserCleared(true);
               setQuery(e.target.value);
+              setActiveIndex(-1);
               setOpen(true);
             }}
             onFocus={() => setOpen(true)}
+            onKeyDown={(e) => {
+              const visible = filtered.slice(0, 60);
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setActiveIndex((i) => Math.min(i + 1, visible.length - 1));
+                setOpen(true);
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setActiveIndex((i) => Math.max(i - 1, 0));
+              } else if (e.key === "Enter" && activeIndex >= 0 && visible[activeIndex]) {
+                e.preventDefault();
+                handleSelect(visible[activeIndex]);
+              } else if (e.key === "Escape") {
+                setOpen(false);
+                setActiveIndex(-1);
+              }
+            }}
             style={{
               width: "100%", padding: "8px 12px",
               border: "1px solid #d1d5db", borderRadius: 8,
@@ -147,7 +174,7 @@ export function PeakPicker({
             }}
           />
           {open && (
-            <div style={{
+            <div ref={listRef} style={{
               position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
               background: "white", border: "1px solid #d1d5db",
               borderRadius: 8, maxHeight: 240, overflowY: "auto",
@@ -155,34 +182,36 @@ export function PeakPicker({
             }}>
               {filtered.length === 0 ? (
                 <div style={{ padding: "10px 12px", fontSize: 13, color: "#9ca3af" }}>
-                  —
+                  {placeholder ? `${placeholder.replace("…", "")} no encontrada` : "Sin resultados"}
                 </div>
               ) : (
-                filtered.slice(0, 60).map((peak) => (
-                  <div
-                    key={peak.id}
-                    onMouseDown={(e) => { e.preventDefault(); handleSelect(peak); }}
-                    style={{
-                      padding: "9px 12px", cursor: "pointer",
-                      background: selected?.id === peak.id ? "#f0f9ff" : "transparent",
-                      borderBottom: "1px solid #f3f4f6",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.background = "#f9fafb";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.background =
-                        selected?.id === peak.id ? "#f0f9ff" : "transparent";
-                    }}
-                  >
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {peak.name}
+                <>
+                  {filtered.slice(0, 60).map((peak, idx) => (
+                    <div
+                      key={peak.id}
+                      onMouseDown={(e) => { e.preventDefault(); handleSelect(peak); }}
+                      onMouseEnter={() => setActiveIndex(idx)}
+                      onMouseLeave={() => setActiveIndex(-1)}
+                      style={{
+                        padding: "9px 12px", cursor: "pointer",
+                        background: idx === activeIndex ? "#f0f9ff" : selected?.id === peak.id ? "#f0f9ff" : "transparent",
+                        borderBottom: "1px solid #f3f4f6",
+                      }}
+                    >
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
+                        {peak.name}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>
+                        {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>
-                      {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
+                  ))}
+                  {filtered.length > 60 && (
+                    <div style={{ padding: "8px 12px", fontSize: 11, color: "#9ca3af", textAlign: "center" }}>
+                      +{filtered.length - 60} más · escribe para filtrar
                     </div>
-                  </div>
-                ))
+                  )}
+                </>
               )}
             </div>
           )}
