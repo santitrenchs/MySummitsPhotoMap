@@ -20,6 +20,7 @@ export const de: Dict = {
   map_zoomIn: "Vergrößern", map_zoomOut: "Verkleinern",
   map_unclimbedPeaks: "{n} nicht bestiegene Gipfel · klicken zum Vergrößern",
 
+  peak_notFound: "Keine Gipfel gefunden", peak_moreResults: "+{n} mehr · tippe zum Filtern",
   field_peak: "Gipfel", field_selectPeak: "Gipfel auswählen…", field_date: "Datum",
   field_route: "Route", field_routePlaceholder: "z. B. Nordgrat des Salenques",
   field_notes: "Notizen", field_notesPlaceholder: "Bedingungen, Wetter, Erinnerungen…",

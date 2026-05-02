@@ -20,6 +20,7 @@ export const fr: Dict = {
   map_zoomIn: "Zoom avant", map_zoomOut: "Zoom arrière",
   map_unclimbedPeaks: "{n} sommets non gravis · cliquer pour zoomer",
 
+  peak_notFound: "Aucun sommet trouvé", peak_moreResults: "+{n} de plus · tapez pour filtrer",
   field_peak: "Sommet", field_selectPeak: "Choisir un sommet…", field_date: "Date",
   field_route: "Itinéraire", field_routePlaceholder: "ex. Arête Nord du Salenques",
   field_notes: "Notes", field_notesPlaceholder: "Conditions, météo, souvenirs…",

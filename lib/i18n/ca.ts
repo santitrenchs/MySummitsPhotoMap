@@ -20,6 +20,7 @@ export const ca: Dict = {
   map_zoomIn: "Apropar", map_zoomOut: "Allunyar",
   map_unclimbedPeaks: "{n} cims sense pujar · fes clic per ampliar",
 
+  peak_notFound: "No s'han trobat cims", peak_moreResults: "+{n} més · escriu per filtrar",
   field_peak: "Cim", field_selectPeak: "Selecciona un cim…", field_date: "Data",
   field_route: "Ruta", field_routePlaceholder: "p. ex. Nord del Salenques",
   field_notes: "Notes", field_notesPlaceholder: "Condicions, temps, records…",

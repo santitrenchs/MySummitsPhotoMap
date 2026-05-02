@@ -20,6 +20,7 @@ export const es: Dict = {
   map_zoomIn: "Acercar", map_zoomOut: "Alejar",
   map_unclimbedPeaks: "{n} cimas sin subir · haz clic para ampliar",
 
+  peak_notFound: "No se encontraron cimas", peak_moreResults: "+{n} más · escribe para filtrar",
   field_peak: "Cima", field_selectPeak: "Selecciona una cima…", field_date: "Fecha",
   field_route: "Ruta", field_routePlaceholder: "p. ej. Norte de Salenques",
   field_notes: "Notas", field_notesPlaceholder: "Condiciones, tiempo, recuerdos…",

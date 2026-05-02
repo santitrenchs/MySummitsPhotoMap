@@ -24,6 +24,9 @@ export type Dict = {
   map_climbedBadge: string; map_ascentsBadge: string; map_last: string;
   map_zoomIn: string; map_zoomOut: string; map_unclimbedPeaks: string;
 
+  // Peak picker
+  peak_notFound: string; peak_moreResults: string;
+
   // Form fields
   field_peak: string; field_selectPeak: string; field_date: string;
   field_route: string; field_routePlaceholder: string;

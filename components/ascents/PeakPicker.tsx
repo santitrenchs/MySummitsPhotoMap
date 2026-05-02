@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useT } from "@/components/providers/I18nProvider";
+import { i as fmt } from "@/lib/i18n";
 
 type Peak = {
   id: string;
@@ -182,7 +183,7 @@ export function PeakPicker({
             }}>
               {filtered.length === 0 ? (
                 <div style={{ padding: "10px 12px", fontSize: 13, color: "#9ca3af" }}>
-                  {placeholder ? `${placeholder.replace("…", "")} no encontrada` : "Sin resultados"}
+                  {t.peak_notFound}
                 </div>
               ) : (
                 <>
@@ -208,7 +209,7 @@ export function PeakPicker({
                   ))}
                   {filtered.length > 60 && (
                     <div style={{ padding: "8px 12px", fontSize: 11, color: "#9ca3af", textAlign: "center" }}>
-                      +{filtered.length - 60} más · escribe para filtrar
+                      {fmt(t.peak_moreResults, { n: filtered.length - 60 })}
                     </div>
                   )}
                 </>

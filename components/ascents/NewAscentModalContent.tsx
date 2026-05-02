@@ -305,7 +305,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
 
     if (!patchRes.ok) {
       const data = await patchRes.json().catch(() => ({}));
-      setError(typeof data.error === "string" ? data.error : "Error al guardar");
+      setError(typeof data.error === "string" ? data.error : t.edit_failedToSave);
       setLoading(false);
       return;
     }
@@ -396,7 +396,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
 
     if (!ascentRes.ok) {
       const data = await ascentRes.json().catch(() => ({}));
-      setError(typeof data.error === "string" ? data.error : "Failed to save ascent");
+      setError(typeof data.error === "string" ? data.error : t.edit_failedToSave);
       setLoading(false);
       return;
     }
@@ -490,7 +490,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                   cursor: "pointer", backdropFilter: "blur(4px)",
                 }}
               >
-                ✏️ Editar foto
+                ✏️ {t.detail_editPhoto}
               </button>
             )}
           </div>
@@ -521,7 +521,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                     cursor: "pointer",
                   }}
                 >
-                  ✏️ Editar foto
+                  ✏️ {t.detail_editPhoto}
                 </button>
               )}
             </div>
