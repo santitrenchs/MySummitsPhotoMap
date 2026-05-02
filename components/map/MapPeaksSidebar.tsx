@@ -19,6 +19,10 @@ interface Props {
   mythicOnly: boolean;
   selectedPeakId: string | null;
   onSelectPeak: (peak: MapPeak) => void;
+  // Expanded detail card
+  selectedPeak?: { peak: MapPeak; ascent: AscentMapEntry | null };
+  onActionCapture?: (peakId: string) => void;
+  onActionView?: (href: string) => void;
   // Sheet mode (mobile)
   asSheet?: boolean;
   onClose?: () => void;
@@ -41,12 +45,15 @@ export default function MapPeaksSidebar({
   peaks, ascentByPeakId, mapBounds,
   filter, rarityFilter, mythicOnly,
   selectedPeakId, onSelectPeak,
+  selectedPeak, onActionCapture, onActionView,
   asSheet = false, onClose,
 }: Props) {
   const [sort, setSort] = useState<SortMode>("distance");
   const [sortOpen, setSortOpen] = useState(false);
   const [uncapturedOnly, setUncapturedOnly] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+  const selectedCardRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Close sort dropdown on outside click
   useEffect(() => {
@@ -117,15 +124,37 @@ export default function MapPeaksSidebar({
     return nearest.map((x) => x.peak);
   }, [filteredPeaks, sort, centerLat, centerLng]);
 
-  // Distance lookup for cards (after sort, peaks are already in sortedPeaks)
+  // Ensure selected peak is always visible in the list (prepend if not in top-25)
+  const visiblePeaks = useMemo(() => {
+    if (!selectedPeak) return sortedPeaks;
+    const inList = sortedPeaks.some((p) => p.id === selectedPeak.peak.id);
+    if (inList) return sortedPeaks;
+    return [selectedPeak.peak, ...sortedPeaks];
+  }, [sortedPeaks, selectedPeak]);
+
+  // Distance lookup for cards
   const distMap = useMemo(() => {
     if (centerLat === null || centerLng === null) return new Map<string, number>();
     const m = new Map<string, number>();
-    for (const p of sortedPeaks) {
+    for (const p of visiblePeaks) {
       m.set(p.id, distKm(centerLat, centerLng, p.latitude, p.longitude));
     }
     return m;
-  }, [sortedPeaks, centerLat, centerLng]);
+  }, [visiblePeaks, centerLat, centerLng]);
+
+  // Auto-scroll to selected card when selection changes
+  useEffect(() => {
+    if (!selectedPeak || !listRef.current || !selectedCardRef.current) return;
+    const list = listRef.current;
+    const card = selectedCardRef.current;
+    const cardTop = card.offsetTop;
+    const cardBottom = cardTop + card.offsetHeight;
+    const listTop = list.scrollTop;
+    const listBottom = listTop + list.clientHeight;
+    if (cardTop < listTop || cardBottom > listBottom) {
+      list.scrollTo({ top: Math.max(0, cardTop - 12), behavior: "smooth" });
+    }
+  }, [selectedPeak]);
 
   const sortLabels: Record<SortMode, string> = {
     distance:  "Más cercanas",
@@ -272,22 +301,48 @@ export default function MapPeaksSidebar({
       </div>
 
       {/* List */}
-      <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
-        {sortedPeaks.length === 0 ? (
+      <div ref={listRef} style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
+        {visiblePeaks.length === 0 ? (
           <div style={{ padding: "32px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
             No hay cimas con los filtros activos
           </div>
         ) : (
-          sortedPeaks.map((peak) => (
-            <MapPeakCard
-              key={peak.id}
-              peak={peak}
-              ascent={ascentByPeakId.get(peak.id)}
-              distanceKm={distMap.get(peak.id) ?? null}
-              selected={peak.id === selectedPeakId}
-              onClick={() => onSelectPeak(peak)}
-            />
-          ))
+          visiblePeaks.map((peak) => {
+            const isSelected = peak.id === selectedPeakId;
+            const ascent = ascentByPeakId.get(peak.id);
+            const isExpanded = isSelected && !!selectedPeak;
+
+            // Action for expanded card
+            const actionLabel = isExpanded
+              ? (ascent ? "Ver captura" : "Capturar cima")
+              : undefined;
+            const actionVariant: "dark" | "blue" = ascent ? "dark" : "blue";
+            const handleAction = isExpanded
+              ? () => {
+                  if (ascent) {
+                    onActionView?.(`/ascents?peak=${ascent.peakId}&highlight=${ascent.ascentId}`);
+                  } else {
+                    onActionCapture?.(peak.id);
+                  }
+                }
+              : undefined;
+
+            return (
+              <div key={peak.id} ref={isSelected ? selectedCardRef : undefined}>
+                <MapPeakCard
+                  peak={peak}
+                  ascent={ascent}
+                  distanceKm={distMap.get(peak.id) ?? null}
+                  selected={isSelected}
+                  onClick={() => onSelectPeak(peak)}
+                  expanded={isExpanded}
+                  onAction={handleAction}
+                  actionLabel={actionLabel}
+                  actionVariant={actionVariant}
+                />
+              </div>
+            );
+          })
         )}
       </div>
     </div>

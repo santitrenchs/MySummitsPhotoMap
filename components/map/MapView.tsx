@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import { useT } from "@/components/providers/I18nProvider";
-import { i } from "@/lib/i18n";
 import MapFilterBar from "./MapFilterBar";
-import MapPeaksSidebar from "./MapPeaksSidebar";
 import MapControls from "./MapControls";
+import MapPeaksSidebar from "./MapPeaksSidebar";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -108,33 +107,6 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: "carto-tiles", type: "raster", source: "carto" }],
 };
 
-// ─── Mountain placeholder (panel) ────────────────────────────────────────────
-
-function PanelPlaceholder() {
-  return (
-    <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg"
-      style={{ width: "100%", height: "100%", display: "block" }}>
-      <defs>
-        <linearGradient id="ph-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#93c5fd" />
-          <stop offset="100%" stopColor="#dbeafe" />
-        </linearGradient>
-        <linearGradient id="ph-rock" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#94a3b8" /><stop offset="100%" stopColor="#475569" />
-        </linearGradient>
-      </defs>
-      <rect width="300" height="200" fill="url(#ph-sky)" />
-      <polygon points="0,160 300,160 300,200 0,200" fill="#4ade80" opacity="0.4" />
-      <polygon points="150,18 250,140 50,140" fill="url(#ph-rock)" />
-      <polygon points="150,18 178,68 150,62 122,68" fill="white" opacity="0.88" />
-      <polygon points="230,40 295,130 165,130" fill="#b0bec5" opacity="0.65" />
-      <rect x="0" y="158" width="300" height="42" fill="#86efac" opacity="0.35" />
-      <polygon points="20,158 38,128 56,158" fill="#16a34a" opacity="0.7" />
-      <polygon points="248,158 266,130 284,158" fill="#16a34a" opacity="0.7" />
-    </svg>
-  );
-}
-
 // ─── Map view persistence ─────────────────────────────────────────────────────
 
 const MAP_VIEW_KEY = "azitracks_map_view";
@@ -195,7 +167,6 @@ export default function MapView({
   const CACHE_MAX = 3000; // evict oldest entries beyond this to keep iteration fast
 
   const [selected, setSelected] = useState<Selected>(null);
-  const [panelScreenPos, setPanelScreenPos] = useState<{ x: number; y: number } | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [rarityFilter, setRarityFilter] = useState<string[]>([]);
   const [mythicOnly, setMythicOnly] = useState(false);
@@ -208,14 +179,6 @@ export default function MapView({
   const [terrain3d, setTerrain3d] = useState(() => window.innerWidth >= 640);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
-  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
-
-  function navigate(href: string) {
-    if (navigatingTo) return;
-    setNavigatingTo(href);
-    router.push(href);
-  }
-
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -384,16 +347,12 @@ export default function MapView({
     justSelectedRef.current = true;
     showHighlight(peak);
 
-    const mapH = map.getContainer().clientHeight;
     map.flyTo({
       center: [peak.longitude, peak.latitude],
       zoom: 13,
       pitch: terrain3d ? 65 : 0,
       bearing: 20,
       duration: 2200,
-      // offset [0, +Y] shifts the target peak Y pixels below viewport center
-      // → peak at 50% + 20% = 70% from top = 30% from bottom
-      offset: [0, Math.round(mapH * 0.2)],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       easing: (t: number) => 1 - Math.pow(1 - t, 3), // ease-out cubic
     });
@@ -426,21 +385,6 @@ export default function MapView({
     applyRarityLayerFilter(map, rarityFilter, mythicOnly);
   }, [rarityFilter, mythicOnly]);
 
-  // Track screen position of selected peak so panel floats above it
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !selected || isMobile) { setPanelScreenPos(null); return; }
-    function update() {
-      const m = mapRef.current;
-      if (!m || !selected) return;
-      const pt = m.project([selected.peak.longitude, selected.peak.latitude]);
-      setPanelScreenPos({ x: Math.round(pt.x), y: Math.round(pt.y) });
-    }
-    update();
-    map.on("move", update);
-    return () => { map.off("move", update); };
-  }, [selected, isMobile]);
-
   // Remove highlight marker when panel is closed
   useEffect(() => {
     if (!selected && highlightMarkerRef.current) {
@@ -458,6 +402,11 @@ export default function MapView({
     const activeRarity = mythicOnly ? ["mythic"] : rarityFilter;
     if (activeRarity.length > 0 && !activeRarity.includes(selected.peak.rarityId ?? "")) setSelected(null);
   }, [filter, rarityFilter, mythicOnly, selected]);
+
+  // Auto-open mobile sheet when a peak is selected
+  useEffect(() => {
+    if (selected && isMobile) setSheetOpen(true);
+  }, [selected, isMobile]);
 
   // Hillshade toggle
   useEffect(() => {
@@ -924,26 +873,6 @@ export default function MapView({
 
   // ── Derived counts ────────────────────────────────────────────────────────
   const climbedCount = ascentData.length;
-  const PANEL_W = 300;
-  const containerW = containerRef.current?.clientWidth ?? 800;
-  const containerH = containerRef.current?.clientHeight ?? 600;
-  const panelStyle: React.CSSProperties = isMobile
-    ? { bottom: 0, left: 0, right: 0, borderRadius: "20px 20px 0 0", maxHeight: "70vh" }
-    : panelScreenPos
-    ? (() => {
-        const gap = 28;
-        const clampedLeft = Math.max(8, Math.min(panelScreenPos.x - PANEL_W / 2, containerW - PANEL_W - 8));
-        const spaceAbove = panelScreenPos.y - gap - 8;
-        const spaceBelow = containerH - panelScreenPos.y - gap - 8;
-        if (spaceAbove >= 220 || spaceAbove >= spaceBelow) {
-          // Panel arriba del pico
-          return { left: clampedLeft, bottom: containerH - panelScreenPos.y + gap, width: PANEL_W, maxHeight: Math.max(120, spaceAbove), borderRadius: 18 };
-        } else {
-          // Panel debajo del pico (cuando está cerca del borde superior)
-          return { left: clampedLeft, top: panelScreenPos.y + gap, width: PANEL_W, maxHeight: Math.max(120, spaceBelow), borderRadius: 18 };
-        }
-      })()
-    : { top: 12, left: "50%", transform: "translateX(-50%)", width: PANEL_W, maxHeight: "calc(100% - 80px)", borderRadius: 18 };
 
   return (
     <div style={{
@@ -1117,7 +1046,7 @@ export default function MapView({
             </div>
           )}
 
-          {/* ── Map controls (layers, 3D, zoom, geolocate) ─────────────── */}
+          {/* ── Map controls (layers, 3D, zoom, geolocate) ────────────── */}
           <MapControls
             isMobile={isMobile}
             hillshade={hillshade}
@@ -1127,7 +1056,7 @@ export default function MapView({
             onZoomIn={() => mapRef.current?.zoomIn()}
             onZoomOut={() => mapRef.current?.zoomOut()}
             onGeolocate={(lat, lng) => {
-              mapRef.current?.flyTo({ center: [lng, lat], zoom: 13, duration: 1500 });
+              mapRef.current?.flyTo({ center: [lng, lat], zoom: 12, duration: 1400 });
             }}
           />
 
@@ -1148,139 +1077,6 @@ export default function MapView({
             >
               📋 Lista
             </button>
-          )}
-
-          {/* ── Detail panel — inside map area ─────────────────────────── */}
-          {selected && (
-            <div
-              className={isMobile ? "map-panel-mobile" : "map-panel"}
-              style={{
-                position: "absolute",
-                ...panelStyle,
-                background: "white",
-                zIndex: 20,
-                overflowY: "auto",
-                boxShadow: "0 12px 48px rgba(0,0,0,0.2)",
-              }}
-            >
-              {selected.ascent?.photoUrl && (
-                <div style={{ position: "relative", aspectRatio: "3/2", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={selected.ascent.photoUrl} alt=""
-                    style={{
-                      width: "100%", height: "100%", objectFit: "cover", display: "block",
-                      objectPosition: (() => {
-                        const cx = selected.ascent.faceCenterX;
-                        const cy = selected.ascent.faceCenterY;
-                        if (cx == null || cy == null) return "50% 20%";
-                        const r = 1.875;
-                        const py = Math.max(0, Math.min(1, (0.38 - cy * r) / (1 - r)));
-                        return `${cx * 100}% ${py * 100}%`;
-                      })(),
-                    }} />
-                </div>
-              )}
-
-              <button
-                onClick={() => setSelected(null)}
-                aria-label="Close"
-                style={{
-                  position: "absolute", top: 10, right: 10,
-                  width: 28, height: 28, borderRadius: "50%",
-                  background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
-                  border: "none", cursor: "pointer",
-                  color: "white", fontSize: 13,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >✕</button>
-
-              <div style={{ padding: "16px 16px 22px" }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111827", margin: "0 0 2px", lineHeight: 1.25 }}>
-                  {selected.peak.name}
-                  <span style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", marginLeft: 8 }}>
-                    · {selected.peak.altitudeM.toLocaleString(t.dateLocale)} m
-                  </span>
-                </h2>
-                {selected.peak.mountainRange && (
-                  <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 14px" }}>
-                    {selected.peak.mountainRange}
-                  </p>
-                )}
-
-                {selected.ascent ? (
-                  <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-                      {selected.ascent.ascentCount > 1 && (
-                        <span style={{
-                          background: "#dcfce7", color: "#16a34a",
-                          borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700,
-                        }}>
-                          {i(t.map_ascentsBadge, { n: selected.ascent.ascentCount })}
-                        </span>
-                      )}
-                      {selected.peak.rarity && (() => {
-                        const color = RARITY_COLORS[selected.peak.rarityId ?? ""] ?? "#9ca3af";
-                        return (
-                          <span style={{ fontSize: 12, fontWeight: 700, color }}>
-                            ✿ {selected.peak.rarity.name}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                    {(() => {
-                      const a = selected.ascent!;
-                      const href = `/ascents?peak=${a.peakId}&highlight=${a.ascentId}`;
-                      const loading = navigatingTo === href;
-                      return (
-                        <button
-                          className="panel-action-btn"
-                          onClick={() => navigate(href)}
-                          disabled={!!navigatingTo}
-                          style={{
-                            width: "100%", padding: "11px",
-                            background: "#111827", color: "white",
-                            border: "none", borderRadius: 12,
-                            fontSize: 13, fontWeight: 700,
-                            cursor: loading ? "wait" : "pointer",
-                            opacity: loading ? 0.7 : 1,
-                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                            transition: "opacity 0.15s",
-                          }}
-                        >
-                          {loading && <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />}
-                          {t.map_viewAscent}
-                        </button>
-                      );
-                    })()}
-                  </>
-                ) : (
-                  <>
-                    <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 16px" }}>
-                      {t.map_notYetClimbed}
-                    </p>
-                    <button
-                      className="panel-action-btn"
-                      onClick={() => {
-                        document.dispatchEvent(
-                          new CustomEvent("open-ascent-modal", { detail: { peakId: selected.peak.id } })
-                        );
-                      }}
-                      style={{
-                        width: "100%", padding: "11px",
-                        background: "#0369a1", color: "white",
-                        border: "none", borderRadius: 12,
-                        fontSize: 13, fontWeight: 700,
-                        cursor: "pointer",
-                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                        transition: "opacity 0.15s",
-                      }}
-                    >
-                      {t.map_logAscent}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
           )}
 
           {/* ── Loading indicator — when fetching viewport peaks ──────────── */}
@@ -1309,9 +1105,14 @@ export default function MapView({
               rarityFilter={rarityFilter}
               mythicOnly={mythicOnly}
               selectedPeakId={selected?.peak.id ?? null}
-              onSelectPeak={(peak) => { flyToPeak(peak); setSheetOpen(false); }}
+              onSelectPeak={(peak) => { flyToPeak(peak); }}
+              selectedPeak={selected ?? undefined}
+              onActionCapture={(peakId) => {
+                document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId } }));
+              }}
+              onActionView={(href) => router.push(href)}
               asSheet
-              onClose={() => setSheetOpen(false)}
+              onClose={() => { setSheetOpen(false); setSelected(null); }}
             />
           )}
 
@@ -1328,6 +1129,11 @@ export default function MapView({
             mythicOnly={mythicOnly}
             selectedPeakId={selected?.peak.id ?? null}
             onSelectPeak={flyToPeak}
+            selectedPeak={selected ?? undefined}
+            onActionCapture={(peakId) => {
+              document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId } }));
+            }}
+            onActionView={(href) => router.push(href)}
           />
         )}
 
