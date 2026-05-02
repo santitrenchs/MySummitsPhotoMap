@@ -65,7 +65,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const [modalStep, setModalStep] = useState<ModalStep>(isEditMode ? "form" : "pick");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
   const [cropApplying, setCropApplying] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -185,7 +184,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalStep, loading, status, cropApplying, isEditMode]);
+  }, [modalStep, loading, cropApplying, isEditMode]);
 
   // ── File handling ────────────────────────────────────────────────────────
 
@@ -292,7 +291,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       return;
     }
 
-    setStatus(t.newAscent_savingAscent);
     const patchRes = await fetch(`/api/ascents/${editAscent.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -309,7 +307,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       const data = await patchRes.json().catch(() => ({}));
       setError(typeof data.error === "string" ? data.error : "Error al guardar");
       setLoading(false);
-      setStatus(null);
       return;
     }
 
@@ -320,7 +317,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     }));
 
     if (pendingPhoto) {
-      setStatus(fmt(t.newAscent_uploadingPhoto, { i: 1, n: 1 }));
       const fd = new FormData();
       fd.append("file", pendingPhoto.blob, "photo.jpg");
       fd.append("ascentId", editAscent.id);
@@ -333,7 +329,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
       if (photoRes.ok) {
         const photo = await photoRes.json();
-        setStatus(fmt(t.newAscent_savingTags, { i: 1 }));
         await fetch(`/api/photos/${photo.id}/faces`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -347,8 +342,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         await fetch(`/api/photos/${editAscent.photoId}?keepOriginal=1`, { method: "DELETE" }).catch(() => {});
       }
     } else if (editAscent.photoId) {
-      // No new photo — update person tags on the existing photo
-      setStatus(fmt(t.newAscent_savingTags, { i: 1 }));
       await fetch(`/api/photos/${editAscent.photoId}/faces`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -357,7 +350,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     }
 
     setLoading(false);
-    setStatus(null);
     router.refresh();
     onClose();
   }
@@ -390,8 +382,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       return;
     }
 
-    // Step 1 — create ascent
-    setStatus(t.newAscent_savingAscent);
     const ascentRes = await fetch("/api/ascents", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -408,7 +398,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       const data = await ascentRes.json().catch(() => ({}));
       setError(typeof data.error === "string" ? data.error : "Failed to save ascent");
       setLoading(false);
-      setStatus(null);
       return;
     }
 
@@ -417,7 +406,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     // Step 2 — upload photos + face tags
     for (let i = 0; i < readyItems.length; i++) {
       const item = readyItems[i];
-      setStatus(fmt(t.newAscent_uploadingPhoto, { i: i + 1, n: readyItems.length }));
       const fd = new FormData();
       fd.append("file", item.blob, "photo.jpg");
       fd.append("ascentId", ascent.id);
@@ -428,12 +416,10 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       if (!photoRes.ok) {
         setError(fmt(t.newAscent_photoFailed, { i: i + 1 }));
         setLoading(false);
-        setStatus(null);
         router.refresh(); onClose(); return;
       }
       if (selectedPersons.length > 0) {
         const photo = await photoRes.json();
-        setStatus(fmt(t.newAscent_savingTags, { i: i + 1 }));
         await fetch(`/api/photos/${photo.id}/faces`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -776,10 +762,10 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
           }}>
             <div style={{ padding: "24px 20px 8px", textAlign: "center" }}>
               <p style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 700, color: "#111827" }}>
-                Eliminar ascensión
+                {t.ascents_delete_title}
               </p>
               <p style={{ margin: 0, fontSize: 14, color: "#6b7280", lineHeight: 1.5 }}>
-                Esta acción no se puede deshacer.
+                {t.ascents_delete_body}
               </p>
             </div>
             <div style={{ padding: "8px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -793,7 +779,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                   color: "white", cursor: "pointer",
                 }}
               >
-                {loading ? "Eliminando…" : "Eliminar"}
+                {loading ? t.deleting : t.delete}
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -815,16 +801,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   }
 
   return null;
-}
-
-// ── Shared sub-components ────────────────────────────────────────────────────
-
-function RightPanelPlaceholder() {
-  return (
-    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#d1d5db", fontSize: 13 }}>
-      Datos de la ascensión
-    </div>
-  );
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────
