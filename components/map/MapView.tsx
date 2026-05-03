@@ -57,6 +57,21 @@ export const RARITY_COLORS: Record<string, string> = {
   mythic:    "#FFD700",
 };
 
+function distKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDist(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  if (km < 10) return `${km.toFixed(1)} km`;
+  return `${Math.round(km)} km`;
+}
+
 // ─── Rarity scoring weights (used in adaptive score computation) ─────────────
 
 export const RARITY_SCORE_WEIGHTS: Record<string, number> = {
@@ -347,7 +362,7 @@ export default function MapView({
     const pt = map.project([targetPeak.longitude, targetPeak.latitude]);
     const mapH = container.clientHeight;
     const mapW = container.clientWidth;
-    const POPUP_W = 220;
+    const POPUP_W = 300;
     const above = pt.y > mapH * 0.38;
     const clampedX = Math.max(POPUP_W / 2 + 8, Math.min(mapW - POPUP_W / 2 - 8, pt.x));
     setPeakPopup({ x: clampedX, y: pt.y, above });
@@ -1090,48 +1105,125 @@ export default function MapView({
           {/* ── Selected peak popup (desktop only) ────────────────────── */}
           {peakPopup && selected && !isMobile && (() => {
             const { peak, ascent } = selected;
-            const rarityColor = RARITY_COLORS[peak.rarityId ?? ""] ?? "#22c55e";
+            const rarityColor = RARITY_COLORS[peak.rarityId ?? ""] ?? "#6b7280";
             const OFFSET = 22;
-            const topPos = peakPopup.above
-              ? peakPopup.y - OFFSET
-              : peakPopup.y + OFFSET;
+            const topPos = peakPopup.above ? peakPopup.y - OFFSET : peakPopup.y + OFFSET;
+            const center = mapRef.current?.getCenter();
+            const dist = center ? distKm(center.lat, center.lng, peak.latitude, peak.longitude) : null;
+            const faceX = ascent?.faceCenterX ?? 0.5;
+            const faceY = ascent?.faceCenterY ?? 0.5;
             return (
-              <div style={{
-                position: "absolute",
-                left: peakPopup.x,
-                top: topPos,
-                transform: peakPopup.above ? "translate(-50%, -100%)" : "translateX(-50%)",
-                pointerEvents: "none",
-                zIndex: 40,
-                background: "white",
-                borderRadius: 12,
-                boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
-                padding: "10px 14px",
-                minWidth: 180,
-                maxWidth: 240,
-                borderTop: `3px solid ${rarityColor}`,
-              }}>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: "absolute",
+                  left: peakPopup.x,
+                  top: topPos,
+                  transform: peakPopup.above ? "translate(-50%, -100%)" : "translateX(-50%)",
+                  zIndex: 40,
+                  background: "white",
+                  borderRadius: 14,
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+                  overflow: "hidden",
+                  minWidth: 260,
+                  maxWidth: 300,
+                  borderTop: `3px solid ${rarityColor}`,
+                }}
+              >
                 {/* Arrow pointing toward the peak */}
                 <div style={{
                   position: "absolute",
-                  left: "50%",
-                  transform: "translateX(-50%)",
+                  left: "50%", transform: "translateX(-50%)",
                   width: 0, height: 0,
                   ...(peakPopup.above
                     ? { bottom: -7, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderTop: "7px solid white" }
                     : { top: -7, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderBottom: "7px solid white" }),
                 }} />
-                <div style={{ fontWeight: 700, fontSize: 14, color: "#111827", lineHeight: 1.3 }}>
-                  {peak.name}
+
+                {/* Header */}
+                <div style={{ padding: "12px 14px 8px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: "#111827", lineHeight: 1.2, flex: 1 }}>
+                      {peak.name}
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#6b7280", whiteSpace: "nowrap" }}>
+                      {peak.altitudeM} m
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                    <div style={{ fontSize: 12, color: "#9ca3af" }}>
+                      {peak.mountainRange ?? ""}
+                    </div>
+                    {peak.rarity && (
+                      <div style={{ fontSize: 11, fontWeight: 600, color: rarityColor, whiteSpace: "nowrap" }}>
+                        ✿ {peak.rarity.name}
+                      </div>
+                    )}
+                  </div>
+                  {dist !== null && (
+                    <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 3 }}>
+                      {formatDist(dist)}
+                    </div>
+                  )}
                 </div>
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-                  {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
-                </div>
-                {ascent && (
-                  <div style={{ marginTop: 5, fontSize: 11, fontWeight: 600, color: rarityColor }}>
-                    ✓ Conquistada
+
+                {/* Hero photo */}
+                {ascent?.photoUrl && (
+                  <div style={{ width: "100%", aspectRatio: "3/2", overflow: "hidden" }}>
+                    <img
+                      src={ascent.photoUrl}
+                      alt=""
+                      style={{
+                        width: "100%", height: "100%",
+                        objectFit: "cover",
+                        objectPosition: `${faceX * 100}% ${faceY * 100}%`,
+                        display: "block",
+                      }}
+                    />
                   </div>
                 )}
+
+                {/* Buttons */}
+                <div style={{ padding: "10px 12px 12px", display: "flex", gap: 8 }}>
+                  {ascent ? (
+                    <>
+                      <button
+                        onClick={() => router.push(`/ascents?peak=${peak.id}`)}
+                        style={{
+                          flex: 1, padding: "9px 0",
+                          background: "white", border: "1.5px solid #e5e7eb",
+                          borderRadius: 10, fontSize: 12, fontWeight: 600,
+                          color: "#374151", cursor: "pointer",
+                        }}
+                      >
+                        Ver capturas
+                      </button>
+                      <button
+                        onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peak.name } }))}
+                        style={{
+                          flex: 1, padding: "9px 0",
+                          background: "#111827", border: "none",
+                          borderRadius: 10, fontSize: 12, fontWeight: 600,
+                          color: "white", cursor: "pointer",
+                        }}
+                      >
+                        Capturar
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peak.name } }))}
+                      style={{
+                        flex: 1, padding: "10px 0",
+                        background: "#111827", border: "none",
+                        borderRadius: 10, fontSize: 13, fontWeight: 600,
+                        color: "white", cursor: "pointer",
+                      }}
+                    >
+                      + Capturar
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })()}
