@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
-import type { MapPeak, AscentMapEntry, MapBounds } from "./MapView";
+import type { MapPeak, AscentMapEntry, MapBounds, RarityDef } from "./MapView";
 import { RARITY_SCORE_WEIGHTS } from "./MapView";
 import MapPeakCard from "./MapPeakCard";
+import MapFilterBar from "./MapFilterBar";
 
 type Filter = "all" | "climbed" | "not-climbed";
 type SortMode = "distance" | "relevance" | "altitude";
@@ -15,8 +16,13 @@ interface Props {
   ascentByPeakId: Map<string, AscentMapEntry>;
   mapBounds: MapBounds | null;
   filter: Filter;
+  onFilterChange: (f: Filter) => void;
   rarityFilter: string[];
+  onRarityChange: (ids: string[]) => void;
   mythicOnly: boolean;
+  onMythicToggle: () => void;
+  rarities: RarityDef[];
+  climbedCount: number;
   selectedPeakId: string | null;
   onSelectPeak: (peak: MapPeak) => void;
   // Sheet mode (mobile)
@@ -39,7 +45,7 @@ function distKm(lat1: number, lng1: number, lat2: number, lng2: number): number 
 
 export default function MapPeaksSidebar({
   peaks, ascentByPeakId, mapBounds,
-  filter, rarityFilter, mythicOnly,
+  filter, onFilterChange, rarityFilter, onRarityChange, mythicOnly, onMythicToggle, rarities, climbedCount,
   selectedPeakId, onSelectPeak,
   asSheet = false, onClose,
 }: Props) {
@@ -283,6 +289,24 @@ export default function MapPeaksSidebar({
             >✕</button>
           )}
         </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{
+        padding: "8px 12px", flexShrink: 0,
+        borderBottom: "1px solid #f3f4f6",
+        display: "flex", gap: 8, flexWrap: "wrap",
+      }}>
+        <MapFilterBar
+          filter={filter}
+          onFilterChange={onFilterChange}
+          rarityFilter={rarityFilter}
+          onRarityChange={onRarityChange}
+          mythicOnly={mythicOnly}
+          onMythicToggle={onMythicToggle}
+          rarities={rarities}
+          climbedCount={climbedCount}
+        />
       </div>
 
       {/* List */}

@@ -961,33 +961,6 @@ export default function MapView({
             style={{ position: "absolute", inset: 0, pointerEvents: sheetOpen ? "none" : "auto" }}
           />
 
-          {/* ── Filter pills overlay — right of search (desktop), below search (mobile) */}
-          <div style={{
-            position: "absolute",
-            top: isMobile ? 86 : 12,
-            left: isMobile ? 12 : 344,
-            right: isMobile ? 12 : undefined,
-            zIndex: 20,
-            display: "flex", alignItems: "center", gap: 8,
-            overflowX: isMobile ? "auto" : "visible",
-            WebkitOverflowScrolling: "touch",
-            // Hide scrollbar on mobile but keep scrollability
-            msOverflowStyle: "none",
-          }}>
-            <MapFilterBar
-              filter={filter}
-              onFilterChange={setFilter}
-              rarityFilter={rarityFilter}
-              onRarityChange={setRarityFilter}
-              mythicOnly={mythicOnly}
-              onMythicToggle={() => {
-                setMythicOnly((v) => !v);
-                if (!mythicOnly) setRarityFilter([]);
-              }}
-              rarities={rarities}
-              climbedCount={climbedCount}
-            />
-          </div>
 
           {/* ── Hover tooltip ──────────────────────────────────────────── */}
           {tooltip && !selected && (
@@ -1204,8 +1177,13 @@ export default function MapView({
               ascentByPeakId={ascentByPeakId.current}
               mapBounds={mapBounds}
               filter={filter}
+              onFilterChange={setFilter}
               rarityFilter={rarityFilter}
+              onRarityChange={setRarityFilter}
               mythicOnly={mythicOnly}
+              onMythicToggle={() => { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); }}
+              rarities={rarities}
+              climbedCount={climbedCount}
               selectedPeakId={selected?.peak.id ?? null}
               onSelectPeak={(peak) => { flyToPeak(peak); }}
               asSheet
@@ -1222,8 +1200,13 @@ export default function MapView({
             ascentByPeakId={ascentByPeakId.current}
             mapBounds={mapBounds}
             filter={filter}
+            onFilterChange={setFilter}
             rarityFilter={rarityFilter}
+            onRarityChange={setRarityFilter}
             mythicOnly={mythicOnly}
+            onMythicToggle={() => { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); }}
+            rarities={rarities}
+            climbedCount={climbedCount}
             selectedPeakId={selected?.peak.id ?? null}
             onSelectPeak={flyToPeak}
           />
