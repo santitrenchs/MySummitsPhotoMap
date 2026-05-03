@@ -200,9 +200,6 @@ export default function MapView({
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-
   // Keep selectedRef in sync for use inside map event listeners (avoids stale closures)
   useEffect(() => { selectedRef.current = selected; }, [selected]);
 
@@ -217,21 +214,6 @@ export default function MapView({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Search results — fetched from API on every keystroke (debounced 300ms)
-  const [searchResults, setSearchResults] = useState<MapPeak[]>([]);
-  useEffect(() => {
-    const q = searchQuery.trim();
-    if (q.length < 2) { setSearchResults([]); return; }
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/peaks?q=${encodeURIComponent(q)}`);
-        if (!res.ok) return;
-        const data: MapPeak[] = await res.json();
-        setSearchResults(data.slice(0, 8));
-      } catch { /* ignore */ }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   // Compute adaptive scores for peaks in the current viewport and update the
   // GeoJSON source. Called after every pan/zoom and after each viewport fetch.
@@ -372,10 +354,6 @@ export default function MapView({
   function flyToPeak(peak: MapPeak) {
     const map = mapRef.current;
     if (!map) return;
-
-    setSearchQuery("");
-    setSearchOpen(false);
-    setSearchResults([]);
 
     // Ensure the peak is in the local cache so highlight/panel work after flying
     if (!peaksCacheRef.current.has(peak.id)) {
@@ -1002,86 +980,6 @@ export default function MapView({
               rarities={rarities}
               climbedCount={climbedCount}
             />
-          </div>
-
-          {/* ── Search panel overlay ──────────────────────────────────── */}
-          <div style={{
-            position: "absolute", top: 12,
-            left: 12, right: 12,
-            ...(isMobile ? {} : { right: "auto", width: 320 }),
-            zIndex: 20,
-            background: "rgba(255,255,255,0.97)",
-            backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-            borderRadius: 16,
-            boxShadow: "0 2px 16px rgba(0,0,0,0.2)",
-            overflow: "hidden",
-          }}>
-            <div style={{ position: "relative", padding: "10px 12px" }}>
-              <span style={{
-                position: "absolute", left: 22, top: "50%", transform: "translateY(-50%)",
-                fontSize: 14, pointerEvents: "none", color: "#9ca3af",
-              }}>🔍</span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
-                onFocus={() => setSearchOpen(true)}
-                onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
-                placeholder="Buscar cima…"
-                style={{
-                  width: "100%", padding: "8px 30px 8px 32px",
-                  borderRadius: 10, border: "none",
-                  fontSize: 16, fontWeight: 500, color: "#111827",
-                  background: "#f3f4f6",
-                  outline: "none", boxSizing: "border-box",
-                }}
-              />
-              {searchQuery && (
-                <button
-                  onMouseDown={() => setSearchQuery("")}
-                  style={{
-                    position: "absolute", right: 18, top: "50%", transform: "translateY(-50%)",
-                    background: "none", border: "none", cursor: "pointer",
-                    color: "#9ca3af", fontSize: 14, lineHeight: 1, padding: 2,
-                  }}
-                >✕</button>
-              )}
-            </div>
-            {searchOpen && searchResults.length > 0 && (
-              <div style={{
-                borderTop: "1px solid #f3f4f6",
-                maxHeight: 260, overflowY: "auto",
-                animation: "searchDrop 0.15s ease both",
-              }}>
-                {searchResults.map((peak) => {
-                  const isClimbed = ascentByPeakId.current.has(peak.id);
-                  return (
-                    <button
-                      key={peak.id}
-                      className="search-result"
-                      onMouseDown={() => flyToPeak(peak)}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 10,
-                        width: "100%", padding: "10px 14px",
-                        background: "none", border: "none", cursor: "pointer",
-                        textAlign: "left", borderBottom: "1px solid #f3f4f6",
-                      }}
-                    >
-                      <span style={{ fontSize: 16, flexShrink: 0 }}>{isClimbed ? "✅" : "🏔"}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827" }}>
-                          {peak.name}
-                        </p>
-                        <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                          {peak.altitudeM.toLocaleString(t.dateLocale)} m
-                          {peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
 
           {/* ── Hover tooltip ──────────────────────────────────────────── */}

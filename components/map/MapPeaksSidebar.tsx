@@ -50,6 +50,24 @@ export default function MapPeaksSidebar({
   const selectedCardRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<MapPeak[]>([]);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) { setSearchResults([]); return; }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/peaks?q=${encodeURIComponent(q)}`);
+        if (!res.ok) return;
+        const data: MapPeak[] = await res.json();
+        setSearchResults(data.slice(0, 8));
+      } catch { /* ignore */ }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Close sort dropdown on outside click
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -235,9 +253,74 @@ export default function MapPeaksSidebar({
         </div>
       )}
 
+      {/* Search input */}
+      <div style={{ padding: "10px 12px", flexShrink: 0, borderBottom: "1px solid #f3f4f6" }}>
+        <div style={{ position: "relative" }}>
+          <span style={{
+            position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+            fontSize: 13, pointerEvents: "none", color: "#9ca3af",
+          }}>🔍</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar cima…"
+            style={{
+              width: "100%", padding: "8px 28px 8px 30px",
+              borderRadius: 10, border: "none",
+              fontSize: 14, fontWeight: 500, color: "#111827",
+              background: "#f3f4f6", outline: "none", boxSizing: "border-box",
+            }}
+          />
+          {searchQuery && (
+            <button
+              onMouseDown={() => setSearchQuery("")}
+              style={{
+                position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer",
+                color: "#9ca3af", fontSize: 13, lineHeight: 1, padding: 2,
+              }}
+            >✕</button>
+          )}
+        </div>
+      </div>
+
       {/* List */}
       <div ref={listRef} style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
-        {visiblePeaks.length === 0 ? (
+        {searchQuery.trim().length >= 2 ? (
+          searchResults.length === 0 ? (
+            <div style={{ padding: "32px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+              Sin resultados
+            </div>
+          ) : (
+            searchResults.map((peak) => {
+              const isClimbed = ascentByPeakId.has(peak.id);
+              return (
+                <button
+                  key={peak.id}
+                  onMouseDown={() => { onSelectPeak(peak); setSearchQuery(""); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    width: "100%", padding: "10px 14px",
+                    background: "none", border: "none", borderBottom: "1px solid #f3f4f6",
+                    cursor: "pointer", textAlign: "left",
+                  }}
+                >
+                  <span style={{ fontSize: 15, flexShrink: 0 }}>{isClimbed ? "✅" : "🏔"}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827",
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {peak.name}
+                    </p>
+                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                      {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
+                    </p>
+                  </div>
+                </button>
+              );
+            })
+          )
+        ) : visiblePeaks.length === 0 ? (
           <div style={{ padding: "32px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
             No hay cimas con los filtros activos
           </div>
