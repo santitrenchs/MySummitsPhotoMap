@@ -122,6 +122,9 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: "carto-tiles", type: "raster", source: "carto" }],
 };
 
+// Height of the mobile top bar (search + filters). Used to offset the list panel.
+const MOBILE_TOP_BAR_H = 104;
+
 // ─── Map view persistence ─────────────────────────────────────────────────────
 
 const MAP_VIEW_KEY = "azitracks_map_view";
@@ -192,7 +195,9 @@ export default function MapView({
   const [rarityFilter, setRarityFilter] = useState<string[]>([]);
   const [mythicOnly, setMythicOnly] = useState(false);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<"map" | "list">("map");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<MapPeak[]>([]);
   // allPeaks grows as the user pans: starts with climbed peaks, gains viewport peaks from API
   const [allPeaks, setAllPeaks] = useState<MapPeak[]>(peaks);
   const [loadingPeaks, setLoadingPeaks] = useState(false);
@@ -200,9 +205,23 @@ export default function MapView({
   const [terrain3d, setTerrain3d] = useState(false);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
-  // Search state
   // Keep selectedRef in sync for use inside map event listeners (avoids stale closures)
   useEffect(() => { selectedRef.current = selected; }, [selected]);
+
+  // Search debounce
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) { setSearchResults([]); return; }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/peaks?q=${encodeURIComponent(q)}`);
+        if (!res.ok) return;
+        const data: MapPeak[] = await res.json();
+        setSearchResults(data.slice(0, 8));
+      } catch { /* ignore */ }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Clear popup when selection is removed
   useEffect(() => { if (!selected) setPeakPopup(null); }, [selected]);
@@ -431,11 +450,6 @@ export default function MapView({
     const activeRarity = mythicOnly ? ["mythic"] : rarityFilter;
     if (activeRarity.length > 0 && !activeRarity.includes(selected.peak.rarityId ?? "")) setSelected(null);
   }, [filter, rarityFilter, mythicOnly, selected]);
-
-  // Auto-open mobile sheet when a peak is selected
-  useEffect(() => {
-    if (selected && isMobile) setSheetOpen(true);
-  }, [selected, isMobile]);
 
   // Hillshade toggle
   useEffect(() => {
@@ -951,6 +965,101 @@ export default function MapView({
         .search-result:hover { background: #f3f4f6; }
       `}</style>
 
+        {/* ── Mobile top bar: search + filters, always visible ─────────── */}
+        {isMobile && (
+          <div style={{
+            position: "absolute", top: 0, left: 0, right: 0,
+            zIndex: 25,
+            background: "white",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+            padding: "8px 12px",
+            display: "flex", flexDirection: "column", gap: 8,
+          }}>
+            <div style={{ position: "relative" }}>
+              <span style={{
+                position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+                fontSize: 13, pointerEvents: "none", color: "#9ca3af",
+              }}>🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar cima…"
+                style={{
+                  width: "100%", padding: "10px 28px 10px 30px",
+                  borderRadius: 10, border: "none",
+                  fontSize: 16, fontWeight: 500, color: "#111827",
+                  background: "#f3f4f6", outline: "none", boxSizing: "border-box",
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  style={{
+                    position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "#9ca3af", fontSize: 13, lineHeight: 1, padding: 2,
+                  }}
+                >✕</button>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <MapFilterBar
+                filter={filter}
+                onFilterChange={setFilter}
+                rarityFilter={rarityFilter}
+                onRarityChange={setRarityFilter}
+                mythicOnly={mythicOnly}
+                onMythicToggle={() => { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); }}
+                rarities={rarities}
+                climbedCount={climbedCount}
+              />
+            </div>
+            {/* Search results dropdown (map view only) */}
+            {mobileView === "map" && searchQuery.trim().length >= 2 && (
+              <div style={{
+                position: "absolute", top: "100%", left: 0, right: 0,
+                background: "white",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.14)",
+                zIndex: 1,
+                maxHeight: 320, overflowY: "auto",
+              }}>
+                {searchResults.length === 0 ? (
+                  <div style={{ padding: "24px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                    Sin resultados
+                  </div>
+                ) : (
+                  searchResults.map((peak) => {
+                    const isClimbed = ascentByPeakId.current.has(peak.id);
+                    return (
+                      <button
+                        key={peak.id}
+                        onClick={() => { flyToPeak(peak); setSearchQuery(""); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 10,
+                          width: "100%", padding: "10px 14px",
+                          background: "none", border: "none", borderBottom: "1px solid #f3f4f6",
+                          cursor: "pointer", textAlign: "left",
+                        }}
+                      >
+                        <span style={{ fontSize: 15, flexShrink: 0 }}>{isClimbed ? "✅" : "🏔"}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {peak.name}
+                          </p>
+                          <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                            {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Map area — full bleed behind floating sidebar */}
         <div style={{ position: "absolute", inset: 0 }}>
 
@@ -958,7 +1067,7 @@ export default function MapView({
           {/* pointerEvents:none when sheet is open to isolate touch from map */}
           <div
             ref={containerRef}
-            style={{ position: "absolute", inset: 0, pointerEvents: sheetOpen ? "none" : "auto" }}
+            style={{ position: "absolute", inset: 0, pointerEvents: isMobile && mobileView === "list" ? "none" : "auto" }}
           />
 
 
@@ -1135,30 +1244,11 @@ export default function MapView({
             }}
           />
 
-          {/* ── Lista button — mobile only, bottom-left ────────────────── */}
-          {isMobile && !sheetOpen && (
-            <button
-              onClick={() => setSheetOpen(true)}
-              style={{
-                position: "absolute", bottom: 100, left: 12, zIndex: 10,
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "8px 16px", borderRadius: 999,
-                background: "rgba(17,24,39,0.78)",
-                backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-                border: "none",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
-                fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer",
-              }}
-            >
-              📋 Lista
-            </button>
-          )}
-
           {/* ── Loading indicator — when fetching viewport peaks ──────────── */}
           {loadingPeaks && (
             <div style={{
-              position: "absolute", top: isMobile ? 130 : 70, left: "50%", transform: "translateX(-50%)",
-              zIndex: 25, pointerEvents: "none",
+              position: "absolute", top: isMobile ? MOBILE_TOP_BAR_H + 12 : 70, left: "50%", transform: "translateX(-50%)",
+              zIndex: 26, pointerEvents: "none",
               background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)",
               padding: "6px 14px", borderRadius: 999,
               display: "flex", alignItems: "center", gap: 7,
@@ -1170,28 +1260,60 @@ export default function MapView({
             </div>
           )}
 
-          {/* ── Mobile bottom sheet — OUTSIDE containerRef, touch-isolated ── */}
-          {isMobile && sheetOpen && (
-            <MapPeaksSidebar
-              peaks={allPeaks}
-              ascentByPeakId={ascentByPeakId.current}
-              mapBounds={mapBounds}
-              filter={filter}
-              onFilterChange={setFilter}
-              rarityFilter={rarityFilter}
-              onRarityChange={setRarityFilter}
-              mythicOnly={mythicOnly}
-              onMythicToggle={() => { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); }}
-              rarities={rarities}
-              climbedCount={climbedCount}
-              selectedPeakId={selected?.peak.id ?? null}
-              onSelectPeak={(peak) => { flyToPeak(peak); }}
-              asSheet
-              onClose={() => { setSheetOpen(false); setSelected(null); }}
-            />
+          {/* ── Mobile list view — overlays map below the top bar ────────── */}
+          {isMobile && mobileView === "list" && (
+            <div style={{
+              position: "absolute",
+              top: MOBILE_TOP_BAR_H, left: 0, right: 0, bottom: 0,
+              zIndex: 20,
+            }}>
+              <MapPeaksSidebar
+                peaks={allPeaks}
+                ascentByPeakId={ascentByPeakId.current}
+                mapBounds={mapBounds}
+                filter={filter}
+                onFilterChange={setFilter}
+                rarityFilter={rarityFilter}
+                onRarityChange={setRarityFilter}
+                mythicOnly={mythicOnly}
+                onMythicToggle={() => { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); }}
+                rarities={rarities}
+                climbedCount={climbedCount}
+                selectedPeakId={selected?.peak.id ?? null}
+                onSelectPeak={(peak) => { setMobileView("map"); flyToPeak(peak); }}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchResults={searchResults}
+                hideSearchInput
+                hideFilters
+                asMobileList
+              />
+            </div>
           )}
 
         </div>{/* end map area */}
+
+        {/* ── Mobile toggle button (Mapa / Lista) ──────────────────────── */}
+        {isMobile && (
+          <button
+            onClick={() => setMobileView((v) => v === "map" ? "list" : "map")}
+            style={{
+              position: "absolute",
+              bottom: "calc(var(--bottom-nav-h, 0px) + 20px)",
+              left: "50%", transform: "translateX(-50%)",
+              zIndex: 30,
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "12px 28px", borderRadius: 999,
+              background: "#16a34a",
+              border: "none",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.28)",
+              fontSize: 14, fontWeight: 700, color: "white", cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {mobileView === "map" ? "≡ Lista" : "◀ Mapa"}
+          </button>
+        )}
 
         {/* ── Desktop sidebar — OUTSIDE containerRef, next to map ─────── */}
         {!isMobile && (
@@ -1209,6 +1331,9 @@ export default function MapView({
             climbedCount={climbedCount}
             selectedPeakId={selected?.peak.id ?? null}
             onSelectPeak={flyToPeak}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchResults={searchResults}
           />
         )}
 

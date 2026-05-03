@@ -25,7 +25,14 @@ interface Props {
   climbedCount: number;
   selectedPeakId: string | null;
   onSelectPeak: (peak: MapPeak) => void;
-  // Sheet mode (mobile)
+  // Controlled search (lifted to MapView)
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
+  searchResults: MapPeak[];
+  hideSearchInput?: boolean;
+  hideFilters?: boolean;
+  asMobileList?: boolean;
+  // Sheet mode (mobile legacy)
   asSheet?: boolean;
   onClose?: () => void;
 }
@@ -47,6 +54,8 @@ export default function MapPeaksSidebar({
   peaks, ascentByPeakId, mapBounds,
   filter, onFilterChange, rarityFilter, onRarityChange, mythicOnly, onMythicToggle, rarities, climbedCount,
   selectedPeakId, onSelectPeak,
+  searchQuery, onSearchChange, searchResults,
+  hideSearchInput = false, hideFilters = false, asMobileList = false,
   asSheet = false, onClose,
 }: Props) {
   const [sort, setSort] = useState<SortMode>("distance");
@@ -55,24 +64,6 @@ export default function MapPeaksSidebar({
   const sortRef = useRef<HTMLDivElement>(null);
   const selectedCardRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-
-  // Search
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<MapPeak[]>([]);
-
-  useEffect(() => {
-    const q = searchQuery.trim();
-    if (q.length < 2) { setSearchResults([]); return; }
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/peaks?q=${encodeURIComponent(q)}`);
-        if (!res.ok) return;
-        const data: MapPeak[] = await res.json();
-        setSearchResults(data.slice(0, 8));
-      } catch { /* ignore */ }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   // Close sort dropdown on outside click
   useEffect(() => {
@@ -210,7 +201,14 @@ export default function MapPeaksSidebar({
 
   // ── Layout ───────────────────────────────────────────────────────────────
 
-  const containerStyle: React.CSSProperties = asSheet
+  const containerStyle: React.CSSProperties = asMobileList
+    ? {
+        position: "absolute", inset: 0,
+        background: "white",
+        display: "flex", flexDirection: "column",
+        overflow: "hidden",
+      }
+    : asSheet
     ? {
         position: "absolute", bottom: 0, left: 0, right: 0,
         height: "62vh", zIndex: 40,
@@ -260,54 +258,58 @@ export default function MapPeaksSidebar({
       )}
 
       {/* Search input */}
-      <div style={{ padding: "10px 12px", flexShrink: 0, borderBottom: "1px solid #f3f4f6" }}>
-        <div style={{ position: "relative" }}>
-          <span style={{
-            position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
-            fontSize: 13, pointerEvents: "none", color: "#9ca3af",
-          }}>🔍</span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar cima…"
-            style={{
-              width: "100%", padding: "8px 28px 8px 30px",
-              borderRadius: 10, border: "none",
-              fontSize: 14, fontWeight: 500, color: "#111827",
-              background: "#f3f4f6", outline: "none", boxSizing: "border-box",
-            }}
-          />
-          {searchQuery && (
-            <button
-              onMouseDown={() => setSearchQuery("")}
+      {!hideSearchInput && (
+        <div style={{ padding: "10px 12px", flexShrink: 0, borderBottom: "1px solid #f3f4f6" }}>
+          <div style={{ position: "relative" }}>
+            <span style={{
+              position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+              fontSize: 13, pointerEvents: "none", color: "#9ca3af",
+            }}>🔍</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Buscar cima…"
               style={{
-                position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", cursor: "pointer",
-                color: "#9ca3af", fontSize: 13, lineHeight: 1, padding: 2,
+                width: "100%", padding: "8px 28px 8px 30px",
+                borderRadius: 10, border: "none",
+                fontSize: 14, fontWeight: 500, color: "#111827",
+                background: "#f3f4f6", outline: "none", boxSizing: "border-box",
               }}
-            >✕</button>
-          )}
+            />
+            {searchQuery && (
+              <button
+                onMouseDown={() => onSearchChange("")}
+                style={{
+                  position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "#9ca3af", fontSize: 13, lineHeight: 1, padding: 2,
+                }}
+              >✕</button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Filters */}
-      <div style={{
-        padding: "8px 12px", flexShrink: 0,
-        borderBottom: "1px solid #f3f4f6",
-        display: "flex", gap: 8, flexWrap: "wrap",
-      }}>
-        <MapFilterBar
-          filter={filter}
-          onFilterChange={onFilterChange}
-          rarityFilter={rarityFilter}
-          onRarityChange={onRarityChange}
-          mythicOnly={mythicOnly}
-          onMythicToggle={onMythicToggle}
-          rarities={rarities}
-          climbedCount={climbedCount}
-        />
-      </div>
+      {!hideFilters && (
+        <div style={{
+          padding: "8px 12px", flexShrink: 0,
+          borderBottom: "1px solid #f3f4f6",
+          display: "flex", gap: 8, flexWrap: "wrap",
+        }}>
+          <MapFilterBar
+            filter={filter}
+            onFilterChange={onFilterChange}
+            rarityFilter={rarityFilter}
+            onRarityChange={onRarityChange}
+            mythicOnly={mythicOnly}
+            onMythicToggle={onMythicToggle}
+            rarities={rarities}
+            climbedCount={climbedCount}
+          />
+        </div>
+      )}
 
       {/* List */}
       <div ref={listRef} style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
@@ -322,7 +324,7 @@ export default function MapPeaksSidebar({
               return (
                 <button
                   key={peak.id}
-                  onMouseDown={() => { onSelectPeak(peak); setSearchQuery(""); }}
+                  onMouseDown={() => { onSelectPeak(peak); onSearchChange(""); }}
                   style={{
                     display: "flex", alignItems: "center", gap: 10,
                     width: "100%", padding: "10px 14px",
