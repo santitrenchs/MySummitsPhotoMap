@@ -359,7 +359,7 @@ export default function MapView({
   function updatePeakPopupPosition(peak?: MapPeak) {
     const map = mapRef.current;
     const container = containerRef.current;
-    if (!map || !container || window.innerWidth < 640 || flyingRef.current) { setPeakPopup(null); return; }
+    if (!map || !container || flyingRef.current) { setPeakPopup(null); return; }
     const targetPeak = peak ?? selectedRef.current?.peak;
     if (!targetPeak) { setPeakPopup(null); return; }
     const pt = map.project([targetPeak.longitude, targetPeak.latitude]);
@@ -1090,12 +1090,14 @@ export default function MapView({
             </div>
           )}
 
-          {/* ── Selected peak popup (desktop only) ────────────────────── */}
-          {peakPopup && selected && !isMobile && (() => {
+          {/* ── Selected peak popup ────────────────────────────────────── */}
+          {peakPopup && selected && (!isMobile || mobileView === "map") && (() => {
             const { peak, ascent } = selected;
             const rarityColor = RARITY_COLORS[peak.rarityId ?? ""] ?? "#6b7280";
             const OFFSET = 22;
-            const topPos = peakPopup.above ? peakPopup.y - OFFSET : peakPopup.y + OFFSET;
+            const topBarH = isMobile && topBarVisible ? MOBILE_TOP_BAR_H : 0;
+            const rawTop = peakPopup.above ? peakPopup.y - OFFSET : peakPopup.y + OFFSET;
+            const topPos = Math.max(topBarH + 8, rawTop);
             const faceX = ascent?.faceCenterX ?? 0.5;
             const faceY = ascent?.faceCenterY ?? 0.5;
             return (
@@ -1106,7 +1108,7 @@ export default function MapView({
                   left: peakPopup.x,
                   top: topPos,
                   transform: peakPopup.above ? "translate(-50%, -100%)" : "translateX(-50%)",
-                  zIndex: 40,
+                  zIndex: 50,
                   background: "white",
                   borderRadius: 14,
                   boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
@@ -1305,7 +1307,7 @@ export default function MapView({
             })}
             style={{
               position: "absolute",
-              bottom: "calc(var(--bottom-nav-h, 0px) + 5px)",
+              bottom: "var(--bottom-nav-h, 0px)",
               left: "50%", transform: "translateX(-50%)",
               zIndex: 30,
               display: "flex", alignItems: "center", gap: 7,
