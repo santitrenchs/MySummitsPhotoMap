@@ -64,8 +64,16 @@ export default function MapPeaksSidebar({
   const touchStartY = useRef(0);
   const isDragging = useRef(false);
 
-  const centerLat = mapBounds ? (mapBounds.north + mapBounds.south) / 2 : null;
-  const centerLng = mapBounds ? (mapBounds.east + mapBounds.west) / 2 : null;
+  const selectedPeakCoords = useMemo(() => {
+    if (!selectedPeakId) return null;
+    const sel = peaks.find((p) => p.id === selectedPeakId);
+    return sel ? { lat: sel.latitude, lng: sel.longitude } : null;
+  }, [selectedPeakId, peaks]);
+
+  const centerLat = selectedPeakCoords?.lat
+    ?? (mapBounds ? (mapBounds.north + mapBounds.south) / 2 : null);
+  const centerLng = selectedPeakCoords?.lng
+    ?? (mapBounds ? (mapBounds.east + mapBounds.west) / 2 : null);
 
   // 1. Apply status + rarity + uncaptured filters (no bounds filter)
   const filteredPeaks = useMemo(() => {
