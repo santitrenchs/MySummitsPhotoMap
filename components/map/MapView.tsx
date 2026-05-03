@@ -1310,11 +1310,6 @@ export default function MapView({
               mythicOnly={mythicOnly}
               selectedPeakId={selected?.peak.id ?? null}
               onSelectPeak={(peak) => { flyToPeak(peak); }}
-              selectedPeak={selected ?? undefined}
-              onActionCapture={(peakId, peakName) => {
-                document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId, peakName } }));
-              }}
-              onActionView={(href) => router.push(href)}
               asSheet
               onClose={() => { setSheetOpen(false); setSelected(null); }}
             />
@@ -1333,11 +1328,6 @@ export default function MapView({
             mythicOnly={mythicOnly}
             selectedPeakId={selected?.peak.id ?? null}
             onSelectPeak={flyToPeak}
-            selectedPeak={selected ?? undefined}
-            onActionCapture={(peakId, peakName) => {
-              document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId, peakName } }));
-            }}
-            onActionView={(href) => router.push(href)}
           />
         )}
 

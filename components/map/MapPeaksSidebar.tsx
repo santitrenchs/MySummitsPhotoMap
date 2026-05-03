@@ -19,10 +19,6 @@ interface Props {
   mythicOnly: boolean;
   selectedPeakId: string | null;
   onSelectPeak: (peak: MapPeak) => void;
-  // Expanded detail card
-  selectedPeak?: { peak: MapPeak; ascent: AscentMapEntry | null };
-  onActionCapture?: (peakId: string, peakName: string) => void;
-  onActionView?: (href: string) => void;
   // Sheet mode (mobile)
   asSheet?: boolean;
   onClose?: () => void;
@@ -45,7 +41,6 @@ export default function MapPeaksSidebar({
   peaks, ascentByPeakId, mapBounds,
   filter, rarityFilter, mythicOnly,
   selectedPeakId, onSelectPeak,
-  selectedPeak, onActionCapture, onActionView,
   asSheet = false, onClose,
 }: Props) {
   const [sort, setSort] = useState<SortMode>("distance");
@@ -126,11 +121,12 @@ export default function MapPeaksSidebar({
 
   // Ensure selected peak is always visible in the list (prepend if not in top-25)
   const visiblePeaks = useMemo(() => {
-    if (!selectedPeak) return sortedPeaks;
-    const inList = sortedPeaks.some((p) => p.id === selectedPeak.peak.id);
+    if (!selectedPeakId) return sortedPeaks;
+    const inList = sortedPeaks.some((p) => p.id === selectedPeakId);
     if (inList) return sortedPeaks;
-    return [selectedPeak.peak, ...sortedPeaks];
-  }, [sortedPeaks, selectedPeak]);
+    const sel = peaks.find((p) => p.id === selectedPeakId);
+    return sel ? [sel, ...sortedPeaks] : sortedPeaks;
+  }, [sortedPeaks, selectedPeakId, peaks]);
 
   // Distance lookup for cards
   const distMap = useMemo(() => {
@@ -144,13 +140,13 @@ export default function MapPeaksSidebar({
 
   // Auto-scroll: always center the selected card in the visible list area
   useEffect(() => {
-    if (!selectedPeak || !listRef.current || !selectedCardRef.current) return;
+    if (!selectedPeakId || !listRef.current || !selectedCardRef.current) return;
     const list = listRef.current;
     const card = selectedCardRef.current;
     const cardMid = card.offsetTop + card.offsetHeight / 2;
     const target = Math.max(0, cardMid - list.clientHeight / 2);
     list.scrollTo({ top: target, behavior: "smooth" });
-  }, [selectedPeak]);
+  }, [selectedPeakId]);
 
   const sortLabels: Record<SortMode, string> = {
     distance:  "Más cercanas",
@@ -305,36 +301,14 @@ export default function MapPeaksSidebar({
         ) : (
           visiblePeaks.map((peak) => {
             const isSelected = peak.id === selectedPeakId;
-            const ascent = ascentByPeakId.get(peak.id);
-            const isExpanded = isSelected && !!selectedPeak;
-
-            // Action for expanded card
-            const actionLabel = isExpanded
-              ? (ascent ? "Ver captura" : "Capturar cima")
-              : undefined;
-            const actionVariant: "dark" | "blue" = ascent ? "dark" : "blue";
-            const handleAction = isExpanded
-              ? () => {
-                  if (ascent) {
-                    onActionView?.(`/ascents?peak=${ascent.peakId}&highlight=${ascent.ascentId}`);
-                  } else {
-                    onActionCapture?.(peak.id, peak.name);
-                  }
-                }
-              : undefined;
-
             return (
               <div key={peak.id} ref={isSelected ? selectedCardRef : undefined}>
                 <MapPeakCard
                   peak={peak}
-                  ascent={ascent}
+                  ascent={ascentByPeakId.get(peak.id)}
                   distanceKm={distMap.get(peak.id) ?? null}
                   selected={isSelected}
                   onClick={() => onSelectPeak(peak)}
-                  expanded={isExpanded}
-                  onAction={handleAction}
-                  actionLabel={actionLabel}
-                  actionVariant={actionVariant}
                 />
               </div>
             );
