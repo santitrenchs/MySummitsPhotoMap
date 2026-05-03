@@ -68,38 +68,41 @@ export async function getAscentMapData(tenantId: string) {
       },
     },
   });
-  // Count ascents per peak
-  const countMap = new Map<string, number>();
-  for (const r of rows) countMap.set(r.peakId, (countMap.get(r.peakId) ?? 0) + 1);
+  // Group by peakId — rows already sorted date desc, so index 0 = most recent per peak
+  const byPeak = new Map<string, typeof rows[number][]>();
+  for (const r of rows) {
+    if (!byPeak.has(r.peakId)) byPeak.set(r.peakId, []);
+    byPeak.get(r.peakId)!.push(r);
+  }
 
-  // Keep only the most recent ascent per peak
-  const seen = new Set<string>();
-  return rows
-    .filter((r) => { if (seen.has(r.peakId)) return false; seen.add(r.peakId); return true; })
-    .map((r) => {
-      const photo = r.photos[0] ?? null;
-      let faceCenterX: number | null = null;
-      let faceCenterY: number | null = null;
-      try {
-        if (photo && photo.faceDetections.length > 0) {
-          const boxes = photo.faceDetections.map(
-            (fd) => fd.boundingBox as { x: number; y: number; width: number; height: number }
-          );
-          faceCenterX = boxes.reduce((sum, b) => sum + b.x + b.width / 2, 0) / boxes.length;
-          faceCenterY = boxes.reduce((sum, b) => sum + b.y + b.height / 2, 0) / boxes.length;
-        }
-      } catch { /* non-critical */ }
-      return {
-        peakId: r.peakId,
-        ascentId: r.id,
-        photoUrl: photo?.url ?? null,
-        date: r.date.toISOString(),
-        route: r.route,
-        ascentCount: countMap.get(r.peakId) ?? 1,
-        faceCenterX,
-        faceCenterY,
-      };
-    });
+  return Array.from(byPeak.entries()).map(([peakId, ascents]) => {
+    const mostRecent = ascents[0];
+    // Use photo from the most recent ascent that has one — not necessarily the most recent ascent.
+    // This prevents a new text-only ascent from hiding a photo from an older ascent of the same peak.
+    const withPhoto = ascents.find(a => a.photos.length > 0);
+    const photo = withPhoto?.photos[0] ?? null;
+    let faceCenterX: number | null = null;
+    let faceCenterY: number | null = null;
+    try {
+      if (photo && photo.faceDetections.length > 0) {
+        const boxes = photo.faceDetections.map(
+          (fd) => fd.boundingBox as { x: number; y: number; width: number; height: number }
+        );
+        faceCenterX = boxes.reduce((sum, b) => sum + b.x + b.width / 2, 0) / boxes.length;
+        faceCenterY = boxes.reduce((sum, b) => sum + b.y + b.height / 2, 0) / boxes.length;
+      }
+    } catch { /* non-critical */ }
+    return {
+      peakId,
+      ascentId: mostRecent.id,
+      photoUrl: photo?.url ?? null,
+      date: mostRecent.date.toISOString(),
+      route: mostRecent.route,
+      ascentCount: ascents.length,
+      faceCenterX,
+      faceCenterY,
+    };
+  });
 }
 
 export async function createAscent(
