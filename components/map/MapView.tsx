@@ -1108,8 +1108,6 @@ export default function MapView({
             const rarityColor = RARITY_COLORS[peak.rarityId ?? ""] ?? "#6b7280";
             const OFFSET = 22;
             const topPos = peakPopup.above ? peakPopup.y - OFFSET : peakPopup.y + OFFSET;
-            const center = mapRef.current?.getCenter();
-            const dist = center ? distKm(center.lat, center.lng, peak.latitude, peak.longitude) : null;
             const faceX = ascent?.faceCenterX ?? 0.5;
             const faceY = ascent?.faceCenterY ?? 0.5;
             return (
@@ -1160,11 +1158,6 @@ export default function MapView({
                       </div>
                     )}
                   </div>
-                  {dist !== null && (
-                    <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 3 }}>
-                      {formatDist(dist)}
-                    </div>
-                  )}
                 </div>
 
                 {/* Hero photo */}
