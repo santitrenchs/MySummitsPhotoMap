@@ -396,7 +396,7 @@ export default function MapView({
       pitch: terrain3d ? 65 : 0,
       bearing: 20,
       duration: 2200,
-      offset: [0, 0],
+      offset: [0, Math.round((containerRef.current?.clientHeight ?? 600) * 0.2)],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       easing: (t: number) => 1 - Math.pow(1 - t, 3), // ease-out cubic
     });
