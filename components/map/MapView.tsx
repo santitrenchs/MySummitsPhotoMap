@@ -1299,7 +1299,7 @@ export default function MapView({
             onClick={() => setMobileView((v) => v === "map" ? "list" : "map")}
             style={{
               position: "absolute",
-              bottom: "calc(var(--bottom-nav-h, 0px) + 20px)",
+              bottom: "calc(var(--bottom-nav-h, 0px) + 5px)",
               left: "50%", transform: "translateX(-50%)",
               zIndex: 30,
               display: "flex", alignItems: "center", gap: 7,
