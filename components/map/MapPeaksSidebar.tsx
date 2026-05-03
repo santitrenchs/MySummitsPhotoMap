@@ -217,76 +217,11 @@ export default function MapPeaksSidebar({
       onTouchEnd={asSheet ? onSheetTouchEnd : undefined}
     >
       {/* Header */}
-      <div style={{
-        padding: "12px 14px 10px", flexShrink: 0,
-        borderBottom: "1px solid #e5e7eb",
-        background: "white",
-      }}>
-        {asSheet && (
-          <div style={{
-            width: 36, height: 4, borderRadius: 2, background: "#d1d5db",
-            margin: "0 auto 12px", flexShrink: 0,
-          }} />
-        )}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827", flexShrink: 0 }}>
-            ⛰️ {sortedPeaks.length} cimas cercanas
-          </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {/* Uncaptured toggle */}
-            <button
-              onClick={() => setUncapturedOnly((v) => !v)}
-              style={{
-                fontSize: 11, fontWeight: 600, cursor: "pointer",
-                padding: "3px 8px", borderRadius: 999,
-                border: `1.5px solid ${uncapturedOnly ? "#1e293b" : "#d1d5db"}`,
-                background: uncapturedOnly ? "#1e293b" : "white",
-                color: uncapturedOnly ? "white" : "#6b7280",
-                whiteSpace: "nowrap",
-                transition: "background 0.15s, color 0.15s",
-              }}
-            >
-              Sin subir
-            </button>
-
-            {/* Sort dropdown */}
-            <div ref={sortRef} style={{ position: "relative" }}>
-              <button
-                onClick={() => setSortOpen((v) => !v)}
-                style={{
-                  fontSize: 11, color: "#6b7280", background: "none", border: "none",
-                  cursor: "pointer", display: "flex", alignItems: "center", gap: 3,
-                  padding: "3px 6px", borderRadius: 6,
-                }}
-              >
-                {sortLabels[sort]} <span style={{ fontSize: 9 }}>▾</span>
-              </button>
-              {sortOpen && (
-                <div style={{
-                  position: "absolute", top: "calc(100% + 4px)", right: 0,
-                  background: "white", borderRadius: 10,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.14)",
-                  border: "1px solid #e5e7eb", zIndex: 60, overflow: "hidden",
-                  minWidth: 140,
-                }}>
-                  {(["distance", "relevance", "altitude"] as SortMode[]).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => { setSort(s); setSortOpen(false); }}
-                      style={{
-                        display: "block", width: "100%", padding: "10px 14px",
-                        fontSize: 12, fontWeight: sort === s ? 700 : 500,
-                        color: "#111827", background: sort === s ? "#f3f4f6" : "none",
-                        border: "none", cursor: "pointer", textAlign: "left",
-                        borderBottom: "1px solid #f3f4f6",
-                      }}
-                    >{sortLabels[s]}</button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {asSheet && onClose && (
+      {asSheet && (
+        <div style={{ padding: "10px 14px 6px", flexShrink: 0, borderBottom: "1px solid #e5e7eb" }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#d1d5db", margin: "0 auto 10px" }} />
+          {onClose && (
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button
                 onClick={onClose}
                 style={{
@@ -295,10 +230,10 @@ export default function MapPeaksSidebar({
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >✕</button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* List */}
       <div ref={listRef} style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
