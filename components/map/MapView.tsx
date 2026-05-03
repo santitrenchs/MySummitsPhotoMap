@@ -196,6 +196,7 @@ export default function MapView({
   const [mythicOnly, setMythicOnly] = useState(false);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   const [mobileView, setMobileView] = useState<"map" | "list">("map");
+  const [topBarVisible, setTopBarVisible] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<MapPeak[]>([]);
   // allPeaks grows as the user pans: starts with climbed peaks, gains viewport peaks from API
@@ -965,8 +966,8 @@ export default function MapView({
         .search-result:hover { background: #f3f4f6; }
       `}</style>
 
-        {/* ── Mobile top bar: search + filters, always visible ─────────── */}
-        {isMobile && (
+        {/* ── Mobile top bar: search + filters ────────────────────────── */}
+        {isMobile && (topBarVisible || mobileView === "list") && (
           <div style={{
             position: "absolute", top: 0, left: 0, right: 0,
             zIndex: 25,
@@ -1217,6 +1218,8 @@ export default function MapView({
             onTerrain3dToggle={() => setTerrain3d((v) => !v)}
             onZoomIn={() => mapRef.current?.zoomIn()}
             onZoomOut={() => mapRef.current?.zoomOut()}
+            topBarVisible={topBarVisible}
+            onTopBarToggle={() => setTopBarVisible((v) => !v)}
             onGeolocate={(lat, lng) => {
               const map = mapRef.current;
               if (!map) return;
@@ -1247,7 +1250,7 @@ export default function MapView({
           {/* ── Loading indicator — when fetching viewport peaks ──────────── */}
           {loadingPeaks && (
             <div style={{
-              position: "absolute", top: isMobile ? MOBILE_TOP_BAR_H + 12 : 70, left: "50%", transform: "translateX(-50%)",
+              position: "absolute", top: isMobile && topBarVisible ? MOBILE_TOP_BAR_H + 12 : 70, left: "50%", transform: "translateX(-50%)",
               zIndex: 26, pointerEvents: "none",
               background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)",
               padding: "6px 14px", borderRadius: 999,
@@ -1296,7 +1299,10 @@ export default function MapView({
         {/* ── Mobile toggle button (Mapa / Lista) ──────────────────────── */}
         {isMobile && (
           <button
-            onClick={() => setMobileView((v) => v === "map" ? "list" : "map")}
+            onClick={() => setMobileView((v) => {
+              if (v === "map") { setTopBarVisible(true); return "list"; }
+              return "map";
+            })}
             style={{
               position: "absolute",
               bottom: "calc(var(--bottom-nav-h, 0px) + 5px)",
