@@ -177,6 +177,7 @@ export default function MapView({
   const highlightMarkerRef = useRef<maplibregl.Marker | null>(null);
   const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null);
   const selectedRef = useRef<Selected>(null);
+  const flyingRef = useRef(false);
   const userLocationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Viewport loading: accumulates all fetched peaks (climbed + unclimbed from API)
@@ -338,7 +339,7 @@ export default function MapView({
   function updatePeakPopupPosition(peak?: MapPeak) {
     const map = mapRef.current;
     const container = containerRef.current;
-    if (!map || !container || window.innerWidth < 640) { setPeakPopup(null); return; }
+    if (!map || !container || window.innerWidth < 640 || flyingRef.current) { setPeakPopup(null); return; }
     const targetPeak = peak ?? selectedRef.current?.peak;
     if (!targetPeak) { setPeakPopup(null); return; }
     const pt = map.project([targetPeak.longitude, targetPeak.latitude]);
@@ -363,7 +364,8 @@ export default function MapView({
 
     const ascent = ascentByPeakId.current.get(peak.id) ?? null;
     setSelected({ peak, ascent });
-    updatePeakPopupPosition(peak);
+    setPeakPopup(null);
+    flyingRef.current = true;
     justSelectedRef.current = true;
     lastSelectionTimeRef.current = Date.now();
     showHighlight(peak);
@@ -377,6 +379,11 @@ export default function MapView({
       offset: [0, Math.round((containerRef.current?.clientHeight ?? 600) * 0.2)],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       easing: (t: number) => 1 - Math.pow(1 - t, 3), // ease-out cubic
+    });
+
+    map.once("moveend", () => {
+      flyingRef.current = false;
+      updatePeakPopupPosition(peak);
     });
   }
 
