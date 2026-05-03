@@ -19,8 +19,6 @@ function formatDist(km: number): string {
 
 export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClick }: MapPeakCardProps) {
   const rarityColor = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
-  const faceX = ascent?.faceCenterX ?? 0.5;
-  const faceY = ascent?.faceCenterY ?? 0.5;
 
   return (
     <button
@@ -36,30 +34,6 @@ export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClic
         transition: "background 0.12s",
       }}
     >
-      {/* Thumbnail */}
-      <div style={{
-        width: 44, height: 44, borderRadius: 8, flexShrink: 0,
-        overflow: "hidden",
-        background: `${rarityColor}18`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        {ascent?.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={ascent.photoUrl}
-            alt=""
-            style={{
-              width: "100%", height: "100%",
-              objectFit: "cover",
-              objectPosition: `${faceX * 100}% ${faceY * 100}%`,
-              display: "block",
-            }}
-          />
-        ) : (
-          <span style={{ fontSize: 18 }}>⛰️</span>
-        )}
-      </div>
-
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 4 }}>
