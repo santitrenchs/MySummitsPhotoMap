@@ -182,6 +182,7 @@ export default function MapView({
   const selectedRef = useRef<Selected>(null);
   const flyingRef = useRef(false);
   const userLocationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   // Viewport loading: accumulates all fetched peaks (climbed + unclimbed from API)
   const peaksCacheRef = useRef(new Map<string, MapPeak>(peaks.map((p) => [p.id, p])));
@@ -226,6 +227,25 @@ export default function MapView({
 
   // Clear popup when selection is removed
   useEffect(() => { if (!selected) setPeakPopup(null); }, [selected]);
+
+  // Close popup when clicking/touching outside it
+  useEffect(() => {
+    if (!selected) return;
+    let active = false;
+    const timer = setTimeout(() => { active = true; }, 150);
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (!active) return;
+      if (popupRef.current?.contains(e.target as Node)) return;
+      setSelected(null);
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler as EventListener, { passive: true });
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler as EventListener);
+    };
+  }, [selected]);
 
   // Detect mobile
   useEffect(() => {
@@ -1102,7 +1122,7 @@ export default function MapView({
             const faceY = ascent?.faceCenterY ?? 0.5;
             return (
               <div
-                onClick={(e) => e.stopPropagation()}
+                ref={popupRef}
                 style={{
                   position: "absolute",
                   left: peakPopup.x,
