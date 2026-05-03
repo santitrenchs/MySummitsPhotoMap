@@ -161,6 +161,7 @@ export default function MapView({
   const lastSelectionTimeRef = useRef<number>(0);
   const highlightMarkerRef = useRef<maplibregl.Marker | null>(null);
   const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const selectedRef = useRef<Selected>(null);
   const userLocationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Viewport loading: accumulates all fetched peaks (climbed + unclimbed from API)
@@ -170,6 +171,7 @@ export default function MapView({
   const CACHE_MAX = 3000; // evict oldest entries beyond this to keep iteration fast
 
   const [selected, setSelected] = useState<Selected>(null);
+  const [peakPopup, setPeakPopup] = useState<{ x: number; y: number; above: boolean } | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [rarityFilter, setRarityFilter] = useState<string[]>([]);
   const [mythicOnly, setMythicOnly] = useState(false);
@@ -185,6 +187,12 @@ export default function MapView({
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Keep selectedRef in sync for use inside map event listeners (avoids stale closures)
+  useEffect(() => { selectedRef.current = selected; }, [selected]);
+
+  // Clear popup when selection is removed
+  useEffect(() => { if (!selected) setPeakPopup(null); }, [selected]);
 
   // Detect mobile
   useEffect(() => {
@@ -330,6 +338,21 @@ export default function MapView({
       .addTo(map);
   }
 
+  function updatePeakPopupPosition(peak?: MapPeak) {
+    const map = mapRef.current;
+    const container = containerRef.current;
+    if (!map || !container || window.innerWidth < 640) { setPeakPopup(null); return; }
+    const targetPeak = peak ?? selectedRef.current?.peak;
+    if (!targetPeak) { setPeakPopup(null); return; }
+    const pt = map.project([targetPeak.longitude, targetPeak.latitude]);
+    const mapH = container.clientHeight;
+    const mapW = container.clientWidth;
+    const POPUP_W = 220;
+    const above = pt.y > mapH * 0.38;
+    const clampedX = Math.max(POPUP_W / 2 + 8, Math.min(mapW - POPUP_W / 2 - 8, pt.x));
+    setPeakPopup({ x: clampedX, y: pt.y, above });
+  }
+
   // Fly to peak with cinematic 3D tour
   function flyToPeak(peak: MapPeak) {
     const map = mapRef.current;
@@ -347,18 +370,18 @@ export default function MapView({
 
     const ascent = ascentByPeakId.current.get(peak.id) ?? null;
     setSelected({ peak, ascent });
+    updatePeakPopupPosition(peak);
     justSelectedRef.current = true;
     lastSelectionTimeRef.current = Date.now();
     showHighlight(peak);
 
-    const mapH = containerRef.current?.clientHeight ?? 600;
     map.flyTo({
       center: [peak.longitude, peak.latitude],
       zoom: 13,
       pitch: terrain3d ? 65 : 0,
       bearing: 20,
       duration: 2200,
-      offset: [0, Math.round(mapH * 0.2)],
+      offset: [0, 0],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       easing: (t: number) => 1 - Math.pow(1 - t, 3), // ease-out cubic
     });
@@ -507,6 +530,7 @@ export default function MapView({
       }, 500);
     });
     map.on("zoomend", updateBounds);
+    map.on("move", () => updatePeakPopupPosition());
 
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
 
@@ -1062,6 +1086,55 @@ export default function MapView({
               {tooltip.text}
             </div>
           )}
+
+          {/* ── Selected peak popup (desktop only) ────────────────────── */}
+          {peakPopup && selected && !isMobile && (() => {
+            const { peak, ascent } = selected;
+            const rarityColor = RARITY_COLORS[peak.rarityId ?? ""] ?? "#22c55e";
+            const OFFSET = 22;
+            const topPos = peakPopup.above
+              ? peakPopup.y - OFFSET
+              : peakPopup.y + OFFSET;
+            return (
+              <div style={{
+                position: "absolute",
+                left: peakPopup.x,
+                top: topPos,
+                transform: peakPopup.above ? "translate(-50%, -100%)" : "translateX(-50%)",
+                pointerEvents: "none",
+                zIndex: 40,
+                background: "white",
+                borderRadius: 12,
+                boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+                padding: "10px 14px",
+                minWidth: 180,
+                maxWidth: 240,
+                borderTop: `3px solid ${rarityColor}`,
+              }}>
+                {/* Arrow pointing toward the peak */}
+                <div style={{
+                  position: "absolute",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: 0, height: 0,
+                  ...(peakPopup.above
+                    ? { bottom: -7, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderTop: "7px solid white" }
+                    : { top: -7, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderBottom: "7px solid white" }),
+                }} />
+                <div style={{ fontWeight: 700, fontSize: 14, color: "#111827", lineHeight: 1.3 }}>
+                  {peak.name}
+                </div>
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+                  {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
+                </div>
+                {ascent && (
+                  <div style={{ marginTop: 5, fontSize: 11, fontWeight: 600, color: rarityColor }}>
+                    ✓ Conquistada
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ── Map controls (layers, 3D, zoom, geolocate) ────────────── */}
           <MapControls
