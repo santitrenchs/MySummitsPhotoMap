@@ -200,20 +200,16 @@ export function AscentsClient({
         for (const entry of entries) {
           // data-unseen-id may contain comma-separated IDs for grouped cards
           const raw = (entry.target as HTMLElement).dataset.unseenId;
-          if (!raw) continue;
-          if (entry.isIntersecting) {
-            if (!cardTimersRef.current.has(raw)) {
-              cardTimersRef.current.set(raw, setTimeout(() => {
-                cardTimersRef.current.delete(raw);
-                observer.unobserve(entry.target);
-                for (const id of raw.split(",")) pendingSeenRef.current.add(id);
-                if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
-                flushTimerRef.current = setTimeout(flush, 1000);
-              }, 1000));
-            }
-          } else {
-            const timer = cardTimersRef.current.get(raw);
-            if (timer !== undefined) { clearTimeout(timer); cardTimersRef.current.delete(raw); }
+          if (!raw || !entry.isIntersecting) continue;
+          // Start timer once on first intersection — don't cancel if user scrolls past
+          if (!cardTimersRef.current.has(raw)) {
+            cardTimersRef.current.set(raw, setTimeout(() => {
+              cardTimersRef.current.delete(raw);
+              observer.unobserve(entry.target);
+              for (const id of raw.split(",")) pendingSeenRef.current.add(id);
+              if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = setTimeout(flush, 1000);
+            }, 1000));
           }
         }
       },
