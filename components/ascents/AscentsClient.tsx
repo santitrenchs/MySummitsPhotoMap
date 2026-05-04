@@ -210,7 +210,7 @@ export function AscentsClient({
   }, [viewChip, selectedPerson, rarity, mythicFilter, timeRange, sort, peakFilter, peakFilterName]);
 
   function clearChip(key: string) {
-    if (key === "view") { setViewChip("all"); setSelectedPersonId(""); setPersonSearch(""); }
+    if (key === "view") { setViewChip("friends"); setSelectedPersonId(""); setPersonSearch(""); }
     if (key === "rarity") { setRarity(null); setMythicFilter(false); }
     if (key === "time") setTimeRange("all");
     if (key === "sort") setSort("date-desc");
