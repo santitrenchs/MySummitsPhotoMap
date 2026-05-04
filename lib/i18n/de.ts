@@ -72,6 +72,13 @@ export const de: Dict = {
   ascents_sort_highest: "Höchste", ascents_sort_az: "A–Z",
   ascents_delete_title: "Besteigung löschen?",
   ascents_delete_body: "Alle Fotos werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+  filter_title: "Aufstiege erkunden", filter_sectionExplore: "Erkunden",
+  filter_mine: "Meine Gipfel", filter_friends: "Mein Team", filter_person: "Von einer Person", filter_withMe: "Mit mir",
+  filter_searchPerson: "Person suchen…",
+  filter_sectionRarity: "Seltenheit", filter_allRarities: "Alle",
+  filter_sectionWhen: "Wann", filter_lastMonth: "Letzter Monat", filter_thisYear: "Dieses Jahr", filter_allTime: "Alles",
+  filter_sectionSort: "Sortieren nach",
+  filter_results: "{n} Aufstieg{n,plural,=1{}other{e}} anzeigen", filter_uniquePeaks: "{n} einzigartiger{n,plural,=1{}other{e}} Gipfel",
   ascents_stat_ascents: "Besteigungen", ascents_stat_highest: "höchste",
   ascents_stat_peaks: "Gipfel", ascents_stat_people: "Freunde",
 

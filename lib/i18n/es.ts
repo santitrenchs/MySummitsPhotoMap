@@ -72,6 +72,13 @@ export const es: Dict = {
   ascents_sort_highest: "Más altas", ascents_sort_az: "A–Z",
   ascents_delete_title: "¿Eliminar ascensión?",
   ascents_delete_body: "También se eliminarán todas las fotos. Esta acción no se puede deshacer.",
+  filter_title: "Explorar ascensiones", filter_sectionExplore: "Explorar",
+  filter_mine: "Mis cimas", filter_friends: "Mi equipo", filter_person: "De una persona", filter_withMe: "Conmigo",
+  filter_searchPerson: "Buscar persona…",
+  filter_sectionRarity: "Rareza", filter_allRarities: "Todas",
+  filter_sectionWhen: "Cuándo", filter_lastMonth: "Último mes", filter_thisYear: "Este año", filter_allTime: "Todo",
+  filter_sectionSort: "Ordenar por",
+  filter_results: "Explorar {n} ascensión{n,plural,=1{}other{es}}", filter_uniquePeaks: "{n} cima{n,plural,=1{}other{s}} única{n,plural,=1{}other{s}}",
   ascents_stat_ascents: "ascensiones", ascents_stat_highest: "más alta",
   ascents_stat_peaks: "cimas", ascents_stat_people: "amigos",
 

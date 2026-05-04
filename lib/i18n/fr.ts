@@ -72,6 +72,13 @@ export const fr: Dict = {
   ascents_sort_highest: "Plus hautes", ascents_sort_az: "A–Z",
   ascents_delete_title: "Supprimer l'ascension ?",
   ascents_delete_body: "Toutes les photos seront également supprimées. Cette action est irréversible.",
+  filter_title: "Explorer les ascensions", filter_sectionExplore: "Explorer",
+  filter_mine: "Mes sommets", filter_friends: "Mon équipe", filter_person: "D'une personne", filter_withMe: "Avec moi",
+  filter_searchPerson: "Rechercher une personne…",
+  filter_sectionRarity: "Rareté", filter_allRarities: "Toutes",
+  filter_sectionWhen: "Quand", filter_lastMonth: "Dernier mois", filter_thisYear: "Cette année", filter_allTime: "Tout",
+  filter_sectionSort: "Trier par",
+  filter_results: "Voir {n} ascension{n,plural,=1{}other{s}}", filter_uniquePeaks: "{n} sommet{n,plural,=1{}other{s}} unique{n,plural,=1{}other{s}}",
   ascents_stat_ascents: "ascensions", ascents_stat_highest: "plus haute",
   ascents_stat_peaks: "sommets", ascents_stat_people: "amis",
 

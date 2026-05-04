@@ -72,6 +72,13 @@ export const ca: Dict = {
   ascents_sort_highest: "Més altes", ascents_sort_az: "A–Z",
   ascents_delete_title: "Eliminar ascensió?",
   ascents_delete_body: "També s'eliminaran totes les fotos. Aquesta acció no es pot desfer.",
+  filter_title: "Explorar ascensions", filter_sectionExplore: "Explorar",
+  filter_mine: "Les meves cimes", filter_friends: "El meu equip", filter_person: "D'una persona", filter_withMe: "Amb mi",
+  filter_searchPerson: "Cercar persona…",
+  filter_sectionRarity: "Raresa", filter_allRarities: "Totes",
+  filter_sectionWhen: "Quan", filter_lastMonth: "Últim mes", filter_thisYear: "Aquest any", filter_allTime: "Tot",
+  filter_sectionSort: "Ordenar per",
+  filter_results: "Explorar {n} ascensió{n,plural,=1{}other{ns}}", filter_uniquePeaks: "{n} cim{n,plural,=1{}other{s}} únic{n,plural,=1{}other{s}}",
   ascents_stat_ascents: "ascensions", ascents_stat_highest: "més alta",
   ascents_stat_peaks: "cims", ascents_stat_people: "amics",
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
+import { i } from "@/lib/i18n";
 import { AscentCard } from "@/components/cards/AscentCard";
 import { GroupedAscentCard } from "@/components/cards/GroupedAscentCard";
 
@@ -26,9 +27,9 @@ export type AscentData = {
 };
 
 type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
-type ViewChip = "all" | "mine" | "person" | "with-me";
+type ViewChip = "mine" | "friends" | "person" | "with-me";
 type TimeRange = "all" | "month" | "year";
-type Sort = "date-desc" | "elev-desc" | "rarity-desc";
+type Sort = "date-desc" | "elev-desc";
 
 function getRarity(altitudeM: number): Rarity {
   if (altitudeM >= 8000) return "snow_lotus";
@@ -55,37 +56,6 @@ const RARITY_LABELS: Record<Rarity, string> = {
   cinquefoil: "Cinquefoil", snow_lotus: "Snow Lotus",
 };
 
-// ─── SeenObserver ─────────────────────────────────────────────────────────────
-
-function SeenObserver({ ascentId, onSeen, children }: { ascentId: string; onSeen: (id: string) => void; children: React.ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const onSeenRef = useRef(onSeen);
-  onSeenRef.current = onSeen;
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          timerRef.current = setTimeout(() => onSeenRef.current(ascentId), 1000);
-        } else {
-          if (timerRef.current) clearTimeout(timerRef.current);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [ascentId]);
-
-  return <div ref={ref}>{children}</div>;
-}
-
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function AscentsClient({
@@ -107,7 +77,7 @@ export function AscentsClient({
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState("");
-  const [viewChip, setViewChip] = useState<ViewChip>("all");
+  const [viewChip, setViewChip] = useState<ViewChip>("friends");
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [personSearch, setPersonSearch] = useState("");
   const [rarity, setRarity] = useState<Rarity | null>(null);
@@ -138,32 +108,6 @@ export function AscentsClient({
     }
   }, [highlightId]);
 
-  // ── Seen tracking for friends' unseen ascents ──────────────────────────────
-  const markedSeenRef = useRef(new Set<string>());
-  const pendingSeenRef = useRef<string[]>([]);
-  const seenFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const flushSeen = useCallback(() => {
-    const ids = [...pendingSeenRef.current];
-    pendingSeenRef.current = [];
-    if (!ids.length) return;
-    fetch("/api/feed/seen", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ascentIds: ids }),
-    }).catch(() => {/* fire and forget */});
-  }, []);
-
-  const markSeen = useCallback((ascentId: string) => {
-    if (markedSeenRef.current.has(ascentId)) return;
-    markedSeenRef.current.add(ascentId);
-    pendingSeenRef.current.push(ascentId);
-    if (seenFlushTimerRef.current) clearTimeout(seenFlushTimerRef.current);
-    seenFlushTimerRef.current = setTimeout(flushSeen, 500);
-  }, [flushSeen]);
-
-  useEffect(() => () => flushSeen(), [flushSeen]);
-
   // Lock body scroll when sheet open
   useEffect(() => {
     if (filtersOpen) {
@@ -189,6 +133,7 @@ export function AscentsClient({
     }
 
     if (viewChip === "mine") r = r.filter((a) => a.isOwn);
+    else if (viewChip === "friends") r = r.filter((a) => !a.isOwn);
     else if (viewChip === "with-me" && currentUserId) r = r.filter((a) => !a.isOwn && a.persons.some((p) => p.id === currentUserId));
     else if (viewChip === "person" && selectedPersonId) r = r.filter((a) => a.createdByUserId === selectedPersonId || a.persons.some((p) => p.id === selectedPersonId));
 
@@ -204,13 +149,13 @@ export function AscentsClient({
     }
 
     return [...r].sort((a, b) => {
-      if (sort === "date-desc")   return new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (sort === "elev-desc")   return b.peak.altitudeM - a.peak.altitudeM;
-      if (sort === "rarity-desc") {
-        const rd = RARITY_ORDER[getRarity(b.peak.altitudeM)] - RARITY_ORDER[getRarity(a.peak.altitudeM)];
-        return rd !== 0 ? rd : b.peak.altitudeM - a.peak.altitudeM;
-      }
-      return 0;
+      if (sort === "elev-desc") return b.peak.altitudeM - a.peak.altitudeM;
+      // Default: unseen friends first (by altitude desc), then rest by date desc
+      const aUnseen = a.isUnseen ?? false;
+      const bUnseen = b.isUnseen ?? false;
+      if (aUnseen !== bUnseen) return bUnseen ? 1 : -1;
+      if (aUnseen && bUnseen) return b.peak.altitudeM - a.peak.altitudeM;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
   }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, sort, currentUserId]);
 
@@ -231,11 +176,11 @@ export function AscentsClient({
   );
 
   const isDirty =
-    viewChip !== "all" || rarity !== null || mythicFilter || timeRange !== "all" ||
+    viewChip !== "friends" || rarity !== null || mythicFilter || timeRange !== "all" ||
     sort !== "date-desc" || peakFilter !== "";
 
   function resetFilters() {
-    setViewChip("all");
+    setViewChip("friends");
     setSelectedPersonId("");
     setPersonSearch("");
     setRarity(null);
@@ -248,19 +193,18 @@ export function AscentsClient({
 
   const activeChips = useMemo(() => {
     const chips: { key: string; label: string; color: { bg: string; border: string; text: string } }[] = [];
-    if (viewChip === "mine")    chips.push({ key: "view", label: "👤 Mis cimas", color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
-    if (viewChip === "with-me") chips.push({ key: "view", label: "👥 Conmigo", color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
-    if (viewChip === "person" && selectedPerson) chips.push({ key: "view", label: `👤 ${selectedPerson.name}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    if (viewChip === "friends")  chips.push({ key: "view", label: t.filter_friends, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    if (viewChip === "with-me")  chips.push({ key: "view", label: t.filter_withMe, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    if (viewChip === "person" && selectedPerson) chips.push({ key: "view", label: selectedPerson.name, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
     if (mythicFilter) {
       chips.push({ key: "rarity", label: "⭐ Mythic", color: { bg: "#fffbeb", border: "#fde68a", text: "#92400e" } });
     } else if (rarity) {
       const c = RARITY_COLORS[rarity];
       chips.push({ key: "rarity", label: `✿ ${RARITY_LABELS[rarity]}`, color: { bg: c.bg, border: c.border, text: c.text } });
     }
-    if (timeRange === "month") chips.push({ key: "time", label: "📅 Último mes", color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    if (timeRange === "month") chips.push({ key: "time", label: `📅 ${t.filter_lastMonth}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
     if (timeRange === "year")  chips.push({ key: "time", label: `📅 ${new Date().getFullYear()}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
-    if (sort === "elev-desc")   chips.push({ key: "sort", label: "⛰ Más altas", color: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" } });
-    if (sort === "rarity-desc") chips.push({ key: "sort", label: "✿ Más raras", color: { bg: "#f5f3ff", border: "#ddd6fe", text: "#6d28d9" } });
+    if (sort === "elev-desc") chips.push({ key: "sort", label: `⛰ ${t.ascents_sort_highest}`, color: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" } });
     if (peakFilter && peakFilterName) chips.push({ key: "peak", label: `⛰️ ${peakFilterName}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
     return chips;
   }, [viewChip, selectedPerson, rarity, mythicFilter, timeRange, sort, peakFilter, peakFilterName]);
@@ -400,7 +344,7 @@ export function AscentsClient({
                 padding: "5px 10px 5px 12px", borderRadius: 20,
                 background: chip.color.bg, border: `1px solid ${chip.color.border}`,
                 color: chip.color.text, fontSize: 12, fontWeight: 600,
-                whiteSpace: "nowrap", flexShrink: 0, cursor: "pointer",
+                whiteSpace: "nowrap", flexShrink: 0, cursor: "pointer", lineHeight: 1,
               }}
               onClick={() => clearChip(chip.key)}
             >
@@ -444,14 +388,14 @@ export function AscentsClient({
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px 12px", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
           <span style={{ fontSize: 17, fontWeight: 800, color: "#111827", letterSpacing: "-0.3px" }}>
-            Explorar ascensiones
+            {t.filter_title}
           </span>
           {isDirty ? (
             <button
               onClick={resetFilters}
               style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#0369a1", cursor: "pointer", padding: "4px 0" }}
             >
-              Borrar todo
+              {t.ascents_clearAll}
             </button>
           ) : (
             <button
@@ -470,13 +414,13 @@ export function AscentsClient({
 
           {/* EXPLORAR */}
           <div>
-            <p style={sectionLabel}>Explorar</p>
+            <p style={sectionLabel}>{t.filter_sectionExplore}</p>
             <div style={chipRow}>
               {([
-                { v: "all",     label: "Todo" },
-                { v: "mine",    label: "Mis cimas" },
-                { v: "person",  label: "De una persona" },
-                { v: "with-me", label: "Conmigo" },
+                { v: "mine",    label: t.filter_mine },
+                { v: "friends", label: t.filter_friends },
+                { v: "person",  label: t.filter_person },
+                { v: "with-me", label: t.filter_withMe },
               ] as { v: ViewChip; label: string }[]).map(({ v, label }) => (
                 <div
                   key={v}
@@ -497,7 +441,7 @@ export function AscentsClient({
               <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
                 <input
                   type="text"
-                  placeholder="Buscar persona…"
+                  placeholder={t.filter_searchPerson}
                   value={personSearch}
                   onChange={(e) => setPersonSearch(e.target.value)}
                   autoFocus
@@ -546,14 +490,14 @@ export function AscentsClient({
 
           {/* RAREZA */}
           <div>
-            <p style={sectionLabel}>Rareza</p>
+            <p style={sectionLabel}>{t.filter_sectionRarity}</p>
             <div style={chipRow}>
               <div
                 className="asc-fchip"
                 style={fchip(rarity === null && !mythicFilter)}
                 onClick={() => { setRarity(null); setMythicFilter(false); }}
               >
-                Todas
+                {t.filter_allRarities}
               </div>
               {(["daisy", "gentian", "edelweiss", "saxifrage", "cinquefoil", "snow_lotus"] as Rarity[]).map((r) => (
                 <div
@@ -562,7 +506,7 @@ export function AscentsClient({
                   style={rarityChip(r, !mythicFilter && rarity === r)}
                   onClick={() => { setMythicFilter(false); setRarity(rarity === r ? null : r); }}
                 >
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: RARITY_COLORS[r].dot, display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ color: RARITY_COLORS[r].dot, fontSize: 13, lineHeight: 1 }}>✿</span>
                   {RARITY_LABELS[r]}
                 </div>
               ))}
@@ -581,12 +525,12 @@ export function AscentsClient({
 
           {/* CUÁNDO */}
           <div>
-            <p style={sectionLabel}>Cuándo</p>
+            <p style={sectionLabel}>{t.filter_sectionWhen}</p>
             <div style={chipRow}>
               {([
-                { v: "month", label: "Último mes" },
-                { v: "year",  label: "Este año" },
-                { v: "all",   label: "Todo" },
+                { v: "month", label: t.filter_lastMonth },
+                { v: "year",  label: t.filter_thisYear },
+                { v: "all",   label: t.filter_allTime },
               ] as { v: TimeRange; label: string }[]).map(({ v, label }) => (
                 <div
                   key={v}
@@ -602,24 +546,20 @@ export function AscentsClient({
 
           {/* ORDENAR POR */}
           <div>
-            <p style={sectionLabel}>Ordenar por</p>
+            <p style={sectionLabel}>{t.filter_sectionSort}</p>
             <div style={chipRow}>
               <div className="asc-fchip" style={fchip(sort === "date-desc")} onClick={() => setSort("date-desc")}>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.6"/>
                   <path d="M8 5v3l2 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                 </svg>
-                Recientes
+                {t.ascents_sort_newest}
               </div>
               <div className="asc-fchip" style={fchip(sort === "elev-desc", sort === "elev-desc" ? { borderColor: "#bfdbfe", background: "#eff6ff", color: "#1d4ed8" } : {})} onClick={() => setSort("elev-desc")}>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                   <path d="M8 2L13 12H3L8 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
                 </svg>
-                Más altas
-              </div>
-              <div className="asc-fchip" style={fchip(sort === "rarity-desc", sort === "rarity-desc" ? { borderColor: "#ddd6fe", background: "#f5f3ff", color: "#6d28d9" } : {})} onClick={() => setSort("rarity-desc")}>
-                <span style={{ fontSize: 13, lineHeight: 1 }}>✿</span>
-                Más raras
+                {t.ascents_sort_highest}
               </div>
             </div>
           </div>
@@ -640,11 +580,11 @@ export function AscentsClient({
             }}
           >
             <span style={{ fontSize: 15, fontWeight: 800 }}>
-              Explorar {filtered.length} ascensión{filtered.length !== 1 ? "es" : ""}
+              {i(t.filter_results, { n: filtered.length })}
             </span>
             <span style={{ opacity: 0.45, fontSize: 14 }}>·</span>
             <span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>
-              {uniquePeaks} cima{uniquePeaks !== 1 ? "s" : ""} única{uniquePeaks !== 1 ? "s" : ""}
+              {i(t.filter_uniquePeaks, { n: uniquePeaks })}
             </span>
           </button>
         </div>
@@ -663,7 +603,7 @@ export function AscentsClient({
             if (group.length === 1) {
               const a = group[0];
               const others = a.persons.filter((p) => p.id !== a.createdByUserId);
-              const card = (
+              return (
                 <div
                   key={a.id}
                   id={`ascent-${a.id}`}
@@ -694,9 +634,6 @@ export function AscentsClient({
                 />
                 </div>
               );
-              return a.isUnseen
-                ? <SeenObserver key={a.id} ascentId={a.id} onSeen={markSeen}>{card}</SeenObserver>
-                : card;
             }
 
             const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
