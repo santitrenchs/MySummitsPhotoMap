@@ -208,7 +208,7 @@ export function AscentsClient({
                 pendingSeenRef.current.add(id);
                 if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
                 flushTimerRef.current = setTimeout(flush, 1000);
-              }, 500));
+              }, 1000));
             }
           } else {
             const timer = cardTimersRef.current.get(id);
