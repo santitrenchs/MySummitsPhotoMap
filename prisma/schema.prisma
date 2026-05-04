@@ -119,6 +119,7 @@ model User {
   faceTags               FaceTag[]    @relation("FaceTagUser")
   sentInvitations        Voucher[]    @relation("SentInvitations")
   voucherUse             VoucherUse?
+  feedSeens              FeedSeen[]
 
   @@map("users")
 }
@@ -246,10 +247,11 @@ model Ascent {
   createdBy   String
   createdAt   DateTime @default(now())
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  peak   Peak   @relation(fields: [peakId], references: [id])
-  user   User   @relation(fields: [createdBy], references: [id])
-  photos Photo[]
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  peak      Peak       @relation(fields: [peakId], references: [id])
+  user      User       @relation(fields: [createdBy], references: [id])
+  photos    Photo[]
+  feedSeens FeedSeen[]
 
   @@index([tenantId])
   @@index([tenantId, peakId])
@@ -327,4 +329,17 @@ enum TagStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+model FeedSeen {
+  userId   String
+  ascentId String
+  seenAt   DateTime @default(now())
+
+  user   User   @relation(fields: [userId],   references: [id], onDelete: Cascade)
+  ascent Ascent @relation(fields: [ascentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, ascentId])
+  @@index([userId, seenAt])
+  @@map("feed_seen")
 }

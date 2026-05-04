@@ -7,7 +7,7 @@ export type Dict = {
   lang_en: string; lang_es: string; lang_ca: string; lang_fr: string; lang_de: string;
 
   // Nav
-  nav_map: string; nav_ascents: string;
+  nav_map: string; nav_ascents: string; nav_social: string;
   nav_settings: string; nav_signOut: string; nav_profile: string;
   nav_comingSoon: string; nav_logAscent: string;
 
@@ -88,6 +88,9 @@ export type Dict = {
   people_reconcileSelect: string; people_reconcileConfirm: string;
   people_reconcileNoFriends: string; people_reconcileLinked: string;
   people_stat_people: string; people_stat_photos: string; people_stat_ascents: string;
+
+  // Social feed
+  social_feedEmpty: string; social_feedEmptySub: string; social_loadMore: string;
 
   // Friends / Social
   friends_title: string; friends_searchPlaceholder: string;
