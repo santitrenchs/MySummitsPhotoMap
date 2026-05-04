@@ -4,7 +4,7 @@ export const ca: Dict = {
   dateLocale: "ca-ES",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Azimut", nav_ascents: "Activitat", nav_social: "Social",
+  nav_map: "Azimut", nav_ascents: "Activitat",
   nav_settings: "Configuració", nav_signOut: "Tancar sessió", nav_profile: "Perfil",
   nav_comingSoon: "Aviat", nav_logAscent: "Registrar ascensió",
 
@@ -74,8 +74,6 @@ export const ca: Dict = {
   ascents_delete_body: "També s'eliminaran totes les fotos. Aquesta acció no es pot desfer.",
   ascents_stat_ascents: "ascensions", ascents_stat_highest: "més alta",
   ascents_stat_peaks: "cims", ascents_stat_people: "amics",
-
-  social_feedEmpty: "Encara sense activitat", social_feedEmptySub: "Quan els teus amics registrin ascensions apareixeran aquí", social_loadMore: "Veure'n més",
 
   friends_title: "Amics", friends_searchPlaceholder: "Cerca per nom o usuari…",
   friends_add: "Afegir", friends_requestSent: "Enviada", friends_alreadyFriends: "Amics",

@@ -142,16 +142,8 @@ export function Sidebar({
             className={`azisb-item${active("/ascents") ? " azisb-item--on" : ""}`}
             data-tip={t.nav_ascents}
           >
-            <span className="azisb-ic"><SpriteIcon index={2} size={28} active={active("/ascents")} /></span>
-            <span className="azisb-lbl">{t.nav_ascents}</span>
-          </Link>
-          <Link
-            href="/social"
-            className={`azisb-item${active("/social") ? " azisb-item--on" : ""}`}
-            data-tip={t.nav_social}
-          >
             <span className="azisb-ic" style={{ position: "relative" }}>
-              <SbSocialIcon active={active("/social")} />
+              <SpriteIcon index={2} size={28} active={active("/ascents")} />
               {unseenFeedCount > 0 && (
                 <span style={{
                   position: "absolute", top: 0, right: -2,
@@ -165,7 +157,7 @@ export function Sidebar({
                 </span>
               )}
             </span>
-            <span className="azisb-lbl">{t.nav_social}</span>
+            <span className="azisb-lbl">{t.nav_ascents}</span>
           </Link>
           <button
             className="azisb-item"

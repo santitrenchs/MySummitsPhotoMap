@@ -446,14 +446,8 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
             <span className="tab-label">{t.nav_map}</span>
           </Link>
           <Link href="/ascents" className={`tab-item${tabActive("/ascents") ? " active" : ""}`} onClick={() => handleTabClick("/ascents")}>
-            <div className="tab-icon-wrap">
-              <SpriteIcon index={2} size={26} active={tabActive("/ascents")} />
-            </div>
-            <span className="tab-label">{t.nav_ascents}</span>
-          </Link>
-          <Link href="/social" className={`tab-item${tabActive("/social") ? " active" : ""}`} onClick={() => handleTabClick("/social")}>
             <div className="tab-icon-wrap" style={{ position: "relative" }}>
-              <SocialIcon size={26} active={tabActive("/social")} />
+              <SpriteIcon index={2} size={26} active={tabActive("/ascents")} />
               {unseenFeedCount > 0 && (
                 <span style={{
                   position: "absolute", top: -2, right: -4,
@@ -467,7 +461,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
                 </span>
               )}
             </div>
-            <span className="tab-label">{t.nav_social}</span>
+            <span className="tab-label">{t.nav_ascents}</span>
           </Link>
         </div>
       </nav>

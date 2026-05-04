@@ -4,7 +4,7 @@ export const en: Dict = {
   dateLocale: "en-GB",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Azimut", nav_ascents: "Activity", nav_social: "Social",
+  nav_map: "Azimut", nav_ascents: "Activity",
   nav_settings: "Settings", nav_signOut: "Sign out", nav_profile: "Profile",
   nav_comingSoon: "Soon", nav_logAscent: "Log new ascent",
 
@@ -74,8 +74,6 @@ export const en: Dict = {
   ascents_delete_body: "All photos will also be deleted. This cannot be undone.",
   ascents_stat_ascents: "ascents", ascents_stat_highest: "highest",
   ascents_stat_peaks: "peaks", ascents_stat_people: "friends",
-
-  social_feedEmpty: "No activity yet", social_feedEmptySub: "When your friends log ascents, they'll appear here", social_loadMore: "Load more",
 
   friends_title: "Friends", friends_searchPlaceholder: "Search by name or username…",
   friends_add: "Add", friends_requestSent: "Sent", friends_alreadyFriends: "Friends",

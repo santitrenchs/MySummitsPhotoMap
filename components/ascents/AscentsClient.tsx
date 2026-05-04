@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
 import { AscentCard } from "@/components/cards/AscentCard";
@@ -19,6 +19,7 @@ export type AscentData = {
   firstPhotoOriginalKey?: string | null;
   persons: { id: string; name: string; email?: string | null }[];
   isOwn: boolean;
+  isUnseen?: boolean;
   userName: string;
   userAvatarUrl: string | null;
   peakStats?: { totalAscents: number; uniqueClimbers: number };
@@ -53,6 +54,37 @@ const RARITY_LABELS: Record<Rarity, string> = {
   daisy: "Daisy", gentian: "Gentian", edelweiss: "Edelweiss", saxifrage: "Saxifrage",
   cinquefoil: "Cinquefoil", snow_lotus: "Snow Lotus",
 };
+
+// ─── SeenObserver ─────────────────────────────────────────────────────────────
+
+function SeenObserver({ ascentId, onSeen, children }: { ascentId: string; onSeen: (id: string) => void; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onSeenRef = useRef(onSeen);
+  onSeenRef.current = onSeen;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          timerRef.current = setTimeout(() => onSeenRef.current(ascentId), 1000);
+        } else {
+          if (timerRef.current) clearTimeout(timerRef.current);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [ascentId]);
+
+  return <div ref={ref}>{children}</div>;
+}
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -105,6 +137,32 @@ export function AscentsClient({
       return () => clearTimeout(timer);
     }
   }, [highlightId]);
+
+  // ── Seen tracking for friends' unseen ascents ──────────────────────────────
+  const markedSeenRef = useRef(new Set<string>());
+  const pendingSeenRef = useRef<string[]>([]);
+  const seenFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushSeen = useCallback(() => {
+    const ids = [...pendingSeenRef.current];
+    pendingSeenRef.current = [];
+    if (!ids.length) return;
+    fetch("/api/feed/seen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ascentIds: ids }),
+    }).catch(() => {/* fire and forget */});
+  }, []);
+
+  const markSeen = useCallback((ascentId: string) => {
+    if (markedSeenRef.current.has(ascentId)) return;
+    markedSeenRef.current.add(ascentId);
+    pendingSeenRef.current.push(ascentId);
+    if (seenFlushTimerRef.current) clearTimeout(seenFlushTimerRef.current);
+    seenFlushTimerRef.current = setTimeout(flushSeen, 500);
+  }, [flushSeen]);
+
+  useEffect(() => () => flushSeen(), [flushSeen]);
 
   // Lock body scroll when sheet open
   useEffect(() => {
@@ -605,7 +663,7 @@ export function AscentsClient({
             if (group.length === 1) {
               const a = group[0];
               const others = a.persons.filter((p) => p.id !== a.createdByUserId);
-              return (
+              const card = (
                 <div
                   key={a.id}
                   id={`ascent-${a.id}`}
@@ -636,6 +694,9 @@ export function AscentsClient({
                 />
                 </div>
               );
+              return a.isUnseen
+                ? <SeenObserver key={a.id} ascentId={a.id} onSeen={markSeen}>{card}</SeenObserver>
+                : card;
             }
 
             const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;

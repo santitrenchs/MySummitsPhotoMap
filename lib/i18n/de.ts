@@ -4,7 +4,7 @@ export const de: Dict = {
   dateLocale: "de-DE",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Azimut", nav_ascents: "Aktivität", nav_social: "Social",
+  nav_map: "Azimut", nav_ascents: "Aktivität",
   nav_settings: "Einstellungen", nav_signOut: "Abmelden", nav_profile: "Profil",
   nav_comingSoon: "Bald", nav_logAscent: "Besteigung eintragen",
 
@@ -74,8 +74,6 @@ export const de: Dict = {
   ascents_delete_body: "Alle Fotos werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
   ascents_stat_ascents: "Besteigungen", ascents_stat_highest: "höchste",
   ascents_stat_peaks: "Gipfel", ascents_stat_people: "Freunde",
-
-  social_feedEmpty: "Noch keine Aktivität", social_feedEmptySub: "Wenn deine Freunde Gipfel loggen, erscheinen sie hier", social_loadMore: "Mehr laden",
 
   friends_title: "Freunde", friends_searchPlaceholder: "Nach Name oder Benutzername suchen…",
   friends_add: "Hinzufügen", friends_requestSent: "Gesendet", friends_alreadyFriends: "Freunde",

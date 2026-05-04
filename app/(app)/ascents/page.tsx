@@ -112,6 +112,7 @@ export default async function AscentsPage() {
             peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { lang: true, wikiUrl: true, body: true } } } },
             photos: PHOTOS_INCLUDE,
             user: { select: { id: true, name: true, avatarUrl: true } },
+            feedSeens: { where: { userId: session.user.id }, select: { seenAt: true } },
           },
         })
       : Promise.resolve([]),
@@ -127,13 +128,20 @@ export default async function AscentsPage() {
   });
   const friendAscents = friendsRaw.map((a) => {
     const u = a.user as { name?: string | null; avatarUrl?: string | null } | null;
-    return { ...enrichAscent(a as Parameters<typeof enrichAscent>[0], false, u?.name ?? "?", u?.avatarUrl ?? null, locale), peakStats: peakStatsMap.get(a.peakId) };
+    const feedSeens = (a as { feedSeens?: { seenAt: Date }[] }).feedSeens ?? [];
+    return {
+      ...enrichAscent(a as Parameters<typeof enrichAscent>[0], false, u?.name ?? "?", u?.avatarUrl ?? null, locale),
+      peakStats: peakStatsMap.get(a.peakId),
+      isUnseen: feedSeens.length === 0,
+    };
   });
 
-  // Merge and sort by date desc
-  const ascents = [...myAscents, ...friendAscents].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  // Unseen friends' ascents first, then own + seen (all by date desc)
+  const byDate = (a: { date: string }, b: { date: string }) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime();
+  const unseenFriends = friendAscents.filter((a) => a.isUnseen).sort(byDate);
+  const rest = [...myAscents, ...friendAscents.filter((a) => !a.isUnseen)].sort(byDate);
+  const ascents = [...unseenFriends, ...rest];
 
   // All unique persons across all ascents (authors + face-tagged), sorted by name
   const allPersonsMap = new Map<string, { id: string; name: string }>();
