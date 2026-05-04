@@ -54,6 +54,7 @@ type Props = {
   userEmail: string | null;
   userAvatarUrl?: string | null;
   pendingFriendRequests?: number;
+  unseenFeedCount?: number;
 };
 
 function getInitials(name: string | null, email: string | null): string {
@@ -70,6 +71,7 @@ export function Sidebar({
   userEmail,
   userAvatarUrl,
   pendingFriendRequests = 0,
+  unseenFeedCount = 0,
 }: Props) {
   const pathname = usePathname();
   const t = useT();
@@ -142,6 +144,28 @@ export function Sidebar({
           >
             <span className="azisb-ic"><SpriteIcon index={2} size={28} active={active("/ascents")} /></span>
             <span className="azisb-lbl">{t.nav_ascents}</span>
+          </Link>
+          <Link
+            href="/social"
+            className={`azisb-item${active("/social") ? " azisb-item--on" : ""}`}
+            data-tip={t.nav_social}
+          >
+            <span className="azisb-ic" style={{ position: "relative" }}>
+              <SbSocialIcon active={active("/social")} />
+              {unseenFeedCount > 0 && (
+                <span style={{
+                  position: "absolute", top: 0, right: -2,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: "#ef4444", color: "#fff",
+                  fontSize: 9, fontWeight: 700, lineHeight: "16px",
+                  textAlign: "center", padding: "0 3px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {unseenFeedCount > 99 ? "99+" : unseenFeedCount}
+                </span>
+              )}
+            </span>
+            <span className="azisb-lbl">{t.nav_social}</span>
           </Link>
           <button
             className="azisb-item"
@@ -595,6 +619,19 @@ function SbProfileIcon() {
       strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+    </svg>
+  );
+}
+
+function SbSocialIcon({ active = false }: { active?: boolean }) {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={active ? 2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      {active && <circle cx="9" cy="7" r="3" fill="currentColor" opacity="0.15" />}
+      <circle cx="9" cy="7" r="3" />
+      <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      <path d="M21 21v-2a4 4 0 0 0-3-3.85" />
     </svg>
   );
 }

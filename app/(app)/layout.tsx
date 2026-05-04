@@ -6,6 +6,7 @@ import { I18nProvider } from "@/components/providers/I18nProvider";
 import { getLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/types";
 import { countPendingRequests } from "@/lib/services/friendship.service";
+import { countUnseenFeed } from "@/lib/services/feed.service";
 import { prisma } from "@/lib/db/client";
 
 export default async function AppLayout({
@@ -16,9 +17,10 @@ export default async function AppLayout({
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [locale, pendingFriendRequests, dbUser] = await Promise.all([
+  const [locale, pendingFriendRequests, unseenFeedCount, dbUser] = await Promise.all([
     getLocale(),
     countPendingRequests(session.user.id),
+    countUnseenFeed(session.user.id),
     prisma.user.findUnique({ where: { id: session.user.id }, select: { avatarUrl: true } }),
   ]);
 
@@ -27,6 +29,7 @@ export default async function AppLayout({
     userEmail: session.user.email ?? null,
     userAvatarUrl: dbUser?.avatarUrl ?? null,
     pendingFriendRequests,
+    unseenFeedCount,
   };
 
   return (

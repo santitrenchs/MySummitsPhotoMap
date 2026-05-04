@@ -51,6 +51,7 @@ type NavBarProps = {
   userEmail: string | null;
   userAvatarUrl?: string | null;
   pendingFriendRequests?: number;
+  unseenFeedCount?: number;
 };
 
 function initials(name: string | null, email: string | null): string {
@@ -63,7 +64,7 @@ function initials(name: string | null, email: string | null): string {
   return "U";
 }
 
-export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendRequests = 0 }: NavBarProps) {
+export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendRequests = 0, unseenFeedCount = 0 }: NavBarProps) {
   const pathname = usePathname();
   const t = useT();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -450,6 +451,24 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
             </div>
             <span className="tab-label">{t.nav_ascents}</span>
           </Link>
+          <Link href="/social" className={`tab-item${tabActive("/social") ? " active" : ""}`} onClick={() => handleTabClick("/social")}>
+            <div className="tab-icon-wrap" style={{ position: "relative" }}>
+              <SocialIcon size={26} active={tabActive("/social")} />
+              {unseenFeedCount > 0 && (
+                <span style={{
+                  position: "absolute", top: -2, right: -4,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: "#ef4444", color: "#fff",
+                  fontSize: 9, fontWeight: 700, lineHeight: "16px",
+                  textAlign: "center", padding: "0 3px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {unseenFeedCount > 99 ? "99+" : unseenFeedCount}
+                </span>
+              )}
+            </div>
+            <span className="tab-label">{t.nav_social}</span>
+          </Link>
         </div>
       </nav>
     </>
@@ -526,6 +545,30 @@ function PlusIcon() {
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
+function SocialIcon({ size = 26, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={active ? 2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      {active ? (
+        <>
+          <circle cx="9" cy="7" r="3" fill="currentColor" opacity="0.15" />
+          <circle cx="9" cy="7" r="3" />
+          <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          <path d="M21 21v-2a4 4 0 0 0-3-3.85" />
+        </>
+      ) : (
+        <>
+          <circle cx="9" cy="7" r="3" />
+          <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          <path d="M21 21v-2a4 4 0 0 0-3-3.85" />
+        </>
+      )}
     </svg>
   );
 }
