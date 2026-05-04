@@ -176,10 +176,10 @@ export function AscentsClient({
     return Array.from(map.values());
   }, [filtered]);
 
-  // IntersectionObserver: mark unseen friend ascents as seen after 500ms of visibility
+  // IntersectionObserver: mark unseen friend ascents as seen after 1s of visibility
   useEffect(() => {
-    const unseenIds = new Set(filtered.filter((a) => a.isUnseen).map((a) => a.id));
-    if (unseenIds.size === 0) return;
+    const hasUnseen = filtered.some((a) => a.isUnseen);
+    if (!hasUnseen) return;
 
     observerRef.current?.disconnect();
 
@@ -198,32 +198,31 @@ export function AscentsClient({
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const id = (entry.target as HTMLElement).dataset.unseenId;
-          if (!id) continue;
+          // data-unseen-id may contain comma-separated IDs for grouped cards
+          const raw = (entry.target as HTMLElement).dataset.unseenId;
+          if (!raw) continue;
           if (entry.isIntersecting) {
-            if (!cardTimersRef.current.has(id)) {
-              cardTimersRef.current.set(id, setTimeout(() => {
-                cardTimersRef.current.delete(id);
+            if (!cardTimersRef.current.has(raw)) {
+              cardTimersRef.current.set(raw, setTimeout(() => {
+                cardTimersRef.current.delete(raw);
                 observer.unobserve(entry.target);
-                pendingSeenRef.current.add(id);
+                for (const id of raw.split(",")) pendingSeenRef.current.add(id);
                 if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
                 flushTimerRef.current = setTimeout(flush, 1000);
               }, 1000));
             }
           } else {
-            const timer = cardTimersRef.current.get(id);
-            if (timer !== undefined) { clearTimeout(timer); cardTimersRef.current.delete(id); }
+            const timer = cardTimersRef.current.get(raw);
+            if (timer !== undefined) { clearTimeout(timer); cardTimersRef.current.delete(raw); }
           }
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.3 }
     );
     observerRef.current = observer;
 
-    for (const id of unseenIds) {
-      const el = document.querySelector(`[data-unseen-id="${id}"]`);
-      if (el) observer.observe(el);
-    }
+    // Observe ALL elements with data-unseen-id (single cards + grouped wrappers)
+    document.querySelectorAll("[data-unseen-id]").forEach((el) => observer.observe(el));
 
     return () => {
       observer.disconnect();
@@ -701,15 +700,17 @@ export function AscentsClient({
             }
 
             const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
+            const groupUnseenIds = group.filter((a) => a.isUnseen).map((a) => a.id).join(",");
             return (
-              <GroupedAscentCard
-                key={groupKey}
-                ascents={group}
-                currentUserEmail={currentUserEmail}
-                currentUserName={currentUserName}
-                animationIndex={i}
-                peakStats={group[0].peakStats}
-              />
+              <div key={groupKey} {...(groupUnseenIds ? { "data-unseen-id": groupUnseenIds } : {})}>
+                <GroupedAscentCard
+                  ascents={group}
+                  currentUserEmail={currentUserEmail}
+                  currentUserName={currentUserName}
+                  animationIndex={i}
+                  peakStats={group[0].peakStats}
+                />
+              </div>
             );
           })}
         </div>
