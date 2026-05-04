@@ -88,6 +88,12 @@ export function AscentsClient({
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
 
+  // "Mark as seen" tracking refs
+  const cardTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const pendingSeenRef = useRef<Set<string>>(new Set());
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
   // Peak filter seeded from ?peak= URL param
   const [peakFilter, setPeakFilter] = useState<string>(() => searchParams.get("peak") ?? "");
   const peakFilterName = peakFilter
@@ -168,6 +174,63 @@ export function AscentsClient({
       map.get(key)!.push(a);
     }
     return Array.from(map.values());
+  }, [filtered]);
+
+  // IntersectionObserver: mark unseen friend ascents as seen after 500ms of visibility
+  useEffect(() => {
+    const unseenIds = new Set(filtered.filter((a) => a.isUnseen).map((a) => a.id));
+    if (unseenIds.size === 0) return;
+
+    observerRef.current?.disconnect();
+
+    const flush = () => {
+      const ids = Array.from(pendingSeenRef.current);
+      if (ids.length === 0) return;
+      pendingSeenRef.current.clear();
+      document.dispatchEvent(new CustomEvent("unseen-feed-count-changed", { detail: { delta: -ids.length } }));
+      fetch("/api/feed/seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ascentIds: ids }),
+      }).catch(() => {});
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.unseenId;
+          if (!id) continue;
+          if (entry.isIntersecting) {
+            if (!cardTimersRef.current.has(id)) {
+              cardTimersRef.current.set(id, setTimeout(() => {
+                cardTimersRef.current.delete(id);
+                observer.unobserve(entry.target);
+                pendingSeenRef.current.add(id);
+                if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+                flushTimerRef.current = setTimeout(flush, 1000);
+              }, 500));
+            }
+          } else {
+            const timer = cardTimersRef.current.get(id);
+            if (timer !== undefined) { clearTimeout(timer); cardTimersRef.current.delete(id); }
+          }
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observerRef.current = observer;
+
+    for (const id of unseenIds) {
+      const el = document.querySelector(`[data-unseen-id="${id}"]`);
+      if (el) observer.observe(el);
+    }
+
+    return () => {
+      observer.disconnect();
+      for (const timer of cardTimersRef.current.values()) clearTimeout(timer);
+      cardTimersRef.current.clear();
+      if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+    };
   }, [filtered]);
 
   const uniquePeaks = useMemo(
@@ -607,6 +670,7 @@ export function AscentsClient({
                 <div
                   key={a.id}
                   id={`ascent-${a.id}`}
+                  {...(a.isUnseen ? { "data-unseen-id": a.id } : {})}
                   style={{
                     borderRadius: 16,
                     transition: "box-shadow 0.4s ease, outline 0.4s ease",

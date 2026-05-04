@@ -77,9 +77,19 @@ export function Sidebar({
   const t = useT();
   const [hovered, setHovered] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [liveFeedCount, setLiveFeedCount] = useState(unseenFeedCount);
   const menuRef = useRef<HTMLDivElement>(null);
   const abbr = getInitials(userName, userEmail);
   const badge = pendingFriendRequests;
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const delta = (e as CustomEvent<{ delta: number }>).detail.delta;
+      setLiveFeedCount((prev) => Math.max(0, prev + delta));
+    };
+    document.addEventListener("unseen-feed-count-changed", handler);
+    return () => document.removeEventListener("unseen-feed-count-changed", handler);
+  }, []);
 
   const collapsed = !hovered && !userMenuOpen;
 
@@ -144,7 +154,7 @@ export function Sidebar({
           >
             <span className="azisb-ic" style={{ position: "relative" }}>
               <SpriteIcon index={2} size={28} active={active("/ascents")} />
-              {unseenFeedCount > 0 && (
+              {liveFeedCount > 0 && (
                 <span style={{
                   position: "absolute", top: 0, right: -2,
                   minWidth: 16, height: 16, borderRadius: 8,
@@ -153,7 +163,7 @@ export function Sidebar({
                   textAlign: "center", padding: "0 3px",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  {unseenFeedCount > 99 ? "99+" : unseenFeedCount}
+                  {liveFeedCount > 99 ? "99+" : liveFeedCount}
                 </span>
               )}
             </span>

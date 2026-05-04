@@ -74,8 +74,18 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   const [defaultPeakName, setDefaultPeakName] = useState<string | undefined>(undefined);
   const [editAscent, setEditAscent] = useState<EditAscent | null>(null);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const [liveFeedCount, setLiveFeedCount] = useState(unseenFeedCount);
   const ini = initials(userName, userEmail);
   const totalPending = pendingFriendRequests;
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const delta = (e as CustomEvent<{ delta: number }>).detail.delta;
+      setLiveFeedCount((prev) => Math.max(0, prev + delta));
+    };
+    document.addEventListener("unseen-feed-count-changed", handler);
+    return () => document.removeEventListener("unseen-feed-count-changed", handler);
+  }, []);
 
   useEffect(() => {
     setPendingPath(null);
@@ -448,7 +458,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           <Link href="/ascents" className={`tab-item${tabActive("/ascents") ? " active" : ""}`} onClick={() => handleTabClick("/ascents")}>
             <div className="tab-icon-wrap" style={{ position: "relative" }}>
               <SpriteIcon index={2} size={26} active={tabActive("/ascents")} />
-              {unseenFeedCount > 0 && (
+              {liveFeedCount > 0 && (
                 <span style={{
                   position: "absolute", top: -2, right: -4,
                   minWidth: 16, height: 16, borderRadius: 8,
@@ -457,7 +467,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
                   textAlign: "center", padding: "0 3px",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  {unseenFeedCount > 99 ? "99+" : unseenFeedCount}
+                  {liveFeedCount > 99 ? "99+" : liveFeedCount}
                 </span>
               )}
             </div>
