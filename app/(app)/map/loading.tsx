@@ -1,42 +1,72 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+const RARITIES = [
+  { main: "#00995C", label: "Daisy" },
+  { main: "#7B5BA6", label: "Gentian" },
+  { main: "#F97316", label: "Edelweiss" },
+  { main: "#EAB308", label: "Saxifrage" },
+  { main: "#DC2626", label: "Cinquefoil" },
+  { main: "#9ca3af", label: "Snow Lotus" },
+];
+
 export default function MapLoading() {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % RARITIES.length), 700);
+    return () => clearInterval(t);
+  }, []);
+
+  const { main, label } = RARITIES[idx];
+
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "calc(100svh - var(--top-nav-h, 3rem) - var(--bottom-nav-h, 0px))",
-        background: "linear-gradient(170deg, #c8d8e8 0%, #b8cce0 40%, #a8bdd6 100%)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
+    <>
+      <style>{`
+        @keyframes ball-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
+      <div style={{
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        height: "calc(100svh - var(--top-nav-h, 0px) - var(--bottom-nav-h, 0px))",
         gap: 12,
-      }}
-    >
-      {/* Pulsing map pin icon */}
-      <svg
-        width="36"
-        height="36"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="#5a88b0"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ opacity: 0.7, animation: "mapPulse 1.4s ease-in-out infinite" }}
-      >
-        <style>{`
-          @keyframes mapPulse {
-            0%, 100% { transform: scale(1);   opacity: 0.7; }
-            50%       { transform: scale(1.15); opacity: 1;   }
-          }
-        `}</style>
-        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-        <line x1="8" y1="2" x2="8" y2="18" />
-        <line x1="16" y1="6" x2="16" y2="22" />
-      </svg>
-      <span style={{ fontSize: 13, fontWeight: 500, color: "#5a88b0", letterSpacing: "0.02em" }}>
-        Atlas
-      </span>
-    </div>
+      }}>
+        <svg
+          width="64" height="64" viewBox="0 0 30 30"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{
+            animation: "ball-spin 1.4s linear infinite",
+            filter: "drop-shadow(0 4px 8px rgba(0,0,0,.18))",
+            opacity: 0.45,
+            transition: "fill .3s ease",
+          }}
+        >
+          <path d="M15 3 Q20.5 9 15 15 Q9.5 9 15 3Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M26.4 11.3 Q22.4 18.4 15 15 Q19 7.9 26.4 11.3Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M22.1 24.7 Q14.1 23.1 15 15 Q23 16.6 22.1 24.7Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M7.9 24.7 Q7 16.6 15 15 Q15.9 23.1 7.9 24.7Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M3.6 11.3 Q11 7.9 15 15 Q7.6 18.4 3.6 11.3Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M15 3 Q20.5 9 15 15 Q9.5 9 15 3Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M26.4 11.3 Q22.4 18.4 15 15 Q19 7.9 26.4 11.3Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M22.1 24.7 Q14.1 23.1 15 15 Q23 16.6 22.1 24.7Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M7.9 24.7 Q7 16.6 15 15 Q15.9 23.1 7.9 24.7Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M3.6 11.3 Q11 7.9 15 15 Q7.6 18.4 3.6 11.3Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M15 4.5 Q17.5 8 16 12 Q14 12 13 8 Q12 5.5 15 4.5Z" fill="white" opacity="0.3"/>
+          <circle cx="15" cy="15" r="4" fill="white"/>
+          <circle cx="15" cy="15" r="4" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+        </svg>
+        <span style={{
+          fontSize: 12, fontWeight: 700, letterSpacing: ".04em",
+          color: main, opacity: 0.45,
+          transition: "color .3s ease",
+        }}>
+          {label}
+        </span>
+      </div>
+    </>
   );
 }

@@ -19,7 +19,7 @@ export default function HomeLoading() {
     return () => clearInterval(t);
   }, []);
 
-  const { main, dark, label } = RARITIES[idx];
+  const { main, label } = RARITIES[idx];
 
   return (
     <>
@@ -45,13 +45,19 @@ export default function HomeLoading() {
             transition: "fill .3s ease",
           }}
         >
-          <circle cx="15" cy="15" r="13" fill="white" />
-          <path d="M 2,15 A 13,13 0 0,1 28,15 Z" fill={main} style={{ transition: "fill .3s ease" }} />
-          <circle cx="15" cy="15" r="13" fill="none" stroke={dark} strokeWidth="1.2" style={{ transition: "stroke .3s ease" }} />
-          <rect x="1" y="13" width="28" height="4" fill="white" />
-          <line x1="2" y1="15" x2="28" y2="15" stroke={dark} strokeWidth="1.2" style={{ transition: "stroke .3s ease" }} />
-          <circle cx="15" cy="15" r="4.5" fill="white" stroke={dark} strokeWidth="1.5" style={{ transition: "stroke .3s ease" }} />
-          <path d="M 6,8 A 13,13 0 0,1 24,8 Q 22,13 15,14 Q 8,13 6,8 Z" fill="white" opacity=".25" />
+          <path d="M15 3 Q20.5 9 15 15 Q9.5 9 15 3Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M26.4 11.3 Q22.4 18.4 15 15 Q19 7.9 26.4 11.3Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M22.1 24.7 Q14.1 23.1 15 15 Q23 16.6 22.1 24.7Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M7.9 24.7 Q7 16.6 15 15 Q15.9 23.1 7.9 24.7Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M3.6 11.3 Q11 7.9 15 15 Q7.6 18.4 3.6 11.3Z" fill={main} style={{ transition: "fill .3s ease" }}/>
+          <path d="M15 3 Q20.5 9 15 15 Q9.5 9 15 3Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M26.4 11.3 Q22.4 18.4 15 15 Q19 7.9 26.4 11.3Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M22.1 24.7 Q14.1 23.1 15 15 Q23 16.6 22.1 24.7Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M7.9 24.7 Q7 16.6 15 15 Q15.9 23.1 7.9 24.7Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M3.6 11.3 Q11 7.9 15 15 Q7.6 18.4 3.6 11.3Z" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
+          <path d="M15 4.5 Q17.5 8 16 12 Q14 12 13 8 Q12 5.5 15 4.5Z" fill="white" opacity="0.3"/>
+          <circle cx="15" cy="15" r="4" fill="white"/>
+          <circle cx="15" cy="15" r="4" fill="none" stroke={main} strokeWidth="0.8" opacity="0.5"/>
         </svg>
         <span style={{
           fontSize: 12, fontWeight: 700, letterSpacing: ".04em",
