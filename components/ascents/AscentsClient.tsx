@@ -77,7 +77,9 @@ export function AscentsClient({
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState("");
-  const [viewChip, setViewChip] = useState<ViewChip>("friends");
+  const [viewChip, setViewChip] = useState<ViewChip>(() =>
+    searchParams.get("highlight") ? "mine" : "friends"
+  );
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [personSearch, setPersonSearch] = useState("");
   const [rarity, setRarity] = useState<Rarity | null>(null);
