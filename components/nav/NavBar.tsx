@@ -24,7 +24,6 @@ function PeakadexLogo({ height = 44 }: { height?: number }) {
       <span style={{ color: "#0D2538", marginRight: Math.round(8 * 1.12) }}>peak</span>
       <svg width={iconSize} height={iconSize} viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"
         style={{ display: "block", transform: "translateY(2px)", flexShrink: 0 }}>
-        <ellipse cx="15" cy="27.5" rx="7" ry="1.8" fill="rgba(0,0,0,.13)"/>
         <path d="M15 3 Q20.5 9 15 15 Q9.5 9 15 3Z" fill={color}/>
         <path d="M26.4 11.3 Q22.4 18.4 15 15 Q19 7.9 26.4 11.3Z" fill={color}/>
         <path d="M22.1 24.7 Q14.1 23.1 15 15 Q23 16.6 22.1 24.7Z" fill={color}/>
