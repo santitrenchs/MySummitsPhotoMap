@@ -9,6 +9,8 @@ interface MapControlsProps {
   onHillshadeToggle: () => void;
   terrain3d: boolean;
   onTerrain3dToggle: () => void;
+  trails: boolean;
+  onTrailsToggle: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onGeolocate: (lat: number, lng: number) => void;
@@ -34,6 +36,7 @@ export default function MapControls({
   isMobile,
   hillshade, onHillshadeToggle,
   terrain3d, onTerrain3dToggle,
+  trails, onTrailsToggle,
   onZoomIn, onZoomOut,
   onGeolocate,
   topBarVisible, onTopBarToggle,
@@ -242,7 +245,7 @@ export default function MapControls({
           background: "white", borderRadius: 12,
           boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
           border: "1px solid #e5e7eb",
-          zIndex: 9999, minWidth: 150, overflow: "hidden",
+          zIndex: 9999, minWidth: 160, overflow: "hidden",
         }}>
           {[
             { label: "Normal", active: !hillshade },
@@ -265,6 +268,30 @@ export default function MapControls({
               {opt.label}
             </button>
           ))}
+          {/* Trails toggle — independent checkbox */}
+          <button
+            onClick={onTrailsToggle}
+            style={{
+              display: "flex", alignItems: "center", gap: 10,
+              width: "100%", padding: "11px 16px",
+              background: "none",
+              border: "none",
+              cursor: "pointer", textAlign: "left",
+              fontSize: 13, fontWeight: 500,
+              color: "#111827",
+            }}
+          >
+            <span style={{
+              width: 16, height: 16, borderRadius: 4, flexShrink: 0,
+              border: `2px solid ${trails ? "#b45309" : "#d1d5db"}`,
+              background: trails ? "#b45309" : "white",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background 0.15s, border-color 0.15s",
+            }}>
+              {trails && <span style={{ color: "white", fontSize: 10, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+            </span>
+            Senderos
+          </button>
         </div>,
         document.body
       )}

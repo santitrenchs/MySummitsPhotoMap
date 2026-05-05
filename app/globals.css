@@ -90,7 +90,7 @@
   --pc-orange:          #FF5D2D;
   --pc-daisy:           #00995C;
   --pc-daisy-soft:      #E6F4EF;
-  --pc-gentian:         #7B5BA6;
+  --pc-gentian:         #3B82F6;
   --pc-gentian-soft:    #F2ECFA;
   --pc-edelweiss:       #F97316;
   --pc-edelweiss-soft:  #FFF0E8;
@@ -384,7 +384,7 @@
   border-radius: 16px;
   padding: 10px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
 

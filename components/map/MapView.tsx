@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
+import { RARITY_COLORS, RARITY_SCORE_WEIGHTS, RARITY_ID_MATCH_EXPR } from "@/lib/rarity";
 import { useT } from "@/components/providers/I18nProvider";
 import MapFilterBar from "./MapFilterBar";
 import MapControls from "./MapControls";
@@ -48,15 +49,6 @@ export type MapBounds = { north: number; south: number; east: number; west: numb
 
 // ─── Rarity color map ────────────────────────────────────────────────────────
 
-export const RARITY_COLORS: Record<string, string> = {
-  daisy:     "#00995C",
-  lavender:  "#A855F7",
-  gentian:   "#7B5BA6",
-  edelweiss: "#F97316",
-  saxifrage: "#EAB308",
-  mythic:    "#FFD700",
-};
-
 function distKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -72,16 +64,9 @@ function formatDist(km: number): string {
   return `${Math.round(km)} km`;
 }
 
-// ─── Rarity scoring weights (used in adaptive score computation) ─────────────
+// ─── Re-exports (lib/rarity.ts is the source of truth) ───────────────────────
 
-export const RARITY_SCORE_WEIGHTS: Record<string, number> = {
-  daisy:     0.2,
-  lavender:  0.3,
-  gentian:   0.4,
-  edelweiss: 0.7,
-  saxifrage: 1.0,
-  mythic:    1.0,
-};
+export { RARITY_COLORS, RARITY_SCORE_WEIGHTS };
 
 // ─── Apply rarity layer filter (safe for iOS — uses setFilter, not setData) ──
 
@@ -205,6 +190,7 @@ export default function MapView({
   const [loadingPeaks, setLoadingPeaks] = useState(false);
   const [hillshade, setHillshade] = useState(false);
   const [terrain3d, setTerrain3d] = useState(false);
+  const [trails, setTrails] = useState(false);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   // Keep selectedRef in sync for use inside map event listeners (avoids stale closures)
@@ -479,6 +465,15 @@ export default function MapView({
     map.setLayoutProperty("hillshading", "visibility", hillshade ? "visible" : "none");
   }, [hillshade]);
 
+  // Trails toggle
+  useEffect(() => {
+    const map = mapRef.current;
+    const vis = trails ? "visible" : "none";
+    if (!map || !map.getLayer("trails-line")) return;
+    map.setLayoutProperty("trails-line", "visibility", vis);
+    map.setLayoutProperty("trails-casing", "visibility", vis);
+  }, [trails]);
+
   // Terrain 3D toggle
   useEffect(() => {
     const map = mapRef.current;
@@ -635,6 +630,7 @@ export default function MapView({
         id: "hillshading",
         type: "hillshade",
         source: "terrain-hillshade",
+        layout: { visibility: "none" },
         paint: {
           "hillshade-exaggeration": 0.7,
           "hillshade-illumination-direction": 315,
@@ -750,6 +746,32 @@ export default function MapView({
         },
       });
 
+      // ── Trails (hiking paths from OpenFreeMap transportation layer) ──────
+      const TRAIL_FILTER: maplibregl.FilterSpecification = [
+        "in", ["get", "class"],
+        ["literal", ["path", "track", "footway", "bridleway"]],
+      ];
+      map.addLayer({
+        id: "trails-casing",
+        type: "line",
+        source: "ofm-source",
+        "source-layer": "transportation",
+        minzoom: 11,
+        filter: TRAIL_FILTER,
+        layout: { visibility: "none", "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": "white", "line-width": 3, "line-opacity": 0.6 },
+      });
+      map.addLayer({
+        id: "trails-line",
+        type: "line",
+        source: "ofm-source",
+        "source-layer": "transportation",
+        minzoom: 11,
+        filter: TRAIL_FILTER,
+        layout: { visibility: "none", "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": "#b45309", "line-width": 1.5, "line-dasharray": [2, 2] },
+      });
+
       // ── GeoJSON source for unascended peaks ─────────────────────────────
       // Starts empty — peaks loaded progressively per viewport via /api/peaks.
       // No clustering: adaptive percentile filtering replaces cluster logic.
@@ -788,15 +810,7 @@ export default function MapView({
             0.7, 11,
             1.0, 15,
           ],
-          "circle-color": ["match", ["get", "rarityId"],
-            "daisy",     "#00995C",
-            "lavender",  "#A855F7",
-            "gentian",   "#7B5BA6",
-            "edelweiss", "#F97316",
-            "saxifrage", "#EAB308",
-            "mythic",    "#FFD700",
-            "#60a5fa",
-          ],
+          "circle-color": RARITY_ID_MATCH_EXPR as maplibregl.ExpressionSpecification,
           "circle-opacity": ["interpolate", ["linear"], ["get", "score"],
             0,   0.55,
             0.5, 0.80,
@@ -1238,6 +1252,8 @@ export default function MapView({
             onHillshadeToggle={() => setHillshade((v) => !v)}
             terrain3d={terrain3d}
             onTerrain3dToggle={() => setTerrain3d((v) => !v)}
+            trails={trails}
+            onTrailsToggle={() => setTrails((v) => !v)}
             onZoomIn={() => mapRef.current?.zoomIn()}
             onZoomOut={() => mapRef.current?.zoomOut()}
             topBarVisible={topBarVisible}

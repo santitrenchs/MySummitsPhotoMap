@@ -4,38 +4,15 @@ import { useState, useRef, useEffect } from "react";
 import type { AscentData } from "@/components/ascents/AscentsClient";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
-import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
+import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
+import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 
-// ─── Rarity (shared logic with AscentCard) ────────────────────────────────────
+// ─── Rarity aliases (lib/rarity.ts is the source of truth) ───────────────────
 
-type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
-
-function getRarity(altitudeM: number): Rarity {
-  if (altitudeM >= 8000) return "snow_lotus";
-  if (altitudeM >= 7000) return "cinquefoil";
-  if (altitudeM >= 5000) return "saxifrage";
-  if (altitudeM >= 3000) return "edelweiss";
-  if (altitudeM >= 1500) return "gentian";
-  return "daisy";
-}
-
-const RARITY_LABEL: Record<Rarity, string> = {
-  daisy:      "Daisy",
-  gentian:    "Gentian",
-  edelweiss:  "Edelweiss",
-  saxifrage:  "Saxifrage",
-  cinquefoil: "Cinquefoil",
-  snow_lotus: "Snow Lotus",
-};
-
-const RARITY_EP: Record<Rarity, number> = {
-  daisy:      8,
-  gentian:    16,
-  edelweiss:  20,
-  saxifrage:  100,
-  cinquefoil: 500,
-  snow_lotus: 1000,
-};
+type Rarity = RarityId;
+const getRarity = getRarityId;
+const RARITY_LABEL = RARITY_LABELS;
+const RARITY_COLOR = RARITY_COLORS;
 
 // ─── Avatar colors (deterministic by index) ───────────────────────────────────
 
@@ -175,6 +152,10 @@ export function GroupedAscentCard({
     return () => document.removeEventListener("click", close);
   }, [menuOpen]);
 
+  useEffect(() => {
+    prefetchNearbyPeaks(peak.id, peak.latitude, peak.longitude);
+  }, [peak.id, peak.latitude, peak.longitude]);
+
   function goTo(idx: number) {
     const next = Math.max(0, Math.min(idx, count - 1));
     currentRef.current = next;
@@ -194,13 +175,6 @@ export function GroupedAscentCard({
     const lngStr = `${Math.abs(peak.longitude).toFixed(4)}°${peak.longitude >= 0 ? "E" : "W"}`;
     return (
       <section className="capture-frame">
-        <div className="capture-topbar">
-          <span className="capture-label">{t.card_peakCapture}</span>
-          <span className="capture-rarity-inline">
-            <span className="rarity-icon">✿</span>
-            <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
-          </span>
-        </div>
         <div className="image-frame">
           {(isFlipped || preloading) && (
             <PeakMiniMap
@@ -346,15 +320,6 @@ export function GroupedAscentCard({
 
       {/* Inner frame */}
       <section className="capture-frame">
-        {/* Topbar */}
-        <div className="capture-topbar">
-          <span className="capture-label">{t.card_peakCapture}</span>
-          <span className="capture-rarity-inline">
-            <span className="rarity-icon">✿</span>
-            <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
-          </span>
-        </div>
-
         {/* Image area */}
         <div className="image-frame">
           {showMap ? (
@@ -462,13 +427,20 @@ export function GroupedAscentCard({
 
         {/* Stat band */}
         <div className="stat-band">
-          <div className="stat-item">
-            <span className="stat-label">{t.card_altitude}</span>
-            <div className="stat-value">{ascents[0].peak.altitudeM.toLocaleString(t.dateLocale)} m</div>
+          <div className="stat-item" style={{ textAlign: "center" }}>
+            <span className="stat-label">{t.card_rarity}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+              <span style={{ color: RARITY_COLOR[rarity], fontSize: 13 }}>✿</span>
+              <span className="stat-value" style={{ color: RARITY_COLOR[rarity] }}>{RARITY_LABEL[rarity]}</span>
+            </div>
           </div>
-          <div className="stat-item" style={{ textAlign: "right" }}>
+          <div className="stat-item" style={{ textAlign: "center" }}>
+            <span className="stat-label">{t.card_altitude}</span>
+            <div className="stat-value" style={{ textAlign: "center" }}>{ascents[0].peak.altitudeM.toLocaleString(t.dateLocale)} m</div>
+          </div>
+          <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_reward}</span>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5, whiteSpace: "nowrap" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
               {isMythic && (
                 <>
                   <svg width="13" height="13" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>

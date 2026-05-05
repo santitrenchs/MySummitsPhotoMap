@@ -1,15 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RARITIES as RARITY_DEFS } from "@/lib/rarity";
 
-const RARITIES = [
-  { main: "#00995C", label: "Daisy" },
-  { main: "#7B5BA6", label: "Gentian" },
-  { main: "#F97316", label: "Edelweiss" },
-  { main: "#EAB308", label: "Saxifrage" },
-  { main: "#DC2626", label: "Cinquefoil" },
-  { main: "#9ca3af", label: "Snow Lotus" },
-];
+const RARITIES = RARITY_DEFS.map((r) => ({ main: r.color, label: r.label }));
 
 export default function MapLoading() {
   const [idx, setIdx] = useState(0);

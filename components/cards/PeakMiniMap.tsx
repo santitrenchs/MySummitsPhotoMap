@@ -2,10 +2,29 @@
 
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
+import { getRarityColor as getRarityColorFromLib, RARITY_ALT_STEP_EXPR } from "@/lib/rarity";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type NearbyPeak = { id: string; name: string; latitude: number; longitude: number; altitudeM: number };
+
+// ─── Nearby peaks cache ───────────────────────────────────────────────────────
+
+const nearbyCache = new Map<string, NearbyPeak[]>();
+const inFlight = new Set<string>();
+const RADIUS = 0.8;
+
+export function prefetchNearbyPeaks(peakId: string, lat: number, lng: number): void {
+  if (nearbyCache.has(peakId) || inFlight.has(peakId)) return;
+  inFlight.add(peakId);
+  fetch(`/api/peaks?lat=${lat}&lng=${lng}&radius=${RADIUS}`)
+    .then((r) => r.json())
+    .then((peaks: NearbyPeak[]) => {
+      nearbyCache.set(peakId, (peaks as NearbyPeak[]).filter((p) => p.id !== peakId));
+    })
+    .catch(() => {})
+    .finally(() => inFlight.delete(peakId));
+}
 
 // ─── Map style ───────────────────────────────────────────────────────────────
 
@@ -47,34 +66,24 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   ],
 };
 
-// ─── Rarity colors ───────────────────────────────────────────────────────────
+// ─── Rarity color (lib/rarity.ts is the source of truth) ────────────────────
 
-function getRarityColors(altitudeM: number): { main: string; dark: string } {
-  if (altitudeM >= 5000) return { main: "#EAB308", dark: "#a87e06" };
-  if (altitudeM >= 3000) return { main: "#F97316", dark: "#c55e0a" };
-  if (altitudeM >= 1500) return { main: "#7B5BA6", dark: "#5c4480" };
-  return { main: "#00995C", dark: "#00763d" };
-}
+const getRarityColor = getRarityColorFromLib;
 
-// ─── Peakadex ball marker ────────────────────────────────────────────────────
+// ─── Flower emoji marker ─────────────────────────────────────────────────────
 
-function createBallMarker(main: string, dark: string): HTMLDivElement {
+function createFlowerMarker(color: string): HTMLDivElement {
   const el = document.createElement("div");
-  el.style.cssText = "width:76px;height:76px;position:absolute;pointer-events:none";
-  el.innerHTML = `<svg width="76" height="76" viewBox="-29 -29 88 88" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="15" cy="15" r="44" fill="none" stroke="${dark}" stroke-width="1.2" opacity="0.12"/>
-    <circle cx="15" cy="15" r="38" fill="none" stroke="${dark}" stroke-width="1.2" opacity="0.22"/>
-    <circle cx="15" cy="15" r="32" fill="none" stroke="${dark}" stroke-width="1.2" opacity="0.38"/>
-    <circle cx="15" cy="15" r="26" fill="none" stroke="${dark}" stroke-width="1.2" opacity="0.55"/>
-    <ellipse cx="15" cy="27" rx="8" ry="2.5" fill="rgba(0,0,0,.2)"/>
-    <circle cx="15" cy="15" r="13" fill="white"/>
-    <path d="M 2,15 A 13,13 0 0,1 28,15 Z" fill="${main}"/>
-    <circle cx="15" cy="15" r="13" fill="none" stroke="${dark}" stroke-width="1.2"/>
-    <rect x="1" y="13" width="28" height="4" fill="white"/>
-    <line x1="2" y1="15" x2="28" y2="15" stroke="${dark}" stroke-width="1.2"/>
-    <circle cx="15" cy="15" r="4.5" fill="white" stroke="${dark}" stroke-width="1.5"/>
-    <path d="M 6,8 A 13,13 0 0,1 24,8 Q 22,13 15,14 Q 8,13 6,8 Z" fill="white" opacity=".25"/>
-  </svg>`;
+  el.style.cssText = "position:absolute;pointer-events:none;width:80px;height:80px";
+  el.innerHTML = `
+    <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="37" fill="none" stroke="${color}" stroke-width="1" opacity="0.12"/>
+      <circle cx="40" cy="40" r="30" fill="none" stroke="${color}" stroke-width="1.1" opacity="0.22"/>
+      <circle cx="40" cy="40" r="22" fill="none" stroke="${color}" stroke-width="1.2" opacity="0.38"/>
+      <circle cx="40" cy="40" r="14" fill="none" stroke="${color}" stroke-width="1.4" opacity="0.55"/>
+    </svg>
+    <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:${color};filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));line-height:1">✿</span>
+  `;
   return el;
 }
 
@@ -107,75 +116,72 @@ export function PeakMiniMap({
       attributionControl: false,
     });
 
-    const { main, dark } = getRarityColors(altitudeM);
+    const color = getRarityColor(altitudeM);
+
+    function renderNearby(nearby: NearbyPeak[]) {
+      if (!nearby.length || map.getSource("nearby-peaks")) return;
+      map.addSource("nearby-peaks", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: nearby.map((p) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
+            properties: { name: p.name, alt: p.altitudeM },
+          })),
+        },
+      });
+      map.addLayer({
+        id: "peak-ghost-dots",
+        type: "circle",
+        source: "nearby-peaks",
+        paint: {
+          "circle-radius": 5,
+          "circle-color": RARITY_ALT_STEP_EXPR as maplibregl.ExpressionSpecification,
+          "circle-opacity": 0.7,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "white",
+          "circle-stroke-opacity": 0.95,
+        },
+      });
+      map.addLayer({
+        id: "peak-labels",
+        type: "symbol",
+        source: "nearby-peaks",
+        layout: {
+          "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 10,
+          "text-offset": [0, 1.2],
+          "text-anchor": "top",
+          "text-max-width": 8,
+        },
+        paint: {
+          "text-color": "#1e293b",
+          "text-halo-color": "rgba(255,255,255,0.92)",
+          "text-halo-width": 1.5,
+        },
+      });
+    }
 
     map.on("load", () => {
-      // Peakadex ball HTML marker for the main peak
-      new maplibregl.Marker({ element: createBallMarker(main, dark), anchor: "center" })
+      new maplibregl.Marker({ element: createFlowerMarker(color), anchor: "center" })
         .setLngLat([lng, lat])
         .addTo(map);
 
-      // Fetch nearby peaks — ghost dots only, no labels
-      const RADIUS = 0.8;
-      fetch(`/api/peaks?lat=${lat}&lng=${lng}&radius=${RADIUS}`)
-        .then((r) => r.json())
-        .then((peaks: NearbyPeak[]) => {
-          const nearby = peaks.filter((p) => p.id !== peakId);
-
-          if (map.getSource("nearby-peaks")) return;
-
-          map.addSource("nearby-peaks", {
-            type: "geojson",
-            data: {
-              type: "FeatureCollection",
-              features: nearby.map((p) => ({
-                type: "Feature" as const,
-                geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
-                properties: { name: p.name, alt: p.altitudeM },
-              })),
-            },
-          });
-
-          map.addLayer({
-            id: "peak-ghost-dots",
-            type: "circle",
-            source: "nearby-peaks",
-            paint: {
-              "circle-radius": 5,
-              "circle-color": ["step", ["get", "alt"],
-                "#00995C",
-                1500, "#7B5BA6",
-                3000, "#F97316",
-                5000, "#EAB308",
-                7000, "#DC2626",
-                8000, "#6b7280",
-              ],
-              "circle-opacity": 0.7,
-              "circle-stroke-width": 2,
-              "circle-stroke-color": "white",
-              "circle-stroke-opacity": 0.95,
-            },
-          });
-          map.addLayer({
-            id: "peak-labels",
-            type: "symbol",
-            source: "nearby-peaks",
-            layout: {
-              "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
-              "text-font": ["Noto Sans Regular"],
-              "text-size": 10,
-              "text-offset": [0, 1.2],
-              "text-anchor": "top",
-              "text-max-width": 8,
-            },
-            paint: {
-              "text-color": "#1e293b",
-              "text-halo-color": "rgba(255,255,255,0.92)",
-              "text-halo-width": 1.5,
-            },
-          });
-        })
-        .catch(() => { /* non-critical */ });
+      const cached = nearbyCache.get(peakId);
+      if (cached) {
+        renderNearby(cached);
+      } else {
+        fetch(`/api/peaks?lat=${lat}&lng=${lng}&radius=${RADIUS}`)
+          .then((r) => r.json())
+          .then((peaks: NearbyPeak[]) => {
+            const nearby = (peaks as NearbyPeak[]).filter((p) => p.id !== peakId);
+            nearbyCache.set(peakId, nearby);
+            renderNearby(nearby);
+          })
+          .catch(() => {});
+      }
     });
 
     mapRef.current = map;

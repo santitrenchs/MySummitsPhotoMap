@@ -1,15 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RARITIES as RARITY_DEFS } from "@/lib/rarity";
 
-const RARITIES = [
-  { main: "#00995C", dark: "#00763d", label: "Daisy" },
-  { main: "#7B5BA6", dark: "#5c4480", label: "Gentian" },
-  { main: "#F97316", dark: "#c55e0a", label: "Edelweiss" },
-  { main: "#EAB308", dark: "#a87e06", label: "Saxifrage" },
-  { main: "#DC2626", dark: "#b91c1c", label: "Cinquefoil" },
-  { main: "#9ca3af", dark: "#6b7280", label: "Snow Lotus" },
-];
+const RARITIES = RARITY_DEFS.map((r) => ({ main: r.color, dark: r.colorDark, label: r.label }));
 
 export default function AscentsLoading() {
   const [idx, setIdx] = useState(0);

@@ -7,6 +7,7 @@ import type { HomeData, MonthlyBar } from "@/lib/services/home.service";
 import type { Dict } from "@/lib/i18n/types";
 import { i } from "@/lib/i18n";
 import { LEVEL_DEFS, getAltCount, meetsLevel, getLevelState } from "@/lib/level-utils";
+import { RARITIES } from "@/lib/rarity";
 import type { LevelDef } from "@/lib/level-utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -279,14 +280,8 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
 
 // ─── Rarity chart ─────────────────────────────────────────────────────────────
 
-const RARITY_BARS: { key: keyof HomeData["stats"]["rarityBreakdown"]; color: string; label: string }[] = [
-  { key: "daisy",      color: "#00995C", label: "Daisy" },
-  { key: "gentian",    color: "#7B5BA6", label: "Gentian" },
-  { key: "edelweiss",  color: "#F97316", label: "Edelweiss" },
-  { key: "saxifrage",  color: "#EAB308", label: "Saxifrage" },
-  { key: "cinquefoil", color: "#DC2626", label: "Cinquefoil" },
-  { key: "snow_lotus", color: "#6b7280", label: "Snow Lotus" },
-];
+const RARITY_BARS: { key: keyof HomeData["stats"]["rarityBreakdown"]; color: string; label: string }[] =
+  RARITIES.map((r) => ({ key: r.id as keyof HomeData["stats"]["rarityBreakdown"], color: r.color, label: r.label }));
 
 function RarityChart({ breakdown }: { breakdown: HomeData["stats"]["rarityBreakdown"] }) {
   const values = RARITY_BARS.map((b) => breakdown[b.key]);

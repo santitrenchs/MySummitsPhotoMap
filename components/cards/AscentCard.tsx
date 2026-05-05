@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useT } from "@/components/providers/I18nProvider";
-import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
+import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
+import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -40,36 +41,12 @@ type Props = {
   animationIndex?: number;
 };
 
-// ─── Rarity system ───────────────────────────────────────────────────────────
+// ─── Rarity aliases (lib/rarity.ts is the source of truth) ───────────────────
 
-type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
-
-function getRarity(altitudeM: number): Rarity {
-  if (altitudeM >= 8000) return "snow_lotus";
-  if (altitudeM >= 7000) return "cinquefoil";
-  if (altitudeM >= 5000) return "saxifrage";
-  if (altitudeM >= 3000) return "edelweiss";
-  if (altitudeM >= 1500) return "gentian";
-  return "daisy";
-}
-
-const RARITY_LABEL: Record<Rarity, string> = {
-  daisy:      "Daisy",
-  gentian:    "Gentian",
-  edelweiss:  "Edelweiss",
-  saxifrage:  "Saxifrage",
-  cinquefoil: "Cinquefoil",
-  snow_lotus: "Snow Lotus",
-};
-
-const RARITY_EP: Record<Rarity, number> = {
-  daisy:      8,
-  gentian:    16,
-  edelweiss:  20,
-  saxifrage:  100,
-  cinquefoil: 500,
-  snow_lotus: 1000,
-};
+type Rarity = RarityId;
+const getRarity = getRarityId;
+const RARITY_LABEL = RARITY_LABELS;
+const RARITY_COLOR = RARITY_COLORS;
 
 
 // ─── Mountain placeholder ────────────────────────────────────────────────────
@@ -146,6 +123,10 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
     return () => document.removeEventListener("click", close);
   }, [menuOpen]);
 
+  useEffect(() => {
+    prefetchNearbyPeaks(ascent.peak.id, ascent.peak.latitude, ascent.peak.longitude);
+  }, [ascent.peak.id, ascent.peak.latitude, ascent.peak.longitude]);
+
   const rarity = getRarity(ascent.peak.altitudeM);
   const isMythic = ascent.peak.isMythic ?? false;
 
@@ -160,13 +141,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
     return (
       <>
         <section className="capture-frame">
-          <div className="capture-topbar">
-            <span className="capture-label">{t.card_peakCapture}</span>
-            <span className="capture-rarity-inline">
-              <span className="rarity-icon">✿</span>
-              <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
-            </span>
-          </div>
           <div className="image-frame">
             {(isFlipped || preloading) && (
               <PeakMiniMap
@@ -276,13 +250,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
 
       {/* Inner frame */}
       <section className="capture-frame">
-        <div className="capture-topbar">
-          <span className="capture-label">{t.card_peakCapture}</span>
-          <span className="capture-rarity-inline">
-            <span className="rarity-icon">✿</span>
-            <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
-          </span>
-        </div>
         <div className="image-frame">
           {showMap && isFlipped
             ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={ascent.peak.name} altitudeM={ascent.peak.altitudeM} />
@@ -303,13 +270,20 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           </div>
         </div>
         <div className="stat-band">
-          <div className="stat-item">
-            <span className="stat-label">{t.card_altitude}</span>
-            <div className="stat-value">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+          <div className="stat-item" style={{ textAlign: "center" }}>
+            <span className="stat-label">{t.card_rarity}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+              <span style={{ color: RARITY_COLOR[rarity], fontSize: 13 }}>✿</span>
+              <span className="stat-value" style={{ color: RARITY_COLOR[rarity] }}>{RARITY_LABEL[rarity]}</span>
+            </div>
           </div>
-          <div className="stat-item" style={{ textAlign: "right" }}>
+          <div className="stat-item" style={{ textAlign: "center" }}>
+            <span className="stat-label">{t.card_altitude}</span>
+            <div className="stat-value" style={{ textAlign: "center" }}>{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+          </div>
+          <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_reward}</span>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5, whiteSpace: "nowrap" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
               {isMythic && (
                 <>
                   <svg width="13" height="13" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
