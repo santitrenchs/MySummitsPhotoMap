@@ -169,6 +169,12 @@ export function PeakMiniMap({
         .setLngLat([lng, lat])
         .addTo(map);
 
+      // Resize immediately — on iOS the card back is hidden (rotateY 180°) when
+      // preloading=true, so the container starts at 0×0. Resize here and again
+      // on idle so the canvas has correct dimensions before/after the flip.
+      map.resize();
+      map.once("idle", () => map.resize());
+
       const cached = nearbyCache.get(peakId);
       if (cached) {
         renderNearby(cached);
@@ -184,8 +190,13 @@ export function PeakMiniMap({
       }
     });
 
+    // ResizeObserver: when the card flips and the container goes from 0 to its
+    // real height, resize the map so GeoJSON layers and the marker reposition.
+    const ro = new ResizeObserver(() => { map.resize(); });
+    ro.observe(containerRef.current);
+
     mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+    return () => { ro.disconnect(); map.remove(); mapRef.current = null; };
   }, [lat, lng, peakId, altitudeM]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
