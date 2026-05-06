@@ -133,14 +133,15 @@ function LevelCard({ def, status, stats, t, locale }: {
         </div>
 
         {/* Name + pills */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, rowGap: 6 }}>
           <span style={{
             fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
             color: isCurrent ? "#0369a1" : "#111827",
+            marginRight: "auto",
           }}>
             {t[def.nameKey] as string}
           </span>
-          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, justifyContent: "flex-end", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, justifyContent: "flex-end" }}>
             {def.targetAscents != null && (
               <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
                 {def.targetAscents} {t.home_statSummits.toLowerCase()}
