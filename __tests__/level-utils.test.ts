@@ -11,10 +11,13 @@ function makeStats(overrides: Partial<HomeData["stats"]> = {}): HomeData["stats"
     friendsCount: 0,
     maxAltitude: 0,
     peaks1000plus: 0,
+    peaks1500plus: 0,
     peaks2000plus: 0,
     peaks3000plus: 0,
     peaks4000plus: 0,
+    peaks4500plus: 0,
     peaks5000plus: 0,
+    peaks6000plus: 0,
     rarityBreakdown: { daisy: 0, gentian: 0, edelweiss: 0, saxifrage: 0, cinquefoil: 0, snow_lotus: 0 },
     ...overrides,
   };
