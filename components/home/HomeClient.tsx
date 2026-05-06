@@ -90,8 +90,8 @@ function LevelCard({ def, status, stats, t, locale }: {
     ? Math.min(stats.totalAscents / def.targetAscents * 100, 100)
     : 100;
 
-  // badge + emoji + name + pills always on one centered row; progress below indented
-  const leftW = 28 + 12 + 32 + 12; // badge + gap + emoji + gap = 84px indent for progress row
+  // badge + name + pills always on one centered row; progress below indented
+  const leftW = 28 + 12; // badge + gap = 40px indent for progress row
 
   return (
     <div style={{
@@ -120,16 +120,6 @@ function LevelCard({ def, status, stats, t, locale }: {
           fontSize: isCompleted ? 13 : status === "locked" ? 13 : 11, fontWeight: 800,
         }}>
           {isCompleted ? "✓" : status === "locked" ? "🔒" : def.idx}
-        </div>
-
-        {/* Emoji */}
-        <div style={{
-          width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-          background: isCurrent ? "#dbeafe" : "#f3f4f6",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 15,
-        }}>
-          {def.emoji}
         </div>
 
         {/* Name + pills */}
