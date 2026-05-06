@@ -420,13 +420,12 @@ export function HomeClient({ data, locale, t }: {
 
               {/* Level pill */}
               <div style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
-                padding: "2px 11px 2px 5px", borderRadius: 20,
+                display: "inline-flex", alignItems: "center",
+                padding: "2px 11px", borderRadius: 20,
                 background: "#eff6ff",
                 fontSize: 12, fontWeight: 700, color: "#0369a1",
                 letterSpacing: "0.01em",
               }}>
-                <span style={{ fontSize: 14, lineHeight: 1 }}>{levelState.current.emoji}</span>
                 {lvlName}
               </div>
 
