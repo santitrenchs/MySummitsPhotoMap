@@ -7,6 +7,7 @@ import type { HomeData, MonthlyBar } from "@/lib/services/home.service";
 import type { Dict } from "@/lib/i18n/types";
 import { i } from "@/lib/i18n";
 import { LEVEL_DEFS, getAltCount, meetsLevel, getLevelState } from "@/lib/level-utils";
+import { RARITIES } from "@/lib/rarity";
 import type { LevelDef } from "@/lib/level-utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -89,8 +90,8 @@ function LevelCard({ def, status, stats, t, locale }: {
     ? Math.min(stats.totalAscents / def.targetAscents * 100, 100)
     : 100;
 
-  // badge + emoji + name + pills always on one centered row; progress below indented
-  const leftW = 28 + 12 + 32 + 12; // badge + gap + emoji + gap = 84px indent for progress row
+  // badge + name + pills always on one centered row; progress below indented
+  const leftW = 28 + 12; // badge + gap = 40px indent for progress row
 
   return (
     <div style={{
@@ -121,25 +122,16 @@ function LevelCard({ def, status, stats, t, locale }: {
           {isCompleted ? "✓" : status === "locked" ? "🔒" : def.idx}
         </div>
 
-        {/* Emoji */}
-        <div style={{
-          width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-          background: isCurrent ? "#dbeafe" : "#f3f4f6",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 15,
-        }}>
-          {def.emoji}
-        </div>
-
         {/* Name + pills */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, rowGap: 6 }}>
           <span style={{
             fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
             color: isCurrent ? "#0369a1" : "#111827",
+            marginRight: "auto",
           }}>
             {t[def.nameKey] as string}
           </span>
-          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, justifyContent: "flex-end", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, justifyContent: "flex-end" }}>
             {def.targetAscents != null && (
               <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
                 {def.targetAscents} {t.home_statSummits.toLowerCase()}
@@ -279,14 +271,8 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
 
 // ─── Rarity chart ─────────────────────────────────────────────────────────────
 
-const RARITY_BARS: { key: keyof HomeData["stats"]["rarityBreakdown"]; color: string; label: string }[] = [
-  { key: "daisy",      color: "#00995C", label: "Daisy" },
-  { key: "gentian",    color: "#7B5BA6", label: "Gentian" },
-  { key: "edelweiss",  color: "#F97316", label: "Edelweiss" },
-  { key: "saxifrage",  color: "#EAB308", label: "Saxifrage" },
-  { key: "cinquefoil", color: "#DC2626", label: "Cinquefoil" },
-  { key: "snow_lotus", color: "#6b7280", label: "Snow Lotus" },
-];
+const RARITY_BARS: { key: keyof HomeData["stats"]["rarityBreakdown"]; color: string; label: string }[] =
+  RARITIES.map((r) => ({ key: r.id as keyof HomeData["stats"]["rarityBreakdown"], color: r.color, label: r.label }));
 
 function RarityChart({ breakdown }: { breakdown: HomeData["stats"]["rarityBreakdown"] }) {
   const values = RARITY_BARS.map((b) => breakdown[b.key]);
@@ -302,7 +288,7 @@ function RarityChart({ breakdown }: { breakdown: HomeData["stats"]["rarityBreakd
               {val || "0"}
             </span>
             <div style={{ width: "100%", height: barH, background: val > 0 ? b.color : "#e5e7eb", borderRadius: "3px 3px 0 0" }} />
-            <span style={{ fontSize: 9, color: "#94a3b8", textAlign: "center", lineHeight: 1.2 }}>{b.label}</span>
+            <span style={{ fontSize: 9, color: "#94a3b8", textAlign: "center", lineHeight: 1.2, height: 22, display: "flex", alignItems: "flex-start", justifyContent: "center" }}>{b.label}</span>
           </div>
         );
       })}
@@ -434,13 +420,12 @@ export function HomeClient({ data, locale, t }: {
 
               {/* Level pill */}
               <div style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
-                padding: "2px 11px 2px 5px", borderRadius: 20,
+                display: "inline-flex", alignItems: "center",
+                padding: "2px 11px", borderRadius: 20,
                 background: "#eff6ff",
                 fontSize: 12, fontWeight: 700, color: "#0369a1",
                 letterSpacing: "0.01em",
               }}>
-                <span style={{ fontSize: 14, lineHeight: 1 }}>{levelState.current.emoji}</span>
                 {lvlName}
               </div>
 

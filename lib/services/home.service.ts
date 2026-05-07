@@ -49,10 +49,13 @@ export type HomeData = {
     friendsCount: number;
     maxAltitude: number;
     peaks1000plus: number;
+    peaks1500plus: number;
     peaks2000plus: number;
     peaks3000plus: number;
     peaks4000plus: number;
+    peaks4500plus: number;
     peaks5000plus: number;
+    peaks6000plus: number;
     rarityBreakdown: { daisy: number; gentian: number; edelweiss: number; saxifrage: number; cinquefoil: number; snow_lotus: number };
   };
   leaderboard: LeaderboardEntry[];
@@ -105,10 +108,13 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   // Altitude stats (derived from myAscents, no extra query needed)
   const maxAltitude = myAscents.length > 0 ? Math.max(...myAscents.map((a) => a.peak.altitudeM)) : 0;
   const peaks1000plus = myAscents.filter((a) => a.peak.altitudeM >= 1000).length;
+  const peaks1500plus = myAscents.filter((a) => a.peak.altitudeM >= 1500).length;
   const peaks2000plus = myAscents.filter((a) => a.peak.altitudeM >= 2000).length;
   const peaks3000plus = myAscents.filter((a) => a.peak.altitudeM >= 3000).length;
   const peaks4000plus = myAscents.filter((a) => a.peak.altitudeM >= 4000).length;
+  const peaks4500plus = myAscents.filter((a) => a.peak.altitudeM >= 4500).length;
   const peaks5000plus = myAscents.filter((a) => a.peak.altitudeM >= 5000).length;
+  const peaks6000plus = myAscents.filter((a) => a.peak.altitudeM >= 6000).length;
 
   // Unique peaks by rarity tier (altitude-based thresholds)
   function altToRarity(m: number): keyof typeof rarityBreakdown {
@@ -268,7 +274,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
 
   return {
     user: { name: user?.name ?? "", username: user?.username ?? null, avatarUrl: user?.avatarUrl ?? null },
-    stats: { totalAscents, uniquePeaks, totalPhotos, totalRegions, friendsCount, maxAltitude, peaks1000plus, peaks2000plus, peaks3000plus, peaks4000plus, peaks5000plus, rarityBreakdown },
+    stats: { totalAscents, uniquePeaks, totalPhotos, totalRegions, friendsCount, maxAltitude, peaks1000plus, peaks1500plus, peaks2000plus, peaks3000plus, peaks4000plus, peaks4500plus, peaks5000plus, peaks6000plus, rarityBreakdown },
     leaderboard,
     userRank,
     nextRankName,

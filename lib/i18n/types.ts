@@ -7,7 +7,7 @@ export type Dict = {
   lang_en: string; lang_es: string; lang_ca: string; lang_fr: string; lang_de: string;
 
   // Nav
-  nav_map: string; nav_ascents: string; nav_social: string;
+  nav_map: string; nav_ascents: string;
   nav_settings: string; nav_signOut: string; nav_profile: string;
   nav_comingSoon: string; nav_logAscent: string;
 
@@ -74,6 +74,13 @@ export type Dict = {
   ascents_sort_newest: string; ascents_sort_oldest: string;
   ascents_sort_highest: string; ascents_sort_az: string;
   ascents_delete_title: string; ascents_delete_body: string;
+  filter_title: string; filter_sectionExplore: string;
+  filter_mine: string; filter_friends: string; filter_person: string; filter_withMe: string;
+  filter_searchPerson: string;
+  filter_sectionRarity: string; filter_allRarities: string;
+  filter_sectionWhen: string; filter_lastMonth: string; filter_thisYear: string; filter_allTime: string;
+  filter_sectionSort: string;
+  filter_results: string; filter_uniquePeaks: string;
   ascents_stat_ascents: string; ascents_stat_highest: string;
   ascents_stat_peaks: string; ascents_stat_people: string;
 
@@ -88,9 +95,6 @@ export type Dict = {
   people_reconcileSelect: string; people_reconcileConfirm: string;
   people_reconcileNoFriends: string; people_reconcileLinked: string;
   people_stat_people: string; people_stat_photos: string; people_stat_ascents: string;
-
-  // Social feed
-  social_feedEmpty: string; social_feedEmptySub: string; social_loadMore: string;
 
   // Friends / Social
   friends_title: string; friends_searchPlaceholder: string;

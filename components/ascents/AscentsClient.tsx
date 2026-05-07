@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
+import { i } from "@/lib/i18n";
 import { AscentCard } from "@/components/cards/AscentCard";
 import { GroupedAscentCard } from "@/components/cards/GroupedAscentCard";
 
@@ -19,15 +20,16 @@ export type AscentData = {
   firstPhotoOriginalKey?: string | null;
   persons: { id: string; name: string; email?: string | null }[];
   isOwn: boolean;
+  isUnseen?: boolean;
   userName: string;
   userAvatarUrl: string | null;
   peakStats?: { totalAscents: number; uniqueClimbers: number };
 };
 
 type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
-type ViewChip = "all" | "mine" | "person" | "with-me";
+type ViewChip = "mine" | "friends" | "person" | "with-me";
 type TimeRange = "all" | "month" | "year";
-type Sort = "date-desc" | "elev-desc" | "rarity-desc";
+type Sort = "date-desc" | "elev-desc";
 
 function getRarity(altitudeM: number): Rarity {
   if (altitudeM >= 8000) return "snow_lotus";
@@ -75,7 +77,7 @@ export function AscentsClient({
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState("");
-  const [viewChip, setViewChip] = useState<ViewChip>("all");
+  const [viewChip, setViewChip] = useState<ViewChip>("friends");
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [personSearch, setPersonSearch] = useState("");
   const [rarity, setRarity] = useState<Rarity | null>(null);
@@ -85,6 +87,12 @@ export function AscentsClient({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
+
+  // "Mark as seen" tracking refs
+  const cardTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const pendingSeenRef = useRef<Set<string>>(new Set());
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Peak filter seeded from ?peak= URL param
   const [peakFilter, setPeakFilter] = useState<string>(() => searchParams.get("peak") ?? "");
@@ -131,6 +139,7 @@ export function AscentsClient({
     }
 
     if (viewChip === "mine") r = r.filter((a) => a.isOwn);
+    else if (viewChip === "friends") r = r.filter((a) => !a.isOwn);
     else if (viewChip === "with-me" && currentUserId) r = r.filter((a) => !a.isOwn && a.persons.some((p) => p.id === currentUserId));
     else if (viewChip === "person" && selectedPersonId) r = r.filter((a) => a.createdByUserId === selectedPersonId || a.persons.some((p) => p.id === selectedPersonId));
 
@@ -146,13 +155,13 @@ export function AscentsClient({
     }
 
     return [...r].sort((a, b) => {
-      if (sort === "date-desc")   return new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (sort === "elev-desc")   return b.peak.altitudeM - a.peak.altitudeM;
-      if (sort === "rarity-desc") {
-        const rd = RARITY_ORDER[getRarity(b.peak.altitudeM)] - RARITY_ORDER[getRarity(a.peak.altitudeM)];
-        return rd !== 0 ? rd : b.peak.altitudeM - a.peak.altitudeM;
-      }
-      return 0;
+      if (sort === "elev-desc") return b.peak.altitudeM - a.peak.altitudeM;
+      // Default: unseen friends first (by altitude desc), then rest by date desc
+      const aUnseen = a.isUnseen ?? false;
+      const bUnseen = b.isUnseen ?? false;
+      if (aUnseen !== bUnseen) return bUnseen ? 1 : -1;
+      if (aUnseen && bUnseen) return b.peak.altitudeM - a.peak.altitudeM;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
   }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, sort, currentUserId]);
 
@@ -167,17 +176,69 @@ export function AscentsClient({
     return Array.from(map.values());
   }, [filtered]);
 
+  // IntersectionObserver: mark unseen friend ascents as seen after 1s of visibility
+  useEffect(() => {
+    const hasUnseen = filtered.some((a) => a.isUnseen);
+    if (!hasUnseen) return;
+
+    observerRef.current?.disconnect();
+
+    const flush = () => {
+      const ids = Array.from(pendingSeenRef.current);
+      if (ids.length === 0) return;
+      pendingSeenRef.current.clear();
+      document.dispatchEvent(new CustomEvent("unseen-feed-count-changed", { detail: { delta: -ids.length } }));
+      fetch("/api/feed/seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ascentIds: ids }),
+      }).catch(() => {});
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          // data-unseen-id may contain comma-separated IDs for grouped cards
+          const raw = (entry.target as HTMLElement).dataset.unseenId;
+          if (!raw || !entry.isIntersecting) continue;
+          // Start timer once on first intersection — don't cancel if user scrolls past
+          if (!cardTimersRef.current.has(raw)) {
+            cardTimersRef.current.set(raw, setTimeout(() => {
+              cardTimersRef.current.delete(raw);
+              observer.unobserve(entry.target);
+              for (const id of raw.split(",")) pendingSeenRef.current.add(id);
+              if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = setTimeout(flush, 1000);
+            }, 1000));
+          }
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observerRef.current = observer;
+
+    // Observe ALL elements with data-unseen-id (single cards + grouped wrappers)
+    document.querySelectorAll("[data-unseen-id]").forEach((el) => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+      for (const timer of cardTimersRef.current.values()) clearTimeout(timer);
+      cardTimersRef.current.clear();
+      if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+    };
+  }, [filtered]);
+
   const uniquePeaks = useMemo(
     () => new Set(filtered.map((a) => a.peak.id)).size,
     [filtered]
   );
 
   const isDirty =
-    viewChip !== "all" || rarity !== null || mythicFilter || timeRange !== "all" ||
+    viewChip !== "friends" || rarity !== null || mythicFilter || timeRange !== "all" ||
     sort !== "date-desc" || peakFilter !== "";
 
   function resetFilters() {
-    setViewChip("all");
+    setViewChip("friends");
     setSelectedPersonId("");
     setPersonSearch("");
     setRarity(null);
@@ -190,25 +251,24 @@ export function AscentsClient({
 
   const activeChips = useMemo(() => {
     const chips: { key: string; label: string; color: { bg: string; border: string; text: string } }[] = [];
-    if (viewChip === "mine")    chips.push({ key: "view", label: "👤 Mis cimas", color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
-    if (viewChip === "with-me") chips.push({ key: "view", label: "👥 Conmigo", color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
-    if (viewChip === "person" && selectedPerson) chips.push({ key: "view", label: `👤 ${selectedPerson.name}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    if (viewChip === "friends")  chips.push({ key: "view", label: t.filter_friends, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    if (viewChip === "with-me")  chips.push({ key: "view", label: t.filter_withMe, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
+    if (viewChip === "person" && selectedPerson) chips.push({ key: "view", label: selectedPerson.name, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
     if (mythicFilter) {
       chips.push({ key: "rarity", label: "⭐ Mythic", color: { bg: "#fffbeb", border: "#fde68a", text: "#92400e" } });
     } else if (rarity) {
       const c = RARITY_COLORS[rarity];
       chips.push({ key: "rarity", label: `✿ ${RARITY_LABELS[rarity]}`, color: { bg: c.bg, border: c.border, text: c.text } });
     }
-    if (timeRange === "month") chips.push({ key: "time", label: "📅 Último mes", color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    if (timeRange === "month") chips.push({ key: "time", label: `📅 ${t.filter_lastMonth}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
     if (timeRange === "year")  chips.push({ key: "time", label: `📅 ${new Date().getFullYear()}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
-    if (sort === "elev-desc")   chips.push({ key: "sort", label: "⛰ Más altas", color: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" } });
-    if (sort === "rarity-desc") chips.push({ key: "sort", label: "✿ Más raras", color: { bg: "#f5f3ff", border: "#ddd6fe", text: "#6d28d9" } });
+    if (sort === "elev-desc") chips.push({ key: "sort", label: `⛰ ${t.ascents_sort_highest}`, color: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" } });
     if (peakFilter && peakFilterName) chips.push({ key: "peak", label: `⛰️ ${peakFilterName}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
     return chips;
   }, [viewChip, selectedPerson, rarity, mythicFilter, timeRange, sort, peakFilter, peakFilterName]);
 
   function clearChip(key: string) {
-    if (key === "view") { setViewChip("all"); setSelectedPersonId(""); setPersonSearch(""); }
+    if (key === "view") { setViewChip("friends"); setSelectedPersonId(""); setPersonSearch(""); }
     if (key === "rarity") { setRarity(null); setMythicFilter(false); }
     if (key === "time") setTimeRange("all");
     if (key === "sort") setSort("date-desc");
@@ -342,7 +402,7 @@ export function AscentsClient({
                 padding: "5px 10px 5px 12px", borderRadius: 20,
                 background: chip.color.bg, border: `1px solid ${chip.color.border}`,
                 color: chip.color.text, fontSize: 12, fontWeight: 600,
-                whiteSpace: "nowrap", flexShrink: 0, cursor: "pointer",
+                whiteSpace: "nowrap", flexShrink: 0, cursor: "pointer", lineHeight: 1,
               }}
               onClick={() => clearChip(chip.key)}
             >
@@ -386,14 +446,14 @@ export function AscentsClient({
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px 12px", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
           <span style={{ fontSize: 17, fontWeight: 800, color: "#111827", letterSpacing: "-0.3px" }}>
-            Explorar ascensiones
+            {t.filter_title}
           </span>
           {isDirty ? (
             <button
               onClick={resetFilters}
               style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#0369a1", cursor: "pointer", padding: "4px 0" }}
             >
-              Borrar todo
+              {t.ascents_clearAll}
             </button>
           ) : (
             <button
@@ -412,13 +472,13 @@ export function AscentsClient({
 
           {/* EXPLORAR */}
           <div>
-            <p style={sectionLabel}>Explorar</p>
+            <p style={sectionLabel}>{t.filter_sectionExplore}</p>
             <div style={chipRow}>
               {([
-                { v: "all",     label: "Todo" },
-                { v: "mine",    label: "Mis cimas" },
-                { v: "person",  label: "De una persona" },
-                { v: "with-me", label: "Conmigo" },
+                { v: "mine",    label: t.filter_mine },
+                { v: "friends", label: t.filter_friends },
+                { v: "person",  label: t.filter_person },
+                { v: "with-me", label: t.filter_withMe },
               ] as { v: ViewChip; label: string }[]).map(({ v, label }) => (
                 <div
                   key={v}
@@ -439,7 +499,7 @@ export function AscentsClient({
               <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
                 <input
                   type="text"
-                  placeholder="Buscar persona…"
+                  placeholder={t.filter_searchPerson}
                   value={personSearch}
                   onChange={(e) => setPersonSearch(e.target.value)}
                   autoFocus
@@ -488,14 +548,14 @@ export function AscentsClient({
 
           {/* RAREZA */}
           <div>
-            <p style={sectionLabel}>Rareza</p>
+            <p style={sectionLabel}>{t.filter_sectionRarity}</p>
             <div style={chipRow}>
               <div
                 className="asc-fchip"
                 style={fchip(rarity === null && !mythicFilter)}
                 onClick={() => { setRarity(null); setMythicFilter(false); }}
               >
-                Todas
+                {t.filter_allRarities}
               </div>
               {(["daisy", "gentian", "edelweiss", "saxifrage", "cinquefoil", "snow_lotus"] as Rarity[]).map((r) => (
                 <div
@@ -504,7 +564,7 @@ export function AscentsClient({
                   style={rarityChip(r, !mythicFilter && rarity === r)}
                   onClick={() => { setMythicFilter(false); setRarity(rarity === r ? null : r); }}
                 >
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: RARITY_COLORS[r].dot, display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ color: RARITY_COLORS[r].dot, fontSize: 13, lineHeight: 1 }}>✿</span>
                   {RARITY_LABELS[r]}
                 </div>
               ))}
@@ -523,12 +583,12 @@ export function AscentsClient({
 
           {/* CUÁNDO */}
           <div>
-            <p style={sectionLabel}>Cuándo</p>
+            <p style={sectionLabel}>{t.filter_sectionWhen}</p>
             <div style={chipRow}>
               {([
-                { v: "month", label: "Último mes" },
-                { v: "year",  label: "Este año" },
-                { v: "all",   label: "Todo" },
+                { v: "month", label: t.filter_lastMonth },
+                { v: "year",  label: t.filter_thisYear },
+                { v: "all",   label: t.filter_allTime },
               ] as { v: TimeRange; label: string }[]).map(({ v, label }) => (
                 <div
                   key={v}
@@ -544,24 +604,20 @@ export function AscentsClient({
 
           {/* ORDENAR POR */}
           <div>
-            <p style={sectionLabel}>Ordenar por</p>
+            <p style={sectionLabel}>{t.filter_sectionSort}</p>
             <div style={chipRow}>
               <div className="asc-fchip" style={fchip(sort === "date-desc")} onClick={() => setSort("date-desc")}>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.6"/>
                   <path d="M8 5v3l2 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                 </svg>
-                Recientes
+                {t.ascents_sort_newest}
               </div>
               <div className="asc-fchip" style={fchip(sort === "elev-desc", sort === "elev-desc" ? { borderColor: "#bfdbfe", background: "#eff6ff", color: "#1d4ed8" } : {})} onClick={() => setSort("elev-desc")}>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                   <path d="M8 2L13 12H3L8 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
                 </svg>
-                Más altas
-              </div>
-              <div className="asc-fchip" style={fchip(sort === "rarity-desc", sort === "rarity-desc" ? { borderColor: "#ddd6fe", background: "#f5f3ff", color: "#6d28d9" } : {})} onClick={() => setSort("rarity-desc")}>
-                <span style={{ fontSize: 13, lineHeight: 1 }}>✿</span>
-                Más raras
+                {t.ascents_sort_highest}
               </div>
             </div>
           </div>
@@ -582,11 +638,11 @@ export function AscentsClient({
             }}
           >
             <span style={{ fontSize: 15, fontWeight: 800 }}>
-              Explorar {filtered.length} ascensión{filtered.length !== 1 ? "es" : ""}
+              {i(t.filter_results, { n: filtered.length })}
             </span>
             <span style={{ opacity: 0.45, fontSize: 14 }}>·</span>
             <span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>
-              {uniquePeaks} cima{uniquePeaks !== 1 ? "s" : ""} única{uniquePeaks !== 1 ? "s" : ""}
+              {i(t.filter_uniquePeaks, { n: uniquePeaks })}
             </span>
           </button>
         </div>
@@ -609,6 +665,7 @@ export function AscentsClient({
                 <div
                   key={a.id}
                   id={`ascent-${a.id}`}
+                  {...(a.isUnseen ? { "data-unseen-id": a.id } : {})}
                   style={{
                     borderRadius: 16,
                     transition: "box-shadow 0.4s ease, outline 0.4s ease",
@@ -639,15 +696,17 @@ export function AscentsClient({
             }
 
             const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
+            const groupUnseenIds = group.filter((a) => a.isUnseen).map((a) => a.id).join(",");
             return (
-              <GroupedAscentCard
-                key={groupKey}
-                ascents={group}
-                currentUserEmail={currentUserEmail}
-                currentUserName={currentUserName}
-                animationIndex={i}
-                peakStats={group[0].peakStats}
-              />
+              <div key={groupKey} {...(groupUnseenIds ? { "data-unseen-id": groupUnseenIds } : {})}>
+                <GroupedAscentCard
+                  ascents={group}
+                  currentUserEmail={currentUserEmail}
+                  currentUserName={currentUserName}
+                  animationIndex={i}
+                  peakStats={group[0].peakStats}
+                />
+              </div>
             );
           })}
         </div>
