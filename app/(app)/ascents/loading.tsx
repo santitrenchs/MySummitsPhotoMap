@@ -22,13 +22,16 @@ export default function AscentsLoading() {
           from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
         }
+        @media (max-width: 639px) {
+          .loading-inner { transform: translateX(-3vw); }
+        }
       `}</style>
       <div style={{
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         height: "calc(100svh - var(--top-nav-h, 0px) - var(--bottom-nav-h, 0px))",
-        gap: 12,
       }}>
+      <div className="loading-inner" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
         <svg
           width="64" height="64" viewBox="0 0 30 30"
           xmlns="http://www.w3.org/2000/svg"
@@ -60,6 +63,7 @@ export default function AscentsLoading() {
         }}>
           {label}
         </span>
+      </div>
       </div>
     </>
   );

@@ -182,6 +182,7 @@ export default function MapView({
   const [mythicOnly, setMythicOnly] = useState(false);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   const [mobileView, setMobileView] = useState<"map" | "list">("map");
+  const searchOpenedListRef = useRef(false);
   const [topBarVisible, setTopBarVisible] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<MapPeak[]>([]);
@@ -1022,7 +1023,17 @@ export default function MapView({
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const q = e.target.value;
+                  setSearchQuery(q);
+                  if (q.trim().length >= 2 && mobileView === "map") {
+                    setMobileView("list");
+                    searchOpenedListRef.current = true;
+                  } else if (q.trim().length < 2 && searchOpenedListRef.current) {
+                    setMobileView("map");
+                    searchOpenedListRef.current = false;
+                  }
+                }}
                 placeholder="Buscar cima…"
                 style={{
                   width: "100%", padding: "10px 28px 10px 30px",
@@ -1033,7 +1044,13 @@ export default function MapView({
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => {
+                    setSearchQuery("");
+                    if (searchOpenedListRef.current) {
+                      setMobileView("map");
+                      searchOpenedListRef.current = false;
+                    }
+                  }}
                   style={{
                     position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
                     background: "none", border: "none", cursor: "pointer",
@@ -1341,10 +1358,13 @@ export default function MapView({
         {/* ── Mobile toggle button (Mapa / Lista) ──────────────────────── */}
         {isMobile && (
           <button
-            onClick={() => setMobileView((v) => {
-              if (v === "map") { setTopBarVisible(true); return "list"; }
-              return "map";
-            })}
+            onClick={() => {
+              searchOpenedListRef.current = false;
+              setMobileView((v) => {
+                if (v === "map") { setTopBarVisible(true); return "list"; }
+                return "map";
+              });
+            }}
             style={{
               position: "absolute",
               bottom: "var(--bottom-nav-h, 0px)",
