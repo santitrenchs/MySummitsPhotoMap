@@ -20,3 +20,12 @@ export const RARITIES: Rarity[] = [
 export function getRarityById(id: RarityId): Rarity {
   return RARITIES.find((r) => r.id === id)!;
 }
+
+export function getRarityByAltitude(altitudeM: number): Rarity {
+  if (altitudeM >= 8000) return getRarityById("snow_lotus");
+  if (altitudeM >= 7000) return getRarityById("cinquefoil");
+  if (altitudeM >= 5000) return getRarityById("saxifrage");
+  if (altitudeM >= 3000) return getRarityById("edelweiss");
+  if (altitudeM >= 1500) return getRarityById("gentian");
+  return getRarityById("daisy");
+}

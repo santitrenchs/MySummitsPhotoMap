@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
+import { getRarityByAltitude } from "@/lib/rarity";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -41,35 +42,6 @@ type Props = {
 };
 
 // ─── Rarity system ───────────────────────────────────────────────────────────
-
-type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
-
-function getRarity(altitudeM: number): Rarity {
-  if (altitudeM >= 8000) return "snow_lotus";
-  if (altitudeM >= 7000) return "cinquefoil";
-  if (altitudeM >= 5000) return "saxifrage";
-  if (altitudeM >= 3000) return "edelweiss";
-  if (altitudeM >= 1500) return "gentian";
-  return "daisy";
-}
-
-const RARITY_LABEL: Record<Rarity, string> = {
-  daisy:      "Daisy",
-  gentian:    "Gentian",
-  edelweiss:  "Edelweiss",
-  saxifrage:  "Saxifrage",
-  cinquefoil: "Cinquefoil",
-  snow_lotus: "Snow Lotus",
-};
-
-const RARITY_EP: Record<Rarity, number> = {
-  daisy:      8,
-  gentian:    16,
-  edelweiss:  20,
-  saxifrage:  100,
-  cinquefoil: 500,
-  snow_lotus: 1000,
-};
 
 
 // ─── Mountain placeholder ────────────────────────────────────────────────────
@@ -146,7 +118,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
     return () => document.removeEventListener("click", close);
   }, [menuOpen]);
 
-  const rarity = getRarity(ascent.peak.altitudeM);
+  const rarity = getRarityByAltitude(ascent.peak.altitudeM);
   const isMythic = ascent.peak.isMythic ?? false;
 
   const dateStr = new Date(ascent.date).toLocaleDateString(locale, {
@@ -164,7 +136,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             <span className="capture-label">{t.card_peakCapture}</span>
             <span className="capture-rarity-inline">
               <span className="rarity-icon">✿</span>
-              <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
+              <span className="rarity-value">{rarity.label}</span>
             </span>
           </div>
           <div className="image-frame">
@@ -280,7 +252,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           <span className="capture-label">{t.card_peakCapture}</span>
           <span className="capture-rarity-inline">
             <span className="rarity-icon">✿</span>
-            <span className="rarity-value">{RARITY_LABEL[rarity]}</span>
+            <span className="rarity-value">{rarity.label}</span>
           </span>
         </div>
         <div className="image-frame">
@@ -322,7 +294,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                   <span style={{ color: "#d1d5db", fontSize: 12 }}>·</span>
                 </>
               )}
-              <span className="stat-value ep">+{RARITY_EP[rarity]} EP</span>
+              <span className="stat-value ep">+{rarity.ep} EP</span>
             </div>
           </div>
         </div>
@@ -357,7 +329,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
       onTouchStart={() => setPreloading(true)}
     >
       <article
-        className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
+        className={`peak-card ${rarity.id} flip-inner${isMythic ? " mythic" : ""}`}
         // @ts-expect-error CSS custom property
         style={{ "--card-i": Math.min(animationIndex, 8) }}
       >
