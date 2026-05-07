@@ -1,8 +1,8 @@
-# AziTracks — CLAUDE.md
+# Peakadex — CLAUDE.md
 
 ## Project Overview
 
-AziTracks is a mobile-first social app for mountain climbers and hikers to log their summit ascents, explore peaks on a map, track personal progress, and compete with friends. It sits at the intersection of outdoor activity tracking (like Strava) and summit-bagging culture, with a strong emphasis on visual storytelling and community motivation.
+Peakadex is a mobile-first social app for mountain climbers and hikers to log their summit ascents, explore peaks on a map, track personal progress, and compete with friends. It sits at the intersection of outdoor activity tracking (like Strava) and summit-bagging culture, with a strong emphasis on visual storytelling and community motivation.
 
 The product is designed for people who climb mountains regularly and want to:
 - Keep a beautiful, photo-first record of their ascents
@@ -209,7 +209,7 @@ FaceDetection / FaceTag
 - Mobile bottom tab bar: **Mi Progreso · Mapa · + (log ascent, center CTA) · Ascensiones · Social** (5 zones, profile accessible from Mi Progreso header).
 - Desktop top nav: Mi Progreso · Mapa · Ascensiones · Social + avatar button.
 - Home tab = Mi Progreso (gamification dashboard). Root `/` redirects to `/home` when authenticated.
-- **Mobile header** (`components/nav/NavBar.tsx`): sticky 52px bar shown only on mobile (`<640px`). Contains the AziTracks logo **absolutely centered** (`position: absolute; left: 50%; transform: translateX(-50%)`) so it stays visually centered regardless of avatar width. The avatar div uses `justify-content: flex-end` on the header.
+- **Mobile header** (`components/nav/NavBar.tsx`): sticky 52px bar shown only on mobile (`<640px`). Contains the Peakadex logo **absolutely centered** (`position: absolute; left: 50%; transform: translateX(-50%)`) so it stays visually centered regardless of avatar width. The avatar div uses `justify-content: flex-end` on the header.
 - **`--top-nav-h` CSS variable**: set to `52px` on mobile (in `app/(app)/layout.tsx`) to match the mobile header height. Map and other full-height containers use `calc(100svh - var(--top-nav-h) - var(--bottom-nav-h))` — this variable must stay in sync with the actual `.mobile-header` height (currently `52px`).
 - **Login redirects to `/home`**: after successful login, `app/(auth)/login/page.tsx` pushes to `/home` (Mi Progreso), not `/map`.
 - **Bottom tab bar instant feedback**: `NavBar.tsx` uses a `pendingPath` state to highlight the tapped tab immediately, before Next.js completes navigation. `handleTabClick(href)` sets `pendingPath`; a `useEffect` on `pathname` resets it once navigation completes. `tabActive(href)` checks `pendingPath` first, then falls back to `isActive`. **Do not call `router.push` inside `handleTabClick`** — the `Link` component handles navigation; calling push too causes double navigation and blanks the tab bar.
@@ -219,12 +219,12 @@ FaceDetection / FaceTag
 
 ## Deployment
 
-- **Production URL**: [www.aziatlas.com](https://www.aziatlas.com) (custom domain via GoDaddy CNAME → Railway)
+- **Production URL**: [www.peakadex.com](https://www.peakadex.com) (custom domain via GoDaddy CNAME → Railway)
 - **Platform**: Railway (auto-deploys on push to `main`)
 - **Databases**: Two Railway PostgreSQL instances — sandbox (port 40040) and production (port 10046 / internal `postgres-52e3.railway.internal:5432`)
 - **File storage**: Cloudflare R2, public base URL `https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev`
   - Avatar key pattern: `avatars/{userId}.jpg`
-- **Email**: Resend (`resend` npm package), domain `mail.aziatlas.com` (subdomain configured in GoDaddy via Resend auto-setup), region `eu-west-1`. From address: `AziAtlas <noreply@mail.aziatlas.com>`. API key in env var `RESEND_API_KEY`, from address in `RESEND_FROM`. Email logic in `lib/email.ts`.
+- **Email**: Resend (`resend` npm package), domain `mail.peakadex.com` (configured via Resend + Cloudflare integration), region `eu-west-1`. From address: `Peakadex <noreply@mail.peakadex.com>`. API key in env var `RESEND_API_KEY`, from address in `RESEND_FROM`. Email logic in `lib/email.ts`.
 
 ---
 
@@ -442,7 +442,7 @@ cropAspect String?           // "4:5" | "1:1"
 | Ascents | **Bitácora** | **Bitàcola** | **Logbook** | **Carnet** | **Logbuch** |
 | Social | Social | Social | Social | Social | Social |
 
-Note: "Atlas" is intentionally not translated — it's a brand name aligned with the potential app rename to AziAtlas.
+Note: "Atlas" is intentionally not translated — it's a brand name, intentionally kept across all locales.
 
 ---
 

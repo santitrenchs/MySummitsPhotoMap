@@ -151,7 +151,7 @@ const WELCOME_COPY: Record<string, { subject: (n: string) => string; h1: (n: str
   ca: {
     subject: (n) => `Benvingut/da a Peakadex, ${n}!`,
     h1: (n) => `Benvingut/da, ${n}!`,
-    body1: "Ja ets part d'Peakadex. Comença registrant el teu primer cim i construeix el teu historial d'ascensions.",
+    body1: "Ja ets part de Peakadex. Comença registrant el teu primer cim i construeix el teu historial d'ascensions.",
     body2: "Explora el mapa, connecta amb els teus amics i puja graons a la classificació de la teva cordada.",
     cta: "Anar a Peakadex →",
   },
@@ -165,7 +165,7 @@ const WELCOME_COPY: Record<string, { subject: (n: string) => string; h1: (n: str
   fr: {
     subject: (n) => `Bienvenue sur Peakadex, ${n} !`,
     h1: (n) => `Bienvenue, ${n} !`,
-    body1: "Tu fais maintenant partie d'Peakadex. Commence par enregistrer ton premier sommet et construis ton historique d'ascensions.",
+    body1: "Tu fais maintenant partie de Peakadex. Commence par enregistrer ton premier sommet et construis ton historique d'ascensions.",
     body2: "Explore la carte, connecte-toi avec tes amis et grimpe dans le classement de ta cordée.",
     cta: "Aller sur Peakadex →",
   },
