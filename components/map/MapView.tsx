@@ -583,9 +583,13 @@ export default function MapView({
     let touchActive = false;
     const onTouchStart = () => { touchActive = true; };
     const onTouchMove = () => {};
-    const onTouchEnd = () => {
-      touchActive = false;
-      setTimeout(() => { if (mapRef.current) mapRef.current.resize(); }, 50);
+    const onTouchEnd = (e: TouchEvent) => {
+      // Only release when the last finger lifts — pinch fires touchend per finger,
+      // so touches.length > 0 means the gesture is still active.
+      if (e.touches.length === 0) {
+        touchActive = false;
+        setTimeout(() => { if (mapRef.current) mapRef.current.resize(); }, 50);
+      }
     };
     containerRef.current.addEventListener("touchstart", onTouchStart, { passive: true });
     containerRef.current.addEventListener("touchmove", onTouchMove, { passive: true });
