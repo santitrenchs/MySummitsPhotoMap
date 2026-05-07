@@ -1,7 +1,7 @@
 import { type Page } from "@playwright/test";
 
 // Credentials for the E2E test user — set via env vars in CI
-export const TEST_EMAIL    = process.env.E2E_EMAIL    ?? "test@aziatlas.com";
+export const TEST_EMAIL    = process.env.E2E_EMAIL    ?? "test@peakadex.com";
 export const TEST_PASSWORD = process.env.E2E_PASSWORD ?? "testpassword123";
 
 export async function login(page: Page) {

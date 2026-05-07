@@ -112,7 +112,7 @@ const MOBILE_TOP_BAR_H = 104;
 
 // ─── Map view persistence ─────────────────────────────────────────────────────
 
-const MAP_VIEW_KEY = "azitracks_map_view";
+const MAP_VIEW_KEY = "peakadex_map_view";
 
 function resolveInitialView(
   ascentData: AscentMapEntry[],

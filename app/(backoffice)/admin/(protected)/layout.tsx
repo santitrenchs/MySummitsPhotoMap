@@ -26,7 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 18 }}>⚙️</span>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>AziAtlas Backoffice</span>
+          <span style={{ fontWeight: 700, fontSize: 15 }}>Peakadex Backoffice</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <span style={{ fontSize: 13, color: "#94a3b8" }}>{session.user.name}</span>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PeakadexLogo } from "@/components/brand/Logo";
 
 export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -25,8 +26,10 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
         <div className="mb-8 text-center">
-          <span className="text-3xl">🔑</span>
-          <h1 className="mt-2 text-2xl font-bold text-gray-900">¿Olvidaste tu contraseña?</h1>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+            <PeakadexLogo height={38} iconScale={1.0} />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900">¿Olvidaste tu contraseña?</h1>
           <p className="mt-1 text-sm text-gray-500">
             Introduce tu email y te enviaremos un enlace para restablecerla.
           </p>

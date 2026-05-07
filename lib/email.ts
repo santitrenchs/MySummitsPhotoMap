@@ -1,11 +1,11 @@
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.RESEND_FROM ?? "AziAtlas <noreply@mail.aziatlas.com>";
+const FROM = process.env.RESEND_FROM ?? "Peakadex <noreply@mail.peakadex.com>";
 const APP_URL = (
   process.env.NEXTAUTH_URL ??
   process.env.AUTH_URL ??
-  "https://www.aziatlas.com"
+  "https://www.peakadex.com"
 ).replace(/\/$/, "");
 
 const FONT_STACK = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
@@ -29,7 +29,7 @@ function renderBrandHeader() {
                   <img src="https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev/logo-email.png" width="42" height="42" alt="" style="display:block;border:0;">
                 </td>
                 <td style="vertical-align:middle;">
-                  <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#0369a1;font-family:${FONT_STACK};">AziAtlas</span>
+                  <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#0369a1;font-family:${FONT_STACK};">Peakadex</span>
                 </td>
               </tr>
             </table>
@@ -39,7 +39,7 @@ function renderBrandHeader() {
 
 const PASSWORD_RESET_COPY: Record<string, { subject: string; h1: string; body: string; cta: string; expiry: string; fallback: string }> = {
   es: {
-    subject: "Restablece tu contraseña — AziAtlas",
+    subject: "Restablece tu contraseña — Peakadex",
     h1: "Restablece tu contraseña",
     body: "Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Haz clic en el botón para continuar.",
     cta: "Restablecer contraseña",
@@ -47,7 +47,7 @@ const PASSWORD_RESET_COPY: Record<string, { subject: string; h1: string; body: s
     fallback: "Si el botón no funciona, copia y pega este enlace en tu navegador:",
   },
   ca: {
-    subject: "Restableix la teva contrasenya — AziAtlas",
+    subject: "Restableix la teva contrasenya — Peakadex",
     h1: "Restableix la teva contrasenya",
     body: "Hem rebut una sol·licitud per restablir la contrasenya del teu compte. Fes clic al botó per continuar.",
     cta: "Restablir contrasenya",
@@ -55,7 +55,7 @@ const PASSWORD_RESET_COPY: Record<string, { subject: string; h1: string; body: s
     fallback: "Si el botó no funciona, copia i enganxa aquest enllaç al teu navegador:",
   },
   en: {
-    subject: "Reset your password — AziAtlas",
+    subject: "Reset your password — Peakadex",
     h1: "Reset your password",
     body: "We received a request to reset your account password. Click the button below to continue.",
     cta: "Reset password",
@@ -63,7 +63,7 @@ const PASSWORD_RESET_COPY: Record<string, { subject: string; h1: string; body: s
     fallback: "If the button doesn't work, copy and paste this link into your browser:",
   },
   fr: {
-    subject: "Réinitialise ton mot de passe — AziAtlas",
+    subject: "Réinitialise ton mot de passe — Peakadex",
     h1: "Réinitialise ton mot de passe",
     body: "Nous avons reçu une demande de réinitialisation du mot de passe de ton compte. Clique sur le bouton pour continuer.",
     cta: "Réinitialiser le mot de passe",
@@ -71,7 +71,7 @@ const PASSWORD_RESET_COPY: Record<string, { subject: string; h1: string; body: s
     fallback: "Si le bouton ne fonctionne pas, copie et colle ce lien dans ton navigateur :",
   },
   de: {
-    subject: "Passwort zurücksetzen — AziAtlas",
+    subject: "Passwort zurücksetzen — Peakadex",
     h1: "Passwort zurücksetzen",
     body: "Wir haben eine Anfrage zum Zurücksetzen deines Passworts erhalten. Klicke auf den Button, um fortzufahren.",
     cta: "Passwort zurücksetzen",
@@ -122,7 +122,7 @@ ${renderBrandHeader()}
         </tr>
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
           </td>
         </tr>
       </table>
@@ -142,39 +142,39 @@ ${renderBrandHeader()}
 
 const WELCOME_COPY: Record<string, { subject: (n: string) => string; h1: (n: string) => string; body1: string; body2: string; cta: string }> = {
   es: {
-    subject: (n) => `¡Bienvenido/a a AziAtlas, ${n}!`,
+    subject: (n) => `¡Bienvenido/a a Peakadex, ${n}!`,
     h1: (n) => `¡Bienvenido/a, ${n}!`,
-    body1: "Ya eres parte de AziAtlas. Empieza registrando tu primera cima y construye tu historial de ascensiones.",
+    body1: "Ya eres parte de Peakadex. Empieza registrando tu primera cima y construye tu historial de ascensiones.",
     body2: "Explora el mapa, conecta con tus amigos y sube peldaños en la clasificación de tu cordada.",
-    cta: "Ir a AziAtlas →",
+    cta: "Ir a Peakadex →",
   },
   ca: {
-    subject: (n) => `Benvingut/da a AziAtlas, ${n}!`,
+    subject: (n) => `Benvingut/da a Peakadex, ${n}!`,
     h1: (n) => `Benvingut/da, ${n}!`,
-    body1: "Ja ets part d'AziAtlas. Comença registrant el teu primer cim i construeix el teu historial d'ascensions.",
+    body1: "Ja ets part de Peakadex. Comença registrant el teu primer cim i construeix el teu historial d'ascensions.",
     body2: "Explora el mapa, connecta amb els teus amics i puja graons a la classificació de la teva cordada.",
-    cta: "Anar a AziAtlas →",
+    cta: "Anar a Peakadex →",
   },
   en: {
-    subject: (n) => `Welcome to AziAtlas, ${n}!`,
+    subject: (n) => `Welcome to Peakadex, ${n}!`,
     h1: (n) => `Welcome, ${n}!`,
-    body1: "You're now part of AziAtlas. Start by logging your first summit and build your ascent history.",
+    body1: "You're now part of Peakadex. Start by logging your first summit and build your ascent history.",
     body2: "Explore the map, connect with friends, and climb the rankings in your rope team.",
-    cta: "Go to AziAtlas →",
+    cta: "Go to Peakadex →",
   },
   fr: {
-    subject: (n) => `Bienvenue sur AziAtlas, ${n} !`,
+    subject: (n) => `Bienvenue sur Peakadex, ${n} !`,
     h1: (n) => `Bienvenue, ${n} !`,
-    body1: "Tu fais maintenant partie d'AziAtlas. Commence par enregistrer ton premier sommet et construis ton historique d'ascensions.",
+    body1: "Tu fais maintenant partie de Peakadex. Commence par enregistrer ton premier sommet et construis ton historique d'ascensions.",
     body2: "Explore la carte, connecte-toi avec tes amis et grimpe dans le classement de ta cordée.",
-    cta: "Aller sur AziAtlas →",
+    cta: "Aller sur Peakadex →",
   },
   de: {
-    subject: (n) => `Willkommen bei AziAtlas, ${n}!`,
+    subject: (n) => `Willkommen bei Peakadex, ${n}!`,
     h1: (n) => `Willkommen, ${n}!`,
-    body1: "Du bist jetzt Teil von AziAtlas. Beginne damit, deinen ersten Gipfel einzutragen und deine Aufstiegshistorie aufzubauen.",
+    body1: "Du bist jetzt Teil von Peakadex. Beginne damit, deinen ersten Gipfel einzutragen und deine Aufstiegshistorie aufzubauen.",
     body2: "Erkunde die Karte, verbinde dich mit Freunden und erklimme die Rangliste deiner Seilschaft.",
-    cta: "Zu AziAtlas →",
+    cta: "Zu Peakadex →",
   },
 };
 
@@ -216,7 +216,7 @@ ${renderBrandHeader()}
         </tr>
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
           </td>
         </tr>
       </table>
@@ -236,41 +236,41 @@ ${renderBrandHeader()}
 
 const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: string) => string; body: (n: string) => string; codeLabel: string; cta: string; footer: (n: string) => string }> = {
   es: {
-    subject: (n) => `${n} te invita a AziAtlas`,
+    subject: (n) => `${n} te invita a Peakadex`,
     h1: (n) => `${n} te ha invitado`,
-    body: (n) => `Tu amigo/a <strong>${n}</strong> te invita a unirte a AziAtlas, la app para registrar tus ascensiones, explorar cimas y comparar tu progreso con tu cordada.`,
+    body: (n) => `Tu amigo/a <strong>${n}</strong> te invita a unirte a Peakadex, la app para registrar tus ascensiones, explorar cimas y comparar tu progreso con tu cordada.`,
     codeLabel: "Tu código de acceso",
     cta: "Crear mi cuenta →",
     footer: (n) => `Una vez registrado/a, busca a <strong>${n}</strong> en la sección <strong>Amigos</strong> y envíale una solicitud. El código caduca en <strong>7 días</strong> y es de un solo uso.`,
   },
   ca: {
-    subject: (n) => `${n} et convida a AziAtlas`,
+    subject: (n) => `${n} et convida a Peakadex`,
     h1: (n) => `${n} t'ha convidat`,
-    body: (n) => `El teu amic/ga <strong>${n}</strong> et convida a unir-te a AziAtlas, l'app per registrar les teves ascensions, explorar cims i comparar el teu progrés amb la teva cordada.`,
+    body: (n) => `El teu amic/ga <strong>${n}</strong> et convida a unir-te a Peakadex, l'app per registrar les teves ascensions, explorar cims i comparar el teu progrés amb la teva cordada.`,
     codeLabel: "El teu codi d'accés",
     cta: "Crear el meu compte →",
     footer: (n) => `Un cop registrat/da, cerca a <strong>${n}</strong> a la secció <strong>Amics</strong> i envia-li una sol·licitud. El codi caduca en <strong>7 dies</strong> i és d'un sol ús.`,
   },
   en: {
-    subject: (n) => `${n} invited you to AziAtlas`,
+    subject: (n) => `${n} invited you to Peakadex`,
     h1: (n) => `${n} has invited you`,
-    body: (n) => `Your friend <strong>${n}</strong> invites you to join AziAtlas, the app to log your ascents, explore summits, and compare your progress with your rope team.`,
+    body: (n) => `Your friend <strong>${n}</strong> invites you to join Peakadex, the app to log your ascents, explore summits, and compare your progress with your rope team.`,
     codeLabel: "Your access code",
     cta: "Create my account →",
     footer: (n) => `Once registered, search for <strong>${n}</strong> in the <strong>Friends</strong> section and send them a request. The code expires in <strong>7 days</strong> and can only be used once.`,
   },
   fr: {
-    subject: (n) => `${n} t'invite sur AziAtlas`,
+    subject: (n) => `${n} t'invite sur Peakadex`,
     h1: (n) => `${n} t'a invité(e)`,
-    body: (n) => `Ton ami(e) <strong>${n}</strong> t'invite à rejoindre AziAtlas, l'app pour enregistrer tes ascensions, explorer les sommets et comparer ta progression avec ta cordée.`,
+    body: (n) => `Ton ami(e) <strong>${n}</strong> t'invite à rejoindre Peakadex, l'app pour enregistrer tes ascensions, explorer les sommets et comparer ta progression avec ta cordée.`,
     codeLabel: "Ton code d'accès",
     cta: "Créer mon compte →",
     footer: (n) => `Une fois inscrit(e), recherche <strong>${n}</strong> dans la section <strong>Amis</strong> et envoie-lui une demande. Le code expire dans <strong>7 jours</strong> et n'est utilisable qu'une seule fois.`,
   },
   de: {
-    subject: (n) => `${n} lädt dich zu AziAtlas ein`,
+    subject: (n) => `${n} lädt dich zu Peakadex ein`,
     h1: (n) => `${n} hat dich eingeladen`,
-    body: (n) => `Dein Freund/deine Freundin <strong>${n}</strong> lädt dich ein, AziAtlas beizutreten — die App zum Erfassen deiner Aufstiege, Erkunden von Gipfeln und Vergleichen deines Fortschritts mit deiner Seilschaft.`,
+    body: (n) => `Dein Freund/deine Freundin <strong>${n}</strong> lädt dich ein, Peakadex beizutreten — die App zum Erfassen deiner Aufstiege, Erkunden von Gipfeln und Vergleichen deines Fortschritts mit deiner Seilschaft.`,
     codeLabel: "Dein Zugangscode",
     cta: "Konto erstellen →",
     footer: (n) => `Nach der Registrierung suche <strong>${n}</strong> im Bereich <strong>Freunde</strong> und sende eine Anfrage. Der Code läuft in <strong>7 Tagen</strong> ab und kann nur einmal verwendet werden.`,
@@ -327,7 +327,7 @@ ${renderBrandHeader()}
         </tr>
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
           </td>
         </tr>
       </table>
@@ -347,31 +347,31 @@ ${renderBrandHeader()}
 
 const FRIEND_REQUEST_COPY: Record<string, { subject: (n: string) => string; h1: string; body: (n: string) => string; cta: string }> = {
   es: {
-    subject: (n) => `${n} quiere unirse a tu cordada en AziAtlas 🧗`,
+    subject: (n) => `${n} quiere unirse a tu cordada en Peakadex 🧗`,
     h1: "Nueva solicitud de amistad",
     body: (n) => `<strong>${n}</strong> quiere añadirte a su cordada. Acepta la solicitud para ver sus ascensiones y aparecer juntos en la clasificación.`,
     cta: "Ver solicitud →",
   },
   ca: {
-    subject: (n) => `${n} vol unir-se a la teva cordada a AziAtlas 🧗`,
+    subject: (n) => `${n} vol unir-se a la teva cordada a Peakadex 🧗`,
     h1: "Nova sol·licitud d'amistat",
     body: (n) => `<strong>${n}</strong> vol afegir-te a la seva cordada. Accepta la sol·licitud per veure les seves ascensions i aparèixer junts a la classificació.`,
     cta: "Veure sol·licitud →",
   },
   en: {
-    subject: (n) => `${n} wants to join your rope team on AziAtlas 🧗`,
+    subject: (n) => `${n} wants to join your rope team on Peakadex 🧗`,
     h1: "New friend request",
     body: (n) => `<strong>${n}</strong> wants to add you to their rope team. Accept the request to see their ascents and appear together in the rankings.`,
     cta: "View request →",
   },
   fr: {
-    subject: (n) => `${n} veut rejoindre ta cordée sur AziAtlas 🧗`,
+    subject: (n) => `${n} veut rejoindre ta cordée sur Peakadex 🧗`,
     h1: "Nouvelle demande d'amitié",
     body: (n) => `<strong>${n}</strong> veut t'ajouter à sa cordée. Accepte la demande pour voir ses ascensions et apparaître ensemble dans le classement.`,
     cta: "Voir la demande →",
   },
   de: {
-    subject: (n) => `${n} möchte deiner Seilschaft auf AziAtlas beitreten 🧗`,
+    subject: (n) => `${n} möchte deiner Seilschaft auf Peakadex beitreten 🧗`,
     h1: "Neue Freundschaftsanfrage",
     body: (n) => `<strong>${n}</strong> möchte dich zu seiner Seilschaft hinzufügen. Nimm die Anfrage an, um seine Aufstiege zu sehen und gemeinsam in der Rangliste zu erscheinen.`,
     cta: "Anfrage ansehen →",
@@ -449,7 +449,7 @@ ${renderBrandHeader()}
         </tr>
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
           </td>
         </tr>
       </table>
@@ -508,7 +508,7 @@ ${renderBrandHeader()}
         <!-- Footer -->
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
           </td>
         </tr>
       </table>
@@ -601,7 +601,7 @@ ${renderBrandHeader()}
         </tr>
         <tr>
           <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} AziAtlas · <a href="${APP_URL}" style="color:#94a3b8;">www.aziatlas.com</a></p>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
           </td>
         </tr>
       </table>

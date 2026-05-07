@@ -1,8 +1,8 @@
-# AziTracks — Agent Instructions
+# Peakadex — Agent Instructions
 
 ## Deployment
 
-This app auto-deploys to production ([www.azitracks.com](https://www.azitracks.com)) on every push to `main` via Railway.
+This app auto-deploys to production ([www.peakadex.com](https://www.peakadex.com)) on every push to `main` via Railway.
 
 **After making any code changes, always commit and push:**
 

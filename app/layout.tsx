@@ -9,7 +9,7 @@ const nunito = Nunito({ subsets: ["latin"], weight: ["700", "800"], variable: "-
 const manrope = Manrope({ subsets: ["latin"], weight: ["800"], variable: "--font-manrope" });
 
 export const metadata: Metadata = {
-  title: "AziAtlas — Your Mountain Summit Map",
+  title: "Peakadex — Your Mountain Summit Map",
   description: "Track your mountain ascents with photos and people",
 };
 
