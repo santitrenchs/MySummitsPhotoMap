@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PeakadexLogo } from "@/components/brand/Logo";
 
 export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -25,13 +26,8 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
         <div className="mb-8 text-center">
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12 }}>
-            <svg width={32} height={32} viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 19 L8.5 7 L13 14 L17 9.5 L21 19 Z" fill="#dbeafe" stroke="#0369a1" strokeWidth="1.8" />
-              <path d="M17 9.5 L19 6.5" stroke="#0369a1" strokeWidth="1.8" />
-              <circle cx="19" cy="6" r="1.2" fill="#0369a1" />
-            </svg>
-            <span style={{ fontSize: 26, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em" }}>Peakadex</span>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+            <PeakadexLogo height={38} iconScale={1.0} />
           </div>
           <h1 className="text-xl font-bold text-gray-900">¿Olvidaste tu contraseña?</h1>
           <p className="mt-1 text-sm text-gray-500">

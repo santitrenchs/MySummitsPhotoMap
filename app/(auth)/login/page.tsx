@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
+import { PeakadexLogo } from "@/components/brand/Logo";
 
 function LoginForm() {
   const router = useRouter();
@@ -38,13 +39,8 @@ function LoginForm() {
   return (
     <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
       <div className="mb-8 text-center">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <svg width={32} height={32} viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 19 L8.5 7 L13 14 L17 9.5 L21 19 Z" fill="#dbeafe" stroke="#0369a1" strokeWidth="1.8" />
-            <path d="M17 9.5 L19 6.5" stroke="#0369a1" strokeWidth="1.8" />
-            <circle cx="19" cy="6" r="1.2" fill="#0369a1" />
-          </svg>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0369a1", letterSpacing: "-0.03em", margin: 0 }}>Peakadex</h1>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <PeakadexLogo height={38} iconScale={1.0} />
         </div>
         <p className="mt-3 text-sm text-gray-500">{t.auth_signInDesc}</p>
       </div>
