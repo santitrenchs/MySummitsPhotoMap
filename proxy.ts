@@ -49,5 +49,5 @@ export default auth((req) => {
 
 export const config = {
   // Run on all routes except static assets and Next.js internals
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public/|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|txt|xml|json)$).*)"],
 };
