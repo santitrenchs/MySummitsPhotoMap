@@ -178,6 +178,20 @@ R=$(req POST /api/v1/invitations -H "Content-Type: application/json" \
   -d '{"email":"not-an-email"}')
 check "POST /api/v1/invitations (invalid email → 400)" 400 "$(code "$R")" "$(body "$R")"
 
+# ── Config ────────────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}── Config ──${RESET}"
+
+R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/config")
+check "GET  /api/v1/config (no auth needed → 200)" 200 "$(code "$R")" "$(body "$R")"
+
+RARITIES_COUNT=$(body "$R" | grep -o '"id":"[^"]*"' | wc -l | tr -d ' ')
+LEVELS_COUNT=$(body "$R" | grep -o '"idx":[0-9]' | wc -l | tr -d ' ')
+if [ "$RARITIES_COUNT" -gt 0 ] && [ "$LEVELS_COUNT" -gt 0 ]; then
+  pass "GET  /api/v1/config returns $RARITIES_COUNT rarities and $LEVELS_COUNT levels"
+else
+  fail "GET  /api/v1/config missing data" "rarities=$RARITIES_COUNT levels=$LEVELS_COUNT"
+fi
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 TOTAL=$((PASS_COUNT + FAIL_COUNT + SKIP_COUNT))
 echo -e "\n${BOLD}Results: ${GREEN}$PASS_COUNT passed${RESET} · ${RED}$FAIL_COUNT failed${RESET} · ${GRAY}$SKIP_COUNT skipped${RESET} · $TOTAL total\n"
