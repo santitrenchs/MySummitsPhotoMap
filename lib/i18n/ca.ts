@@ -226,9 +226,9 @@ export const ca: Dict = {
   home_altZone1: "Baixa muntanya", home_altZone2: "Mitja muntanya",
   home_altZone3: "Alta muntanya", home_altZone4: "Alta muntanya tècnica",
   home_altZone5: "Expedició", home_altZone6: "Expedició extrema",
-  home_onboarding_title: "La teva aventura comença aquí 🏔️",
-  home_onboarding_sub: "Registra el teu primer cim per veure el teu progrés i competir amb els teus amics.",
-  home_onboarding_cta: "Registrar primera ascensió",
+  home_onboarding_title: "Cada cim guarda una història.",
+  home_onboarding_sub: "Captura la teva primera ascensió i comença a escriure la teva.",
+  home_onboarding_cta: "Capturar primera ascensió →",
   home_chartTitle: "Últims 6 mesos", home_chartMeters: "metres ascendits",
   home_rarityChartTitle: "Cims per raresa",
 

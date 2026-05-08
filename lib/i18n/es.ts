@@ -224,9 +224,9 @@ export const es: Dict = {
   home_altZone1: "Baja montaña", home_altZone2: "Media montaña",
   home_altZone3: "Alta montaña", home_altZone4: "Alta montaña técnica",
   home_altZone5: "Expedición", home_altZone6: "Expedición extrema",
-  home_onboarding_title: "Tu aventura empieza aquí 🏔️",
-  home_onboarding_sub: "Registra tu primera cima para ver tu progreso y competir con tus amigos.",
-  home_onboarding_cta: "Registrar primera ascensión",
+  home_onboarding_title: "Cada cima guarda una historia.",
+  home_onboarding_sub: "Captura tu primera ascensión y empieza a escribir la tuya.",
+  home_onboarding_cta: "Capturar primera ascensión →",
   home_chartTitle: "Últimos 6 meses", home_chartMeters: "metros ascendidos",
   home_rarityChartTitle: "Cimas por rareza",
 
