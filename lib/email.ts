@@ -149,11 +149,11 @@ const WELCOME_COPY: Record<string, { subject: (n: string) => string; h1: (n: str
     cta: "Ir a Peakadex →",
   },
   ca: {
-    subject: (n) => `Benvingut/da a Peakadex, ${n}!`,
-    h1: (n) => `Benvingut/da, ${n}!`,
-    body1: "Ja ets part de Peakadex. Comença registrant el teu primer cim i construeix el teu historial d'ascensions.",
-    body2: "Explora el mapa, connecta amb els teus amics i puja graons a la classificació de la teva cordada.",
-    cta: "Anar a Peakadex →",
+    subject: (n) => `Benvingut/da a Peakadex, ${n}. La teva història comença aquí`,
+    h1: (n) => `Benvingut/da, ${n}`,
+    body1: `Cada cim té una història.<br>I avui comença la teva.<br><br>Ja formes part de Peakadex. Registra la teva primera ascensió i comença a escriure el teu camí a la muntanya.`,
+    body2: `Explora nous horitzons, descobreix cims i comparteix cada pas amb la teva cordada.<br>La muntanya t'espera.`,
+    cta: "Començar l'aventura →",
   },
   en: {
     subject: (n) => `Welcome to Peakadex, ${n}!`,
@@ -248,7 +248,7 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
     h1: (n) => `${n} vol compartir la muntanya amb tu`,
     body: (_n) => `Cada cim té una història.<br>Ara és el teu moment de començar la teva. Uneix-te a Peakadex, registra les teves ascensions i viu l'aventura amb la teva cordada.`,
     codeLabel: "El teu codi d'accés",
-    cta: "Crear el meu compte →",
+    cta: "Unir-me a Peakadex →",
     footer: (n) => `Un cop registrat/da, cerca a <strong>${n}</strong> a la secció <strong>Amics</strong> i envia-li una sol·licitud. El codi caduca en <strong>7 dies</strong> i és d'un sol ús.`,
   },
   en: {
@@ -353,10 +353,10 @@ const FRIEND_REQUEST_COPY: Record<string, { subject: (n: string) => string; h1: 
     cta: "Ver solicitud →",
   },
   ca: {
-    subject: (n) => `${n} vol unir-se a la teva cordada a Peakadex 🧗`,
-    h1: "Nova sol·licitud d'amistat",
-    body: (n) => `<strong>${n}</strong> vol afegir-te a la seva cordada. Accepta la sol·licitud per veure les seves ascensions i aparèixer junts a la classificació.`,
-    cta: "Veure sol·licitud →",
+    subject: (n) => `${n} vol compartir camí amb tu a Peakadex`,
+    h1: "Una nova cordada t'espera",
+    body: (n) => `<strong>${n}</strong> vol sumar-te a la seva cordada.<br><br>Cada cim és millor quan es comparteix. Accepta la sol·licitud i segueix les seves ascensions, compareu el vostre progrés i avanceu junts cap a nous reptes.`,
+    cta: "Unir-me a la cordada →",
   },
   en: {
     subject: (n) => `${n} wants to join your rope team on Peakadex 🧗`,
@@ -386,10 +386,10 @@ const FRIEND_ACCEPTED_COPY: Record<string, { subject: (n: string) => string; h1:
     cta: "Ver amigos →",
   },
   ca: {
-    subject: (n) => `${n} ha acceptat la teva sol·licitud d'amistat`,
-    h1: "Ja sou cordada!",
-    body: (n) => `<strong>${n}</strong> ha acceptat la teva sol·licitud. Ja podeu veure les vostres ascensions i competir junts a la classificació.`,
-    cta: "Veure amics →",
+    subject: (n) => `${n} ja forma part de la teva cordada`,
+    h1: "La cordada creix",
+    body: (n) => `<strong>${n}</strong> ha acceptat la teva sol·licitud.<br><br>Un nou company de camí. Nous cims a l'horitzó.<br>Compartiu ascensions, desafieu-vos i escriviu plegats noves històries a la muntanya.`,
+    cta: "Veure la cordada →",
   },
   en: {
     subject: (n) => `${n} accepted your friend request`,
@@ -526,33 +526,33 @@ ${renderBrandHeader()}
   console.log("[email] friend request sent OK, id:", data?.id);
 }
 
-const PHOTO_TAG_COPY: Record<string, { subject: (n: string) => string; h1: (n: string) => string; body: (n: string, peak: string) => string; cta: string }> = {
+const PHOTO_TAG_COPY: Record<string, { subject: (n: string, peak: string) => string; h1: (n: string) => string; body: (n: string, peak: string) => string; cta: string }> = {
   es: {
-    subject: (n) => `${n} te ha etiquetado en una foto`,
+    subject: (n, _peak) => `${n} te ha etiquetado en una foto`,
     h1: (n) => `${n} te ha etiquetado`,
     body: (n, peak) => `<strong>${n}</strong> te ha etiquetado en una foto de la ascensión a <strong>${peak}</strong>.`,
     cta: "Ver foto →",
   },
   ca: {
-    subject: (n) => `${n} t'ha etiquetat en una foto`,
-    h1: (n) => `${n} t'ha etiquetat`,
-    body: (n, peak) => `<strong>${n}</strong> t'ha etiquetat en una foto de l'ascensió a <strong>${peak}</strong>.`,
-    cta: "Veure foto →",
+    subject: (n, peak) => `${n} ha fet tornar un record a ${peak}`,
+    h1: (_n) => `Un record compartit`,
+    body: (n, peak) => `<strong>${n}</strong> t'ha etiquetat en una foto de l'ascensió a <strong>${peak}</strong>.<br><br>Moments que tornen. Passes que deixen empremta.<br>Reviu aquell dia i guarda'l com part del teu camí a la muntanya.`,
+    cta: "Veure la foto →",
   },
   en: {
-    subject: (n) => `${n} tagged you in a photo`,
+    subject: (n, _peak) => `${n} tagged you in a photo`,
     h1: (n) => `${n} tagged you`,
     body: (n, peak) => `<strong>${n}</strong> tagged you in a photo from the ascent of <strong>${peak}</strong>.`,
     cta: "View photo →",
   },
   fr: {
-    subject: (n) => `${n} t'a tagué(e) dans une photo`,
+    subject: (n, _peak) => `${n} t'a tagué(e) dans une photo`,
     h1: (n) => `${n} t'a tagué(e)`,
     body: (n, peak) => `<strong>${n}</strong> t'a tagué(e) dans une photo de l'ascension de <strong>${peak}</strong>.`,
     cta: "Voir la photo →",
   },
   de: {
-    subject: (n) => `${n} hat dich in einem Foto markiert`,
+    subject: (n, _peak) => `${n} hat dich in einem Foto markiert`,
     h1: (n) => `${n} hat dich markiert`,
     body: (n, peak) => `<strong>${n}</strong> hat dich in einem Foto des Aufstiegs auf <strong>${peak}</strong> markiert.`,
     cta: "Foto ansehen →",
@@ -572,7 +572,7 @@ export async function sendPhotoTagEmail(
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: copy.subject(taggerName),
+    subject: copy.subject(taggerName, peakName),
     html: `
 <!DOCTYPE html>
 <html lang="${locale}">
