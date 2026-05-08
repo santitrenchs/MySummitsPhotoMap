@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AscentsClient } from "@/components/ascents/AscentsClient";
+import { OpenAscentModalButton } from "@/components/ascents/OpenAscentModalButton";
 import { getServerT, getLocale } from "@/lib/i18n/server";
 import { prisma } from "@/lib/db/client";
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
@@ -158,12 +159,10 @@ export default async function AscentsPage() {
     <div style={{ maxWidth: 520, margin: "0 auto", padding: "28px 12px" }}>
       <div className="ascents-page-header" style={{ display: "none" }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: 0 }}>{t.nav_ascents}</h1>
-        <Link
-          href="/ascents/new"
-          style={{ padding: "8px 16px", background: "#0369a1", color: "white", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none" }}
-        >
-          {t.ascents_newAscent}
-        </Link>
+        <OpenAscentModalButton
+          label={t.ascents_newAscent}
+          style={{ padding: "8px 16px", background: "#0369a1", color: "white", borderRadius: 8, fontSize: 13, fontWeight: 600 }}
+        />
       </div>
 
       {ascents.length === 0 ? (
@@ -174,15 +173,10 @@ export default async function AscentsPage() {
           <p style={{ fontSize: 32, margin: "0 0 8px" }}>🏔</p>
           <p style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", margin: 0 }}>{t.ascents_emptyTitle}</p>
           <p style={{ fontSize: 13, color: "#9ca3af", margin: "4px 0 16px" }}>{t.ascents_emptySub}</p>
-          <Link
-            href="/ascents/new"
-            style={{
-              padding: "8px 16px", background: "#0369a1", color: "white",
-              borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none",
-            }}
-          >
-            {t.nav_logAscent}
-          </Link>
+          <OpenAscentModalButton
+            label={t.nav_logAscent}
+            style={{ padding: "8px 16px", background: "#0369a1", color: "white", borderRadius: 8, fontSize: 13, fontWeight: 600 }}
+          />
         </div>
       ) : (
         <Suspense>

@@ -771,12 +771,15 @@ export function HomeClient({ data, locale, t }: {
               <p style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 600, color: "#374151" }}>
                 {t.home_noAscents}
               </p>
-              <Link href="/ascents/new" style={{
-                display: "inline-block", background: "#0369a1", color: "white",
-                padding: "9px 20px", borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: "none",
-              }}>
+              <button
+                onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal"))}
+                style={{
+                  display: "inline-block", background: "#0369a1", color: "white",
+                  padding: "9px 20px", borderRadius: 10, fontSize: 13, fontWeight: 600,
+                  border: "none", cursor: "pointer",
+                }}>
                 {t.home_logFirst}
-              </Link>
+              </button>
             </div>
           </div>
         ) : (
