@@ -274,6 +274,7 @@ export function FriendsClient({
   async function sendInvite() {
     const email = inviteEmail.trim().toLowerCase();
     if (!email) return;
+    if (!email.includes("@") || !email.includes(".")) { setInviteStatus("error"); return; }
     setInviteStatus("sending");
     try {
       const res = await fetch("/api/invitations", {
@@ -330,7 +331,7 @@ export function FriendsClient({
               border: "1px solid #e5e7eb", borderRadius: 8,
               fontSize: 16, outline: "none", background: "#f9fafb",
             }}
-            onFocus={(e) => (e.target.style.borderColor = "#0369a1")}
+            onFocus={(e) => (e.target.style.borderColor = "#DC2626")}
             onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
           />
           <Btn onClick={sendInvite} disabled={inviteStatus === "sending" || !inviteEmail.trim()}>
@@ -387,7 +388,7 @@ export function FriendsClient({
               border: "1px solid #e5e7eb", borderRadius: 10,
               fontSize: 16, outline: "none", background: "#f9fafb",
             }}
-            onFocus={(e) => (e.target.style.borderColor = "#0369a1")}
+            onFocus={(e) => (e.target.style.borderColor = "#DC2626")}
             onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
           />
           <svg style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }}
