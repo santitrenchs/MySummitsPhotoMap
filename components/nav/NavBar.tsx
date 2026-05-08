@@ -3,17 +3,41 @@
 import Link from "next/link";
 import { PeakadexLogo } from "@/components/brand/Logo";
 
+// index 0 = Home (compass), 1 = Map (atlas), 2 = Ascents (history)
 function SpriteIcon({ index, size = 22, active = false }: { index: number; size?: number; active?: boolean }) {
+  const opacity = active ? 1 : 0.45;
+  const style: React.CSSProperties = { transition: "opacity 150ms ease", opacity, flexShrink: 0 };
+
+  if (index === 0) return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
+      <circle cx="12" cy="12" r="8.5" stroke="#0F2233" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="12" cy="3" r="1.4" fill="#E53935" stroke="#0F2233" strokeWidth="1.5"/>
+      <path d="M15.9 7.8L13.5 14.1L8.1 16.2L10.5 9.9L15.9 7.8Z" stroke="#0F2233" strokeWidth="2" strokeLinejoin="round"/>
+      <path d="M15.9 7.8L13.5 14.1L11.9 12.1L15.9 7.8Z" fill="#E53935"/>
+      <path d="M8.1 16.2L10.5 9.9L12.1 11.9L8.1 16.2Z" fill="#CBD5E1"/>
+    </svg>
+  );
+
+  if (index === 1) return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
+      <path d="M3.5 5.5L8.5 3.5L15.5 6.2L20.5 4.2V18.5L15.5 20.5L8.5 17.8L3.5 19.8V5.5Z" stroke="#0F2233" strokeWidth="2" strokeLinejoin="round"/>
+      <path d="M8.5 3.5V17.8" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M15.5 6.2V20.5" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M6.5 14.5C8.2 12.8 9.6 12.1 11.2 13.1C12.8 14.1 13.6 13.8 15 12.4" stroke="#0F2233" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="2.5 2.5"/>
+      <circle cx="17.2" cy="10.2" r="1.4" fill="#E53935" stroke="#0F2233" strokeWidth="1.5"/>
+    </svg>
+  );
+
+  // index 2 — Ascents history
   return (
-    <div style={{
-      width: size, height: size, flexShrink: 0,
-      backgroundImage: "url('/brand/iconos.png')",
-      backgroundSize: `${size}px ${size * 5}px`,
-      backgroundPosition: `0 ${-(index * size * 1.25 + size * 0.125)}px`,
-      backgroundRepeat: "no-repeat",
-      opacity: active ? 1 : 0.5,
-      transition: "opacity 150ms ease",
-    }} />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
+      <path d="M3.5 13.5L8.6 7.2L12 11.3L14.3 8.5L20.5 16.5H3.5V13.5Z" stroke="#0F2233" strokeWidth="2" strokeLinejoin="round"/>
+      <path d="M4.5 16.5H20.5L17.7 13.1L15.8 15.2L12 11.3L9.2 14.7L7.6 12.8L4.5 16.5Z" fill="#64748B"/>
+      <circle cx="5" cy="20" r="1" fill="#0F2233"/>
+      <path d="M9 20H20" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="5" cy="23" r="1" fill="#0F2233"/>
+      <path d="M9 23H17" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
   );
 }
 
