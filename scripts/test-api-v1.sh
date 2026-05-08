@@ -111,6 +111,17 @@ echo -e "\n${BOLD}── Photos ──${RESET}"
 R=$(req DELETE "/api/v1/photos/00000000-0000-0000-0000-000000000000")
 check "DELETE /api/v1/photos/[bad-id] → 404" 404 "$(code "$R")" "$(body "$R")"
 
+R=$(req GET "/api/v1/photos/00000000-0000-0000-0000-000000000000/persons")
+check "GET  /api/v1/photos/[bad-id]/persons → 404" 404 "$(code "$R")" "$(body "$R")"
+
+R=$(req POST "/api/v1/photos/00000000-0000-0000-0000-000000000000/persons" \
+  -H "Content-Type: application/json" -d '{"userId":"00000000-0000-0000-0000-000000000000"}')
+check "POST /api/v1/photos/[bad-id]/persons → 404" 404 "$(code "$R")" "$(body "$R")"
+
+R=$(req POST "/api/v1/photos/00000000-0000-0000-0000-000000000000/persons" \
+  -H "Content-Type: application/json" -d '{"userId":"not-a-uuid"}')
+check "POST /api/v1/photos/[bad-id]/persons (bad userId → 400)" 400 "$(code "$R")" "$(body "$R")"
+
 # ── Peaks ─────────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}── Peaks ──${RESET}"
 
@@ -122,6 +133,17 @@ check "GET  /api/v1/peaks?q=Mont" 200 "$(code "$R")" "$(body "$R")"
 
 R=$(req GET "/api/v1/peaks?north=43&south=42&east=3&west=0")
 check "GET  /api/v1/peaks (viewport bounds)" 200 "$(code "$R")" "$(body "$R")"
+
+PEAK_ID=$(body "$(req GET '/api/v1/peaks?q=Everest')" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+if [ -n "$PEAK_ID" ]; then
+  R=$(req GET "/api/v1/peaks/$PEAK_ID")
+  check "GET  /api/v1/peaks/[id]" 200 "$(code "$R")" "$(body "$R")"
+else
+  skip "GET  /api/v1/peaks/[id] — no peaks found"
+fi
+
+R=$(req GET "/api/v1/peaks/00000000-0000-0000-0000-000000000000")
+check "GET  /api/v1/peaks/[bad-id] → 404" 404 "$(code "$R")" "$(body "$R")"
 
 # ── Home & Feed ───────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}── Home & Feed ──${RESET}"
@@ -137,6 +159,12 @@ check "GET  /api/v1/feed?cursor=..." 200 "$(code "$R")" "$(body "$R")"
 
 R=$(req POST /api/v1/feed/seen -H "Content-Type: application/json" -d '{"ascentIds":[]}')
 check "POST /api/v1/feed/seen (empty → 200)" 200 "$(code "$R")" "$(body "$R")"
+
+# ── Persons (tagging candidates) ─────────────────────────────────────────────
+echo -e "\n${BOLD}── Persons ──${RESET}"
+
+R=$(req GET /api/v1/persons)
+check "GET  /api/v1/persons" 200 "$(code "$R")" "$(body "$R")"
 
 # ── Friends ───────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}── Friends ──${RESET}"
