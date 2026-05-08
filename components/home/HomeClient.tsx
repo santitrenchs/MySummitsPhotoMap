@@ -734,16 +734,9 @@ export function HomeClient({ data, locale, t }: {
             <p style={{ margin: "0 0 14px", fontSize: 13, color: "#6b7280" }}>
               {t.home_motivationNoFriendsSub}
             </p>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
               <Link href="/friends" style={{
                 display: "inline-block", background: "#0369a1", color: "white",
-                padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: "none",
-              }}>
-                {t.home_addFriends}
-              </Link>
-              <Link href="/friends" style={{
-                display: "inline-block", background: "white", color: "#0369a1",
-                border: "1.5px solid #bfdbfe",
                 padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: "none",
               }}>
                 {t.home_inviteFriends}
