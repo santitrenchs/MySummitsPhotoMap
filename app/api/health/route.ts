@@ -14,7 +14,7 @@ export async function GET() {
 
   try {
     await prisma.$queryRaw`SELECT 1`;
-    return NextResponse.json({ ok: true, db: masked, version, r2Bucket: process.env.R2_BUCKET_NAME ?? "(not set)" });
+    return NextResponse.json({ ok: true, db: masked, version });
   } catch (err) {
     return NextResponse.json(
       { ok: false, db: masked, version, error: String(err) },
