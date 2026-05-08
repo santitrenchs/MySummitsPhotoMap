@@ -238,7 +238,7 @@ ${renderBrandHeader()}
 const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: string) => string; body: (n: string) => string; codeLabel: string; cta: string; footer: (n: string) => string }> = {
   es: {
     subject: (n) => `${n} te invita a Peakadex`,
-    h1: (n) => `${n} quiere compartir la montaña contigo`,
+    h1: (n) => `${n} te invita a Peakadex`,
     body: (_n) => `Cada cima tiene una historia.<br>Ahora es tu momento de empezar la tuya. Únete a Peakadex, registra tus ascensiones y vive la aventura con tu cordada.`,
     codeLabel: "Tu código de acceso",
     cta: "Crear mi cuenta →",
@@ -246,7 +246,7 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
   },
   ca: {
     subject: (n) => `${n} t'invita a Peakadex`,
-    h1: (n) => `${n} vol compartir la muntanya amb tu`,
+    h1: (n) => `${n} t'invita a Peakadex`,
     body: (_n) => `Cada cim té una història.<br>Ara és el teu moment de començar la teva. Uneix-te a Peakadex, registra les teves ascensions i viu l'aventura amb la teva cordada.`,
     codeLabel: "El teu codi d'accés",
     cta: "Unir-me a Peakadex →",
@@ -254,7 +254,7 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
   },
   en: {
     subject: (n) => `${n} invites you to Peakadex`,
-    h1: (n) => `${n} wants to share the mountain with you`,
+    h1: (n) => `${n} invites you to Peakadex`,
     body: (_n) => `Every summit has a story.<br>Now it's your turn to start yours. Join Peakadex, log your ascents and live the adventure with your rope team.`,
     codeLabel: "Your access code",
     cta: "Create my account →",
@@ -262,7 +262,7 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
   },
   fr: {
     subject: (n) => `${n} t'invite sur Peakadex`,
-    h1: (n) => `${n} veut partager la montagne avec toi`,
+    h1: (n) => `${n} t'invite sur Peakadex`,
     body: (_n) => `Chaque sommet a une histoire.<br>C'est maintenant ton tour de commencer la tienne. Rejoins Peakadex, enregistre tes ascensions et vis l'aventure avec ta cordée.`,
     codeLabel: "Ton code d'accès",
     cta: "Créer mon compte →",
@@ -270,7 +270,7 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
   },
   de: {
     subject: (n) => `${n} lädt dich zu Peakadex ein`,
-    h1: (n) => `${n} möchte den Berg mit dir teilen`,
+    h1: (n) => `${n} lädt dich zu Peakadex ein`,
     body: (_n) => `Jeder Gipfel hat eine Geschichte.<br>Jetzt ist dein Moment, deine eigene zu beginnen. Tritt Peakadex bei, erfasse deine Aufstiege und erlebe das Abenteuer mit deiner Seilschaft.`,
     codeLabel: "Dein Zugangscode",
     cta: "Konto erstellen →",
