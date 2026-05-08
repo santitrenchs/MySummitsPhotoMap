@@ -1,6 +1,5 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { Suspense } from "react";
 import { AscentsClient } from "@/components/ascents/AscentsClient";
 import { OpenAscentModalButton } from "@/components/ascents/OpenAscentModalButton";
@@ -165,43 +164,9 @@ export default async function AscentsPage() {
         />
       </div>
 
-      {ascents.length === 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{
-            textAlign: "center", padding: "64px 0",
-            border: "1px dashed #e5e7eb", borderRadius: 12,
-          }}>
-            <p style={{ fontSize: 32, margin: "0 0 8px" }}>🏔</p>
-            <p style={{ fontSize: 14, fontWeight: 500, color: "#6b7280", margin: 0 }}>{t.ascents_emptyTitle}</p>
-            <p style={{ fontSize: 13, color: "#9ca3af", margin: "4px 0 16px" }}>{t.ascents_emptySub}</p>
-            <OpenAscentModalButton
-              label={t.nav_logAscent}
-              style={{ padding: "8px 16px", background: "#0369a1", color: "white", borderRadius: 8, fontSize: 13, fontWeight: 600 }}
-            />
-          </div>
-          {friendUserIds.length === 0 && (
-            <div style={{
-              background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
-              border: "1.5px dashed #bfdbfe", borderRadius: 16, padding: "32px 22px",
-              textAlign: "center",
-            }}>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
-              <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#111827" }}>{t.home_motivationNoFriends}</p>
-              <p style={{ margin: "0 0 16px", fontSize: 13, color: "#6b7280" }}>{t.home_motivationNoFriendsSub}</p>
-              <Link href="/friends" style={{
-                display: "inline-block", background: "#0369a1", color: "white",
-                padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: "none",
-              }}>
-                {t.home_inviteFriends}
-              </Link>
-            </div>
-          )}
-        </div>
-      ) : (
-        <Suspense>
-          <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} currentUserName={session.user.name ?? ""} currentUserId={session.user.id} hasFriends={friendUserIds.length > 0} />
-        </Suspense>
-      )}
+      <Suspense>
+        <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} currentUserName={session.user.name ?? ""} currentUserId={session.user.id} hasFriends={friendUserIds.length > 0} />
+      </Suspense>
     </div>
   );
 }
