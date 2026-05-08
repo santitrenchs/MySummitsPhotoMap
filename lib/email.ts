@@ -244,9 +244,9 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
     footer: (n) => `Una vez registrado/a, busca a <strong>${n}</strong> en la sección <strong>Amigos</strong> y envíale una solicitud. El código caduca en <strong>7 días</strong> y es de un solo uso.`,
   },
   ca: {
-    subject: (n) => `${n} et convida a Peakadex`,
-    h1: (n) => `${n} t'ha convidat`,
-    body: (n) => `El teu amic/ga <strong>${n}</strong> et convida a unir-te a Peakadex, l'app per registrar les teves ascensions, explorar cims i comparar el teu progrés amb la teva cordada.`,
+    subject: (n) => `${n} vol compartir la muntanya amb tu`,
+    h1: (n) => `${n} vol compartir la muntanya amb tu`,
+    body: (_n) => `Cada cim té una història.<br>Ara és el teu moment de començar la teva. Uneix-te a Peakadex, registra les teves ascensions i viu l'aventura amb la teva cordada.`,
     codeLabel: "El teu codi d'accés",
     cta: "Crear el meu compte →",
     footer: (n) => `Un cop registrat/da, cerca a <strong>${n}</strong> a la secció <strong>Amics</strong> i envia-li una sol·licitud. El codi caduca en <strong>7 dies</strong> i és d'un sol ús.`,
