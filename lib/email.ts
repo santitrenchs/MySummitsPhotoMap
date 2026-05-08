@@ -3,6 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM ?? "Peakadex <noreply@mail.peakadex.com>";
 const APP_URL = (
+  process.env.APP_URL ??
   process.env.NEXTAUTH_URL ??
   process.env.AUTH_URL ??
   "https://www.peakadex.com"
