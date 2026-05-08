@@ -564,6 +564,7 @@ export async function sendPhotoTagEmail(
   peakName: string,
   ascentId: string,
   locale = "es",
+  imageUrl?: string,
 ) {
   const copy = PHOTO_TAG_COPY[locale] ?? PHOTO_TAG_COPY.es;
   const photoUrl = `${APP_URL}/ascents/${ascentId}`;
@@ -581,8 +582,9 @@ ${renderEmailHead()}
     <tr><td align="center">
       <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
 ${renderBrandHeader()}
+        ${imageUrl ? `<tr><td style="padding:0;"><img src="${imageUrl}" width="480" alt="" style="display:block;width:100%;max-height:360px;object-fit:cover;border:0;"></td></tr>` : ""}
         <tr>
-          <td style="padding:32px;">
+          <td style="padding:28px 32px 32px;">
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body(taggerName, peakName)}</p>
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>

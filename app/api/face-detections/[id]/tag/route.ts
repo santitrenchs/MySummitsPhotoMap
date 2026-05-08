@@ -37,6 +37,7 @@ export async function POST(
         detection.photo.ascent.peak.name,
         detection.photo.ascent.id,
         taggedUser.language,
+        detection.photo.url,
       ).catch((e) => console.error("[face-tag] email failed:", e));
     }
   }

@@ -66,7 +66,7 @@ export async function POST(
           select: { email: true, activityNotifications: true, language: true },
         }).then((u) => {
           if (u?.activityNotifications) {
-            sendPhotoTagEmail(u.email, taggerName, photo.ascent!.peak.name, photo.ascent!.id, u.language)
+            sendPhotoTagEmail(u.email, taggerName, photo.ascent!.peak.name, photo.ascent!.id, u.language, photo.url)
               .catch((e) => console.error("[faces] tag email failed:", e));
           }
         }).catch(() => {});
