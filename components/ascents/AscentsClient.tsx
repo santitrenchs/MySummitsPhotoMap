@@ -6,6 +6,7 @@ import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { AscentCard } from "@/components/cards/AscentCard";
 import { GroupedAscentCard } from "@/components/cards/GroupedAscentCard";
+import Link from "next/link";
 
 export type AscentData = {
   id: string;
@@ -652,11 +653,33 @@ export function AscentsClient({
 
       {/* ── Feed ──────────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
+        viewChip === "friends" && !ascents.some((a) => !a.isOwn) ? (
+          <div style={{
+            background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
+            border: "1.5px dashed #bfdbfe", borderRadius: 16, padding: "32px 22px",
+            textAlign: "center", marginTop: 16,
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
+            <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#111827" }}>
+              {t.home_motivationNoFriends}
+            </p>
+            <p style={{ margin: "0 0 16px", fontSize: 13, color: "#6b7280" }}>
+              {t.home_motivationNoFriendsSub}
+            </p>
+            <Link href="/friends" style={{
+              display: "inline-block", background: "#0369a1", color: "white",
+              padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: "none",
+            }}>
+              {t.home_inviteFriends}
+            </Link>
+          </div>
+        ) : (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
           <p style={{ fontSize: 48, margin: "0 0 12px" }}>🔍</p>
           <p style={{ fontSize: 15, fontWeight: 600, color: "#374151", margin: "0 0 4px" }}>{t.ascents_noResults}</p>
           <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>{t.ascents_noResultsSub}</p>
         </div>
+        )
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
           {groups.map((group, i) => {
