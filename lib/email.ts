@@ -3,19 +3,18 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM ?? "Peakadex <noreply@mail.peakadex.com>";
 const APP_URL = (
+  process.env.APP_URL ??
   process.env.NEXTAUTH_URL ??
   process.env.AUTH_URL ??
   "https://www.peakadex.com"
 ).replace(/\/$/, "");
 
-const FONT_STACK = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+const FONT_STACK = "Arial,Helvetica,sans-serif";
 
 function renderEmailHead() {
   return `<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>`;
 }
 
@@ -25,11 +24,14 @@ function renderBrandHeader() {
           <td style="padding:24px 32px 20px;background:#ffffff;border-bottom:1px solid #f1f5f9;text-align:center;">
             <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 auto;">
               <tr>
-                <td style="vertical-align:middle;padding-right:10px;">
-                  <img src="https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev/logo-email.png" width="42" height="42" alt="" style="display:block;border:0;">
+                <td style="vertical-align:middle;">
+                  <span style="font-family:${FONT_STACK};font-size:28px;font-weight:800;letter-spacing:-0.02em;color:#0D2538;">peak</span>
+                </td>
+                <td style="vertical-align:middle;padding:0 4px;">
+                  <img src="https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev/logo-email-v2.png" width="30" height="30" alt="" style="display:block;border:0;">
                 </td>
                 <td style="vertical-align:middle;">
-                  <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#0369a1;font-family:${FONT_STACK};">Peakadex</span>
+                  <span style="font-family:${FONT_STACK};font-size:28px;font-weight:800;letter-spacing:-0.02em;color:#8a9bb0;">adex</span>
                 </td>
               </tr>
             </table>
@@ -99,7 +101,6 @@ ${renderEmailHead()}
 ${renderBrandHeader()}
         <tr>
           <td style="padding:32px;">
-            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1}</h1>
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body}</p>
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
@@ -149,11 +150,11 @@ const WELCOME_COPY: Record<string, { subject: (n: string) => string; h1: (n: str
     cta: "Ir a Peakadex →",
   },
   ca: {
-    subject: (n) => `Benvingut/da a Peakadex, ${n}!`,
-    h1: (n) => `Benvingut/da, ${n}!`,
-    body1: "Ja ets part de Peakadex. Comença registrant el teu primer cim i construeix el teu historial d'ascensions.",
-    body2: "Explora el mapa, connecta amb els teus amics i puja graons a la classificació de la teva cordada.",
-    cta: "Anar a Peakadex →",
+    subject: (n) => `Benvingut/da a Peakadex, ${n}. La teva història comença aquí`,
+    h1: (n) => `Benvingut/da, ${n}`,
+    body1: `Cada cim té una història.<br>I avui comença la teva.<br><br>Ja formes part de Peakadex. Registra la teva primera ascensió i comença a escriure el teu camí a la muntanya.`,
+    body2: `Explora nous horitzons, descobreix cims i comparteix cada pas amb la teva cordada.<br>La muntanya t'espera.`,
+    cta: "Començar l'aventura →",
   },
   en: {
     subject: (n) => `Welcome to Peakadex, ${n}!`,
@@ -237,40 +238,40 @@ ${renderBrandHeader()}
 const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: string) => string; body: (n: string) => string; codeLabel: string; cta: string; footer: (n: string) => string }> = {
   es: {
     subject: (n) => `${n} te invita a Peakadex`,
-    h1: (n) => `${n} te ha invitado`,
-    body: (n) => `Tu amigo/a <strong>${n}</strong> te invita a unirte a Peakadex, la app para registrar tus ascensiones, explorar cimas y comparar tu progreso con tu cordada.`,
+    h1: (n) => `${n} te invita a Peakadex`,
+    body: (_n) => `Cada cima tiene una historia.<br>Ahora es tu momento de empezar la tuya. Únete a Peakadex, registra tus ascensiones y vive la aventura con tu cordada.`,
     codeLabel: "Tu código de acceso",
     cta: "Crear mi cuenta →",
     footer: (n) => `Una vez registrado/a, busca a <strong>${n}</strong> en la sección <strong>Amigos</strong> y envíale una solicitud. El código caduca en <strong>7 días</strong> y es de un solo uso.`,
   },
   ca: {
-    subject: (n) => `${n} et convida a Peakadex`,
-    h1: (n) => `${n} t'ha convidat`,
-    body: (n) => `El teu amic/ga <strong>${n}</strong> et convida a unir-te a Peakadex, l'app per registrar les teves ascensions, explorar cims i comparar el teu progrés amb la teva cordada.`,
+    subject: (n) => `${n} t'invita a Peakadex`,
+    h1: (n) => `${n} t'invita a Peakadex`,
+    body: (_n) => `Cada cim té una història.<br>Ara és el teu moment de començar la teva. Uneix-te a Peakadex, registra les teves ascensions i viu l'aventura amb la teva cordada.`,
     codeLabel: "El teu codi d'accés",
-    cta: "Crear el meu compte →",
+    cta: "Unir-me a Peakadex →",
     footer: (n) => `Un cop registrat/da, cerca a <strong>${n}</strong> a la secció <strong>Amics</strong> i envia-li una sol·licitud. El codi caduca en <strong>7 dies</strong> i és d'un sol ús.`,
   },
   en: {
-    subject: (n) => `${n} invited you to Peakadex`,
-    h1: (n) => `${n} has invited you`,
-    body: (n) => `Your friend <strong>${n}</strong> invites you to join Peakadex, the app to log your ascents, explore summits, and compare your progress with your rope team.`,
+    subject: (n) => `${n} invites you to Peakadex`,
+    h1: (n) => `${n} invites you to Peakadex`,
+    body: (_n) => `Every summit has a story.<br>Now it's your turn to start yours. Join Peakadex, log your ascents and live the adventure with your rope team.`,
     codeLabel: "Your access code",
     cta: "Create my account →",
     footer: (n) => `Once registered, search for <strong>${n}</strong> in the <strong>Friends</strong> section and send them a request. The code expires in <strong>7 days</strong> and can only be used once.`,
   },
   fr: {
     subject: (n) => `${n} t'invite sur Peakadex`,
-    h1: (n) => `${n} t'a invité(e)`,
-    body: (n) => `Ton ami(e) <strong>${n}</strong> t'invite à rejoindre Peakadex, l'app pour enregistrer tes ascensions, explorer les sommets et comparer ta progression avec ta cordée.`,
+    h1: (n) => `${n} t'invite sur Peakadex`,
+    body: (_n) => `Chaque sommet a une histoire.<br>C'est maintenant ton tour de commencer la tienne. Rejoins Peakadex, enregistre tes ascensions et vis l'aventure avec ta cordée.`,
     codeLabel: "Ton code d'accès",
     cta: "Créer mon compte →",
     footer: (n) => `Une fois inscrit(e), recherche <strong>${n}</strong> dans la section <strong>Amis</strong> et envoie-lui une demande. Le code expire dans <strong>7 jours</strong> et n'est utilisable qu'une seule fois.`,
   },
   de: {
     subject: (n) => `${n} lädt dich zu Peakadex ein`,
-    h1: (n) => `${n} hat dich eingeladen`,
-    body: (n) => `Dein Freund/deine Freundin <strong>${n}</strong> lädt dich ein, Peakadex beizutreten — die App zum Erfassen deiner Aufstiege, Erkunden von Gipfeln und Vergleichen deines Fortschritts mit deiner Seilschaft.`,
+    h1: (n) => `${n} lädt dich zu Peakadex ein`,
+    body: (_n) => `Jeder Gipfel hat eine Geschichte.<br>Jetzt ist dein Moment, deine eigene zu beginnen. Tritt Peakadex bei, erfasse deine Aufstiege und erlebe das Abenteuer mit deiner Seilschaft.`,
     codeLabel: "Dein Zugangscode",
     cta: "Konto erstellen →",
     footer: (n) => `Nach der Registrierung suche <strong>${n}</strong> im Bereich <strong>Freunde</strong> und sende eine Anfrage. Der Code läuft in <strong>7 Tagen</strong> ab und kann nur einmal verwendet werden.`,
@@ -301,7 +302,6 @@ ${renderEmailHead()}
 ${renderBrandHeader()}
         <tr>
           <td style="padding:32px;">
-            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1(inviterName)}</h1>
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body(inviterName)}</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
               <tr>
@@ -353,10 +353,10 @@ const FRIEND_REQUEST_COPY: Record<string, { subject: (n: string) => string; h1: 
     cta: "Ver solicitud →",
   },
   ca: {
-    subject: (n) => `${n} vol unir-se a la teva cordada a Peakadex 🧗`,
-    h1: "Nova sol·licitud d'amistat",
-    body: (n) => `<strong>${n}</strong> vol afegir-te a la seva cordada. Accepta la sol·licitud per veure les seves ascensions i aparèixer junts a la classificació.`,
-    cta: "Veure sol·licitud →",
+    subject: (n) => `${n} vol compartir camí amb tu a Peakadex`,
+    h1: "Una nova cordada t'espera",
+    body: (n) => `<strong>${n}</strong> vol sumar-te a la seva cordada.<br><br>Cada cim és millor quan es comparteix. Accepta la sol·licitud i segueix les seves ascensions, compareu el vostre progrés i avanceu junts cap a nous reptes.`,
+    cta: "Unir-me a la cordada →",
   },
   en: {
     subject: (n) => `${n} wants to join your rope team on Peakadex 🧗`,
@@ -386,10 +386,10 @@ const FRIEND_ACCEPTED_COPY: Record<string, { subject: (n: string) => string; h1:
     cta: "Ver amigos →",
   },
   ca: {
-    subject: (n) => `${n} ha acceptat la teva sol·licitud d'amistat`,
-    h1: "Ja sou cordada!",
-    body: (n) => `<strong>${n}</strong> ha acceptat la teva sol·licitud. Ja podeu veure les vostres ascensions i competir junts a la classificació.`,
-    cta: "Veure amics →",
+    subject: (n) => `${n} ja forma part de la teva cordada`,
+    h1: "La cordada creix",
+    body: (n) => `<strong>${n}</strong> ha acceptat la teva sol·licitud.<br><br>Un nou company de camí. Nous cims a l'horitzó.<br>Compartiu ascensions, desafieu-vos i escriviu plegats noves històries a la muntanya.`,
+    cta: "Veure la cordada →",
   },
   en: {
     subject: (n) => `${n} accepted your friend request`,
@@ -526,33 +526,33 @@ ${renderBrandHeader()}
   console.log("[email] friend request sent OK, id:", data?.id);
 }
 
-const PHOTO_TAG_COPY: Record<string, { subject: (n: string) => string; h1: (n: string) => string; body: (n: string, peak: string) => string; cta: string }> = {
+const PHOTO_TAG_COPY: Record<string, { subject: (n: string, peak: string) => string; h1: (n: string) => string; body: (n: string, peak: string) => string; cta: string }> = {
   es: {
-    subject: (n) => `${n} te ha etiquetado en una foto`,
+    subject: (n, peak) => `Revive el momento vivido con ${n} en ${peak}`,
     h1: (n) => `${n} te ha etiquetado`,
     body: (n, peak) => `<strong>${n}</strong> te ha etiquetado en una foto de la ascensión a <strong>${peak}</strong>.`,
     cta: "Ver foto →",
   },
   ca: {
-    subject: (n) => `${n} t'ha etiquetat en una foto`,
-    h1: (n) => `${n} t'ha etiquetat`,
-    body: (n, peak) => `<strong>${n}</strong> t'ha etiquetat en una foto de l'ascensió a <strong>${peak}</strong>.`,
-    cta: "Veure foto →",
+    subject: (n, peak) => `Reviu el moment viscut amb ${n} al ${peak}`,
+    h1: (_n) => `Un record compartit`,
+    body: (n, peak) => `<strong>${n}</strong> t'ha etiquetat en una foto de l'ascensió a <strong>${peak}</strong>.<br><br>Moments que tornen. Passes que deixen empremta.<br>Reviu aquell dia i guarda'l com part del teu camí a la muntanya.`,
+    cta: "Veure la foto →",
   },
   en: {
-    subject: (n) => `${n} tagged you in a photo`,
+    subject: (n, peak) => `Relive the moment with ${n} at ${peak}`,
     h1: (n) => `${n} tagged you`,
     body: (n, peak) => `<strong>${n}</strong> tagged you in a photo from the ascent of <strong>${peak}</strong>.`,
     cta: "View photo →",
   },
   fr: {
-    subject: (n) => `${n} t'a tagué(e) dans une photo`,
+    subject: (n, peak) => `Revis le moment vécu avec ${n} à ${peak}`,
     h1: (n) => `${n} t'a tagué(e)`,
     body: (n, peak) => `<strong>${n}</strong> t'a tagué(e) dans une photo de l'ascension de <strong>${peak}</strong>.`,
     cta: "Voir la photo →",
   },
   de: {
-    subject: (n) => `${n} hat dich in einem Foto markiert`,
+    subject: (n, peak) => `Erlebe den Moment mit ${n} auf dem ${peak} neu`,
     h1: (n) => `${n} hat dich markiert`,
     body: (n, peak) => `<strong>${n}</strong> hat dich in einem Foto des Aufstiegs auf <strong>${peak}</strong> markiert.`,
     cta: "Foto ansehen →",
@@ -565,6 +565,7 @@ export async function sendPhotoTagEmail(
   peakName: string,
   ascentId: string,
   locale = "es",
+  imageUrl?: string,
 ) {
   const copy = PHOTO_TAG_COPY[locale] ?? PHOTO_TAG_COPY.es;
   const photoUrl = `${APP_URL}/ascents/${ascentId}`;
@@ -572,7 +573,7 @@ export async function sendPhotoTagEmail(
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: copy.subject(taggerName),
+    subject: copy.subject(taggerName, peakName),
     html: `
 <!DOCTYPE html>
 <html lang="${locale}">
@@ -582,9 +583,9 @@ ${renderEmailHead()}
     <tr><td align="center">
       <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
 ${renderBrandHeader()}
+        ${imageUrl ? `<tr><td style="padding:0;"><img src="${imageUrl}" width="480" alt="" style="display:block;width:100%;height:auto;border:0;"></td></tr>` : ""}
         <tr>
-          <td style="padding:32px;">
-            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1(taggerName)}</h1>
+          <td style="padding:28px 32px 32px;">
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body(taggerName, peakName)}</p>
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
