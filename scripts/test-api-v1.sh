@@ -15,15 +15,11 @@ skip() { echo -e "${GRAY}– $1${RESET}"; ((SKIP_COUNT++)); }
 
 check() {
   local label="$1"; local expected="$2"; local actual="$3"; local body="$4"
-  if [ "$actual" = "$expected" ]; then
-    pass "$label (HTTP $actual)"
-  else
-    fail "$label (expected $expected, got $actual)" "$body"
-  fi
+  if [ "$actual" = "$expected" ]; then pass "$label (HTTP $actual)"
+  else fail "$label (expected $expected, got $actual)" "$body"; fi
 }
 
 req() {
-  # req METHOD PATH [extra curl args...]
   local method="$1"; local path="$2"; shift 2
   curl -s -w "\n%{http_code}" -X "$method" "$BASE$path" -H "$AUTH" "$@"
 }
@@ -43,25 +39,23 @@ TOKEN=$(body "$LOGIN" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 if [ -z "$TOKEN" ]; then echo -e "${RED}  Cannot continue without token.${RESET}\n"; exit 1; fi
 AUTH="Authorization: Bearer $TOKEN"
 
-# Wrong password → 401
 R=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"wrongpass\"}")
 check "POST /api/v1/auth/login (wrong pass → 401)" 401 "$(code "$R")" "$(body "$R")"
 
-# Forgot password → 200 (always, even if email unknown)
-R=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/v1/auth/forgot-password" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"unknown@example.com"}')
-check "POST /api/v1/auth/forgot-password (unknown email → 200)" 200 "$(code "$R")" "$(body "$R")"
+R=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/v1/auth/validate-voucher" \
+  -H "Content-Type: application/json" -d '{"code":"INVALID-CODE"}')
+check "POST /api/v1/auth/validate-voucher (bad code → 400)" 400 "$(code "$R")" "$(body "$R")"
 
-# Reset password with invalid token → 400
+R=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/v1/auth/forgot-password" \
+  -H "Content-Type: application/json" -d '{"email":"unknown@example.com"}')
+check "POST /api/v1/auth/forgot-password (unknown → 200)" 200 "$(code "$R")" "$(body "$R")"
+
 R=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/v1/auth/reset-password" \
-  -H "Content-Type: application/json" \
-  -d '{"token":"invalidtoken","password":"newpass123"}')
+  -H "Content-Type: application/json" -d '{"token":"badtoken","password":"newpass123"}')
 check "POST /api/v1/auth/reset-password (bad token → 400)" 400 "$(code "$R")" "$(body "$R")"
 
-# No token → 401
 R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/me")
 check "GET  /api/v1/me (no token → 401)" 401 "$(code "$R")" ""
 
@@ -77,6 +71,14 @@ check "GET  /api/v1/settings" 200 "$(code "$R")" "$(body "$R")"
 R=$(req PATCH /api/v1/settings -H "Content-Type: application/json" -d '{}')
 check "PATCH /api/v1/settings (empty body → 200)" 200 "$(code "$R")" "$(body "$R")"
 
+R=$(req POST /api/v1/settings/password -H "Content-Type: application/json" \
+  -d '{"currentPassword":"wrongpass","newPassword":"irrelevant1"}')
+check "POST /api/v1/settings/password (wrong current → 400)" 400 "$(code "$R")" "$(body "$R")"
+
+R=$(req POST /api/v1/settings/password -H "Content-Type: application/json" \
+  -d '{"currentPassword":"short","newPassword":"x"}')
+check "POST /api/v1/settings/password (too short → 400)" 400 "$(code "$R")" "$(body "$R")"
+
 # ── Ascents ───────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}── Ascents ──${RESET}"
 
@@ -88,19 +90,26 @@ if [ -n "$ASCENT_ID" ]; then
   R=$(req GET "/api/v1/ascents/$ASCENT_ID")
   check "GET  /api/v1/ascents/[id]" 200 "$(code "$R")" "$(body "$R")"
 
+  R=$(req PATCH "/api/v1/ascents/$ASCENT_ID" -H "Content-Type: application/json" -d '{}')
+  check "PATCH /api/v1/ascents/[id] (empty → 200)" 200 "$(code "$R")" "$(body "$R")"
+
   R=$(req GET "/api/v1/ascents/00000000-0000-0000-0000-000000000000")
   check "GET  /api/v1/ascents/[bad-id] → 404" 404 "$(code "$R")" "$(body "$R")"
 else
-  skip "GET /api/v1/ascents/[id] — no ascents in account"
+  skip "GET/PATCH /api/v1/ascents/[id] — no ascents in account"
 fi
 
-R=$(req GET /api/v1/ascents)
-check "GET  /api/v1/ascents (no token → 401)" 401 "$(curl -s -w "\n%{http_code}" "$BASE/api/v1/ascents" | tail -1)" ""
+R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/ascents")
+check "GET  /api/v1/ascents (no token → 401)" 401 "$(code "$R")" ""
 
-# POST with missing peak → 400
-R=$(req POST /api/v1/ascents -H "Content-Type: application/json" \
-  -d '{"date":"2026-01-01"}')
+R=$(req POST /api/v1/ascents -H "Content-Type: application/json" -d '{"date":"2026-01-01"}')
 check "POST /api/v1/ascents (missing peakId → 400)" 400 "$(code "$R")" "$(body "$R")"
+
+# ── Photos ────────────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}── Photos ──${RESET}"
+
+R=$(req DELETE "/api/v1/photos/00000000-0000-0000-0000-000000000000")
+check "DELETE /api/v1/photos/[bad-id] → 404" 404 "$(code "$R")" "$(body "$R")"
 
 # ── Peaks ─────────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}── Peaks ──${RESET}"
@@ -126,13 +135,15 @@ check "GET  /api/v1/feed" 200 "$(code "$R")" "$(body "$R")"
 R=$(req GET "/api/v1/feed?cursor=2026-01-01")
 check "GET  /api/v1/feed?cursor=..." 200 "$(code "$R")" "$(body "$R")"
 
+R=$(req POST /api/v1/feed/seen -H "Content-Type: application/json" -d '{"ascentIds":[]}')
+check "POST /api/v1/feed/seen (empty → 200)" 200 "$(code "$R")" "$(body "$R")"
+
 # ── Friends ───────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}── Friends ──${RESET}"
 
 R=$(req GET /api/v1/friends)
 check "GET  /api/v1/friends" 200 "$(code "$R")" "$(body "$R")"
 
-# Send request to self → should error
 MY_ID=$(body "$(req GET /api/v1/me)" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
 if [ -n "$MY_ID" ]; then
   R=$(req POST /api/v1/friends -H "Content-Type: application/json" \
@@ -140,12 +151,11 @@ if [ -n "$MY_ID" ]; then
   check "POST /api/v1/friends (self → 400)" 400 "$(code "$R")" "$(body "$R")"
 fi
 
-# PATCH non-existent friendship → 400
 R=$(req PATCH "/api/v1/friends/00000000-0000-0000-0000-000000000000" \
   -H "Content-Type: application/json" -d '{"action":"ACCEPTED"}')
 check "PATCH /api/v1/friends/[bad-id] → 400" 400 "$(code "$R")" "$(body "$R")"
 
-# ── User search ───────────────────────────────────────────────────────────────
+# ── Users ─────────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}── Users ──${RESET}"
 
 R=$(req GET "/api/v1/users/search?q=san")
@@ -153,6 +163,20 @@ check "GET  /api/v1/users/search?q=san" 200 "$(code "$R")" "$(body "$R")"
 
 R=$(req GET "/api/v1/users/search?q=")
 check "GET  /api/v1/users/search?q= (empty)" 200 "$(code "$R")" "$(body "$R")"
+
+# ── Invitations ───────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}── Invitations ──${RESET}"
+
+R=$(req GET /api/v1/invitations)
+check "GET  /api/v1/invitations" 200 "$(code "$R")" "$(body "$R")"
+
+R=$(req POST /api/v1/invitations -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\"}")
+check "POST /api/v1/invitations (self → 400)" 400 "$(code "$R")" "$(body "$R")"
+
+R=$(req POST /api/v1/invitations -H "Content-Type: application/json" \
+  -d '{"email":"not-an-email"}')
+check "POST /api/v1/invitations (invalid email → 400)" 400 "$(code "$R")" "$(body "$R")"
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 TOTAL=$((PASS_COUNT + FAIL_COUNT + SKIP_COUNT))
