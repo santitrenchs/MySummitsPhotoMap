@@ -29,7 +29,7 @@ function renderBrandHeader() {
                   <img src="https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev/logo-email.png" width="42" height="42" alt="" style="display:block;border:0;">
                 </td>
                 <td style="vertical-align:middle;">
-                  <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#0369a1;font-family:${FONT_STACK};">Peakadex</span>
+                  <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#DC2626;font-family:${FONT_STACK};">Peakadex</span>
                 </td>
               </tr>
             </table>
@@ -105,7 +105,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${resetUrl}"
-                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -116,7 +116,7 @@ ${renderBrandHeader()}
             <hr style="border:none;border-top:1px solid #f1f5f9;margin:24px 0;">
             <p style="margin:0;font-size:12px;color:#cbd5e1;word-break:break-all;">
               ${copy.fallback}<br>
-              <a href="${resetUrl}" style="color:#0369a1;">${resetUrl}</a>
+              <a href="${resetUrl}" style="color:#DC2626;">${resetUrl}</a>
             </p>
           </td>
         </tr>
@@ -205,7 +205,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${appUrl}"
-                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -305,8 +305,8 @@ ${renderBrandHeader()}
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body(inviterName)}</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
               <tr>
-                <td style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px 20px;text-align:center;">
-                  <p style="margin:0 0 6px;font-size:13px;color:#0369a1;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">${copy.codeLabel}</p>
+                <td style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px 20px;text-align:center;">
+                  <p style="margin:0 0 6px;font-size:13px;color:#DC2626;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">${copy.codeLabel}</p>
                   <p style="margin:0;font-size:26px;font-weight:800;color:#0f172a;letter-spacing:0.12em;">${voucherCode}</p>
                 </td>
               </tr>
@@ -315,7 +315,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${registerUrl}"
-                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -438,7 +438,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${friendsUrl}"
-                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -496,7 +496,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${friendsUrl}"
-                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -590,7 +590,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${photoUrl}"
-                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
