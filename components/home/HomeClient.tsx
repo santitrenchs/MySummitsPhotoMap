@@ -751,7 +751,7 @@ export function HomeClient({ data, locale, t }: {
 
 
       {/* ── Recent Ascents ──────────────────────────────────────────────── */}
-      <section style={{ padding: "24px 0 0" }}>
+      {recentAscents.length > 0 && <section style={{ padding: "24px 0 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", marginBottom: 10 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
             {t.home_recentAscents}
@@ -761,34 +761,12 @@ export function HomeClient({ data, locale, t }: {
           </Link>
         </div>
 
-        {recentAscents.length === 0 ? (
-          <div style={{ padding: "0 16px" }}>
-            <div style={{
-              background: "#f9fafb", border: "1.5px dashed #d1d5db", borderRadius: 14,
-              padding: "28px 20px", textAlign: "center",
-            }}>
-              <p style={{ margin: "0 0 8px", fontSize: 32 }}>🏔️</p>
-              <p style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 600, color: "#374151" }}>
-                {t.home_noAscents}
-              </p>
-              <button
-                onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal"))}
-                style={{
-                  display: "inline-block", background: "#0369a1", color: "white",
-                  padding: "9px 20px", borderRadius: 10, fontSize: 13, fontWeight: 600,
-                  border: "none", cursor: "pointer",
-                }}>
-                {t.home_logFirst}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div style={{
-            display: "flex", gap: 12, overflowX: "auto",
-            padding: "4px 16px 8px", scrollbarWidth: "none",
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any}>
-            {recentAscents.map((a) => (
+        <div style={{
+          display: "flex", gap: 12, overflowX: "auto",
+          padding: "4px 16px 8px", scrollbarWidth: "none",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any}>
+          {recentAscents.map((a) => (
               <Link key={a.id} href={`/ascents?highlight=${a.id}`} style={{ textDecoration: "none", flexShrink: 0 }}>
                 <div style={{
                   width: 150, borderRadius: 14,
@@ -818,9 +796,8 @@ export function HomeClient({ data, locale, t }: {
                 </div>
               </Link>
             ))}
-          </div>
-        )}
-      </section>
+        </div>
+      </section>}
 
 
       {/* ── Achievements ── hidden ───────────────────────────────────────── */}
