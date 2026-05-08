@@ -268,4 +268,9 @@ export const es: Dict = {
   card_backDesc_saxifrage: "Altitud extrema. Cimas entre 5000 y 6999 metros, reservadas para expedicionarios.",
   card_backDesc_cinquefoil: "Territorio de los gigantes. Entre 7000 y 7999 metros, el límite del posible.",
   card_backDesc_snow_lotus: "El techo del mundo. Solo las cimas de más de 8000 metros ostentan esta rareza.",
+  map_onboarding_title: "Captura las rarezas\nde la montaña",
+  map_onboarding_sub: "Cada cima esconde una flor única. Cuanto más alto llegues, más rara es la conquista. Explora, asciende y construye tu colección.",
+  map_onboarding_rarities: "Las 6 rarezas",
+  map_onboarding_cta: "Explorar el mapa",
+  map_onboarding_dontShow: "No volver a mostrar",
 };

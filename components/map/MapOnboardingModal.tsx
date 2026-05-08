@@ -2,17 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { RARITIES } from "@/lib/rarity";
+import { useT } from "@/components/providers/I18nProvider";
 
 // altitude display helper — "< 1.500 m", "1.500 – 2.999 m", "≥ 8.000 m"
-function altRange(idx: number): string {
+function altRange(idx: number, locale: string): string {
   const cur = RARITIES[idx];
   const next = RARITIES[idx + 1];
-  if (idx === 0) return `< ${next!.minAlt.toLocaleString("ca")} m`;
-  if (!next) return `≥ ${cur.minAlt.toLocaleString("ca")} m`;
-  return `${cur.minAlt.toLocaleString("ca")} – ${(next.minAlt - 1).toLocaleString("ca")} m`;
+  if (idx === 0) return `< ${next!.minAlt.toLocaleString(locale)} m`;
+  if (!next) return `≥ ${cur.minAlt.toLocaleString(locale)} m`;
+  return `${cur.minAlt.toLocaleString(locale)} – ${(next.minAlt - 1).toLocaleString(locale)} m`;
 }
 
-// card background / border configs matching the HTML prototype
 const CARD_STYLES: Record<string, { bg: string; border: string; text: string }> = {
   daisy:      { bg: "#f0fdf7", border: "#6ee7b7", text: "#007a46" },
   gentian:    { bg: "#faf5ff", border: "#d8b4fe", text: "#7e22ce" },
@@ -23,15 +23,14 @@ const CARD_STYLES: Record<string, { bg: string; border: string; text: string }> 
 };
 
 export default function MapOnboardingModal() {
+  const t = useT();
   const [visible, setVisible] = useState(true);
   const [dontShow, setDontShow] = useState(false);
-  // bottom-sheet drag state
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
   const touchStartY = useRef(0);
   const isDragging = useRef(false);
 
-  // respect "don't show" on mount (localStorage fast-path while DB loads)
   useEffect(() => {
     if (typeof window !== "undefined" && localStorage.getItem("peakadex_map_onboarding") === "seen") {
       setVisible(false);
@@ -52,7 +51,6 @@ export default function MapOnboardingModal() {
     setVisible(false);
   }
 
-  // ── Touch drag handlers ──────────────────────────────────────────────────
   function onTouchStart(e: React.TouchEvent) {
     touchStartY.current = e.touches[0].clientY;
     isDragging.current = true;
@@ -76,24 +74,24 @@ export default function MapOnboardingModal() {
   }
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  // derive locale from document lang for number formatting
+  const locale = typeof document !== "undefined" ? (document.documentElement.lang || "en") : "en";
+
+  // split title on \n for the line break
+  const titleParts = t.map_onboarding_title.split("\n");
 
   return (
     <>
-      {/* ── Backdrop ──────────────────────────────────────────────────── */}
       <div
         onClick={() => handleClose(false)}
         style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 1100,
+          position: "fixed", inset: 0, zIndex: 1100,
           background: "rgba(11,22,40,0.72)",
-          backdropFilter: "blur(3px)",
-          WebkitBackdropFilter: "blur(3px)",
+          backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)",
           animation: "obFadeIn 0.25s ease forwards",
         }}
       />
 
-      {/* ── Sheet / Modal ─────────────────────────────────────────────── */}
       <div
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -101,26 +99,19 @@ export default function MapOnboardingModal() {
         style={{
           position: "fixed",
           zIndex: 1101,
-          // Mobile: bottom sheet
           ...(isMobile ? {
-            bottom: 0,
-            left: 0,
-            right: 0,
+            bottom: 0, left: 0, right: 0,
             borderRadius: "20px 20px 0 0",
-            maxHeight: "92svh",
-            overflowY: "auto",
+            maxHeight: "92svh", overflowY: "auto",
             transform: `translateY(${dragY}px)`,
             transition: dragging ? "none" : "transform 0.2s ease",
             animation: "obSlideUp 0.35s cubic-bezier(0.22,1,0.36,1) forwards",
           } : {
-            // Desktop: centered modal
-            top: "50%",
-            left: "50%",
-            transform: `translate(-50%, -50%)`,
+            top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
             width: "min(540px, 92vw)",
             borderRadius: 20,
-            maxHeight: "90svh",
-            overflowY: "auto",
+            maxHeight: "90svh", overflowY: "auto",
             animation: "obModalIn 0.3s cubic-bezier(0.22,1,0.36,1) forwards",
           }),
           background: "#fff",
@@ -132,7 +123,7 @@ export default function MapOnboardingModal() {
         <div style={{
           height: 4,
           background: "linear-gradient(90deg,#0369a1 0%,#38bdf8 50%,#818cf8 100%)",
-          borderRadius: isMobile ? "20px 20px 0 0" : "20px 20px 0 0",
+          borderRadius: "20px 20px 0 0",
         }} />
 
         {/* drag handle (mobile only) */}
@@ -142,103 +133,76 @@ export default function MapOnboardingModal() {
           </div>
         )}
 
-        {/* ── Header ─────────────────────────────────────────────────── */}
+        {/* header */}
         <div style={{ padding: isMobile ? "16px 20px 0" : "24px 28px 0" }}>
           <h2 style={{
-            fontSize: isMobile ? 22 : 26,
-            fontWeight: 800,
-            color: "#0f172a",
-            lineHeight: 1.2,
-            letterSpacing: "-0.4px",
-            margin: "0 0 10px",
+            fontSize: isMobile ? 22 : 26, fontWeight: 800,
+            color: "#0f172a", lineHeight: 1.2, letterSpacing: "-0.4px", margin: "0 0 10px",
           }}>
-            Captura les rareses<br />de la muntanya
+            {titleParts[0]}{titleParts[1] && <><br />{titleParts[1]}</>}
           </h2>
           <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.6, margin: 0 }}>
-            Cada cim amaga una <em style={{ color: "#0369a1", fontStyle: "normal", fontWeight: 600 }}>flor única</em>.
-            Com més alt arribes, més rara és la troballa.
-            Explora, ascendeix i construeix la teva col·lecció.
+            {t.map_onboarding_sub}
           </p>
         </div>
 
-        {/* ── Divider ────────────────────────────────────────────────── */}
+        {/* divider */}
         <div style={{
           display: "flex", alignItems: "center", gap: 10,
           margin: isMobile ? "16px 20px 12px" : "20px 28px 14px",
         }}>
           <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
           <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Les 6 rareses
+            {t.map_onboarding_rarities}
           </span>
           <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
         </div>
 
-        {/* ── Rarity grid ────────────────────────────────────────────── */}
+        {/* rarity grid */}
         <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 8,
-          padding: isMobile ? "0 20px" : "0 28px",
+          display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 8, padding: isMobile ? "0 20px" : "0 28px",
         }}>
           {RARITIES.map((r, idx) => {
             const cs = CARD_STYLES[r.id] ?? { bg: "#f8fafc", border: "#e2e8f0", text: "#334155" };
             return (
-              <div
-                key={r.id}
-                style={{
-                  background: cs.bg,
-                  border: `1.5px solid ${cs.border}`,
-                  borderRadius: 12,
-                  padding: "12px 8px 10px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  textAlign: "center",
-                }}
-              >
+              <div key={r.id} style={{
+                background: cs.bg, border: `1.5px solid ${cs.border}`,
+                borderRadius: 12, padding: "12px 8px 10px",
+                display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
+              }}>
                 <span style={{ fontSize: 28, lineHeight: 1, marginBottom: 6, color: r.color }}>✿</span>
                 <span style={{ fontSize: 11, fontWeight: 800, color: cs.text, lineHeight: 1.1, marginBottom: 3 }}>
                   {r.label}
                 </span>
                 <span style={{ fontSize: 9.5, color: cs.text, opacity: 0.65, lineHeight: 1.2 }}>
-                  {altRange(idx)}
+                  {altRange(idx, locale)}
                 </span>
               </div>
             );
           })}
         </div>
 
-        {/* ── Footer ─────────────────────────────────────────────────── */}
+        {/* footer */}
         <div style={{
           padding: isMobile ? "16px 20px 28px" : "20px 28px 28px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-          alignItems: "center",
+          display: "flex", flexDirection: "column", gap: 12, alignItems: "center",
         }}>
           <button
             onClick={() => handleClose(dontShow)}
             style={{
-              width: "100%",
-              padding: "14px",
+              width: "100%", padding: "14px",
               background: "linear-gradient(135deg,#0369a1 0%,#0ea5e9 100%)",
-              color: "#fff",
-              border: "none",
-              borderRadius: 12,
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
+              color: "#fff", border: "none", borderRadius: 12,
+              fontSize: 15, fontWeight: 700, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               boxShadow: "0 4px 18px rgba(3,105,161,0.35)",
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="9" /><path d="M16 8L13.5 14.5L8 16L10.5 9.5L16 8Z" />
             </svg>
-            Explorar el mapa
+            {t.map_onboarding_cta}
           </button>
 
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
@@ -249,7 +213,7 @@ export default function MapOnboardingModal() {
               style={{ width: 15, height: 15, accentColor: "#0369a1", cursor: "pointer", flexShrink: 0 }}
             />
             <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>
-              No tornar a mostrar
+              {t.map_onboarding_dontShow}
             </span>
           </label>
         </div>

@@ -270,4 +270,9 @@ export const en: Dict = {
   card_backDesc_saxifrage: "Extreme altitude. Peaks between 5000 and 6999 metres, for true expeditioners.",
   card_backDesc_cinquefoil: "Giant territory. Between 7000 and 7999 metres, the edge of the possible.",
   card_backDesc_snow_lotus: "The roof of the world. Only summits above 8000 metres earn this rarity.",
+  map_onboarding_title: "Collect the mountain's\nrarest flowers",
+  map_onboarding_sub: "Every summit hides a unique flower. The higher you climb, the rarer the find. Explore, ascend and build your collection.",
+  map_onboarding_rarities: "The 6 rarities",
+  map_onboarding_cta: "Explore the map",
+  map_onboarding_dontShow: "Don't show again",
 };

@@ -242,4 +242,8 @@ export type Dict = {
   card_backDesc_daisy: string; card_backDesc_gentian: string;
   card_backDesc_edelweiss: string; card_backDesc_saxifrage: string;
   card_backDesc_cinquefoil: string; card_backDesc_snow_lotus: string;
+  // Map onboarding modal
+  map_onboarding_title: string; map_onboarding_sub: string;
+  map_onboarding_rarities: string; map_onboarding_cta: string;
+  map_onboarding_dontShow: string;
 };
