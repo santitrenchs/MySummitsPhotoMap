@@ -6,10 +6,12 @@ BASE="${1:-https://featureapi-v1-staging.up.railway.app}"
 EMAIL="${2:-santitrenchs@gmail.com}"
 PASS="${3:-12345678}"
 
-GREEN='\033[0;32m'; RED='\033[0;31m'; RESET='\033[0m'; BOLD='\033[1m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; GRAY='\033[0;90m'; RESET='\033[0m'; BOLD='\033[1m'
+PASS_COUNT=0; FAIL_COUNT=0; SKIP_COUNT=0
 
-pass() { echo -e "${GREEN}✓${RESET} $1"; }
-fail() { echo -e "${RED}✗${RESET} $1"; echo "  → $2"; }
+pass() { echo -e "${GREEN}✓${RESET} $1"; ((PASS_COUNT++)); }
+fail() { echo -e "${RED}✗${RESET} $1"; echo -e "  ${GRAY}→ $2${RESET}"; ((FAIL_COUNT++)); }
+skip() { echo -e "${GRAY}– $1${RESET}"; ((SKIP_COUNT++)); }
 
 check() {
   local label="$1"; local expected="$2"; local actual="$3"; local body="$4"
@@ -20,65 +22,140 @@ check() {
   fi
 }
 
+req() {
+  # req METHOD PATH [extra curl args...]
+  local method="$1"; local path="$2"; shift 2
+  curl -s -w "\n%{http_code}" -X "$method" "$BASE$path" -H "$AUTH" "$@"
+}
+body() { echo "$1" | head -1; }
+code() { echo "$1" | tail -1; }
+
 echo -e "\n${BOLD}Peakadex API v1 — $BASE${RESET}\n"
 
-# ── 1. Login ──────────────────────────────────────────────────────────────────
-echo "── Auth ──"
+# ── Auth ──────────────────────────────────────────────────────────────────────
+echo -e "${BOLD}── Auth ──${RESET}"
+
 LOGIN=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\"}")
-CODE=$(echo "$LOGIN" | tail -1)
-BODY=$(echo "$LOGIN" | head -1)
-check "POST /api/v1/auth/login" 200 "$CODE" "$BODY"
-TOKEN=$(echo "$BODY" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+check "POST /api/v1/auth/login" 200 "$(code "$LOGIN")" "$(body "$LOGIN")"
+TOKEN=$(body "$LOGIN" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 if [ -z "$TOKEN" ]; then echo -e "${RED}  Cannot continue without token.${RESET}\n"; exit 1; fi
 AUTH="Authorization: Bearer $TOKEN"
 
-# ── 2. Me ─────────────────────────────────────────────────────────────────────
-R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/me" -H "$AUTH")
-check "GET  /api/v1/me" 200 "$(echo "$R" | tail -1)" "$(echo "$R" | head -1)"
+# Wrong password → 401
+R=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"wrongpass\"}")
+check "POST /api/v1/auth/login (wrong pass → 401)" 401 "$(code "$R")" "$(body "$R")"
 
-# ── 3. Ascents ────────────────────────────────────────────────────────────────
-echo "\n── Ascents ──"
-R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/ascents" -H "$AUTH")
-check "GET  /api/v1/ascents" 200 "$(echo "$R" | tail -1)" "$(echo "$R" | head -1)"
+# Forgot password → 200 (always, even if email unknown)
+R=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/v1/auth/forgot-password" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"unknown@example.com"}')
+check "POST /api/v1/auth/forgot-password (unknown email → 200)" 200 "$(code "$R")" "$(body "$R")"
 
-# Grab first ascent id for detail test
-ASCENT_ID=$(echo "$R" | head -1 | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+# Reset password with invalid token → 400
+R=$(curl -s -w "\n%{http_code}" -X POST "$BASE/api/v1/auth/reset-password" \
+  -H "Content-Type: application/json" \
+  -d '{"token":"invalidtoken","password":"newpass123"}')
+check "POST /api/v1/auth/reset-password (bad token → 400)" 400 "$(code "$R")" "$(body "$R")"
+
+# No token → 401
+R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/me")
+check "GET  /api/v1/me (no token → 401)" 401 "$(code "$R")" ""
+
+# ── Me & Settings ─────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}── Me & Settings ──${RESET}"
+
+R=$(req GET /api/v1/me)
+check "GET  /api/v1/me" 200 "$(code "$R")" "$(body "$R")"
+
+R=$(req GET /api/v1/settings)
+check "GET  /api/v1/settings" 200 "$(code "$R")" "$(body "$R")"
+
+R=$(req PATCH /api/v1/settings -H "Content-Type: application/json" -d '{}')
+check "PATCH /api/v1/settings (empty body → 200)" 200 "$(code "$R")" "$(body "$R")"
+
+# ── Ascents ───────────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}── Ascents ──${RESET}"
+
+R=$(req GET /api/v1/ascents)
+check "GET  /api/v1/ascents" 200 "$(code "$R")" "$(body "$R")"
+
+ASCENT_ID=$(body "$R" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
 if [ -n "$ASCENT_ID" ]; then
-  R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/ascents/$ASCENT_ID" -H "$AUTH")
-  check "GET  /api/v1/ascents/$ASCENT_ID" 200 "$(echo "$R" | tail -1)" "$(echo "$R" | head -1)"
+  R=$(req GET "/api/v1/ascents/$ASCENT_ID")
+  check "GET  /api/v1/ascents/[id]" 200 "$(code "$R")" "$(body "$R")"
+
+  R=$(req GET "/api/v1/ascents/00000000-0000-0000-0000-000000000000")
+  check "GET  /api/v1/ascents/[bad-id] → 404" 404 "$(code "$R")" "$(body "$R")"
 else
-  echo -e "  ${BOLD}(skip)${RESET} GET /api/v1/ascents/[id] — no ascents found"
+  skip "GET /api/v1/ascents/[id] — no ascents in account"
 fi
 
-# Unauthorized check
-R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/ascents")
-check "GET  /api/v1/ascents (no token → 401)" 401 "$(echo "$R" | tail -1)" ""
+R=$(req GET /api/v1/ascents)
+check "GET  /api/v1/ascents (no token → 401)" 401 "$(curl -s -w "\n%{http_code}" "$BASE/api/v1/ascents" | tail -1)" ""
 
-# ── 4. Peaks ──────────────────────────────────────────────────────────────────
-echo "\n── Peaks ──"
-R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/peaks?q=Everest" -H "$AUTH")
-check "GET  /api/v1/peaks?q=Everest" 200 "$(echo "$R" | tail -1)" "$(echo "$R" | head -1)"
+# POST with missing peak → 400
+R=$(req POST /api/v1/ascents -H "Content-Type: application/json" \
+  -d '{"date":"2026-01-01"}')
+check "POST /api/v1/ascents (missing peakId → 400)" 400 "$(code "$R")" "$(body "$R")"
 
-# ── 5. Home ───────────────────────────────────────────────────────────────────
-echo "\n── Home ──"
-R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/home" -H "$AUTH")
-check "GET  /api/v1/home" 200 "$(echo "$R" | tail -1)" "$(echo "$R" | head -1)"
+# ── Peaks ─────────────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}── Peaks ──${RESET}"
 
-# ── 6. Feed ───────────────────────────────────────────────────────────────────
-echo "\n── Feed ──"
-R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/feed" -H "$AUTH")
-check "GET  /api/v1/feed" 200 "$(echo "$R" | tail -1)" "$(echo "$R" | head -1)"
+R=$(req GET "/api/v1/peaks?q=Everest")
+check "GET  /api/v1/peaks?q=Everest" 200 "$(code "$R")" "$(body "$R")"
 
-# ── 7. Friends ────────────────────────────────────────────────────────────────
-echo "\n── Friends ──"
-R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/friends" -H "$AUTH")
-check "GET  /api/v1/friends" 200 "$(echo "$R" | tail -1)" "$(echo "$R" | head -1)"
+R=$(req GET "/api/v1/peaks?q=Mont")
+check "GET  /api/v1/peaks?q=Mont" 200 "$(code "$R")" "$(body "$R")"
 
-# ── 8. Settings ───────────────────────────────────────────────────────────────
-echo "\n── Settings ──"
-R=$(curl -s -w "\n%{http_code}" "$BASE/api/v1/settings" -H "$AUTH")
-check "GET  /api/v1/settings" 200 "$(echo "$R" | tail -1)" "$(echo "$R" | head -1)"
+R=$(req GET "/api/v1/peaks?north=43&south=42&east=3&west=0")
+check "GET  /api/v1/peaks (viewport bounds)" 200 "$(code "$R")" "$(body "$R")"
 
-echo ""
+# ── Home & Feed ───────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}── Home & Feed ──${RESET}"
+
+R=$(req GET /api/v1/home)
+check "GET  /api/v1/home" 200 "$(code "$R")" "$(body "$R")"
+
+R=$(req GET /api/v1/feed)
+check "GET  /api/v1/feed" 200 "$(code "$R")" "$(body "$R")"
+
+R=$(req GET "/api/v1/feed?cursor=2026-01-01")
+check "GET  /api/v1/feed?cursor=..." 200 "$(code "$R")" "$(body "$R")"
+
+# ── Friends ───────────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}── Friends ──${RESET}"
+
+R=$(req GET /api/v1/friends)
+check "GET  /api/v1/friends" 200 "$(code "$R")" "$(body "$R")"
+
+# Send request to self → should error
+MY_ID=$(body "$(req GET /api/v1/me)" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+if [ -n "$MY_ID" ]; then
+  R=$(req POST /api/v1/friends -H "Content-Type: application/json" \
+    -d "{\"addresseeId\":\"$MY_ID\"}")
+  check "POST /api/v1/friends (self → 400)" 400 "$(code "$R")" "$(body "$R")"
+fi
+
+# PATCH non-existent friendship → 400
+R=$(req PATCH "/api/v1/friends/00000000-0000-0000-0000-000000000000" \
+  -H "Content-Type: application/json" -d '{"action":"ACCEPTED"}')
+check "PATCH /api/v1/friends/[bad-id] → 400" 400 "$(code "$R")" "$(body "$R")"
+
+# ── User search ───────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}── Users ──${RESET}"
+
+R=$(req GET "/api/v1/users/search?q=san")
+check "GET  /api/v1/users/search?q=san" 200 "$(code "$R")" "$(body "$R")"
+
+R=$(req GET "/api/v1/users/search?q=")
+check "GET  /api/v1/users/search?q= (empty)" 200 "$(code "$R")" "$(body "$R")"
+
+# ── Summary ───────────────────────────────────────────────────────────────────
+TOTAL=$((PASS_COUNT + FAIL_COUNT + SKIP_COUNT))
+echo -e "\n${BOLD}Results: ${GREEN}$PASS_COUNT passed${RESET} · ${RED}$FAIL_COUNT failed${RESET} · ${GRAY}$SKIP_COUNT skipped${RESET} · $TOTAL total\n"
+
+[ "$FAIL_COUNT" -eq 0 ]
