@@ -18,12 +18,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing_credentials" }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    include: {
-      memberships: { select: { tenantId: true }, take: 1 },
-    },
-  });
+  let user;
+  try {
+    user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        memberships: { select: { tenantId: true }, take: 1 },
+      },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "db_error", detail: msg }, { status: 500 });
+  }
 
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
@@ -31,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
   if (!secret) {
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return NextResponse.json({ error: "server_error", detail: "missing AUTH_SECRET" }, { status: 500 });
   }
 
   const tenantId = user.memberships[0]?.tenantId ?? null;
