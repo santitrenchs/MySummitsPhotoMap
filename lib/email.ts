@@ -236,7 +236,7 @@ ${renderBrandHeader()}
 
 const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: string) => string; body: (n: string) => string; codeLabel: string; cta: string; footer: (n: string) => string }> = {
   es: {
-    subject: (n) => `${n} quiere compartir la montaña contigo`,
+    subject: (n) => `${n} te invita a Peakadex`,
     h1: (n) => `${n} quiere compartir la montaña contigo`,
     body: (_n) => `Cada cima tiene una historia.<br>Ahora es tu momento de empezar la tuya. Únete a Peakadex, registra tus ascensiones y vive la aventura con tu cordada.`,
     codeLabel: "Tu código de acceso",
@@ -244,7 +244,7 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
     footer: (n) => `Una vez registrado/a, busca a <strong>${n}</strong> en la sección <strong>Amigos</strong> y envíale una solicitud. El código caduca en <strong>7 días</strong> y es de un solo uso.`,
   },
   ca: {
-    subject: (n) => `${n} vol compartir la muntanya amb tu`,
+    subject: (n) => `${n} t'invita a Peakadex`,
     h1: (n) => `${n} vol compartir la muntanya amb tu`,
     body: (_n) => `Cada cim té una història.<br>Ara és el teu moment de començar la teva. Uneix-te a Peakadex, registra les teves ascensions i viu l'aventura amb la teva cordada.`,
     codeLabel: "El teu codi d'accés",
@@ -252,7 +252,7 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
     footer: (n) => `Un cop registrat/da, cerca a <strong>${n}</strong> a la secció <strong>Amics</strong> i envia-li una sol·licitud. El codi caduca en <strong>7 dies</strong> i és d'un sol ús.`,
   },
   en: {
-    subject: (n) => `${n} wants to share the mountain with you`,
+    subject: (n) => `${n} invites you to Peakadex`,
     h1: (n) => `${n} wants to share the mountain with you`,
     body: (_n) => `Every summit has a story.<br>Now it's your turn to start yours. Join Peakadex, log your ascents and live the adventure with your rope team.`,
     codeLabel: "Your access code",
@@ -260,7 +260,7 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
     footer: (n) => `Once registered, search for <strong>${n}</strong> in the <strong>Friends</strong> section and send them a request. The code expires in <strong>7 days</strong> and can only be used once.`,
   },
   fr: {
-    subject: (n) => `${n} veut partager la montagne avec toi`,
+    subject: (n) => `${n} t'invite sur Peakadex`,
     h1: (n) => `${n} veut partager la montagne avec toi`,
     body: (_n) => `Chaque sommet a une histoire.<br>C'est maintenant ton tour de commencer la tienne. Rejoins Peakadex, enregistre tes ascensions et vis l'aventure avec ta cordée.`,
     codeLabel: "Ton code d'accès",
@@ -268,7 +268,7 @@ const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: 
     footer: (n) => `Une fois inscrit(e), recherche <strong>${n}</strong> dans la section <strong>Amis</strong> et envoie-lui une demande. Le code expire dans <strong>7 jours</strong> et n'est utilisable qu'une seule fois.`,
   },
   de: {
-    subject: (n) => `${n} möchte den Berg mit dir teilen`,
+    subject: (n) => `${n} lädt dich zu Peakadex ein`,
     h1: (n) => `${n} möchte den Berg mit dir teilen`,
     body: (_n) => `Jeder Gipfel hat eine Geschichte.<br>Jetzt ist dein Moment, deine eigene zu beginnen. Tritt Peakadex bei, erfasse deine Aufstiege und erlebe das Abenteuer mit deiner Seilschaft.`,
     codeLabel: "Dein Zugangscode",
