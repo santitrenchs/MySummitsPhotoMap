@@ -100,7 +100,6 @@ ${renderEmailHead()}
 ${renderBrandHeader()}
         <tr>
           <td style="padding:32px;">
-            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1}</h1>
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body}</p>
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
@@ -584,7 +583,6 @@ ${renderEmailHead()}
 ${renderBrandHeader()}
         <tr>
           <td style="padding:32px;">
-            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1(taggerName)}</h1>
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body(taggerName, peakName)}</p>
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
