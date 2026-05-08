@@ -8,14 +8,14 @@ const APP_URL = (
   "https://www.peakadex.com"
 ).replace(/\/$/, "");
 
-const FONT_STACK = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+const FONT_STACK = "'Manrope','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
 
 function renderEmailHead() {
   return `<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>`;
 }
 
@@ -23,16 +23,19 @@ function renderBrandHeader() {
   return `
         <tr>
           <td style="padding:24px 32px 20px;background:#ffffff;border-bottom:1px solid #f1f5f9;text-align:center;">
-            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 auto;">
-              <tr>
-                <td style="vertical-align:middle;padding-right:10px;">
-                  <img src="https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev/logo-email.png" width="42" height="42" alt="" style="display:block;border:0;">
-                </td>
-                <td style="vertical-align:middle;">
-                  <span style="font-size:34px;line-height:1;font-weight:800;letter-spacing:-0.03em;color:#DC2626;font-family:${FONT_STACK};">Peakadex</span>
-                </td>
-              </tr>
-            </table>
+            <div style="display:inline-flex;align-items:center;gap:0;font-family:${FONT_STACK};font-size:30px;font-weight:800;letter-spacing:-0.02em;line-height:1;">
+              <span style="color:#0D2538;margin-right:6px;">peak</span>
+              <svg width="28" height="28" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;position:relative;top:1px;">
+                <path d="M15 3 Q20.5 9 15 15 Q9.5 9 15 3Z" fill="#DC2626"/>
+                <path d="M26.4 11.3 Q22.4 18.4 15 15 Q19 7.9 26.4 11.3Z" fill="#DC2626"/>
+                <path d="M22.1 24.7 Q14.1 23.1 15 15 Q23 16.6 22.1 24.7Z" fill="#DC2626"/>
+                <path d="M7.9 24.7 Q7 16.6 15 15 Q15.9 23.1 7.9 24.7Z" fill="#DC2626"/>
+                <path d="M3.6 11.3 Q11 7.9 15 15 Q7.6 18.4 3.6 11.3Z" fill="#DC2626"/>
+                <circle cx="15" cy="15" r="4" fill="white"/>
+                <circle cx="15" cy="15" r="4" fill="none" stroke="#DC2626" stroke-width="0.8" opacity="0.5"/>
+              </svg>
+              <span style="color:#8a9bb0;margin-left:6px;">adex</span>
+            </div>
           </td>
         </tr>`;
 }
@@ -105,7 +108,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${resetUrl}"
-                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -116,7 +119,7 @@ ${renderBrandHeader()}
             <hr style="border:none;border-top:1px solid #f1f5f9;margin:24px 0;">
             <p style="margin:0;font-size:12px;color:#cbd5e1;word-break:break-all;">
               ${copy.fallback}<br>
-              <a href="${resetUrl}" style="color:#DC2626;">${resetUrl}</a>
+              <a href="${resetUrl}" style="color:#0369a1;">${resetUrl}</a>
             </p>
           </td>
         </tr>
@@ -205,7 +208,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${appUrl}"
-                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -305,8 +308,8 @@ ${renderBrandHeader()}
             <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body(inviterName)}</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
               <tr>
-                <td style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px 20px;text-align:center;">
-                  <p style="margin:0 0 6px;font-size:13px;color:#DC2626;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">${copy.codeLabel}</p>
+                <td style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px 20px;text-align:center;">
+                  <p style="margin:0 0 6px;font-size:13px;color:#0369a1;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">${copy.codeLabel}</p>
                   <p style="margin:0;font-size:26px;font-weight:800;color:#0f172a;letter-spacing:0.12em;">${voucherCode}</p>
                 </td>
               </tr>
@@ -315,7 +318,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${registerUrl}"
-                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -438,7 +441,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${friendsUrl}"
-                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -496,7 +499,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${friendsUrl}"
-                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
@@ -590,7 +593,7 @@ ${renderBrandHeader()}
               <tr>
                 <td align="center">
                   <a href="${photoUrl}"
-                     style="display:inline-block;background:#DC2626;color:#ffffff;font-size:15px;font-weight:700;
+                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
                             text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
                     ${copy.cta}
                   </a>
