@@ -19,10 +19,12 @@ export default function MapContainer({
   peaks,
   ascentData = [],
   rarities = [],
+  showOnboarding = false,
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
   rarities?: RarityDef[];
+  showOnboarding?: boolean;
 }) {
-  return <MapView peaks={peaks} ascentData={ascentData} rarities={rarities} />;
+  return <MapView peaks={peaks} ascentData={ascentData} rarities={rarities} showOnboarding={showOnboarding} />;
 }

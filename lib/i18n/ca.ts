@@ -270,4 +270,9 @@ export const ca: Dict = {
   card_backDesc_saxifrage: "Altitud extrema. Cims entre 5000 i 6999 metres, per a veritables expedicionaris.",
   card_backDesc_cinquefoil: "Territori dels gegants. Entre 7000 i 7999 metres, al límit del possible.",
   card_backDesc_snow_lotus: "El sostre del món. Només les cimes de més de 8000 metres ostenten aquesta raresa.",
+  map_onboarding_title: "Captura les rareses\nde la muntanya",
+  map_onboarding_sub: "Cada cim amaga una flor única. Com més alt arribes, més rara és la troballa. Explora, ascendeix i construeix la teva col·lecció.",
+  map_onboarding_rarities: "Les 6 rareses",
+  map_onboarding_cta: "Explorar el mapa",
+  map_onboarding_dontShow: "No tornar a mostrar",
 };

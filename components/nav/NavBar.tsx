@@ -548,9 +548,9 @@ function MountainIcon({ size = 18, active = false }: { size?: number; active?: b
 
 function PlusIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.45 }}>
+      <path d="M12 5V19" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M5 12H19" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   );
 }

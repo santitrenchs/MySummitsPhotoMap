@@ -15,6 +15,7 @@ const SettingsPatchSchema = z.object({
   allowOthersToTag:      z.boolean().optional(),
   emailNotifications:    z.boolean().optional(),
   activityNotifications: z.boolean().optional(),
+  mapOnboardingSeen:     z.boolean().optional(),
 });
 
 export async function GET() {

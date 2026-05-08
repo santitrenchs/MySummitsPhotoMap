@@ -66,6 +66,7 @@ export function AscentsClient({
   currentUserEmail,
   currentUserName,
   currentUserId,
+  hasFriends = true,
 }: {
   ascents: AscentData[];
   allPersons: { id: string; name: string }[];
@@ -73,6 +74,7 @@ export function AscentsClient({
   currentUserEmail?: string | null;
   currentUserName?: string;
   currentUserId?: string;
+  hasFriends?: boolean;
 }) {
   const t = useT();
   const searchParams = useSearchParams();
@@ -653,7 +655,7 @@ export function AscentsClient({
 
       {/* ── Feed ──────────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
-        viewChip === "friends" && !ascents.some((a) => !a.isOwn) ? (
+        viewChip === "friends" && !hasFriends ? (
           <div style={{
             background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
             border: "1.5px dashed #bfdbfe", borderRadius: 16, padding: "32px 22px",

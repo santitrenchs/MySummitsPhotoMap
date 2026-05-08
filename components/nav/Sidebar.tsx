@@ -359,7 +359,7 @@ const CSS = `
   white-space: nowrap;
 }
 .azisb--c .azisb-nav { padding: 4px 0; }
-.azisb--c .azisb-item { padding: 0; justify-content: center; overflow: visible; }
+.azisb--c .azisb-item { padding: 0; justify-content: center; overflow: visible; gap: 0; }
 .azisb-item:hover { background: #f8fafc; color: #0f172a; }
 .azisb-item--on { background: #eff6ff; color: #0369a1; }
 .azisb-item--on .azisb-lbl { font-weight: 600; }
@@ -450,7 +450,7 @@ const CSS = `
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
 }
-.azisb--c .azisb-user { overflow: visible; padding: 0 0 0 10px; gap: 0; }
+.azisb--c .azisb-user { overflow: visible; padding: 0; gap: 0; justify-content: center; }
 .azisb-user:hover { background: #f8fafc; }
 
 /* Avatar */
@@ -598,10 +598,9 @@ function SbMountainIcon({ on = false }: { on?: boolean }) {
 
 function SbPlusIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2.2" strokeLinecap="round">
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.45 }}>
+      <path d="M12 5V19" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M5 12H19" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   );
 }
