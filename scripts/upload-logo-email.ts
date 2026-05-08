@@ -25,7 +25,7 @@ async function main() {
 
   await r2.send(new PutObjectCommand({
     Bucket: "mysummits",
-    Key: "logo-email.png",
+    Key: "logo-email-v2.png",
     Body: png,
     ContentType: "image/png",
   }));
