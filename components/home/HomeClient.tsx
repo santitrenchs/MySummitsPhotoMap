@@ -488,15 +488,18 @@ export function HomeClient({ data, locale, t }: {
             <p style={{ margin: "0 0 20px", fontSize: 14, color: "#166534", lineHeight: 1.5 }}>
               {t.home_onboarding_sub}
             </p>
-            <Link href="/ascents/new" style={{
-              display: "inline-block",
-              background: "#16a34a", color: "white",
-              padding: "11px 24px", borderRadius: 12,
-              fontSize: 14, fontWeight: 700, textDecoration: "none",
-              boxShadow: "0 4px 12px rgba(22,163,74,0.35)",
-            }}>
+            <button
+              onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal"))}
+              style={{
+                display: "inline-block",
+                background: "#16a34a", color: "white",
+                padding: "11px 24px", borderRadius: 12,
+                fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(22,163,74,0.35)",
+              }}
+            >
               {t.home_onboarding_cta}
-            </Link>
+            </button>
           </div>
         </div>
       )}
