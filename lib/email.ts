@@ -528,31 +528,31 @@ ${renderBrandHeader()}
 
 const PHOTO_TAG_COPY: Record<string, { subject: (n: string, peak: string) => string; h1: (n: string) => string; body: (n: string, peak: string) => string; cta: string }> = {
   es: {
-    subject: (n, _peak) => `${n} te ha etiquetado en una foto`,
+    subject: (n, peak) => `Revive el momento vivido con ${n} en ${peak}`,
     h1: (n) => `${n} te ha etiquetado`,
     body: (n, peak) => `<strong>${n}</strong> te ha etiquetado en una foto de la ascensión a <strong>${peak}</strong>.`,
     cta: "Ver foto →",
   },
   ca: {
-    subject: (n, peak) => `${n} ha fet tornar un record a ${peak}`,
+    subject: (n, peak) => `Reviu el moment viscut amb ${n} al ${peak}`,
     h1: (_n) => `Un record compartit`,
     body: (n, peak) => `<strong>${n}</strong> t'ha etiquetat en una foto de l'ascensió a <strong>${peak}</strong>.<br><br>Moments que tornen. Passes que deixen empremta.<br>Reviu aquell dia i guarda'l com part del teu camí a la muntanya.`,
     cta: "Veure la foto →",
   },
   en: {
-    subject: (n, _peak) => `${n} tagged you in a photo`,
+    subject: (n, peak) => `Relive the moment with ${n} at ${peak}`,
     h1: (n) => `${n} tagged you`,
     body: (n, peak) => `<strong>${n}</strong> tagged you in a photo from the ascent of <strong>${peak}</strong>.`,
     cta: "View photo →",
   },
   fr: {
-    subject: (n, _peak) => `${n} t'a tagué(e) dans une photo`,
+    subject: (n, peak) => `Revis le moment vécu avec ${n} à ${peak}`,
     h1: (n) => `${n} t'a tagué(e)`,
     body: (n, peak) => `<strong>${n}</strong> t'a tagué(e) dans une photo de l'ascension de <strong>${peak}</strong>.`,
     cta: "Voir la photo →",
   },
   de: {
-    subject: (n, _peak) => `${n} hat dich in einem Foto markiert`,
+    subject: (n, peak) => `Erlebe den Moment mit ${n} auf dem ${peak} neu`,
     h1: (n) => `${n} hat dich markiert`,
     body: (n, peak) => `<strong>${n}</strong> hat dich in einem Foto des Aufstiegs auf <strong>${peak}</strong> markiert.`,
     cta: "Foto ansehen →",
