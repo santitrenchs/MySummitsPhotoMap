@@ -1226,7 +1226,7 @@ export default function MapView({
                   {ascent ? (
                     <>
                       <button
-                        onClick={() => router.push(`/ascents?peak=${peak.id}`)}
+                        onClick={() => router.push(`/ascents?highlight=${ascent.ascentId}&peak=${peak.id}`)}
                         style={{
                           flex: 1, padding: "9px 0",
                           background: "white", border: "1.5px solid #e5e7eb",
