@@ -228,7 +228,7 @@ export const de: Dict = {
   home_altZone5: "Expedition", home_altZone6: "Extreme Expedition",
   home_onboarding_title: "Jeder Gipfel birgt eine Geschichte.",
   home_onboarding_sub: "Erfasse deinen ersten Aufstieg und beginne deine zu schreiben.",
-  home_onboarding_cta: "Ersten Aufstieg erfassen →",
+  home_onboarding_cta: "Ersten Aufstieg erfassen",
   home_chartTitle: "Letzte 6 Monate", home_chartMeters: "Höhenmeter",
   home_rarityChartTitle: "Gipfel nach Seltenheit",
 

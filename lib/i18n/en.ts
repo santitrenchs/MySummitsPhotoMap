@@ -225,7 +225,7 @@ export const en: Dict = {
   home_hideLevels: "Show less",
   home_onboarding_title: "Every summit holds a story.",
   home_onboarding_sub: "Capture your first ascent and begin yours.",
-  home_onboarding_cta: "Capture first ascent →",
+  home_onboarding_cta: "Capture first ascent",
   home_chartTitle: "Last 6 months", home_chartMeters: "meters ascended",
   home_rarityChartTitle: "Peaks by rarity",
   home_altZone1: "Low mountain", home_altZone2: "Mid mountain",
