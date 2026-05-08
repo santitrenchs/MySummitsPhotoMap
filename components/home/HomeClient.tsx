@@ -495,7 +495,7 @@ export function HomeClient({ data, locale, t }: {
               fontSize: 14, fontWeight: 700, textDecoration: "none",
               boxShadow: "0 4px 12px rgba(22,163,74,0.35)",
             }}>
-              {t.home_onboarding_cta} →
+              {t.home_onboarding_cta}
             </Link>
           </div>
         </div>

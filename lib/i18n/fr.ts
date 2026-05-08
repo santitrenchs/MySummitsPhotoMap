@@ -228,7 +228,7 @@ export const fr: Dict = {
   home_altZone5: "Expédition", home_altZone6: "Expédition extrême",
   home_onboarding_title: "Chaque sommet cache une histoire.",
   home_onboarding_sub: "Capture ta première ascension et commence à écrire la tienne.",
-  home_onboarding_cta: "Capturer la première ascension →",
+  home_onboarding_cta: "Capturer la première ascension",
   home_chartTitle: "6 derniers mois", home_chartMeters: "mètres gravis",
   home_rarityChartTitle: "Sommets par rareté",
 
