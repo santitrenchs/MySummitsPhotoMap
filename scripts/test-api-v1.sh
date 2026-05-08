@@ -134,12 +134,12 @@ check "GET  /api/v1/peaks?q=Mont" 200 "$(code "$R")" "$(body "$R")"
 R=$(req GET "/api/v1/peaks?north=43&south=42&east=3&west=0")
 check "GET  /api/v1/peaks (viewport bounds)" 200 "$(code "$R")" "$(body "$R")"
 
-PEAK_ID=$(body "$(req GET '/api/v1/peaks?q=Everest')" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+PEAK_ID=$(body "$(req GET '/api/v1/peaks?north=43&south=42&east=3&west=0')" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
 if [ -n "$PEAK_ID" ]; then
   R=$(req GET "/api/v1/peaks/$PEAK_ID")
   check "GET  /api/v1/peaks/[id]" 200 "$(code "$R")" "$(body "$R")"
 else
-  skip "GET  /api/v1/peaks/[id] — no peaks found"
+  skip "GET  /api/v1/peaks/[id] — no peaks in viewport"
 fi
 
 R=$(req GET "/api/v1/peaks/00000000-0000-0000-0000-000000000000")
