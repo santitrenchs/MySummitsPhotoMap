@@ -8,14 +8,12 @@ const APP_URL = (
   "https://www.peakadex.com"
 ).replace(/\/$/, "");
 
-const FONT_STACK = "'Manrope','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+const FONT_STACK = "Arial,Helvetica,sans-serif";
 
 function renderEmailHead() {
   return `<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>`;
 }
 
@@ -23,19 +21,19 @@ function renderBrandHeader() {
   return `
         <tr>
           <td style="padding:24px 32px 20px;background:#ffffff;border-bottom:1px solid #f1f5f9;text-align:center;">
-            <div style="display:inline-flex;align-items:center;gap:0;font-family:${FONT_STACK};font-size:30px;font-weight:800;letter-spacing:-0.02em;line-height:1;">
-              <span style="color:#0D2538;margin-right:6px;">peak</span>
-              <svg width="28" height="28" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;position:relative;top:1px;">
-                <path d="M15 3 Q20.5 9 15 15 Q9.5 9 15 3Z" fill="#DC2626"/>
-                <path d="M26.4 11.3 Q22.4 18.4 15 15 Q19 7.9 26.4 11.3Z" fill="#DC2626"/>
-                <path d="M22.1 24.7 Q14.1 23.1 15 15 Q23 16.6 22.1 24.7Z" fill="#DC2626"/>
-                <path d="M7.9 24.7 Q7 16.6 15 15 Q15.9 23.1 7.9 24.7Z" fill="#DC2626"/>
-                <path d="M3.6 11.3 Q11 7.9 15 15 Q7.6 18.4 3.6 11.3Z" fill="#DC2626"/>
-                <circle cx="15" cy="15" r="4" fill="white"/>
-                <circle cx="15" cy="15" r="4" fill="none" stroke="#DC2626" stroke-width="0.8" opacity="0.5"/>
-              </svg>
-              <span style="color:#8a9bb0;margin-left:6px;">adex</span>
-            </div>
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 auto;">
+              <tr>
+                <td style="vertical-align:middle;">
+                  <span style="font-family:${FONT_STACK};font-size:28px;font-weight:800;letter-spacing:-0.02em;color:#0D2538;">peak</span>
+                </td>
+                <td style="vertical-align:middle;padding:0 4px;">
+                  <img src="https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev/logo-email.png" width="30" height="30" alt="" style="display:block;border:0;">
+                </td>
+                <td style="vertical-align:middle;">
+                  <span style="font-family:${FONT_STACK};font-size:28px;font-weight:800;letter-spacing:-0.02em;color:#8a9bb0;">adex</span>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>`;
 }
