@@ -358,6 +358,7 @@ const CSS = `
   overflow: hidden;
   white-space: nowrap;
 }
+.azisb--c .azisb-nav { padding: 4px 0; }
 .azisb--c .azisb-item { padding: 0; justify-content: center; overflow: visible; }
 .azisb-item:hover { background: #f8fafc; color: #0f172a; }
 .azisb-item--on { background: #eff6ff; color: #0369a1; }
@@ -378,7 +379,7 @@ const CSS = `
 
 /* ── Icon + label ───────────────────────── */
 .azisb-ic {
-  width: 20px; height: 20px;
+  width: 28px; height: 28px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
