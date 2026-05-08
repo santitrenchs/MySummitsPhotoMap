@@ -598,7 +598,7 @@ function SbMountainIcon({ on = false }: { on?: boolean }) {
 
 function SbPlusIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.45 }}>
       <path d="M12 5V19" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
       <path d="M5 12H19" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
     </svg>
