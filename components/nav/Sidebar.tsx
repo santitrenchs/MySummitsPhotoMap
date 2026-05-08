@@ -359,7 +359,7 @@ const CSS = `
   white-space: nowrap;
 }
 .azisb--c .azisb-nav { padding: 4px 0; }
-.azisb--c .azisb-item { padding: 0; justify-content: center; overflow: visible; }
+.azisb--c .azisb-item { padding: 0; justify-content: center; overflow: visible; gap: 0; }
 .azisb-item:hover { background: #f8fafc; color: #0f172a; }
 .azisb-item--on { background: #eff6ff; color: #0369a1; }
 .azisb-item--on .azisb-lbl { font-weight: 600; }
@@ -450,7 +450,7 @@ const CSS = `
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
 }
-.azisb--c .azisb-user { overflow: visible; padding: 0 0 0 10px; gap: 0; }
+.azisb--c .azisb-user { overflow: visible; padding: 0; gap: 0; justify-content: center; }
 .azisb-user:hover { background: #f8fafc; }
 
 /* Avatar */
