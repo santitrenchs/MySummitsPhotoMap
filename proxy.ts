@@ -11,16 +11,14 @@ export default auth((req) => {
     pathname === "/forgot-password" ||
     pathname === "/reset-password";
   const isAuthApi = pathname.startsWith("/api/auth");
-  const isV1Api = pathname.startsWith("/api/v1");
   const isAdminLogin = pathname === "/admin/login";
   const isAdminRoute = pathname.startsWith("/admin") && !isAdminLogin;
 
-  // Always allow NextAuth internal API routes, health check, and v1 API (handles own auth)
-  if (isAuthApi || isV1Api || pathname === "/api/health") return NextResponse.next();
+  // Always allow NextAuth internal API routes and health check
+  if (isAuthApi || pathname === "/api/health") return NextResponse.next();
 
   // ── Backoffice (/admin/*) ──────────────────────────────────
   if (isAdminLogin) {
-    // Already logged in as admin → skip login page
     if (isLoggedIn && req.auth?.user?.isAdmin) {
       return NextResponse.redirect(new URL("/admin/users", req.nextUrl));
     }
@@ -35,12 +33,10 @@ export default auth((req) => {
   }
 
   // ── Main app ───────────────────────────────────────────────
-  // Redirect authenticated users away from auth pages
   if (isLoggedIn && isAuthPage) {
     return NextResponse.redirect(new URL("/map", req.nextUrl));
   }
 
-  // Redirect unauthenticated users to login (except root, which redirects itself)
   if (!isLoggedIn && !isAuthPage && pathname !== "/") {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
@@ -49,6 +45,6 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Run on all routes except static assets and Next.js internals
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public/).*)"],
+  // Excludes: static assets, Next.js internals, and /api/v1 (handles own Bearer auth)
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public/|api/v1|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|txt|xml|json)$).*)"],
 };
