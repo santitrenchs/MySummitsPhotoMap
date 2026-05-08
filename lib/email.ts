@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.RESEND_FROM ?? "Peakadex <noreply@mail.peakadex.com>";
+const FROM = process.env.RESEND_FROM ?? "Peakadex <hola@mail.peakadex.com>";
 const APP_URL = (
   process.env.APP_URL ??
   process.env.NEXTAUTH_URL ??
@@ -28,7 +28,7 @@ function renderBrandHeader() {
                   <span style="font-family:${FONT_STACK};font-size:28px;font-weight:800;letter-spacing:-0.02em;color:#0D2538;">peak</span>
                 </td>
                 <td style="vertical-align:middle;padding:0 4px;">
-                  <img src="https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev/logo-email-v2.png" width="30" height="30" alt="" style="display:block;border:0;">
+                  <img src="https://www.peakadex.com/logo-email-v2.png" width="30" height="30" alt="" style="display:block;border:0;">
                 </td>
                 <td style="vertical-align:middle;">
                   <span style="font-family:${FONT_STACK};font-size:28px;font-weight:800;letter-spacing:-0.02em;color:#8a9bb0;">adex</span>
