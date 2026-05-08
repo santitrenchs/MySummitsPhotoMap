@@ -8,6 +8,7 @@ import { useT } from "@/components/providers/I18nProvider";
 import MapFilterBar from "./MapFilterBar";
 import MapControls from "./MapControls";
 import MapPeaksSidebar from "./MapPeaksSidebar";
+import MapOnboardingModal from "./MapOnboardingModal";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -146,10 +147,12 @@ export default function MapView({
   peaks,
   ascentData = [],
   rarities = [],
+  showOnboarding = false,
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
   rarities?: RarityDef[];
+  showOnboarding?: boolean;
 }) {
   const router = useRouter();
   const t = useT();
@@ -1404,6 +1407,8 @@ export default function MapView({
             searchResults={searchResults}
           />
         )}
+
+      {showOnboarding && <MapOnboardingModal />}
 
     </div>
   );
