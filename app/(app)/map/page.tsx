@@ -11,7 +11,7 @@ export default async function MapPage() {
   const [ascentData, rarities, userPrefs] = await Promise.all([
     getAscentMapData(session.user.tenantId),
     prisma.rarity.findMany({ orderBy: { order: "asc" } }),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { mapOnboardingSeen: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { mapOnboardingSeen: true } }).catch(() => null),
   ]);
 
   // Only fetch the user's climbed peaks — unclimbed peaks load client-side per viewport
