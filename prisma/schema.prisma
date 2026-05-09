@@ -81,9 +81,10 @@ model PeakWikiText {
 
 model User {
   id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  name         String
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  name          String
   username     String?  @unique
   bio          String?
   language     String   @default("en")
@@ -110,9 +111,6 @@ model User {
   // System
   isAdmin      Boolean  @default(false)
 
-  // Registration — voucher used to sign up (null for pre-voucher users)
-  voucherId    String?
-
   createdAt    DateTime @default(now())
 
   memberships            Membership[]
@@ -120,11 +118,31 @@ model User {
   sentFriendRequests     Friendship[] @relation("SentFriendRequests")
   receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
   faceTags               FaceTag[]    @relation("FaceTagUser")
-  sentInvitations        Voucher[]    @relation("SentInvitations")
-  voucherUse             VoucherUse?
   feedSeens              FeedSeen[]
+  accounts               Account[]
 
   @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
 }
 
 model Tenant {
@@ -164,39 +182,6 @@ enum MembershipRole {
   OWNER
   ADMIN
   MEMBER
-}
-
-model Voucher {
-  id           String    @id @default(uuid())
-  code         String    @unique
-  maxUses      Int       @default(1)
-  usedCount    Int       @default(0)
-  note         String?
-  expiresAt    DateTime?
-  createdAt    DateTime  @default(now())
-  // Invitation fields — null for admin-created vouchers
-  inviterId    String?
-  inviteeEmail String?
-
-  uses    VoucherUse[]
-  inviter User?        @relation("SentInvitations", fields: [inviterId], references: [id], onDelete: SetNull)
-
-  @@index([inviterId])
-  @@map("vouchers")
-}
-
-model VoucherUse {
-  id        String   @id @default(uuid())
-  voucherId String
-  userId    String
-  usedAt    DateTime @default(now())
-
-  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId])
-  @@index([voucherId])
-  @@map("voucher_uses")
 }
 
 model PasswordResetToken {
