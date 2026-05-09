@@ -332,6 +332,7 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
             <div>
               <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0 }}>{t.settings_changePassword}</p>
               {!pwOpen && <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>{t.settings_changePasswordDesc}</p>}
+              {!pwOpen && googleLinked && <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>{t.settings_changePasswordGoogleNote}</p>}
             </div>
             <span style={{ fontSize: 12, color: "#9ca3af", transform: pwOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
           </button>

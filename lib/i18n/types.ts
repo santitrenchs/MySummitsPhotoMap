@@ -142,6 +142,7 @@ export type Dict = {
   settings_linkedPerson: string; settings_linkedPersonDesc: string;
   settings_claimPerson: string; settings_unclaimPerson: string;
   settings_searchPerson: string; settings_linkedPersonCurrent: string;
+  settings_changePasswordGoogleNote: string;
   settings_connectedAccounts: string;
   settings_googleConnected: string; settings_googleNotConnected: string;
   settings_unlinkGoogle: string; settings_unlinkGoogleNeedPassword: string;

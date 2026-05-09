@@ -150,6 +150,7 @@ export const es: Dict = {
   settings_linkedPerson: "Perfil vinculado", settings_linkedPersonDesc: "Vincula tu cuenta a tu perfil de etiquetas",
   settings_claimPerson: "Vincular perfil", settings_unclaimPerson: "Desvincular",
   settings_searchPerson: "Busca tu nombre en las fotos…", settings_linkedPersonCurrent: "Vinculado a",
+  settings_changePasswordGoogleNote: "Cambiar esta contraseña no afecta a tu cuenta de Google. Puedes seguir entrando con ambos métodos.",
   settings_connectedAccounts: "Cuentas conectadas",
   settings_googleConnected: "Google conectado", settings_googleNotConnected: "Google no conectado",
   settings_unlinkGoogle: "Desvincular", settings_unlinkGoogleNeedPassword: "Establece una contraseña antes de desvincular Google",
