@@ -154,14 +154,9 @@ export type Dict = {
   auth_resetPassword: string; auth_resetPasswordDesc: string;
   auth_passwordsNoMatch: string; auth_resettingPassword: string;
   auth_resetSuccess: string; auth_invalidResetToken: string; auth_backToLogin: string;
-  // Voucher gate (register flow)
-  auth_voucher_title: string; auth_voucher_subtitle: string;
-  auth_voucher_placeholder: string; auth_voucher_btn: string; auth_voucher_verifying: string;
-  auth_voucher_invalid: string; auth_voucher_verified: string;
-  auth_voucher_noCode: string; auth_voucher_tokenExpired: string;
   auth_nameHint: string; auth_emailExists: string; auth_createAccountSubmit: string;
   auth_username: string; auth_usernameHint: string; auth_usernameTaken: string; auth_usernameInvalid: string;
-  auth_haveCode: string;
+  auth_continueWithGoogle: string;
 
   // Crop modal
   crop_title: string; crop_next: string;
