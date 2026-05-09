@@ -21,10 +21,17 @@ export default async function SettingsPage() {
       autoDetectFaces: true,
       autoSuggestPeople: true,
       reviewFacesBeforeSave: true,
+      passwordHash: true,
+      accounts: { select: { provider: true } },
     },
   });
 
   if (!user) redirect("/login");
 
-  return <SettingsClient initialUser={user} />;
+  const { passwordHash, accounts, ...rest } = user;
+  return <SettingsClient initialUser={{
+    ...rest,
+    hasPassword: !!passwordHash,
+    googleLinked: accounts.some(a => a.provider === "google"),
+  }} />;
 }

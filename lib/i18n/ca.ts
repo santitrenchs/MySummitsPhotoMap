@@ -150,6 +150,10 @@ export const ca: Dict = {
   settings_linkedPerson: "Perfil vinculat", settings_linkedPersonDesc: "Vincula el teu compte al teu perfil d'etiquetes",
   settings_claimPerson: "Vincular perfil", settings_unclaimPerson: "Desvincular",
   settings_searchPerson: "Cerca el teu nom a les fotos…", settings_linkedPersonCurrent: "Vinculat a",
+  settings_connectedAccounts: "Comptes connectats",
+  settings_googleConnected: "Google connectat", settings_googleNotConnected: "Google no connectat",
+  settings_unlinkGoogle: "Desvincula", settings_unlinkGoogleNeedPassword: "Estableix una contrasenya abans de desvincular Google",
+  settings_unlinkGoogleConfirm: "Desvincula el teu compte de Google? Podràs continuar entrant amb la teva contrasenya.",
 
   auth_signInDesc: "Inicia sessió al teu compte", auth_accountCreated: "Compte creat! Inicia sessió per començar.",
   auth_invalidCredentials: "Correu o contrasenya incorrectes", auth_signingIn: "Iniciant sessió…",
