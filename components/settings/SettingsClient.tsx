@@ -111,6 +111,7 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
   const [googleLinked, setGoogleLinked] = useState(initialUser.googleLinked);
   const [unlinkingGoogle, setUnlinkingGoogle] = useState(false);
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
+  const [unlinkConfirmOpen, setUnlinkConfirmOpen] = useState(false);
 
   // Delete
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -186,7 +187,7 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
   }
 
   async function unlinkGoogle() {
-    if (!confirm(t.settings_unlinkGoogleConfirm)) return;
+    setUnlinkConfirmOpen(false);
     setUnlinkingGoogle(true); setUnlinkError(null);
     const res = await fetch("/api/settings/accounts/google", { method: "DELETE" });
     setUnlinkingGoogle(false);
@@ -334,9 +335,9 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
           </div>
           {googleLinked && (
             initialUser.hasPassword ? (
-              <button onClick={unlinkGoogle} disabled={unlinkingGoogle}
+              <button onClick={() => setUnlinkConfirmOpen(true)} disabled={unlinkingGoogle}
                 style={{ padding: "7px 14px", background: "white", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: unlinkingGoogle ? "default" : "pointer", opacity: unlinkingGoogle ? 0.5 : 1, flexShrink: 0 }}>
-                {t.settings_unlinkGoogle}
+                {unlinkingGoogle ? "…" : t.settings_unlinkGoogle}
               </button>
             ) : (
               <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, maxWidth: 160, textAlign: "right", lineHeight: 1.4 }}>
@@ -465,6 +466,46 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
           )}
         </div>
       </Card>
+
+      {/* Unlink Google confirmation bottom sheet */}
+      {unlinkConfirmOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000 }}>
+          {/* Backdrop */}
+          <div onClick={() => setUnlinkConfirmOpen(false)}
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }} />
+          {/* Sheet */}
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0,
+            background: "white", borderRadius: "20px 20px 0 0",
+            padding: "24px 20px 36px", maxWidth: 480, margin: "0 auto",
+          }}>
+            {/* Handle */}
+            <div style={{ width: 36, height: 4, background: "#e5e7eb", borderRadius: 99, margin: "0 auto 20px" }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <GoogleIcon size={22} />
+              <p style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
+                {t.settings_unlinkGoogle}
+              </p>
+            </div>
+
+            <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, margin: "0 0 24px" }}>
+              {t.settings_unlinkGoogleConfirm}
+            </p>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setUnlinkConfirmOpen(false)}
+                style={{ flex: 1, padding: "12px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                {t.cancel}
+              </button>
+              <button onClick={unlinkGoogle} disabled={unlinkingGoogle}
+                style={{ flex: 1, padding: "12px", background: "#111827", color: "white", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: unlinkingGoogle ? "default" : "pointer", opacity: unlinkingGoogle ? 0.6 : 1 }}>
+                {unlinkingGoogle ? "…" : t.settings_unlinkGoogle}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
