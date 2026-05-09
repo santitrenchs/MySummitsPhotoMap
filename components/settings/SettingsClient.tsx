@@ -90,7 +90,7 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
 
   // Language
   const [langOpen, setLangOpen] = useState(false);
-  const currentLangOption = LOCALE_OPTIONS.find(o => o.value === locale);
+  const currentLangOption = LOCALE_OPTIONS.find(o => o.value === settings.language) ?? LOCALE_OPTIONS.find(o => o.value === locale);
 
   // Password form
   const [pwOpen, setPwOpen] = useState(false);
