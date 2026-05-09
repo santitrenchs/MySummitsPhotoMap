@@ -489,9 +489,20 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
               </p>
             </div>
 
-            <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, margin: "0 0 24px" }}>
+            <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, margin: "0 0 16px" }}>
               {t.settings_unlinkGoogleConfirm}
             </p>
+            {initialUser.hasPassword ? (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 12px", marginBottom: 24 }}>
+                <span style={{ fontSize: 15, lineHeight: 1 }}>🔑</span>
+                <p style={{ fontSize: 13, color: "#15803d", margin: 0, lineHeight: 1.5 }}>{t.settings_unlinkGoogleHasPassword}</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 12px", marginBottom: 24 }}>
+                <span style={{ fontSize: 15, lineHeight: 1 }}>⚠️</span>
+                <p style={{ fontSize: 13, color: "#dc2626", margin: 0, lineHeight: 1.5 }}>{t.settings_unlinkGoogleNoPassword}</p>
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setUnlinkConfirmOpen(false)}

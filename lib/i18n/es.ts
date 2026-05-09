@@ -155,6 +155,8 @@ export const es: Dict = {
   settings_googleConnected: "Google conectado", settings_googleNotConnected: "Google no conectado",
   settings_unlinkGoogle: "Desvincular", settings_unlinkGoogleNeedPassword: "Establece una contraseña antes de desvincular Google",
   settings_unlinkGoogleConfirm: "¿Desvincular tu cuenta de Google? Seguirás pudiendo entrar con tu contraseña.",
+  settings_unlinkGoogleHasPassword: "Tienes contraseña configurada. Podrás seguir entrando con email y contraseña.",
+  settings_unlinkGoogleNoPassword: "No tienes contraseña. Si desvinculás Google, perderás el acceso a tu cuenta. Crea una contraseña primero.",
 
   auth_signInDesc: "Inicia sesión en tu cuenta", auth_accountCreated: "¡Cuenta creada! Inicia sesión para empezar.",
   auth_invalidCredentials: "Email o contraseña incorrectos", auth_signingIn: "Iniciando sesión…",
