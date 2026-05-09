@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
+import { PeakadexLogo } from "@/components/brand/Logo";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -37,6 +38,10 @@ function LoginForm() {
 
   return (
     <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+        <PeakadexLogo height={38} iconScale={1.0} />
+      </div>
 
       <p className="mb-6 text-sm text-gray-500">
         {t.auth_noAccount}{" "}
