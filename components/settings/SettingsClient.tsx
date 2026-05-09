@@ -88,7 +88,13 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
   const [accountSuccess, setAccountSuccess] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
 
-  // Language
+  // Language — sync locale context with DB value on mount
+  useEffect(() => {
+    if (settings.language && settings.language !== locale) {
+      setLocale(settings.language as Locale);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [langOpen, setLangOpen] = useState(false);
   const currentLangOption = LOCALE_OPTIONS.find(o => o.value === settings.language) ?? LOCALE_OPTIONS.find(o => o.value === locale);
 
@@ -153,7 +159,8 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
   }, []);
 
   async function saveLanguage(newLocale: Locale) {
-    setLocale(newLocale); // immediate UI update
+    setLocale(newLocale);
+    setSettings(s => ({ ...s, language: newLocale }));
     await fetch("/api/settings", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ language: newLocale }),
