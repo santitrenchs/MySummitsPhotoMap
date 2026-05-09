@@ -490,7 +490,7 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
             </div>
 
             <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, margin: "0 0 16px" }}>
-              {t.settings_unlinkGoogleConfirm}
+              {t.settings_unlinkGoogleConfirmNeutral}
             </p>
             {initialUser.hasPassword ? (
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 12px", marginBottom: 24 }}>

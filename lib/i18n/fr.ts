@@ -155,6 +155,7 @@ export const fr: Dict = {
   settings_googleConnected: "Google connecté", settings_googleNotConnected: "Google non connecté",
   settings_unlinkGoogle: "Délier", settings_unlinkGoogleNeedPassword: "Définis un mot de passe avant de délier Google",
   settings_unlinkGoogleConfirm: "Délier ton compte Google ? Tu pourras toujours te connecter avec ton mot de passe.",
+  settings_unlinkGoogleConfirmNeutral: "Es-tu sûr de vouloir délier ton compte Google ?",
   settings_unlinkGoogleHasPassword: "Tu as un mot de passe configuré. Tu pourras toujours te connecter avec ton email et mot de passe.",
   settings_unlinkGoogleNoPassword: "Tu n'as pas de mot de passe. Si tu délies Google, tu perdras l'accès à ton compte. Crée un mot de passe d'abord.",
 

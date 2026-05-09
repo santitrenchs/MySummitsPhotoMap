@@ -155,6 +155,7 @@ export const de: Dict = {
   settings_googleConnected: "Google verbunden", settings_googleNotConnected: "Google nicht verbunden",
   settings_unlinkGoogle: "Trennen", settings_unlinkGoogleNeedPassword: "Lege ein Passwort fest, bevor du Google trennst",
   settings_unlinkGoogleConfirm: "Google-Konto trennen? Du kannst dich weiterhin mit deinem Passwort anmelden.",
+  settings_unlinkGoogleConfirmNeutral: "Bist du sicher, dass du dein Google-Konto trennen möchtest?",
   settings_unlinkGoogleHasPassword: "Du hast ein Passwort festgelegt. Du kannst dich weiterhin mit E-Mail und Passwort anmelden.",
   settings_unlinkGoogleNoPassword: "Du hast kein Passwort. Wenn du Google trennst, verlierst du den Zugang zu deinem Konto. Lege zuerst ein Passwort fest.",
 

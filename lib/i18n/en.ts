@@ -155,6 +155,7 @@ export const en: Dict = {
   settings_googleConnected: "Google connected", settings_googleNotConnected: "Google not connected",
   settings_unlinkGoogle: "Unlink", settings_unlinkGoogleNeedPassword: "Set a password before unlinking Google",
   settings_unlinkGoogleConfirm: "Unlink your Google account? You'll still be able to sign in with your password.",
+  settings_unlinkGoogleConfirmNeutral: "Are you sure you want to unlink your Google account?",
   settings_unlinkGoogleHasPassword: "You have a password set. You can still sign in with your email and password.",
   settings_unlinkGoogleNoPassword: "You have no password. If you unlink Google, you'll lose access to your account. Set a password first.",
 

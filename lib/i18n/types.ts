@@ -147,6 +147,7 @@ export type Dict = {
   settings_googleConnected: string; settings_googleNotConnected: string;
   settings_unlinkGoogle: string; settings_unlinkGoogleNeedPassword: string;
   settings_unlinkGoogleConfirm: string;
+  settings_unlinkGoogleConfirmNeutral: string;
   settings_unlinkGoogleHasPassword: string;
   settings_unlinkGoogleNoPassword: string;
 
