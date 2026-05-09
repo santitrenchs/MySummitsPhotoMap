@@ -150,6 +150,7 @@ export const en: Dict = {
   settings_linkedPerson: "Linked profile", settings_linkedPersonDesc: "Link your account to your face-tag profile",
   settings_claimPerson: "Link profile", settings_unclaimPerson: "Unlink",
   settings_searchPerson: "Search your name in photos…", settings_linkedPersonCurrent: "Linked to",
+  settings_changePasswordGoogleNote: "Changing this password does not affect your Google account. You can still sign in with both methods.",
   settings_connectedAccounts: "Connected accounts",
   settings_googleConnected: "Google connected", settings_googleNotConnected: "Google not connected",
   settings_unlinkGoogle: "Unlink", settings_unlinkGoogleNeedPassword: "Set a password before unlinking Google",
