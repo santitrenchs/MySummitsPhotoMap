@@ -332,7 +332,12 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
             <div>
               <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0 }}>{t.settings_changePassword}</p>
               {!pwOpen && <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>{t.settings_changePasswordDesc}</p>}
-              {!pwOpen && googleLinked && <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>{t.settings_changePasswordGoogleNote}</p>}
+              {!pwOpen && googleLinked && (
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginTop: 6, padding: "7px 10px", background: "#eff6ff", borderRadius: 7 }}>
+                  <span style={{ fontSize: 13, lineHeight: 1, marginTop: 1 }}>ℹ️</span>
+                  <p style={{ fontSize: 12, color: "#1d4ed8", margin: 0, lineHeight: 1.4 }}>{t.settings_changePasswordGoogleNote}</p>
+                </div>
+              )}
             </div>
             <span style={{ fontSize: 12, color: "#9ca3af", transform: pwOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
           </button>
