@@ -395,8 +395,7 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
         </SettingsRow>
       </Card>
 
-      {/* Danger zone */}
-      <SectionHeader label={t.settings_dangerZone} />
+      <div style={{ marginTop: 28 }} />
       <Card>
         <SettingsRow label={t.settings_signOut} description={t.settings_signOutDesc}>
           <button onClick={() => signOut({ callbackUrl: "/login" })}
