@@ -150,7 +150,7 @@ export const de: Dict = {
   settings_linkedPerson: "Verknüpftes Profil", settings_linkedPersonDesc: "Verknüpfe dein Konto mit deinem Tag-Profil",
   settings_claimPerson: "Profil verknüpfen", settings_unclaimPerson: "Verknüpfung aufheben",
   settings_searchPerson: "Suche deinen Namen in Fotos…", settings_linkedPersonCurrent: "Verknüpft mit",
-  settings_changePasswordGoogleNote: "Das Ändern dieses Passworts hat keinen Einfluss auf dein Google-Konto. Du kannst dich weiterhin mit beiden Methoden anmelden.",
+  settings_changePasswordGoogleNote: "Google aktiv · du kannst dich auch ohne Passwort anmelden",
   settings_connectedAccounts: "Verbundene Konten",
   settings_googleConnected: "Google verbunden", settings_googleNotConnected: "Google nicht verbunden",
   settings_unlinkGoogle: "Trennen", settings_unlinkGoogleNeedPassword: "Lege ein Passwort fest, bevor du Google trennst",

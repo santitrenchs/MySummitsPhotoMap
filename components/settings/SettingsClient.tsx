@@ -55,13 +55,14 @@ function SettingsRow({ label, description, children, last }: { label: string; de
   );
 }
 
-function GoogleIcon() {
+function GoogleIcon({ size = 20, color }: { size?: number; color?: string }) {
+  const fill = color ?? undefined;
   return (
-    <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    <svg width={size} height={size} viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill={fill ?? "#4285F4"}/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill={fill ?? "#34A853"}/>
+      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill={fill ?? "#FBBC05"}/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill={fill ?? "#EA4335"}/>
     </svg>
   );
 }
@@ -86,6 +87,10 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
   const [accountSaving, setAccountSaving] = useState(false);
   const [accountSuccess, setAccountSuccess] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
+
+  // Language
+  const [langOpen, setLangOpen] = useState(false);
+  const currentLangOption = LOCALE_OPTIONS.find(o => o.value === locale);
 
   // Password form
   const [pwOpen, setPwOpen] = useState(false);
@@ -216,16 +221,31 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
       {/* Language */}
       <SectionHeader label={t.settings_language} />
       <Card>
-        {LOCALE_OPTIONS.map(({ value, flagImg, name }, idx) => {
+        {/* Collapsed row — always visible */}
+        <button type="button" onClick={() => setLangOpen(o => !o)} style={{
+          display: "flex", alignItems: "center", gap: 12,
+          width: "100%", padding: "0 16px", height: 52,
+          background: "none", border: "none", cursor: "pointer",
+          borderBottom: langOpen ? "1px solid #f3f4f6" : "none", textAlign: "left",
+        }}>
+          {currentLangOption && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={currentLangOption.flagImg} alt={currentLangOption.name} style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
+          )}
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#111827" }}>{currentLangOption?.name}</span>
+          <span style={{ fontSize: 11, color: "#9ca3af", transform: langOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+        </button>
+
+        {/* Expanded options */}
+        {langOpen && LOCALE_OPTIONS.map(({ value, flagImg, name }, idx) => {
           const active = locale === value;
           return (
-            <button key={value} onClick={() => saveLanguage(value)} style={{
+            <button key={value} onClick={() => { saveLanguage(value); setLangOpen(false); }} style={{
               display: "flex", alignItems: "center", gap: 12,
               width: "100%", padding: "0 16px", height: 48,
               background: "none", border: "none", cursor: "pointer",
               borderBottom: idx < LOCALE_OPTIONS.length - 1 ? "1px solid #f3f4f6" : "none",
-              textAlign: "left",
-              transition: "background 0.1s",
+              textAlign: "left", transition: "background 0.1s",
             }}
             onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
             onMouseLeave={e => (e.currentTarget.style.background = "none")}
@@ -333,9 +353,9 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
               <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", margin: 0 }}>{t.settings_changePassword}</p>
               {!pwOpen && <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>{t.settings_changePasswordDesc}</p>}
               {!pwOpen && googleLinked && (
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginTop: 6, padding: "7px 10px", background: "#eff6ff", borderRadius: 7 }}>
-                  <span style={{ fontSize: 13, lineHeight: 1, marginTop: 1 }}>ℹ️</span>
-                  <p style={{ fontSize: 12, color: "#1d4ed8", margin: 0, lineHeight: 1.4 }}>{t.settings_changePasswordGoogleNote}</p>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 5, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 99, padding: "3px 8px" }}>
+                  <GoogleIcon size={11} color="#15803d" />
+                  <span style={{ fontSize: 11, color: "#15803d", fontWeight: 500 }}>{t.settings_changePasswordGoogleNote}</span>
                 </div>
               )}
             </div>

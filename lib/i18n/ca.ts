@@ -150,7 +150,7 @@ export const ca: Dict = {
   settings_linkedPerson: "Perfil vinculat", settings_linkedPersonDesc: "Vincula el teu compte al teu perfil d'etiquetes",
   settings_claimPerson: "Vincular perfil", settings_unclaimPerson: "Desvincular",
   settings_searchPerson: "Cerca el teu nom a les fotos…", settings_linkedPersonCurrent: "Vinculat a",
-  settings_changePasswordGoogleNote: "Canviar aquesta contrasenya no afecta el teu compte de Google. Pots continuar entrant amb tots dos mètodes.",
+  settings_changePasswordGoogleNote: "Google actiu · també pots entrar sense contrasenya",
   settings_connectedAccounts: "Comptes connectats",
   settings_googleConnected: "Google connectat", settings_googleNotConnected: "Google no connectat",
   settings_unlinkGoogle: "Desvincula", settings_unlinkGoogleNeedPassword: "Estableix una contrasenya abans de desvincular Google",
