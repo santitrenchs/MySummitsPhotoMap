@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
+import { PeakadexLogo } from "@/components/brand/Logo";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -72,6 +73,10 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+          <PeakadexLogo height={38} iconScale={1.0} />
+        </div>
 
         <p className="mb-6 text-sm text-gray-500">
           {t.auth_haveAccount}{" "}
