@@ -11,14 +11,27 @@ import LandingFAQ from "./LandingFAQ";
 import LandingCTA from "./LandingCTA";
 import LandingFooter from "./LandingFooter";
 
-export default function LandingPage() {
+type Stats = {
+  totalRarities: number;
+  totalPeaks: number;
+  capturedPeaks: number;
+  totalAscents: number;
+};
+
+export default function LandingPage({
+  stats,
+  peakCounts,
+}: {
+  stats: Stats;
+  peakCounts: Record<string, number>;
+}) {
   return (
     <div className="ld-root">
       <LandingNav />
       <main>
         <LandingHero />
-        <LandingStats />
-        <LandingRarities />
+        <LandingStats stats={stats} />
+        <LandingRarities peakCounts={peakCounts} />
         <LandingCards />
         <LandingHowItWorks />
         <LandingFAQ />

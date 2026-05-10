@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 type Stats = {
   totalRarities: number;
@@ -77,17 +77,9 @@ function StatCard({
   );
 }
 
-export default function LandingStats() {
-  const [stats, setStats] = useState<Stats | null>(null);
+export default function LandingStats({ stats }: { stats: Stats }) {
   const [active, setActive] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    fetch("/api/stats/landing")
-      .then((r) => r.json())
-      .then(setStats)
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -100,7 +92,7 @@ export default function LandingStats() {
     return () => observer.disconnect();
   }, []);
 
-  const s = stats ?? { totalRarities: 6, totalPeaks: 0, capturedPeaks: 0, totalAscents: 0 };
+  const s = stats;
 
   return (
     <section

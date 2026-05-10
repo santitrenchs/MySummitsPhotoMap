@@ -14,7 +14,7 @@ const RARITIES = [
   { id: "snowlotus",  name: "Snow Lotus", emoji: "✿", color: "#94A3B8", altRange: "≥ 8.000 m",         description: "8000ers. El olimpo del coleccionismo",        ep: "2.000 EP" },
 ];
 
-export default function LandingRarities() {
+export default function LandingRarities({ peakCounts }: { peakCounts: Record<string, number> }) {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -162,23 +162,34 @@ export default function LandingRarities() {
                 {r.description}
               </p>
 
-              {/* EP badge */}
-              <span
-                style={{
-                  display: "inline-block",
-                  background: `${r.color}18`,
-                  border: `1px solid ${r.color}35`,
-                  borderRadius: 100,
-                  padding: "3px 10px",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  fontFamily: "var(--font-mono-landing, monospace)",
-                  color: r.color,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {r.ep}
-              </span>
+              {/* EP badge + peak count */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    background: `${r.color}18`,
+                    border: `1px solid ${r.color}35`,
+                    borderRadius: 100,
+                    padding: "3px 10px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    fontFamily: "var(--font-mono-landing, monospace)",
+                    color: r.color,
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  {r.ep}
+                </span>
+                {peakCounts[r.id] > 0 && (
+                  <span style={{
+                    fontSize: 11,
+                    color: "rgba(13,37,56,0.4)",
+                    fontFamily: "var(--font-mono-landing, monospace)",
+                  }}>
+                    {peakCounts[r.id].toLocaleString("es-ES")} cimas
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -186,7 +197,7 @@ export default function LandingRarities() {
         {/* Bottom copy */}
         <div style={{ textAlign: "center", marginTop: 52 }}>
           <p style={{ fontSize: 14, color: "rgba(13,37,56,0.4)", marginBottom: 20 }}>
-            Las Snow Lotus se cuentan con los dedos de las manos.
+            Las Snow Lotus son la rareza más difícil. Solo unos pocos las han capturado todas.
           </p>
           <a href="/register" className="ld-btn-primary" style={{ display: "inline-flex" }}>
             Empieza con una Daisy →

@@ -94,13 +94,13 @@ export default function LandingHero() {
                 lineHeight: 1.02,
               }}
             >
-              <span className="hero-line" style={{ display: "block" }}>
+              <span className="hero-line" style={{ display: "block", color: "#0D2538" }}>
                 Captura cimas.
               </span>
-              <span className="hero-line" style={{ display: "block" }}>
+              <span className="hero-line" style={{ display: "block", color: "var(--ld-gold)" }}>
                 Colecciona rarezas.
               </span>
-              <span className="hero-line" style={{ display: "block", color: "#2F7A5F" }}>
+              <span className="hero-line" style={{ display: "block", color: "#5A6E84" }}>
                 Conviértete en
               </span>
               <span className="hero-line" style={{ display: "block", color: "#2F7A5F" }}>
