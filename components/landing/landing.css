@@ -1,0 +1,223 @@
+/* ─────────────────────────────────────────────────────────────────
+   PEAKADEX LANDING — Design System
+   ───────────────────────────────────────────────────────────────── */
+
+/* ── Tokens ──────────────────────────────────────────────────────── */
+.ld-root {
+  --ld-bg-deep: #070B14;
+  --ld-bg-surface: #0F1523;
+  --ld-bg-elevated: #171E30;
+  --ld-gold: #F5C842;
+  --ld-gold-dim: rgba(245, 200, 66, 0.15);
+  --ld-gold-glow: rgba(245, 200, 66, 0.3);
+  --ld-text: #F0F4FF;
+  --ld-muted: #7B8DB0;
+  --ld-border: rgba(255, 255, 255, 0.08);
+  --ld-border-strong: rgba(255, 255, 255, 0.14);
+  --rarity-daisy: #00995C;
+  --rarity-gentian: #A855F7;
+  --rarity-edelweiss: #3B82F6;
+  --rarity-saxifrage: #F97316;
+  --rarity-cinquefoil: #EAB308;
+  --rarity-snowlotus: #FFD700;
+  font-family: var(--font-inter, sans-serif);
+  color: var(--ld-text);
+  background: var(--ld-bg-deep);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography helpers ──────────────────────────────────────────── */
+.ld-display {
+  font-family: var(--font-space, sans-serif);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.ld-mono {
+  font-family: var(--font-mono-landing, monospace);
+  letter-spacing: -0.01em;
+}
+
+/* ── Scroll reveal ───────────────────────────────────────────────── */
+.ld-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.ld-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays */
+.ld-reveal[data-delay="1"] { transition-delay: 0.08s; }
+.ld-reveal[data-delay="2"] { transition-delay: 0.16s; }
+.ld-reveal[data-delay="3"] { transition-delay: 0.24s; }
+.ld-reveal[data-delay="4"] { transition-delay: 0.32s; }
+.ld-reveal[data-delay="5"] { transition-delay: 0.40s; }
+.ld-reveal[data-delay="6"] { transition-delay: 0.48s; }
+
+/* ── Keyframes ───────────────────────────────────────────────────── */
+@keyframes ld-float {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50%       { transform: translateY(-12px) rotate(-2deg); }
+}
+
+@keyframes ld-float-subtle {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes ld-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes ld-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0.4); }
+  70%  { box-shadow: 0 0 0 12px rgba(245, 200, 66, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0); }
+}
+
+@keyframes ld-ping {
+  0%        { transform: scale(1); opacity: 1; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes ld-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes ld-glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+@keyframes ld-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Global layout helpers ───────────────────────────────────────── */
+.ld-container {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.ld-section {
+  padding: 100px 0;
+}
+
+.ld-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ld-gold);
+  margin-bottom: 16px;
+}
+
+.ld-section-title {
+  font-size: clamp(32px, 5vw, 52px);
+  color: var(--ld-text);
+  margin-bottom: 16px;
+}
+
+.ld-section-sub {
+  font-size: 18px;
+  color: var(--ld-muted);
+  line-height: 1.6;
+  max-width: 560px;
+}
+
+/* ── Button styles ───────────────────────────────────────────────── */
+.ld-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ld-gold);
+  color: #070B14;
+  font-family: var(--font-space, sans-serif);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 28px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ld-btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  background-size: 200% 100%;
+  animation: ld-shimmer 3s infinite;
+}
+
+.ld-btn-primary:hover {
+  background: #e8b92e;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(245, 200, 66, 0.4);
+}
+
+.ld-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--ld-text);
+  font-family: var(--font-space, sans-serif);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 14px 24px;
+  border-radius: 100px;
+  border: 1px solid var(--ld-border-strong);
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.ld-btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+/* ── Micro copy below CTA ────────────────────────────────────────── */
+.ld-cta-micro {
+  font-size: 12px;
+  color: var(--ld-muted);
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* ── Noise overlay texture ───────────────────────────────────────── */
+.ld-noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Accessibility: reduce motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ld-reveal { transition: none; opacity: 1; transform: none; }
+  [class*="ld-float"], [class*="ld-shimmer"], [class*="ld-ping"], [class*="ld-pulse"] {
+    animation: none;
+  }
+}
