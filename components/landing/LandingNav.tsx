@@ -71,7 +71,7 @@ export default function LandingNav() {
           <PeakadexLogo
             height={30}
             iconScale={1.1}
-            iconBgColor={scrolled ? "white" : "transparent"}
+            iconBgColor="white"
           />
         </Link>
 
