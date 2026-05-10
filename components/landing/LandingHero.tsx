@@ -24,6 +24,7 @@ export default function LandingHero() {
 
   return (
     <section
+      className="ld-hero-section"
       style={{
         minHeight: "100svh",
         position: "relative",
@@ -144,15 +145,18 @@ export default function LandingHero() {
       </div>
 
       <style>{`
-        /* On mobile: stronger gradient so text is always legible over the map */
+        /* Mobile: texto arriba, mapa visible en la mitad inferior */
         @media (max-width: 680px) {
+          .ld-hero-section {
+            align-items: flex-start !important;
+          }
           .ld-hero-gradient {
             background: linear-gradient(
               to bottom,
-              rgba(255,255,255,0.98) 0%,
-              rgba(255,255,255,0.95) 60%,
-              rgba(255,255,255,0.7) 80%,
-              rgba(255,255,255,0) 100%
+              rgba(255,255,255,1)   0%,
+              rgba(255,255,255,0.95) 30%,
+              rgba(255,255,255,0.55) 58%,
+              rgba(255,255,255,0)   78%
             ) !important;
           }
         }

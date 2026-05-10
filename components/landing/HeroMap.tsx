@@ -6,6 +6,7 @@ import Image from "next/image";
 // West: -2.939°, East: 2.335°, North: 43.423°, South: 41.970° (zoom 8, 1920×720)
 const PEAKS = [
   {
+    id: "vignemale",
     name: "Vignemale",
     alt: "3.298 m",
     rarity: "Edelweiss",
@@ -16,6 +17,7 @@ const PEAKS = [
     yPct: 44.8,
   },
   {
+    id: "monte-perdido",
     name: "Monte Perdido",
     alt: "3.355 m",
     rarity: "Edelweiss",
@@ -26,6 +28,7 @@ const PEAKS = [
     yPct: 51.0,
   },
   {
+    id: "posets",
     name: "Posets",
     alt: "3.375 m",
     rarity: "Edelweiss",
@@ -36,6 +39,7 @@ const PEAKS = [
     yPct: 53.1,
   },
   {
+    id: "aneto",
     name: "Aneto",
     alt: "3.404 m",
     rarity: "Edelweiss",
@@ -46,6 +50,7 @@ const PEAKS = [
     yPct: 54.5,
   },
   {
+    id: "pica",
     name: "Pica d'Estats",
     alt: "3.143 m",
     rarity: "Edelweiss",
@@ -66,7 +71,9 @@ export default function HeroMap() {
           src="/images/hero-pyrenees.jpg"
           alt="Mapa de los Pirineos"
           fill
-          style={{ objectFit: "cover", objectPosition: "center top" }}
+          // On desktop: center. On mobile (portrait): shift right so peaks
+          // (located at 53-82% of the 1920px wide image) are in the visible crop.
+          style={{ objectFit: "cover", objectPosition: "65% center" }}
           priority
           quality={90}
         />
@@ -76,7 +83,7 @@ export default function HeroMap() {
       {PEAKS.map((peak) => (
         <div
           key={peak.name}
-          className="hero-marker"
+          className={`hero-marker hero-marker-${peak.id}`}
           style={{
             position: "absolute",
             left: `${peak.xPct}%`,
@@ -268,9 +275,32 @@ export default function HeroMap() {
         .hero-map-pulse {
           animation: heroMapPulse 2.2s ease-out infinite;
         }
-        /* Hide markers on mobile — gradient covers the map vertically */
+        /**
+         * Mobile: objectPosition is "65% center" → visible x range ≈ 53–71% of the
+         * 1920px image. Peaks in that range (Vignemale 53%, Monte Perdido 56%, Posets 64%,
+         * Aneto 68%) map to mobile viewport % as:
+         *   mobile_x% = (peak_xPct - 53.5) / (71.0 - 53.5) * 100
+         *   mobile_y% = peak_yPct  (y is ~1:1 since height nearly fills portrait)
+         * We override left/top per-peak and hide the two that fall outside.
+         */
         @media (max-width: 680px) {
-          .hero-marker { display: none !important; }
+          /* Re-position all markers for the mobile crop */
+          .hero-marker { pointer-events: none; }
+
+          /* Vignemale: desktop 53.0% → mobile ≈ -2.9% (just off left edge, hide) */
+          .hero-marker-vignemale { display: none !important; }
+
+          /* Monte Perdido: desktop 56.4% → mobile ≈ 16.6% */
+          .hero-marker-monte-perdido { left: 17% !important; top: 51% !important; }
+
+          /* Posets: desktop 63.9% → mobile ≈ 59.4% */
+          .hero-marker-posets { left: 59% !important; top: 53% !important; }
+
+          /* Aneto: desktop 68.2% → mobile ≈ 84.0% */
+          .hero-marker-aneto { left: 84% !important; top: 55% !important; }
+
+          /* Pica d'États: desktop 82.3% → mobile ≈ 165% (way off screen, hide) */
+          .hero-marker-pica { display: none !important; }
         }
       `}</style>
     </>
