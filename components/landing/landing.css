@@ -4,19 +4,19 @@
 
 /* ── Tokens ──────────────────────────────────────────────────────── */
 .ld-root {
-  --ld-bg-deep: #07111E;
-  --ld-bg-surface: #0D1A28;
-  --ld-bg-elevated: #132030;
+  --ld-bg-deep: #FFFFFF;
+  --ld-bg-surface: #F4F7FA;
+  --ld-bg-elevated: #E8EEF4;
   --ld-accent: #DC2626;
   --ld-accent-hover: #b91c1c;
   --ld-accent-dim: rgba(220, 38, 38, 0.15);
   --ld-accent-glow: rgba(220, 38, 38, 0.3);
   --ld-gold: #F5C842;
   --ld-navy: #0D2538;
-  --ld-text: #F0F4FF;
-  --ld-muted: #7B8DB0;
-  --ld-border: rgba(255, 255, 255, 0.08);
-  --ld-border-strong: rgba(255, 255, 255, 0.14);
+  --ld-text: #0D2538;
+  --ld-muted: #5A6E84;
+  --ld-border: rgba(13, 37, 56, 0.1);
+  --ld-border-strong: rgba(13, 37, 56, 0.18);
   --rarity-daisy: #00995C;
   --rarity-gentian: #A855F7;
   --rarity-edelweiss: #3B82F6;
@@ -193,8 +193,8 @@
 }
 
 .ld-btn-ghost:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(13, 37, 56, 0.35);
+  background: rgba(13, 37, 56, 0.05);
   transform: translateY(-2px);
 }
 

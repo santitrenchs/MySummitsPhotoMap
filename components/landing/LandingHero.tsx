@@ -226,7 +226,7 @@ export default function LandingHero() {
         alignItems: "center",
         position: "relative",
         overflow: "hidden",
-        background: "linear-gradient(165deg, #0E1C2E 0%, #07111E 55%, #0B1120 100%)",
+        background: "linear-gradient(165deg, #F0F4F8 0%, #FFFFFF 55%, #F4F7FA 100%)",
         paddingTop: 80,
       }}
     >
@@ -277,11 +277,11 @@ export default function LandingHero() {
         >
           <path
             d="M0 220 L0 160 L80 120 L160 155 L260 80 L340 130 L440 40 L520 100 L600 60 L680 110 L760 30 L840 90 L920 50 L1000 120 L1100 70 L1180 130 L1260 90 L1360 150 L1440 110 L1440 220Z"
-            fill="rgba(11,16,28,0.9)"
+            fill="rgba(13,37,56,0.07)"
           />
           <path
             d="M0 220 L0 180 L100 155 L200 175 L320 110 L400 150 L500 90 L570 130 L640 105 L720 145 L800 80 L870 120 L940 100 L1020 140 L1120 95 L1200 140 L1300 115 L1380 155 L1440 130 L1440 220Z"
-            fill="rgba(7,11,20,0.95)"
+            fill="rgba(13,37,56,0.12)"
           />
         </svg>
       </div>
@@ -374,7 +374,7 @@ export default function LandingHero() {
             <p
               style={{
                 fontSize: "clamp(16px, 2vw, 19px)",
-                color: "rgba(240,244,255,0.65)",
+                color: "#5A6E84",
                 lineHeight: 1.6,
                 margin: "0 0 40px",
                 maxWidth: 500,
@@ -411,7 +411,7 @@ export default function LandingHero() {
                 gap: 32,
                 marginTop: 48,
                 paddingTop: 32,
-                borderTop: "1px solid rgba(255,255,255,0.07)",
+                borderTop: "1px solid rgba(13,37,56,0.08)",
               }}
               className="ld-hero-stats"
             >
@@ -427,7 +427,7 @@ export default function LandingHero() {
                   >
                     {stat.value}
                   </div>
-                  <div style={{ fontSize: 12, color: "rgba(240,244,255,0.45)", marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: "rgba(13,37,56,0.45)", marginTop: 2 }}>
                     {stat.label}
                   </div>
                 </div>

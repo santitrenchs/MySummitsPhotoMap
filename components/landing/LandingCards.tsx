@@ -374,7 +374,7 @@ export default function LandingCards() {
       className="ld-section"
       ref={sectionRef}
       style={{
-        background: "linear-gradient(180deg, #070B14 0%, #0C1220 100%)",
+        background: "#F4F7FA",
       }}
     >
       <div className="ld-container">
@@ -391,7 +391,7 @@ export default function LandingCards() {
             de esa montaña. Anverso y reverso. Como un trofeo, pero que
             cabe en el bolsillo.
           </p>
-          <p style={{ fontSize: 13, color: "rgba(240,244,255,0.35)", marginTop: 12 }}>
+          <p style={{ fontSize: 13, color: "rgba(13,37,56,0.45)", marginTop: 12 }}>
             Pasa el cursor (o toca) para ver el reverso →
           </p>
         </div>
@@ -415,14 +415,14 @@ export default function LandingCards() {
           <p
             style={{
               fontSize: 15,
-              color: "rgba(240,244,255,0.45)",
+              color: "rgba(13,37,56,0.55)",
               marginBottom: 6,
               fontStyle: "italic",
             }}
           >
             &ldquo;Algunas cartas son comunes. Otras son casi imposibles.&rdquo;
           </p>
-          <p style={{ fontSize: 13, color: "rgba(240,244,255,0.3)", marginBottom: 28 }}>
+          <p style={{ fontSize: 13, color: "rgba(13,37,56,0.4)", marginBottom: 28 }}>
             Las Snow Lotus se cuentan con los dedos de las manos.
           </p>
           <a href="/register" className="ld-btn-primary" style={{ display: "inline-flex" }}>

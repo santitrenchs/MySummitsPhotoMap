@@ -155,7 +155,7 @@ export default function LandingHowItWorks() {
                   fontSize: 100,
                   fontFamily: "var(--font-mono-landing, monospace)",
                   fontWeight: 500,
-                  color: "rgba(255,255,255,0.025)",
+                  color: "rgba(13,37,56,0.04)",
                   lineHeight: 1,
                   pointerEvents: "none",
                   userSelect: "none",
@@ -204,7 +204,7 @@ export default function LandingHowItWorks() {
                   fontFamily: "var(--font-space, sans-serif)",
                   fontSize: 17,
                   fontWeight: 700,
-                  color: "#F0F4FF",
+                  color: "#0D2538",
                   letterSpacing: "-0.01em",
                   marginBottom: 10,
                   lineHeight: 1.25,
@@ -217,7 +217,7 @@ export default function LandingHowItWorks() {
               <p
                 style={{
                   fontSize: 13,
-                  color: "rgba(240,244,255,0.55)",
+                  color: "rgba(13,37,56,0.55)",
                   lineHeight: 1.6,
                   margin: 0,
                 }}
@@ -259,13 +259,13 @@ export default function LandingHowItWorks() {
               fontSize: 20,
               fontFamily: "var(--font-space, sans-serif)",
               fontWeight: 600,
-              color: "#F0F4FF",
+              color: "#0D2538",
               marginBottom: 8,
             }}
           >
             ¿Tu próxima cima te espera?
           </p>
-          <p style={{ fontSize: 14, color: "rgba(240,244,255,0.45)", marginBottom: 24 }}>
+          <p style={{ fontSize: 14, color: "rgba(13,37,56,0.5)", marginBottom: 24 }}>
             Regístrate gratis y empieza a capturarla hoy.
           </p>
           <a href="/register" className="ld-btn-primary">

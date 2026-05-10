@@ -19,7 +19,7 @@ export default function LandingFooter() {
   return (
     <footer
       style={{
-        background: "#050810",
+        background: "#0D2538",
         borderTop: "1px solid rgba(255,255,255,0.06)",
         padding: "48px 0 32px",
       }}
@@ -37,7 +37,7 @@ export default function LandingFooter() {
           {/* Brand column */}
           <div>
             <Link href="/" style={{ textDecoration: "none", display: "inline-block", marginBottom: 14 }}>
-              <PeakadexLogo height={28} peakColor="#F0F4FF" adexColor="rgba(240,244,255,0.5)" />
+              <PeakadexLogo height={28} peakColor="#F0F4FF" adexColor="rgba(240,244,255,0.5)" iconBgColor="#0D2538" />
             </Link>
             <p
               style={{

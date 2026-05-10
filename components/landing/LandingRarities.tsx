@@ -91,7 +91,7 @@ export default function LandingRarities() {
       id="rarezas"
       className="ld-section"
       style={{
-        background: "linear-gradient(180deg, #070B14 0%, #0A0F1E 50%, #070B14 100%)",
+        background: "linear-gradient(180deg, #FFFFFF 0%, #F4F7FA 50%, #FFFFFF 100%)",
       }}
     >
       <div className="ld-container">
@@ -128,7 +128,7 @@ export default function LandingRarities() {
               className="rarity-card"
               data-delay={i * 80}
               style={{
-                background: "var(--ld-bg-surface)",
+                background: "#FFFFFF",
                 border: `1px solid ${r.color}30`,
                 borderRadius: 16,
                 padding: "28px 24px",
@@ -142,7 +142,7 @@ export default function LandingRarities() {
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLElement;
                 el.style.borderColor = `${r.color}70`;
-                el.style.boxShadow = `0 0 48px ${r.color}1A, 0 4px 24px rgba(0,0,0,0.4)`;
+                el.style.boxShadow = `0 0 48px ${r.color}1A, 0 4px 24px rgba(13,37,56,0.08)`;
                 el.style.transform = "translateY(-4px) scale(1)";
               }}
               onMouseLeave={(e) => {
@@ -188,7 +188,7 @@ export default function LandingRarities() {
                 className="ld-mono"
                 style={{
                   fontSize: 12,
-                  color: "rgba(240,244,255,0.5)",
+                  color: "rgba(13,37,56,0.5)",
                   marginBottom: 10,
                 }}
               >
@@ -199,7 +199,7 @@ export default function LandingRarities() {
               <p
                 style={{
                   fontSize: 13,
-                  color: "rgba(240,244,255,0.6)",
+                  color: "rgba(13,37,56,0.6)",
                   lineHeight: 1.5,
                   margin: "0 0 14px",
                 }}
@@ -230,7 +230,7 @@ export default function LandingRarities() {
 
         {/* Bottom copy */}
         <div style={{ textAlign: "center", marginTop: 52 }}>
-          <p style={{ fontSize: 14, color: "rgba(240,244,255,0.4)", marginBottom: 20 }}>
+          <p style={{ fontSize: 14, color: "rgba(13,37,56,0.4)", marginBottom: 20 }}>
             Las Snow Lotus se cuentan con los dedos de las manos.
           </p>
           <a href="/register" className="ld-btn-primary" style={{ display: "inline-flex" }}>

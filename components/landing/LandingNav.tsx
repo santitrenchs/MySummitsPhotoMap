@@ -14,6 +14,7 @@ export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 60);
@@ -23,7 +24,10 @@ export default function LandingNav() {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        hamburgerRef.current && !hamburgerRef.current.contains(e.target as Node)
+      ) {
         setMenuOpen(false);
       }
     };
@@ -47,10 +51,10 @@ export default function LandingNav() {
         right: 0,
         zIndex: 1000,
         transition: "background 0.3s, backdrop-filter 0.3s, border-bottom 0.3s",
-        background: scrolled ? "rgba(7, 11, 20, 0.88)" : "transparent",
+        background: scrolled ? "rgba(255,255,255,0.92)" : "transparent",
         backdropFilter: scrolled ? "blur(16px)" : "none",
         WebkitBackdropFilter: scrolled ? "blur(16px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.07)" : "none",
+        borderBottom: scrolled ? "1px solid rgba(13,37,56,0.08)" : "none",
       }}
     >
       <div
@@ -67,8 +71,7 @@ export default function LandingNav() {
           <PeakadexLogo
             height={30}
             iconScale={1.1}
-            peakColor="#F0F4FF"
-            adexColor="rgba(240,244,255,0.55)"
+            iconBgColor={scrolled ? "white" : "transparent"}
           />
         </Link>
 
@@ -88,7 +91,7 @@ export default function LandingNav() {
               style={{
                 background: "none",
                 border: "none",
-                color: "rgba(240, 244, 255, 0.7)",
+                color: "rgba(13,37,56,0.65)",
                 fontFamily: "var(--font-space, sans-serif)",
                 fontSize: 14,
                 fontWeight: 500,
@@ -98,11 +101,11 @@ export default function LandingNav() {
                 transition: "color 0.2s, background 0.2s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = "#F0F4FF";
-                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
+                (e.currentTarget as HTMLButtonElement).style.color = "#0D2538";
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(13,37,56,0.05)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = "rgba(240, 244, 255, 0.7)";
+                (e.currentTarget as HTMLButtonElement).style.color = "rgba(13,37,56,0.65)";
                 (e.currentTarget as HTMLButtonElement).style.background = "none";
               }}
             >
@@ -116,7 +119,7 @@ export default function LandingNav() {
           <Link
             href="/login"
             style={{
-              color: "rgba(240,244,255,0.65)",
+              color: "rgba(13,37,56,0.55)",
               fontSize: 14,
               fontWeight: 500,
               fontFamily: "var(--font-space, sans-serif)",
@@ -129,18 +132,19 @@ export default function LandingNav() {
           >
             Iniciar sesión
           </Link>
-          <Link href="/register" className="ld-btn-primary" style={{ fontSize: 14, padding: "10px 20px" }}>
+          <Link href="/register" className="ld-btn-primary ld-register-btn" style={{ fontSize: 14, padding: "10px 20px" }}>
             Registrarse
           </Link>
 
           {/* Mobile hamburger */}
           <button
+            ref={hamburgerRef}
             onClick={() => setMenuOpen((o) => !o)}
             style={{
               display: "none",
               background: "none",
               border: "none",
-              color: "#F0F4FF",
+              color: "#0D2538",
               cursor: "pointer",
               padding: 8,
               marginLeft: 4,
@@ -164,9 +168,9 @@ export default function LandingNav() {
         <div
           ref={menuRef}
           style={{
-            background: "rgba(15, 21, 35, 0.98)",
+            background: "rgba(255,255,255,0.98)",
             backdropFilter: "blur(20px)",
-            borderTop: "1px solid rgba(255,255,255,0.08)",
+            borderTop: "1px solid rgba(13,37,56,0.08)",
             padding: "12px 24px 20px",
             display: "flex",
             flexDirection: "column",
@@ -180,14 +184,14 @@ export default function LandingNav() {
               style={{
                 background: "none",
                 border: "none",
-                color: "rgba(240, 244, 255, 0.8)",
+                color: "rgba(13,37,56,0.8)",
                 fontFamily: "var(--font-space, sans-serif)",
                 fontSize: 16,
                 fontWeight: 500,
                 padding: "12px 0",
                 textAlign: "left",
                 cursor: "pointer",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                borderBottom: "1px solid rgba(13,37,56,0.06)",
               }}
             >
               {link.label}
@@ -209,6 +213,7 @@ export default function LandingNav() {
           .ld-nav-links { display: none !important; }
           .ld-login-link { display: none !important; }
           .ld-hamburger { display: flex !important; }
+          .ld-register-btn { font-size: 12px !important; padding: 8px 14px !important; }
         }
         @media (min-width: 681px) {
           .ld-hamburger { display: none !important; }
