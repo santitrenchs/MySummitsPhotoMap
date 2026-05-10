@@ -8,7 +8,7 @@ export async function extractImageMeta(file: File): Promise<ImageMeta> {
   try {
     const exifr = await import("exifr");
     const data = await exifr.parse(file, {
-      pick: ["DateTimeOriginal", "GPSLatitude", "GPSLongitude"],
+      pick: ["DateTimeOriginal", "GPSLatitude", "GPSLongitude", "GPSLatitudeRef", "GPSLongitudeRef"],
       gps: true,
     });
 
