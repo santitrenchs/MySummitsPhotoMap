@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { RARITY_FLOWERS } from "@/components/brand/RarityFlowers";
 
 const RARITIES = [
   {
@@ -167,17 +166,8 @@ export default function LandingRarities() {
                 }}
               />
 
-              {/* Flower SVG */}
-              {(() => {
-                const Flower = RARITY_FLOWERS[r.id];
-                return Flower ? (
-                  <div style={{ marginBottom: 14, lineHeight: 1 }}>
-                    <Flower size={52} />
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 36, marginBottom: 14, lineHeight: 1 }}>{r.emoji}</div>
-                );
-              })()}
+              {/* Rarity emoji */}
+              <div style={{ fontSize: 40, marginBottom: 14, lineHeight: 1 }}>{r.emoji}</div>
 
               {/* Name */}
               <div
