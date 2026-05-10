@@ -276,30 +276,39 @@ export default function HeroMap() {
           animation: heroMapPulse 2.2s ease-out infinite;
         }
         /**
-         * Mobile: objectPosition is "65% center" → visible x range ≈ 53–71% of the
-         * 1920px image. Peaks in that range (Vignemale 53%, Monte Perdido 56%, Posets 64%,
-         * Aneto 68%) map to mobile viewport % as:
-         *   mobile_x% = (peak_xPct - 53.5) / (71.0 - 53.5) * 100
-         *   mobile_y% = peak_yPct  (y is ~1:1 since height nearly fills portrait)
-         * We override left/top per-peak and hide the two that fall outside.
+         * Mobile (≤680px): objectPosition "65% center" → visible x ≈ 53–71% of image.
+         * Markers are repositioned using `bottom` so they sit in the visible map area
+         * below the gradient (which fades out at ~64% from top = ~36% from bottom).
+         * Vignemale (53%) and Pica d'États (82%) fall outside the visible crop → hidden.
          */
         @media (max-width: 680px) {
-          /* Re-position all markers for the mobile crop */
-          .hero-marker { pointer-events: none; }
+          .hero-marker {
+            /* Switch from top-anchor to bottom-anchor so markers stay in the map zone */
+            top: auto !important;
+          }
 
-          /* Vignemale: desktop 53.0% → mobile ≈ -2.9% (just off left edge, hide) */
+          /* Vignemale: just off the left edge of the mobile crop → hide */
           .hero-marker-vignemale { display: none !important; }
 
-          /* Monte Perdido: desktop 56.4% → mobile ≈ 16.6% */
-          .hero-marker-monte-perdido { left: 17% !important; top: 51% !important; }
+          /* Monte Perdido: mobile x ≈ 17%, placed in the lower map zone */
+          .hero-marker-monte-perdido {
+            left: 17% !important;
+            bottom: 24% !important;
+          }
 
-          /* Posets: desktop 63.9% → mobile ≈ 59.4% */
-          .hero-marker-posets { left: 59% !important; top: 53% !important; }
+          /* Posets: mobile x ≈ 59% */
+          .hero-marker-posets {
+            left: 57% !important;
+            bottom: 21% !important;
+          }
 
-          /* Aneto: desktop 68.2% → mobile ≈ 84.0% */
-          .hero-marker-aneto { left: 84% !important; top: 55% !important; }
+          /* Aneto: mobile x ≈ 84% */
+          .hero-marker-aneto {
+            left: 82% !important;
+            bottom: 18% !important;
+          }
 
-          /* Pica d'États: desktop 82.3% → mobile ≈ 165% (way off screen, hide) */
+          /* Pica d'Estats: way off the right edge → hide */
           .hero-marker-pica { display: none !important; }
         }
       `}</style>

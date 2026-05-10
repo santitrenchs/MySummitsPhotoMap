@@ -80,7 +80,7 @@ export default function LandingHero() {
 
       {/* ── Text content ── */}
       <div
-        className="ld-container"
+        className="ld-container ld-hero-content"
         style={{ position: "relative", zIndex: 6, paddingTop: 80, paddingBottom: 60 }}
       >
         <div style={{ maxWidth: 560 }}>
@@ -110,6 +110,7 @@ export default function LandingHero() {
           </div>
 
           <p
+            className="ld-hero-sub"
             style={{
               fontSize: "clamp(16px, 2vw, 19px)",
               color: "#5A6E84",
@@ -138,25 +139,41 @@ export default function LandingHero() {
             </button>
           </div>
 
-          <p className="ld-cta-micro" style={{ textAlign: "left", marginTop: 16 }}>
+          <p className="ld-cta-micro ld-hero-micro" style={{ textAlign: "left", marginTop: 16 }}>
             Sin tarjeta de crédito · Gratis para empezar
           </p>
         </div>
       </div>
 
       <style>{`
-        /* Mobile: texto arriba, mapa visible en la mitad inferior */
+        /* ── Mobile hero layout ── */
         @media (max-width: 680px) {
+          /* Texto pegado arriba */
           .ld-hero-section {
             align-items: flex-start !important;
           }
+          /* Contenido más compacto en mobile para dejar sitio al mapa */
+          .ld-hero-content {
+            padding-top: 68px !important;
+            padding-bottom: 0 !important;
+          }
+          /* Párrafo más corto */
+          .ld-hero-sub {
+            margin-bottom: 28px !important;
+          }
+          /* Micro-copy oculto en mobile para reducir altura de contenido */
+          .ld-hero-micro {
+            display: none !important;
+          }
+          /* Gradiente: blanco sólido encima del texto → fade en botones → transparente */
+          /* Contenido ocupa ~44% del viewport → fade 44–60% → mapa visible 60%+ */
           .ld-hero-gradient {
             background: linear-gradient(
               to bottom,
-              rgba(255,255,255,1)   0%,
-              rgba(255,255,255,0.95) 30%,
-              rgba(255,255,255,0.55) 58%,
-              rgba(255,255,255,0)   78%
+              rgba(255,255,255,1)    0%,
+              rgba(255,255,255,1)   44%,
+              rgba(255,255,255,0.6) 54%,
+              rgba(255,255,255,0)   64%
             ) !important;
           }
         }
