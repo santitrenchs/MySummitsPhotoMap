@@ -5,7 +5,7 @@ import { RARITIES } from "@/lib/rarity";
 import LandingPage from "@/components/landing/LandingPage";
 import type { Metadata } from "next";
 
-export const revalidate = 3600; // regenerate at most once per hour
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Peakadex — Captura cimas. Colecciona rarezas. Conviértete en Legendario.",
