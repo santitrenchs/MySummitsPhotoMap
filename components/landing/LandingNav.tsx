@@ -393,11 +393,19 @@ export default function LandingNav() {
 
       <style>{`
         @media (max-width: 680px) {
-          .ld-nav-links { display: none !important; }
+          .ld-nav-links  { display: none !important; }
           .ld-login-link { display: none !important; }
-          .ld-hamburger { display: flex !important; }
+          .ld-hamburger  { display: flex !important; }
+
+          /* Keep ld-right-swap visible on mobile — shows lang selector OR CTA on scroll */
+          /* Give it a fixed min-width so the absolutely-positioned CTA fits */
+          .ld-right-swap { min-width: 96px; }
+
+          /* Hide language name on mobile — show only flag + chevron */
+          .ld-lang-name { display: none !important; }
+
+          /* Compact register button on mobile */
           .ld-register-btn { font-size: 12px !important; padding: 8px 14px !important; }
-          .ld-right-swap { display: none !important; }
         }
         @media (min-width: 681px) {
           .ld-hamburger { display: none !important; }

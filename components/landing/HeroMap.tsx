@@ -71,8 +71,7 @@ export default function HeroMap() {
           src="/images/hero-pyrenees.jpg"
           alt="Mapa de los Pirineos"
           fill
-          // On desktop: center. On mobile (portrait): shift right so peaks
-          // (located at 53-82% of the 1920px wide image) are in the visible crop.
+          // objectPosition "65% center" so the portrait crop on mobile focuses on the peaks
           style={{ objectFit: "cover", objectPosition: "65% center" }}
           priority
           quality={90}
@@ -98,75 +97,64 @@ export default function HeroMap() {
           }}
         >
           {peak.captured ? (
-            // ── Captured: green ring + name badge ──
+            // ── Captured: same circular photo marker as the real app map ──
+            // App: 44px circle, border 2.5px white, box-shadow = green ring + drop shadow
             <>
+              {/* Name badge above */}
               <div
                 style={{
                   background: "rgba(255,255,255,0.97)",
-                  border: "1px solid rgba(13,37,56,0.13)",
+                  border: "1px solid rgba(13,37,56,0.10)",
                   borderRadius: 999,
-                  padding: "4px 10px 4px 7px",
+                  padding: "3px 9px 3px 6px",
                   fontSize: 11,
                   fontWeight: 700,
                   color: "#0D2538",
                   whiteSpace: "nowrap",
-                  boxShadow: "0 2px 14px rgba(13,37,56,0.16)",
+                  boxShadow: "0 2px 10px rgba(13,37,56,0.12)",
                   display: "flex",
                   alignItems: "center",
                   gap: 5,
-                  marginBottom: 5,
+                  marginBottom: 6,
                   fontFamily: "system-ui, -apple-system, sans-serif",
                   letterSpacing: "-0.01em",
                 }}
               >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "#16A34A",
-                    display: "inline-block",
-                    flexShrink: 0,
-                    boxShadow: "0 0 4px #16A34A80",
-                  }}
-                />
+                <span style={{
+                  width: 7, height: 7, borderRadius: "50%",
+                  background: "#22c55e", display: "inline-block", flexShrink: 0,
+                }} />
                 <span>{peak.name}</span>
                 <span style={{ color: "#9CA3AF", fontWeight: 400, fontSize: 10 }}>
                   {peak.alt}
                 </span>
               </div>
-              <div
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "50%",
-                  background: "rgba(22,163,74,0.12)",
-                  border: "2.5px solid #16A34A",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 0 0 4px rgba(22,163,74,0.12)",
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M2.5 7L5.5 10L11.5 4"
-                    stroke="#16A34A"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+
+              {/* Circle — matches app MapView marker exactly */}
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "2.5px solid white",
+                boxShadow: "0 0 0 3.5px #22c55e, 0 4px 16px rgba(0,0,0,0.32)",
+                background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 20,
+                lineHeight: 1,
+                userSelect: "none",
+              }}>
+                ⛰️
               </div>
-              <div
-                style={{
-                  width: 2,
-                  height: 7,
-                  background: "#16A34A",
-                  opacity: 0.4,
-                  borderRadius: "0 0 1px 1px",
-                }}
-              />
+
+              {/* Stem */}
+              <div style={{
+                width: 2, height: 6,
+                background: "#22c55e", opacity: 0.5,
+                borderRadius: "0 0 1px 1px", marginTop: 1,
+              }} />
             </>
           ) : (
             // ── Uncaptured: rarity badge + pulsing dot + "+" icon ──
@@ -216,51 +204,30 @@ export default function HeroMap() {
                     background: `${peak.color}25`,
                   }}
                 />
-                <div
-                  style={{
-                    width: 13,
-                    height: 13,
-                    borderRadius: "50%",
-                    background: peak.color,
-                    boxShadow: `0 0 10px ${peak.color}80`,
-                    border: "2px solid rgba(255,255,255,0.95)",
-                    position: "relative",
-                    zIndex: 1,
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: -3,
-                    right: -3,
-                    width: 13,
-                    height: 13,
-                    borderRadius: "50%",
-                    background: "white",
-                    border: `1.5px solid ${peak.color}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 9,
-                    fontWeight: 900,
-                    color: peak.color,
-                    lineHeight: 1,
-                    zIndex: 2,
-                    fontFamily: "system-ui,-apple-system,sans-serif",
-                  }}
-                >
+                <div style={{
+                  width: 13, height: 13, borderRadius: "50%",
+                  background: peak.color,
+                  boxShadow: `0 0 10px ${peak.color}80`,
+                  border: "2px solid rgba(255,255,255,0.95)",
+                  position: "relative", zIndex: 1,
+                }} />
+                <div style={{
+                  position: "absolute", top: -3, right: -3,
+                  width: 13, height: 13, borderRadius: "50%",
+                  background: "white", border: `1.5px solid ${peak.color}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 9, fontWeight: 900, color: peak.color,
+                  lineHeight: 1, zIndex: 2,
+                  fontFamily: "system-ui,-apple-system,sans-serif",
+                }}>
                   +
                 </div>
               </div>
-              <div
-                style={{
-                  width: 2,
-                  height: 6,
-                  background: peak.color,
-                  opacity: 0.35,
-                  borderRadius: "0 0 1px 1px",
-                }}
-              />
+              <div style={{
+                width: 2, height: 6,
+                background: peak.color, opacity: 0.35,
+                borderRadius: "0 0 1px 1px",
+              }} />
             </>
           )}
         </div>
@@ -275,41 +242,19 @@ export default function HeroMap() {
         .hero-map-pulse {
           animation: heroMapPulse 2.2s ease-out infinite;
         }
+
         /**
          * Mobile (≤680px): objectPosition "65% center" → visible x ≈ 53–71% of image.
-         * Markers are repositioned using `bottom` so they sit in the visible map area
-         * below the gradient (which fades out at ~64% from top = ~36% from bottom).
-         * Vignemale (53%) and Pica d'États (82%) fall outside the visible crop → hidden.
+         * Markers repositioned with bottom-anchor so they sit in the visible map area
+         * below the gradient. Vignemale + Pica hidden (outside crop).
          */
         @media (max-width: 680px) {
-          .hero-marker {
-            /* Switch from top-anchor to bottom-anchor so markers stay in the map zone */
-            top: auto !important;
-          }
-
-          /* Vignemale: just off the left edge of the mobile crop → hide */
+          .hero-marker { top: auto !important; }
           .hero-marker-vignemale { display: none !important; }
-
-          /* Monte Perdido: mobile x ≈ 17%, placed in the lower map zone */
-          .hero-marker-monte-perdido {
-            left: 17% !important;
-            bottom: 24% !important;
-          }
-
-          /* Posets: mobile x ≈ 59% */
-          .hero-marker-posets {
-            left: 57% !important;
-            bottom: 21% !important;
-          }
-
-          /* Aneto: mobile x ≈ 84% */
-          .hero-marker-aneto {
-            left: 82% !important;
-            bottom: 18% !important;
-          }
-
-          /* Pica d'Estats: way off the right edge → hide */
-          .hero-marker-pica { display: none !important; }
+          .hero-marker-monte-perdido { left: 17% !important; bottom: 24% !important; }
+          .hero-marker-posets       { left: 57% !important; bottom: 21% !important; }
+          .hero-marker-aneto        { left: 82% !important; bottom: 18% !important; }
+          .hero-marker-pica         { display: none !important; }
         }
       `}</style>
     </>
