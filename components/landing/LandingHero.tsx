@@ -298,42 +298,6 @@ export default function LandingHero() {
         >
           {/* Left: Text */}
           <div style={{ flex: 1, maxWidth: 600 }}>
-            {/* Badge */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                background: "rgba(220, 38, 38, 0.1)",
-                border: "1px solid rgba(220, 38, 38, 0.28)",
-                borderRadius: 100,
-                padding: "6px 14px",
-                marginBottom: 32,
-              }}
-            >
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: "#DC2626",
-                  display: "inline-block",
-                  animation: "ld-pulse-ring 2s infinite",
-                }}
-              />
-              <span
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "#DC2626",
-                  fontFamily: "var(--font-space, sans-serif)",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                Early Access — Únete a los primeros exploradores
-              </span>
-            </div>
-
             {/* Headline */}
             <div ref={titleRef}>
               <h1
