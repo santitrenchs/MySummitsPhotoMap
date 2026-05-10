@@ -148,24 +148,34 @@ function CardDeck() {
   const [active, setActive] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const [noTransition, setNoTransition] = useState<number | null>(null);
+  // "fan" = intro spread, "gather" = collapsing to stack, "ready" = normal cycling
+  const [phase, setPhase] = useState<"fan" | "gather" | "ready">("fan");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Intro animation: fan out → gather → start cycling
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("gather"), 650);
+    const t2 = setTimeout(() => setPhase("ready"), 1250);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
   const cycle = useCallback(() => {
-    if (transitioning) return;
+    if (transitioning || phase !== "ready") return;
     setTransitioning(true);
-    const prev = active; // card flying out
+    const prev = active;
     setTimeout(() => {
-      setNoTransition(prev); // teleport old front to back instantly
+      setNoTransition(prev);
       setActive(a => (a + 1) % DECK.length);
       setTransitioning(false);
       setTimeout(() => setNoTransition(null), 60);
     }, 460);
-  }, [active, transitioning]);
+  }, [active, transitioning, phase]);
 
   useEffect(() => {
+    if (phase !== "ready") return;
     timerRef.current = setTimeout(cycle, 3600);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [cycle]);
+  }, [cycle, phase]);
 
   // position 0 = front, 1 = mid, 2 = back
   const stackStyles = [
@@ -173,7 +183,20 @@ function CardDeck() {
     { transform: "translateX(22px) translateY(10px) rotate(6deg) scale(0.95)", zIndex: 9, opacity: 0.88 },
     { transform: "translateX(40px) translateY(18px) rotate(11deg) scale(0.90)", zIndex: 8, opacity: 0.72 },
   ];
+  // Fanned positions: cards spread wide so all 3 are clearly visible
+  const fanStyles = [
+    { transform: "translateX(-52px) translateY(8px) rotate(-14deg) scale(0.92)", zIndex: 8, opacity: 0.85 },
+    { transform: "translateX(0px) translateY(-8px) rotate(0deg) scale(0.96)", zIndex: 10, opacity: 1 },
+    { transform: "translateX(52px) translateY(8px) rotate(14deg) scale(0.92)", zIndex: 9, opacity: 0.85 },
+  ];
   const exitStyle = { transform: "translateX(-130%) translateY(-20px) rotate(-20deg) scale(0.82)", zIndex: 20, opacity: 0 };
+
+  const getStyle = (i: number) => {
+    const pos = (i - active + DECK.length) % DECK.length;
+    if (transitioning && pos === 0) return exitStyle;
+    if (phase === "fan") return fanStyles[pos];
+    return stackStyles[pos];
+  };
 
   return (
     <div style={{ position: "relative", width: 270, cursor: "pointer" }} onClick={cycle}>
@@ -183,9 +206,9 @@ function CardDeck() {
       </div>
 
       {DECK.map((card, i) => {
-        const pos = (i - active + DECK.length) % DECK.length;
-        const isExiting = transitioning && pos === 0;
-        const style = isExiting ? exitStyle : stackStyles[pos];
+        const style = getStyle(i);
+        const isInstant = noTransition === i;
+        const isFanning = phase === "fan";
 
         return (
           <div
@@ -196,9 +219,11 @@ function CardDeck() {
               left: 0,
               right: 0,
               ...style,
-              transition: noTransition === i
+              transition: isInstant
                 ? "none"
-                : "transform 0.48s cubic-bezier(0.2,0.8,0.2,1), opacity 0.38s ease",
+                : isFanning
+                  ? "none"
+                  : "transform 0.52s cubic-bezier(0.2,0.8,0.2,1), opacity 0.42s ease",
               transformOrigin: "bottom center",
               willChange: "transform, opacity",
             }}
@@ -208,7 +233,7 @@ function CardDeck() {
         );
       })}
 
-      <p style={{ textAlign: "center", fontSize: 11, color: "rgba(13,37,56,0.35)", marginTop: 10 }}>
+      <p style={{ textAlign: "center", fontSize: 11, color: "rgba(13,37,56,0.35)", marginTop: 10, opacity: phase === "ready" ? 1 : 0, transition: "opacity 0.4s ease" }}>
         Toca para pasar la carta
       </p>
     </div>
