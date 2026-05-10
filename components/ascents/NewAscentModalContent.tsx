@@ -612,7 +612,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                   value={personSearch}
                   onChange={(e) => setPersonSearch(e.target.value)}
                   placeholder={t.tag_searchOrType}
-                  style={{ ...inputStyle, fontSize: 15 }}
+                  style={inputStyle}
                 />
                 {personResults.length > 0 && (
                   <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden", marginTop: 4 }}>
