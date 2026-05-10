@@ -11,11 +11,12 @@ export default auth((req) => {
     pathname === "/forgot-password" ||
     pathname === "/reset-password";
   const isAuthApi = pathname.startsWith("/api/auth");
+  const isPublicApi = pathname === "/api/stats/landing";
   const isAdminLogin = pathname === "/admin/login";
   const isAdminRoute = pathname.startsWith("/admin") && !isAdminLogin;
 
-  // Always allow NextAuth internal API routes and health check
-  if (isAuthApi || pathname === "/api/health") return NextResponse.next();
+  // Always allow NextAuth internal API routes, health check and public stats
+  if (isAuthApi || isPublicApi || pathname === "/api/health") return NextResponse.next();
 
   // ── Backoffice (/admin/*) ──────────────────────────────────
   if (isAdminLogin) {

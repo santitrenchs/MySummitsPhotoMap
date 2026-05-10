@@ -3,6 +3,7 @@
 import "./landing.css";
 import LandingNav from "./LandingNav";
 import LandingHero from "./LandingHero";
+import LandingStats from "./LandingStats";
 import LandingRarities from "./LandingRarities";
 import LandingCards from "./LandingCards";
 import LandingHowItWorks from "./LandingHowItWorks";
@@ -16,6 +17,7 @@ export default function LandingPage() {
       <LandingNav />
       <main>
         <LandingHero />
+        <LandingStats />
         <LandingRarities />
         <LandingCards />
         <LandingHowItWorks />

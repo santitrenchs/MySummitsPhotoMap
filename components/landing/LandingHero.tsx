@@ -490,36 +490,6 @@ export default function LandingHero() {
             <p className="ld-cta-micro" style={{ textAlign: "left", marginTop: 16 }}>
               Sin tarjeta de crédito · Gratis para empezar
             </p>
-
-            {/* Stats strip */}
-            <div
-              style={{
-                display: "flex",
-                gap: 32,
-                marginTop: 48,
-                paddingTop: 32,
-                borderTop: "1px solid rgba(13,37,56,0.08)",
-              }}
-              className="ld-hero-stats"
-            >
-              {[
-                { value: "6", label: "Rarezas" },
-                { value: "∞", label: "Cimas por capturar" },
-                { value: "5", label: "Niveles de progresión" },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <div
-                    className="ld-mono"
-                    style={{ fontSize: 28, fontWeight: 500, color: "#DC2626" }}
-                  >
-                    {stat.value}
-                  </div>
-                  <div style={{ fontSize: 12, color: "rgba(13,37,56,0.45)", marginTop: 2 }}>
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Right: Floating card */}
