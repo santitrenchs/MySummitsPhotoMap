@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { PeakadexLogo } from "@/components/brand/Logo";
 
 const NAV_LINKS = [
   { label: "Rarezas", href: "#rarezas" },
@@ -62,18 +63,13 @@ export default function LandingNav() {
         }}
       >
         {/* Logo */}
-        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 8 }}>
-          <span
-            style={{
-              fontSize: 20,
-              fontFamily: "var(--font-space, sans-serif)",
-              fontWeight: 700,
-              color: "#F0F4FF",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Peak<span style={{ color: "var(--ld-gold, #F5C842)" }}>adex</span>
-          </span>
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+          <PeakadexLogo
+            height={30}
+            iconScale={1.1}
+            peakColor="#F0F4FF"
+            adexColor="rgba(240,244,255,0.55)"
+          />
         </Link>
 
         {/* Desktop nav links */}

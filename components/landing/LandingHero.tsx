@@ -226,7 +226,7 @@ export default function LandingHero() {
         alignItems: "center",
         position: "relative",
         overflow: "hidden",
-        background: "linear-gradient(165deg, #0D1A30 0%, #070B14 55%, #0A0F1E 100%)",
+        background: "linear-gradient(165deg, #0E1C2E 0%, #07111E 55%, #0B1120 100%)",
         paddingTop: 80,
       }}
     >
@@ -239,7 +239,7 @@ export default function LandingHero() {
           width: 600,
           height: 600,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(245,200,66,0.05) 0%, transparent 65%)",
+          background: "radial-gradient(circle, rgba(220,38,38,0.06) 0%, transparent 65%)",
           pointerEvents: "none",
         }}
       />
@@ -304,8 +304,8 @@ export default function LandingHero() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 8,
-                background: "rgba(245, 200, 66, 0.1)",
-                border: "1px solid rgba(245, 200, 66, 0.25)",
+                background: "rgba(220, 38, 38, 0.1)",
+                border: "1px solid rgba(220, 38, 38, 0.28)",
                 borderRadius: 100,
                 padding: "6px 14px",
                 marginBottom: 32,
@@ -316,7 +316,7 @@ export default function LandingHero() {
                   width: 7,
                   height: 7,
                   borderRadius: "50%",
-                  background: "#F5C842",
+                  background: "#DC2626",
                   display: "inline-block",
                   animation: "ld-pulse-ring 2s infinite",
                 }}
@@ -325,7 +325,7 @@ export default function LandingHero() {
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: "#F5C842",
+                  color: "#DC2626",
                   fontFamily: "var(--font-space, sans-serif)",
                   letterSpacing: "0.04em",
                 }}
@@ -354,7 +354,7 @@ export default function LandingHero() {
                   className="hero-line"
                   style={{
                     display: "block",
-                    color: "#F5C842",
+                    color: "#DC2626",
                   }}
                 >
                   Conviértete en
@@ -363,7 +363,7 @@ export default function LandingHero() {
                   className="hero-line"
                   style={{
                     display: "block",
-                    color: "#F5C842",
+                    color: "#DC2626",
                   }}
                 >
                   Legendario.
@@ -423,7 +423,7 @@ export default function LandingHero() {
                 <div key={stat.label}>
                   <div
                     className="ld-mono"
-                    style={{ fontSize: 28, fontWeight: 500, color: "#F5C842" }}
+                    style={{ fontSize: 28, fontWeight: 500, color: "#DC2626" }}
                   >
                     {stat.value}
                   </div>

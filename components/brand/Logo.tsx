@@ -7,6 +7,8 @@ type LogoProps = {
   style?: React.CSSProperties;
   peakClassName?: string;
   adexClassName?: string;
+  peakColor?: string;
+  adexColor?: string;
 };
 
 export function PeakadexLogo({
@@ -16,6 +18,8 @@ export function PeakadexLogo({
   style,
   peakClassName,
   adexClassName,
+  peakColor,
+  adexColor,
 }: LogoProps) {
   const iconSize = Math.round(height * iconScale);
   const color = "#DC2626";
@@ -36,7 +40,7 @@ export function PeakadexLogo({
         ...style,
       }}
     >
-      <span className={peakClassName} style={{ color: "#0D2538", marginRight: Math.round(8 * 1.12) }}>peak</span>
+      <span className={peakClassName} style={{ color: peakColor ?? "#0D2538", marginRight: Math.round(8 * 1.12) }}>peak</span>
       <svg
         width={iconSize}
         height={iconSize}
@@ -58,7 +62,7 @@ export function PeakadexLogo({
         <circle cx="15" cy="15" r="4" fill="white"/>
         <circle cx="15" cy="15" r="4" fill="none" stroke={color} strokeWidth="0.8" opacity="0.5"/>
       </svg>
-      <span className={adexClassName} style={{ color: "#8a9bb0", marginLeft: 7 }}>adex</span>
+      <span className={adexClassName} style={{ color: adexColor ?? "#8a9bb0", marginLeft: 7 }}>adex</span>
     </div>
   );
 }

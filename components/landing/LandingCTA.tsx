@@ -30,7 +30,7 @@ export default function LandingCTA() {
       style={{
         position: "relative",
         overflow: "hidden",
-        background: "linear-gradient(180deg, #0C1220 0%, #070B14 40%, #0A0F1C 100%)",
+        background: "linear-gradient(180deg, #0D1A28 0%, #07111E 40%, #0B1120 100%)",
         padding: "120px 0 100px",
       }}
     >
@@ -44,7 +44,7 @@ export default function LandingCTA() {
           width: 700,
           height: 500,
           borderRadius: "50%",
-          background: "radial-gradient(ellipse, rgba(245,200,66,0.07) 0%, transparent 65%)",
+          background: "radial-gradient(ellipse, rgba(220,38,38,0.08) 0%, transparent 65%)",
           pointerEvents: "none",
         }}
       />
@@ -167,7 +167,7 @@ export default function LandingCTA() {
             <br />
             en la cima.
             <br />
-            <span style={{ color: "#F5C842" }}>Empieza aquí.</span>
+            <span style={{ color: "#DC2626" }}>Empieza aquí.</span>
           </h2>
 
           <p

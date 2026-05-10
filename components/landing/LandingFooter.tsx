@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PeakadexLogo } from "@/components/brand/Logo";
 
 const FOOTER_LINKS = {
   Producto: [
@@ -36,17 +37,7 @@ export default function LandingFooter() {
           {/* Brand column */}
           <div>
             <Link href="/" style={{ textDecoration: "none", display: "inline-block", marginBottom: 14 }}>
-              <span
-                style={{
-                  fontSize: 20,
-                  fontFamily: "var(--font-space, sans-serif)",
-                  fontWeight: 700,
-                  color: "#F0F4FF",
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                Peak<span style={{ color: "#F5C842" }}>adex</span>
-              </span>
+              <PeakadexLogo height={28} peakColor="#F0F4FF" adexColor="rgba(240,244,255,0.5)" />
             </Link>
             <p
               style={{
