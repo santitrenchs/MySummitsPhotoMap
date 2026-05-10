@@ -100,10 +100,10 @@ export default function LandingHero() {
               <span className="hero-line" style={{ display: "block" }}>
                 Colecciona rarezas.
               </span>
-              <span className="hero-line" style={{ display: "block", color: "#DC2626" }}>
+              <span className="hero-line" style={{ display: "block", color: "#2F7A5F" }}>
                 Conviértete en
               </span>
-              <span className="hero-line" style={{ display: "block", color: "#DC2626" }}>
+              <span className="hero-line" style={{ display: "block", color: "#2F7A5F" }}>
                 Legendario.
               </span>
             </h1>

@@ -76,7 +76,7 @@ function FAQItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#DC2626",
+            color: "#2F7A5F",
             fontSize: 16,
             lineHeight: 1,
             transition: "transform 0.25s ease",

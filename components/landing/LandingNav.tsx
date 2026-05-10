@@ -241,7 +241,7 @@ export default function LandingNav() {
                       <img src={lang.flag} alt={lang.name} width={20} height={15} style={{ borderRadius: 2, objectFit: "cover", flexShrink: 0 }} />
                       {lang.name}
                       {lang.value === locale && (
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginLeft: "auto", color: "#DC2626" }}>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginLeft: "auto", color: "#2F7A5F" }}>
                           <path d="M2 7l4 4 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       )}
@@ -363,9 +363,9 @@ export default function LandingNav() {
                     gap: 6,
                     padding: "7px 12px",
                     borderRadius: 8,
-                    border: `1px solid ${lang.value === locale ? "#DC2626" : "rgba(13,37,56,0.12)"}`,
+                    border: `1px solid ${lang.value === locale ? "#2F7A5F" : "rgba(13,37,56,0.12)"}`,
                     background: lang.value === locale ? "rgba(220,38,38,0.06)" : "none",
-                    color: lang.value === locale ? "#DC2626" : "rgba(13,37,56,0.7)",
+                    color: lang.value === locale ? "#2F7A5F" : "rgba(13,37,56,0.7)",
                     fontSize: 13,
                     fontWeight: lang.value === locale ? 600 : 400,
                     fontFamily: "var(--font-space, sans-serif)",

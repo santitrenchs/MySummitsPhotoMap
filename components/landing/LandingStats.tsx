@@ -57,7 +57,7 @@ function StatCard({
           fontSize: "clamp(36px, 5vw, 60px)",
           fontWeight: 800,
           fontFamily: "var(--font-space, sans-serif)",
-          color: "#DC2626",
+          color: "#2F7A5F",
           letterSpacing: "-0.03em",
           lineHeight: 1,
           marginBottom: 8,

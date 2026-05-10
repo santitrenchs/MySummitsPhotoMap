@@ -24,7 +24,7 @@ export function PeakadexLogo({
   iconBgColor,
 }: LogoProps) {
   const iconSize = Math.round(height * iconScale);
-  const color = "#DC2626";
+  const color = "#2F7A5F";
 
   return (
     <div

@@ -331,7 +331,7 @@ export function FriendsClient({
               border: "1px solid #e5e7eb", borderRadius: 8,
               fontSize: 16, outline: "none", background: "#f9fafb",
             }}
-            onFocus={(e) => (e.target.style.borderColor = "#DC2626")}
+            onFocus={(e) => (e.target.style.borderColor = "#2F7A5F")}
             onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
           />
           <Btn onClick={sendInvite} disabled={inviteStatus === "sending" || !inviteEmail.trim()}>
@@ -380,7 +380,7 @@ export function FriendsClient({
               border: "1px solid #e5e7eb", borderRadius: 10,
               fontSize: 16, outline: "none", background: "#f9fafb",
             }}
-            onFocus={(e) => (e.target.style.borderColor = "#DC2626")}
+            onFocus={(e) => (e.target.style.borderColor = "#2F7A5F")}
             onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
           />
           <svg style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }}

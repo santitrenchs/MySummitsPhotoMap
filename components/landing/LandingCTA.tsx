@@ -167,7 +167,7 @@ export default function LandingCTA() {
             <br />
             en la cima.
             <br />
-            <span style={{ color: "#DC2626" }}>Empieza aquí.</span>
+            <span style={{ color: "#2F7A5F" }}>Empieza aquí.</span>
           </h2>
 
           <p
