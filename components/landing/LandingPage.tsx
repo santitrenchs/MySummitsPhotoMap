@@ -6,6 +6,7 @@ import LandingHero from "./LandingHero";
 import LandingRarities from "./LandingRarities";
 import LandingCards from "./LandingCards";
 import LandingHowItWorks from "./LandingHowItWorks";
+import LandingFAQ from "./LandingFAQ";
 import LandingCTA from "./LandingCTA";
 import LandingFooter from "./LandingFooter";
 
@@ -18,6 +19,7 @@ export default function LandingPage() {
         <LandingRarities />
         <LandingCards />
         <LandingHowItWorks />
+        <LandingFAQ />
         <LandingCTA />
       </main>
       <LandingFooter />
