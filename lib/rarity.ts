@@ -11,19 +11,25 @@
 
 export type RarityId =
   | "daisy"
+  | "heather"
   | "gentian"
+  | "tundra"
   | "edelweiss"
+  | "draba"
   | "saxifrage"
   | "cinquefoil"
   | "snow_lotus";
 
 export const RARITIES = [
-  { id: "daisy"      as RarityId, label: "Daisy",      color: "#00995C", colorDark: "#00763d", minAlt: 0,    ep: 8,    scoreWeight: 0.2 },
-  { id: "gentian"    as RarityId, label: "Gentian",    color: "#A855F7", colorDark: "#7c3aed", minAlt: 1500, ep: 16,   scoreWeight: 0.3 },
-  { id: "edelweiss"  as RarityId, label: "Edelweiss",  color: "#3B82F6", colorDark: "#2563eb", minAlt: 3000, ep: 20,   scoreWeight: 0.4 },
-  { id: "saxifrage"  as RarityId, label: "Saxifrage",  color: "#F97316", colorDark: "#c55e0a", minAlt: 5000, ep: 100,  scoreWeight: 0.7 },
-  { id: "cinquefoil" as RarityId, label: "Cinquefoil", color: "#EAB308", colorDark: "#a87e06", minAlt: 7000, ep: 500,  scoreWeight: 1.0 },
-  { id: "snow_lotus" as RarityId, label: "Snow Lotus", color: "#FFD700", colorDark: "#b8960c", minAlt: 8000, ep: 1000, scoreWeight: 1.0 },
+  { id: "daisy"      as RarityId, label: "Daisy",      color: "#00995C", colorDark: "#00763d", minAlt: 0,    ep: 10,   scoreWeight: 0.10 },
+  { id: "heather"    as RarityId, label: "Heather",    color: "#10B981", colorDark: "#0a9268", minAlt: 1000, ep: 20,   scoreWeight: 0.15 },
+  { id: "gentian"    as RarityId, label: "Gentian",    color: "#A855F7", colorDark: "#7c3aed", minAlt: 2000, ep: 30,   scoreWeight: 0.20 },
+  { id: "tundra"     as RarityId, label: "Tundra",     color: "#6366F1", colorDark: "#4f52cc", minAlt: 3000, ep: 60,   scoreWeight: 0.30 },
+  { id: "edelweiss"  as RarityId, label: "Edelweiss",  color: "#3B82F6", colorDark: "#2563eb", minAlt: 4000, ep: 120,  scoreWeight: 0.40 },
+  { id: "draba"      as RarityId, label: "Draba",      color: "#06B6D4", colorDark: "#0591a8", minAlt: 5000, ep: 250,  scoreWeight: 0.60 },
+  { id: "saxifrage"  as RarityId, label: "Saxifrage",  color: "#F97316", colorDark: "#c55e0a", minAlt: 6000, ep: 500,  scoreWeight: 0.75 },
+  { id: "cinquefoil" as RarityId, label: "Cinquefoil", color: "#EAB308", colorDark: "#a87e06", minAlt: 7000, ep: 1000, scoreWeight: 0.90 },
+  { id: "snow_lotus" as RarityId, label: "Snow Lotus", color: "#FFD700", colorDark: "#b8960c", minAlt: 8000, ep: 2000, scoreWeight: 1.00 },
 ] as const;
 
 // ─── Derived lookup maps ──────────────────────────────────────────────────────
@@ -34,6 +40,9 @@ export const RARITY_COLORS: Record<string, string> = {
   lavender: "#A855F7",
   mythic:   "#FFD700",
 };
+
+// Rarity icon — same symbol for all rarities, only color changes (✿)
+export const RARITY_ICON = "✿";
 
 export const RARITY_LABELS: Record<RarityId, string> =
   Object.fromEntries(RARITIES.map((r) => [r.id, r.label])) as Record<RarityId, string>;

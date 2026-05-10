@@ -86,20 +86,26 @@
 /* ── Peakadex Capture Cards ───────────────────────────────────────────── */
 
 :root {
-  --pc-dark:            #0D2538;
-  --pc-orange:          #FF5D2D;
-  --pc-daisy:           #00995C;
-  --pc-daisy-soft:      #E6F4EF;
-  --pc-gentian:         #3B82F6;
-  --pc-gentian-soft:    #F2ECFA;
-  --pc-edelweiss:       #F97316;
-  --pc-edelweiss-soft:  #FFF0E8;
-  --pc-saxifrage:         #EAB308;
-  --pc-saxifrage-soft:    #FFF8DB;
-  --pc-cinquefoil:        #DC2626;
-  --pc-cinquefoil-soft:   #FEF2F2;
-  --pc-snow-lotus:        #6b7280;
-  --pc-snow-lotus-soft:   #F9FAFB;
+  --pc-dark:              #0D2538;
+  --pc-orange:            #FF5D2D;
+  --pc-daisy:             #00995C;
+  --pc-daisy-soft:        #D1FAE5;
+  --pc-heather:           #10B981;
+  --pc-heather-soft:      #D1FAE5;
+  --pc-gentian:           #A855F7;
+  --pc-gentian-soft:      #F3E8FF;
+  --pc-tundra:            #6366F1;
+  --pc-tundra-soft:       #E0E7FF;
+  --pc-edelweiss:         #3B82F6;
+  --pc-edelweiss-soft:    #DBEAFE;
+  --pc-draba:             #06B6D4;
+  --pc-draba-soft:        #CFFAFE;
+  --pc-saxifrage:         #F97316;
+  --pc-saxifrage-soft:    #FFEDD5;
+  --pc-cinquefoil:        #EAB308;
+  --pc-cinquefoil-soft:   #FEF9C3;
+  --pc-snow-lotus:        #FFD700;
+  --pc-snow-lotus-soft:   #FEFCE8;
 }
 
 /* ── Flip wrapper ─────────────────────────────────────────────────────── */
@@ -265,8 +271,11 @@
 }
 
 .daisy      .capture-topbar { background: linear-gradient(90deg, var(--pc-daisy-soft), #fff); }
+.heather    .capture-topbar { background: linear-gradient(90deg, var(--pc-heather-soft), #fff); }
 .gentian    .capture-topbar { background: linear-gradient(90deg, var(--pc-gentian-soft), #fff); }
+.tundra     .capture-topbar { background: linear-gradient(90deg, var(--pc-tundra-soft), #fff); }
 .edelweiss  .capture-topbar { background: linear-gradient(90deg, var(--pc-edelweiss-soft), #fff); }
+.draba      .capture-topbar { background: linear-gradient(90deg, var(--pc-draba-soft), #fff); }
 .saxifrage  .capture-topbar { background: linear-gradient(90deg, var(--pc-saxifrage-soft), #fff); }
 .cinquefoil .capture-topbar { background: linear-gradient(90deg, var(--pc-cinquefoil-soft), #fff); }
 .snow_lotus .capture-topbar { background: linear-gradient(90deg, var(--pc-snow-lotus-soft), #fff); }
@@ -278,8 +287,11 @@
   text-transform: uppercase;
 }
 .daisy      .capture-label { color: var(--pc-daisy); }
+.heather    .capture-label { color: var(--pc-heather); }
 .gentian    .capture-label { color: var(--pc-gentian); }
+.tundra     .capture-label { color: var(--pc-tundra); }
 .edelweiss  .capture-label { color: var(--pc-edelweiss); }
+.draba      .capture-label { color: var(--pc-draba); }
 .saxifrage  .capture-label { color: var(--pc-saxifrage); }
 .cinquefoil .capture-label { color: var(--pc-cinquefoil); }
 .snow_lotus .capture-label { color: var(--pc-snow-lotus); }
@@ -418,8 +430,11 @@
   gap: 8px;
 }
 .daisy      .rarity-value { color: var(--pc-daisy); }
+.heather    .rarity-value { color: var(--pc-heather); }
 .gentian    .rarity-value { color: var(--pc-gentian); }
+.tundra     .rarity-value { color: var(--pc-tundra); }
 .edelweiss  .rarity-value { color: var(--pc-edelweiss); }
+.draba      .rarity-value { color: var(--pc-draba); }
 .saxifrage  .rarity-value { color: var(--pc-saxifrage); }
 .cinquefoil .rarity-value { color: var(--pc-cinquefoil); }
 .snow_lotus .rarity-value { color: var(--pc-snow-lotus); }
@@ -434,12 +449,15 @@
   font-size: 14px;
   flex-shrink: 0;
 }
-.daisy      .rarity-icon { background: var(--pc-daisy-soft);       color: var(--pc-daisy); }
-.gentian    .rarity-icon { background: var(--pc-gentian-soft);     color: var(--pc-gentian); }
-.edelweiss  .rarity-icon { background: var(--pc-edelweiss-soft);   color: var(--pc-edelweiss); }
-.saxifrage  .rarity-icon { background: var(--pc-saxifrage-soft);   color: var(--pc-saxifrage); }
-.cinquefoil .rarity-icon { background: var(--pc-cinquefoil-soft);  color: var(--pc-cinquefoil); }
-.snow_lotus .rarity-icon { background: var(--pc-snow-lotus-soft);  color: var(--pc-snow-lotus); }
+.daisy      .rarity-icon { background: var(--pc-daisy-soft);      color: var(--pc-daisy); }
+.heather    .rarity-icon { background: var(--pc-heather-soft);    color: var(--pc-heather); }
+.gentian    .rarity-icon { background: var(--pc-gentian-soft);    color: var(--pc-gentian); }
+.tundra     .rarity-icon { background: var(--pc-tundra-soft);     color: var(--pc-tundra); }
+.edelweiss  .rarity-icon { background: var(--pc-edelweiss-soft);  color: var(--pc-edelweiss); }
+.draba      .rarity-icon { background: var(--pc-draba-soft);      color: var(--pc-draba); }
+.saxifrage  .rarity-icon { background: var(--pc-saxifrage-soft);  color: var(--pc-saxifrage); }
+.cinquefoil .rarity-icon { background: var(--pc-cinquefoil-soft); color: var(--pc-cinquefoil); }
+.snow_lotus .rarity-icon { background: var(--pc-snow-lotus-soft); color: var(--pc-snow-lotus); }
 
 .ep { color: var(--pc-orange); }
 
@@ -545,10 +563,15 @@
   height: 100%; border-radius: 999px;
 }
 
-.daisy     .back-bar-fill { background: var(--pc-daisy); }
-.gentian   .back-bar-fill { background: var(--pc-gentian); }
-.edelweiss .back-bar-fill { background: var(--pc-edelweiss); }
-.saxifrage .back-bar-fill { background: var(--pc-saxifrage); }
+.daisy      .back-bar-fill { background: var(--pc-daisy); }
+.heather    .back-bar-fill { background: var(--pc-heather); }
+.gentian    .back-bar-fill { background: var(--pc-gentian); }
+.tundra     .back-bar-fill { background: var(--pc-tundra); }
+.edelweiss  .back-bar-fill { background: var(--pc-edelweiss); }
+.draba      .back-bar-fill { background: var(--pc-draba); }
+.saxifrage  .back-bar-fill { background: var(--pc-saxifrage); }
+.cinquefoil .back-bar-fill { background: var(--pc-cinquefoil); }
+.snow_lotus .back-bar-fill { background: var(--pc-snow-lotus); }
 
 .back-bar-labels {
   display: flex; justify-content: space-between;
@@ -600,10 +623,15 @@
   content: ""; display: inline-block;
   width: 5px; height: 5px; border-radius: 50%;
 }
-.daisy     .back-stats-eyebrow::before { background: var(--pc-daisy); }
-.gentian   .back-stats-eyebrow::before { background: var(--pc-gentian); }
-.edelweiss .back-stats-eyebrow::before { background: var(--pc-edelweiss); }
-.saxifrage .back-stats-eyebrow::before { background: var(--pc-saxifrage); }
+.daisy      .back-stats-eyebrow::before { background: var(--pc-daisy); }
+.heather    .back-stats-eyebrow::before { background: var(--pc-heather); }
+.gentian    .back-stats-eyebrow::before { background: var(--pc-gentian); }
+.tundra     .back-stats-eyebrow::before { background: var(--pc-tundra); }
+.edelweiss  .back-stats-eyebrow::before { background: var(--pc-edelweiss); }
+.draba      .back-stats-eyebrow::before { background: var(--pc-draba); }
+.saxifrage  .back-stats-eyebrow::before { background: var(--pc-saxifrage); }
+.cinquefoil .back-stats-eyebrow::before { background: var(--pc-cinquefoil); }
+.snow_lotus .back-stats-eyebrow::before { background: var(--pc-snow-lotus); }
 
 .back-stats-row { display: flex; gap: 0; }
 

@@ -3,60 +3,15 @@
 import { useEffect, useRef } from "react";
 
 const RARITIES = [
-  {
-    id: "daisy",
-    name: "Daisy",
-    emoji: "🌼",
-    color: "#00995C",
-    altRange: "< 1.500 m",
-    description: "La entrada al mundo de los coleccionistas",
-    ep: "8 EP",
-  },
-  {
-    id: "gentian",
-    name: "Gentian",
-    emoji: "🪻",
-    color: "#A855F7",
-    altRange: "1.500 – 2.999 m",
-    description: "Terreno alpino. Ya no es un paseo",
-    ep: "16 EP",
-  },
-  {
-    id: "edelweiss",
-    name: "Edelweiss",
-    emoji: "🌸",
-    color: "#3B82F6",
-    altRange: "3.000 – 4.999 m",
-    description: "Alta montaña. Donde empieza la leyenda",
-    ep: "20 EP",
-  },
-  {
-    id: "saxifrage",
-    name: "Saxifrage",
-    emoji: "🔶",
-    color: "#F97316",
-    altRange: "5.000 – 6.999 m",
-    description: "Expedición. Pocos llegan hasta aquí",
-    ep: "100 EP",
-  },
-  {
-    id: "cinquefoil",
-    name: "Cinquefoil",
-    emoji: "⭐",
-    color: "#EAB308",
-    altRange: "7.000 – 7.999 m",
-    description: "Death zones. Solo los elegidos",
-    ep: "500 EP",
-  },
-  {
-    id: "snowlotus",
-    name: "Snow Lotus",
-    emoji: "❄️",
-    color: "#FFD700",
-    altRange: "≥ 8.000 m",
-    description: "8000ers. El olimpo del coleccionismo",
-    ep: "1.000 EP",
-  },
+  { id: "daisy",      name: "Daisy",      emoji: "✿", color: "#00995C", altRange: "0 – 999 m",         description: "La entrada al mundo de los coleccionistas",  ep: "10 EP"    },
+  { id: "heather",    name: "Heather",    emoji: "✿", color: "#10B981", altRange: "1.000 – 1.999 m",   description: "Brezales y valles de montaña",               ep: "20 EP"    },
+  { id: "gentian",    name: "Gentian",    emoji: "✿", color: "#A855F7", altRange: "2.000 – 2.999 m",   description: "Terreno alpino. Ya no es un paseo",           ep: "30 EP"    },
+  { id: "tundra",     name: "Tundra",     emoji: "✿", color: "#6366F1", altRange: "3.000 – 3.999 m",   description: "Zona de tundra alpina. El paisaje cambia",    ep: "60 EP"    },
+  { id: "edelweiss",  name: "Edelweiss",  emoji: "✿", color: "#3B82F6", altRange: "4.000 – 4.999 m",   description: "Alta montaña. Donde empieza la leyenda",      ep: "120 EP"   },
+  { id: "draba",      name: "Draba",      emoji: "✿", color: "#06B6D4", altRange: "5.000 – 5.999 m",   description: "Una de las flores más altas del mundo",       ep: "250 EP"   },
+  { id: "saxifrage",  name: "Saxifrage",  emoji: "✿", color: "#F97316", altRange: "6.000 – 6.999 m",   description: "Expedición. Pocos llegan hasta aquí",         ep: "500 EP"   },
+  { id: "cinquefoil", name: "Cinquefoil", emoji: "✿", color: "#EAB308", altRange: "7.000 – 7.999 m",   description: "Death zones. Solo los elegidos",              ep: "1.000 EP" },
+  { id: "snowlotus",  name: "Snow Lotus", emoji: "✿", color: "#FFD700", altRange: "≥ 8.000 m",         description: "8000ers. El olimpo del coleccionismo",        ep: "2.000 EP" },
 ];
 
 export default function LandingRarities() {
@@ -240,15 +195,21 @@ export default function LandingRarities() {
       </div>
 
       <style>{`
-        @media (max-width: 860px) {
+        @media (max-width: 960px) {
           .ld-rarities-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
+            grid-template-columns: repeat(3, 1fr) !important;
           }
         }
-        @media (max-width: 480px) {
+        @media (max-width: 680px) {
+          .ld-rarities-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+          }
+        }
+        @media (max-width: 380px) {
           .ld-rarities-grid {
             grid-template-columns: 1fr !important;
-            gap: 12px !important;
+            gap: 10px !important;
           }
         }
       `}</style>
