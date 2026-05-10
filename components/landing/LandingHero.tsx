@@ -1,323 +1,215 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-const RARITY_COLOR = "#FFD700";
+const DECK = [
+  {
+    peakName: "Mont Blanc",
+    altitude: "4.808 m",
+    country: "🇫🇷 Francia",
+    rarity: "Snow Lotus",
+    rarityEmoji: "❄",
+    color: "#FFD700",
+    ep: "+1.000",
+    date: "22 jul 2023",
+    route: "Vía normal por Goûter",
+    skyBase: "#1B2200",
+    skyMid: "#2A2000",
+  },
+  {
+    peakName: "Aneto",
+    altitude: "3.404 m",
+    country: "🇪🇸 España",
+    rarity: "Edelweiss",
+    rarityEmoji: "🌸",
+    color: "#3B82F6",
+    ep: "+20",
+    date: "14 ago 2024",
+    route: "Vía del Portillón",
+    skyBase: "#0A1628",
+    skyMid: "#0F2460",
+  },
+  {
+    peakName: "Picu Urriellu",
+    altitude: "2.519 m",
+    country: "🇪🇸 España",
+    rarity: "Gentian",
+    rarityEmoji: "🪻",
+    color: "#A855F7",
+    ep: "+16",
+    date: "3 sep 2024",
+    route: "Vía normal SW",
+    skyBase: "#130A20",
+    skyMid: "#1A0B30",
+  },
+];
 
-function MountainScene({ dark = false }: { dark?: boolean }) {
+function MountainScene({ uid, color, skyBase, skyMid }: { uid: string; color: string; skyBase: string; skyMid: string }) {
   return (
     <svg width="100%" height="100%" viewBox="0 0 260 325" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-      {/* Sky gradient base */}
-      <rect width="260" height="325" fill={dark ? "#0a1628" : "#1a2d4a"} />
-      <rect width="260" height="325" fill="url(#skyGrad)" />
-      {/* Stars (only front) */}
-      {!dark && <>
-        <circle cx="40" cy="30" r="1" fill="white" opacity="0.6"/>
-        <circle cx="90" cy="15" r="0.8" fill="white" opacity="0.5"/>
-        <circle cx="180" cy="25" r="1" fill="white" opacity="0.7"/>
-        <circle cx="220" cy="40" r="0.7" fill="white" opacity="0.4"/>
-        <circle cx="130" cy="10" r="1.2" fill="white" opacity="0.5"/>
-      </>}
-      {/* Far mountains */}
-      <path d="M0 200 L40 140 L80 170 L120 120 L160 155 L200 130 L240 160 L260 145 L260 325 L0 325Z" fill="#0d1e35" opacity="0.7"/>
-      {/* Mid mountains */}
-      <path d="M0 240 L30 180 L60 210 L100 160 L140 200 L180 170 L220 195 L260 175 L260 325 L0 325Z" fill="#0a1628" opacity="0.85"/>
-      {/* Main peak — Mont Blanc */}
-      <path d="M-20 325 L130 60 L280 325Z" fill="#13263d"/>
-      {/* Snow cap */}
-      <path d="M130 60 L95 130 L130 115 L165 130Z" fill="rgba(255,255,255,0.92)" />
-      <path d="M130 60 L95 130 L130 115Z" fill="rgba(255,255,255,0.6)" />
-      {/* Snow streaks */}
-      <path d="M120 115 L110 145" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M142 118 L152 148" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round"/>
-      {/* Glow around peak */}
-      <ellipse cx="130" cy="90" rx="60" ry="40" fill="url(#peakGlow)" opacity="0.4"/>
+      <rect width="260" height="325" fill={skyBase} />
+      <rect width="260" height="325" fill={`url(#sg-${uid})`} />
+      <circle cx="40" cy="30" r="1" fill="white" opacity="0.5"/>
+      <circle cx="90" cy="15" r="0.8" fill="white" opacity="0.4"/>
+      <circle cx="190" cy="22" r="1" fill="white" opacity="0.6"/>
+      <circle cx="220" cy="40" r="0.7" fill="white" opacity="0.4"/>
+      <circle cx="130" cy="10" r="1.2" fill="white" opacity="0.45"/>
+      <path d="M0 200 L40 140 L80 170 L120 120 L160 155 L200 130 L240 160 L260 145 L260 325 L0 325Z" fill="#0d1e35" opacity="0.6"/>
+      <path d="M0 240 L30 180 L60 210 L100 160 L140 200 L180 170 L220 195 L260 175 L260 325 L0 325Z" fill={skyBase} opacity="0.9"/>
+      <path d="M-20 325 L130 58 L280 325Z" fill="#13263d"/>
+      <path d="M130 58 L95 128 L130 113 L165 128Z" fill="rgba(255,255,255,0.92)"/>
+      <path d="M130 58 L95 128 L130 113Z" fill="rgba(255,255,255,0.55)"/>
+      <path d="M120 113 L110 142" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M142 116 L152 145" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round"/>
+      <ellipse cx="130" cy="88" rx="55" ry="36" fill={`url(#pg-${uid})`} opacity="0.5"/>
       <defs>
-        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0a1628"/>
-          <stop offset="60%" stopColor="#1a3050" stopOpacity="0.8"/>
-          <stop offset="100%" stopColor="#0d1e35" stopOpacity="0"/>
+        <linearGradient id={`sg-${uid}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={skyBase}/>
+          <stop offset="55%" stopColor={skyMid} stopOpacity="0.7"/>
+          <stop offset="100%" stopColor={skyBase} stopOpacity="0"/>
         </linearGradient>
-        <radialGradient id="peakGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#FFD700" stopOpacity="0.3"/>
-          <stop offset="100%" stopColor="#FFD700" stopOpacity="0"/>
+        <radialGradient id={`pg-${uid}`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.35"/>
+          <stop offset="100%" stopColor={color} stopOpacity="0"/>
         </radialGradient>
       </defs>
     </svg>
   );
 }
 
-function HeroCard() {
-  const [flipped, setFlipped] = useState(false);
-
+function SingleCard({ card }: { card: typeof DECK[0] }) {
   return (
     <div
-      style={{ perspective: 1200, width: 270, flexShrink: 0, cursor: "pointer" }}
-      onClick={() => setFlipped(f => !f)}
+      style={{
+        background: "#fff",
+        borderRadius: 28,
+        border: "1px solid rgba(13,37,56,0.07)",
+        boxShadow: "0 1px 3px rgba(13,37,56,0.10), 0 20px 50px rgba(13,37,56,0.14)",
+        padding: 10,
+        display: "flex",
+        flexDirection: "column",
+        userSelect: "none",
+      }}
     >
+      {/* Image frame */}
       <div
         style={{
-          width: "100%",
+          borderRadius: 18,
+          overflow: "hidden",
           position: "relative",
-          transformStyle: "preserve-3d",
-          transition: "transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1)",
-          transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
-          animation: "ld-float 5s ease-in-out infinite",
+          aspectRatio: "4/5",
+          background: card.skyBase,
+          boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.10)",
         }}
       >
-        {/* ── FRONT ── */}
-        <div
-          style={{
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-            background: "#fff",
-            borderRadius: 28,
-            border: "1px solid rgba(13,37,56,0.07)",
-            boxShadow: "0 1px 3px rgba(13,37,56,0.10), 0 20px 50px rgba(13,37,56,0.13)",
-            padding: 10,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* Image frame */}
-          <div
-            style={{
-              borderRadius: 18,
-              overflow: "hidden",
-              position: "relative",
-              aspectRatio: "4/5",
-              background: "#1a2d4a",
-              boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.10)",
-            }}
-          >
-            <MountainScene />
+        <MountainScene uid={card.peakName} color={card.color} skyBase={card.skyBase} skyMid={card.skyMid} />
 
-            {/* Dark gradient overlay at bottom */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: "52%",
-                background: "linear-gradient(to top, rgba(7,18,31,0.88) 0%, rgba(7,18,31,0.48) 55%, transparent 100%)",
-                pointerEvents: "none",
-              }}
-            />
+        <div style={{ position: "absolute", inset: 0, height: "52%", bottom: 0, top: "auto", background: "linear-gradient(to top, rgba(7,18,31,0.90) 0%, rgba(7,18,31,0.45) 55%, transparent 100%)", pointerEvents: "none" }} />
 
-            {/* Rarity badge — top left */}
-            <div
-              style={{
-                position: "absolute",
-                top: 12,
-                left: 12,
-                background: "rgba(255,215,0,0.92)",
-                color: "#fff",
-                fontSize: 9,
-                fontWeight: 900,
-                letterSpacing: "0.12em",
-                padding: "5px 10px",
-                borderRadius: 999,
-                boxShadow: "0 8px 24px rgba(255,215,0,0.35)",
-                fontFamily: "var(--font-space, sans-serif)",
-                textTransform: "uppercase",
-              }}
-            >
-              ❄ Snow Lotus
-            </div>
-
-            {/* Peak info — overlaid bottom */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: 14,
-                left: 14,
-                right: 14,
-                pointerEvents: "none",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 22,
-                  fontWeight: 800,
-                  color: "#fff",
-                  letterSpacing: "-0.035em",
-                  lineHeight: 1.05,
-                  textShadow: "0 2px 8px rgba(0,0,0,0.45)",
-                  marginBottom: 4,
-                }}
-              >
-                Mont Blanc
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "rgba(255,255,255,0.86)",
-                    textShadow: "0 1px 4px rgba(0,0,0,0.45)",
-                  }}
-                >
-                  Vía normal por Goûter
-                </span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginTop: 5,
-                }}
-              >
-                <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.72)", textShadow: "0 1px 4px rgba(0,0,0,0.45)" }}>
-                  22 jul 2023
-                </span>
-                <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.72)", textShadow: "0 1px 4px rgba(0,0,0,0.45)" }}>
-                  🇫🇷 Francia
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Stat band */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: 6,
-              margin: "8px 0 0",
-            }}
-          >
-            {[
-              { label: "Altitud", value: "4.808 m", color: RARITY_COLOR },
-              { label: "Rareza", value: "❄ Snow Lotus", color: RARITY_COLOR },
-              { label: "EP", value: "+1.000", color: "#FF5D2D" },
-            ].map(({ label, value, color }) => (
-              <div
-                key={label}
-                style={{
-                  background: "#F8FAFC",
-                  borderRadius: 12,
-                  padding: "9px 8px",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase", color: "#8A94A3", marginBottom: 4 }}>
-                  {label}
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {value}
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Rarity badge */}
+        <div style={{ position: "absolute", top: 12, left: 12, background: `${card.color}EC`, color: "#fff", fontSize: 9, fontWeight: 900, letterSpacing: "0.12em", padding: "5px 10px", borderRadius: 999, boxShadow: `0 8px 24px ${card.color}55`, fontFamily: "var(--font-space, sans-serif)", textTransform: "uppercase" }}>
+          {card.rarityEmoji} {card.rarity}
         </div>
 
-        {/* ── BACK ── */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
-            background: "#07121f",
-            borderRadius: 28,
-            border: "1px solid rgba(255,215,0,0.2)",
-            boxShadow: "0 1px 3px rgba(13,37,56,0.10), 0 20px 50px rgba(13,37,56,0.13)",
-            padding: 10,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* Terrain area */}
-          <div
-            style={{
-              borderRadius: 18,
-              overflow: "hidden",
-              position: "relative",
-              aspectRatio: "4/5",
-              background: "#0a1628",
-            }}
-          >
-            <MountainScene dark />
-
-            {/* Dark overlay bottom */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: "55%",
-                background: "linear-gradient(to top, rgba(7,18,31,0.92) 0%, rgba(7,18,31,0.5) 55%, transparent 100%)",
-                pointerEvents: "none",
-              }}
-            />
-
-            {/* Data overlaid */}
-            <div style={{ position: "absolute", bottom: 14, left: 14, right: 14, pointerEvents: "none" }}>
-              {/* Coords */}
-              <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.7)", textShadow: "0 1px 4px rgba(0,0,0,.4)", marginBottom: 5 }}>
-                📍 45.8327° N · 6.8652° E
-              </div>
-              {/* Peak name */}
-              <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1, textShadow: "0 2px 8px rgba(0,0,0,.5)", marginBottom: 2 }}>
-                Mont Blanc
-              </div>
-              {/* Altitude */}
-              <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: "-0.04em", lineHeight: 1, textShadow: "0 2px 8px rgba(0,0,0,.4)" }}>
-                4.808 m
-              </div>
-              {/* Range */}
-              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginTop: 3, textShadow: "0 1px 4px rgba(0,0,0,.4)" }}>
-                Alpes · Francia / Italia
-              </div>
-
-              {/* Altitude progress bar */}
-              <div style={{ marginTop: 10 }}>
-                <div style={{ height: 4, borderRadius: 999, background: "rgba(255,255,255,0.2)" }}>
-                  <div style={{ height: "100%", width: "55%", borderRadius: 999, background: RARITY_COLOR }} />
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.04em" }}>0 m</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.04em" }}>8.849 m</span>
-                </div>
-              </div>
-            </div>
+        {/* Peak info */}
+        <div style={{ position: "absolute", bottom: 14, left: 14, right: 14, pointerEvents: "none" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.035em", lineHeight: 1.05, textShadow: "0 2px 8px rgba(0,0,0,0.45)", marginBottom: 3 }}>
+            {card.peakName}
           </div>
-
-          {/* Back stats */}
-          <div style={{ padding: "10px 4px 0" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: RARITY_COLOR, display: "inline-block" }} />
-              Estadísticas Peakadex
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-              {[
-                { label: "Rareza", value: "❄ Snow Lotus" },
-                { label: "EP ganados", value: "+1.000" },
-                { label: "Fecha", value: "22 jul 2023" },
-                { label: "Cordillera", value: "Alpes" },
-              ].map(({ label, value }) => (
-                <div key={label} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "8px 10px" }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: label === "EP ganados" ? "#FF5D2D" : "rgba(255,255,255,0.85)" }}>{value}</div>
-                </div>
-              ))}
-            </div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.86)", textShadow: "0 1px 4px rgba(0,0,0,0.45)", marginBottom: 4 }}>
+            {card.route}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.72)", textShadow: "0 1px 4px rgba(0,0,0,0.45)" }}>{card.date}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.72)", textShadow: "0 1px 4px rgba(0,0,0,0.45)" }}>{card.country}</span>
           </div>
         </div>
       </div>
 
+      {/* Stat band */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
+        {[
+          { label: "Altitud", value: card.altitude, color: card.color },
+          { label: "Rareza", value: `${card.rarityEmoji} ${card.rarity}`, color: card.color },
+          { label: "EP", value: card.ep, color: "#FF5D2D" },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{ background: "#F8FAFC", borderRadius: 12, padding: "9px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase", color: "#8A94A3", marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CardDeck() {
+  const [active, setActive] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
+  const [noTransition, setNoTransition] = useState<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cycle = useCallback(() => {
+    if (transitioning) return;
+    setTransitioning(true);
+    const prev = active; // card flying out
+    setTimeout(() => {
+      setNoTransition(prev); // teleport old front to back instantly
+      setActive(a => (a + 1) % DECK.length);
+      setTransitioning(false);
+      setTimeout(() => setNoTransition(null), 60);
+    }, 460);
+  }, [active, transitioning]);
+
+  useEffect(() => {
+    timerRef.current = setTimeout(cycle, 3600);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [cycle]);
+
+  // position 0 = front, 1 = mid, 2 = back
+  const stackStyles = [
+    { transform: "translateX(0px) translateY(0px) rotate(0deg) scale(1)", zIndex: 10, opacity: 1 },
+    { transform: "translateX(22px) translateY(10px) rotate(6deg) scale(0.95)", zIndex: 9, opacity: 0.88 },
+    { transform: "translateX(40px) translateY(18px) rotate(11deg) scale(0.90)", zIndex: 8, opacity: 0.72 },
+  ];
+  const exitStyle = { transform: "translateX(-130%) translateY(-20px) rotate(-20deg) scale(0.82)", zIndex: 20, opacity: 0 };
+
+  return (
+    <div style={{ position: "relative", width: 270, cursor: "pointer" }} onClick={cycle}>
+      {/* Reserve space for the front card */}
+      <div style={{ visibility: "hidden", pointerEvents: "none" }}>
+        <SingleCard card={DECK[0]} />
+      </div>
+
+      {DECK.map((card, i) => {
+        const pos = (i - active + DECK.length) % DECK.length;
+        const isExiting = transitioning && pos === 0;
+        const style = isExiting ? exitStyle : stackStyles[pos];
+
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              ...style,
+              transition: noTransition === i
+                ? "none"
+                : "transform 0.48s cubic-bezier(0.2,0.8,0.2,1), opacity 0.38s ease",
+              transformOrigin: "bottom center",
+              willChange: "transform, opacity",
+            }}
+          >
+            <SingleCard card={card} />
+          </div>
+        );
+      })}
+
       <p style={{ textAlign: "center", fontSize: 11, color: "rgba(13,37,56,0.35)", marginTop: 10 }}>
-        Toca para ver el reverso
+        Toca para pasar la carta
       </p>
     </div>
   );
@@ -502,7 +394,7 @@ export default function LandingHero() {
             }}
             className="ld-hero-card-wrap"
           >
-            <HeroCard />
+            <CardDeck />
           </div>
         </div>
       </div>
