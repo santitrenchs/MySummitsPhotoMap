@@ -2,9 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
-const HeroMap = dynamic(() => import("./HeroMap"), { ssr: false });
+import HeroMap from "./HeroMap";
 
 export default function LandingHero() {
   const titleRef = useRef<HTMLDivElement>(null);
