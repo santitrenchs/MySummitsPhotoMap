@@ -7,34 +7,23 @@ import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakadexLogo } from "@/components/brand/Logo";
 
-type Step = "voucher" | "form";
-
 export default function RegisterPage() {
   const router = useRouter();
   const t = useT();
 
-  const [step, setStep] = useState<Step>("voucher");
-  const [registrationToken, setRegistrationToken] = useState<string>("");
-
-  // Voucher step state
-  const [code, setCode] = useState("");
-  const [verifying, setVerifying] = useState(false);
-  const [voucherError, setVoucherError] = useState<string | null>(null);
-
-  // Form step state
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [usernameEdited, setUsernameEdited] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Auto-suggest username from name while user hasn't manually edited it
   useEffect(() => {
     if (usernameEdited) return;
     const suggested = name.toLowerCase().trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
       .replace(/[^a-z0-9_]/g, "_")
       .replace(/_+/g, "_")
       .replace(/^_|_$/g, "")
@@ -42,36 +31,6 @@ export default function RegisterPage() {
     setUsername(suggested);
   }, [name, usernameEdited]);
 
-  // ── Step A: verify voucher ────────────────────────────────────────────────
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
-    setVoucherError(null);
-    setVerifying(true);
-
-    try {
-      const res = await fetch("/api/auth/validate-voucher", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim().toUpperCase() }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setVoucherError(data.error ?? t.auth_voucher_invalid);
-        return;
-      }
-
-      setRegistrationToken(data.registrationToken);
-      setStep("form");
-    } catch {
-      setVoucherError(t.auth_voucher_invalid);
-    } finally {
-      setVerifying(false);
-    }
-  }
-
-  // ── Step B: register + auto-login ─────────────────────────────────────────
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -81,19 +40,12 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, username, email, password, registrationToken }),
+        body: JSON.stringify({ name, username, email, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        // Token expired → send back to voucher step
-        if (res.status === 401) {
-          setRegistrationToken("");
-          setStep("voucher");
-          setVoucherError(t.auth_voucher_tokenExpired);
-          return;
-        }
         setFormError(
           res.status === 409 && data.error === "Username already taken"
             ? t.auth_usernameTaken
@@ -104,16 +56,13 @@ export default function RegisterPage() {
         return;
       }
 
-      // Auto-login after successful registration
       const result = await signIn("credentials", { email, password, redirect: false });
       if (result?.error) {
-        // Registration succeeded but auto-login failed — send to login
         router.push("/login?registered=1");
         return;
       }
 
-      router.push("/home");
-      router.refresh();
+      window.location.href = "/home";
     } catch {
       setFormError(t.auth_registrationFailed);
     } finally {
@@ -121,185 +70,155 @@ export default function RegisterPage() {
     }
   }
 
-  // ── Shared card wrapper ───────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
 
-        {/* Logo */}
-        <div className="mb-8 text-center">
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <PeakadexLogo height={38} iconScale={1.0} />
-          </div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+          <PeakadexLogo height={38} iconScale={1.0} />
         </div>
 
-        {step === "voucher" ? (
-          // ── Voucher gate ────────────────────────────────────────────────
-          <>
-            <div className="mb-6 text-center">
-              <p className="text-base font-semibold text-gray-900">{t.auth_voucher_title}</p>
-              <p className="mt-1 text-sm text-gray-500">{t.auth_voucher_subtitle}</p>
-            </div>
+        <p className="mb-6 text-sm text-gray-500">
+          {t.auth_haveAccount}{" "}
+          <Link href="/login" className="text-primary-600 hover:underline font-medium">
+            {t.auth_signIn}
+          </Link>
+        </p>
 
-            <form onSubmit={handleVerify} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => {
-                    setVoucherError(null);
-                    setCode(e.target.value.toUpperCase());
-                  }}
-                  placeholder={t.auth_voucher_placeholder}
-                  required
-                  autoFocus
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-primary-500 uppercase"
-                  style={{ borderColor: voucherError ? "#ef4444" : undefined }}
-                />
-                {voucherError && (
-                  <p className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                    {voucherError}
-                  </p>
-                )}
-              </div>
+        <form onSubmit={handleRegister} className="space-y-4">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            autoFocus
+            autoComplete="name"
+            placeholder={t.auth_yourName}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
 
-              <button
-                type="submit"
-                disabled={verifying || !code.trim()}
-                className="w-full py-2 px-4 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {verifying ? t.auth_voucher_verifying : t.auth_voucher_btn}
-              </button>
-            </form>
+          <div style={{ position: "relative" }}>
+            <span style={{
+              position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+              fontSize: 14, color: "#6b7280", pointerEvents: "none",
+            }}>@</span>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => {
+                setUsernameEdited(true);
+                setFormError(null);
+                setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+              }}
+              required
+              autoComplete="username"
+              minLength={3}
+              maxLength={30}
+              placeholder={t.auth_username}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              style={{ paddingLeft: 30 }}
+            />
+          </div>
 
-            <p className="mt-6 text-center text-sm text-gray-400">
-              {t.auth_voucher_noCode}
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => { setFormError(null); setEmail(e.target.value); }}
+            required
+            autoComplete="email"
+            placeholder={t.settings_email}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+
+          <div style={{ position: "relative" }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              autoComplete="new-password"
+              placeholder={t.auth_password}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              style={{ paddingRight: 44 }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              style={{
+                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer", padding: 0, color: "#9ca3af",
+              }}
+            >
+              {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
+
+          {formError && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {formError}
             </p>
+          )}
 
-            <p className="mt-4 text-center text-sm text-gray-500">
-              {t.auth_haveAccount}{" "}
-              <Link href="/login" className="text-primary-600 hover:underline font-medium">
-                {t.auth_signIn}
-              </Link>
-            </p>
-          </>
-        ) : (
-          // ── Registration form ────────────────────────────────────────────
-          <>
-            {/* Verified badge */}
-            <div className="mb-6 flex items-center justify-center">
-              <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-semibold px-3 py-1 rounded-full border border-green-200">
-                {t.auth_voucher_verified}
-              </span>
-            </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full py-3 px-4 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {submitting ? t.auth_creatingAccount : t.auth_createAccountSubmit}
+          </button>
+        </form>
 
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t.auth_yourName}
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  autoFocus
-                  autoComplete="name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <p className="mt-1 text-xs text-gray-400">{t.auth_nameHint}</p>
-              </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0" }}>
+          <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+          <span style={{ fontSize: 12, color: "#9ca3af" }}>o</span>
+          <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+        </div>
 
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t.auth_username}
-                </label>
-                <div style={{ position: "relative" }}>
-                  <span style={{
-                    position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
-                    fontSize: 14, color: "#6b7280", pointerEvents: "none",
-                  }}>@</span>
-                  <input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => {
-                      setUsernameEdited(true);
-                      setFormError(null);
-                      setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
-                    }}
-                    required
-                    autoComplete="username"
-                    minLength={3}
-                    maxLength={30}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    style={{ paddingLeft: 28 }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-gray-400">{t.auth_usernameHint}</p>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t.settings_email}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setFormError(null); setEmail(e.target.value); }}
-                  required
-                  autoComplete="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t.auth_password}
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <p className="mt-1 text-xs text-gray-400">{t.auth_minPassword}</p>
-              </div>
-
-              {formError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {formError}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-2 px-4 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? t.auth_creatingAccount : t.auth_createAccountSubmit}
-              </button>
-            </form>
-
-            <p className="mt-4 text-center text-sm text-gray-500">
-              <button
-                onClick={() => { setStep("voucher"); setFormError(null); }}
-                className="text-gray-400 hover:underline text-xs"
-              >
-                ← {t.auth_voucher_btn}
-              </button>
-            </p>
-          </>
-        )}
+        <button
+          type="button"
+          onClick={() => signIn("google", { callbackUrl: "/home" })}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+            gap: 10, padding: "12px 16px", border: "1px solid #d1d5db", borderRadius: 8,
+            background: "white", fontSize: 14, fontWeight: 500, color: "#374151",
+            cursor: "pointer",
+          }}
+        >
+          <GoogleIcon />
+          {t.auth_continueWithGoogle}
+        </button>
       </div>
     </div>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
   );
 }
