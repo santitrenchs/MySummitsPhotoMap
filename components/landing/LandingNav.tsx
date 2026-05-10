@@ -10,11 +10,32 @@ const NAV_LINKS = [
   { label: "Cómo funciona", href: "#como-funciona" },
 ];
 
+const LANGS = [
+  { value: "es", flag: "/flags/es.svg", name: "Español" },
+  { value: "en", flag: "/flags/en.svg", name: "English" },
+  { value: "ca", flag: "/flags/ca.svg", name: "Català" },
+  { value: "fr", flag: "/flags/fr.svg", name: "Français" },
+  { value: "de", flag: "/flags/de.svg", name: "Deutsch" },
+];
+
+function readLocaleCookie(): string {
+  if (typeof document === "undefined") return "es";
+  const m = document.cookie.match(/(?:^|; )locale=([^;]+)/);
+  return m?.[1] ?? "es";
+}
+
 export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [locale, setLocale] = useState("es");
+  const [langOpen, setLangOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setLocale(readLocaleCookie());
+  }, []);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 60);
@@ -35,12 +56,30 @@ export default function LandingNav() {
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+      }
+    };
+    if (langOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [langOpen]);
+
   const handleAnchor = (href: string) => {
     setMenuOpen(false);
     const id = href.replace("#", "");
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  const selectLocale = (val: string) => {
+    setLocale(val);
+    setLangOpen(false);
+    document.cookie = `locale=${val}; path=/; max-age=${60 * 60 * 24 * 365}`;
+  };
+
+  const currentLang = LANGS.find((l) => l.value === locale) ?? LANGS[0];
 
   return (
     <header
@@ -68,22 +107,11 @@ export default function LandingNav() {
       >
         {/* Logo */}
         <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
-          <PeakadexLogo
-            height={30}
-            iconScale={1.1}
-            iconBgColor="white"
-          />
+          <PeakadexLogo height={30} iconScale={1.1} iconBgColor="white" />
         </Link>
 
         {/* Desktop nav links */}
-        <nav
-          style={{
-            display: "flex",
-            gap: 4,
-            alignItems: "center",
-          }}
-          className="ld-nav-links"
-        >
+        <nav style={{ display: "flex", gap: 4, alignItems: "center" }} className="ld-nav-links">
           {NAV_LINKS.map((link) => (
             <button
               key={link.href}
@@ -114,27 +142,151 @@ export default function LandingNav() {
           ))}
         </nav>
 
-        {/* CTA */}
+        {/* Right side: language selector ↔ CTA (cross-fade) + hamburger */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Link
-            href="/login"
-            style={{
-              color: "rgba(13,37,56,0.55)",
-              fontSize: 14,
-              fontWeight: 500,
-              fontFamily: "var(--font-space, sans-serif)",
-              textDecoration: "none",
-              padding: "8px 12px",
-              borderRadius: 8,
-              transition: "color 0.2s",
-            }}
-            className="ld-login-link"
-          >
-            Iniciar sesión
-          </Link>
-          <Link href="/register" className="ld-btn-primary ld-register-btn" style={{ fontSize: 14, padding: "10px 20px" }}>
-            Registrarse
-          </Link>
+
+          {/* Wrapper that holds both — language fades out, CTA fades in */}
+          <div style={{ position: "relative", height: 38, display: "flex", alignItems: "center" }} className="ld-right-swap">
+
+            {/* Language selector — top of page */}
+            <div
+              ref={langRef}
+              style={{
+                opacity: scrolled ? 0 : 1,
+                pointerEvents: scrolled ? "none" : "auto",
+                transition: "opacity 0.25s ease",
+                position: "relative",
+              }}
+            >
+              <button
+                onClick={() => setLangOpen((o) => !o)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  background: "none",
+                  border: "1px solid rgba(13,37,56,0.15)",
+                  borderRadius: 8,
+                  padding: "7px 12px",
+                  cursor: "pointer",
+                  color: "#0D2538",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  fontFamily: "var(--font-space, sans-serif)",
+                  transition: "background 0.2s, border-color 0.2s",
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(13,37,56,0.05)";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(13,37,56,0.25)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "none";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(13,37,56,0.15)";
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={currentLang.flag} alt={currentLang.name} width={18} height={13} style={{ borderRadius: 2, objectFit: "cover" }} />
+                <span className="ld-lang-name">{currentLang.name}</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.45, transition: "transform 0.2s", transform: langOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                  <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+
+              {langOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    right: 0,
+                    background: "#fff",
+                    border: "1px solid rgba(13,37,56,0.10)",
+                    borderRadius: 12,
+                    boxShadow: "0 8px 32px rgba(13,37,56,0.12)",
+                    overflow: "hidden",
+                    minWidth: 160,
+                    zIndex: 100,
+                  }}
+                >
+                  {LANGS.map((lang) => (
+                    <button
+                      key={lang.value}
+                      onClick={() => selectLocale(lang.value)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        width: "100%",
+                        padding: "10px 14px",
+                        background: lang.value === locale ? "rgba(13,37,56,0.04)" : "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: 14,
+                        fontWeight: lang.value === locale ? 600 : 400,
+                        color: lang.value === locale ? "#0D2538" : "rgba(13,37,56,0.75)",
+                        fontFamily: "var(--font-space, sans-serif)",
+                        textAlign: "left",
+                        transition: "background 0.15s",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (lang.value !== locale)
+                          (e.currentTarget as HTMLButtonElement).style.background = "rgba(13,37,56,0.04)";
+                      }}
+                      onMouseLeave={(e) => {
+                        if (lang.value !== locale)
+                          (e.currentTarget as HTMLButtonElement).style.background = "none";
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={lang.flag} alt={lang.name} width={20} height={15} style={{ borderRadius: 2, objectFit: "cover", flexShrink: 0 }} />
+                      {lang.name}
+                      {lang.value === locale && (
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginLeft: "auto", color: "#DC2626" }}>
+                          <path d="M2 7l4 4 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* CTA — appears on scroll */}
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: "50%",
+                transform: "translateY(-50%)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                opacity: scrolled ? 1 : 0,
+                pointerEvents: scrolled ? "auto" : "none",
+                transition: "opacity 0.25s ease",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Link
+                href="/login"
+                style={{
+                  color: "rgba(13,37,56,0.55)",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  fontFamily: "var(--font-space, sans-serif)",
+                  textDecoration: "none",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                }}
+                className="ld-login-link"
+              >
+                Iniciar sesión
+              </Link>
+              <Link href="/register" className="ld-btn-primary ld-register-btn" style={{ fontSize: 14, padding: "10px 20px" }}>
+                Registrarse
+              </Link>
+            </div>
+          </div>
 
           {/* Mobile hamburger */}
           <button
@@ -147,7 +299,6 @@ export default function LandingNav() {
               color: "#0D2538",
               cursor: "pointer",
               padding: 8,
-              marginLeft: 4,
             }}
             className="ld-hamburger"
             aria-label="Menú"
@@ -197,6 +348,38 @@ export default function LandingNav() {
               {link.label}
             </button>
           ))}
+
+          {/* Language picker in mobile menu */}
+          <div style={{ padding: "14px 0 8px", borderBottom: "1px solid rgba(13,37,56,0.06)" }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(13,37,56,0.4)", margin: "0 0 10px" }}>Idioma</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {LANGS.map((lang) => (
+                <button
+                  key={lang.value}
+                  onClick={() => { selectLocale(lang.value); setMenuOpen(false); }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "7px 12px",
+                    borderRadius: 8,
+                    border: `1px solid ${lang.value === locale ? "#DC2626" : "rgba(13,37,56,0.12)"}`,
+                    background: lang.value === locale ? "rgba(220,38,38,0.06)" : "none",
+                    color: lang.value === locale ? "#DC2626" : "rgba(13,37,56,0.7)",
+                    fontSize: 13,
+                    fontWeight: lang.value === locale ? 600 : 400,
+                    fontFamily: "var(--font-space, sans-serif)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={lang.flag} alt={lang.name} width={18} height={13} style={{ borderRadius: 2, objectFit: "cover" }} />
+                  {lang.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Link
             href="/register"
             className="ld-btn-primary"
@@ -214,9 +397,13 @@ export default function LandingNav() {
           .ld-login-link { display: none !important; }
           .ld-hamburger { display: flex !important; }
           .ld-register-btn { font-size: 12px !important; padding: 8px 14px !important; }
+          .ld-right-swap { display: none !important; }
         }
         @media (min-width: 681px) {
           .ld-hamburger { display: none !important; }
+        }
+        @media (max-width: 900px) and (min-width: 681px) {
+          .ld-lang-name { display: none !important; }
         }
       `}</style>
     </header>
