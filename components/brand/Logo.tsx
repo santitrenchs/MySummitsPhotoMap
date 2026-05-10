@@ -21,10 +21,8 @@ export function PeakadexLogo({
   adexClassName,
   peakColor,
   adexColor,
-  iconBgColor,
 }: LogoProps) {
   const iconSize = Math.round(height * iconScale);
-  const color = "#00995C";
 
   return (
     <div
@@ -43,25 +41,14 @@ export function PeakadexLogo({
       }}
     >
       <span className={peakClassName} style={{ color: peakColor ?? "#0D2538", marginRight: Math.round(height * 0.28) }}>peak</span>
-      <div
-        style={{
-          width: iconSize,
-          height: iconSize,
-          borderRadius: "50%",
-          border: `${Math.max(2, iconSize * 0.065)}px solid ${color}`,
-          background: iconBgColor ?? "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          fontSize: Math.round(iconSize * 0.67),
-          color,
-          lineHeight: 1,
-          transform: "translateY(1px)",
-        }}
-      >
-        ✿
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo-icon.svg"
+        width={iconSize}
+        height={iconSize}
+        alt=""
+        style={{ display: "block", flexShrink: 0, transform: "translateY(1px)" }}
+      />
       <span className={adexClassName} style={{ color: adexColor ?? "#4E6178", marginLeft: Math.round(height * 0.28) }}>adex</span>
     </div>
   );
