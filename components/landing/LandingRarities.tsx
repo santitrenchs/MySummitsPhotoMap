@@ -121,8 +121,8 @@ export default function LandingRarities() {
                 }}
               />
 
-              {/* Rarity emoji */}
-              <div style={{ fontSize: 40, marginBottom: 14, lineHeight: 1 }}>{r.emoji}</div>
+              {/* Rarity icon — same ✿ for all, color changes per rarity */}
+              <div style={{ fontSize: 40, marginBottom: 14, lineHeight: 1, color: r.color }}>{r.emoji}</div>
 
               {/* Name */}
               <div
