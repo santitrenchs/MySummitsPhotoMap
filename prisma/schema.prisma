@@ -82,7 +82,8 @@ model PeakWikiText {
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
-  passwordHash String
+  emailVerified DateTime?
+  passwordHash  String?
   name         String
   username     String?  @unique
   bio          String?

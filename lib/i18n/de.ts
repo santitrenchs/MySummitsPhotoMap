@@ -158,6 +158,7 @@ export const de: Dict = {
   auth_minPassword: "Mindestens 8 Zeichen", auth_registrationFailed: "Registrierung fehlgeschlagen",
   auth_creatingAccount: "Konto wird erstellt…", auth_createAccount: "Konto erstellen",
   auth_haveAccount: "Bereits ein Konto?",
+  auth_continueWithGoogle: "Mit Google fortfahren",
 
   crop_title: "Zuschneiden", crop_next: "Weiter",
 

@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import type { AdapterUser } from "@auth/core/adapters";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -14,24 +15,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ...baseAdapter,
     // When a new user signs in via Google, create Tenant + Membership too
     createUser: async (data) => {
-      return await prisma.$transaction(async (tx) => {
+      const user = await prisma.$transaction(async (tx) => {
         const username = await generateUniqueUsername(data.name ?? data.email ?? "user");
-        const user = await tx.user.create({
+        const created = await tx.user.create({
           data: { ...data, name: data.name ?? data.email ?? "user", username },
         });
-        const slug = await generateUniqueSlug(user.name ?? user.email);
+        const slug = await generateUniqueSlug(created.name ?? created.email);
         const tenant = await tx.tenant.create({
-          data: { name: user.name ?? "My Team", slug },
+          data: { name: created.name ?? "My Team", slug },
         });
         await tx.membership.create({
-          data: { userId: user.id, tenantId: tenant.id, role: "OWNER" },
+          data: { userId: created.id, tenantId: tenant.id, role: "OWNER" },
         });
-        // Fire-and-forget welcome email
-        sendWelcomeEmail(user.email, user.name, "es").catch((err) =>
+        sendWelcomeEmail(created.email, created.name, "es").catch((err) =>
           console.error("[auth] google welcome email failed:", err)
         );
-        return user;
+        return created;
       });
+      return user as unknown as AdapterUser;
     },
   },
   session: { strategy: "jwt" },
@@ -90,7 +91,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { userId: token.id as string },
           select: { tenantId: true },
         });
-        token.tenantId = membership?.tenantId ?? null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (token as any).tenantId = membership?.tenantId ?? null;
       }
       return token;
     },
