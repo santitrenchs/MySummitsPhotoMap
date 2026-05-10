@@ -38,13 +38,14 @@ export default function LandingHero() {
       <HeroMap />
 
       {/* ── Left-to-right gradient: opaque white → transparent ── */}
+      {/* z-index: 2 so it sits above the map tiles but markers (z:10) pierce through */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(to right, #FFFFFF 0%, #FFFFFF 32%, rgba(255,255,255,0.92) 48%, rgba(255,255,255,0.55) 62%, rgba(255,255,255,0) 78%)",
-          zIndex: 1,
+            "linear-gradient(to right, #FFFFFF 0%, #FFFFFF 30%, rgba(255,255,255,0.90) 45%, rgba(255,255,255,0.45) 60%, rgba(255,255,255,0) 75%)",
+          zIndex: 2,
           pointerEvents: "none",
         }}
         className="ld-hero-gradient"
@@ -81,7 +82,7 @@ export default function LandingHero() {
       {/* ── Text content ── */}
       <div
         className="ld-container"
-        style={{ position: "relative", zIndex: 2, paddingTop: 80, paddingBottom: 60 }}
+        style={{ position: "relative", zIndex: 6, paddingTop: 80, paddingBottom: 60 }}
       >
         <div style={{ maxWidth: 560 }}>
           {/* Headline */}
