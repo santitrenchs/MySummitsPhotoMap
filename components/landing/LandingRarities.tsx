@@ -4,14 +4,14 @@ import { useEffect, useRef } from "react";
 
 const RARITIES = [
   { id: "daisy",      name: "Daisy",      emoji: "✿", color: "#00995C", altRange: "0 – 999 m",         description: "La entrada al mundo de los coleccionistas",  ep: "10 EP"    },
-  { id: "heather",    name: "Heather",    emoji: "✿", color: "#10B981", altRange: "1.000 – 1.999 m",   description: "Brezales y valles de montaña",               ep: "20 EP"    },
-  { id: "gentian",    name: "Gentian",    emoji: "✿", color: "#A855F7", altRange: "2.000 – 2.999 m",   description: "Terreno alpino. Ya no es un paseo",           ep: "30 EP"    },
-  { id: "tundra",     name: "Tundra",     emoji: "✿", color: "#6366F1", altRange: "3.000 – 3.999 m",   description: "Zona de tundra alpina. El paisaje cambia",    ep: "60 EP"    },
-  { id: "edelweiss",  name: "Edelweiss",  emoji: "✿", color: "#3B82F6", altRange: "4.000 – 4.999 m",   description: "Alta montaña. Donde empieza la leyenda",      ep: "120 EP"   },
-  { id: "draba",      name: "Draba",      emoji: "✿", color: "#06B6D4", altRange: "5.000 – 5.999 m",   description: "Una de las flores más altas del mundo",       ep: "250 EP"   },
+  { id: "heather",    name: "Heather",    emoji: "✿", color: "#06B6D4", altRange: "1.000 – 1.999 m",   description: "Brezales y valles de montaña",               ep: "20 EP"    },
+  { id: "gentian",    name: "Gentian",    emoji: "✿", color: "#1E40AF", altRange: "2.000 – 2.999 m",   description: "Terreno alpino. Ya no es un paseo",           ep: "30 EP"    },
+  { id: "tundra",     name: "Tundra",     emoji: "✿", color: "#0E7490", altRange: "3.000 – 3.999 m",   description: "Zona de tundra alpina. El paisaje cambia",    ep: "60 EP"    },
+  { id: "edelweiss",  name: "Edelweiss",  emoji: "✿", color: "#A855F7", altRange: "4.000 – 4.999 m",   description: "Alta montaña. Donde empieza la leyenda",      ep: "120 EP"   },
+  { id: "draba",      name: "Draba",      emoji: "✿", color: "#EC4899", altRange: "5.000 – 5.999 m",   description: "Una de las flores más altas del mundo",       ep: "250 EP"   },
   { id: "saxifrage",  name: "Saxifrage",  emoji: "✿", color: "#F97316", altRange: "6.000 – 6.999 m",   description: "Expedición. Pocos llegan hasta aquí",         ep: "500 EP"   },
   { id: "cinquefoil", name: "Cinquefoil", emoji: "✿", color: "#EAB308", altRange: "7.000 – 7.999 m",   description: "Death zones. Solo los elegidos",              ep: "1.000 EP" },
-  { id: "snowlotus",  name: "Snow Lotus", emoji: "✿", color: "#FFD700", altRange: "≥ 8.000 m",         description: "8000ers. El olimpo del coleccionismo",        ep: "2.000 EP" },
+  { id: "snowlotus",  name: "Snow Lotus", emoji: "✿", color: "#94A3B8", altRange: "≥ 8.000 m",         description: "8000ers. El olimpo del coleccionismo",        ep: "2.000 EP" },
 ];
 
 export default function LandingRarities() {

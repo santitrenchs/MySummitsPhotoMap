@@ -90,22 +90,22 @@
   --pc-orange:            #FF5D2D;
   --pc-daisy:             #00995C;
   --pc-daisy-soft:        #D1FAE5;
-  --pc-heather:           #10B981;
-  --pc-heather-soft:      #D1FAE5;
-  --pc-gentian:           #A855F7;
-  --pc-gentian-soft:      #F3E8FF;
-  --pc-tundra:            #6366F1;
-  --pc-tundra-soft:       #E0E7FF;
-  --pc-edelweiss:         #3B82F6;
-  --pc-edelweiss-soft:    #DBEAFE;
-  --pc-draba:             #06B6D4;
-  --pc-draba-soft:        #CFFAFE;
+  --pc-heather:           #06B6D4;
+  --pc-heather-soft:      #CFFAFE;
+  --pc-gentian:           #1E40AF;
+  --pc-gentian-soft:      #DBEAFE;
+  --pc-tundra:            #0E7490;
+  --pc-tundra-soft:       #CFFAFE;
+  --pc-edelweiss:         #A855F7;
+  --pc-edelweiss-soft:    #F3E8FF;
+  --pc-draba:             #EC4899;
+  --pc-draba-soft:        #FCE7F3;
   --pc-saxifrage:         #F97316;
   --pc-saxifrage-soft:    #FFEDD5;
   --pc-cinquefoil:        #EAB308;
   --pc-cinquefoil-soft:   #FEF9C3;
-  --pc-snow-lotus:        #FFD700;
-  --pc-snow-lotus-soft:   #FEFCE8;
+  --pc-snow-lotus:        #94A3B8;
+  --pc-snow-lotus-soft:   #F1F5F9;
 }
 
 /* ── Flip wrapper ─────────────────────────────────────────────────────── */
