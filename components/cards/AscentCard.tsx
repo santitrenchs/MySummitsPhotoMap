@@ -297,8 +297,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 background: RARITY_COLOR[rarity] + "20",
                 borderRadius: 20, padding: "4px 10px",
               }}>
-                <span style={{ color: RARITY_COLOR[rarity], fontSize: 13, lineHeight: 1 }}>✿</span>
-                <span style={{ color: RARITY_COLOR[rarity], fontSize: 13, fontWeight: 700 }}>{RARITY_LABEL[rarity]}</span>
+                <span style={{ color: RARITY_COLOR[rarity], fontSize: 11, lineHeight: 1 }}>✿</span>
+                <span style={{ color: RARITY_COLOR[rarity], fontSize: 11, fontWeight: 700 }}>{RARITY_LABEL[rarity]}</span>
               </div>
             </div>
           </div>
