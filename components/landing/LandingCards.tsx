@@ -348,14 +348,13 @@ export default function LandingCards() {
     if (dist > total / 2)  dist -= total;
     if (dist < -total / 2) dist += total;
     const absDist = Math.abs(dist);
-    const maxVisible = vw < 640 ? 2 : 3;
-    if (absDist > maxVisible) return { display: "none" };
+    if (absDist > 2) return { display: "none" };
 
     const step = Math.min(CARD_W * 0.43, vw * 0.20);
     const translateX = dist * step;
     const scale      = absDist === 0 ? 1 : absDist === 1 ? 0.84 : absDist === 2 ? 0.71 : 0.60;
     const rotateY    = dist === 0 ? 0 : dist > 0 ? Math.min(dist * 24, 55) : Math.max(dist * 24, -55);
-    const opacity    = absDist === 0 ? 1 : absDist === 1 ? 0.70 : absDist === 2 ? 0.35 : 0.12;
+    const opacity    = absDist === 0 ? 1 : absDist === 1 ? 0.72 : 0.38;
     const zIndex     = 10 - absDist;
 
     return {
