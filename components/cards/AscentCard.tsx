@@ -273,8 +273,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_rarity}</span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-              <span style={{ color: RARITY_COLOR[rarity], fontSize: 13 }}>✿</span>
-              <span className="stat-value" style={{ color: RARITY_COLOR[rarity] }}>{RARITY_LABEL[rarity]}</span>
+              <span style={{ color: RARITY_COLOR[rarity], fontSize: 11 }}>✿</span>
+              <span className="stat-value" style={{ color: RARITY_COLOR[rarity], fontSize: 11 }}>{RARITY_LABEL[rarity]}</span>
             </div>
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
