@@ -20,12 +20,13 @@ type CardData = {
   peakName: string; altitudeM: number; altLabel: string;
   country: string; flag: string; mountainRange: string;
   lat: number; lng: number;
+  photo?: string;
   route: string; date: string;
   user: string; userColor: string;
 };
 
 const RAW: CardData[] = [
-  { peakName: "Aneto",               altitudeM: 3404, altLabel: "3.404 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6313, lng:   0.6560, route: "Vía del Portillón",           date: "14 ago 2024", user: "Iker Etxeberria",   userColor: "#1E40AF" },
+  { peakName: "Aneto",               altitudeM: 3404, altLabel: "3.404 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6313, lng:   0.6560, photo: "/images/landing-aneto.jpg", route: "Vía del Portillón",           date: "14 ago 2024", user: "Iker Etxeberria",   userColor: "#1E40AF" },
   { peakName: "Monte Perdido",       altitudeM: 3355, altLabel: "3.355 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6761, lng:   0.0361, route: "Vía del Cilindro",            date: "02 sep 2023", user: "Javier Ordesa",     userColor: "#A855F7" },
   { peakName: "Posets",              altitudeM: 3375, altLabel: "3.375 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6500, lng:   0.4167, route: "Arista NO",                   date: "27 jul 2024", user: "Marta Ribagorza",   userColor: "#0E7490" },
   { peakName: "Pica d'Estats",       altitudeM: 3143, altLabel: "3.143 m", flag: "🇦🇩", country: "Andorra",       mountainRange: "Pirineos",         lat:  42.6642, lng:   1.3942, route: "Vía normal SO",               date: "11 ago 2023", user: "Oriol Casanovas",   userColor: "#00995C" },
@@ -147,7 +148,12 @@ function CardFace({ card, index, flipped }: { card: CardData; index: number; fli
 
         {/* Photo area — flex:1 fills remaining space */}
         <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "0 10px" , borderRadius: 14 }}>
-          <MountainScene color={color} altM={card.altitudeM} uid={uid} />
+          {card.photo
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={card.photo} alt={card.peakName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            : <MountainScene color={color} altM={card.altitudeM} uid={uid} />
+          }
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 50%, transparent 100%)" }} />
           <div style={{ position: "absolute", bottom: 12, left: 14, right: 14 }}>
             <div style={{
               fontSize: 17, fontWeight: 700, color: "#FFFFFF",
