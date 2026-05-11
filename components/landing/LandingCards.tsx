@@ -19,31 +19,32 @@ function rarityForAlt(m: number): { name: string; color: string; ep: string } {
 type CardData = {
   peakName: string; altitudeM: number; altLabel: string;
   country: string; flag: string; mountainRange: string;
+  lat: number; lng: number;
   route: string; date: string;
   user: string; userColor: string;
 };
 
 const RAW: CardData[] = [
-  { peakName: "Aneto",               altitudeM: 3404, altLabel: "3.404 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",        route: "Vía del Portillón",           date: "14 ago 2024", user: "Iker Etxeberria",   userColor: "#1E40AF" },
-  { peakName: "Monte Perdido",       altitudeM: 3355, altLabel: "3.355 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",        route: "Vía del Cilindro",            date: "02 sep 2023", user: "Javier Ordesa",     userColor: "#A855F7" },
-  { peakName: "Posets",              altitudeM: 3375, altLabel: "3.375 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",        route: "Arista NO",                   date: "27 jul 2024", user: "Marta Ribagorza",   userColor: "#0E7490" },
-  { peakName: "Pica d'Estats",       altitudeM: 3143, altLabel: "3.143 m", flag: "🇦🇩", country: "Andorra",       mountainRange: "Pirineos",        route: "Vía normal SO",               date: "11 ago 2023", user: "Oriol Casanovas",   userColor: "#00995C" },
-  { peakName: "Mont Blanc",          altitudeM: 4808, altLabel: "4.808 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes",           route: "Vía Goûter",                  date: "22 jul 2023", user: "Luc Moreau",        userColor: "#EC4899" },
-  { peakName: "Barre des Écrins",    altitudeM: 4102, altLabel: "4.102 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes Dauphinois", route: "Arista O",                   date: "18 jul 2024", user: "Camille Durand",    userColor: "#1E40AF" },
-  { peakName: "La Meije",            altitudeM: 3983, altLabel: "3.983 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes Dauphinois", route: "Gran Couloir",               date: "05 ago 2022", user: "Étienne Charlet",   userColor: "#F97316" },
-  { peakName: "Mont Aiguille",       altitudeM: 2087, altLabel: "2.087 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Vercors",         route: "Vía normal S",                date: "30 may 2024", user: "Pierre Vaucher",    userColor: "#A855F7" },
-  { peakName: "Dufourspitze",        altitudeM: 4634, altLabel: "4.634 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Peninos",   route: "Arista NE",                   date: "14 ago 2023", user: "Lukas Zurbuchen",   userColor: "#0E7490" },
-  { peakName: "Matterhorn",          altitudeM: 4478, altLabel: "4.478 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Peninos",   route: "Arista Hörnli",               date: "29 jul 2022", user: "Matthias Hörnli",   userColor: "#EC4899" },
-  { peakName: "Gran Paradiso",       altitudeM: 4061, altLabel: "4.061 m", flag: "🇮🇹", country: "Italia",        mountainRange: "Alpes Graios",    route: "Vía normal",                  date: "03 ago 2024", user: "Giulia Rinaldi",    userColor: "#00995C" },
-  { peakName: "Jungfrau",            altitudeM: 4158, altLabel: "4.158 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Berneses",  route: "Ruta del Rottal",             date: "20 jul 2023", user: "Anna Albrecht",     userColor: "#F97316" },
-  { peakName: "Eiger",               altitudeM: 3967, altLabel: "3.967 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Berneses",  route: "Arista O (vía normal)",       date: "16 sep 2023", user: "Franz Eigermann",   userColor: "#1E40AF" },
-  { peakName: "Zugspitze",           altitudeM: 2962, altLabel: "2.962 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Alpes Bávaros",   route: "Vía normal SE",               date: "12 oct 2024", user: "Tobias Kramer",     userColor: "#A855F7" },
-  { peakName: "Watzmann",            altitudeM: 2713, altLabel: "2.713 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Berchtesgaden",   route: "Arista SO",                   date: "08 ago 2024", user: "Sepp Watzl",        userColor: "#0E7490" },
-  { peakName: "Alpspitze",           altitudeM: 2628, altLabel: "2.628 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Wetterstein",     route: "Vía normal E",                date: "25 jun 2024", user: "Leonhard Alper",    userColor: "#EC4899" },
-  { peakName: "Ben Nevis",           altitudeM: 1345, altLabel: "1.345 m", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", country: "Escocia",        mountainRange: "Grampian",        route: "Mountain Track",              date: "17 may 2024", user: "Callum MacLeod",    userColor: "#F97316" },
-  { peakName: "Scafell Pike",        altitudeM:  978, altLabel: "978 m",   flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", country: "Inglaterra",     mountainRange: "Lake District",   route: "Ruta desde Wasdale Head",     date: "03 nov 2023", user: "Oliver Scaford",    userColor: "#00995C" },
-  { peakName: "Snowdon",             altitudeM: 1085, altLabel: "1.085 m", flag: "🏴󠁧󠁢󠁷󠁬󠁳󠁿", country: "Gales",          mountainRange: "Eryri",           route: "Llanberis Path",              date: "22 abr 2024", user: "Gareth Llewelyn",   userColor: "#1E40AF" },
-  { peakName: "Buachaille Etive Mòr",altitudeM: 1021, altLabel: "1.021 m", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", country: "Escocia",        mountainRange: "Glen Coe",        route: "Vía SE por Coire na Tulaich", date: "09 jun 2024", user: "Ewan MacFarlane",   userColor: "#A855F7" },
+  { peakName: "Aneto",               altitudeM: 3404, altLabel: "3.404 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6313, lng:   0.6560, route: "Vía del Portillón",           date: "14 ago 2024", user: "Iker Etxeberria",   userColor: "#1E40AF" },
+  { peakName: "Monte Perdido",       altitudeM: 3355, altLabel: "3.355 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6761, lng:   0.0361, route: "Vía del Cilindro",            date: "02 sep 2023", user: "Javier Ordesa",     userColor: "#A855F7" },
+  { peakName: "Posets",              altitudeM: 3375, altLabel: "3.375 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6500, lng:   0.4167, route: "Arista NO",                   date: "27 jul 2024", user: "Marta Ribagorza",   userColor: "#0E7490" },
+  { peakName: "Pica d'Estats",       altitudeM: 3143, altLabel: "3.143 m", flag: "🇦🇩", country: "Andorra",       mountainRange: "Pirineos",         lat:  42.6642, lng:   1.3942, route: "Vía normal SO",               date: "11 ago 2023", user: "Oriol Casanovas",   userColor: "#00995C" },
+  { peakName: "Mont Blanc",          altitudeM: 4808, altLabel: "4.808 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes",            lat:  45.8326, lng:   6.8652, route: "Vía Goûter",                  date: "22 jul 2023", user: "Luc Moreau",        userColor: "#EC4899" },
+  { peakName: "Barre des Écrins",    altitudeM: 4102, altLabel: "4.102 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes Dauphinois", lat:  44.9244, lng:   6.3567, route: "Arista O",                    date: "18 jul 2024", user: "Camille Durand",    userColor: "#1E40AF" },
+  { peakName: "La Meije",            altitudeM: 3983, altLabel: "3.983 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes Dauphinois", lat:  45.0072, lng:   6.4467, route: "Gran Couloir",                date: "05 ago 2022", user: "Étienne Charlet",   userColor: "#F97316" },
+  { peakName: "Mont Aiguille",       altitudeM: 2087, altLabel: "2.087 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Vercors",          lat:  44.8017, lng:   5.5150, route: "Vía normal S",                date: "30 may 2024", user: "Pierre Vaucher",    userColor: "#A855F7" },
+  { peakName: "Dufourspitze",        altitudeM: 4634, altLabel: "4.634 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Peninos",    lat:  45.9369, lng:   7.8669, route: "Arista NE",                   date: "14 ago 2023", user: "Lukas Zurbuchen",   userColor: "#0E7490" },
+  { peakName: "Matterhorn",          altitudeM: 4478, altLabel: "4.478 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Peninos",    lat:  45.9766, lng:   7.6586, route: "Arista Hörnli",               date: "29 jul 2022", user: "Matthias Hörnli",   userColor: "#EC4899" },
+  { peakName: "Gran Paradiso",       altitudeM: 4061, altLabel: "4.061 m", flag: "🇮🇹", country: "Italia",        mountainRange: "Alpes Graios",     lat:  45.5175, lng:   7.2686, route: "Vía normal",                  date: "03 ago 2024", user: "Giulia Rinaldi",    userColor: "#00995C" },
+  { peakName: "Jungfrau",            altitudeM: 4158, altLabel: "4.158 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Berneses",   lat:  46.5375, lng:   7.9622, route: "Ruta del Rottal",             date: "20 jul 2023", user: "Anna Albrecht",     userColor: "#F97316" },
+  { peakName: "Eiger",               altitudeM: 3967, altLabel: "3.967 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Berneses",   lat:  46.5775, lng:   8.0050, route: "Arista O (vía normal)",       date: "16 sep 2023", user: "Franz Eigermann",   userColor: "#1E40AF" },
+  { peakName: "Zugspitze",           altitudeM: 2962, altLabel: "2.962 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Alpes Bávaros",    lat:  47.4211, lng:  10.9853, route: "Vía normal SE",               date: "12 oct 2024", user: "Tobias Kramer",     userColor: "#A855F7" },
+  { peakName: "Watzmann",            altitudeM: 2713, altLabel: "2.713 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Berchtesgaden",    lat:  47.5508, lng:  12.9444, route: "Arista SO",                   date: "08 ago 2024", user: "Sepp Watzl",        userColor: "#0E7490" },
+  { peakName: "Alpspitze",           altitudeM: 2628, altLabel: "2.628 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Wetterstein",      lat:  47.4558, lng:  10.9986, route: "Vía normal E",                date: "25 jun 2024", user: "Leonhard Alper",    userColor: "#EC4899" },
+  { peakName: "Ben Nevis",           altitudeM: 1345, altLabel: "1.345 m", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", country: "Escocia",        mountainRange: "Grampian",         lat:  56.7969, lng:  -5.0035, route: "Mountain Track",              date: "17 may 2024", user: "Callum MacLeod",    userColor: "#F97316" },
+  { peakName: "Scafell Pike",        altitudeM:  978, altLabel: "978 m",   flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", country: "Inglaterra",     mountainRange: "Lake District",    lat:  54.4541, lng:  -3.2114, route: "Ruta desde Wasdale Head",     date: "03 nov 2023", user: "Oliver Scaford",    userColor: "#00995C" },
+  { peakName: "Snowdon",             altitudeM: 1085, altLabel: "1.085 m", flag: "🏴󠁧󠁢󠁷󠁬󠁳󠁿", country: "Gales",          mountainRange: "Eryri",            lat:  53.0685, lng:  -4.0762, route: "Llanberis Path",              date: "22 abr 2024", user: "Gareth Llewelyn",   userColor: "#1E40AF" },
+  { peakName: "Buachaille Etive Mòr",altitudeM: 1021, altLabel: "1.021 m", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", country: "Escocia",        mountainRange: "Glen Coe",         lat:  56.6735, lng:  -4.9586, route: "Vía SE por Coire na Tulaich", date: "09 jun 2024", user: "Ewan MacFarlane",   userColor: "#A855F7" },
 ];
 
 // ─── Mountain scene (photo placeholder) ──────────────────────────────────────
@@ -156,7 +157,7 @@ function CardFace({ card, index, flipped }: { card: CardData; index: number; fli
               {card.peakName}
             </div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>
-              {card.flag} {card.country}
+              📍 {Math.abs(card.lat).toFixed(4)}°{card.lat >= 0 ? "N" : "S"} · {Math.abs(card.lng).toFixed(4)}°{card.lng >= 0 ? "E" : "W"}
             </div>
           </div>
         </div>
