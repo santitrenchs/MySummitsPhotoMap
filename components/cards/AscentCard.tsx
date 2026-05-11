@@ -304,7 +304,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_altitude}</span>
-            <div className="stat-value" style={{ textAlign: "center", marginTop: 2, fontSize: 11 }}>{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+            <div className="stat-value" style={{ textAlign: "center", marginTop: 2, fontSize: 11, whiteSpace: "nowrap" }}>{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_reward}</span>

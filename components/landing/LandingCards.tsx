@@ -179,7 +179,7 @@ function CardFace({ card, index, flipped }: { card: CardData; index: number; fli
             <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase" as const, color: "#8A94A3", marginBottom: 4 }}>
               ALTITUD
             </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#0D2538", marginTop: 2 }}>{card.altLabel}</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#0D2538", marginTop: 2, whiteSpace: "nowrap" }}>{card.altLabel}</div>
           </div>
 
           <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 6px", textAlign: "center" }}>
