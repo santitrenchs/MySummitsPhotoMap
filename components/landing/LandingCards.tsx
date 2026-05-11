@@ -370,76 +370,109 @@ export default function LandingCards() {
   return (
     <section id="cartas" className="ld-section" style={{ background: "#F4F7FA" }}>
       <div className="ld-container">
+        <div className="lc-split">
 
-        {/* Header */}
-        <div style={{ marginBottom: 52 }} className="ld-cards-header">
-          <div className="ld-section-label">Cartas coleccionables</div>
-          <h2 className="ld-display ld-section-title">
-            Cada cima, una carta.
-            <br />
-            <span style={{ color: "var(--ld-gold)" }}>Tu colección, tu leyenda.</span>
-          </h2>
-          <p className="ld-section-sub">
-            Cuando registras una ascensión, Peakadex genera una carta única
-            de esa montaña. Anverso y reverso. Como un trofeo, pero que cabe en el bolsillo.
-          </p>
-        </div>
+          {/* ── Left column: text + CTA ── */}
+          <div className="lc-left">
+            <div className="ld-section-label">Cartas coleccionables</div>
+            <h2 className="ld-display ld-section-title" style={{ marginTop: 12 }}>
+              Cada cima,<br />una carta.
+              <br />
+              <span style={{ color: "var(--ld-gold)" }}>Tu colección,<br />tu leyenda.</span>
+            </h2>
+            <p className="ld-section-sub" style={{ marginTop: 20 }}>
+              Cuando registras una ascensión, Peakadex genera una carta única
+              de esa montaña. Anverso y reverso. Como un trofeo, pero que cabe en el bolsillo.
+            </p>
+            <p style={{ fontSize: 13, color: "rgba(13,37,56,0.4)", marginTop: 20, marginBottom: 28 }}>
+              Las Snow Lotus son la rareza más difícil. Solo unos pocos las han capturado todas.
+            </p>
+            <a href="/register" className="ld-btn-primary" style={{ display: "inline-flex" }}>
+              Empieza tu colección
+            </a>
+          </div>
 
-        {/* Coverflow */}
-        <div
-          ref={containerRef}
-          style={{ position: "relative", height: CARD_H, perspective: 1200, overflow: "hidden" }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {RAW.map((card, i) => (
-            <div key={card.peakName} style={cardStyle(i)} onClick={() => handleCardClick(i)}>
-              <CardFace card={card} index={i} flipped={!!flipped[i] && i === active} />
+          {/* ── Right column: carousel ── */}
+          <div className="lc-right">
+            {/* Coverflow */}
+            <div
+              ref={containerRef}
+              style={{ position: "relative", height: CARD_H, perspective: 1200, overflow: "hidden" }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {RAW.map((card, i) => (
+                <div key={card.peakName} style={cardStyle(i)} onClick={() => handleCardClick(i)}>
+                  <CardFace card={card} index={i} flipped={!!flipped[i] && i === active} />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Dot indicators */}
-        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 36 }}>
-          {RAW.map((_, i) => (
-            <button key={i} onClick={() => setActive(i)} aria-label={`Carta ${i + 1}`} style={{
-              width: i === active ? 20 : 7, height: 7,
-              borderRadius: 99, border: "none", padding: 0, cursor: "pointer",
-              background: i === active ? "#0D2538" : "rgba(13,37,56,0.2)",
-              transition: "width 0.3s, background 0.3s",
-            }} />
-          ))}
-        </div>
+            {/* Dot indicators */}
+            <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 28 }}>
+              {RAW.map((_, i) => (
+                <button key={i} onClick={() => setActive(i)} aria-label={`Carta ${i + 1}`} style={{
+                  width: i === active ? 20 : 7, height: 7,
+                  borderRadius: 99, border: "none", padding: 0, cursor: "pointer",
+                  background: i === active ? "#0D2538" : "rgba(13,37,56,0.2)",
+                  transition: "width 0.3s, background 0.3s",
+                }} />
+              ))}
+            </div>
 
-        {/* Peak name + rarity label */}
-        <div style={{ textAlign: "center", marginTop: 20, minHeight: 44 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#0D2538",
-            fontFamily: "var(--font-space, sans-serif)", letterSpacing: "-0.01em" }}>
-            {RAW[active].peakName}
+            {/* Peak name + rarity */}
+            <div style={{ textAlign: "center", marginTop: 16, minHeight: 44 }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "#0D2538",
+                fontFamily: "var(--font-space, sans-serif)", letterSpacing: "-0.01em" }}>
+                {RAW[active].peakName}
+              </div>
+              <div style={{ fontSize: 12, color: rarityForAlt(RAW[active].altitudeM).color, fontWeight: 600, marginTop: 3 }}>
+                ✿ {rarityForAlt(RAW[active].altitudeM).name} · {RAW[active].altLabel}
+              </div>
+              <p style={{ fontSize: 11, color: "rgba(13,37,56,0.3)", marginTop: 6 }}>
+                Toca la carta para ver el reverso
+              </p>
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: rarityForAlt(RAW[active].altitudeM).color, fontWeight: 600, marginTop: 3 }}>
-            ✿ {rarityForAlt(RAW[active].altitudeM).name} · {RAW[active].altLabel}
-          </div>
-          <p style={{ fontSize: 11, color: "rgba(13,37,56,0.3)", marginTop: 8 }}>
-            Toca la carta para ver el reverso
-          </p>
-        </div>
 
-        {/* Bottom CTA */}
-        <div style={{ textAlign: "center", marginTop: 40 }}>
-          <p style={{ fontSize: 13, color: "rgba(13,37,56,0.4)", marginBottom: 24 }}>
-            Las Snow Lotus son la rareza más difícil. Solo unos pocos las han capturado todas.
-          </p>
-          <a href="/register" className="ld-btn-primary" style={{ display: "inline-flex" }}>
-            Empieza tu colección
-          </a>
         </div>
       </div>
 
       <style>{`
+        .lc-split {
+          display: flex;
+          flex-direction: column;
+          gap: 48px;
+        }
+        .lc-left {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .lc-right {
+          width: 100%;
+        }
+        @media (min-width: 900px) {
+          .lc-split {
+            flex-direction: row;
+            align-items: center;
+            gap: 64px;
+          }
+          .lc-left {
+            flex: 0 0 340px;
+            max-width: 340px;
+          }
+          .lc-right {
+            flex: 1;
+            min-width: 0;
+          }
+          .lc-left .ld-section-title {
+            font-size: 40px !important;
+          }
+        }
         @media (max-width: 560px) {
-          .ld-cards-header h2 { font-size: 30px !important; }
+          .lc-left .ld-section-title { font-size: 30px !important; }
         }
       `}</style>
     </section>
