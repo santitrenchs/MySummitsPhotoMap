@@ -124,23 +124,19 @@ function CardFace({ card, index, flipped }: { card: CardData; index: number; fli
       }}>
 
         {/* User header */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 9,
-          padding: "10px 12px 10px",
-        }}>
-          {/* Avatar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px" }}>
           <div style={{
-            width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
             background: card.userColor,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 700, color: "#fff",
+            fontSize: 11, fontWeight: 700, color: "#fff",
           }}>
             {card.user.split(" ").map(w => w[0]).join("")}
           </div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#0D2538", flex: 1 }}>
-            {card.user}
-          </span>
-          {/* ⋮ */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538" }}>{card.user}</div>
+            <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{card.date}</div>
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 3, opacity: 0.3 }}>
             {[0,1,2].map(d => (
               <div key={d} style={{ width: 3, height: 3, borderRadius: "50%", background: "#0D2538" }} />
@@ -148,10 +144,9 @@ function CardFace({ card, index, flipped }: { card: CardData; index: number; fli
           </div>
         </div>
 
-        {/* Photo area */}
-        <div style={{ height: PHOTO_H, position: "relative", flexShrink: 0, overflow: "hidden" }}>
+        {/* Photo area — flex:1 fills remaining space */}
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "0 10px" , borderRadius: 14 }}>
           <MountainScene color={color} altM={card.altitudeM} uid={uid} />
-          {/* Peak name + meta overlay */}
           <div style={{ position: "absolute", bottom: 12, left: 14, right: 14 }}>
             <div style={{
               fontSize: 17, fontWeight: 700, color: "#FFFFFF",
@@ -160,57 +155,43 @@ function CardFace({ card, index, flipped }: { card: CardData; index: number; fli
             }}>
               {card.peakName}
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>{card.date}</span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{card.flag} {card.country}</span>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>
+              {card.flag} {card.country}
             </div>
           </div>
         </div>
 
-        {/* Stats row — RAREZA · ALTITUD · RECOMPENSA */}
-        <div style={{
-          display: "grid", gridTemplateColumns: "1fr 1px 1fr 1px 1fr",
-          alignItems: "center", padding: "14px 0", flex: 1,
-        }}>
-          <div style={{ textAlign: "center", padding: "0 6px" }}>
-            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 5 }}>
+        {/* Stat band — RAREZA · ALTITUD · RECOMPENSA */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: "10px" }}>
+          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 6px", textAlign: "center" }}>
+            <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase" as const, color: "#8A94A3", marginBottom: 4 }}>
               RAREZA
             </div>
-            <div style={{ fontSize: 12, fontWeight: 700, color, display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
-              ✿ {rarity}
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 3, background: color + "20", borderRadius: 20, padding: "3px 8px" }}>
+                <span style={{ color, fontSize: 10, lineHeight: 1 }}>✿</span>
+                <span style={{ color, fontSize: 10, fontWeight: 700 }}>{rarity}</span>
+              </div>
             </div>
           </div>
 
-          <div style={{ height: 28, background: "rgba(13,37,56,0.08)" }} />
-
-          <div style={{ textAlign: "center", padding: "0 6px" }}>
-            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 5 }}>
+          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 6px", textAlign: "center" }}>
+            <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase" as const, color: "#8A94A3", marginBottom: 4 }}>
               ALTITUD
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#0D2538" }}>
-              {card.altLabel}
-            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#0D2538", marginTop: 2 }}>{card.altLabel}</div>
           </div>
 
-          <div style={{ height: 28, background: "rgba(13,37,56,0.08)" }} />
-
-          <div style={{ textAlign: "center", padding: "0 6px" }}>
-            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 5 }}>
+          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 6px", textAlign: "center" }}>
+            <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase" as const, color: "#8A94A3", marginBottom: 4 }}>
               RECOMPENSA
             </div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#F97316" }}>
-              +{ep}
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", background: "#fef3c7", borderRadius: 20, padding: "3px 8px" }}>
+                <span style={{ color: "#d97706", fontSize: 10, fontWeight: 700 }}>+{ep}</span>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Footer: mountain range */}
-        <div style={{
-          borderTop: "1px solid rgba(13,37,56,0.06)",
-          padding: "8px 14px",
-          fontSize: 10, color: "rgba(13,37,56,0.4)",
-        }}>
-          {card.mountainRange}
         </div>
       </div>
 

@@ -251,6 +251,12 @@
   color: #111827;
 }
 
+.user-date {
+  font-size: 11px;
+  color: #6B7280;
+  margin-top: 1px;
+}
+
 .user-action {
   font-size: 11px;
   color: #6B7280;

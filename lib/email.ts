@@ -619,3 +619,57 @@ ${renderBrandHeader()}
 
   console.log("[email] photo tag sent OK, id:", data?.id);
 }
+
+export async function sendNewUserNotification(userName: string, userEmail: string) {
+  const now = new Date().toLocaleString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "full", timeStyle: "short" });
+
+  const { data, error } = await resend.emails.send({
+    from: FROM,
+    to: "santitrenchs@gmail.com",
+    subject: `🧗 Nuevo usuario en Peakadex: ${userName}`,
+    html: `
+<!DOCTYPE html>
+<html>
+${renderEmailHead()}
+<body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+${renderBrandHeader()}
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="margin:0 0 20px;font-size:20px;font-weight:700;color:#0f172a;">Nuevo registro</h1>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+              <tr style="background:#f8fafc;">
+                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;width:110px;">Nombre</td>
+                <td style="padding:12px 16px;font-size:14px;color:#0f172a;font-weight:600;">${userName}</td>
+              </tr>
+              <tr style="border-top:1px solid #e2e8f0;">
+                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Email</td>
+                <td style="padding:12px 16px;font-size:14px;color:#0369a1;">${userEmail}</td>
+              </tr>
+              <tr style="border-top:1px solid #e2e8f0;background:#f8fafc;">
+                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Fecha</td>
+                <td style="padding:12px 16px;font-size:14px;color:#0f172a;">${now}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">Peakadex · Panel de administración</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+
+  if (error) {
+    console.error("[email] new user notification error:", error);
+  } else {
+    console.log("[email] new user notification sent OK, id:", data?.id);
+  }
+}

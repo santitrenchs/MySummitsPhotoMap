@@ -179,6 +179,25 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               <div className="stat-value">{ascent.peakStats?.uniqueClimbers ?? "—"}</div>
             </div>
           </div>
+          <footer className="capture-note">
+            <p className="note-byline">
+              <strong>{ascent.user.name}</strong>
+              {ascent.persons.length > 0 && (
+                <>
+                  {" "}{t.detail_with.toLowerCase()}{" "}
+                  {ascent.persons.map((p, i) => (
+                    <span key={p.id}>
+                      {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
+                      <strong>{p.name}</strong>
+                    </span>
+                  ))}
+                </>
+              )}
+            </p>
+            {ascent.description && (
+              <p className="note-text">{ascent.description}</p>
+            )}
+          </footer>
         </section>
       </>
     );
@@ -195,6 +214,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
         }
         <div className="user-copy">
           <div className="user-name">{ascent.user.name}</div>
+          <div className="user-date">{dateStr}</div>
         </div>
         {isProfile ? (
           <div onClick={(e) => e.stopPropagation()}>
@@ -264,7 +284,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             <div className="peak-name">{ascent.peak.name}</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
             <div className="peak-meta">
-              <span>{dateStr}</span>
               <span>{latStr} · {lngStr}</span>
             </div>
           </div>
@@ -272,53 +291,45 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
         <div className="stat-band">
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_rarity}</span>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-              <span style={{ color: RARITY_COLOR[rarity], fontSize: 13 }}>✿</span>
-              <span className="stat-value" style={{ color: RARITY_COLOR[rarity] }}>{RARITY_LABEL[rarity]}</span>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                background: RARITY_COLOR[rarity] + "20",
+                borderRadius: 20, padding: "4px 10px",
+              }}>
+                <span style={{ color: RARITY_COLOR[rarity], fontSize: 13, lineHeight: 1 }}>✿</span>
+                <span style={{ color: RARITY_COLOR[rarity], fontSize: 13, fontWeight: 700 }}>{RARITY_LABEL[rarity]}</span>
+              </div>
             </div>
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_altitude}</span>
-            <div className="stat-value" style={{ textAlign: "center" }}>{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+            <div className="stat-value" style={{ textAlign: "center", marginTop: 2 }}>{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_reward}</span>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
-              {isMythic && (
-                <>
-                  <svg width="13" height="13" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
-                    <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
-                    <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
-                    <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
-                    <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
-                  </svg>
-                  <span className="stat-value" style={{ color: "#f59e0b" }}>1 Cairn</span>
-                  <span style={{ color: "#d1d5db", fontSize: 12 }}>·</span>
-                </>
-              )}
-              <span className="stat-value ep">+{RARITY_EP[rarity]} EP</span>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                background: "#fef3c7", borderRadius: 20, padding: "4px 10px",
+                whiteSpace: "nowrap",
+              }}>
+                {isMythic && (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
+                      <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
+                      <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
+                      <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
+                      <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
+                    </svg>
+                    <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 700 }}>1 Cairn ·</span>
+                  </>
+                )}
+                <span style={{ color: "#d97706", fontSize: 13, fontWeight: 700 }}>+{RARITY_EP[rarity]} EP</span>
+              </div>
             </div>
           </div>
         </div>
-        <footer className="capture-note">
-          <p className="note-byline">
-            <strong>{ascent.user.name}</strong>
-            {ascent.persons.length > 0 && (
-              <>
-                {" "}{t.detail_with.toLowerCase()}{" "}
-                {ascent.persons.map((p, i) => (
-                  <span key={p.id}>
-                    {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
-                    <strong>{p.name}</strong>
-                  </span>
-                ))}
-              </>
-            )}
-          </p>
-          {ascent.description && (
-            <p className="note-text">{ascent.description}</p>
-          )}
-        </footer>
       </section>
     </>
   );

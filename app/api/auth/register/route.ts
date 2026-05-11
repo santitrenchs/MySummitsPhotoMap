@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { hashPassword } from "@/lib/auth/password";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
 import { generateUniqueSlug, generateUsername } from "@/lib/utils/user-utils";
 
 const RegisterSchema = z.object({
@@ -49,6 +49,9 @@ export async function POST(req: NextRequest) {
     const locale = ["es", "ca", "en", "fr", "de"].find((l) => acceptLang.toLowerCase().includes(l)) ?? "es";
     sendWelcomeEmail(email, name, locale).catch((err) =>
       console.error("[register] welcome email failed:", err)
+    );
+    sendNewUserNotification(name, email).catch((err) =>
+      console.error("[register] new user notification failed:", err)
     );
 
     return NextResponse.json({ ok: true }, { status: 201 });
