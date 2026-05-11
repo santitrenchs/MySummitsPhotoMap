@@ -141,6 +141,9 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           border-top: 1px solid rgba(0,0,0,0.07);
           z-index: 100;
           padding-bottom: env(safe-area-inset-bottom);
+          transform: translateZ(0);
+          -webkit-transform: translateZ(0);
+          will-change: transform;
         }
         .tab-inner {
           display: flex;
