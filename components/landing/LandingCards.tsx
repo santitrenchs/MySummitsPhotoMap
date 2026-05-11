@@ -341,12 +341,12 @@ export default function LandingCards() {
     if (dist > total / 2)  dist -= total;
     if (dist < -total / 2) dist += total;
     const absDist = Math.abs(dist);
-    if (absDist > 4) return { display: "none" };
+    if (absDist > 3) return { display: "none" };
 
-    const translateX = dist * (CARD_W * 0.70);
-    const scale      = absDist === 0 ? 1 : absDist === 1 ? 0.87 : absDist === 2 ? 0.76 : 0.67;
-    const rotateY    = dist === 0 ? 0 : dist > 0 ? Math.min(dist * 18, 45) : Math.max(dist * 18, -45);
-    const opacity    = absDist === 0 ? 1 : absDist === 1 ? 0.75 : absDist === 2 ? 0.45 : 0.2;
+    const translateX = dist * (CARD_W * 0.43);
+    const scale      = absDist === 0 ? 1 : absDist === 1 ? 0.84 : absDist === 2 ? 0.71 : 0.60;
+    const rotateY    = dist === 0 ? 0 : dist > 0 ? Math.min(dist * 24, 55) : Math.max(dist * 24, -55);
+    const opacity    = absDist === 0 ? 1 : absDist === 1 ? 0.70 : absDist === 2 ? 0.35 : 0.12;
     const zIndex     = 10 - absDist;
 
     return {
@@ -380,7 +380,7 @@ export default function LandingCards() {
         {/* Coverflow */}
         <div
           ref={containerRef}
-          style={{ position: "relative", height: CARD_H, perspective: 1200 }}
+          style={{ position: "relative", height: CARD_H, perspective: 1200, overflow: "hidden" }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
