@@ -520,7 +520,6 @@ const CSS = `
 .pg-section {
   background: #F4F7FA;
   position: relative;
-  overflow: hidden;
 }
 
 /* ── Header ── */
