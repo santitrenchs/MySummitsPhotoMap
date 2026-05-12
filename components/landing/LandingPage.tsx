@@ -6,6 +6,7 @@ import LandingHero from "./LandingHero";
 import LandingStats from "./LandingStats";
 import LandingRarities from "./LandingRarities";
 import LandingMythic from "./LandingMythic";
+import LandingProgression from "./LandingProgression";
 import LandingCards from "./LandingCards";
 import LandingHowItWorks from "./LandingHowItWorks";
 import LandingFAQ from "./LandingFAQ";
@@ -35,6 +36,7 @@ export default function LandingPage({
         <LandingRarities peakCounts={peakCounts} />
         <LandingCards />
         <LandingMythic />
+        <LandingProgression />
         <LandingHowItWorks />
         <LandingFAQ />
         <LandingCTA />
