@@ -83,70 +83,73 @@ function LevelIcon({ name, color, size = 26 }: { name: string; color: string; si
   }
 }
 
-// ─── Continuous expedition line (spans 400vw inside pg-track) ─────────────────
+// ─── Mountain silhouette (bottom of sticky viewport, spans 400vw) ─────────────
 
-function ExpeditionLine() {
-  // Coordinate system: 4000 units wide × 120 units tall
-  // Path gently ascends left→right (y decreases = visually rises)
-  const path = "M 0,100 C 400,94 800,84 1200,70 C 1600,56 2000,44 2400,34 C 2800,24 3200,16 3600,11 L 4000,9";
+function MountainSilhouette() {
+  // Ridgeline: gentle in ch1, rises dramatically through ch2-ch3 (Mythic zone),
+  // settles calmly in ch4. y=0 = top of SVG (tallest), y=100 = bottom edge.
+  const ridge =
+    "M 0,98 C 80,94 180,88 280,82 C 380,76 460,88 560,80 " +
+    "C 650,72 740,66 840,72 C 920,78 990,74 1050,66 " +
+    "C 1130,56 1210,46 1300,38 C 1380,30 1450,42 1530,34 " +
+    "C 1610,26 1680,18 1760,22 C 1840,26 1900,16 1970,20 " +
+    "C 2040,12 2110,6 2180,10 C 2250,14 2310,8 2380,12 " +
+    "C 2450,16 2510,22 2580,18 C 2650,24 2720,30 2800,36 " +
+    "C 2880,42 2950,38 3030,48 C 3110,58 3180,52 3260,62 " +
+    "C 3340,72 3410,66 3500,76 C 3590,84 3670,80 3760,86 " +
+    "C 3840,90 3920,88 4000,92";
+
+  // Slightly farther-back layer for depth (shifted up a bit)
+  const ridgeBack =
+    "M 0,100 C 120,96 240,90 360,84 C 480,78 560,90 660,82 " +
+    "C 760,74 850,68 960,74 C 1060,80 1120,72 1200,60 " +
+    "C 1300,48 1380,36 1480,28 C 1560,22 1640,34 1720,26 " +
+    "C 1800,18 1860,10 1940,14 C 2010,18 2080,8 2140,12 " +
+    "C 2200,16 2270,22 2340,18 C 2420,14 2490,28 2560,34 " +
+    "C 2640,40 2720,36 2800,46 C 2880,56 2960,50 3040,60 " +
+    "C 3120,70 3200,64 3290,74 C 3380,84 3470,80 3570,88 " +
+    "C 3660,94 3760,90 3860,94 L 4000,96";
 
   return (
     <svg
-      style={{ position: "absolute", bottom: "20%", left: 0, width: "100%", height: 130, pointerEvents: "none", zIndex: 1, overflow: "visible" }}
-      viewBox="0 0 4000 120"
+      style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 110,
+        pointerEvents: "none", zIndex: 1, overflow: "visible" }}
+      viewBox="0 0 4000 100"
       preserveAspectRatio="none"
     >
       <defs>
-        <linearGradient id="expLine" x1="0%" y1="0" x2="100%" y2="0">
-          <stop offset="0%"   stopColor="rgba(34,197,94,0.20)"/>
-          <stop offset="22%"  stopColor="rgba(6,182,212,0.35)"/>
-          <stop offset="48%"  stopColor="rgba(168,85,247,0.40)"/>
-          <stop offset="72%"  stopColor="rgba(249,115,22,0.48)"/>
-          <stop offset="100%" stopColor="rgba(245,200,66,0.80)"/>
+        <linearGradient id="mtFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="rgba(13,37,56,0)"/>
+          <stop offset="100%" stopColor="rgba(13,37,56,0.055)"/>
         </linearGradient>
-        <linearGradient id="expHalo" x1="0%" y1="0" x2="100%" y2="0">
-          <stop offset="0%"   stopColor="rgba(34,197,94,0.08)"/>
-          <stop offset="48%"  stopColor="rgba(168,85,247,0.12)"/>
-          <stop offset="100%" stopColor="rgba(245,200,66,0.30)"/>
+        <linearGradient id="mtFillBack" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="rgba(13,37,56,0)"/>
+          <stop offset="100%" stopColor="rgba(13,37,56,0.03)"/>
         </linearGradient>
-        <filter id="expBlur"><feGaussianBlur stdDeviation="3"/></filter>
+        <linearGradient id="mtRidge" x1="0%" y1="0" x2="100%" y2="0">
+          <stop offset="0%"   stopColor="rgba(34,197,94,0.28)"/>
+          <stop offset="25%"  stopColor="rgba(6,182,212,0.40)"/>
+          <stop offset="50%"  stopColor="rgba(168,85,247,0.44)"/>
+          <stop offset="75%"  stopColor="rgba(249,115,22,0.50)"/>
+          <stop offset="100%" stopColor="rgba(245,200,66,0.72)"/>
+        </linearGradient>
+        <filter id="ridgeGlow"><feGaussianBlur stdDeviation="2.5"/></filter>
       </defs>
 
-      {/* Glow halo */}
-      <path d={path} stroke="url(#expHalo)" strokeWidth="10" fill="none" filter="url(#expBlur)"/>
-      {/* Main line */}
-      <path d={path} stroke="url(#expLine)" strokeWidth="1.4" fill="none" strokeLinecap="round"/>
+      {/* Back layer — depth */}
+      <path d={`${ridgeBack} L 4000,100 L 0,100 Z`} fill="url(#mtFillBack)"/>
+      <path d={ridgeBack} stroke="rgba(13,37,56,0.06)" strokeWidth="1" fill="none"/>
 
-      {/* Level nodes — spaced through chapter 1 (x 0–1000) */}
-      {[
-        { x: 120, y: 98, c: "34,197,94",   r: 3 },
-        { x: 290, y: 93, c: "6,182,212",   r: 3 },
-        { x: 470, y: 87, c: "168,85,247",  r: 3 },
-        { x: 660, y: 80, c: "249,115,22",  r: 3 },
-        { x: 870, y: 74, c: "245,200,66",  r: 4.5 },
-      ].map((n, i) => (
-        <g key={i}>
-          <circle cx={n.x} cy={n.y} r={n.r + 5} fill={`rgba(${n.c},0.10)`}/>
-          <circle cx={n.x} cy={n.y} r={n.r} fill={`rgba(${n.c},0.75)`}/>
-        </g>
-      ))}
+      {/* Main silhouette fill */}
+      <path d={`${ridge} L 4000,100 L 0,100 Z`} fill="url(#mtFill)"/>
 
-      {/* Chapter transition ticks */}
-      {[{ x: 1000, y: 70 }, { x: 2000, y: 44 }, { x: 3000, y: 20 }].map((m, i) => (
-        <g key={i}>
-          <line x1={m.x} y1={m.y - 14} x2={m.x} y2={m.y + 14}
-            stroke="rgba(13,37,56,0.10)" strokeWidth="1" strokeDasharray="2 3"/>
-          <circle cx={m.x} cy={m.y} r={2.5} fill="rgba(13,37,56,0.12)"/>
-        </g>
-      ))}
+      {/* Ridgeline glow */}
+      <path d={ridge} stroke="rgba(168,85,247,0.10)" strokeWidth="5"
+        fill="none" filter="url(#ridgeGlow)"/>
 
-      {/* Cairn landmark in chapter 3 (x ~2500) */}
-      <circle cx={2500} cy={34} r={7}  fill="rgba(245,200,66,0.12)"/>
-      <circle cx={2500} cy={34} r={3.5} fill="rgba(245,200,66,0.65)"/>
-
-      {/* Summit dot at end */}
-      <circle cx={3850} cy={10} r={8}  fill="rgba(245,200,66,0.15)"/>
-      <circle cx={3850} cy={10} r={3.5} fill="rgba(245,200,66,0.90)"/>
+      {/* Ridgeline with expedition gradient */}
+      <path d={ridge} stroke="url(#mtRidge)" strokeWidth="1.2"
+        fill="none" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -472,7 +475,7 @@ export default function LandingProgression() {
             <div ref={trackRef} className="pg-track">
               {/* Persistent layers — sit behind all chapters */}
               <TrackBackground/>
-              <ExpeditionLine/>
+              <MountainSilhouette/>
 
               <ChapterLevels   active={activeChapter === 0}/>
               <ChapterRarities active={activeChapter === 1}/>
@@ -624,7 +627,8 @@ const CSS = `
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding: 0 max(40px, 8vw);
+  justify-content: center;
+  padding: 0;
   position: relative;
   background: transparent;
   overflow: hidden;
@@ -633,6 +637,8 @@ const CSS = `
   position: relative;
   z-index: 2;
   width: 100%;
+  max-width: 1160px;
+  padding: 0 24px;
 }
 .pg-ch-eyebrow {
   font-size: 11px;
@@ -973,9 +979,9 @@ const CSS = `
   .pg-outer { height: auto; }
   .pg-sticky { position: static; height: auto; overflow: visible; }
   .pg-track { flex-direction: column; width: 100%; transform: none !important; }
-  .pg-chapter { width: 100%; height: auto; padding: 72px 24px; }
+  .pg-chapter { width: 100%; height: auto; padding: 72px 0; }
   .pg-nav { display: none; }
-  .pg-ch-inner { width: 100%; }
+  .pg-ch-inner { width: 100%; padding: 0 24px; }
   .pg-levels { flex-direction: column; gap: 32px; max-width: 100%; margin-top: 36px; }
   .pg-levels-line { display: none; }
   .pg-level { flex-direction: row; align-items: center; gap: 16px; opacity: 1; transform: none; }
