@@ -278,10 +278,10 @@ function RarityChart({ breakdown }: { breakdown: HomeData["stats"]["rarityBreakd
   const values = RARITY_BARS.map((b) => breakdown[b.key]);
   const max = Math.max(...values, 1);
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 4 }}>
       {RARITY_BARS.map((b, i) => {
         const val = values[i];
-        const barH = val > 0 && max > 0 ? Math.max(Math.round((val / max) * 64), 8) : 3;
+        const barH = val > 0 && max > 0 ? Math.max(Math.round((val / max) * 96), 8) : 3;
         return (
           <div key={b.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
             <span style={{ fontSize: 10, fontWeight: 700, lineHeight: 1, color: val > 0 ? b.color : "transparent" }}>
