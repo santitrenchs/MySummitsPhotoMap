@@ -1090,25 +1090,47 @@ export default function MapView({
                 ) : (
                   searchResults.map((peak) => {
                     const isClimbed = ascentByPeakId.current.has(peak.id);
+                    const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
                     return (
                       <button
                         key={peak.id}
+                        className="search-result"
                         onClick={() => { flyToPeak(peak); setSearchQuery(""); }}
                         style={{
                           display: "flex", alignItems: "center", gap: 10,
                           width: "100%", padding: "10px 14px",
-                          background: "none", border: "none", borderBottom: "1px solid #f3f4f6",
+                          background: "none", border: "none",
+                          borderBottom: "1px solid #f3f4f6",
+                          borderLeft: `3px solid ${rc}`,
                           cursor: "pointer", textAlign: "left",
                         }}
                       >
-                        <span style={{ fontSize: 15, flexShrink: 0 }}>{isClimbed ? "✅" : "🏔"}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {peak.name}
-                          </p>
-                          <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                            {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
-                          </p>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
+                            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {peak.name}
+                            </p>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
+                              {peak.altitudeM} m
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
+                            <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                              {peak.mountainRange ?? ""}
+                            </p>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                              {isClimbed && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 5px" }}>
+                                  ✓ Capturada
+                                </span>
+                              )}
+                              {peak.rarity && (
+                                <span style={{ fontSize: 11, fontWeight: 600, color: rc }}>
+                                  ✿ {peak.rarity.name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </button>
                     );
