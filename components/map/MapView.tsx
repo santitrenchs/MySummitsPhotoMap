@@ -1261,7 +1261,7 @@ export default function MapView({
                         color: "white", cursor: "pointer",
                       }}
                     >
-                      + Capturar
+                      Capturar
                     </button>
                   )}
                 </div>
