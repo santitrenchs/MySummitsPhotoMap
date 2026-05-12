@@ -26,9 +26,9 @@ const RARITIES = [
 ] as const;
 
 const RANKING = [
-  { rank: 1, name: "Marc Rebelo",   initials: "MR", color: "#0EA5E9", ascents: 42, cairns: 3, ep: 2840, isMe: false },
-  { rank: 2, name: "Tú",            initials: "TÚ", color: "#22c55e", ascents: 38, cairns: 2, ep: 1980, isMe: true  },
-  { rank: 3, name: "Laia Torrents", initials: "LT", color: "#A855F7", ascents: 35, cairns: 1, ep: 1200, isMe: false },
+  { rank: 1, name: "Santi Trenchs", initials: "ST", color: "#0EA5E9", ascents: 52, cairns: 4, ep: 2980, isMe: true  },
+  { rank: 2, name: "Jordi Bonati",  initials: "JB", color: "#22c55e", ascents: 37, cairns: 1, ep: 2303, isMe: false },
+  { rank: 3, name: "Arnau",         initials: "AR", color: "#A855F7", ascents: 25, cairns: 0, ep: 2150, isMe: false },
 ];
 
 // ─── Chapter 1: Levels ────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ function ChapterLevels({ active }: { active: boolean }) {
       <svg className="pg-topo" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
         {[80,160,250,350,460,580].map((r, i) => (
           <ellipse key={i} cx="400" cy="600" rx={r} ry={r * 0.38}
-            fill="none" stroke="rgba(34,197,94,0.06)" strokeWidth="0.8" />
+            fill="none" stroke="rgba(34,197,94,0.10)" strokeWidth="0.8" />
         ))}
       </svg>
 
@@ -372,7 +372,7 @@ const CSS = `
 
 /* ── Section ── */
 .pg-section {
-  background: linear-gradient(160deg, #030A12 0%, #060F1C 45%, #040810 100%);
+  background: #F4F7FA;
   position: relative;
 }
 .pg-blob {
@@ -407,7 +407,7 @@ const CSS = `
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.22em;
-  color: rgba(240,237,232,0.35);
+  color: rgba(13,37,56,0.4);
   display: inline-block;
   margin-bottom: 28px;
   opacity: 0;
@@ -418,7 +418,7 @@ const CSS = `
 .pg-header-title {
   font-size: clamp(46px, 6.5vw, 84px);
   font-weight: 800;
-  color: #F0EDE8;
+  color: #0D2538;
   line-height: 1.0;
   letter-spacing: -0.03em;
   margin: 0 0 28px;
@@ -429,7 +429,7 @@ const CSS = `
 .pg-header-on .pg-header-title { opacity: 1; transform: translateY(0); }
 .pg-header-sub {
   font-size: clamp(16px, 1.8vw, 20px);
-  color: rgba(240,237,232,0.48);
+  color: rgba(13,37,56,0.5);
   line-height: 1.65;
   margin: 0;
   opacity: 0;
@@ -473,23 +473,23 @@ const CSS = `
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: rgba(240,237,232,0.2);
+  background: rgba(13,37,56,0.18);
   transition: background 0.35s, box-shadow 0.35s, transform 0.35s;
 }
 .pg-nav-on .pg-nav-dot {
-  background: rgba(240,237,232,0.9);
-  box-shadow: 0 0 8px rgba(240,237,232,0.5);
+  background: rgba(13,37,56,0.75);
+  box-shadow: 0 0 8px rgba(13,37,56,0.2);
   transform: scale(1.3);
 }
 .pg-nav-label {
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.10em;
-  color: rgba(240,237,232,0.22);
+  color: rgba(13,37,56,0.22);
   text-transform: uppercase;
   transition: color 0.35s;
 }
-.pg-nav-on .pg-nav-label { color: rgba(240,237,232,0.65); }
+.pg-nav-on .pg-nav-label { color: rgba(13,37,56,0.55); }
 
 /* ── Chapter base ── */
 .pg-chapter {
@@ -518,33 +518,33 @@ const CSS = `
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: rgba(240,237,232,0.32);
+  color: rgba(13,37,56,0.38);
   text-transform: uppercase;
   margin-bottom: 18px;
 }
 .pg-ch-heading {
   font-size: clamp(32px, 3.8vw, 56px);
   font-weight: 800;
-  color: #F0EDE8;
+  color: #0D2538;
   line-height: 1.08;
   letter-spacing: -0.025em;
   margin: 0 0 22px;
 }
 .pg-ch-body {
   font-size: clamp(14px, 1.3vw, 17px);
-  color: rgba(240,237,232,0.48);
+  color: rgba(13,37,56,0.52);
   line-height: 1.7;
   margin: 0;
 }
 .pg-ch-note {
   font-size: 13px;
-  color: rgba(240,237,232,0.28);
+  color: rgba(13,37,56,0.32);
   line-height: 1.6;
   margin: 16px 0 0;
 }
 
 /* ── Chapter 1: Levels ── */
-.pg-ch1 { background: linear-gradient(140deg, #040C16 0%, #061220 100%); }
+.pg-ch1 { background: linear-gradient(140deg, #EEF3F9 0%, #F4F7FA 100%); }
 .pg-levels {
   display: flex;
   align-items: flex-start;
@@ -576,8 +576,8 @@ const CSS = `
   width: 62px;
   height: 62px;
   border-radius: 50%;
-  border: 1.5px solid var(--c);
-  background: rgba(4,12,22,0.9);
+  border: 2px solid var(--c);
+  background: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -615,12 +615,12 @@ const CSS = `
 }
 .pg-level-reqs span {
   font-size: 10px;
-  color: rgba(240,237,232,0.3);
+  color: rgba(13,37,56,0.38);
   text-align: center;
 }
 
 /* ── Chapter 2: Rarities ── */
-.pg-ch2 { background: linear-gradient(140deg, #04101E 0%, #060D18 100%); }
+.pg-ch2 { background: linear-gradient(140deg, #F0F4FA 0%, #F4F7FA 100%); }
 .pg-ch2-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -660,7 +660,7 @@ const CSS = `
 }
 .pg-rarity-alt {
   font-size: 11px;
-  color: rgba(240,237,232,0.3);
+  color: rgba(13,37,56,0.35);
   margin-right: 8px;
 }
 .pg-rarity-ep {
@@ -671,7 +671,7 @@ const CSS = `
 }
 
 /* ── Chapter 3: Cairns ── */
-.pg-ch3 { background: linear-gradient(140deg, #060912 0%, #050D1A 100%); }
+.pg-ch3 { background: linear-gradient(140deg, #F4F7FA 0%, #EEF2F8 100%); }
 .pg-ch3-inner {
   display: flex;
   flex-direction: column;
@@ -717,15 +717,15 @@ const CSS = `
 .pg-ch3-body { text-align: center; max-width: 380px; }
 .pg-cairn-note {
   font-size: 14px;
-  color: rgba(240,237,232,0.35);
+  color: rgba(13,37,56,0.42);
   line-height: 1.7;
   margin: 14px 0 0;
   text-align: center;
 }
-.pg-cairn-note em { color: rgba(240,237,232,0.55); font-style: italic; }
+.pg-cairn-note em { color: rgba(13,37,56,0.62); font-style: italic; }
 
 /* ── Chapter 4: Ranking ── */
-.pg-ch4 { background: linear-gradient(140deg, #04101A 0%, #060D16 100%); }
+.pg-ch4 { background: linear-gradient(140deg, #EDF2F8 0%, #F4F7FA 100%); }
 .pg-ch4-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -743,10 +743,10 @@ const CSS = `
 .pg-criteria-chip {
   padding: 6px 14px;
   border-radius: 100px;
-  border: 1px solid rgba(240,237,232,0.15);
+  border: 1px solid rgba(13,37,56,0.14);
   font-size: 12px;
   font-weight: 600;
-  color: rgba(240,237,232,0.45);
+  color: rgba(13,37,56,0.48);
   letter-spacing: 0.04em;
 }
 .pg-leaderboard {
@@ -760,26 +760,27 @@ const CSS = `
   gap: 14px;
   padding: 14px 18px;
   border-radius: 16px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: #FFFFFF;
+  border: 1px solid rgba(13,37,56,0.07);
   opacity: 0;
   transform: translateX(20px);
   transition: opacity 0.6s ease var(--d), transform 0.6s ease var(--d);
 }
 .pg-lb-on .pg-lb-row { opacity: 1; transform: translateX(0); }
 .pg-lb-me {
-  background: rgba(34,197,94,0.06);
-  border-color: rgba(34,197,94,0.22);
-  box-shadow: 0 0 24px rgba(34,197,94,0.08);
+  background: #EBF5FF;
+  border-color: rgba(14,165,233,0.30);
+  border-left: 3px solid #0EA5E9;
+  box-shadow: 0 2px 12px rgba(14,165,233,0.08);
 }
 .pg-lb-rank {
   font-size: 12px;
   font-weight: 800;
-  color: rgba(240,237,232,0.3);
+  color: rgba(13,37,56,0.28);
   width: 28px;
   flex-shrink: 0;
 }
-.pg-lb-me .pg-lb-rank { color: rgba(34,197,94,0.7); }
+.pg-lb-me .pg-lb-rank { color: #0EA5E9; }
 .pg-lb-avatar {
   width: 36px;
   height: 36px;
@@ -796,12 +797,12 @@ const CSS = `
 .pg-lb-name {
   font-size: 14px;
   font-weight: 700;
-  color: #F0EDE8;
+  color: #0D2538;
   margin-bottom: 3px;
 }
 .pg-lb-stats {
   font-size: 11px;
-  color: rgba(240,237,232,0.38);
+  color: rgba(13,37,56,0.42);
   display: flex;
   gap: 6px;
 }
@@ -809,13 +810,13 @@ const CSS = `
 .pg-lb-ep {
   font-size: 13px;
   font-weight: 800;
-  color: rgba(240,237,232,0.55);
+  color: rgba(13,37,56,0.55);
   white-space: nowrap;
 }
-.pg-lb-ep span { font-size: 10px; font-weight: 600; color: rgba(240,237,232,0.3); }
+.pg-lb-ep span { font-size: 10px; font-weight: 600; color: rgba(13,37,56,0.32); }
 .pg-lb-note {
   font-size: 11px;
-  color: rgba(240,237,232,0.22);
+  color: rgba(13,37,56,0.25);
   text-align: center;
   margin: 6px 0 0;
   letter-spacing: 0.02em;
@@ -835,7 +836,7 @@ const CSS = `
 .pg-final-quote {
   font-size: clamp(22px, 3vw, 38px);
   font-weight: 700;
-  color: #F0EDE8;
+  color: #0D2538;
   line-height: 1.35;
   margin: 0 auto 48px;
   max-width: 560px;
@@ -848,10 +849,10 @@ const CSS = `
   align-items: center;
   gap: 8px;
   padding: 16px 36px;
-  background: rgba(240,237,232,0.06);
-  border: 1px solid rgba(240,237,232,0.22);
+  background: #0D2538;
+  border: 1px solid #0D2538;
   border-radius: 100px;
-  color: #F0EDE8;
+  color: #FFFFFF;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -859,9 +860,9 @@ const CSS = `
   transition: background 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.2s;
 }
 .pg-final-btn:hover {
-  background: rgba(240,237,232,0.10);
-  border-color: rgba(240,237,232,0.45);
-  box-shadow: 0 0 32px rgba(240,237,232,0.1);
+  background: #1E3A5A;
+  border-color: #1E3A5A;
+  box-shadow: 0 8px 32px rgba(13,37,56,0.2);
   transform: translateY(-2px);
 }
 
