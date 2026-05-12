@@ -26,9 +26,9 @@ const RARITIES = [
 ] as const;
 
 const RANKING = [
-  { rank: 1, name: "Santi Trenchs", initials: "ST", color: "#0EA5E9", ascents: 52, cairns: 4, ep: 2980, isMe: true  },
-  { rank: 2, name: "Jordi Bonati",  initials: "JB", color: "#22c55e", ascents: 37, cairns: 1, ep: 2303, isMe: false },
-  { rank: 3, name: "Arnau",         initials: "AR", color: "#A855F7", ascents: 25, cairns: 0, ep: 2150, isMe: false },
+  { rank: 1, name: "Oriol Casanovas", initials: "OC", color: "#00995C", ascents: 48, cairns: 3, ep: 2760, isMe: false },
+  { rank: 2, name: "Tú",              initials: "TÚ", color: "#0EA5E9", ascents: 38, cairns: 2, ep: 1980, isMe: true  },
+  { rank: 3, name: "Marta Ribagorza", initials: "MR", color: "#0E7490", ascents: 31, cairns: 1, ep: 1420, isMe: false },
 ];
 
 // ─── Chapter 1: Levels ────────────────────────────────────────────────────────
