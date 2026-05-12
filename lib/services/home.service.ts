@@ -209,15 +209,19 @@ export async function getHomeData(userId: string): Promise<HomeData> {
         isCurrentUser: isMe,
       };
     })
-    .sort((a, b) => b.ep - a.ep);
+    .sort((a, b) =>
+      b.ascentCount - a.ascentCount ||
+      b.cairns - a.cairns ||
+      b.ep - a.ep
+    );
 
   const userRank = leaderboard.findIndex((e) => e.isCurrentUser) + 1;
 
   // Next rank up
   const personAhead = userRank > 1 ? leaderboard[userRank - 2] : null;
-  const myEp = lbMap.get(userId)?.ep ?? 0;
+  const myAscents2 = lbMap.get(userId)?.count ?? 0;
   const nextRankName = personAhead?.name ?? null;
-  const nextRankGap = personAhead ? personAhead.ep - myEp + 1 : 0;
+  const nextRankGap = personAhead ? personAhead.ascentCount - myAscents2 + 1 : 0;
 
   // 6. Monthly stats — last 6 months, derived from myAscents (no extra query)
   const totalMetersAscended = myAscents.reduce((sum, a) => sum + a.peak.altitudeM, 0);
