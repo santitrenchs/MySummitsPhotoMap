@@ -3,16 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // ─── Rarity helpers ──────────────────────────────────────────────────────────
-function rarityForAlt(m: number): { name: string; color: string; ep: string } {
-  if (m >= 8000) return { name: "Snow Lotus",  color: "#94A3B8", ep: "2.000 EP" };
-  if (m >= 7000) return { name: "Cinquefoil",  color: "#EAB308", ep: "1.000 EP" };
-  if (m >= 6000) return { name: "Saxifrage",   color: "#F97316", ep: "500 EP"   };
-  if (m >= 5000) return { name: "Draba",       color: "#EC4899", ep: "250 EP"   };
-  if (m >= 4000) return { name: "Edelweiss",   color: "#A855F7", ep: "120 EP"   };
-  if (m >= 3000) return { name: "Tundra",      color: "#0E7490", ep: "60 EP"    };
-  if (m >= 2000) return { name: "Gentian",     color: "#1E40AF", ep: "30 EP"    };
-  if (m >= 1000) return { name: "Heather",     color: "#06B6D4", ep: "20 EP"    };
-  return          { name: "Daisy",        color: "#00995C", ep: "10 EP"    };
+function rarityForAlt(m: number): { name: string; color: string; ep: string; flower: string } {
+  if (m >= 8000) return { name: "Snow Lotus",  color: "#94A3B8", ep: "2.000 EP", flower: "✿" };
+  if (m >= 7000) return { name: "Cinquefoil",  color: "#EAB308", ep: "1.000 EP", flower: "✿" };
+  if (m >= 6000) return { name: "Saxifrage",   color: "#F97316", ep: "500 EP",   flower: "✿" };
+  if (m >= 5000) return { name: "Draba",       color: "#EC4899", ep: "250 EP",   flower: "✿" };
+  if (m >= 4000) return { name: "Edelweiss",   color: "#A855F7", ep: "120 EP",   flower: "✿" };
+  if (m >= 3000) return { name: "Tundra",      color: "#0E7490", ep: "60 EP",    flower: "✿" };
+  if (m >= 2000) return { name: "Gentian",     color: "#1E40AF", ep: "30 EP",    flower: "✿" };
+  if (m >= 1000) return { name: "Heather",     color: "#06B6D4", ep: "20 EP",    flower: "✿" };
+  return          { name: "Daisy",        color: "#00995C", ep: "10 EP",    flower: "✿" };
 }
 
 // ─── Card data ────────────────────────────────────────────────────────────────
@@ -20,32 +20,34 @@ type CardData = {
   peakName: string; altitudeM: number; altLabel: string;
   country: string; flag: string; mountainRange: string;
   lat: number; lng: number;
-  photo?: string;
+  photo?: string; mapImg: string;
   route: string; date: string;
   user: string; userColor: string;
+  ascents: number; climbers: number;
+  message: string;
 };
 
 const RAW: CardData[] = [
-  { peakName: "Aneto",               altitudeM: 3404, altLabel: "3.404 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6313, lng:   0.6560, photo: "/images/landing-aneto.webp", route: "Vía del Portillón",           date: "14 ago 2024", user: "Iker Etxeberria",   userColor: "#1E40AF" },
-  { peakName: "Monte Perdido",       altitudeM: 3355, altLabel: "3.355 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6761, lng:   0.0361, photo: "/images/landing-monteperdido.webp", route: "Vía del Cilindro",            date: "02 sep 2023", user: "Javier Ordesa",     userColor: "#A855F7" },
-  { peakName: "Posets",              altitudeM: 3375, altLabel: "3.375 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6500, lng:   0.4167, photo: "/images/landing-posets.webp", route: "Arista NO",                   date: "27 jul 2024", user: "Marta Ribagorza",   userColor: "#0E7490" },
-  { peakName: "Pica d'Estats",       altitudeM: 3143, altLabel: "3.143 m", flag: "🇦🇩", country: "Andorra",       mountainRange: "Pirineos",         lat:  42.6642, lng:   1.3942, photo: "/images/landing-picadestats.webp", route: "Vía normal SO",               date: "11 ago 2023", user: "Oriol Casanovas",   userColor: "#00995C" },
-  { peakName: "Mont Blanc",          altitudeM: 4808, altLabel: "4.808 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes",            lat:  45.8326, lng:   6.8652, photo: "/images/landing-montblanc.webp", route: "Vía Goûter",                  date: "22 jul 2023", user: "Luc Moreau",        userColor: "#EC4899" },
-  { peakName: "Barre des Écrins",    altitudeM: 4102, altLabel: "4.102 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes Dauphinois", lat:  44.9244, lng:   6.3567, photo: "/images/landing-ecrins.webp", route: "Arista O",                    date: "18 jul 2024", user: "Camille Durand",    userColor: "#1E40AF" },
-  { peakName: "La Meije",            altitudeM: 3983, altLabel: "3.983 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes Dauphinois", lat:  45.0072, lng:   6.4467, photo: "/images/landing-lameije.webp", route: "Gran Couloir",                date: "05 ago 2022", user: "Étienne Charlet",   userColor: "#F97316" },
-  { peakName: "Mont Aiguille",       altitudeM: 2087, altLabel: "2.087 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Vercors",          lat:  44.8017, lng:   5.5150, photo: "/images/landing-montaiguille.webp", route: "Vía normal S",                date: "30 may 2024", user: "Pierre Vaucher",    userColor: "#A855F7" },
-  { peakName: "Dufourspitze",        altitudeM: 4634, altLabel: "4.634 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Peninos",    lat:  45.9369, lng:   7.8669, photo: "/images/landing-dufourspitze.webp", route: "Arista NE",                   date: "14 ago 2023", user: "Lukas Zurbuchen",   userColor: "#0E7490" },
-  { peakName: "Matterhorn",          altitudeM: 4478, altLabel: "4.478 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Peninos",    lat:  45.9766, lng:   7.6586, photo: "/images/landing-matterhorn.webp", route: "Arista Hörnli",               date: "29 jul 2022", user: "Matthias Hörnli",   userColor: "#EC4899" },
-  { peakName: "Gran Paradiso",       altitudeM: 4061, altLabel: "4.061 m", flag: "🇮🇹", country: "Italia",        mountainRange: "Alpes Graios",     lat:  45.5175, lng:   7.2686, photo: "/images/landing-granparadiso.webp", route: "Vía normal",                  date: "03 ago 2024", user: "Giulia Rinaldi",    userColor: "#00995C" },
-  { peakName: "Jungfrau",            altitudeM: 4158, altLabel: "4.158 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Berneses",   lat:  46.5375, lng:   7.9622, photo: "/images/landing-jungfrau.webp", route: "Ruta del Rottal",             date: "20 jul 2023", user: "Anna Albrecht",     userColor: "#F97316" },
-  { peakName: "Eiger",               altitudeM: 3967, altLabel: "3.967 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Berneses",   lat:  46.5775, lng:   8.0050, photo: "/images/landing-eiger.webp", route: "Arista O (vía normal)",       date: "16 sep 2023", user: "Franz Eigermann",   userColor: "#1E40AF" },
-  { peakName: "Zugspitze",           altitudeM: 2962, altLabel: "2.962 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Alpes Bávaros",    lat:  47.4211, lng:  10.9853, photo: "/images/landing-zugspitze.webp", route: "Vía normal SE",               date: "12 oct 2024", user: "Tobias Kramer",     userColor: "#A855F7" },
-  { peakName: "Watzmann",            altitudeM: 2713, altLabel: "2.713 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Berchtesgaden",    lat:  47.5508, lng:  12.9444, photo: "/images/landing-watzmann.webp", route: "Arista SO",                   date: "08 ago 2024", user: "Sepp Watzl",        userColor: "#0E7490" },
-  { peakName: "Alpspitze",           altitudeM: 2628, altLabel: "2.628 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Wetterstein",      lat:  47.4558, lng:  10.9986, photo: "/images/landing-alpspitze.webp", route: "Vía normal E",                date: "25 jun 2024", user: "Leonhard Alper",    userColor: "#EC4899" },
-  { peakName: "Ben Nevis",           altitudeM: 1345, altLabel: "1.345 m", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", country: "Escocia",        mountainRange: "Grampian",         lat:  56.7969, lng:  -5.0035, photo: "/images/landing-bennevis.webp", route: "Mountain Track",              date: "17 may 2024", user: "Callum MacLeod",    userColor: "#F97316" },
-  { peakName: "Scafell Pike",        altitudeM:  978, altLabel: "978 m",   flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", country: "Inglaterra",     mountainRange: "Lake District",    lat:  54.4541, lng:  -3.2114, photo: "/images/landing-scafellpike.webp", route: "Ruta desde Wasdale Head",     date: "03 nov 2023", user: "Oliver Scaford",    userColor: "#00995C" },
-  { peakName: "Snowdon",             altitudeM: 1085, altLabel: "1.085 m", flag: "🏴󠁧󠁢󠁷󠁬󠁳󠁿", country: "Gales",          mountainRange: "Eryri",            lat:  53.0685, lng:  -4.0762, photo: "/images/landing-snowdon.webp", route: "Llanberis Path",              date: "22 abr 2024", user: "Gareth Llewelyn",   userColor: "#1E40AF" },
-  { peakName: "Buachaille Etive Mòr",altitudeM: 1021, altLabel: "1.021 m", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", country: "Escocia",        mountainRange: "Glen Coe",         lat:  56.6735, lng:  -4.9586, photo: "/images/landing-buachaille.webp", route: "Vía SE por Coire na Tulaich", date: "09 jun 2024", user: "Ewan MacFarlane",   userColor: "#A855F7" },
+  { peakName: "Aneto",               altitudeM: 3404, altLabel: "3.404 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6313, lng:   0.6560, photo: "/images/landing-aneto.webp",         mapImg: "/images/landing-aneto-map.webp",         route: "Vía del Portillón",           date: "14 ago 2024", user: "Iker Etxeberria",   userColor: "#1E40AF", ascents:  847, climbers: 312, message: "El paso del portillón con niebla y el puente de Mahoma cubierto de hielo. Cosas que no olvidarás nunca." },
+  { peakName: "Monte Perdido",       altitudeM: 3355, altLabel: "3.355 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6761, lng:   0.0361, photo: "/images/landing-monteperdido.webp",  mapImg: "/images/landing-monteperdido-map.webp",  route: "Vía del Cilindro",            date: "02 sep 2023", user: "Javier Ordesa",     userColor: "#A855F7", ascents:  423, climbers: 167, message: "Subimos con los pies mojados desde el primer paso. La cima llegó justo cuando se abrió el cielo." },
+  { peakName: "Posets",              altitudeM: 3375, altLabel: "3.375 m", flag: "🇪🇸", country: "España",        mountainRange: "Pirineos",         lat:  42.6500, lng:   0.4167, photo: "/images/landing-posets.webp",        mapImg: "/images/landing-posets-map.webp",        route: "Arista NO",                   date: "27 jul 2024", user: "Marta Ribagorza",   userColor: "#0E7490", ascents:  298, climbers: 128, message: "Mi primera arista técnica. Iba muerta de miedo y llegué arriba llorando de felicidad." },
+  { peakName: "Pica d'Estats",       altitudeM: 3143, altLabel: "3.143 m", flag: "🇦🇩", country: "Andorra",       mountainRange: "Pirineos",         lat:  42.6642, lng:   1.3942, photo: "/images/landing-picadestats.webp",   mapImg: "/images/landing-picadestats-map.webp",   route: "Vía normal SO",               date: "11 ago 2023", user: "Oriol Casanovas",   userColor: "#00995C", ascents:  612, climbers: 241, message: "El techo de Catalunya visto desde arriba. Hay veces que una cima no necesita más explicación." },
+  { peakName: "Mont Blanc",          altitudeM: 4808, altLabel: "4.808 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes",            lat:  45.8326, lng:   6.8652, photo: "/images/landing-montblanc.webp",     mapImg: "/images/landing-montblanc-map.webp",     route: "Vía Goûter",                  date: "22 jul 2023", user: "Luc Moreau",        userColor: "#EC4899", ascents: 1284, climbers: 489, message: "Salida a las 2h de la mañana, frío de otro mundo y la vía láctea entera para nosotros solos." },
+  { peakName: "Barre des Écrins",    altitudeM: 4102, altLabel: "4.102 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes Dauphinois", lat:  44.9244, lng:   6.3567, photo: "/images/landing-ecrins.webp",        mapImg: "/images/landing-ecrins-map.webp",        route: "Arista O",                    date: "18 jul 2024", user: "Camille Durand",    userColor: "#1E40AF", ascents:  312, climbers: 124, message: "La arista oeste es puro alpinismo clásico. Tardamos más de la cuenta pero lo repetiría mañana." },
+  { peakName: "La Meije",            altitudeM: 3983, altLabel: "3.983 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Alpes Dauphinois", lat:  45.0072, lng:   6.4467, photo: "/images/landing-lameije.webp",       mapImg: "/images/landing-lameije-map.webp",       route: "Gran Couloir",                date: "05 ago 2022", user: "Étienne Charlet",   userColor: "#F97316", ascents:  178, climbers:  89, message: "El Gran Couloir me respetó. No me esperaba esa exposición. Una de las cimas más salvajes que he pisado." },
+  { peakName: "Mont Aiguille",       altitudeM: 2087, altLabel: "2.087 m", flag: "🇫🇷", country: "Francia",       mountainRange: "Vercors",          lat:  44.8017, lng:   5.5150, photo: "/images/landing-montaiguille.webp",  mapImg: "/images/landing-montaiguille-map.webp",  route: "Vía normal S",                date: "30 may 2024", user: "Pierre Vaucher",    userColor: "#A855F7", ascents:  534, climbers: 210, message: "Dicen que fue la primera cumbre escalada de la historia. Yo solo sé que la vista desde arriba justifica todo." },
+  { peakName: "Dufourspitze",        altitudeM: 4634, altLabel: "4.634 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Peninos",    lat:  45.9369, lng:   7.8669, photo: "/images/landing-dufourspitze.webp",  mapImg: "/images/landing-dufourspitze-map.webp",  route: "Arista NE",                   date: "14 ago 2023", user: "Lukas Zurbuchen",   userColor: "#0E7490", ascents:  267, climbers: 118, message: "El techo de Suiza. La cresta final con viento lateral y el Monte Rosa entero debajo. Sin palabras." },
+  { peakName: "Matterhorn",          altitudeM: 4478, altLabel: "4.478 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Peninos",    lat:  45.9766, lng:   7.6586, photo: "/images/landing-matterhorn.webp",    mapImg: "/images/landing-matterhorn-map.webp",    route: "Arista Hörnli",               date: "29 jul 2022", user: "Matthias Hörnli",   userColor: "#EC4899", ascents:  723, climbers: 298, message: "Llevo diez años mirando esta montaña desde Zermatt. El día que subí entendí por qué me fascinaba tanto." },
+  { peakName: "Gran Paradiso",       altitudeM: 4061, altLabel: "4.061 m", flag: "🇮🇹", country: "Italia",        mountainRange: "Alpes Graios",     lat:  45.5175, lng:   7.2686, photo: "/images/landing-granparadiso.webp",  mapImg: "/images/landing-granparadiso-map.webp",  route: "Vía normal",                  date: "03 ago 2024", user: "Giulia Rinaldi",    userColor: "#00995C", ascents:  891, climbers: 342, message: "Mi primer cuatro mil. Fui sola, con una guía y mil dudas. Bajé siendo otra persona." },
+  { peakName: "Jungfrau",            altitudeM: 4158, altLabel: "4.158 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Berneses",   lat:  46.5375, lng:   7.9622, photo: "/images/landing-jungfrau.webp",      mapImg: "/images/landing-jungfrau-map.webp",      route: "Ruta del Rottal",             date: "20 jul 2023", user: "Anna Albrecht",     userColor: "#F97316", ascents: 1031, climbers: 401, message: "Salida de noche por el Rottal con la luna llena iluminando el glaciar. Hay momentos que no se fotografían." },
+  { peakName: "Eiger",               altitudeM: 3967, altLabel: "3.967 m", flag: "🇨🇭", country: "Suiza",         mountainRange: "Alpes Berneses",   lat:  46.5775, lng:   8.0050, photo: "/images/landing-eiger.webp",         mapImg: "/images/landing-eiger-map.webp",         route: "Arista O (vía normal)",       date: "16 sep 2023", user: "Franz Eigermann",   userColor: "#1E40AF", ascents:  156, climbers:  78, message: "La cara norte me miró fijamente durante todo el descenso. Algún día volvemos con más ambición." },
+  { peakName: "Zugspitze",           altitudeM: 2962, altLabel: "2.962 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Alpes Bávaros",    lat:  47.4211, lng:  10.9853, photo: "/images/landing-zugspitze.webp",     mapImg: "/images/landing-zugspitze-map.webp",     route: "Vía normal SE",               date: "12 oct 2024", user: "Tobias Kramer",     userColor: "#A855F7", ascents: 1423, climbers: 534, message: "Mi abuelo la subió en 1971. Yo la subí con mi hija en 2024. Algunas tradiciones merecen repetirse." },
+  { peakName: "Watzmann",            altitudeM: 2713, altLabel: "2.713 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Berchtesgaden",    lat:  47.5508, lng:  12.9444, photo: "/images/landing-watzmann.webp",      mapImg: "/images/landing-watzmann-map.webp",      route: "Arista SO",                   date: "08 ago 2024", user: "Sepp Watzl",        userColor: "#0E7490", ascents:  612, climbers: 234, message: "Tres días de lluvia antes. Al cuarto amaneció y lo dimos todo. La arista SO nos dejó sin aliento." },
+  { peakName: "Alpspitze",           altitudeM: 2628, altLabel: "2.628 m", flag: "🇩🇪", country: "Alemania",      mountainRange: "Wetterstein",      lat:  47.4558, lng:  10.9986, photo: "/images/landing-alpspitze.webp",     mapImg: "/images/landing-alpspitze-map.webp",     route: "Vía normal E",                date: "25 jun 2024", user: "Leonhard Alper",    userColor: "#EC4899", ascents:  489, climbers: 198, message: "La he subido tantas veces que ya la llamo 'mi montaña'. Esta vez con nieve fresca. La mejor de todas." },
+  { peakName: "Ben Nevis",           altitudeM: 1345, altLabel: "1.345 m", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", country: "Escocia",        mountainRange: "Grampian",         lat:  56.7969, lng:  -5.0035, photo: "/images/landing-bennevis.webp",      mapImg: "/images/landing-bennevis-map.webp",      route: "Mountain Track",              date: "17 may 2024", user: "Callum MacLeod",    userColor: "#F97316", ascents: 2134, climbers: 812, message: "Niebla, lluvia y viento. O sea, un día perfecto escocés. La cima apareció de repente y casi no me la creo." },
+  { peakName: "Scafell Pike",        altitudeM:  978, altLabel: "978 m",   flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", country: "Inglaterra",     mountainRange: "Lake District",    lat:  54.4541, lng:  -3.2114, photo: "/images/landing-scafellpike.webp",   mapImg: "/images/landing-scafellpike-map.webp",   route: "Ruta desde Wasdale Head",     date: "03 nov 2023", user: "Oliver Scaford",    userColor: "#00995C", ascents: 1876, climbers: 723, message: "El techo de Inglaterra es una roca gris bajo nubes grises. Y sin embargo no cambiaría ese día por nada." },
+  { peakName: "Snowdon",             altitudeM: 1085, altLabel: "1.085 m", flag: "🏴󠁧󠁢󠁷󠁬󠁳󠁿", country: "Gales",          mountainRange: "Eryri",            lat:  53.0685, lng:  -4.0762, photo: "/images/landing-snowdon.webp",       mapImg: "/images/landing-snowdon-map.webp",       route: "Llanberis Path",              date: "22 abr 2024", user: "Gareth Llewelyn",   userColor: "#1E40AF", ascents: 2891, climbers: 1045, message: "Yr Wyddfa en galés. Lo subí cantando una canción que me enseñó mi padre de pequeño. Buen día." },
+  { peakName: "Buachaille Etive Mòr",altitudeM: 1021, altLabel: "1.021 m", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", country: "Escocia",        mountainRange: "Glen Coe",         lat:  56.6735, lng:  -4.9586, photo: "/images/landing-buachaille.webp",    mapImg: "/images/landing-buachaille-map.webp",    route: "Vía SE por Coire na Tulaich", date: "09 jun 2024", user: "Ewan MacFarlane",   userColor: "#A855F7", ascents:  345, climbers: 142, message: "La montaña más fotografiada de Escocia. Verla desde abajo es una cosa. Verla desde arriba es otra." },
 ];
 
 // ─── Mountain scene (photo placeholder) ──────────────────────────────────────
@@ -82,29 +84,26 @@ function MountainScene({ color, altM, uid }: { color: string; altM: number; uid:
           <stop offset="100%" stopColor="rgba(0,0,0,0.72)" />
         </linearGradient>
       </defs>
-      {/* Sky */}
       <rect width="240" height="200" fill={`url(#sky-${uid})`} />
-      {/* Far ridge */}
       <path d="M0 155 L40 110 L80 130 L130 90 L175 115 L210 85 L240 105 L240 200 L0 200Z"
         fill={terrainFar} />
-      {/* Main peak */}
       <path d="M30 200 L120 55 L210 200Z" fill={terrainNear} />
-      {/* Snow cap */}
       <path d="M120 55 L104 92 L120 84 L136 92Z" fill="rgba(255,255,255,0.88)" />
-      {/* Subtle light face */}
       <path d="M120 55 L104 92 L120 84Z" fill="rgba(255,255,255,0.25)" />
-      {/* Bottom overlay for text legibility */}
       <rect width="240" height="200" fill={`url(#ov-${uid})`} />
     </svg>
   );
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
-const PHOTO_H = 200;
 
 function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: number; flipped: boolean; isNearby: boolean }) {
   const { name: rarity, color, ep } = rarityForAlt(card.altitudeM);
   const uid = `c${index}`;
+
+  const latStr = `${Math.abs(card.lat).toFixed(4)}°${card.lat >= 0 ? "N" : "S"}`;
+  const lngStr = `${Math.abs(card.lng).toFixed(4)}°${card.lng >= 0 ? "E" : "W"}`;
+  const barPct = Math.min(100, (card.altitudeM / 8849) * 100).toFixed(1);
 
   return (
     <div style={{
@@ -114,7 +113,7 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
       transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
     }}>
 
-      {/* ── Front — app card style ── */}
+      {/* ── Front ── */}
       <div style={{
         position: "absolute", inset: 0,
         backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
@@ -147,62 +146,45 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
         </div>
 
         {/* Photo area — flex:1 fills remaining space */}
-        <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "0 10px" , borderRadius: 14 }}>
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "0 10px", borderRadius: 14 }}>
           {card.photo && isNearby
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={card.photo} alt={card.peakName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             : <MountainScene color={color} altM={card.altitudeM} uid={uid} />
           }
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 50%, transparent 100%)" }} />
+          {/* Peak overlay */}
           <div style={{ position: "absolute", bottom: 12, left: 14, right: 14 }}>
-            <div style={{
-              fontSize: 17, fontWeight: 700, color: "#FFFFFF",
-              lineHeight: 1.2, marginBottom: 4,
-              textShadow: "0 1px 6px rgba(0,0,0,0.5)",
-            }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2, marginBottom: 3, textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}>
               {card.peakName}
             </div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>
-              📍 {Math.abs(card.lat).toFixed(4)}°{card.lat >= 0 ? "N" : "S"} · {Math.abs(card.lng).toFixed(4)}°{card.lng >= 0 ? "E" : "W"}
+              📍 {latStr} · {lngStr}
             </div>
           </div>
         </div>
 
         {/* Stat band — RAREZA · ALTITUD · RECOMPENSA */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: "10px" }}>
-          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 6px", textAlign: "center" }}>
-            <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase" as const, color: "#8A94A3", marginBottom: 4 }}>
-              RAREZA
-            </div>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 3, background: color + "20", borderRadius: 20, padding: "3px 8px" }}>
-                <span style={{ color, fontSize: 10, lineHeight: 1 }}>✿</span>
-                <span style={{ color, fontSize: 10, fontWeight: 700 }}>{rarity}</span>
-              </div>
+          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
+            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RAREZA</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, lineHeight: 1.2 }}>
+              ✿ <span style={{ fontSize: 10 }}>{rarity}</span>
             </div>
           </div>
-
-          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 6px", textAlign: "center" }}>
-            <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase" as const, color: "#8A94A3", marginBottom: 4 }}>
-              ALTITUD
-            </div>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "#0D2538", marginTop: 2, whiteSpace: "nowrap" }}>{card.altLabel}</div>
+          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
+            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>ALTITUD</div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{card.altLabel}</div>
           </div>
-
-          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 6px", textAlign: "center" }}>
-            <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase" as const, color: "#8A94A3", marginBottom: 4 }}>
-              RECOMPENSA
-            </div>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <div style={{ display: "inline-flex", alignItems: "center", background: "#fef3c7", borderRadius: 20, padding: "3px 8px" }}>
-                <span style={{ color: "#d97706", fontSize: 10, fontWeight: 700 }}>+{ep}</span>
-              </div>
-            </div>
+          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
+            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RECOMPENSA</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{ep}</div>
           </div>
         </div>
+
       </div>
 
-      {/* ── Back ── */}
+      {/* ── Back — matches AscentCard buildBack() ── */}
       <div style={{
         position: "absolute", inset: 0,
         backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
@@ -211,48 +193,82 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
         background: "#FFFFFF",
         border: "1px solid rgba(13,37,56,0.09)",
         boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
-        display: "flex", flexDirection: "column", padding: "18px 16px",
+        display: "flex", flexDirection: "column",
       }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#0D2538", flex: 1 }}>{card.peakName}</span>
-          <span style={{
-            background: `${color}18`, border: `1px solid ${color}40`,
-            borderRadius: 100, padding: "2px 8px",
-            fontSize: 9, color, fontWeight: 700,
-          }}>✿ {rarity}</span>
+
+        {/* Map image — fills all space above the stats panel */}
+        <div style={{ position: "relative", flex: 1, overflow: "hidden" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={card.mapImg}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+          {/* Bottom gradient */}
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.22) 50%, transparent 100%)",
+          }} />
+          {/* Peak overlay: coords + name + alt + range + bar */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 12px 10px" }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.60)", marginBottom: 3 }}>
+              📍 {latStr} · {lngStr}
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", lineHeight: 1.1, textShadow: "0 1px 6px rgba(0,0,0,0.7)" }}>
+              {card.peakName}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", marginTop: 1 }}>
+              {card.altLabel}
+            </div>
+            {card.mountainRange && (
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.50)", marginTop: 1 }}>{card.mountainRange}</div>
+            )}
+            {/* Altitude bar — full width */}
+            <div style={{ marginTop: 10 }}>
+              <div style={{ height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${barPct}%`, background: color }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
+                <span style={{ fontSize: 8, color: "rgba(255,255,255,0.40)" }}>0 m</span>
+                <span style={{ fontSize: 8, color: "rgba(255,255,255,0.40)" }}>8.849 m</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Detail rows */}
-        {[
-          { label: "Altitud",    value: card.altLabel,                    mono: true  },
-          { label: "Cordillera", value: card.mountainRange,               mono: false },
-          { label: "País",       value: `${card.flag} ${card.country}`,   mono: false },
-          { label: "Fecha",      value: card.date,                        mono: false },
-          { label: "Ruta",       value: card.route,                       mono: false },
-          { label: "EP ganados", value: ep,                               mono: true  },
-        ].map((s) => (
-          <div key={s.label} style={{
-            display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-            padding: "7px 0", borderBottom: "1px solid rgba(13,37,56,0.06)", gap: 8,
-          }}>
-            <span style={{ fontSize: 10, color: "rgba(13,37,56,0.4)", fontWeight: 600, flexShrink: 0 }}>
-              {s.label}
-            </span>
-            <span style={{
-              fontSize: 10, textAlign: "right",
-              color: s.label === "EP ganados" ? "#F97316" : "#0D2538",
-              fontFamily: s.mono ? "var(--font-mono-landing, monospace)" : "inherit",
-              fontWeight: s.label === "EP ganados" ? 700 : 500,
-            }}>
-              {s.label === "EP ganados" ? `+${s.value}` : s.value}
+        {/* Stats panel — fixed height */}
+        <div style={{ flexShrink: 0 }}>
+          {/* Eyebrow */}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "9px 14px 6px" }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
+            <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(13,37,56,0.4)", textTransform: "uppercase" }}>
+              Estadísticas Peakadex
             </span>
           </div>
-        ))}
-
-        <div style={{ marginTop: "auto", paddingTop: 12, textAlign: "center",
-          fontSize: 10, color: "rgba(13,37,56,0.25)" }}>
-          ✓ Capturada · Peakadex
+          {/* KPIs */}
+          <div style={{ display: "flex", borderTop: "1px solid rgba(13,37,56,0.06)" }}>
+            <div style={{ flex: 1, padding: "8px 14px" }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.38)", textTransform: "uppercase", marginBottom: 3 }}>Ascensiones</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.ascents.toLocaleString("es")}</div>
+            </div>
+            <div style={{ width: 1, background: "rgba(13,37,56,0.06)", margin: "8px 0" }} />
+            <div style={{ flex: 1, padding: "8px 14px", textAlign: "right" }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.38)", textTransform: "uppercase", marginBottom: 3 }}>Alpinistas</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.climbers.toLocaleString("es")}</div>
+            </div>
+          </div>
+          {/* Footer: user + message */}
+          <div style={{ borderTop: "1px solid rgba(13,37,56,0.06)", padding: "8px 14px 12px" }}>
+            <p style={{ margin: 0, fontSize: 11, color: "#111827", lineHeight: 1.4 }}>
+              <strong>{card.user}</strong>
+            </p>
+            <p style={{
+              margin: "3px 0 0", fontSize: 10, color: "#6B7280", lineHeight: 1.5,
+              display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+            }}>
+              {card.message}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -283,7 +299,6 @@ export default function LandingCards() {
   const prev = useCallback(() => setActive((a) => (a - 1 + total) % total), [total]);
   const next = useCallback(() => setActive((a) => (a + 1) % total), [total]);
 
-  // keyboard
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft")  prev();
@@ -293,7 +308,6 @@ export default function LandingCards() {
     return () => window.removeEventListener("keydown", handler);
   }, [prev, next]);
 
-  // trackpad horizontal scroll
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -382,7 +396,6 @@ export default function LandingCards() {
 
           {/* ── Right column: carousel ── */}
           <div className="lc-right">
-            {/* Coverflow */}
             <div
               ref={containerRef}
               style={{ position: "relative", height: CARD_H, perspective: 1200, overflow: "hidden" }}
@@ -391,7 +404,10 @@ export default function LandingCards() {
               onTouchEnd={handleTouchEnd}
             >
               {RAW.map((card, i) => {
-                const absDist = Math.abs(i - active);
+                let dist = i - active;
+                if (dist > total / 2)  dist -= total;
+                if (dist < -total / 2) dist += total;
+                const absDist = Math.abs(dist);
                 return (
                   <div key={card.peakName} style={cardStyle(i)} onClick={() => handleCardClick(i)}>
                     <CardFace card={card} index={i} flipped={!!flipped[i] && i === active} isNearby={absDist <= 2} />
@@ -462,7 +478,11 @@ export default function LandingCards() {
             font-size: 40px !important;
           }
         }
-        @media (max-width: 560px) {
+        @media (min-width: 640px) and (max-width: 899px) {
+          .lc-left { align-items: center; text-align: center; }
+        }
+        @media (max-width: 639px) {
+          .lc-left { align-items: center; text-align: center; }
           .lc-left .ld-section-title { font-size: 30px !important; }
         }
       `}</style>

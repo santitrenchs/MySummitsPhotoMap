@@ -69,6 +69,7 @@ export default function HeroMap() {
       </div>
 
       {/* Peak markers — filter xPct ≥ 52 to keep clear of the hero text on the left */}
+      <div className="hero-markers-container" style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
       {PEAKS.filter((p) => p.xPct >= 52).map((peak) => {
         const color = peak.captured ? "#22c55e" : rarityColor(peak.altM);
         const altLabel = peak.altM >= 1000
@@ -117,13 +118,13 @@ export default function HeroMap() {
               </div>
             </div>
 
-            {/* Dot — radar rings on Pica d'Estats */}
+            {/* Dot — radar rings: estats on desktop, aneto on tablet */}
             <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {peak.id === "estats" && (
+              {(peak.id === "estats" || peak.id === "aneto") && (
                 <>
-                  <div className="radar-ring radar-ring-1" style={{ borderColor: color }} />
-                  <div className="radar-ring radar-ring-2" style={{ borderColor: color }} />
-                  <div className="radar-ring radar-ring-3" style={{ borderColor: color }} />
+                  <div className={`radar-ring radar-ring-1 radar-${peak.id}`} style={{ borderColor: color }} />
+                  <div className={`radar-ring radar-ring-2 radar-${peak.id}`} style={{ borderColor: color }} />
+                  <div className={`radar-ring radar-ring-3 radar-${peak.id}`} style={{ borderColor: color }} />
                 </>
               )}
               <div style={{
@@ -140,6 +141,7 @@ export default function HeroMap() {
           </div>
         );
       })}
+      </div>
 
       <style>{`
         @keyframes heroMapPulse {
@@ -165,20 +167,30 @@ export default function HeroMap() {
         .radar-ring-2 { animation-delay: 0.8s; }
         .radar-ring-3 { animation-delay: 1.6s; }
 
+        /* Radar rings: estats default, aneto on tablet */
+        .radar-aneto { display: none; }
+        @media (min-width: 640px) and (max-width: 899px) {
+          .radar-estats { display: none !important; }
+          .radar-aneto  { display: block; }
+        }
+
+        /* Tablet: shift all markers 15% to the right so they clear the text */
+        @media (min-width: 640px) and (max-width: 899px) {
+          .hero-markers-container { transform: translateX(15%); }
+        }
+
         /* Mobile: hide all markers by default, show only the mobile-visible set */
         @media (max-width: 680px) {
           .hero-marker { display: none !important; }
           .hero-marker-mobile { display: flex !important; }
 
-          /* Remap positions to the visible crop (objectPosition: 65% center) */
-          .hero-marker-perdido   { left: 14% !important; top: 52% !important; }
-          .hero-marker-posets    { left: 46% !important; top: 54% !important; }
-          .hero-marker-maladeta  { left: 62% !important; top: 55% !important; }
-          .hero-marker-aneto     { left: 68% !important; top: 57% !important; }
-          .hero-marker-perdiguero{ left: 43% !important; top: 52% !important; }
-          .hero-marker-infern    { left: 78% !important; top: 58% !important; }
-          .hero-marker-besiberri { left: 86% !important; top: 60% !important; }
-          .hero-marker-peguera   { left: 96% !important; top: 64% !important; }
+          /* Push all markers below the gradient zone (which ends at 64% of viewport) */
+          .hero-marker-perdido   { left: 10% !important; top: 68% !important; }
+          .hero-marker-posets    { left: 38% !important; top: 72% !important; }
+          .hero-marker-aneto     { left: 62% !important; top: 76% !important; }
+          .hero-marker-peguera   { left: 84% !important; top: 80% !important; }
+          .hero-marker-cotiella  { left: 22% !important; top: 82% !important; }
+          .hero-marker-turbon    { left: 52% !important; top: 86% !important; }
         }
       `}</style>
     </>

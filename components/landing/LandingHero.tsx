@@ -124,19 +124,10 @@ export default function LandingHero() {
           </p>
 
           {/* CTAs */}
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
             <Link href="/register" className="ld-btn-primary" style={{ fontSize: 16, padding: "15px 32px" }}>
               Empieza tu colección →
             </Link>
-            <button
-              onClick={() => {
-                document.getElementById("como-funciona")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="ld-btn-ghost"
-              style={{ fontSize: 15 }}
-            >
-              Ver cómo funciona
-            </button>
           </div>
 
           <p className="ld-cta-micro ld-hero-micro" style={{ textAlign: "left", marginTop: 16 }}>
@@ -174,6 +165,26 @@ export default function LandingHero() {
               rgba(255,255,255,1)   44%,
               rgba(255,255,255,0.6) 54%,
               rgba(255,255,255,0)   64%
+            ) !important;
+          }
+        }
+
+        /* Tablet */
+        @media (min-width: 640px) and (max-width: 899px) {
+          .ld-hero-section { min-height: 72svh !important; }
+          .ld-hero-micro { text-align: center !important; }
+        }
+
+        /* Tablet: extender el blanco horizontal hasta el 55% para que el mapa no solape el texto */
+        @media (min-width: 640px) and (max-width: 899px) {
+          .ld-hero-gradient {
+            background: linear-gradient(
+              to right,
+              #FFFFFF 0%,
+              #FFFFFF 55%,
+              rgba(255,255,255,0.80) 67%,
+              rgba(255,255,255,0.25) 78%,
+              rgba(255,255,255,0)   88%
             ) !important;
           }
         }
