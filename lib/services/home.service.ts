@@ -56,7 +56,7 @@ export type HomeData = {
     peaks4500plus: number;
     peaks5000plus: number;
     peaks6000plus: number;
-    rarityBreakdown: { daisy: number; gentian: number; edelweiss: number; saxifrage: number; cinquefoil: number; snow_lotus: number };
+    rarityBreakdown: { daisy: number; heather: number; gentian: number; tundra: number; edelweiss: number; draba: number; saxifrage: number; cinquefoil: number; snow_lotus: number };
   };
   leaderboard: LeaderboardEntry[];
   userRank: number; // 1-based
@@ -120,12 +120,15 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   function altToRarity(m: number): keyof typeof rarityBreakdown {
     if (m >= 8000) return "snow_lotus";
     if (m >= 7000) return "cinquefoil";
-    if (m >= 5000) return "saxifrage";
-    if (m >= 3000) return "edelweiss";
-    if (m >= 1500) return "gentian";
+    if (m >= 6000) return "saxifrage";
+    if (m >= 5000) return "draba";
+    if (m >= 4000) return "edelweiss";
+    if (m >= 3000) return "tundra";
+    if (m >= 2000) return "gentian";
+    if (m >= 1000) return "heather";
     return "daisy";
   }
-  const rarityBreakdown = { daisy: 0, gentian: 0, edelweiss: 0, saxifrage: 0, cinquefoil: 0, snow_lotus: 0 };
+  const rarityBreakdown = { daisy: 0, heather: 0, gentian: 0, tundra: 0, edelweiss: 0, draba: 0, saxifrage: 0, cinquefoil: 0, snow_lotus: 0 };
   const seenPeakIds = new Set<string>();
   for (const a of myAscents) {
     if (!seenPeakIds.has(a.peakId)) {

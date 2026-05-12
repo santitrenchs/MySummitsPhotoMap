@@ -275,7 +275,7 @@ const RARITY_BARS: { key: keyof HomeData["stats"]["rarityBreakdown"]; color: str
   RARITIES.map((r) => ({ key: r.id as keyof HomeData["stats"]["rarityBreakdown"], color: r.color, label: r.label }));
 
 function RarityChart({ breakdown }: { breakdown: HomeData["stats"]["rarityBreakdown"] }) {
-  const values = RARITY_BARS.map((b) => breakdown[b.key]);
+  const values = RARITY_BARS.map((b) => breakdown[b.key] ?? 0);
   const max = Math.max(...values, 1);
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 4 }}>
