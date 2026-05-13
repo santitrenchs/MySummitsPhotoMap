@@ -54,6 +54,9 @@ model Peak {
   wikiTexts PeakWikiText[]
 
   @@index([rarityId])
+  @@index([country])
+  @@index([altitudeM])
+  @@index([latitude, longitude])
   @@map("peaks")
 }
 

@@ -1,1006 +1,421 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// 1718 × 916 image → padding-top = 916/1718 * 100 = 53.32%
+const IMG_PT = (916 / 1718) * 100;
 
+// lx/ly = % of image width/height for each summit center
+// connH = connector line height in px — grows with level to amplify staircase
 const LEVELS = [
-  { name: "Scout",     ascents: 20,  altK: 1.5, color: "#22c55e", rgb: "34,197,94"   },
-  { name: "Guide",     ascents: 50,  altK: 3.0, color: "#06B6D4", rgb: "6,182,212"   },
-  { name: "Explorer",  ascents: 100, altK: 4.5, color: "#A855F7", rgb: "168,85,247"  },
-  { name: "Master",    ascents: 150, altK: 6.0, color: "#F97316", rgb: "249,115,22"  },
-  { name: "Legendary", ascents: null, altK: null, color: "#F5C842", rgb: "245,200,66" },
+  { name: "Scout",     ascents: 20,  altReq: "1 500 m",  lx: 10,    ly: 68, connH: 30 },
+  { name: "Guide",     ascents: 50,  altReq: "3 000 m",  lx: 27.5,  ly: 55, connH: 12 },
+  { name: "Explorer",  ascents: 100, altReq: "4 500 m",  lx: 48,    ly: 55, connH: 53 },
+  { name: "Master",    ascents: 150, altReq: "6 000 m",  lx: 66.25, ly: 48, connH: 63 },
+  { name: "Legendary", ascents: null, altReq: null,      lx: 85.5,  ly: 33, connH: 59 },
 ] as const;
 
 const RARITIES = [
-  { label: "Daisy",      ep: 10,   color: "#00995C", rgb: "0,153,92",    altM: 0    },
-  { label: "Heather",    ep: 20,   color: "#06B6D4", rgb: "6,182,212",   altM: 1000 },
-  { label: "Gentian",    ep: 30,   color: "#3B82F6", rgb: "59,130,246",  altM: 2000 },
-  { label: "Tundra",     ep: 60,   color: "#0EA5E9", rgb: "14,165,233",  altM: 3000 },
-  { label: "Edelweiss",  ep: 120,  color: "#A855F7", rgb: "168,85,247",  altM: 4000 },
-  { label: "Draba",      ep: 250,  color: "#EC4899", rgb: "236,72,153",  altM: 5000 },
-  { label: "Saxifrage",  ep: 500,  color: "#F97316", rgb: "249,115,22",  altM: 6000 },
-  { label: "Cinquefoil", ep: 1000, color: "#EAB308", rgb: "234,179,8",   altM: 7000 },
-  { label: "Snow Lotus", ep: 2000, color: "#CBD5E1", rgb: "203,213,225", altM: 8000 },
+  { label: "Daisy",      ep: 10,   color: "#5B8C6F" },
+  { label: "Heather",    ep: 20,   color: "#6A9BAE" },
+  { label: "Gentian",    ep: 30,   color: "#8A7BB0" },
+  { label: "Tundra",     ep: 60,   color: "#6B8FA8" },
+  { label: "Edelweiss",  ep: 120,  color: "#9B8B70" },
+  { label: "Draba",      ep: 250,  color: "#A07868" },
+  { label: "Saxifrage",  ep: 500,  color: "#A88055" },
+  { label: "Cinquefoil", ep: 1000, color: "#A89060" },
+  { label: "Snow Lotus", ep: 2000, color: "#8A9BAE" },
 ] as const;
 
 const RANKING = [
-  { rank: 1, name: "Oriol Casanovas", initials: "OC", color: "#00995C", ascents: 48, cairns: 3, ep: 2760, isMe: false },
-  { rank: 2, name: "Tú",              initials: "TÚ", color: "#0EA5E9", ascents: 38, cairns: 2, ep: 1980, isMe: true  },
-  { rank: 3, name: "Marta Ribagorza", initials: "MR", color: "#0E7490", ascents: 31, cairns: 1, ep: 1420, isMe: false },
-];
+  { name: "Oriol Casanovas", initials: "OC", color: "#00995C", ascents: 48, ep: 2760, isMe: false },
+  { name: "Tú",              initials: "TÚ", color: "#0EA5E9", ascents: 38, ep: 1980, isMe: true  },
+  { name: "Marta Ribagorza", initials: "MR", color: "#0E7490", ascents: 31, ep: 1420, isMe: false },
+] as const;
 
-// ─── Monoline level icons ──────────────────────────────────────────────────────
+// ─── Icons (monoline) ─────────────────────────────────────────────────────────
 
-function LevelIcon({ name, color, size = 26 }: { name: string; color: string; size?: number }) {
+function LevelIcon({ name, color }: { name: string; color: string }) {
+  const s = { stroke: color, strokeWidth: 1.4, fill: "none", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   switch (name) {
     case "Scout":
       return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="3.5" stroke={color} strokeWidth="1.6"/>
-          <circle cx="12" cy="12" r="8.5" stroke={color} strokeWidth="0.8" strokeDasharray="2 2.5"/>
+        <svg width={15} height={15} viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3.5" {...s} />
+          <circle cx="12" cy="12" r="8.5" {...s} strokeOpacity={0.35} />
         </svg>
       );
     case "Guide":
       return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="8.5" stroke={color} strokeWidth="1.1"/>
-          <line x1="12" y1="3.5" x2="12" y2="7"    stroke={color} strokeWidth="1.7" strokeLinecap="round"/>
-          <line x1="12" y1="17"  x2="12" y2="20.5"  stroke={color} strokeWidth="1.7" strokeLinecap="round"/>
-          <line x1="3.5" y1="12" x2="7"   y2="12"   stroke={color} strokeWidth="1.7" strokeLinecap="round"/>
-          <line x1="17"  y1="12" x2="20.5" y2="12"  stroke={color} strokeWidth="1.7" strokeLinecap="round"/>
-          <circle cx="12" cy="12" r="1.8" fill={color}/>
+        <svg width={15} height={15} viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8.5" {...s} />
+          <path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3" {...s} />
         </svg>
       );
     case "Explorer":
       return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <path d="M12 21.5C7 21.5 2.5 17 2.5 12S7 2.5 12 2.5" stroke={color} strokeWidth="1.1" strokeLinecap="round"/>
-          <path d="M12 17.5C9 17.5 6.5 15 6.5 12S9 6.5 12 6.5" stroke={color} strokeWidth="1.1" strokeLinecap="round"/>
-          <path d="M12 13.5C11.2 13.5 10.5 12.8 10.5 12S11.2 10.5 12 10.5" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
-          <circle cx="12" cy="12" r="1.4" fill={color}/>
-          <path d="M12 2.5C17 2.5 21.5 7 21.5 12S17 21.5 12 21.5" stroke={color} strokeWidth="1.1" strokeLinecap="round" strokeOpacity="0.28"/>
-          <path d="M12 6.5C15 6.5 17.5 9 17.5 12S15 17.5 12 17.5" stroke={color} strokeWidth="1.1" strokeLinecap="round" strokeOpacity="0.28"/>
+        <svg width={15} height={15} viewBox="0 0 24 24">
+          <ellipse cx="12" cy="12" rx="3.5" ry="2.2" {...s} />
+          <ellipse cx="12" cy="12" rx="7.5" ry="4.8" {...s} strokeOpacity={0.5} />
+          <ellipse cx="12" cy="12" rx="11" ry="7.5" {...s} strokeOpacity={0.22} />
         </svg>
       );
     case "Master":
       return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <path d="M12 3L21 20H3Z" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/>
-          <path d="M12 3L8 14H16Z" stroke={color} strokeWidth="0.9" strokeLinejoin="round" strokeOpacity="0.42"/>
+        <svg width={15} height={15} viewBox="0 0 24 24">
+          <polyline points="12,3 21,20 3,20" {...s} />
+          <line x1="12" y1="10" x2="12" y2="15" {...s} strokeOpacity={0.4} />
         </svg>
       );
     case "Legendary":
       return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <path d="M12 2.5L13.6 9.8L20.5 7.2L15.8 12.6L22 14.8L14.8 15.8L16.2 22.5L12 17L7.8 22.5L9.2 15.8L2 14.8L8.2 12.6L3.5 7.2L10.4 9.8Z"
-            stroke={color} strokeWidth="1.2" strokeLinejoin="round"/>
+        <svg width={15} height={15} viewBox="0 0 24 24">
+          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" {...s} />
         </svg>
       );
-    default:
-      return null;
+    default: return null;
   }
-}
-
-// ─── Mountain silhouette (bottom of sticky viewport, spans 400vw) ─────────────
-
-function MountainSilhouette() {
-  // Ridgeline: gentle in ch1, rises dramatically through ch2-ch3 (Mythic zone),
-  // settles calmly in ch4. y=0 = top of SVG (tallest), y=100 = bottom edge.
-  const ridge =
-    "M 0,98 C 80,94 180,88 280,82 C 380,76 460,88 560,80 " +
-    "C 650,72 740,66 840,72 C 920,78 990,74 1050,66 " +
-    "C 1130,56 1210,46 1300,38 C 1380,30 1450,42 1530,34 " +
-    "C 1610,26 1680,18 1760,22 C 1840,26 1900,16 1970,20 " +
-    "C 2040,12 2110,6 2180,10 C 2250,14 2310,8 2380,12 " +
-    "C 2450,16 2510,22 2580,18 C 2650,24 2720,30 2800,36 " +
-    "C 2880,42 2950,38 3030,48 C 3110,58 3180,52 3260,62 " +
-    "C 3340,72 3410,66 3500,76 C 3590,84 3670,80 3760,86 " +
-    "C 3840,90 3920,88 4000,92";
-
-  // Slightly farther-back layer for depth (shifted up a bit)
-  const ridgeBack =
-    "M 0,100 C 120,96 240,90 360,84 C 480,78 560,90 660,82 " +
-    "C 760,74 850,68 960,74 C 1060,80 1120,72 1200,60 " +
-    "C 1300,48 1380,36 1480,28 C 1560,22 1640,34 1720,26 " +
-    "C 1800,18 1860,10 1940,14 C 2010,18 2080,8 2140,12 " +
-    "C 2200,16 2270,22 2340,18 C 2420,14 2490,28 2560,34 " +
-    "C 2640,40 2720,36 2800,46 C 2880,56 2960,50 3040,60 " +
-    "C 3120,70 3200,64 3290,74 C 3380,84 3470,80 3570,88 " +
-    "C 3660,94 3760,90 3860,94 L 4000,96";
-
-  return (
-    <svg
-      style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 110,
-        pointerEvents: "none", zIndex: 1, overflow: "visible" }}
-      viewBox="0 0 4000 100"
-      preserveAspectRatio="none"
-    >
-      <defs>
-        <linearGradient id="mtFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="rgba(13,37,56,0)"/>
-          <stop offset="100%" stopColor="rgba(13,37,56,0.055)"/>
-        </linearGradient>
-        <linearGradient id="mtFillBack" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="rgba(13,37,56,0)"/>
-          <stop offset="100%" stopColor="rgba(13,37,56,0.03)"/>
-        </linearGradient>
-        <linearGradient id="mtRidge" x1="0%" y1="0" x2="100%" y2="0">
-          <stop offset="0%"   stopColor="rgba(34,197,94,0.28)"/>
-          <stop offset="25%"  stopColor="rgba(6,182,212,0.40)"/>
-          <stop offset="50%"  stopColor="rgba(168,85,247,0.44)"/>
-          <stop offset="75%"  stopColor="rgba(249,115,22,0.50)"/>
-          <stop offset="100%" stopColor="rgba(245,200,66,0.72)"/>
-        </linearGradient>
-        <filter id="ridgeGlow"><feGaussianBlur stdDeviation="2.5"/></filter>
-      </defs>
-
-      {/* Back layer — depth */}
-      <path d={`${ridgeBack} L 4000,100 L 0,100 Z`} fill="url(#mtFillBack)"/>
-      <path d={ridgeBack} stroke="rgba(13,37,56,0.06)" strokeWidth="1" fill="none"/>
-
-      {/* Main silhouette fill */}
-      <path d={`${ridge} L 4000,100 L 0,100 Z`} fill="url(#mtFill)"/>
-
-      {/* Ridgeline glow */}
-      <path d={ridge} stroke="rgba(168,85,247,0.10)" strokeWidth="5"
-        fill="none" filter="url(#ridgeGlow)"/>
-
-      {/* Ridgeline with expedition gradient */}
-      <path d={ridge} stroke="url(#mtRidge)" strokeWidth="1.2"
-        fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
-
-// ─── Continuous track background ──────────────────────────────────────────────
-
-function TrackBackground() {
-  return (
-    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
-      {/* Warm→cool atmospheric gradient across the full 400vw */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(to right, #EBF3F0 0%, #EDF3FA 22%, #EFF0FA 44%, #F3EDF8 66%, #F7EDE0 88%, #FAF2D8 100%)",
-      }}/>
-
-      {/* Very subtle topographic contours */}
-      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.032 }}
-        viewBox="0 0 4000 900" preserveAspectRatio="xMidYMid slice">
-        {[130, 270, 410, 560, 700, 840].map((y, i) => (
-          <path key={i}
-            d={`M 0,${y} C 600,${y - 18 + i * 4} 1200,${y + 14 - i * 3} 1800,${y - 8 + i * 5} C 2400,${y + 18 - i * 2} 3000,${y - 12 + i * 3} 3600,${y + 10 - i * 4} L 4000,${y + 6}`}
-            stroke="rgba(13,37,56,1)" strokeWidth="0.9" fill="none"
-          />
-        ))}
-      </svg>
-
-      {/* Per-chapter ambient color wash */}
-      <div style={{ position: "absolute", inset: 0, display: "flex", width: "100%", height: "100%" }}>
-        <div style={{ flex: "0 0 25%", background: "linear-gradient(to right, rgba(34,197,94,0.05) 0%, rgba(34,197,94,0.02) 100%)" }}/>
-        <div style={{ flex: "0 0 25%", background: "linear-gradient(to right, rgba(6,182,212,0.04) 0%, rgba(168,85,247,0.04) 100%)" }}/>
-        <div style={{ flex: "0 0 25%", background: "linear-gradient(to right, rgba(212,160,23,0.04) 0%, rgba(245,200,66,0.06) 100%)" }}/>
-        <div style={{ flex: "0 0 25%", background: "linear-gradient(to right, rgba(14,165,233,0.04) 0%, rgba(14,165,233,0.02) 100%)" }}/>
-      </div>
-    </div>
-  );
-}
-
-// ─── Chapter 1: Levels ────────────────────────────────────────────────────────
-
-function ChapterLevels({ active }: { active: boolean }) {
-  return (
-    <div className="pg-chapter pg-ch1">
-      <div className="pg-ch-inner">
-        <div className="pg-ch-eyebrow">01 · EL CAMINO</div>
-        <h3 className="pg-ch-heading">Cada ascensión<br />te define.</h3>
-        <p className="pg-ch-body">
-          Tu nivel refleja tu historia<br />en la montaña.
-        </p>
-
-        <div className="pg-levels">
-          <div className="pg-levels-line"/>
-          {LEVELS.map((lvl, i) => (
-            <div
-              key={lvl.name}
-              className={`pg-level${active ? " pg-level-on" : ""}${i === 4 ? " pg-level-legendary" : ""}`}
-              style={{ "--c": lvl.color, "--rgb": lvl.rgb, "--d": `${i * 0.15}s` } as React.CSSProperties}
-            >
-              <div className="pg-level-badge">
-                <LevelIcon name={lvl.name} color={lvl.color} size={i === 4 ? 30 : 24}/>
-              </div>
-              <div className="pg-level-name">{lvl.name}</div>
-              <div className="pg-level-reqs">
-                {lvl.ascents !== null
-                  ? <span>{lvl.ascents} cimas</span>
-                  : <span>sin límite</span>}
-                {lvl.altK !== null && <span>≥ {lvl.altK}k m</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Chapter 2: Rarities ──────────────────────────────────────────────────────
-
-function ChapterRarities({ active }: { active: boolean }) {
-  return (
-    <div className="pg-chapter pg-ch2">
-      <div className="pg-ch2-grid pg-ch-inner">
-        <div className="pg-ch-copy">
-          <div className="pg-ch-eyebrow">02 · RAREZAS & EP</div>
-          <h3 className="pg-ch-heading">La altitud<br />define el valor.</h3>
-          <p className="pg-ch-body">
-            Cada cima tiene una rareza.<br />
-            Cuanto más alta, más puntos de expedición.
-          </p>
-          <p className="pg-ch-note">
-            Los EP acumulados determinan tu posición<br />
-            cuando las ascensiones empatan.
-          </p>
-        </div>
-
-        <div className="pg-rarities">
-          {RARITIES.map((r, i) => (
-            <div
-              key={r.label}
-              className={`pg-rarity-row${active ? " pg-rarity-on" : ""}`}
-              style={{
-                "--d": `${i * 0.065}s`,
-                borderColor: `rgba(${r.rgb},0.20)`,
-                boxShadow: active ? `0 0 ${6 + i * 3}px rgba(${r.rgb},0.16)` : "none",
-              } as React.CSSProperties}
-            >
-              <div className="pg-rarity-dot" style={{ background: r.color }}/>
-              <div className="pg-rarity-label" style={{ color: r.color }}>{r.label}</div>
-              <div className="pg-rarity-alt">≥{r.altM >= 1000 ? `${r.altM / 1000}k` : r.altM} m</div>
-              <div className="pg-rarity-ep" style={{ color: r.color }}>+{r.ep.toLocaleString("es")} EP</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Chapter 3: Cairns ────────────────────────────────────────────────────────
-
-function CairnSVG() {
-  return (
-    <svg viewBox="0 0 120 170" width="100" height="142" style={{ overflow: "visible" }}>
-      <defs>
-        {[1,2,3,4,5,6].map(n => (
-          <linearGradient key={n} id={`sg${n}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={`hsl(220,${12+n*3}%,${62+n*4}%)`}/>
-            <stop offset="100%" stopColor={`hsl(220,${10+n*2}%,${52+n*3}%)`}/>
-          </linearGradient>
-        ))}
-        <linearGradient id="sg-cap" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#F5C842"/>
-          <stop offset="100%" stopColor="#D4A017"/>
-        </linearGradient>
-        <radialGradient id="sg-floor" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="rgba(212,160,23,0.25)"/>
-          <stop offset="100%" stopColor="transparent"/>
-        </radialGradient>
-      </defs>
-      <ellipse cx="60" cy="162" rx="50" ry="10" fill="url(#sg-floor)"/>
-      <ellipse cx="60" cy="148" rx="44" ry="14" fill="url(#sg1)" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
-      <ellipse cx="58" cy="126" rx="34" ry="11" fill="url(#sg2)" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
-      <ellipse cx="61" cy="107" rx="25" ry="9"  fill="url(#sg3)" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
-      <ellipse cx="59" cy="91"  rx="18" ry="7"  fill="url(#sg4)" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
-      <ellipse cx="60" cy="77"  rx="12" ry="5.5" fill="url(#sg5)" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
-      <ellipse cx="61" cy="66"  rx="7.5" ry="4.5" fill="url(#sg6)" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
-      <ellipse cx="60" cy="56"  rx="5"  ry="3.5"  fill="url(#sg-cap)" stroke="rgba(245,200,66,0.5)" strokeWidth="0.8"/>
-    </svg>
-  );
-}
-
-function ChapterCairns({ active }: { active: boolean }) {
-  return (
-    <div className="pg-chapter pg-ch3">
-      <div className={`pg-ch3-inner${active ? " pg-cairns-on" : ""}`}>
-        <div className="pg-ch-eyebrow" style={{ textAlign: "center" }}>03 · CAIRNS MYTHIC</div>
-        <h3 className="pg-ch-heading pg-ch3-heading">Las Mythic<br />dejan huella.</h3>
-
-        <div className="pg-cairn-wrap">
-          <div className="pg-cairn-glow"/>
-          <div className="pg-cairn-float"><CairnSVG/></div>
-          <div className="pg-cairn-badge">+1 Cairn</div>
-        </div>
-
-        <p className="pg-ch-body pg-ch3-body">
-          Cada cima Mythic conquistada añade un Cairn a tu perfil.
-        </p>
-        <p className="pg-cairn-note">
-          Los Cairns desempatan rankings.<br/>
-          Pero sobre todo, <em>cuentan historias.</em>
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Chapter 4: Ranking (Cordada) ─────────────────────────────────────────────
-
-function ChapterRanking({ active }: { active: boolean }) {
-  return (
-    <div className="pg-chapter pg-ch4">
-      <div className="pg-ch4-grid pg-ch-inner">
-        <div className="pg-ch-copy">
-          <div className="pg-ch-eyebrow">04 · TU CORDADA</div>
-          <h3 className="pg-ch-heading">Tu círculo<br />de cumbre.</h3>
-          <p className="pg-ch-body">
-            Peakadex no compara desconocidos.<br/>
-            Solo a quienes comparten montaña contigo.
-          </p>
-          <div className="pg-criteria">
-            <div className="pg-criteria-chip">Ascensiones</div>
-            <div className="pg-criteria-chip">Cairns</div>
-            <div className="pg-criteria-chip">EP Totales</div>
-          </div>
-          <p className="pg-ch-note" style={{ marginTop: 18 }}>
-            El ranking se actualiza en tiempo real.
-          </p>
-        </div>
-
-        {/* Cordada */}
-        <div className={`pg-cordada${active ? " pg-cordada-on" : ""}`}>
-          {/* Rope line */}
-          <svg className="pg-cordada-rope" viewBox="0 0 2 200" preserveAspectRatio="none">
-            <line x1="1" y1="0" x2="1" y2="200"
-              stroke="rgba(13,37,56,0.10)" strokeWidth="2" strokeDasharray="4 5"/>
-          </svg>
-
-          {RANKING.map((entry, i) => (
-            <div
-              key={entry.rank}
-              className={`pg-cordada-member${entry.isMe ? " pg-cordada-me" : ""}`}
-              style={{ "--d": `${i * 0.18}s` } as React.CSSProperties}
-            >
-              <div className="pg-cordada-avatar"
-                style={{
-                  borderColor: entry.isMe ? entry.color : "transparent",
-                  boxShadow: entry.isMe ? `0 0 0 3px rgba(14,165,233,0.15), 0 0 20px rgba(14,165,233,0.18)` : "none",
-                }}>
-                <div className="pg-cordada-initials" style={{ background: entry.color }}>
-                  {entry.initials}
-                </div>
-              </div>
-
-              <div className="pg-cordada-info">
-                <div className="pg-cordada-name">
-                  {entry.name}
-                  {entry.isMe && <span className="pg-cordada-you"> · tú</span>}
-                </div>
-                <div className="pg-cordada-stats">
-                  <span>{entry.ascents} cimas</span>
-                  <span className="pg-lb-sep">·</span>
-                  <span>{entry.ep.toLocaleString("es")} EP</span>
-                  {entry.cairns > 0 && <>
-                    <span className="pg-lb-sep">·</span>
-                    <span className="pg-cordada-cairns">{entry.cairns} cairn{entry.cairns !== 1 ? "s" : ""}</span>
-                  </>}
-                </div>
-              </div>
-
-              <div className="pg-cordada-rank"
-                style={{ color: i === 0 ? "#D4A017" : "rgba(13,37,56,0.25)" }}>
-                #{entry.rank}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function LandingProgression() {
-  const outerRef   = useRef<HTMLDivElement>(null);
-  const trackRef   = useRef<HTMLDivElement>(null);
-  const rafRef     = useRef<number>(0);
   const sectionRef = useRef<HTMLElement>(null);
-  const [activeChapter, setActiveChapter] = useState(0);
-  const [headerOn, setHeaderOn]           = useState(false);
+  const [revealed, setRevealed] = useState(0);
 
   useEffect(() => {
-    const outer = outerRef.current;
-    const track = trackRef.current;
-    if (!outer || !track) return;
-
-    const tick = () => {
-      if (window.innerWidth < 640) return;
-      const rect = outer.getBoundingClientRect();
-      const scrollable = outer.offsetHeight - window.innerHeight;
-      if (scrollable <= 0) return;
-      const progress = Math.max(0, Math.min(1, -rect.top / scrollable));
-      track.style.transform = `translateX(-${progress * 3 * window.innerWidth}px)`;
-      setActiveChapter(Math.min(3, Math.floor(progress * 4)));
-    };
-
+    const el = sectionRef.current;
+    if (!el) return;
+    const thresholds = [0.04, 0.18, 0.34, 0.50, 0.64];
     const onScroll = () => {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(tick);
+      const { top, height } = el.getBoundingClientRect();
+      const progress = Math.max(0, Math.min(1, -top / (height - window.innerHeight)));
+      setRevealed(thresholds.filter(t => progress >= t).length);
     };
-
     window.addEventListener("scroll", onScroll, { passive: true });
-    tick();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(rafRef.current);
-    };
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) setHeaderOn(true); },
-      { threshold: 0.05 }
-    );
-    if (sectionRef.current) obs.observe(sectionRef.current);
-    return () => obs.disconnect();
-  }, []);
+  const lp = "clamp(24px, calc((100vw - 1160px) / 2 + 24px), 180px)";
 
   return (
     <>
-      <style>{CSS}</style>
-      <section ref={sectionRef} className="pg-section">
+      <style>{`
+        @media (max-width: 767px) {
+          .pg-sticky   { position: static !important; height: auto !important; overflow: visible !important; }
+          .pg-main     { flex-direction: column !important; }
+          .pg-left     { width: 100% !important; padding-bottom: 0 !important; padding-right: 24px !important; }
+          .pg-right    { min-height: 320px; }
+          .pg-bar      { padding-left: 24px !important; padding-right: 24px !important; flex-wrap: wrap; gap: 8px !important; }
+        }
+      `}</style>
 
-        <div className={`pg-header${headerOn ? " pg-header-on" : ""}`}>
-          <div className="pg-header-eyebrow">PROGRESIÓN DE MONTAÑERO</div>
-          <h2 className="pg-header-title">De excursionista<br/>a leyenda.</h2>
-          <p className="pg-header-sub">
-            Cada ascensión deja huella.<br/>Tu perfil evoluciona montaña a montaña.
-          </p>
-        </div>
+      <section
+        ref={sectionRef}
+        style={{ height: "300vh", background: "#F6F8FA", position: "relative" }}
+      >
+        <div
+          className="pg-sticky"
+          style={{
+            position: "sticky",
+            top: 0,
+            height: "100svh",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* ── Two-column content row ── */}
+          <div
+            className="pg-main"
+            style={{ flex: 1, display: "flex", minHeight: 0 }}
+          >
+            {/* ── LEFT: editorial text ── */}
+            <div
+              className="pg-left"
+              style={{
+                width: "46%",
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                paddingLeft: lp,
+                paddingRight: "clamp(28px, 3.5vw, 56px)",
+                paddingTop: 72,
+                paddingBottom: 32,
+                position: "relative",
+                zIndex: 2,
+              }}
+            >
+              {/* Eyebrow */}
+              <p className="ld-section-label" style={{ margin: "0 0 16px" }}>
+                Sistema de progresión
+              </p>
 
-        <div ref={outerRef} className="pg-outer">
-          <div className="pg-sticky">
+              {/* Headline */}
+              <h2 className="ld-display ld-section-title" style={{ margin: "0 0 20px" }}>
+                Cada cima suma.<br />
+                <span style={{ color: "var(--ld-gold)", whiteSpace: "nowrap" }}>Tu leyenda evoluciona.</span>
+              </h2>
 
-            <div className="pg-nav">
-              {["Niveles", "Rarezas", "Cairns", "Cordada"].map((label, i) => (
-                <div key={i} className={`pg-nav-item${activeChapter === i ? " pg-nav-on" : ""}`}>
-                  <div className="pg-nav-dot"/>
-                  <span className="pg-nav-label">{label}</span>
+              {/* Body */}
+              <p className="ld-section-sub" style={{ margin: "0 0 32px", maxWidth: 300 }}>
+                Cinco rangos definen tu camino como montañero.
+              </p>
+
+              {/* Rarity section */}
+              <div style={{ borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: 20 }}>
+                <p style={{
+                  margin: "0 0 12px",
+                  fontSize: 9,
+                  fontWeight: 600,
+                  letterSpacing: "0.13em",
+                  textTransform: "uppercase",
+                  color: "#b0b7c3",
+                }}>
+                  Rarezas · Puntos de elevación
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {RARITIES.map((r, i) => (
+                    <div
+                      key={r.label}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginTop: i === RARITIES.length - 1 ? 4 : 0,
+                        filter: i === RARITIES.length - 1
+                          ? "drop-shadow(0 0 7px rgba(138,175,200,0.35))"
+                          : undefined,
+                      }}
+                    >
+                      <span style={{
+                        width: 6, height: 6,
+                        borderRadius: "50%",
+                        background: r.color,
+                        flexShrink: 0,
+                      }} />
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: "#0D2538",
+                        letterSpacing: "0.01em",
+                      }}>
+                        {r.label}
+                      </span>
+                      <span style={{ color: "rgba(13,37,56,0.3)", fontSize: 11 }}>·</span>
+                      <span style={{
+                        fontSize: 11,
+                        color: "rgba(13,37,56,0.4)",
+                        fontFamily: "var(--font-mono-landing, monospace)",
+                      }}>
+                        {r.ep} EP
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
 
-            <div ref={trackRef} className="pg-track">
-              {/* Persistent layers — sit behind all chapters */}
-              <TrackBackground/>
-              <MountainSilhouette/>
+            {/* ── RIGHT: mountain illustration + level nodes ── */}
+            <div
+              className="pg-right"
+              style={{ flex: 1, position: "relative" }}
+            >
+              {/* Soft left-edge blend */}
+              <div style={{
+                position: "absolute",
+                top: 0, left: 0, bottom: 0,
+                width: 80,
+                background: "linear-gradient(to right, #F6F8FA 10%, transparent)",
+                zIndex: 4,
+                pointerEvents: "none",
+              }} />
 
-              <ChapterLevels   active={activeChapter === 0}/>
-              <ChapterRarities active={activeChapter === 1}/>
-              <ChapterCairns   active={activeChapter === 2}/>
-              <ChapterRanking  active={activeChapter === 3}/>
+              {/* Mountain wrapper — aspect-ratio locked, bottom-anchored */}
+              <div style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                paddingTop: `${IMG_PT}%`,
+              }}>
+                {/* Mountain image */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/mountain-progression.png"
+                  alt=""
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    display: "block",
+                    userSelect: "none",
+                    pointerEvents: "none",
+                  }}
+                />
+
+                {/* Level nodes — positioned as % of image */}
+                {LEVELS.map((l, i) => {
+                  const on = revealed > i;
+                  return (
+                    <div
+                      key={l.name}
+                      style={{
+                        position: "absolute",
+                        left: `${l.lx}%`,
+                        top: `${l.ly}%`,
+                        zIndex: 10 + i,
+                      }}
+                    >
+                      {/* Editorial annotation — floats above summit */}
+                      <div style={{
+                        position: "absolute",
+                        bottom: 2,
+                        left: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        opacity: on ? 1 : 0,
+                        transform: on
+                          ? "translateX(-50%) translateY(-46px)"
+                          : "translateX(-50%) translateY(-34px)",
+                        transition: `opacity 0.8s ease ${i * 0.18}s, transform 0.8s ease ${i * 0.18}s`,
+                        pointerEvents: "none",
+                      }}>
+                        <div style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: l.name === "Legendary" ? 7 : 3,
+                          whiteSpace: "nowrap",
+                          padding: l.name === "Legendary" ? "0 6px" : undefined,
+                          filter: l.name === "Legendary" && on
+                            ? "drop-shadow(0 0 12px rgba(196,140,50,0.22))"
+                            : undefined,
+                        }}>
+                          <div style={{
+                            fontWeight: 500,
+                            fontSize: 11,
+                            letterSpacing: "0.16em",
+                            textTransform: "uppercase",
+                            color: l.name === "Legendary" ? "#C4862B" : "#0D2538",
+                          }}>
+                            {l.name}
+                          </div>
+                          <div style={{
+                            fontSize: 10,
+                            letterSpacing: "0.04em",
+                            color: "rgba(13,37,56,0.28)",
+                            lineHeight: 1.9,
+                            textAlign: "center",
+                          }}>
+                            {l.ascents != null && <div>{l.ascents} ascensiones</div>}
+                            {l.altReq != null && <div>{l.altReq}</div>}
+                          </div>
+                        </div>
+                        <div style={{
+                          width: 5, height: 5,
+                          borderRadius: "50%",
+                          background: l.name === "Legendary" ? "#C4862B" : "#fff",
+                          border: `1px solid ${l.name === "Legendary" ? "#C4862B" : "rgba(13,37,56,0.28)"}`,
+                          flexShrink: 0,
+                          margin: l.name === "Legendary" ? "10px 0 0" : "7px 0 0",
+                          boxShadow: l.name === "Legendary" && on ? "0 0 8px rgba(196,134,43,0.35)" : undefined,
+                        }} />
+                        <div style={{
+                          width: 1,
+                          height: l.connH,
+                          flexShrink: 0,
+                          background: l.name === "Legendary"
+                            ? "linear-gradient(to bottom, rgba(196,134,43,0.28), transparent)"
+                            : "linear-gradient(to bottom, rgba(13,37,56,0.18), transparent)",
+                        }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className={`pg-final${headerOn ? " pg-final-on" : ""}`}>
-          <blockquote className="pg-final-quote">
-            "No coleccionas cimas.<br/>Construyes una historia de montaña."
-          </blockquote>
-          <Link href="/register" className="pg-final-btn">
-            Empieza tu ascensión →
-          </Link>
-        </div>
+          {/* ── BOTTOM BAR: cordada ranking ── */}
+          <div
+            className="pg-bar"
+            style={{
+              borderTop: "1px solid rgba(0,0,0,0.05)",
+              background: "rgba(255,255,255,0.52)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              paddingTop: 12,
+              paddingBottom: 12,
+              paddingLeft: lp,
+              paddingRight: 32,
+              display: "flex",
+              alignItems: "center",
+              gap: 20,
+              flexShrink: 0,
+            }}
+          >
+            <span style={{
+              fontSize: 9,
+              fontWeight: 600,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: "#b0b7c3",
+              whiteSpace: "nowrap",
+            }}>
+              Tu cordada
+            </span>
 
+            {RANKING.map((r) => (
+              <div
+                key={r.name}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  padding: "5px 11px",
+                  borderRadius: 20,
+                  background: r.isMe ? "rgba(14,165,233,0.07)" : "transparent",
+                  border: r.isMe ? "1px solid rgba(14,165,233,0.18)" : "1px solid transparent",
+                }}
+              >
+                {/* Avatar */}
+                <div style={{
+                  width: 22, height: 22,
+                  borderRadius: "50%",
+                  background: r.color,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 7.5,
+                  fontWeight: 700,
+                  color: "white",
+                  letterSpacing: "0.03em",
+                  flexShrink: 0,
+                }}>
+                  {r.initials}
+                </div>
+
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: r.isMe ? 600 : 400,
+                  color: r.isMe ? "#0f1117" : "#4b5563",
+                }}>
+                  {r.name}
+                </span>
+
+                <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                  {r.ascents} cimas · {r.ep} EP
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
     </>
   );
 }
-
-// ─── CSS ──────────────────────────────────────────────────────────────────────
-
-const CSS = `
-@keyframes pgLegendaryAurora {
-  0%,100% { box-shadow: 0 0 16px rgba(245,200,66,0.40), 0 0 32px rgba(245,200,66,0.18); }
-  50%     { box-shadow: 0 0 28px rgba(245,200,66,0.65), 0 0 56px rgba(245,200,66,0.32), 0 0 90px rgba(245,200,66,0.12); }
-}
-@keyframes pgCairnFloat {
-  0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-9px); }
-}
-@keyframes pgGlowPulse {
-  0%,100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
-  50%     { opacity: 0.75; transform: translateX(-50%) scale(1.14); }
-}
-@keyframes pgFadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Section ── */
-.pg-section {
-  background: #F4F7FA;
-  position: relative;
-}
-
-/* ── Header ── */
-.pg-header {
-  text-align: center;
-  padding: 110px 24px 72px;
-  position: relative;
-  z-index: 2;
-}
-.pg-header-eyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  color: rgba(13,37,56,0.35);
-  display: inline-block;
-  margin-bottom: 28px;
-  opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.pg-header-on .pg-header-eyebrow { opacity: 1; transform: translateY(0); }
-.pg-header-title {
-  font-size: clamp(46px, 6.5vw, 84px);
-  font-weight: 800;
-  color: #0D2538;
-  line-height: 1.0;
-  letter-spacing: -0.03em;
-  margin: 0 0 28px;
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.8s ease 0.12s, transform 0.8s ease 0.12s;
-}
-.pg-header-on .pg-header-title { opacity: 1; transform: translateY(0); }
-.pg-header-sub {
-  font-size: clamp(16px, 1.8vw, 20px);
-  color: rgba(13,37,56,0.48);
-  line-height: 1.65;
-  margin: 0;
-  opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 0.8s ease 0.24s, transform 0.8s ease 0.24s;
-}
-.pg-header-on .pg-header-sub { opacity: 1; transform: translateY(0); }
-
-/* ── Scroll zone ── */
-.pg-outer { height: 400vh; position: relative; }
-.pg-sticky {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  overflow: hidden;
-}
-.pg-track {
-  display: flex;
-  width: 400vw;
-  height: 100%;
-  will-change: transform;
-  position: relative;
-}
-
-/* ── Chapter nav ── */
-.pg-nav {
-  position: absolute;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 28px;
-  z-index: 20;
-}
-.pg-nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-}
-.pg-nav-dot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: rgba(13,37,56,0.18);
-  transition: background 0.35s, box-shadow 0.35s, transform 0.35s;
-}
-.pg-nav-on .pg-nav-dot {
-  background: rgba(13,37,56,0.70);
-  box-shadow: 0 0 8px rgba(13,37,56,0.18);
-  transform: scale(1.3);
-}
-.pg-nav-label {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.10em;
-  color: rgba(13,37,56,0.22);
-  text-transform: uppercase;
-  transition: color 0.35s;
-}
-.pg-nav-on .pg-nav-label { color: rgba(13,37,56,0.55); }
-
-/* ── Chapter base ── */
-.pg-chapter {
-  width: 100vw;
-  height: 100%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  position: relative;
-  background: transparent;
-  overflow: hidden;
-}
-.pg-ch-inner {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 1160px;
-  padding: 0 24px;
-}
-.pg-ch-eyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  color: rgba(13,37,56,0.35);
-  text-transform: uppercase;
-  margin-bottom: 18px;
-}
-.pg-ch-heading {
-  font-size: clamp(32px, 3.8vw, 56px);
-  font-weight: 800;
-  color: #0D2538;
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  margin: 0 0 22px;
-}
-.pg-ch-body {
-  font-size: clamp(14px, 1.3vw, 17px);
-  color: rgba(13,37,56,0.50);
-  line-height: 1.7;
-  margin: 0;
-}
-.pg-ch-note {
-  font-size: 13px;
-  color: rgba(13,37,56,0.30);
-  line-height: 1.6;
-  margin: 16px 0 0;
-}
-.pg-ch-copy { /* left column in 2-col chapters */ }
-
-/* ── Chapter 1: Levels ── */
-.pg-levels {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  position: relative;
-  margin-top: 52px;
-  max-width: 900px;
-}
-.pg-levels-line {
-  position: absolute;
-  top: 30px;
-  left: 31px; right: 31px;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(34,197,94,0.35), rgba(6,182,212,0.35) 25%, rgba(168,85,247,0.35) 50%, rgba(249,115,22,0.35) 75%, rgba(245,200,66,0.55));
-  opacity: 0.6;
-}
-.pg-level {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.65s ease var(--d), transform 0.65s ease var(--d);
-}
-.pg-level-on { opacity: 1; transform: translateY(0); }
-.pg-level-badge {
-  width: 62px; height: 62px;
-  border-radius: 50%;
-  border: 2px solid var(--c);
-  background: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 14px;
-  position: relative;
-  z-index: 2;
-  transition: box-shadow 0.8s ease var(--d);
-}
-.pg-level-on .pg-level-badge {
-  box-shadow: 0 0 12px rgba(var(--rgb),0.30), 0 0 24px rgba(var(--rgb),0.12);
-}
-.pg-level-legendary .pg-level-badge {
-  width: 72px; height: 72px;
-  margin-bottom: 16px;
-}
-.pg-level-legendary.pg-level-on .pg-level-badge {
-  animation: pgLegendaryAurora 3.5s ease-in-out infinite;
-}
-.pg-level-name {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--c);
-  margin-bottom: 6px;
-  text-align: center;
-  letter-spacing: 0.03em;
-}
-.pg-level-reqs {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.pg-level-reqs span {
-  font-size: 10px;
-  color: rgba(13,37,56,0.35);
-  text-align: center;
-}
-
-/* ── Chapter 2: Rarities ── */
-.pg-ch2-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 72px;
-  align-items: center;
-  max-width: 960px;
-}
-.pg-rarities {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.pg-rarity-row {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 7px 14px;
-  border-radius: 100px;
-  border: 1px solid transparent;
-  background: rgba(255,255,255,0.55);
-  opacity: 0;
-  transform: translateX(20px);
-  transition: opacity 0.5s ease var(--d), transform 0.5s ease var(--d), box-shadow 0.5s ease var(--d);
-}
-.pg-rarity-on { opacity: 1; transform: translateX(0); }
-.pg-rarity-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.pg-rarity-label {
-  font-size: 13px; font-weight: 700;
-  flex: 1;
-  letter-spacing: 0.02em;
-}
-.pg-rarity-alt {
-  font-size: 11px;
-  color: rgba(13,37,56,0.32);
-  margin-right: 8px;
-}
-.pg-rarity-ep {
-  font-size: 12px; font-weight: 800;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-/* ── Chapter 3: Cairns ── */
-.pg-ch3-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.9s ease, transform 0.9s ease;
-}
-.pg-cairns-on { opacity: 1; transform: translateY(0); }
-.pg-ch3-heading { text-align: center; }
-.pg-cairn-wrap {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 32px 0 20px;
-}
-.pg-cairn-glow {
-  position: absolute;
-  bottom: -12px;
-  left: 50%;
-  width: 140px; height: 36px;
-  background: radial-gradient(ellipse, rgba(212,160,23,0.30) 0%, transparent 70%);
-  filter: blur(8px);
-  animation: pgGlowPulse 4s ease-in-out infinite;
-}
-.pg-cairn-float { animation: pgCairnFloat 4.5s ease-in-out infinite; }
-.pg-cairn-badge {
-  margin-top: 16px;
-  background: linear-gradient(135deg, rgba(212,160,23,0.12), rgba(245,200,66,0.08));
-  border: 1px solid rgba(212,160,23,0.35);
-  border-radius: 100px;
-  padding: 6px 18px;
-  font-size: 13px; font-weight: 800;
-  color: #B8820E;
-  letter-spacing: 0.08em;
-  box-shadow: 0 0 16px rgba(212,160,23,0.15);
-}
-.pg-ch3-body { text-align: center; max-width: 380px; }
-.pg-cairn-note {
-  font-size: 14px;
-  color: rgba(13,37,56,0.38);
-  line-height: 1.7;
-  margin: 14px 0 0;
-  text-align: center;
-}
-.pg-cairn-note em { color: rgba(13,37,56,0.58); font-style: italic; }
-
-/* ── Chapter 4: Cordada ── */
-.pg-ch4-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 72px;
-  align-items: center;
-  max-width: 960px;
-}
-.pg-criteria {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 28px;
-}
-.pg-criteria-chip {
-  padding: 6px 14px;
-  border-radius: 100px;
-  border: 1px solid rgba(13,37,56,0.13);
-  font-size: 12px; font-weight: 600;
-  color: rgba(13,37,56,0.45);
-  letter-spacing: 0.04em;
-  background: rgba(255,255,255,0.5);
-}
-.pg-cordada {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  position: relative;
-  max-width: 400px;
-}
-.pg-cordada-rope {
-  position: absolute;
-  left: 27px;
-  top: 52px;
-  width: 2px;
-  bottom: 52px;
-  pointer-events: none;
-}
-.pg-cordada-member {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 0;
-  opacity: 0;
-  transform: translateX(-20px);
-  transition: opacity 0.6s ease var(--d), transform 0.6s ease var(--d);
-  position: relative;
-  z-index: 2;
-}
-.pg-cordada-on .pg-cordada-member { opacity: 1; transform: translateX(0); }
-.pg-cordada-avatar {
-  width: 54px; height: 54px;
-  border-radius: 50%;
-  border: 2.5px solid transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: box-shadow 0.4s ease;
-}
-.pg-cordada-initials {
-  width: 46px; height: 46px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px; font-weight: 800;
-  color: #fff;
-}
-.pg-cordada-info { flex: 1; min-width: 0; }
-.pg-cordada-name {
-  font-size: 15px; font-weight: 700;
-  color: #0D2538;
-  margin-bottom: 4px;
-}
-.pg-cordada-you {
-  font-size: 12px; font-weight: 600;
-  color: #0EA5E9;
-}
-.pg-cordada-stats {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: rgba(13,37,56,0.42);
-}
-.pg-lb-sep { opacity: 0.4; }
-.pg-cordada-cairns { color: #B8820E; font-weight: 600; }
-.pg-cordada-rank {
-  font-size: 18px; font-weight: 800;
-  letter-spacing: -0.02em;
-  flex-shrink: 0;
-}
-
-/* ── Final CTA ── */
-.pg-final {
-  text-align: center;
-  padding: 96px 24px 120px;
-  position: relative;
-  z-index: 2;
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.9s ease 0.1s, transform 0.9s ease 0.1s;
-}
-.pg-final-on { opacity: 1; transform: translateY(0); }
-.pg-final-quote {
-  font-size: clamp(22px, 3vw, 38px);
-  font-weight: 700;
-  color: #0D2538;
-  line-height: 1.35;
-  margin: 0 auto 48px;
-  max-width: 560px;
-  border: none;
-  padding: 0;
-  letter-spacing: -0.02em;
-}
-.pg-final-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 36px;
-  background: #0D2538;
-  border: 1px solid #0D2538;
-  border-radius: 100px;
-  color: #FFFFFF;
-  font-size: 15px; font-weight: 700;
-  letter-spacing: 0.04em;
-  text-decoration: none;
-  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.2s;
-}
-.pg-final-btn:hover {
-  background: #1E3A5A;
-  border-color: #1E3A5A;
-  box-shadow: 0 8px 32px rgba(13,37,56,0.18);
-  transform: translateY(-2px);
-}
-
-/* ── Mobile: vertical stack, no horizontal scroll ── */
-@media (max-width: 639px) {
-  .pg-outer { height: auto; }
-  .pg-sticky { position: static; height: auto; overflow: visible; }
-  .pg-track { flex-direction: column; width: 100%; transform: none !important; }
-  .pg-chapter { width: 100%; height: auto; padding: 72px 0; }
-  .pg-nav { display: none; }
-  .pg-ch-inner { width: 100%; padding: 0 24px; }
-  .pg-levels { flex-direction: column; gap: 32px; max-width: 100%; margin-top: 36px; }
-  .pg-levels-line { display: none; }
-  .pg-level { flex-direction: row; align-items: center; gap: 16px; opacity: 1; transform: none; }
-  .pg-level-badge { margin-bottom: 0; }
-  .pg-level-legendary .pg-level-badge { width: 62px; height: 62px; }
-  .pg-level-reqs { align-items: flex-start; }
-  .pg-ch2-grid { grid-template-columns: 1fr; gap: 36px; }
-  .pg-ch4-grid { grid-template-columns: 1fr; gap: 36px; }
-  .pg-rarity-row { opacity: 1; transform: none; }
-  .pg-ch3-inner { opacity: 1; transform: none; }
-  .pg-cordada-member { opacity: 1; transform: none; }
-}
-
-/* ── Tablet ── */
-@media (min-width: 640px) and (max-width: 899px) {
-  .pg-levels { max-width: 100%; }
-  .pg-level-badge { width: 52px; height: 52px; }
-  .pg-level-legendary .pg-level-badge { width: 60px; height: 60px; }
-  .pg-ch2-grid { gap: 40px; }
-  .pg-ch4-grid { gap: 40px; }
-}
-`;

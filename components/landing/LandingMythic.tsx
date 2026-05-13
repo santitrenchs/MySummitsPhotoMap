@@ -212,7 +212,7 @@ export default function LandingMythic() {
           position: "relative",
           background: "linear-gradient(170deg, #04080F 0%, #07111E 40%, #060D18 70%, #030710 100%)",
           overflow: "hidden",
-          padding: "72px 0",
+          padding: "72px 0 36px",
         }}
       >
         {/* ── Ambient glow blobs ── */}
