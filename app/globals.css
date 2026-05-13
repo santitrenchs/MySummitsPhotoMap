@@ -655,3 +655,5 @@
   text-transform: uppercase; letter-spacing: .07em;
   color: #94a3b8;
 }
+
+.scroll-snap-hide-bar::-webkit-scrollbar { display: none; }
