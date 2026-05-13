@@ -215,6 +215,10 @@ export const fr: Dict = {
   profile_photos_searchTaggedPlaceholder: "Chercher photo où tu apparais…",
   profile_photos_countLabel: "{n} {n,plural,=1{photo}other{photos}}",
   profile_photos_tagAll: "Toutes",
+  profile_catalog_label: "Catalogue · Sommets",
+  profile_catalog_peaks: "sommets",
+  profile_catalog_ascents: "ascensions",
+  profile_catalog_highest: "Plus haut",
 
 
 

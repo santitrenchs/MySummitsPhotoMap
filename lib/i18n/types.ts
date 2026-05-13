@@ -220,6 +220,10 @@ export type Dict = {
   profile_photos_searchTaggedPlaceholder: string;
   profile_photos_countLabel: string;
   profile_photos_tagAll: string;
+  profile_catalog_label: string;
+  profile_catalog_peaks: string;
+  profile_catalog_ascents: string;
+  profile_catalog_highest: string;
 
   // Home / Dashboard
   nav_home: string;

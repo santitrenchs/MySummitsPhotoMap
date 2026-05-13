@@ -215,6 +215,10 @@ export const ca: Dict = {
   profile_photos_searchTaggedPlaceholder: "Cercar foto on apareixes…",
   profile_photos_countLabel: "{n} {n,plural,=1{foto}other{fotos}}",
   profile_photos_tagAll: "Totes",
+  profile_catalog_label: "Catàleg · Cims",
+  profile_catalog_peaks: "cims",
+  profile_catalog_ascents: "ascensions",
+  profile_catalog_highest: "Més alta",
 
 
 

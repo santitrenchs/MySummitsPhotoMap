@@ -2,6 +2,7 @@
 
 import { RARITIES, RARITY_COLORS } from "@/lib/rarity";
 import type { RarityId } from "@/lib/rarity";
+import { useT } from "@/components/providers/I18nProvider";
 import type { PeakForFilter } from "./usePeakFilters";
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
+  const t = useT();
   const totalAscents = peaks.reduce((s, p) => s + p.count, 0);
   const maxAlt = peaks.length > 0 ? Math.max(...peaks.map((p) => p.altitudeM)) : 0;
 
@@ -39,7 +41,7 @@ export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
             fontSize: 9, fontWeight: 700, letterSpacing: "0.18em",
             color: "#94A3B8", textTransform: "uppercase", marginBottom: 4,
           }}>
-            Catálogo · Cimas
+            {t.profile_catalog_label}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
             <span style={{
@@ -53,7 +55,7 @@ export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
               fontFamily: "var(--font-inter, sans-serif)",
               fontSize: 14, fontWeight: 500, color: "#5A6E84",
             }}>
-              cimas · <strong style={{ color: "#0D2538", fontWeight: 700 }}>{totalAscents}</strong> ascensiones
+              {t.profile_catalog_peaks} · <strong style={{ color: "#0D2538", fontWeight: 700 }}>{totalAscents}</strong> {t.profile_catalog_ascents}
             </span>
           </div>
         </div>
@@ -65,14 +67,14 @@ export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
             fontSize: 9, fontWeight: 700, letterSpacing: "0.18em",
             color: "#94A3B8", textTransform: "uppercase", marginBottom: 4,
           }}>
-            Más alta
+            {t.profile_catalog_highest}
           </div>
           <div style={{
             fontFamily: "var(--font-space-grotesk, sans-serif)",
             fontSize: 20, fontWeight: 800, color: "#0D2538",
             letterSpacing: "-0.025em", lineHeight: 1,
           }}>
-            {maxAlt.toLocaleString("es")} m
+            {maxAlt} m
           </div>
         </div>
       </div>
