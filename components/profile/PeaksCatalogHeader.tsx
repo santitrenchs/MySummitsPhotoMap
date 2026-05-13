@@ -37,8 +37,8 @@ export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
         {/* Left */}
         <div>
           <div style={{
-            fontFamily: "var(--font-mono-landing, monospace)",
-            fontSize: 9, fontWeight: 700, letterSpacing: "0.18em",
+            fontFamily: "var(--font-inter, sans-serif)",
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
             color: "#94A3B8", textTransform: "uppercase", marginBottom: 4,
           }}>
             {t.profile_catalog_label}
@@ -63,8 +63,8 @@ export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
         {/* Right */}
         <div style={{ textAlign: "right" }}>
           <div style={{
-            fontFamily: "var(--font-mono-landing, monospace)",
-            fontSize: 9, fontWeight: 700, letterSpacing: "0.18em",
+            fontFamily: "var(--font-inter, sans-serif)",
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
             color: "#94A3B8", textTransform: "uppercase", marginBottom: 4,
           }}>
             {t.profile_catalog_highest}

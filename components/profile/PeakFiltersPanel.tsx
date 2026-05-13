@@ -92,8 +92,8 @@ export function PeakFiltersPanel({
       {/* Rarity section */}
       <div style={{ padding: "14px 14px 4px" }}>
         <div style={{
-          fontFamily: "var(--font-mono-landing, monospace)",
-          fontSize: 9, fontWeight: 700, letterSpacing: "0.16em",
+          fontFamily: "var(--font-inter, sans-serif)",
+          fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
           color: "#94A3B8", textTransform: "uppercase",
           marginBottom: 6,
         }}>
@@ -201,8 +201,8 @@ export function PeakFiltersPanel({
       {/* Sort section */}
       <div style={{ padding: "0 14px 14px" }}>
         <div style={{
-          fontFamily: "var(--font-mono-landing, monospace)",
-          fontSize: 9, fontWeight: 700, letterSpacing: "0.16em",
+          fontFamily: "var(--font-inter, sans-serif)",
+          fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
           color: "#94A3B8", textTransform: "uppercase",
           margin: "0 0 6px",
         }}>

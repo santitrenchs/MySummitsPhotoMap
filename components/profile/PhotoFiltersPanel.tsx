@@ -51,7 +51,7 @@ export function PhotoFiltersPanel({ photos, filteredCount, tier, setTier, sort, 
 
       {/* Rarity */}
       <div style={{ padding: "14px 14px 4px" }}>
-        <div style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", color: "#94A3B8", textTransform: "uppercase", marginBottom: 6 }}>
+        <div style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#94A3B8", textTransform: "uppercase", marginBottom: 6 }}>
           {t.profile_filter_rarity}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
@@ -79,7 +79,7 @@ export function PhotoFiltersPanel({ photos, filteredCount, tier, setTier, sort, 
 
       {/* Sort */}
       <div style={{ padding: "0 14px 14px" }}>
-        <div style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", color: "#94A3B8", textTransform: "uppercase", margin: "12px 0 6px" }}>
+        <div style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#94A3B8", textTransform: "uppercase", margin: "12px 0 6px" }}>
           {t.profile_filter_sort}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
