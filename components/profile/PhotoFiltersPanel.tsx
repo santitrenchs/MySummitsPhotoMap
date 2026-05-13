@@ -86,18 +86,15 @@ export function PhotoFiltersPanel({ photos, filteredCount, tier, setTier, sort, 
       {/* Sort */}
       <div style={{ padding: "0 14px 14px" }}>
         <div style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#94A3B8", textTransform: "uppercase", margin: "12px 0 6px" }}>
-          {t.profile_filter_sort}
+          {t.filter_sectionSort}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {SORT_OPTIONS.map((opt) => {
             const active = sort === opt.id;
             return (
               <button key={opt.id} onClick={() => setSort(opt.id)}
-                style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, cursor: "pointer", border: `1px solid ${active ? "#0D2538" : "#F1F5F9"}`, background: active ? "#0D2538" : "#F8FAFC" }}>
-                <div style={{ width: 14, height: 14, borderRadius: "50%", flexShrink: 0, border: `1.5px solid ${active ? "transparent" : "#CBD5E1"}`, background: active ? "white" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {active && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#0D2538" }} />}
-                </div>
-                <span style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 12, fontWeight: 600, color: active ? "white" : "#374151" }}>{t[opt.labelKey]}</span>
+                style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 20, cursor: "pointer", border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`, background: active ? "#eff6ff" : "#f9fafb", color: active ? "#0369a1" : "#6b7280", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+                {t[opt.labelKey]}
               </button>
             );
           })}
