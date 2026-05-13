@@ -3,7 +3,8 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import type { MapPeak, AscentMapEntry, MapBounds, RarityDef } from "./MapView";
 import { RARITY_SCORE_WEIGHTS } from "./MapView";
-import { RARITY_COLORS } from "@/lib/rarity";
+import { RARITY_COLORS, RARITIES } from "@/lib/rarity";
+import { RarityFlower } from "@/components/brand/RarityFlowers";
 import MapPeakCard from "./MapPeakCard";
 import MapFilterBar from "./MapFilterBar";
 
@@ -323,6 +324,7 @@ export default function MapPeaksSidebar({
             searchResults.map((peak) => {
               const isClimbed = ascentByPeakId.has(peak.id);
               const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
+              const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
               return (
                 <button
                   key={peak.id}
@@ -356,10 +358,17 @@ export default function MapPeaksSidebar({
                             ✓ Capturada
                           </span>
                         )}
-                        {peak.rarity && (
-                          <span style={{ fontSize: 11, fontWeight: 600, color: rc }}>
-                            ✿ {peak.rarity.name}
-                          </span>
+                        {peak.rarity && rarityEntry && (
+                          <div style={{
+                            display: "inline-flex", alignItems: "center", gap: 3,
+                            padding: "2px 7px", borderRadius: 999,
+                            background: rc + "22",
+                          }}>
+                            <RarityFlower id={rarityEntry.id} size={10} />
+                            <span style={{ fontSize: 10, fontWeight: 700, color: rarityEntry.colorDark, whiteSpace: "nowrap" }}>
+                              {peak.rarity.name}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
