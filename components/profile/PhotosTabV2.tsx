@@ -54,17 +54,16 @@ export function PhotosTabV2({ photos, isTagged = false }: Props) {
         />
       </div>
 
-      {/* Filter panel */}
-      {filtersOpen && (
-        <PhotoFiltersPanel
-          photos={photos}
-          filteredCount={filtered.length}
-          tier={tier} setTier={setTier}
-          sort={sort} setSort={setSort}
-          clearAll={clearAll}
-          onClose={() => setFiltersOpen(false)}
-        />
-      )}
+      {/* Filter panel (bottom sheet) */}
+      <PhotoFiltersPanel
+        isOpen={filtersOpen}
+        photos={photos}
+        filteredCount={filtered.length}
+        tier={tier} setTier={setTier}
+        sort={sort} setSort={setSort}
+        clearAll={clearAll}
+        onClose={() => setFiltersOpen(false)}
+      />
 
       {/* Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, padding: "8px 0 32px" }}>

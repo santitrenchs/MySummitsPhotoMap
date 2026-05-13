@@ -64,20 +64,19 @@ export function PeaksTabV2({ peaks }: Props) {
         />
       </div>
 
-      {/* Filter panel (inline expansion) */}
-      {filtersOpen && (
-        <PeakFiltersPanel
-          peaks={peaks}
-          filteredCount={filtered.length}
-          tier={tier} setTier={setTier}
-          mythic={mythic} setMythic={setMythic}
-          range={range} setRange={setRange}
-          sort={sort} setSort={setSort}
-          ranges={ranges}
-          clearAll={clearAll}
-          onClose={() => setFiltersOpen(false)}
-        />
-      )}
+      {/* Filter panel (bottom sheet) */}
+      <PeakFiltersPanel
+        isOpen={filtersOpen}
+        peaks={peaks}
+        filteredCount={filtered.length}
+        tier={tier} setTier={setTier}
+        mythic={mythic} setMythic={setMythic}
+        range={range} setRange={setRange}
+        sort={sort} setSort={setSort}
+        ranges={ranges}
+        clearAll={clearAll}
+        onClose={() => setFiltersOpen(false)}
+      />
 
       {/* Peak list */}
       {filtered.length === 0 ? (
