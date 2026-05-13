@@ -82,7 +82,7 @@ function PhotoTile({ photo, isTagged, dateLocale }: { photo: PhotoForFilter; isT
   const dateStr = new Date(photo.date).toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "2-digit" });
 
   return (
-    <Link href={isTagged ? `/ascents/${photo.ascentId}` : `/ascents?highlight=${photo.ascentId}`} style={{ textDecoration: "none" }}>
+    <Link href={`/ascents?highlight=${photo.ascentId}`} style={{ textDecoration: "none" }}>
       <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden", background: imgError ? "#E8EFF6" : "#0D2538", borderRadius: 8 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {!imgError && <img src={photo.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => setImgError(true)} />}
