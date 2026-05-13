@@ -677,7 +677,7 @@ export function AscentsClient({
           </div>
         ) : (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
-          <p style={{ fontSize: 48, margin: "0 0 12px" }}>🔍</p>
+          <p style={{ fontSize: 52, margin: "0 0 12px", color: RARITY_COLORS[rarity ?? "daisy"].dot, lineHeight: 1 }}>✿</p>
           <p style={{ fontSize: 15, fontWeight: 600, color: "#374151", margin: "0 0 4px" }}>{t.ascents_noResults}</p>
           <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>{t.ascents_noResultsSub}</p>
         </div>
