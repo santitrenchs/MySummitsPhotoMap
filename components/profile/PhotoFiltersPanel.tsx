@@ -53,7 +53,7 @@ export function PhotoFiltersPanel({ photos, filteredCount, tier, setTier, sort, 
         <div style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#94A3B8", textTransform: "uppercase", marginBottom: 6 }}>
           {t.profile_filter_rarity}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {RARITIES.map((r) => {
             const count = rarityCounts[r.id] ?? 0;
             const active = tier === r.id;
@@ -63,21 +63,18 @@ export function PhotoFiltersPanel({ photos, filteredCount, tier, setTier, sort, 
                 key={r.id}
                 disabled={locked}
                 onClick={() => setTier(active ? null : r.id as RarityId)}
+                title={r.label}
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "8px 12px", borderRadius: 999, cursor: locked ? "default" : "pointer",
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  padding: "7px 11px", borderRadius: 999, cursor: locked ? "default" : "pointer",
                   border: `1.5px solid ${active ? r.color + "88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
                   background: active ? r.color + "22" : (locked ? "#F8FAFC" : "#f9fafb"),
                   opacity: locked ? 0.55 : 1,
                   transition: "all 0.15s",
-                  width: "100%", justifyContent: "flex-start",
                 }}
               >
-                <span style={{ color: locked ? "#CBD5E1" : r.color, fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✿</span>
-                <span style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 12, fontWeight: 600, color: active ? r.colorDark : (locked ? "#94A3B8" : "#6b7280"), flex: 1, textAlign: "left" }}>
-                  {r.label}
-                </span>
-                <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 700, color: active ? r.colorDark : (locked ? "#CBD5E1" : "#9ca3af"), flexShrink: 0 }}>
+                <span style={{ color: locked ? "#CBD5E1" : r.color, fontSize: 15, lineHeight: 1 }}>✿</span>
+                <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 700, color: active ? r.colorDark : (locked ? "#CBD5E1" : "#9ca3af") }}>
                   {locked ? "—" : count}
                 </span>
               </button>
