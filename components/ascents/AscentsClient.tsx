@@ -566,11 +566,11 @@ export function AscentsClient({
                 <div
                   key={r}
                   className="asc-fchip"
+                  title={RARITY_LABELS[r]}
                   style={rarityChip(r, !mythicFilter && rarity === r)}
                   onClick={() => { setMythicFilter(false); setRarity(rarity === r ? null : r); }}
                 >
-                  <span style={{ color: RARITY_COLORS[r].dot, fontSize: 13, lineHeight: 1 }}>✿</span>
-                  {RARITY_LABELS[r]}
+                  <span style={{ color: RARITY_COLORS[r].dot, fontSize: 15, lineHeight: 1 }}>✿</span>
                 </div>
               ))}
               <div
