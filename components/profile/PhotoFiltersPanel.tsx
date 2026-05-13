@@ -2,7 +2,6 @@
 
 import { RARITIES } from "@/lib/rarity";
 import type { RarityId } from "@/lib/rarity";
-import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import type { PhotoSortId, PhotoForFilter } from "./usePhotoFilters";
@@ -60,15 +59,25 @@ export function PhotoFiltersPanel({ photos, filteredCount, tier, setTier, sort, 
             const active = tier === r.id;
             const locked = count === 0;
             return (
-              <button key={r.id} disabled={locked} onClick={() => setTier(active ? null : r.id as RarityId)}
-                style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 12, cursor: locked ? "default" : "pointer", border: `1px solid ${active ? r.color : locked ? "#F1F5F9" : r.color + "55"}`, background: active ? r.color : locked ? "#F8FAFC" : "white", opacity: locked ? 0.55 : 1, transition: "all 0.15s" }}>
-                <div style={{ width: 26, height: 26, borderRadius: "50%", flexShrink: 0, background: active ? "white" : r.color + "22", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <RarityFlower id={r.id} size={16} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                  <div style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 12, fontWeight: 700, color: active ? "white" : locked ? "#94A3B8" : r.colorDark, lineHeight: 1.2 }}>{r.label}</div>
-                </div>
-                <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 800, padding: "2px 7px", borderRadius: 999, background: active ? "rgba(255,255,255,0.22)" : locked ? "transparent" : r.color + "22", color: active ? "white" : locked ? "#CBD5E1" : r.colorDark, flexShrink: 0 }}>
+              <button
+                key={r.id}
+                disabled={locked}
+                onClick={() => setTier(active ? null : r.id as RarityId)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "8px 12px", borderRadius: 999, cursor: locked ? "default" : "pointer",
+                  border: `1.5px solid ${active ? r.color + "88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
+                  background: active ? r.color + "22" : (locked ? "#F8FAFC" : "#f9fafb"),
+                  opacity: locked ? 0.55 : 1,
+                  transition: "all 0.15s",
+                  width: "100%", justifyContent: "flex-start",
+                }}
+              >
+                <span style={{ color: locked ? "#CBD5E1" : r.color, fontSize: 13, lineHeight: 1, flexShrink: 0 }}>✿</span>
+                <span style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 12, fontWeight: 600, color: active ? r.colorDark : (locked ? "#94A3B8" : "#6b7280"), flex: 1, textAlign: "left" }}>
+                  {r.label}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 700, color: active ? r.colorDark : (locked ? "#CBD5E1" : "#9ca3af"), flexShrink: 0 }}>
                   {locked ? "—" : count}
                 </span>
               </button>
