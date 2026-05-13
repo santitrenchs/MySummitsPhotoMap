@@ -188,6 +188,39 @@ export type Dict = {
   profile_timesClimbed: string;
   profile_noAscents: string;
 
+  // Profile — Cimas tab v2
+  profile_collection_title: string;
+  profile_collection_unique: string;
+  profile_collection_ascents: string;
+  profile_collection_rarities: string;
+  profile_trophy_mostClimbed: string;
+  profile_trophy_highest: string;
+  profile_trophy_rarest: string;
+  profile_trophy_recent: string;
+  profile_trophy_label_ascents: string;
+  profile_trophy_label_altitude: string;
+  profile_trophy_label_species: string;
+  profile_trophy_label_conquered: string;
+  profile_filter_button: string;
+  profile_filter_searchPlaceholder: string;
+  profile_filter_title: string;
+  profile_filter_rarity: string;
+  profile_filter_range: string;
+  profile_filter_sort: string;
+  profile_filter_clearAll: string;
+  profile_filter_showN: string;
+  profile_sort_altDesc: string;
+  profile_sort_altAsc: string;
+  profile_sort_countDesc: string;
+  profile_sort_recent: string;
+  profile_sort_alpha: string;
+  profile_emptyFiltered_title: string;
+  profile_emptyFiltered_body: string;
+  profile_photos_searchPlaceholder: string;
+  profile_photos_searchTaggedPlaceholder: string;
+  profile_photos_countLabel: string;
+  profile_photos_tagAll: string;
+
   // Home / Dashboard
   nav_home: string;
   home_greeting: string;

@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { AvatarCropModal } from "@/components/photos/AvatarCropModal";
+import { PeaksTabV2 } from "@/components/profile/PeaksTabV2";
+import { PhotosTabV2 } from "@/components/profile/PhotosTabV2";
+import type { RarityId } from "@/lib/rarity";
+import type { PeakForFilter } from "@/components/profile/usePeakFilters";
 
 type Ascent = {
   id: string;
@@ -17,13 +21,7 @@ type Ascent = {
   photoCount: number;
 };
 
-type Peak = {
-  id: string;
-  name: string;
-  altitudeM: number;
-  mountainRange: string | null;
-  count: number;
-};
+type Peak = PeakForFilter;
 
 type Photo = {
   id: string;
@@ -31,6 +29,7 @@ type Photo = {
   ascentId: string;
   peakName: string;
   altitudeM: number;
+  rarityId: RarityId;
   date: Date;
   creatorName?: string;
 };
@@ -141,15 +140,15 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
       </div>
 
       {/* ── Tab content ── */}
-      <div style={{ padding: "16px" }}>
+      <div style={{ padding: "0 16px" }}>
         {tab === "peaks" && (
-          <PeaksTab peaks={peaks} dateLocale={t.dateLocale} timesClimbed={t.profile_timesClimbed} />
+          <PeaksTabV2 peaks={peaks} />
         )}
         {tab === "photos" && (
-          <PhotosTab photos={photos} />
+          <PhotosTabV2 photos={photos} />
         )}
         {tab === "tagged" && (
-          <PhotosTab photos={taggedPhotos} showCreator />
+          <PhotosTabV2 photos={taggedPhotos} isTagged />
         )}
       </div>
 
