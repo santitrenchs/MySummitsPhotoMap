@@ -182,10 +182,9 @@ export const RARITY_FLOWERS: Record<string, React.ComponentType<FlowerProps>> = 
 
 // Inline flower icon for use at small sizes (badges, tiles, filter chips).
 // Uses the full SVG at the requested size.
+// Inline flower icon for badges, tiles and filter chips.
+// Uses a tinted ✿ emoji — small, consistent, colour-coded by rarity.
 export function RarityFlower({ id, size = 20 }: { id: RarityId | string; size?: number }) {
-  const Component = RARITY_FLOWERS[id];
-  if (Component) return <Component size={size} />;
-  // Fallback for unknown ids
   const color = RARITY_COLORS[id as RarityId] ?? "#94A3B8";
   return (
     <span style={{ fontSize: size * 0.85, lineHeight: 1, color, display: "inline-block", userSelect: "none" }} aria-hidden>
