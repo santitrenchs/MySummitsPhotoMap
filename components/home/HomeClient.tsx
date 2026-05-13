@@ -289,7 +289,7 @@ function RarityChart({ breakdown }: { breakdown: HomeData["stats"]["rarityBreakd
               {val || "0"}
             </span>
             <div style={{ width: "100%", height: barH, background: val > 0 ? b.color : "#e5e7eb", borderRadius: "3px 3px 0 0" }} />
-            <span style={{ fontSize: 9, color: "#94a3b8", textAlign: "center", lineHeight: 1.2, height: 22, display: "flex", alignItems: "flex-start", justifyContent: "center" }}>{b.label}</span>
+            <span title={b.label} style={{ fontSize: 14, lineHeight: 1, color: val > 0 ? b.color : "#e5e7eb", height: 22, display: "flex", alignItems: "flex-start", justifyContent: "center" }}>✿</span>
           </div>
         );
       })}
