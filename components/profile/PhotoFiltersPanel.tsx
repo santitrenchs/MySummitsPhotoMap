@@ -12,6 +12,12 @@ const SORT_OPTIONS: { id: PhotoSortId; labelKey: "profile_sort_recent" | "profil
   { id: "alpha",        labelKey: "profile_sort_alpha" },
 ];
 
+const sectionLabel: React.CSSProperties = {
+  fontFamily: "var(--font-inter, sans-serif)",
+  fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
+  color: "#9ca3af", textTransform: "uppercase",
+};
+
 type Props = {
   photos: PhotoForFilter[];
   filteredCount: number;
@@ -50,10 +56,10 @@ export function PhotoFiltersPanel({ photos, filteredCount, tier, setTier, sort, 
 
       {/* Rarity */}
       <div style={{ padding: "14px 14px 4px" }}>
-        <div style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#94A3B8", textTransform: "uppercase", marginBottom: 6 }}>
+        <div style={{ ...sectionLabel, marginBottom: 6 }}>
           {t.profile_filter_rarity}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {RARITIES.map((r) => {
             const count = rarityCounts[r.id] ?? 0;
             const active = tier === r.id;
@@ -85,10 +91,10 @@ export function PhotoFiltersPanel({ photos, filteredCount, tier, setTier, sort, 
 
       {/* Sort */}
       <div style={{ padding: "0 14px 14px" }}>
-        <div style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#94A3B8", textTransform: "uppercase", margin: "12px 0 6px" }}>
+        <div style={{ ...sectionLabel, margin: "12px 0 6px" }}>
           {t.filter_sectionSort}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {SORT_OPTIONS.map((opt) => {
             const active = sort === opt.id;
             return (
@@ -103,10 +109,10 @@ export function PhotoFiltersPanel({ photos, filteredCount, tier, setTier, sort, 
 
       {/* Footer */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderTop: "1px solid #F1F5F9", background: "#FAFBFC" }}>
-        <button onClick={clearAll} disabled={!hasFilters} style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 12, fontWeight: 600, color: hasFilters ? "#5A6E84" : "#CBD5E1", background: "none", border: "none", cursor: hasFilters ? "pointer" : "default", padding: 0 }}>
+        <button onClick={clearAll} disabled={!hasFilters} style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 13, fontWeight: 600, color: hasFilters ? "#0369a1" : "#CBD5E1", background: "none", border: "none", cursor: hasFilters ? "pointer" : "default", padding: 0 }}>
           {t.profile_filter_clearAll}
         </button>
-        <button onClick={onClose} style={{ padding: "9px 16px", borderRadius: 999, background: "#2F7A5F", color: "white", border: "none", cursor: "pointer", fontFamily: "var(--font-inter, sans-serif)", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+        <button onClick={onClose} style={{ padding: "10px 18px", borderRadius: 999, background: "#2F7A5F", color: "white", border: "none", cursor: "pointer", fontFamily: "var(--font-inter, sans-serif)", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
           {i(t.profile_photos_countLabel, { n: filteredCount })} →
         </button>
       </div>
