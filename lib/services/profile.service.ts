@@ -24,7 +24,7 @@ export async function getProfileData(tenantId: string, userId: string) {
         peak: {
           select: {
             id: true, name: true, altitudeM: true,
-            mountainRange: true, country: true, rarityId: true,
+            mountainRange: true, country: true, rarityId: true, isMythic: true,
           },
         },
         photos: { orderBy: { createdAt: "asc" }, select: { id: true, url: true } },
@@ -57,7 +57,7 @@ export async function getProfileData(tenantId: string, userId: string) {
   const peakMap = new Map<string, {
     id: string; name: string; altitudeM: number;
     mountainRange: string | null; country: string | null;
-    rarityId: RarityId;
+    rarityId: RarityId; isMythic: boolean;
     count: number;
     firstDate: Date; lastDate: Date;
     firstPhotoUrl: string | null;
@@ -71,7 +71,7 @@ export async function getProfileData(tenantId: string, userId: string) {
       peakMap.set(pk.id, {
         id: pk.id, name: pk.name, altitudeM: pk.altitudeM,
         mountainRange: pk.mountainRange, country: pk.country ?? null,
-        rarityId,
+        rarityId, isMythic: pk.isMythic ?? false,
         count: 0,
         firstDate: a.date, lastDate: a.date,
         firstPhotoUrl: a.photos[0]?.url ?? null,

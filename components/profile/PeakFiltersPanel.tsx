@@ -11,6 +11,8 @@ type Props = {
   filteredCount: number;
   tier: RarityId | null;
   setTier: (v: RarityId | null) => void;
+  mythic: boolean;
+  setMythic: (v: boolean) => void;
   range: string | null;
   setRange: (v: string | null) => void;
   sort: SortId;
@@ -29,7 +31,7 @@ const SORT_OPTIONS: { id: SortId; key: keyof ReturnType<typeof useT> }[] = [
 ];
 
 export function PeakFiltersPanel({
-  peaks, filteredCount, tier, setTier, range, setRange,
+  peaks, filteredCount, tier, setTier, mythic, setMythic, range, setRange,
   sort, setSort, ranges, clearAll, onClose,
 }: Props) {
   const t = useT();
@@ -39,6 +41,7 @@ export function PeakFiltersPanel({
   for (const p of peaks) {
     rarityCounts[p.rarityId] = (rarityCounts[p.rarityId] ?? 0) + 1;
   }
+  const mythicCount = peaks.filter((p) => p.isMythic).length;
 
   // Count peaks per range
   const rangeCounts: Record<string, number> = {};
@@ -48,7 +51,7 @@ export function PeakFiltersPanel({
     }
   }
 
-  const hasFilters = tier !== null || range !== null || sort !== "altitude_desc";
+  const hasFilters = tier !== null || mythic || range !== null || sort !== "altitude_desc";
 
   return (
     <div style={{
@@ -101,13 +104,13 @@ export function PeakFiltersPanel({
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {RARITIES.map((r) => {
             const count = rarityCounts[r.id] ?? 0;
-            const active = tier === r.id;
+            const active = !mythic && tier === r.id;
             const locked = count === 0;
             return (
               <button
                 key={r.id}
                 disabled={locked}
-                onClick={() => setTier(active ? null : r.id as RarityId)}
+                onClick={() => { setMythic(false); setTier(active ? null : r.id as RarityId); }}
                 title={r.label}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
@@ -129,6 +132,30 @@ export function PeakFiltersPanel({
               </button>
             );
           })}
+          {/* Mythic pill */}
+          <button
+            disabled={mythicCount === 0}
+            onClick={() => { setMythic(!mythic); setTier(null); }}
+            title="Mythic"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "7px 11px", borderRadius: 999,
+              cursor: mythicCount === 0 ? "default" : "pointer",
+              border: `1.5px solid ${mythic ? "#f59e0b88" : (mythicCount === 0 ? "#F1F5F9" : "#E5E7EB")}`,
+              background: mythic ? "#fffbeb" : (mythicCount === 0 ? "#F8FAFC" : "#f9fafb"),
+              opacity: mythicCount === 0 ? 0.55 : 1,
+              transition: "all 0.15s",
+            }}
+          >
+            <span style={{ fontSize: 13, lineHeight: 1 }}>⭐</span>
+            <span style={{
+              fontFamily: "var(--font-mono-landing, monospace)",
+              fontSize: 11, fontWeight: 700,
+              color: mythic ? "#92400e" : (mythicCount === 0 ? "#CBD5E1" : "#9ca3af"),
+            }}>
+              {mythicCount === 0 ? "—" : mythicCount}
+            </span>
+          </button>
         </div>
       </div>
 

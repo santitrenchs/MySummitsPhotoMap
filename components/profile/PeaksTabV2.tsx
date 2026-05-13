@@ -20,6 +20,7 @@ export function PeaksTabV2({ peaks }: Props) {
   const {
     query, setQuery,
     tier, setTier,
+    mythic, setMythic,
     range, setRange,
     sort, setSort,
     filtered,
@@ -28,7 +29,7 @@ export function PeaksTabV2({ peaks }: Props) {
     clearAll,
   } = usePeakFilters(peaks);
 
-  const activeFilterCount = [tier !== null, range !== null, sort !== "altitude_desc"].filter(Boolean).length;
+  const activeFilterCount = [tier !== null, mythic, range !== null, sort !== "altitude_desc"].filter(Boolean).length;
 
   if (peaks.length === 0) {
     return (
@@ -69,6 +70,7 @@ export function PeaksTabV2({ peaks }: Props) {
           peaks={peaks}
           filteredCount={filtered.length}
           tier={tier} setTier={setTier}
+          mythic={mythic} setMythic={setMythic}
           range={range} setRange={setRange}
           sort={sort} setSort={setSort}
           ranges={ranges}

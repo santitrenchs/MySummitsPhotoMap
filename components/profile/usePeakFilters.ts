@@ -12,6 +12,7 @@ export type PeakForFilter = {
   mountainRange: string | null;
   country: string | null;
   rarityId: RarityId;
+  isMythic: boolean;
   count: number;
   firstDate: Date;
   lastDate: Date;
@@ -21,6 +22,7 @@ export type PeakForFilter = {
 export function usePeakFilters(peaks: PeakForFilter[]) {
   const [query, setQuery] = useState("");
   const [tier, setTier] = useState<RarityId | null>(null);
+  const [mythic, setMythic] = useState(false);
   const [range, setRange] = useState<string | null>(null);
   const [sort, setSort] = useState<SortId>("altitude_desc");
 
@@ -31,7 +33,9 @@ export function usePeakFilters(peaks: PeakForFilter[]) {
       const q = query.trim().toLowerCase();
       result = result.filter((p) => p.name.toLowerCase().includes(q));
     }
-    if (tier) {
+    if (mythic) {
+      result = result.filter((p) => p.isMythic);
+    } else if (tier) {
       result = result.filter((p) => p.rarityId === tier);
     }
     if (range) {
@@ -56,11 +60,12 @@ export function usePeakFilters(peaks: PeakForFilter[]) {
     return Array.from(set).sort();
   }, [peaks]);
 
-  const hasActiveFilters = tier !== null || range !== null || sort !== "altitude_desc";
+  const hasActiveFilters = tier !== null || mythic || range !== null || sort !== "altitude_desc";
 
   function clearAll() {
     setQuery("");
     setTier(null);
+    setMythic(false);
     setRange(null);
     setSort("altitude_desc");
   }
@@ -68,6 +73,7 @@ export function usePeakFilters(peaks: PeakForFilter[]) {
   return {
     query, setQuery,
     tier, setTier,
+    mythic, setMythic,
     range, setRange,
     sort, setSort,
     filtered,
