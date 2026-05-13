@@ -12,15 +12,20 @@ export type LevelDef = {
   heroBg?: string;
 };
 
+// targetAscents counts UNIQUE peaks climbed (not total ascents).
+// getLevelState() passes stats.uniquePeaks when calling meetsLevel().
 export const LEVEL_DEFS: LevelDef[] = [
-  { idx: 1, emoji: "🌱", nameKey: "home_level1", targetAscents: 20,  altReqs: [{ threshold: 1500, count: 1 }] },
+  { idx: 1, emoji: "🌱", nameKey: "home_level1", targetAscents: 20,  altReqs: [{ threshold: 2000, count: 1 }] },
   { idx: 2, emoji: "🥾", nameKey: "home_level2", targetAscents: 50,  altReqs: [{ threshold: 3000, count: 1 }] },
-  { idx: 3, emoji: "🧭", nameKey: "home_level3", targetAscents: 100, altReqs: [{ threshold: 4500, count: 1 }] },
-  { idx: 4, emoji: "🏔️", nameKey: "home_level4", targetAscents: 150, altReqs: [{ threshold: 6000, count: 1 }] },
-  { idx: 5, emoji: "👑", nameKey: "home_level5", quoteKey: "home_level5Quote", heroBg: "/levels/messner.jpeg" },
+  { idx: 3, emoji: "🧭", nameKey: "home_level3", targetAscents: 100, altReqs: [{ threshold: 4000, count: 1 }] },
+  { idx: 4, emoji: "⛰️", nameKey: "home_level4", targetAscents: 150, altReqs: [{ threshold: 5000, count: 1 }] },
+  { idx: 5, emoji: "🏔️", nameKey: "home_level5", targetAscents: 220, altReqs: [{ threshold: 6500, count: 1 }] },
+  { idx: 6, emoji: "👑", nameKey: "home_level6", targetAscents: 300, altReqs: [{ threshold: 8000, count: 1 }], quoteKey: "home_level6Quote", heroBg: "/levels/messner.jpeg" },
 ];
 
 export function getAltCount(stats: HomeData["stats"], threshold: number): number {
+  if (threshold >= 8000) return stats.peaks8000plus;
+  if (threshold >= 6500) return stats.peaks6500plus;
   if (threshold >= 6000) return stats.peaks6000plus;
   if (threshold >= 5000) return stats.peaks5000plus;
   if (threshold >= 4500) return stats.peaks4500plus;
@@ -31,21 +36,23 @@ export function getAltCount(stats: HomeData["stats"], threshold: number): number
   return stats.peaks1000plus;
 }
 
-export function meetsLevel(def: LevelDef, n: number, stats: HomeData["stats"]): boolean {
+export function meetsLevel(def: LevelDef, uniquePeaks: number, stats: HomeData["stats"]): boolean {
   if (def.targetAscents == null) return true;
-  if (n < def.targetAscents) return false;
+  if (uniquePeaks < def.targetAscents) return false;
   return !def.altReqs || def.altReqs.every((r) => getAltCount(stats, r.threshold) >= r.count);
 }
 
 export function getLevelState(stats: HomeData["stats"]) {
   let currentIdx = LEVEL_DEFS.length - 1;
-  for (let i = 0; i < LEVEL_DEFS.length - 1; i++) {
-    if (!meetsLevel(LEVEL_DEFS[i], stats.totalAscents, stats)) {
+  for (let i = 0; i < LEVEL_DEFS.length; i++) {
+    if (!meetsLevel(LEVEL_DEFS[i], stats.uniquePeaks, stats)) {
       currentIdx = i;
       break;
     }
   }
+  const isMaxLevel = currentIdx === LEVEL_DEFS.length - 1
+    && meetsLevel(LEVEL_DEFS[currentIdx], stats.uniquePeaks, stats);
   const current = LEVEL_DEFS[currentIdx];
   const next = currentIdx < LEVEL_DEFS.length - 1 ? LEVEL_DEFS[currentIdx + 1] : null;
-  return { currentIdx, current, next, isMaxLevel: currentIdx === LEVEL_DEFS.length - 1 };
+  return { currentIdx, current, next, isMaxLevel };
 }

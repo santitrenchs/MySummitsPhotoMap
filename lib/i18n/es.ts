@@ -206,8 +206,8 @@ export const es: Dict = {
   home_badge6Title: "Sky Chaser",          home_badge6Sub: "You've reached the heights few ever touch",
 
   home_level1: "Scout", home_level2: "Guide", home_level3: "Explorer",
-  home_level4: "Master", home_level5: "Legendary",
-  home_level5Quote: "La montaña no es un juego, es una oportunidad para descubrir quién eres realmente.",
+  home_level4: "Alpinist", home_level5: "Master", home_level6: "Zenith",
+  home_level6Quote: "La montaña no es un juego, es una oportunidad para descubrir quién eres realmente.",
   home_maxLevelHint: "Leyenda del Montañismo",
   home_heroSubtitle: "Tu evolución en la montaña",
   home_metricPeaks: "cimas", home_metricAscents: "ascensiones", home_metricMaxAlt: "alt. máx",

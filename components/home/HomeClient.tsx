@@ -69,8 +69,9 @@ const LEVEL_COLORS = [
   { accent: "#16a34a", light: "#f0fdf4", mid: "#dcfce7", dark: "#166534" }, // 1 Scout    — green
   { accent: "#d97706", light: "#fffbeb", mid: "#fef3c7", dark: "#92400e" }, // 2 Guide    — amber
   { accent: "#ea580c", light: "#fff7ed", mid: "#ffedd5", dark: "#9a3412" }, // 3 Explorer — orange
-  { accent: "#1d4ed8", light: "#eff6ff", mid: "#dbeafe", dark: "#1e40af" }, // 4 Master   — blue
-  { accent: "#7c3aed", light: "#faf5ff", mid: "#ede9fe", dark: "#5b21b6" }, // 5 Legendary — purple
+  { accent: "#1d4ed8", light: "#eff6ff", mid: "#dbeafe", dark: "#1e40af" }, // 4 Alpinist — blue
+  { accent: "#7c3aed", light: "#faf5ff", mid: "#ede9fe", dark: "#5b21b6" }, // 5 Master   — purple
+  { accent: "#b45309", light: "#fefce8", mid: "#fef9c3", dark: "#78350f" }, // 6 Zenith   — gold
 ];
 
 
@@ -87,7 +88,7 @@ function LevelCard({ def, status, stats, t, locale }: {
   const isCurrent   = status === "current";
   const color       = LEVEL_COLORS[def.idx - 1];
   const ascentPct   = def.targetAscents
-    ? Math.min(stats.totalAscents / def.targetAscents * 100, 100)
+    ? Math.min(stats.uniquePeaks / def.targetAscents * 100, 100)
     : 100;
 
   // badge + name + pills always on one centered row; progress below indented
@@ -159,15 +160,15 @@ function LevelCard({ def, status, stats, t, locale }: {
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
-              {i(t.home_levelProgress, { current: stats.totalAscents, total: def.targetAscents })}
+              {i(t.home_levelProgress, { current: stats.uniquePeaks, total: def.targetAscents })}
             </span>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
               {Math.round(ascentPct)}%
             </span>
           </div>
-          {stats.totalAscents < def.targetAscents && (
+          {stats.uniquePeaks < def.targetAscents && (
             <div style={{ fontSize: 12, color: "#6b7280" }}>
-              → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.totalAscents })}
+              → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.uniquePeaks })}
             </div>
           )}
           {def.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
@@ -323,7 +324,7 @@ export function HomeClient({ data, locale, t }: {
   // Altitude breakdown for summit card (only non-zero buckets)
   const fmt = (n: number) => n.toLocaleString(locale);
   const altBuckets = [
-    { icon: "🌿", name: t.home_altZone1, range: `0–${fmt(1000)} m`,             count: stats.totalAscents - stats.peaks1000plus },
+    { icon: "🌿", name: t.home_altZone1, range: `0–${fmt(1000)} m`,             count: stats.uniquePeaks - stats.peaks1000plus },
     { icon: "⛰️", name: t.home_altZone2, range: `${fmt(1000)}–${fmt(2000)} m`,  count: stats.peaks1000plus - stats.peaks2000plus },
     { icon: "🏔️", name: t.home_altZone3, range: `${fmt(2000)}–${fmt(3000)} m`,  count: stats.peaks2000plus - stats.peaks3000plus },
     { icon: "❄️", name: t.home_altZone4, range: `${fmt(3000)}–${fmt(4000)} m`,  count: stats.peaks3000plus - stats.peaks4000plus },
@@ -621,7 +622,7 @@ export function HomeClient({ data, locale, t }: {
               const lvlColor = LEVEL_COLORS[(entry.levelIdx - 1) % LEVEL_COLORS.length];
               const levelName = t[LEVEL_DEFS[(entry.levelIdx - 1) % LEVEL_DEFS.length].nameKey];
               const progressPct = entry.nextLevelTarget
-                ? Math.min(100, Math.round((entry.ep / entry.nextLevelTarget) * 100))
+                ? Math.min(100, Math.round((entry.uniquePeakCount / entry.nextLevelTarget) * 100))
                 : 100;
 
               // Hint for current user

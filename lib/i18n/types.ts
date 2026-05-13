@@ -212,9 +212,9 @@ export type Dict = {
 
   // Level names (same in all languages)
   home_level1: string; home_level2: string; home_level3: string;
-  home_level4: string; home_level5: string;
-  // Level hero card quote (level 5 — Legendary)
-  home_level5Quote: string;
+  home_level4: string; home_level5: string; home_level6: string;
+  // Level hero card quote (level 6 — Zenith)
+  home_level6Quote: string;
   home_maxLevelHint: string;
   // Hero metrics
   home_heroSubtitle: string;
