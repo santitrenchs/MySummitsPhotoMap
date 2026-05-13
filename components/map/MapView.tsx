@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
-import { RARITY_COLORS, RARITY_SCORE_WEIGHTS, RARITY_ID_MATCH_EXPR } from "@/lib/rarity";
+import { RARITY_COLORS, RARITIES, RARITY_SCORE_WEIGHTS, RARITY_ID_MATCH_EXPR } from "@/lib/rarity";
+import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { useT } from "@/components/providers/I18nProvider";
 import MapFilterBar from "./MapFilterBar";
 import MapControls from "./MapControls";
@@ -1091,6 +1092,7 @@ export default function MapView({
                   searchResults.map((peak) => {
                     const isClimbed = ascentByPeakId.current.has(peak.id);
                     const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
+                    const reEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
                     return (
                       <button
                         key={peak.id}
@@ -1124,10 +1126,17 @@ export default function MapView({
                                   ✓ Capturada
                                 </span>
                               )}
-                              {peak.rarity && (
-                                <span style={{ fontSize: 11, fontWeight: 600, color: rc }}>
-                                  ✿ {peak.rarity.name}
-                                </span>
+                              {peak.rarity && reEntry && (
+                                <div style={{
+                                  display: "inline-flex", alignItems: "center", gap: 3,
+                                  padding: "2px 7px", borderRadius: 999,
+                                  background: rc + "22",
+                                }}>
+                                  <RarityFlower id={reEntry.id} size={10} />
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: reEntry.colorDark, whiteSpace: "nowrap" }}>
+                                    {peak.rarity.name}
+                                  </span>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1174,6 +1183,7 @@ export default function MapView({
           {peakPopup && selected && (!isMobile || mobileView === "map") && (() => {
             const { peak, ascent } = selected;
             const rarityColor = RARITY_COLORS[peak.rarityId ?? ""] ?? "#6b7280";
+            const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
             const OFFSET = 22;
             const topBarH = isMobile && topBarVisible ? MOBILE_TOP_BAR_H : 0;
             const rawTop = peakPopup.above ? peakPopup.y - OFFSET : peakPopup.y + OFFSET;
@@ -1222,9 +1232,16 @@ export default function MapView({
                     <div style={{ fontSize: 12, color: "#9ca3af" }}>
                       {peak.mountainRange ?? ""}
                     </div>
-                    {peak.rarity && (
-                      <div style={{ fontSize: 11, fontWeight: 600, color: rarityColor, whiteSpace: "nowrap" }}>
-                        ✿ {peak.rarity.name}
+                    {peak.rarity && rarityEntry && (
+                      <div style={{
+                        display: "inline-flex", alignItems: "center", gap: 3,
+                        padding: "2px 7px", borderRadius: 999,
+                        background: rarityColor + "22",
+                      }}>
+                        <RarityFlower id={rarityEntry.id} size={10} />
+                        <span style={{ fontSize: 10, fontWeight: 700, color: rarityEntry.colorDark, whiteSpace: "nowrap" }}>
+                          {peak.rarity.name}
+                        </span>
                       </div>
                     )}
                   </div>
