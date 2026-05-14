@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/db/client";
+import { getRarityId } from "@/lib/rarity";
+import type { RarityId } from "@/lib/rarity";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +30,7 @@ export type MonthlyBar = {
   isoMonth: string;       // "YYYY-MM"
   summits: number;
   metersAscended: number;
+  rarityBreakdown: Partial<Record<RarityId, number>>;
 };
 
 export type FriendActivity = {
@@ -271,10 +274,16 @@ export async function getHomeData(userId: string): Promise<HomeData> {
       const ad = new Date(a.date);
       return ad.getFullYear() === y && ad.getMonth() === m;
     });
+    const rarityBreakdownMonth: Partial<Record<RarityId, number>> = {};
+    for (const a of bucket) {
+      const rid = getRarityId(a.peak.altitudeM);
+      rarityBreakdownMonth[rid] = (rarityBreakdownMonth[rid] ?? 0) + 1;
+    }
     monthlyStats.push({
       isoMonth,
       summits: bucket.length,
       metersAscended: bucket.reduce((s, a) => s + a.peak.altitudeM, 0),
+      rarityBreakdown: rarityBreakdownMonth,
     });
   }
 

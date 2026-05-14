@@ -245,12 +245,32 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
       {data.map((d) => {
-        const barH = d.summits > 0 ? Math.max(Math.round((d.summits / max) * 64), 8) : 3;
+        const totalH = d.summits > 0 ? Math.max(Math.round((d.summits / max) * 64), 8) : 3;
         const label = new Intl.DateTimeFormat(locale, { month: "short" }).format(
           new Date(`${d.isoMonth}-15`)
         );
+
+        // Build stacked segments (daisy → snow_lotus, bottom to top)
+        type Seg = { color: string; h: number };
+        const segments: Seg[] = [];
+        if (d.summits > 0) {
+          let usedH = 0;
+          const raritiesWithCount = RARITIES.filter((r) => (d.rarityBreakdown[r.id] ?? 0) > 0);
+          raritiesWithCount.forEach((r, idx) => {
+            const count = d.rarityBreakdown[r.id]!;
+            const isLast = idx === raritiesWithCount.length - 1;
+            const h = isLast ? totalH - usedH : Math.max(1, Math.round((count / d.summits) * totalH));
+            usedH += h;
+            segments.push({ color: r.color, h });
+          });
+        }
+
         return (
-          <div key={d.isoMonth} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+          <Link
+            key={d.isoMonth}
+            href={`/ascents?month=${d.isoMonth}&view=mine`}
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}
+          >
             <span style={{
               fontSize: 10, fontWeight: 700, lineHeight: 1,
               color: d.summits > 0 ? "#0369a1" : "transparent",
@@ -258,12 +278,19 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
               {d.summits || "0"}
             </span>
             <div style={{
-              width: "100%", height: barH,
-              background: d.summits > 0 ? "#0369a1" : "#e5e7eb",
+              width: "100%", height: totalH,
               borderRadius: "3px 3px 0 0",
-            }} />
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column-reverse",
+              background: d.summits === 0 ? "#e5e7eb" : undefined,
+            }}>
+              {segments.map((seg, i) => (
+                <div key={i} style={{ width: "100%", height: seg.h, background: seg.color, flexShrink: 0 }} />
+              ))}
+            </div>
             <span style={{ fontSize: 10, color: "#94a3b8", textTransform: "capitalize" }}>{label}</span>
-          </div>
+          </Link>
         );
       })}
     </div>

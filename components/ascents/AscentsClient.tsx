@@ -80,14 +80,18 @@ export function AscentsClient({
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState("");
-  const [viewChip, setViewChip] = useState<ViewChip>(() =>
-    searchParams.get("highlight") ? "mine" : "friends"
-  );
+  const [viewChip, setViewChip] = useState<ViewChip>(() => {
+    if (searchParams.get("highlight")) return "mine";
+    const v = searchParams.get("view");
+    if (v === "mine" || v === "friends" || v === "with-me") return v;
+    return "friends";
+  });
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [personSearch, setPersonSearch] = useState("");
   const [rarity, setRarity] = useState<Rarity | null>(null);
   const [mythicFilter, setMythicFilter] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
+  const [monthFilter, setMonthFilter] = useState<string | null>(() => searchParams.get("month"));
   const [sort, setSort] = useState<Sort>("date-desc");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -151,7 +155,9 @@ export function AscentsClient({
     if (mythicFilter) r = r.filter((a) => a.peak.isMythic);
     else if (rarity) r = r.filter((a) => getRarity(a.peak.altitudeM) === rarity);
 
-    if (timeRange === "month") {
+    if (monthFilter) {
+      r = r.filter((a) => a.date.startsWith(monthFilter));
+    } else if (timeRange === "month") {
       const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
       r = r.filter((a) => new Date(a.date).getTime() >= cutoff);
     } else if (timeRange === "year") {
@@ -168,7 +174,7 @@ export function AscentsClient({
       if (aUnseen && bUnseen) return b.peak.altitudeM - a.peak.altitudeM;
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
-  }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, sort, currentUserId]);
+  }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, currentUserId]);
 
   const groups = useMemo(() => {
     const map = new Map<string, AscentData[]>();
@@ -265,17 +271,30 @@ export function AscentsClient({
       const c = RARITY_COLORS[rarity];
       chips.push({ key: "rarity", label: `✿ ${RARITY_LABELS[rarity]}`, color: { bg: c.bg, border: c.border, text: c.text } });
     }
-    if (timeRange === "month") chips.push({ key: "time", label: `📅 ${t.filter_lastMonth}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
-    if (timeRange === "year")  chips.push({ key: "time", label: `📅 ${new Date().getFullYear()}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    if (monthFilter) {
+      const [yr, mo] = monthFilter.split("-");
+      const label = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(new Date(`${yr}-${mo}-15`));
+      chips.push({ key: "month", label: `📅 ${label}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    } else if (timeRange === "month") {
+      chips.push({ key: "time", label: `📅 ${t.filter_lastMonth}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    } else if (timeRange === "year") {
+      chips.push({ key: "time", label: `📅 ${new Date().getFullYear()}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    }
     if (sort === "elev-desc") chips.push({ key: "sort", label: `⛰ ${t.ascents_sort_highest}`, color: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" } });
     if (peakFilter && peakFilterName) chips.push({ key: "peak", label: `⛰️ ${peakFilterName}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
     return chips;
-  }, [viewChip, selectedPerson, rarity, mythicFilter, timeRange, sort, peakFilter, peakFilterName]);
+  }, [viewChip, selectedPerson, rarity, mythicFilter, timeRange, monthFilter, sort, peakFilter, peakFilterName]);
 
   function clearChip(key: string) {
     if (key === "view") { setViewChip("friends"); setSelectedPersonId(""); setPersonSearch(""); }
     if (key === "rarity") { setRarity(null); setMythicFilter(false); }
     if (key === "time") setTimeRange("all");
+    if (key === "month") {
+      setMonthFilter(null);
+      const u = new URL(window.location.href);
+      u.searchParams.delete("month");
+      window.history.replaceState(null, "", u.toString());
+    }
     if (key === "sort") setSort("date-desc");
     if (key === "peak") {
       setPeakFilter("");
