@@ -4,6 +4,45 @@
 
 ---
 
+## Brand Assets
+
+### Logo
+
+Full wordmark: **"peak[icon]adex"** — "peak" in navy `#0D2538`, icon in the center, "adex" in slate `#4E6178`.
+
+```
+Component:  components/brand/Logo.tsx → <PeakadexLogo />
+Font:       Manrope 800, letterSpacing -0.02em
+File:       /public/logo-icon.svg  (922×935 viewBox, embeds PNG)
+```
+
+The icon between the two text halves is a **green mountain inside a green circle** — the brand mark.
+Spacing between text and icon: `height × 0.28` on each side.
+
+Props:
+| Prop | Default | Notes |
+|---|---|---|
+| `height` | 44 | Controls overall size |
+| `iconScale` | 1.0 | Icon size relative to height |
+| `peakColor` | `#0D2538` | "peak" text color |
+| `adexColor` | `#4E6178` | "adex" text color |
+
+### Icon Mark
+
+The standalone brand icon — green mountain with snow cap inside a green circle. Used as favicon and app icon.
+
+```
+Favicon:    app/icon.png  (297×301 RGBA PNG, extracted from logo-icon.svg)
+Source:     /public/logo-icon.svg  (base64-embedded PNG)
+```
+
+Colors in the icon mark:
+- Circle stroke + mountain fill: `#4a8c5c` (brand green)
+- Snow cap: white `#ffffff`
+- Background: transparent
+
+---
+
 ## Fonts
 
 | Variable | Typeface | Used for |
