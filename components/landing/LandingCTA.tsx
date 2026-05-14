@@ -14,7 +14,6 @@ const RARITY_CYCLE = [
   "#F97316", // Saxifrage
   "#EAB308", // Cinquefoil
   "#94A3B8", // Snow Lotus
-  "#FFD700", // Mythic
 ];
 
 const pct = (i: number) => `${Math.round((i / RARITY_CYCLE.length) * 100)}%`;
