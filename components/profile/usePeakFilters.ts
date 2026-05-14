@@ -35,7 +35,8 @@ export function usePeakFilters(peaks: PeakForFilter[]) {
     }
     if (mythic) {
       result = result.filter((p) => p.isMythic);
-    } else if (tier) {
+    }
+    if (tier) {
       result = result.filter((p) => p.rarityId === tier);
     }
     if (range) {
@@ -52,7 +53,7 @@ export function usePeakFilters(peaks: PeakForFilter[]) {
         default:              return b.altitudeM - a.altitudeM;
       }
     });
-  }, [peaks, query, tier, range, sort]);
+  }, [peaks, query, tier, mythic, range, sort]);
 
   const ranges = useMemo(() => {
     const set = new Set<string>();

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { RARITIES } from "@/lib/rarity";
 
 export default function LandingCTA() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -115,7 +116,7 @@ export default function LandingCTA() {
             transition: "opacity 0.8s ease, transform 0.8s ease",
           }}
         >
-          {/* Rarities preview row */}
+          {/* Rarities preview row — ✿ symbols in rarity colors */}
           <div
             style={{
               display: "flex",
@@ -125,33 +126,46 @@ export default function LandingCTA() {
               flexWrap: "wrap",
             }}
           >
-            {[
-              { emoji: "🌼", color: "#00995C", name: "Daisy" },
-              { emoji: "🪻", color: "#A855F7", name: "Gentian" },
-              { emoji: "🌸", color: "#3B82F6", name: "Edelweiss" },
-              { emoji: "🔶", color: "#F97316", name: "Saxifrage" },
-              { emoji: "⭐", color: "#EAB308", name: "Cinquefoil" },
-              { emoji: "❄️", color: "#FFD700", name: "Snow Lotus" },
-            ].map((r) => (
+            {RARITIES.map((r) => (
               <div
-                key={r.name}
-                title={r.name}
+                key={r.id}
+                title={r.label}
                 style={{
                   width: 44,
                   height: 44,
                   borderRadius: "50%",
-                  background: `${r.color}15`,
-                  border: `1.5px solid ${r.color}40`,
+                  background: `${r.color}18`,
+                  border: `1.5px solid ${r.color}45`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 20,
-                  boxShadow: `0 0 16px ${r.color}20`,
+                  fontSize: 19,
+                  color: r.color,
+                  boxShadow: `0 0 14px ${r.color}22`,
+                  fontFamily: "sans-serif",
                 }}
               >
-                {r.emoji}
+                ✿
               </div>
             ))}
+            {/* Mythic */}
+            <div
+              title="Mythic"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: "rgba(255,215,0,0.12)",
+                border: "1.5px solid rgba(255,215,0,0.35)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 18,
+                boxShadow: "0 0 14px rgba(255,215,0,0.2)",
+              }}
+            >
+              ⭐
+            </div>
           </div>
 
           {/* Headline */}
@@ -161,13 +175,14 @@ export default function LandingCTA() {
               fontSize: "clamp(36px, 6vw, 68px)",
               margin: "0 0 20px",
               lineHeight: 1.08,
+              color: "rgba(240,244,255,0.92)",
             }}
           >
             Tu leyenda no empieza
             <br />
             en la cima.
             <br />
-            <span style={{ color: "#2F7A5F" }}>Empieza aquí.</span>
+            <span style={{ color: "#4ade80" }}>Empieza aquí.</span>
           </h2>
 
           <p
@@ -199,41 +214,8 @@ export default function LandingCTA() {
           </Link>
 
           <p className="ld-cta-micro" style={{ marginTop: 16 }}>
-            Sin tarjeta de crédito · Sin app que descargar · Empieza en 1 minuto
+            Sin tarjeta de crédito · Empieza en 1 minuto
           </p>
-
-          {/* Trust signals */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: 32,
-              marginTop: 52,
-              paddingTop: 40,
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-              flexWrap: "wrap",
-            }}
-          >
-            {[
-              { icon: "🔒", text: "Tus datos son tuyos" },
-              { icon: "🚫", text: "Sin publicidad" },
-              { icon: "🏔️", text: "Hecho para montañeros" },
-            ].map((item) => (
-              <div
-                key={item.text}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 13,
-                  color: "rgba(240,244,255,0.4)",
-                }}
-              >
-                <span style={{ fontSize: 16 }}>{item.icon}</span>
-                {item.text}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </section>

@@ -77,10 +77,17 @@ function applyRarityLayerFilter(
   rarityFilter: string[],
   mythicOnly: boolean,
 ) {
-  const active = mythicOnly ? ["mythic"] : rarityFilter;
-  const filter: maplibregl.FilterSpecification | null = active.length > 0
-    ? ["in", ["get", "rarityId"], ["literal", active]]
-    : null;
+  let filter: maplibregl.FilterSpecification | null = null;
+  if (mythicOnly && rarityFilter.length > 0) {
+    filter = ["all",
+      ["==", ["get", "isMythic"], 1],
+      ["in", ["get", "rarityId"], ["literal", rarityFilter]],
+    ] as unknown as maplibregl.FilterSpecification;
+  } else if (mythicOnly) {
+    filter = ["==", ["get", "isMythic"], 1] as unknown as maplibregl.FilterSpecification;
+  } else if (rarityFilter.length > 0) {
+    filter = ["in", ["get", "rarityId"], ["literal", rarityFilter]] as unknown as maplibregl.FilterSpecification;
+  }
   for (const layer of ["unclustered-peaks", "mythic-glow", "peak-labels"]) {
     if (map.getLayer(layer)) {
       if (filter) map.setFilter(layer, filter);
@@ -454,11 +461,11 @@ export default function MapView({
   useEffect(() => {
     const showAscended = filter !== "not-climbed";
     const showUnascended = filter !== "climbed";
-    const activeRarity = mythicOnly ? ["mythic"] : rarityFilter;
     markerEls.current.forEach((el, peakId) => {
       const peak = peaksCacheRef.current.get(peakId);
-      const passesRarity = activeRarity.length === 0 || activeRarity.includes(peak?.rarityId ?? "");
-      el.style.display = showAscended && passesRarity ? "block" : "none";
+      const passesMythic = !mythicOnly || !!peak?.isMythic;
+      const passesRarity = rarityFilter.length === 0 || rarityFilter.includes(peak?.rarityId ?? "");
+      el.style.display = showAscended && passesMythic && passesRarity ? "block" : "none";
     });
     const map = mapRef.current;
     if (map) {
@@ -491,8 +498,8 @@ export default function MapView({
     const isAscended = ascentByPeakId.current.has(selected.peak.id);
     if (filter === "not-climbed" && isAscended) setSelected(null);
     if (filter === "climbed" && !isAscended) setSelected(null);
-    const activeRarity = mythicOnly ? ["mythic"] : rarityFilter;
-    if (activeRarity.length > 0 && !activeRarity.includes(selected.peak.rarityId ?? "")) setSelected(null);
+    if (mythicOnly && !selected.peak.isMythic) setSelected(null);
+    if (rarityFilter.length > 0 && !rarityFilter.includes(selected.peak.rarityId ?? "")) setSelected(null);
   }, [filter, rarityFilter, mythicOnly, selected]);
 
   // Hillshade toggle
@@ -1411,7 +1418,6 @@ export default function MapView({
                           disabled={locked}
                           onClick={() => {
                             if (locked) return;
-                            setMythicOnly(false);
                             setRarityFilter((prev) =>
                               prev.includes(r.id) ? prev.filter((x) => x !== r.id) : [...prev, r.id]
                             );
@@ -1442,7 +1448,7 @@ export default function MapView({
                         <button
                           title="Mythic"
                           disabled={locked}
-                          onClick={() => { if (!locked) { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); } }}
+                          onClick={() => { if (!locked) { setMythicOnly((v) => !v); } }}
                           style={{
                             display: "inline-flex", alignItems: "center", gap: 5,
                             padding: "7px 11px", borderRadius: 999,
@@ -1784,7 +1790,7 @@ export default function MapView({
                 rarityFilter={rarityFilter}
                 onRarityChange={setRarityFilter}
                 mythicOnly={mythicOnly}
-                onMythicToggle={() => { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); }}
+                onMythicToggle={() => { setMythicOnly((v) => !v); }}
                 rarities={rarities}
                 climbedCount={climbedCount}
                 selectedPeakId={selected?.peak.id ?? null}
@@ -1842,7 +1848,7 @@ export default function MapView({
             rarityFilter={rarityFilter}
             onRarityChange={setRarityFilter}
             mythicOnly={mythicOnly}
-            onMythicToggle={() => { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); }}
+            onMythicToggle={() => { setMythicOnly((v) => !v); }}
             rarities={rarities}
             climbedCount={climbedCount}
             selectedPeakId={selected?.peak.id ?? null}

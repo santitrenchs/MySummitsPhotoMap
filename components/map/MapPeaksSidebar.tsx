@@ -89,15 +89,12 @@ export default function MapPeaksSidebar({
 
   // 1. Apply status + rarity filters (no bounds filter)
   const filteredPeaks = useMemo(() => {
-    const activeRarity = mythicOnly ? ["mythic"] : rarityFilter;
     return peaks.filter((p) => {
       const hasAscent = ascentByPeakId.has(p.id);
       if (filter === "climbed" && !hasAscent) return false;
       if (filter === "not-climbed" && hasAscent) return false;
-      if (activeRarity.length > 0) {
-        if (mythicOnly && !p.isMythic) return false;
-        if (!mythicOnly && !activeRarity.includes(p.rarityId ?? "")) return false;
-      }
+      if (mythicOnly && !p.isMythic) return false;
+      if (rarityFilter.length > 0 && !rarityFilter.includes(p.rarityId ?? "")) return false;
       return true;
     });
   }, [peaks, ascentByPeakId, filter, rarityFilter, mythicOnly]);
@@ -546,14 +543,13 @@ export default function MapPeaksSidebar({
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {RARITIES.map((r) => {
                     const count = rarityCounts[r.id] ?? 0;
-                    const active = !mythicOnly && rarityFilter.includes(r.id);
+                    const active = rarityFilter.includes(r.id);
                     const locked = count === 0;
                     return (
                       <button
                         key={r.id}
                         disabled={locked}
                         onClick={() => {
-                          if (mythicOnly) onMythicToggle();
                           onRarityChange(active ? rarityFilter.filter((x) => x !== r.id) : [...rarityFilter, r.id]);
                         }}
                         title={r.label}
@@ -576,7 +572,7 @@ export default function MapPeaksSidebar({
                   {/* Mythic */}
                   <button
                     disabled={mythicCount === 0}
-                    onClick={() => { if (rarityFilter.length > 0) onRarityChange([]); onMythicToggle(); }}
+                    onClick={() => { onMythicToggle(); }}
                     title="Mythic"
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 5,

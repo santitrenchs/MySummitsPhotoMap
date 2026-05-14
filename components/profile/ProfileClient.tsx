@@ -84,16 +84,33 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
             )}
           </div>
 
-          {/* Name / username / stats */}
+          {/* Name / username / bio */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: "0 0 2px", lineHeight: 1.2 }}>
               {user.name}
             </h1>
             {user.username && (
-              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 8px" }}>@{user.username}</p>
+              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 6px" }}>@{user.username}</p>
             )}
-            {user.bio && (
-              <p style={{ fontSize: 13, color: "#374151", margin: "8px 0 0", lineHeight: 1.5 }}>{user.bio}</p>
+            {user.bio ? (
+              <p style={{
+                fontSize: 13, color: "#4b5563", margin: 0, lineHeight: 1.55,
+                display: "-webkit-box", WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical", overflow: "hidden",
+              }}>
+                {user.bio}
+              </p>
+            ) : (
+              <button
+                onClick={() => setEditOpen(true)}
+                style={{
+                  background: "none", border: "none", padding: 0, cursor: "pointer",
+                  fontSize: 13, color: "#9ca3af", lineHeight: 1.55,
+                  fontStyle: "italic", fontFamily: "inherit",
+                }}
+              >
+                {t.profile_bioPlaceholder}
+              </button>
             )}
           </div>
 

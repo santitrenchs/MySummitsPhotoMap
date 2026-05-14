@@ -115,13 +115,13 @@ export function PeakFiltersPanel({
             <div style={chipRow}>
               {RARITIES.map((r) => {
                 const count = rarityCounts[r.id] ?? 0;
-                const active = !mythic && tier === r.id;
+                const active = tier === r.id;
                 const locked = count === 0;
                 return (
                   <button
                     key={r.id}
                     disabled={locked}
-                    onClick={() => { setMythic(false); setTier(active ? null : r.id as RarityId); }}
+                    onClick={() => { setTier(active ? null : r.id as RarityId); }}
                     title={r.label}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 5,
@@ -143,7 +143,7 @@ export function PeakFiltersPanel({
               {/* Mythic */}
               <button
                 disabled={mythicCount === 0}
-                onClick={() => { setMythic(!mythic); setTier(null); }}
+                onClick={() => { setMythic(!mythic); }}
                 title="Mythic"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
