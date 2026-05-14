@@ -65,7 +65,7 @@ export default function LandingCTA() {
         }
         .cta-flower {
           display: block;
-          font-size: 28px;
+          font-size: 56px;
           line-height: 1;
           font-family: sans-serif;
           opacity: 0.9;
@@ -131,7 +131,7 @@ export default function LandingCTA() {
               display: "inline-flex",
             }}
           >
-            Empieza tu colección — Es gratis →
+            Captura tu primera Daisy →
           </Link>
 
           <p className="ld-cta-micro" style={{ marginTop: 16 }}>
