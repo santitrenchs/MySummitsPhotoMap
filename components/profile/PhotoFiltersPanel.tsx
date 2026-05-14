@@ -41,6 +41,10 @@ export function PhotoFiltersPanel({ isOpen, photos, filteredCount, tier, setTier
 
   return (
     <>
+      <style>{`
+        .rarity-pill-name { display: none; }
+        @media (min-width: 640px) { .rarity-pill-name { display: inline; } }
+      `}</style>
       {/* Backdrop */}
       <div
         style={{
@@ -113,6 +117,7 @@ export function PhotoFiltersPanel({ isOpen, photos, filteredCount, tier, setTier
                     }}
                   >
                     <span style={{ color: locked ? "#CBD5E1" : r.color, fontSize: 15, lineHeight: 1 }}>✿</span>
+                    <span className="rarity-pill-name" style={{ fontSize: 11, fontWeight: 600, color: active ? r.colorDark : (locked ? "#CBD5E1" : "#6b7280") }}>{r.label}</span>
                     <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 700, color: active ? r.colorDark : (locked ? "#CBD5E1" : "#9ca3af") }}>
                       {locked ? "—" : count}
                     </span>
