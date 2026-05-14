@@ -32,6 +32,14 @@ export function PhotosTabV2({ photos, isTagged = false }: Props) {
 
   return (
     <div style={{ background: "#F4F7FA", margin: "0 -16px", padding: "0 16px" }}>
+      <style>{`
+        .tag-init { display: flex !important; }
+        .tag-full { display: none !important; }
+        @media (min-width: 640px) {
+          .tag-init { display: none !important; }
+          .tag-full { display: flex !important; }
+        }
+      `}</style>
 
       {/* Sticky filter bar — reuses same component as Cimas, no range */}
       <div style={{
@@ -75,6 +83,12 @@ export function PhotosTabV2({ photos, isTagged = false }: Props) {
   );
 }
 
+function getInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
 function PhotoTile({ photo, isTagged, dateLocale }: { photo: PhotoForFilter; isTagged: boolean; dateLocale: string }) {
   const [imgError, setImgError] = useState(false);
   const color = RARITY_COLORS[photo.rarityId] ?? "#94A3B8";
@@ -96,11 +110,20 @@ function PhotoTile({ photo, isTagged, dateLocale }: { photo: PhotoForFilter; isT
 
         {/* Top-right: tagged-by badge */}
         {isTagged && photo.creatorName && (
-          <div style={{ position: "absolute", top: 5, right: 5, background: "rgba(13,37,56,0.78)", backdropFilter: "blur(4px)", borderRadius: 999, padding: "2px 6px" }}>
-            <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 8, fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
-              @{photo.creatorName}
-            </span>
-          </div>
+          <>
+            {/* Mobile: initials circle */}
+            <div className="tag-init" style={{ position: "absolute", top: 5, right: 5, width: 22, height: 22, borderRadius: "50%", background: "rgba(13,37,56,0.78)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 8, fontWeight: 800, color: "white", lineHeight: 1 }}>
+                {getInitials(photo.creatorName)}
+              </span>
+            </div>
+            {/* Desktop: full username pill */}
+            <div className="tag-full" style={{ position: "absolute", top: 5, right: 5, background: "rgba(13,37,56,0.78)", backdropFilter: "blur(4px)", borderRadius: 999, padding: "3px 8px", display: "none", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 9, fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: 1 }}>
+                @{photo.creatorName}
+              </span>
+            </div>
+          </>
         )}
 
         {/* Bottom overlay */}
