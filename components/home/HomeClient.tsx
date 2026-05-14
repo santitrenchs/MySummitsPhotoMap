@@ -485,8 +485,6 @@ export function HomeClient({ data, locale, t }: {
                 background: "rgba(255,255,255,0.15)",
                 borderRadius: 20, padding: "5px 14px",
               }}>
-                <span style={{ fontWeight: 700, color: "#ffffff" }}>+{myEp} EP</span>
-                <span style={{ fontSize: 18, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>·</span>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="#fbbf24">
                   <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
                   <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
@@ -495,6 +493,8 @@ export function HomeClient({ data, locale, t }: {
                 </svg>
                 <span style={{ fontWeight: 700, color: "#fbbf24" }}>{myCairns}</span>
                 <span style={{ fontWeight: 400, color: "#fbbf24" }}>Cairns</span>
+                <span style={{ fontSize: 18, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>·</span>
+                <span style={{ fontWeight: 700, color: "#ffffff" }}>+{myEp} EP</span>
               </div>
             </div>
           </div>
