@@ -501,10 +501,14 @@ export default function MapView({
         map.dragPan.disable();
 
         if (terrain3d) {
-          // At high zoom levels, setTerrain recalculates the camera altitude
-          // synchronously and can place it below the terrain surface, causing
-          // a blank WebGL canvas. Zoom out to a safe level first, then enable.
+          // Cap zoom at 14 in 3D mode:
+          //  - The Terrarium DEM has no meaningful extra resolution above zoom 14.
+          //  - setTerrain() recalculates camera altitude synchronously; at zoom >14
+          //    with exaggeration 1.5 the camera ends up below the terrain surface
+          //    and the WebGL renderer outputs a blank canvas.
+          //  - Restricting scroll zoom prevents this from happening mid-session too.
           const MAX_3D_ZOOM = 14;
+          map.setMaxZoom(MAX_3D_ZOOM);
 
           const enable3D = () => {
             if (!map) return;
@@ -524,6 +528,7 @@ export default function MapView({
             enable3D();
           }
         } else {
+          map.setMaxZoom(22); // restore default
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (map as any).setTerrain(null);
           map.easeTo({ pitch: 0, duration: 600 });
