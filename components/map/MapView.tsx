@@ -380,9 +380,14 @@ export default function MapView({
     const pt = map.project([targetPeak.longitude, targetPeak.latitude]);
     const mapH = container.clientHeight;
     const mapW = container.clientWidth;
+    const mobile = window.innerWidth < 640;
+    // On desktop the sidebar overlays the right portion — exclude it from the visible area
+    const sidebarW = mobile ? 0 : (parseInt(getComputedStyle(container).getPropertyValue('--sidebar-w').trim(), 10) || 320);
+    const visibleW = mapW - sidebarW;
     const POPUP_W = 300;
     const above = pt.y > mapH * 0.38;
-    const clampedX = Math.max(POPUP_W / 2 + 8, Math.min(mapW - POPUP_W / 2 - 8, pt.x));
+    // Clamp X within visible area only (not behind sidebar)
+    const clampedX = Math.max(POPUP_W / 2 + 8, Math.min(visibleW - POPUP_W / 2 - 12, pt.x));
     setPeakPopup({ x: clampedX, y: pt.y, above });
   }
 
@@ -405,13 +410,36 @@ export default function MapView({
     lastSelectionTimeRef.current = Date.now();
     showHighlight(peak);
 
+    const container = containerRef.current;
+    const W = container?.clientWidth ?? 800;
+    const H = container?.clientHeight ?? 600;
+    const mobile = window.innerWidth < 640;
+
+    // On desktop the sidebar overlays the right side — shift center left so the
+    // peak lands in the middle of the VISIBLE area (canvas minus sidebar).
+    const sidebarW = (!mobile && container)
+      ? (parseInt(getComputedStyle(container).getPropertyValue('--sidebar-w').trim(), 10) || 320)
+      : 0;
+
+    // On mobile account for the top bar
+    const topBarH = (mobile && topBarVisible) ? MOBILE_TOP_BAR_H : 0;
+
+    // X: pull left by half the sidebar so peak is centred in the visible strip
+    const offsetX = -(sidebarW / 2);
+
+    // Y: place peak slightly below the visual midpoint of the visible area so
+    // the popup (which opens above the marker) always has room to show.
+    // offset > 0 → camera centre is below container centre → peak appears below centre.
+    const visibleH = H - topBarH;
+    const offsetY = Math.round(topBarH / 2 + visibleH * 0.15);
+
     map.flyTo({
       center: [peak.longitude, peak.latitude],
       zoom: 13,
       pitch: terrain3d ? 65 : 0,
       bearing: 20,
       duration: 2200,
-      offset: [0, Math.round((containerRef.current?.clientHeight ?? 600) * 0.2)],
+      offset: [Math.round(offsetX), offsetY],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       easing: (t: number) => 1 - Math.pow(1 - t, 3), // ease-out cubic
     });
@@ -1553,8 +1581,13 @@ export default function MapView({
             const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
             const OFFSET = 22;
             const topBarH = isMobile && topBarVisible ? MOBILE_TOP_BAR_H : 0;
+            const POPUP_MAX_H = 340; // generous estimate for popup with photo + buttons
             const rawTop = peakPopup.above ? peakPopup.y - OFFSET : peakPopup.y + OFFSET;
-            const topPos = Math.max(topBarH + 8, rawTop);
+            // When above=true the element's `top` is its BOTTOM (translateY(-100%)).
+            // Clamp so the popup TOP (= rawTop - POPUP_MAX_H) stays below the top bar.
+            const topPos = peakPopup.above
+              ? Math.max(topBarH + POPUP_MAX_H + 8, rawTop)
+              : Math.max(topBarH + 8, rawTop);
             const faceX = ascent?.faceCenterX ?? 0.5;
             const faceY = ascent?.faceCenterY ?? 0.5;
             return (
