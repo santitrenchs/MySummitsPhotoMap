@@ -150,6 +150,13 @@ export const en: Dict = {
   settings_linkedPerson: "Linked profile", settings_linkedPersonDesc: "Link your account to your face-tag profile",
   settings_claimPerson: "Link profile", settings_unclaimPerson: "Unlink",
   settings_searchPerson: "Search your name in photos…", settings_linkedPersonCurrent: "Linked to",
+  settings_changePasswordGoogleNote: "Google active · you can also sign in without a password",
+  settings_connectedAccounts: "Connected accounts",
+  settings_googleConnected: "Google connected", settings_googleNotConnected: "Google not connected",
+  settings_unlinkGoogle: "Unlink", settings_unlinkGoogleNeedPassword: "Set a password before unlinking Google",
+  settings_unlinkGoogleConfirmNeutral: "Are you sure you want to unlink your Google account?",
+  settings_unlinkGoogleHasPassword: "You have a password set. You can still sign in with your email and password.",
+  settings_unlinkGoogleNoPassword: "You have no password. If you unlink Google, you'll lose access to your account. Set a password first.",
 
   auth_signInDesc: "Sign in to your account", auth_accountCreated: "Account created! Sign in to get started.",
   auth_invalidCredentials: "Invalid email or password", auth_signingIn: "Signing in…",

@@ -150,6 +150,13 @@ export const es: Dict = {
   settings_linkedPerson: "Perfil vinculado", settings_linkedPersonDesc: "Vincula tu cuenta a tu perfil de etiquetas",
   settings_claimPerson: "Vincular perfil", settings_unclaimPerson: "Desvincular",
   settings_searchPerson: "Busca tu nombre en las fotos…", settings_linkedPersonCurrent: "Vinculado a",
+  settings_changePasswordGoogleNote: "Google activo · también puedes entrar sin contraseña",
+  settings_connectedAccounts: "Cuentas conectadas",
+  settings_googleConnected: "Google conectado", settings_googleNotConnected: "Google no conectado",
+  settings_unlinkGoogle: "Desvincular", settings_unlinkGoogleNeedPassword: "Establece una contraseña antes de desvincular Google",
+  settings_unlinkGoogleConfirmNeutral: "¿Seguro que quieres desvincular tu cuenta de Google?",
+  settings_unlinkGoogleHasPassword: "Tienes contraseña configurada. Podrás seguir entrando con email y contraseña.",
+  settings_unlinkGoogleNoPassword: "No tienes contraseña. Si desvinculás Google, perderás el acceso a tu cuenta. Crea una contraseña primero.",
 
   auth_signInDesc: "Inicia sesión en tu cuenta", auth_accountCreated: "¡Cuenta creada! Inicia sesión para empezar.",
   auth_invalidCredentials: "Email o contraseña incorrectos", auth_signingIn: "Iniciando sesión…",

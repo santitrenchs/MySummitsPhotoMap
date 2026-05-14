@@ -150,6 +150,13 @@ export const fr: Dict = {
   settings_linkedPerson: "Profil lié", settings_linkedPersonDesc: "Liez votre compte à votre profil de tags",
   settings_claimPerson: "Lier le profil", settings_unclaimPerson: "Délier",
   settings_searchPerson: "Cherche ton nom dans les photos…", settings_linkedPersonCurrent: "Lié à",
+  settings_changePasswordGoogleNote: "Google actif · tu peux aussi te connecter sans mot de passe",
+  settings_connectedAccounts: "Comptes connectés",
+  settings_googleConnected: "Google connecté", settings_googleNotConnected: "Google non connecté",
+  settings_unlinkGoogle: "Délier", settings_unlinkGoogleNeedPassword: "Définis un mot de passe avant de délier Google",
+  settings_unlinkGoogleConfirmNeutral: "Es-tu sûr de vouloir délier ton compte Google ?",
+  settings_unlinkGoogleHasPassword: "Tu as un mot de passe configuré. Tu pourras toujours te connecter avec ton email et mot de passe.",
+  settings_unlinkGoogleNoPassword: "Tu n'as pas de mot de passe. Si tu délies Google, tu perdras l'accès à ton compte. Crée un mot de passe d'abord.",
 
   auth_signInDesc: "Connecte-toi à ton compte", auth_accountCreated: "Compte créé ! Connecte-toi pour commencer.",
   auth_invalidCredentials: "E-mail ou mot de passe incorrect", auth_signingIn: "Connexion…",
