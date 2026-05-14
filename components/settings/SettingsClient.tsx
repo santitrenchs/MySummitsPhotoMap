@@ -96,6 +96,10 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
 
+  // Language picker
+  const [langOpen, setLangOpen] = useState(false);
+  const currentLangOption = LOCALE_OPTIONS.find(o => o.value === locale);
+
   // Delete
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -217,16 +221,32 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
       {/* Language */}
       <SectionHeader label={t.settings_language} />
       <Card>
-        {LOCALE_OPTIONS.map(({ value, flagImg, name }, idx) => {
+        {/* Collapsed row — always visible, shows active language */}
+        <button type="button" onClick={() => setLangOpen(o => !o)} style={{
+          display: "flex", alignItems: "center", gap: 12,
+          width: "100%", padding: "0 16px", height: 52,
+          background: "none", border: "none", cursor: "pointer",
+          borderBottom: langOpen ? "1px solid #f3f4f6" : "none",
+          textAlign: "left",
+        }}>
+          {currentLangOption && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={currentLangOption.flagImg} alt={currentLangOption.name} style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
+          )}
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#111827" }}>{currentLangOption?.name}</span>
+          <span style={{ fontSize: 11, color: "#9ca3af", transform: langOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+        </button>
+
+        {/* Expanded options */}
+        {langOpen && LOCALE_OPTIONS.map(({ value, flagImg, name }, idx) => {
           const active = locale === value;
           return (
-            <button key={value} onClick={() => saveLanguage(value)} style={{
+            <button key={value} onClick={() => { saveLanguage(value); setLangOpen(false); }} style={{
               display: "flex", alignItems: "center", gap: 12,
               width: "100%", padding: "0 16px", height: 48,
               background: "none", border: "none", cursor: "pointer",
               borderBottom: idx < LOCALE_OPTIONS.length - 1 ? "1px solid #f3f4f6" : "none",
-              textAlign: "left",
-              transition: "background 0.1s",
+              textAlign: "left", transition: "background 0.1s",
             }}
             onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
             onMouseLeave={e => (e.currentTarget.style.background = "none")}
