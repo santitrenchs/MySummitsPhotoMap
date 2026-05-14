@@ -407,7 +407,7 @@ const CSS = `
 /* ── Footer ─────────────────────────────── */
 .azisb-footer {
   padding: 10px 8px;
-  margin-top: 48px;
+  margin-top: auto;
   border-top: 1px solid #f0f2f5;
   position: relative;
   flex-shrink: 0;
