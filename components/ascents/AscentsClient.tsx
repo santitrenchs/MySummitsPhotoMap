@@ -635,10 +635,10 @@ export function AscentsClient({
             onClick={() => setFiltersOpen(false)}
             style={{
               width: "100%", padding: "16px",
-              background: "#0369a1", color: "white", border: "none",
+              background: "#2F7A5F", color: "white", border: "none",
               borderRadius: 14, fontFamily: "inherit",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              boxShadow: "0 4px 14px rgba(3,105,161,0.32)",
+              boxShadow: "0 4px 14px rgba(47,122,95,0.32)",
               cursor: "pointer",
             }}
           >
