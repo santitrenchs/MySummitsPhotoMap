@@ -176,34 +176,34 @@ export function Sidebar({
             <span className="azisb-ic"><SbPlusIcon /></span>
             <span className="azisb-lbl">Nueva ascensión</span>
           </button>
-        </nav>
 
-        {/* ── User footer ────────────────────────── */}
-        <div className="azisb-footer" ref={menuRef}>
-
-          {/* Avatar → Profile */}
+          {/* Avatar → Profile (last nav item, like Instagram) */}
           <Link
             href="/profile"
-            className="azisb-user"
-            data-tip={userName ?? undefined}
+            className={`azisb-item${active("/profile") ? " azisb-item--on" : ""}`}
+            data-tip={t.nav_profile}
           >
-            <div className="azisb-avatar" style={{ position: "relative" }}>
-              {userAvatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={userAvatarUrl}
-                  alt=""
-                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
-                />
-              ) : (
-                abbr
-              )}
-              {badge > 0 && <span className="azisb-badge">{badge}</span>}
-            </div>
-            <div className="azisb-uinfo">
-              <p className="azisb-uname">{userName ?? "User"}</p>
-            </div>
+            <span className="azisb-ic">
+              <div className="azisb-avatar" style={{ position: "relative" }}>
+                {userAvatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={userAvatarUrl}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                  />
+                ) : (
+                  abbr
+                )}
+                {badge > 0 && <span className="azisb-badge">{badge}</span>}
+              </div>
+            </span>
+            <span className="azisb-lbl">{userName ?? t.nav_profile}</span>
           </Link>
+        </nav>
+
+        {/* ── Footer — hamburger only, anchored to bottom ─────────────── */}
+        <div className="azisb-footer" ref={menuRef}>
 
           {/* Hamburger → Settings + Sign out */}
           <button
@@ -413,24 +413,6 @@ const CSS = `
   flex-shrink: 0;
 }
 
-/* ── User link (avatar → profile) ──────── */
-.azisb-user {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 12px;
-  height: 44px;
-  border-radius: 10px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 140ms, padding 220ms cubic-bezier(0.4,0,0.2,1);
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  overflow: hidden;
-}
-.azisb--c .azisb-user { overflow: visible; padding: 0; gap: 0; justify-content: center; }
-.azisb-user:hover { background: #f8fafc; }
-
 /* Avatar */
 .azisb-avatar {
   width: 32px; height: 32px; min-width: 32px;
@@ -450,28 +432,6 @@ const CSS = `
   background: #ef4444; color: #fff;
   font-size: 9px; font-weight: 700; line-height: 14px;
   text-align: center; padding: 0 3px; pointer-events: none;
-}
-
-/* User info */
-.azisb-uinfo {
-  flex: 1; min-width: 0; overflow: hidden;
-  max-width: 180px; opacity: 1;
-}
-.azisb:not(.azisb--c) .azisb-uinfo {
-  transition: opacity 150ms ease 180ms, max-width 150ms ease 180ms;
-}
-.azisb--c .azisb-uinfo {
-  opacity: 0; max-width: 0; flex: 0;
-  transition: opacity 80ms ease, max-width 80ms ease;
-}
-.azisb-uname {
-  font-size: 15px; font-weight: 600; color: #111827;
-  margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  line-height: 1;
-}
-.azisb-uemail {
-  font-size: 13px; color: #9ca3af;
-  margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* ── User menu ──────────────────────────── */
