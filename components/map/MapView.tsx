@@ -531,7 +531,7 @@ export default function MapView({
       style: MAP_STYLE,
       center,
       zoom,
-      pitch: initMobile ? 0 : 45,
+      pitch: 0,
     });
     mapRef.current = map;
 
@@ -629,11 +629,7 @@ export default function MapView({
         maxzoom: 15,
       });
 
-      // Enable 3D terrain by default (desktop only — mobile starts flat)
-      if (!initMobile) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
-      }
+      // 3D terrain is off by default — user activates via the 3D button
 
       map.addLayer({
         id: "hillshading",
