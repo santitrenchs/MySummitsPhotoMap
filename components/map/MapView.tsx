@@ -1649,9 +1649,10 @@ export default function MapView({
                         onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peak.name } }))}
                         style={{
                           flex: 1, padding: "9px 0",
-                          background: "#111827", border: "none",
+                          background: "#2F7A5F", border: "none",
                           borderRadius: 10, fontSize: 12, fontWeight: 600,
                           color: "white", cursor: "pointer",
+                          boxShadow: "0 2px 8px rgba(47,122,95,0.28)",
                         }}
                       >
                         Capturar
@@ -1662,9 +1663,10 @@ export default function MapView({
                       onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peak.name } }))}
                       style={{
                         flex: 1, padding: "10px 0",
-                        background: "#111827", border: "none",
+                        background: "#2F7A5F", border: "none",
                         borderRadius: 10, fontSize: 13, fontWeight: 600,
                         color: "white", cursor: "pointer",
+                        boxShadow: "0 2px 8px rgba(47,122,95,0.28)",
                       }}
                     >
                       Capturar
