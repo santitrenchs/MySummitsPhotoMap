@@ -8,7 +8,6 @@ import LandingRarities from "./LandingRarities";
 import LandingMythic from "./LandingMythic";
 import LandingProgression from "./LandingProgression";
 import LandingCards from "./LandingCards";
-import LandingHowItWorks from "./LandingHowItWorks";
 import LandingFAQ from "./LandingFAQ";
 import LandingCTA from "./LandingCTA";
 import LandingFooter from "./LandingFooter";
@@ -37,7 +36,6 @@ export default function LandingPage({
         <LandingCards />
         <LandingMythic />
         <LandingProgression />
-        <LandingHowItWorks />
         <LandingFAQ />
         <LandingCTA />
       </main>
