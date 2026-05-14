@@ -194,6 +194,70 @@ boxShadow: 0 4px 14px rgba(47,122,95,0.32)
 
 ---
 
+## Loading State (Page Skeleton)
+
+Peakadex uses a **rarity-cycling ✿ spinner** instead of grey block skeletons. Every route-level loading screen (`app/**/loading.tsx`) shares the same pattern.
+
+### Layout
+
+```
+Full viewport height (minus nav bars), flex center
+container: display flex · flexDirection column · alignItems center
+           height: calc(100svh - var(--top-nav-h,0px) - var(--bottom-nav-h,0px))
+
+inner (.loading-inner):
+  display flex · flexDirection column · alignItems center · gap 12
+  mobile offset: translateX(-3vw)  ← compensates for off-center visual weight of nav
+```
+
+### ✿ Flower spinner
+
+```
+fontSize: 56 · lineHeight: 1 · opacity: 0.5
+animation: rarity-pulse 1.4s ease-in-out infinite
+color transition: 0.3s ease  (smooth color crossfade between rarities)
+```
+
+```css
+@keyframes rarity-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.15); }
+}
+```
+
+### Rarity label
+
+```
+fontSize: 12 · fontWeight: 700 · letterSpacing: 0.04em
+color: same rarity color · opacity: 0.45
+transition: color 0.3s ease
+```
+
+### Cycling logic
+
+Cycles through all 9 RARITIES (daisy → snow_lotus) at **700 ms/step** using `setInterval`.
+Both color and label update simultaneously with a CSS `transition: color 0.3s ease`.
+
+```ts
+const [idx, setIdx] = useState(0);
+useEffect(() => {
+  const t = setInterval(() => setIdx((i) => (i + 1) % RARITIES.length), 700);
+  return () => clearInterval(t);
+}, []);
+```
+
+### Files
+
+| Route | File |
+|---|---|
+| Mi Progreso | `app/(app)/home/loading.tsx` |
+| Actividades | `app/(app)/ascents/loading.tsx` |
+| Atlas (Map) | `app/(app)/map/loading.tsx` |
+
+All three files are identical — copy any one as template for new routes.
+
+---
+
 ## Empty State (no filter results)
 
 When filters return zero results, show a centered ✿ instead of a magnifier.
