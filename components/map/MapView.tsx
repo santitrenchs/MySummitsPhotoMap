@@ -196,6 +196,7 @@ export default function MapView({
   const [hillshade, setHillshade] = useState(false);
   const [terrain3d, setTerrain3d] = useState(false);
   const [trails, setTrails] = useState(false);
+  const [huts, setHuts] = useState(false);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   // Keep selectedRef in sync for use inside map event listeners (avoids stale closures)
@@ -479,6 +480,14 @@ export default function MapView({
     map.setLayoutProperty("trails-casing", "visibility", vis);
   }, [trails]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    const vis = huts ? "visible" : "none";
+    if (!map || !map.getLayer("refugios-dots")) return;
+    map.setLayoutProperty("refugios-dots", "visibility", vis);
+    map.setLayoutProperty("refugios-labels", "visibility", vis);
+  }, [huts]);
+
   // Terrain 3D toggle
   useEffect(() => {
     const map = mapRef.current;
@@ -719,6 +728,7 @@ export default function MapView({
         "source-layer": "poi",
         minzoom: 11,
         filter: REFUGIO_FILTER,
+        layout: { visibility: "none" },
         paint: {
           "circle-radius": 5,
           "circle-color": "#f59e0b",
@@ -736,6 +746,7 @@ export default function MapView({
         minzoom: 12,
         filter: REFUGIO_FILTER,
         layout: {
+          visibility: "none",
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Regular"],
           "text-size": 11,
@@ -1313,6 +1324,8 @@ export default function MapView({
             onTerrain3dToggle={() => setTerrain3d((v) => !v)}
             trails={trails}
             onTrailsToggle={() => setTrails((v) => !v)}
+            huts={huts}
+            onHutsToggle={() => setHuts((v) => !v)}
             onZoomIn={() => mapRef.current?.zoomIn()}
             onZoomOut={() => mapRef.current?.zoomOut()}
             topBarVisible={topBarVisible}
