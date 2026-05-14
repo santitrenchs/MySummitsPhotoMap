@@ -501,20 +501,37 @@ export default function MapView({
         map.dragPan.disable();
 
         if (terrain3d) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
-          map.easeTo({ pitch: 45, duration: 600 });
+          // At high zoom levels, setTerrain recalculates the camera altitude
+          // synchronously and can place it below the terrain surface, causing
+          // a blank WebGL canvas. Zoom out to a safe level first, then enable.
+          const MAX_3D_ZOOM = 14;
+
+          const enable3D = () => {
+            if (!map) return;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (map as any).setTerrain({ source: "terrain", exaggeration: 1.5 });
+            map.easeTo({ pitch: 45, duration: 600 });
+            map.once("idle", () => {
+              map?.scrollZoom.enable();
+              map?.dragPan.enable();
+            });
+          };
+
+          if (map.getZoom() > MAX_3D_ZOOM) {
+            map.easeTo({ zoom: MAX_3D_ZOOM, pitch: 0, duration: 400 });
+            map.once("moveend", enable3D);
+          } else {
+            enable3D();
+          }
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (map as any).setTerrain(null);
           map.easeTo({ pitch: 0, duration: 600 });
+          map.once("idle", () => {
+            map?.scrollZoom.enable();
+            map?.dragPan.enable();
+          });
         }
-
-        // Re-enable interactions once map is fully idle after terrain switch
-        map.once("idle", () => {
-          map.scrollZoom.enable();
-          map.dragPan.enable();
-        });
       } catch {
         // Fallback: re-enable if something went wrong
         map.scrollZoom.enable();
