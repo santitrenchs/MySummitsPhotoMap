@@ -976,12 +976,22 @@ export default function MapView({
   const climbedCount = ascentData.length;
 
   return (
-    <div style={{
+    <div className="map-viewport" style={{
       position: "relative",
       height: "calc(100svh - var(--top-nav-h, 3.5rem) - var(--bottom-nav-h, 0px))",
     }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        /* ── Desktop sidebar width — responsive clamp ── */
+        .map-viewport {
+          --sidebar-w: 320px;
+        }
+        @media (min-width: 1180px) { .map-viewport { --sidebar-w: 320px; } }
+        @media (min-width: 1280px) { .map-viewport { --sidebar-w: 344px; } }
+        @media (min-width: 1360px) { .map-viewport { --sidebar-w: 364px; } }
+        @media (min-width: 1440px) { .map-viewport { --sidebar-w: 380px; } }
+        @media (min-width: 1600px) { .map-viewport { --sidebar-w: 400px; } }
+        @media (min-width: 1800px) { .map-viewport { --sidebar-w: 420px; } }
         @keyframes locationPulse {
           0%   { box-shadow: 0 0 0 0 rgba(37,99,235,0.5), 0 1px 4px rgba(0,0,0,0.3); }
           70%  { box-shadow: 0 0 0 14px rgba(37,99,235,0), 0 1px 4px rgba(0,0,0,0.3); }

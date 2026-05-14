@@ -224,11 +224,11 @@ export default function MapPeaksSidebar({
     : {
         position: "absolute",
         top: 12, right: 12, bottom: 12,
-        width: 320,
+        width: "var(--sidebar-w, 320px)" as unknown as number,
         display: "flex", flexDirection: "column",
         borderRadius: 16,
         background: "white",
-        boxShadow: "0 2px 20px rgba(0,0,0,0.14)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
         overflow: "hidden",
         zIndex: 10,
       };

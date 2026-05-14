@@ -200,7 +200,7 @@ export default function MapControls({
 
   const containerStyle: React.CSSProperties = isMobile
     ? { position: "absolute", right: 12, bottom: 100, zIndex: 10, display: "flex", flexDirection: "column", gap: 8 }
-    : { position: "absolute", right: 344, bottom: 80, zIndex: 10, display: "flex", flexDirection: "column", gap: 8 };
+    : { position: "absolute", right: "calc(var(--sidebar-w, 320px) + 24px)" as unknown as number, bottom: 80, zIndex: 10, display: "flex", flexDirection: "column", gap: 8 };
 
   const geoColor = geoState === "error" ? "#dc2626" : geoState === "locating" ? "#0369a1" : "#1e293b";
 
