@@ -34,6 +34,9 @@ interface Props {
   hideSearchInput?: boolean;
   hideFilters?: boolean;
   asMobileList?: boolean;
+  // Optional controlled sort (lifted to MapView for mobile)
+  sort?: SortMode;
+  onSortChange?: (s: SortMode) => void;
   // Sheet mode (mobile legacy)
   asSheet?: boolean;
   onClose?: () => void;
@@ -58,9 +61,12 @@ export default function MapPeaksSidebar({
   selectedPeakId, onSelectPeak,
   searchQuery, onSearchChange, searchResults,
   hideSearchInput = false, hideFilters = false, asMobileList = false,
+  sort: sortProp, onSortChange,
   asSheet = false, onClose,
 }: Props) {
-  const [sort, setSort] = useState<SortMode>("distance");
+  const [internalSort, setInternalSort] = useState<SortMode>("distance");
+  const sort = sortProp ?? internalSort;
+  const setSort = (s: SortMode) => { onSortChange ? onSortChange(s) : setInternalSort(s); };
   const [filtersOpen, setFiltersOpen] = useState(false);
   const selectedCardRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);

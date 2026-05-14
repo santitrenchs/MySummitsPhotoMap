@@ -6,7 +6,7 @@ import maplibregl from "maplibre-gl";
 import { RARITY_COLORS, RARITIES, RARITY_SCORE_WEIGHTS, RARITY_ID_MATCH_EXPR } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { useT } from "@/components/providers/I18nProvider";
-import MapFilterBar from "./MapFilterBar";
+import { createPortal } from "react-dom";
 import MapControls from "./MapControls";
 import MapPeaksSidebar from "./MapPeaksSidebar";
 import MapOnboardingModal from "./MapOnboardingModal";
@@ -109,8 +109,8 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: "carto-tiles", type: "raster", source: "carto" }],
 };
 
-// Height of the mobile top bar (search + filters). Used to offset the list panel.
-const MOBILE_TOP_BAR_H = 104;
+// Height of the mobile top bar (single search+filter row). Used to offset the list panel.
+const MOBILE_TOP_BAR_H = 60;
 
 // ─── Map view persistence ─────────────────────────────────────────────────────
 
@@ -199,6 +199,9 @@ export default function MapView({
   const [huts, setHuts] = useState(false);
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  type SortMode = "distance" | "relevance" | "altitude";
+  const [mobileSort, setMobileSort] = useState<SortMode>("distance");
   // Keep selectedRef in sync for use inside map event listeners (avoids stale closures)
   useEffect(() => { selectedRef.current = selected; }, [selected]);
 
@@ -1046,147 +1049,472 @@ export default function MapView({
         .panel-action-btn { transition: opacity 0.15s, transform 0.15s; }
         .panel-action-btn:hover { opacity: 0.88; transform: scale(0.98); }
         .search-result:hover { background: #f3f4f6; }
+        .rarity-pill-name { display: none; }
+        @media (min-width: 640px) { .rarity-pill-name { display: inline; } }
       `}</style>
 
-        {/* ── Mobile top bar: search + filters ────────────────────────── */}
-        {isMobile && (topBarVisible || mobileView === "list") && (
-          <div style={{
-            position: "absolute", top: 0, left: 0, right: 0,
-            zIndex: 25,
-            background: "white",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
-            padding: "8px 12px",
-            display: "flex", flexDirection: "column", gap: 8,
-          }}>
-            <div style={{ position: "relative" }}>
-              <span style={{
-                position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
-                fontSize: 13, pointerEvents: "none", color: "#9ca3af",
-              }}>🔍</span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  const q = e.target.value;
-                  setSearchQuery(q);
-                  if (q.trim().length >= 2 && mobileView === "map") {
-                    setMobileView("list");
-                    searchOpenedListRef.current = true;
-                  } else if (q.trim().length < 2 && searchOpenedListRef.current) {
-                    setMobileView("map");
-                    searchOpenedListRef.current = false;
-                  }
-                }}
-                placeholder="Buscar cima…"
-                style={{
-                  width: "100%", padding: "10px 28px 10px 30px",
-                  borderRadius: 10, border: "none",
-                  fontSize: 16, fontWeight: 500, color: "#111827",
-                  background: "#f3f4f6", outline: "none", boxSizing: "border-box",
-                }}
-              />
-              {searchQuery && (
+        {/* ── Mobile top bar: search + filter button ───────────────────── */}
+        {isMobile && (topBarVisible || mobileView === "list") && (() => {
+          const mobileActiveFilterCount =
+            (filter !== "all" ? 1 : 0) +
+            (rarityFilter.length > 0 ? 1 : 0) +
+            (mythicOnly ? 1 : 0) +
+            (mobileSort !== "distance" ? 1 : 0);
+          return (
+            <div style={{
+              position: "absolute", top: 0, left: 0, right: 0,
+              zIndex: 25,
+              background: "white",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+              padding: "8px 12px",
+            }}>
+              {/* Search + filter row */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {/* Search input */}
+                <div style={{ flex: 1, position: "relative" }}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                    <circle cx="5.5" cy="5.5" r="4" stroke="#94A3B8" strokeWidth="2.2" />
+                    <line x1="9" y1="9" x2="13" y2="13" stroke="#94A3B8" strokeWidth="2.2" strokeLinecap="round" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      const q = e.target.value;
+                      setSearchQuery(q);
+                      if (q.trim().length >= 2 && mobileView === "map") {
+                        setMobileView("list");
+                        searchOpenedListRef.current = true;
+                      } else if (q.trim().length < 2 && searchOpenedListRef.current) {
+                        setMobileView("map");
+                        searchOpenedListRef.current = false;
+                      }
+                    }}
+                    placeholder="Buscar cima…"
+                    style={{
+                      width: "100%", padding: "10px 28px 10px 32px",
+                      borderRadius: 12, border: "1px solid #E5E7EB",
+                      fontSize: 16, color: "#0D2538",
+                      background: "white", outline: "none", boxSizing: "border-box",
+                      boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+                    }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        if (searchOpenedListRef.current) {
+                          setMobileView("map");
+                          searchOpenedListRef.current = false;
+                        }
+                      }}
+                      style={{
+                        position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "#9ca3af", fontSize: 13, lineHeight: 1, padding: 2,
+                      }}
+                    >✕</button>
+                  )}
+                </div>
+                {/* Filter button */}
                 <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    if (searchOpenedListRef.current) {
-                      setMobileView("map");
-                      searchOpenedListRef.current = false;
-                    }
-                  }}
+                  onClick={() => setMobileFiltersOpen((v) => !v)}
                   style={{
-                    position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-                    background: "none", border: "none", cursor: "pointer",
-                    color: "#9ca3af", fontSize: 13, lineHeight: 1, padding: 2,
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "10px 14px", borderRadius: 12,
+                    border: `1px solid ${mobileFiltersOpen ? "#0D2538" : "#E5E7EB"}`,
+                    background: mobileFiltersOpen ? "#0D2538" : "white",
+                    boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+                    cursor: "pointer", flexShrink: 0, position: "relative",
                   }}
-                >✕</button>
-              )}
-            </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <MapFilterBar
-                filter={filter}
-                onFilterChange={setFilter}
-                rarityFilter={rarityFilter}
-                onRarityChange={setRarityFilter}
-                mythicOnly={mythicOnly}
-                onMythicToggle={() => { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); }}
-                rarities={rarities}
-                climbedCount={climbedCount}
-              />
-            </div>
-            {/* Search results dropdown (map view only) */}
-            {mobileView === "map" && searchQuery.trim().length >= 2 && (
-              <div style={{
-                position: "absolute", top: "100%", left: 0, right: 0,
-                background: "white",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.14)",
-                zIndex: 1,
-                maxHeight: 320, overflowY: "auto",
-              }}>
-                {searchResults.length === 0 ? (
-                  <div style={{ padding: "24px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
-                    Sin resultados
-                  </div>
-                ) : (
-                  searchResults.map((peak) => {
-                    const isClimbed = ascentByPeakId.current.has(peak.id);
-                    const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
-                    const reEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
+                >
+                  <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+                    <line x1="0" y1="2" x2="14" y2="2" stroke={mobileFiltersOpen ? "white" : "#374151"} strokeWidth="1.8" strokeLinecap="round" />
+                    <line x1="2" y1="6" x2="12" y2="6" stroke={mobileFiltersOpen ? "white" : "#374151"} strokeWidth="1.8" strokeLinecap="round" />
+                    <line x1="4" y1="10" x2="10" y2="10" stroke={mobileFiltersOpen ? "white" : "#374151"} strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: mobileFiltersOpen ? "white" : "#374151" }}>
+                    {t.profile_filter_button}
+                  </span>
+                  {mobileActiveFilterCount > 0 && (
+                    <span style={{
+                      position: "absolute", top: -6, right: -6,
+                      width: 16, height: 16, borderRadius: "50%",
+                      background: mobileFiltersOpen ? "white" : "#FF5D2D",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontFamily: "var(--font-mono-landing, monospace)", fontSize: 10, fontWeight: 800,
+                      color: mobileFiltersOpen ? "#0D2538" : "white",
+                    }}>
+                      {mobileActiveFilterCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Active chips row */}
+              {!mobileFiltersOpen && mobileActiveFilterCount > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                  {filter !== "all" && (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      padding: "4px 8px 4px 10px", borderRadius: 999,
+                      background: "white", border: "1px solid #16a34a55",
+                    }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#16a34a" }}>
+                        {filter === "climbed" ? "Capturadas" : "Sin capturar"}
+                      </span>
+                      <button onClick={() => setFilter("all")} style={{
+                        width: 16, height: 16, borderRadius: "50%", background: "#16a34a1A",
+                        border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                      }}>
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                          <line x1="1" y1="1" x2="7" y2="7" stroke="#16a34a" strokeWidth="1.8" strokeLinecap="round" />
+                          <line x1="7" y1="1" x2="1" y2="7" stroke="#16a34a" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </span>
+                  )}
+                  {mythicOnly && (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      padding: "4px 8px 4px 10px", borderRadius: 999,
+                      background: "white", border: "1px solid #f59e0b55",
+                    }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#92400e" }}>⭐ Mythic</span>
+                      <button onClick={() => setMythicOnly(false)} style={{
+                        width: 16, height: 16, borderRadius: "50%", background: "#f59e0b1A",
+                        border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                      }}>
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                          <line x1="1" y1="1" x2="7" y2="7" stroke="#92400e" strokeWidth="1.8" strokeLinecap="round" />
+                          <line x1="7" y1="1" x2="1" y2="7" stroke="#92400e" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </span>
+                  )}
+                  {rarityFilter.map((rid) => {
+                    const rEntry = RARITIES.find((r) => r.id === rid);
+                    if (!rEntry) return null;
                     return (
-                      <button
-                        key={peak.id}
-                        className="search-result"
-                        onClick={() => { flyToPeak(peak); setSearchQuery(""); }}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 10,
-                          width: "100%", padding: "10px 14px",
-                          background: "none", border: "none",
-                          borderBottom: "1px solid #f3f4f6",
-                          borderLeft: `3px solid ${rc}`,
-                          cursor: "pointer", textAlign: "left",
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                              {peak.name}
-                            </p>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
-                              {peak.altitudeM} m
-                            </span>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
-                            <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                              {peak.mountainRange ?? ""}
-                            </p>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                              {isClimbed && (
-                                <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 5px" }}>
-                                  ✓ Capturada
-                                </span>
-                              )}
-                              {peak.rarity && reEntry && (
-                                <div style={{
-                                  display: "inline-flex", alignItems: "center", gap: 3,
-                                  padding: "2px 7px", borderRadius: 999,
-                                  background: rc + "22",
-                                }}>
-                                  <RarityFlower id={reEntry.id} size={10} />
-                                  <span style={{ fontSize: 10, fontWeight: 700, color: reEntry.colorDark, whiteSpace: "nowrap" }}>
-                                    {peak.rarity.name}
+                      <span key={rid} style={{
+                        display: "inline-flex", alignItems: "center", gap: 4,
+                        padding: "4px 8px 4px 10px", borderRadius: 999,
+                        background: "white", border: `1px solid ${rEntry.color}55`,
+                      }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: rEntry.colorDark }}>
+                          ✿ {rEntry.label}
+                        </span>
+                        <button onClick={() => setRarityFilter((prev) => prev.filter((x) => x !== rid))} style={{
+                          width: 16, height: 16, borderRadius: "50%", background: rEntry.color + "1A",
+                          border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                        }}>
+                          <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                            <line x1="1" y1="1" x2="7" y2="7" stroke={rEntry.color} strokeWidth="1.8" strokeLinecap="round" />
+                            <line x1="7" y1="1" x2="1" y2="7" stroke={rEntry.color} strokeWidth="1.8" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      </span>
+                    );
+                  })}
+                  {mobileSort !== "distance" && (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      padding: "4px 8px 4px 10px", borderRadius: 999,
+                      background: "white", border: "1px solid #0369a155",
+                    }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#0369a1" }}>
+                        {mobileSort === "relevance" ? "Relevancia" : "Altitud"}
+                      </span>
+                      <button onClick={() => setMobileSort("distance")} style={{
+                        width: 16, height: 16, borderRadius: "50%", background: "#0369a11A",
+                        border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                      }}>
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                          <line x1="1" y1="1" x2="7" y2="7" stroke="#0369a1" strokeWidth="1.8" strokeLinecap="round" />
+                          <line x1="7" y1="1" x2="1" y2="7" stroke="#0369a1" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Search results dropdown (map view only) */}
+              {mobileView === "map" && searchQuery.trim().length >= 2 && (
+                <div style={{
+                  position: "absolute", top: "100%", left: 0, right: 0,
+                  background: "white",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.14)",
+                  zIndex: 1,
+                  maxHeight: 320, overflowY: "auto",
+                }}>
+                  {searchResults.length === 0 ? (
+                    <div style={{ padding: "24px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                      Sin resultados
+                    </div>
+                  ) : (
+                    searchResults.map((peak) => {
+                      const isClimbed = ascentByPeakId.current.has(peak.id);
+                      const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
+                      const reEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
+                      return (
+                        <button
+                          key={peak.id}
+                          className="search-result"
+                          onClick={() => { flyToPeak(peak); setSearchQuery(""); }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 10,
+                            width: "100%", padding: "10px 14px",
+                            background: "none", border: "none",
+                            borderBottom: "1px solid #f3f4f6",
+                            borderLeft: `3px solid ${rc}`,
+                            cursor: "pointer", textAlign: "left",
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {peak.name}
+                              </p>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
+                                {peak.altitudeM} m
+                              </span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
+                              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                                {peak.mountainRange ?? ""}
+                              </p>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                {isClimbed && (
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 5px" }}>
+                                    ✓ Capturada
                                   </span>
-                                </div>
-                              )}
+                                )}
+                                {peak.rarity && reEntry && (
+                                  <div style={{
+                                    display: "inline-flex", alignItems: "center", gap: 3,
+                                    padding: "2px 7px", borderRadius: 999,
+                                    background: rc + "22",
+                                  }}>
+                                    <RarityFlower id={reEntry.id} size={10} />
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: reEntry.colorDark, whiteSpace: "nowrap" }}>
+                                      {peak.rarity.name}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </button>
-                    );
-                  })
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ── Mobile filters bottom sheet ───────────────────────────────── */}
+        {isMobile && mobileFiltersOpen && typeof window !== "undefined" && createPortal(
+          <>
+            {/* Backdrop */}
+            <div
+              onClick={() => setMobileFiltersOpen(false)}
+              style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.45)" }}
+            />
+            {/* Sheet */}
+            <div style={{
+              position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 301,
+              background: "white",
+              borderRadius: "24px 24px 0 0",
+              maxHeight: "92svh",
+              boxShadow: "0 -4px 40px rgba(0,0,0,0.14)",
+              paddingBottom: "env(safe-area-inset-bottom)",
+              display: "flex", flexDirection: "column",
+              animation: "mobileFilterIn 0.34s cubic-bezier(0.32,0.72,0,1) both",
+            }}>
+              <style>{`
+                @keyframes mobileFilterIn {
+                  from { transform: translateY(110%); }
+                  to   { transform: translateY(0); }
+                }
+              `}</style>
+              {/* Drag handle */}
+              <div style={{ width: 36, height: 4, background: "#e5e7eb", borderRadius: 2, margin: "12px auto 0" }} />
+              {/* Header */}
+              <div style={{ padding: "14px 20px 12px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 17, fontWeight: 800, color: "#111827", letterSpacing: "-0.3px" }}>
+                  {t.profile_filter_button}
+                </span>
+                {(filter !== "all" || rarityFilter.length > 0 || mythicOnly || mobileSort !== "distance") ? (
+                  <button
+                    onClick={() => { setFilter("all"); setRarityFilter([]); setMythicOnly(false); setMobileSort("distance"); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#0369a1" }}
+                  >
+                    Limpiar todo
+                  </button>
+                ) : (
+                  <button onClick={() => setMobileFiltersOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <line x1="4" y1="4" x2="16" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="16" y1="4" x2="4" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
                 )}
               </div>
-            )}
-          </div>
+              {/* Scrollable body */}
+              <div style={{ overflowY: "auto", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
+
+                {/* Rareza section */}
+                <div>
+                  <p style={{ margin: "0 0 8px", fontFamily: "var(--font-inter, Inter)", fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" }}>
+                    Rareza
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {RARITIES.map((r) => {
+                      const count = allPeaks.filter((p) => p.rarityId === r.id).length;
+                      const active = rarityFilter.includes(r.id);
+                      const locked = count === 0;
+                      return (
+                        <button
+                          key={r.id}
+                          title={r.label}
+                          disabled={locked}
+                          onClick={() => {
+                            if (locked) return;
+                            setMythicOnly(false);
+                            setRarityFilter((prev) =>
+                              prev.includes(r.id) ? prev.filter((x) => x !== r.id) : [...prev, r.id]
+                            );
+                          }}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            padding: "7px 11px", borderRadius: 999,
+                            border: `1.5px solid ${active ? r.color + "88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
+                            background: active ? r.color + "22" : (locked ? "#F8FAFC" : "#f9fafb"),
+                            opacity: locked ? 0.55 : 1,
+                            cursor: locked ? "default" : "pointer",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          <span style={{ fontSize: 15, color: locked ? "#CBD5E1" : r.color }}>✿</span>
+                          <span className="rarity-pill-name" style={{ fontSize: 11, fontWeight: 600, color: active ? r.colorDark : (locked ? "#CBD5E1" : "#6b7280") }}>{r.label}</span>
+                          <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 700, color: active ? r.colorDark : (locked ? "#CBD5E1" : "#9ca3af") }}>
+                            {locked ? "—" : count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {/* Mythic pill */}
+                    {(() => {
+                      const mythicCount = allPeaks.filter((p) => p.isMythic).length;
+                      const locked = mythicCount === 0;
+                      return (
+                        <button
+                          title="Mythic"
+                          disabled={locked}
+                          onClick={() => { if (!locked) { setMythicOnly((v) => !v); if (!mythicOnly) setRarityFilter([]); } }}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            padding: "7px 11px", borderRadius: 999,
+                            border: `1.5px solid ${mythicOnly ? "#f59e0b88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
+                            background: mythicOnly ? "#fffbeb" : (locked ? "#F8FAFC" : "#f9fafb"),
+                            opacity: locked ? 0.55 : 1,
+                            cursor: locked ? "default" : "pointer",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          <span style={{ fontSize: 13 }}>⭐</span>
+                          <span className="rarity-pill-name" style={{ fontSize: 11, fontWeight: 600, color: mythicOnly ? "#92400e" : (locked ? "#CBD5E1" : "#6b7280") }}>Mythic</span>
+                          <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 700, color: mythicOnly ? "#92400e" : (locked ? "#CBD5E1" : "#9ca3af") }}>
+                            {locked ? "—" : mythicCount}
+                          </span>
+                        </button>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Estado section */}
+                <div>
+                  <p style={{ margin: "0 0 8px", fontFamily: "var(--font-inter, Inter)", fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" }}>
+                    Estado
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {([
+                      { value: "all" as Filter, label: "Todas" },
+                      { value: "climbed" as Filter, label: `Capturadas (${climbedCount})` },
+                      { value: "not-climbed" as Filter, label: "Sin capturar" },
+                    ]).map(({ value, label }) => (
+                      <button
+                        key={value}
+                        onClick={() => setFilter(value)}
+                        className="filter-chip"
+                        style={{
+                          display: "inline-flex", alignItems: "center",
+                          padding: "8px 14px", borderRadius: 20,
+                          fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
+                          border: `1.5px solid ${filter === value ? "#0369a1" : "#e5e7eb"}`,
+                          background: filter === value ? "#eff6ff" : "#f9fafb",
+                          color: filter === value ? "#0369a1" : "#6b7280",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ordenar section */}
+                <div>
+                  <p style={{ margin: "0 0 8px", fontFamily: "var(--font-inter, Inter)", fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" }}>
+                    Ordenar
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {([
+                      { value: "distance" as SortMode, label: "Distancia" },
+                      { value: "relevance" as SortMode, label: "Relevancia" },
+                      { value: "altitude" as SortMode, label: "Altitud" },
+                    ]).map(({ value, label }) => (
+                      <button
+                        key={value}
+                        onClick={() => setMobileSort(value)}
+                        className="filter-chip"
+                        style={{
+                          display: "inline-flex", alignItems: "center",
+                          padding: "8px 14px", borderRadius: 20,
+                          fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
+                          border: `1.5px solid ${mobileSort === value ? "#0369a1" : "#e5e7eb"}`,
+                          background: mobileSort === value ? "#eff6ff" : "#f9fafb",
+                          color: mobileSort === value ? "#0369a1" : "#6b7280",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {/* Footer CTA */}
+              <div style={{ padding: "12px 20px 16px", borderTop: "1px solid #f3f4f6" }}>
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  style={{
+                    width: "100%", padding: 16, borderRadius: 14,
+                    background: "#2F7A5F", color: "white", border: "none",
+                    fontSize: 15, fontWeight: 800, cursor: "pointer",
+                    boxShadow: "0 4px 14px rgba(47,122,95,0.32)",
+                  }}
+                >
+                  Ver cimas
+                </button>
+              </div>
+            </div>
+          </>,
+          document.body
         )}
 
         {/* Map area — full bleed behind floating sidebar */}
@@ -1432,6 +1760,8 @@ export default function MapView({
                 hideSearchInput
                 hideFilters
                 asMobileList
+                sort={mobileSort}
+                onSortChange={setMobileSort}
               />
             </div>
           )}
