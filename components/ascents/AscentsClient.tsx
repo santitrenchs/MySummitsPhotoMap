@@ -369,43 +369,67 @@ export function AscentsClient({
 
       {/* ── Search + filter button ──────────────────────────────────────── */}
       <div style={{ display: "flex", gap: 8, marginBottom: activeChips.length ? 10 : 16 }}>
-        <input
-          type="text"
-          placeholder={t.ascents_search}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            flex: 1, padding: "10px 18px", fontSize: 16,
-            border: "1.5px solid #e5e7eb", borderRadius: 24,
-            outline: "none", background: "white", boxSizing: "border-box",
-          }}
-        />
+        {/* Search input */}
+        <div style={{ flex: 1, position: "relative" }}>
+          <svg
+            width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="#94A3B8" strokeWidth="2.2" strokeLinecap="round"
+            style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+          >
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder={t.ascents_search}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%", padding: "10px 12px 10px 32px", fontSize: 16,
+              border: "1px solid #E5E7EB", borderRadius: 12,
+              boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+              outline: "none", background: "white", boxSizing: "border-box",
+              color: "#0D2538",
+            }}
+          />
+        </div>
+        {/* Filter button */}
         <button
           className="asc-fchip"
           onClick={() => setFiltersOpen(true)}
           style={{
             display: "flex", alignItems: "center", gap: 6,
-            padding: "10px 16px", borderRadius: 24,
-            border: `1.5px solid ${isDirty ? "#bfdbfe" : "#e5e7eb"}`,
-            background: isDirty ? "#eff6ff" : "white",
-            color: isDirty ? "#0369a1" : "#6b7280",
-            fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink: 0,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+            padding: "10px 14px", borderRadius: 12,
+            border: `1px solid ${filtersOpen ? "#0D2538" : "#E5E7EB"}`,
+            background: filtersOpen ? "#0D2538" : "white",
+            boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+            cursor: "pointer", flexShrink: 0,
+            position: "relative",
           }}
         >
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-            <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          <svg width="14" height="12" viewBox="0 0 14 12" fill="none"
+            stroke={filtersOpen ? "white" : "#374151"}
+            strokeWidth="1.8" strokeLinecap="round"
+          >
+            <line x1="0" y1="2" x2="14" y2="2" />
+            <line x1="2" y1="6" x2="12" y2="6" />
+            <line x1="4" y1="10" x2="10" y2="10" />
           </svg>
-          Filtrar
+          <span style={{ fontSize: 13, fontWeight: 700, color: filtersOpen ? "white" : "#374151" }}>
+            {t.profile_filter_button}
+          </span>
           {isDirty && (
-            <span style={{
+            <div style={{
+              position: "absolute", top: -6, right: -6,
               width: 16, height: 16, borderRadius: "50%",
-              background: "#0369a1", color: "white",
-              fontSize: 9, fontWeight: 800,
+              background: filtersOpen ? "white" : "#FF5D2D",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              {activeChips.length}
-            </span>
+              <span style={{
+                fontFamily: "var(--font-mono-landing, monospace)",
+                fontSize: 10, fontWeight: 800,
+                color: filtersOpen ? "#0D2538" : "white",
+              }}>{activeChips.length}</span>
+            </div>
           )}
         </button>
       </div>
