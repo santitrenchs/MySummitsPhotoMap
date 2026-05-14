@@ -95,6 +95,82 @@ Each rarity has a vivid `color` and a darker `colorDark`. Used as:
 
 ## Filter System
 
+Applies to: **Actividades**, **Profile** (Peaks + Photos), **Map sidebar**. All share the same visual language.
+
+### Search + Filter Bar
+
+The entry point for every filter surface. A flex row with two children.
+
+```
+container:  display flex · gap 8 · alignItems center
+```
+
+**Search input** (left, `flex: 1`):
+
+```
+wrapper:    position relative  (holds the SVG icon)
+
+icon:       SVG magnifier 14×14 · stroke #94A3B8 · strokeWidth 2.2
+            position absolute · left 10 · top 50% · translateY(-50%)
+            pointerEvents none
+
+input:      width 100% · padding 10px 12px 10px 32px · fontSize 16
+            border 1px solid #E5E7EB · borderRadius 12
+            background white · color #0D2538
+            boxShadow 0 1px 2px rgba(13,37,56,0.04)
+            outline none · boxSizing border-box
+```
+
+**Filter button** (right, `flexShrink: 0`):
+
+```
+padding:    10px 14px · borderRadius 12
+border:     1px solid #0D2538 (open)  /  1px solid #E5E7EB (closed)
+background: #0D2538 (open)  /  white (closed)
+boxShadow:  0 1px 2px rgba(13,37,56,0.04)
+position:   relative  (for the badge)
+
+icon:       funnel SVG 14×12 · stroke white (open) / #374151 (closed)
+            strokeWidth 1.8 · strokeLinecap round
+            viewBox "0 0 14 12":  line (0,2)→(14,2)
+                                  line (2,6)→(12,6)
+                                  line (4,10)→(10,10)
+label:      fontSize 13 · fontWeight 700 · color white (open) / #374151 (closed)
+            i18n key: profile_filter_button
+```
+
+**Active badge** (shown when `hasActiveFilters`, positioned on the button):
+
+```
+position:   absolute · top -6 · right -6
+size:       16×16 · borderRadius 50%
+background: white (open) / #FF5D2D (closed)
+count text: font-mono-landing · fontSize 10 · fontWeight 800
+            color #0D2538 (open) / white (closed)
+```
+
+**Active chips row** (shown below the bar when panel is closed and filters are active):
+
+```
+display: flex · flexWrap wrap · gap 6 · marginTop 8
+
+chip:       inline-flex · gap 4 · padding 4px 8px 4px 10px
+            background white · border 1px solid color+"55" · borderRadius 999
+label:      fontSize 12 · fontWeight 600 · color (filter color)
+remove btn: 16×16 · borderRadius 50% · bg color+"1A"
+            SVG ×  8×8 · stroke color · strokeWidth 1.8
+```
+
+**NEVER use:**
+- `borderRadius > 12` on these elements (24 = pill style, wrong for this pattern)
+- `border > 1px` 
+- Blue `#0369a1` / `#eff6ff` as the active button state (that's for fchips inside the panel, not the button itself)
+- A hardcoded "Filtrar" string — always use `t.profile_filter_button`
+
+**Reference implementations:** `components/profile/PeakFiltersBar.tsx`, `components/ascents/AscentsClient.tsx`, `components/map/MapPeaksSidebar.tsx`
+
+---
+
 Both **Ascents** and **Profile** filters share the same visual language.
 
 ### Bottom Sheet (mobile)
@@ -154,9 +230,9 @@ active:    border 1.5px #0369a1  · bg #eff6ff   · color #0369a1
 
 Chip rows: `display: flex · flexWrap: wrap · gap: 8`
 
-### Rarity Pills (emoji-only)
+### Rarity Pills
 
-Compact icon+count pills — no label text, name in `title` tooltip only.
+Used inside filter panels (bottom sheet body). Responsive: emoji-only on mobile, emoji + name on desktop.
 
 ```
 display: inline-flex · alignItems: center · gap: 5
@@ -167,17 +243,27 @@ active:    border 1.5px color+"88" · bg color+"22"
 locked:    border 1.5px #F1F5F9  · bg #F8FAFC · opacity 0.55
 
 ✿ emoji:  fontSize 15 · color: rarity.color (or #CBD5E1 if locked)
+name:      className="rarity-pill-name" · fontSize 11 · fontWeight 600
+           active → rarity.colorDark · inactive → #6b7280 · locked → #CBD5E1
+           hidden on mobile, visible on desktop via CSS:
+             .rarity-pill-name { display: none }
+             @media (min-width: 640px) { .rarity-pill-name { display: inline } }
 count:     font-mono-landing · fontSize 11 · fontWeight 700
            active → rarity.colorDark · inactive → #9ca3af · locked → #CBD5E1
 ```
 
+Always add the `<style>` block at the top of the panel component's return (inside the fragment). The `title` attribute on the button still holds the name for tooltip fallback.
+
 ### Mythic Pill (⭐)
 
-Same size as rarity pills, amber/gold theme:
+Same size as rarity pills, amber/gold theme. Also shows "Mythic" label on desktop via `rarity-pill-name`.
 
 ```
 inactive:  border 1.5px #E5E7EB  · bg #f9fafb
 active:    border 1.5px #f59e0b88 · bg #fffbeb
+
+⭐ emoji:  fontSize 13
+name:      "Mythic" · className="rarity-pill-name" · same responsive rule
 count text active: color #92400e
 ```
 
