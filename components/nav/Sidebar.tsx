@@ -180,16 +180,11 @@ export function Sidebar({
 
         {/* ── User footer ────────────────────────── */}
         <div className="azisb-footer" ref={menuRef}>
-          <div
+
+          {/* Avatar → Profile */}
+          <Link
+            href="/profile"
             className="azisb-user"
-            onClick={() => setUserMenuOpen((o) => !o)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") setUserMenuOpen((o) => !o);
-            }}
-            aria-label="User menu"
-            aria-expanded={userMenuOpen}
             data-tip={userName ?? undefined}
           >
             <div className="azisb-avatar" style={{ position: "relative" }}>
@@ -208,41 +203,23 @@ export function Sidebar({
             <div className="azisb-uinfo">
               <p className="azisb-uname">{userName ?? "User"}</p>
             </div>
-            <span className="azisb-uchev">
-              <SbChevronUpIcon />
-            </span>
-          </div>
+          </Link>
+
+          {/* Hamburger → Settings + Sign out */}
+          <button
+            className="azisb-item"
+            data-tip="Más"
+            onClick={() => setUserMenuOpen((o) => !o)}
+            aria-label="Más opciones"
+            aria-expanded={userMenuOpen}
+          >
+            <span className="azisb-ic"><SbHamburgerIcon /></span>
+            <span className="azisb-lbl">Más</span>
+          </button>
 
           {userMenuOpen && (
             <div className="azisb-umenu">
-              <div className="azisb-umenu-hd">
-                <p className="azisb-umenu-name">{userName ?? "User"}</p>
-                {userEmail && <p className="azisb-umenu-email">{userEmail}</p>}
-              </div>
               <div className="azisb-umenu-sec">
-                <Link
-                  href="/profile"
-                  className="azisb-umenu-item"
-                  onClick={() => setUserMenuOpen(false)}
-                >
-                  <SbProfileIcon /> {t.nav_profile}
-                </Link>
-                <Link
-                  href="/friends"
-                  className="azisb-umenu-item"
-                  onClick={() => setUserMenuOpen(false)}
-                >
-                  <SbFriendsIcon />
-                  {t.friends_title}
-                  {badge > 0 && (
-                    <span style={{
-                      marginLeft: "auto", minWidth: 18, height: 18, borderRadius: 9,
-                      background: "#ef4444", color: "#fff", fontSize: 10,
-                      fontWeight: 700, lineHeight: "18px", textAlign: "center",
-                      padding: "0 5px", display: "inline-flex", alignItems: "center",
-                    }}>{badge}</span>
-                  )}
-                </Link>
                 <Link
                   href="/settings"
                   className="azisb-umenu-item"
@@ -436,7 +413,7 @@ const CSS = `
   flex-shrink: 0;
 }
 
-/* ── User button ────────────────────────── */
+/* ── User link (avatar → profile) ──────── */
 .azisb-user {
   display: flex;
   align-items: center;
@@ -444,6 +421,7 @@ const CSS = `
   padding: 0 12px;
   height: 44px;
   border-radius: 10px;
+  text-decoration: none;
   cursor: pointer;
   transition: background 140ms, padding 220ms cubic-bezier(0.4,0,0.2,1);
   user-select: none;
@@ -494,18 +472,6 @@ const CSS = `
 .azisb-uemail {
   font-size: 13px; color: #9ca3af;
   margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.azisb-uchev {
-  color: #d1d5db; flex-shrink: 0;
-  display: flex; align-items: center;
-  max-width: 20px; opacity: 1; overflow: hidden;
-}
-.azisb:not(.azisb--c) .azisb-uchev {
-  transition: opacity 150ms ease 180ms, max-width 150ms ease 180ms;
-}
-.azisb--c .azisb-uchev {
-  opacity: 0; max-width: 0;
-  transition: opacity 80ms ease, max-width 80ms ease;
 }
 
 /* ── User menu ──────────────────────────── */
@@ -605,21 +571,13 @@ function SbPlusIcon() {
   );
 }
 
-function SbChevronUpIcon() {
+function SbHamburgerIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="18 15 12 9 6 15" />
-    </svg>
-  );
-}
-
-function SbProfileIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F2233"
+      strokeWidth="2" strokeLinecap="round" style={{ opacity: 0.45 }}>
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
     </svg>
   );
 }
@@ -637,17 +595,6 @@ function SbSocialIcon({ active = false }: { active?: boolean }) {
   );
 }
 
-function SbFriendsIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="9" cy="7" r="3" />
-      <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      <path d="M21 21v-2a4 4 0 0 0-3-3.85" />
-    </svg>
-  );
-}
 
 function SbSettingsIcon() {
   return (
