@@ -130,7 +130,7 @@ export default function LandingHero() {
             </Link>
           </div>
 
-          <p className="ld-cta-micro ld-hero-micro" style={{ textAlign: "left", marginTop: 16 }}>
+          <p className="ld-cta-micro ld-hero-micro" style={{ textAlign: "center", marginTop: 16 }}>
             Sin tarjeta de crédito · Gratis para empezar
           </p>
         </div>
