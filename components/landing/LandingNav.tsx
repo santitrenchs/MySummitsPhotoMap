@@ -7,7 +7,6 @@ import { PeakadexLogo } from "@/components/brand/Logo";
 const NAV_LINKS = [
   { label: "Rarezas", href: "#rarezas" },
   { label: "Cartas", href: "#cartas" },
-  { label: "Cómo funciona", href: "#como-funciona" },
 ];
 
 const LANGS = [
