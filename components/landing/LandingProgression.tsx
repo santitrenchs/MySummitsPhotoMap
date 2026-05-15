@@ -2,417 +2,544 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// 1718 × 916 image → padding-top = 916/1718 * 100 = 53.32%
-const IMG_PT = (916 / 1718) * 100;
-
-// lx/ly = % of image width/height for each summit center
-// connH = connector line height in px — grows with level to amplify staircase
-const LEVELS = [
-  { name: "Scout",     ascents: 20,  altReq: "1 500 m",  lx: 10,    ly: 68, connH: 30 },
-  { name: "Guide",     ascents: 50,  altReq: "3 000 m",  lx: 27.5,  ly: 55, connH: 12 },
-  { name: "Explorer",  ascents: 100, altReq: "4 500 m",  lx: 48,    ly: 55, connH: 53 },
-  { name: "Master",    ascents: 150, altReq: "6 000 m",  lx: 66.25, ly: 48, connH: 63 },
-  { name: "Legendary", ascents: null, altReq: null,      lx: 85.5,  ly: 33, connH: 59 },
-] as const;
-
-const RARITIES = [
-  { label: "Daisy",      ep: 10,   color: "#5B8C6F" },
-  { label: "Heather",    ep: 20,   color: "#6A9BAE" },
-  { label: "Gentian",    ep: 30,   color: "#8A7BB0" },
-  { label: "Tundra",     ep: 60,   color: "#6B8FA8" },
-  { label: "Edelweiss",  ep: 120,  color: "#9B8B70" },
-  { label: "Draba",      ep: 250,  color: "#A07868" },
-  { label: "Saxifrage",  ep: 500,  color: "#A88055" },
-  { label: "Cinquefoil", ep: 1000, color: "#A89060" },
-  { label: "Snow Lotus", ep: 2000, color: "#8A9BAE" },
-] as const;
+// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const RANKING = [
-  { name: "Oriol Casanovas", initials: "OC", color: "#00995C", ascents: 48, ep: 2760, isMe: false },
-  { name: "Tú",              initials: "TÚ", color: "#0EA5E9", ascents: 38, ep: 1980, isMe: true  },
-  { name: "Marta Ribagorza", initials: "MR", color: "#0E7490", ascents: 31, ep: 1420, isMe: false },
+  { pos: 1, name: "Oriol",  initials: "OC", ascents: 48, isMe: false },
+  { pos: 2, name: "Tú",     initials: "TÚ", ascents: 38, isMe: true  },
+  { pos: 3, name: "Marta",  initials: "MR", ascents: 31, isMe: false },
 ] as const;
 
-// ─── Icons (monoline) ─────────────────────────────────────────────────────────
+// Rendered top-to-bottom in UI (Zenith at top, Scout at bottom)
+const ZENITH_NODES = [
+  { label: "Zenith",   pct: 100 },
+  { label: "Legend",   pct: 80  },
+  { label: "Master",   pct: 60  },
+  { label: "Explorer", pct: 40  },
+  { label: "Guide",    pct: 20  },
+  { label: "Scout",    pct: 0   },
+] as const;
 
-function LevelIcon({ name, color }: { name: string; color: string }) {
-  const s = { stroke: color, strokeWidth: 1.4, fill: "none", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  switch (name) {
-    case "Scout":
-      return (
-        <svg width={15} height={15} viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="3.5" {...s} />
-          <circle cx="12" cy="12" r="8.5" {...s} strokeOpacity={0.35} />
-        </svg>
-      );
-    case "Guide":
-      return (
-        <svg width={15} height={15} viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="8.5" {...s} />
-          <path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3" {...s} />
-        </svg>
-      );
-    case "Explorer":
-      return (
-        <svg width={15} height={15} viewBox="0 0 24 24">
-          <ellipse cx="12" cy="12" rx="3.5" ry="2.2" {...s} />
-          <ellipse cx="12" cy="12" rx="7.5" ry="4.8" {...s} strokeOpacity={0.5} />
-          <ellipse cx="12" cy="12" rx="11" ry="7.5" {...s} strokeOpacity={0.22} />
-        </svg>
-      );
-    case "Master":
-      return (
-        <svg width={15} height={15} viewBox="0 0 24 24">
-          <polyline points="12,3 21,20 3,20" {...s} />
-          <line x1="12" y1="10" x2="12" y2="15" {...s} strokeOpacity={0.4} />
-        </svg>
-      );
-    case "Legendary":
-      return (
-        <svg width={15} height={15} viewBox="0 0 24 24">
-          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" {...s} />
-        </svg>
-      );
-    default: return null;
-  }
+const USER_PCT = 32; // between Guide (20%) and Explorer (40%)
+
+// ─── Premium dark card shell ──────────────────────────────────────────────────
+
+function Card({
+  children,
+  delay,
+  revealed,
+  accentGlow,
+}: {
+  children: React.ReactNode;
+  delay: number;
+  revealed: boolean;
+  accentGlow?: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        flex: "1 1 0",
+        minWidth: 0,
+        borderRadius: 22,
+        background: "linear-gradient(160deg, #0F2030 0%, #0B1B29 55%, #091623 100%)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        boxShadow: [
+          hovered
+            ? `0 40px 100px rgba(0,0,0,0.30), 0 0 0 1px rgba(255,255,255,0.09)${accentGlow ? `, ${accentGlow}` : ""}`
+            : "0 28px 72px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.06)",
+        ].join(""),
+        padding: "30px 26px 26px",
+        display: "flex",
+        flexDirection: "column" as const,
+        opacity: revealed ? 1 : 0,
+        transform: revealed
+          ? hovered ? "translateY(-4px)" : "translateY(0)"
+          : "translateY(32px)",
+        transition: revealed
+          ? `opacity 0.75s ease ${delay}s, transform 0.75s ease ${delay}s, box-shadow 0.4s ease`
+          : `opacity 0.75s ease ${delay}s, transform 0.75s ease ${delay}s`,
+        position: "relative" as const,
+        overflow: "hidden",
+        cursor: "default",
+        willChange: "transform",
+      }}
+    >
+      {/* Top edge highlight */}
+      <div style={{
+        position: "absolute", top: 0, left: "15%", right: "15%", height: 1,
+        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)",
+        pointerEvents: "none",
+      }} />
+      {/* Ambient glow blob */}
+      {accentGlow && (
+        <div style={{
+          position: "absolute", top: -60, right: -60,
+          width: 180, height: 180, borderRadius: "50%",
+          background: accentGlow.replace("0 0 40px", "radial-gradient(circle,").replace(")", ", transparent)"),
+          opacity: hovered ? 0.12 : 0.07,
+          transition: "opacity 0.4s ease",
+          pointerEvents: "none",
+          filter: "blur(32px)",
+        }} />
+      )}
+      {children}
+    </div>
+  );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Card 1 — Tu cordada ──────────────────────────────────────────────────────
+
+function CardCordada({ revealed }: { revealed: boolean }) {
+  return (
+    <Card delay={0.08} revealed={revealed} accentGlow="0 0 40px rgba(14,165,233,0.15)">
+      {/* Label */}
+      <p style={{
+        margin: "0 0 22px", fontSize: 9, fontWeight: 700,
+        letterSpacing: "0.18em", textTransform: "uppercase" as const,
+        color: "rgba(255,255,255,0.28)",
+      }}>
+        Tu cordada
+      </p>
+
+      {/* Ranking rows */}
+      <div style={{ display: "flex", flexDirection: "column" as const, gap: 3, flex: 1 }}>
+        {RANKING.map((r) => (
+          <div
+            key={r.name}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 11,
+              padding: "11px 12px",
+              borderRadius: 14,
+              background: r.isMe
+                ? "linear-gradient(90deg, rgba(14,165,233,0.11) 0%, rgba(14,165,233,0.05) 100%)"
+                : "rgba(255,255,255,0.025)",
+              border: r.isMe
+                ? "1px solid rgba(14,165,233,0.18)"
+                : "1px solid transparent",
+            }}
+          >
+            {/* Position */}
+            <span style={{
+              width: 14, flexShrink: 0, textAlign: "center" as const,
+              fontSize: 10, fontWeight: 600,
+              color: r.pos === 1
+                ? "rgba(245,200,66,0.75)"
+                : "rgba(255,255,255,0.16)",
+              fontFamily: "var(--font-mono-landing, monospace)",
+            }}>
+              {r.pos}
+            </span>
+
+            {/* Avatar */}
+            <div style={{
+              width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+              background: r.isMe
+                ? "linear-gradient(135deg, #0EA5E9, #0369A1)"
+                : "rgba(255,255,255,0.06)",
+              border: r.isMe
+                ? "1.5px solid rgba(14,165,233,0.45)"
+                : "1.5px solid rgba(255,255,255,0.1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 8, fontWeight: 800, letterSpacing: "0.02em",
+              color: r.isMe ? "#fff" : "rgba(255,255,255,0.4)",
+            }}>
+              {r.initials}
+            </div>
+
+            {/* Name */}
+            <span style={{
+              flex: 1, fontSize: 13,
+              fontWeight: r.isMe ? 600 : 400,
+              color: r.isMe ? "#FFFFFF" : "rgba(255,255,255,0.38)",
+              letterSpacing: "-0.01em",
+            }}>
+              {r.name}
+            </span>
+
+            {/* Ascents */}
+            <span style={{
+              fontSize: 12,
+              fontWeight: r.isMe ? 600 : 400,
+              color: r.isMe
+                ? "rgba(255,255,255,0.85)"
+                : "rgba(255,255,255,0.2)",
+              fontFamily: "var(--font-mono-landing, monospace)",
+            }}>
+              {r.ascents}
+            </span>
+
+            {/* Cimas micro-label */}
+            <span style={{
+              fontSize: 9,
+              color: r.isMe ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.12)",
+            }}>
+              ↑
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        marginTop: 22, paddingTop: 18,
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <p style={{
+          margin: 0, fontSize: 13,
+          color: "rgba(255,255,255,0.36)",
+          lineHeight: 1.65, fontWeight: 400,
+        }}>
+          Compite con quienes<br />comparten tu camino.
+        </p>
+      </div>
+    </Card>
+  );
+}
+
+// ─── Card 2 — Cada cima cuenta ────────────────────────────────────────────────
+
+function CardClimb({ revealed }: { revealed: boolean }) {
+  return (
+    <Card delay={0.2} revealed={revealed} accentGlow="0 0 40px rgba(47,122,95,0.18)">
+      {/* Label */}
+      <p style={{
+        margin: "0 0 22px", fontSize: 9, fontWeight: 700,
+        letterSpacing: "0.18em", textTransform: "uppercase" as const,
+        color: "rgba(255,255,255,0.28)",
+      }}>
+        Cada cima cuenta
+      </p>
+
+      {/* Central animation area */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column" as const,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 14,
+        padding: "4px 0 10px",
+      }}>
+        {/* +1 posición badge — CSS-animated loop */}
+        <div className="soc-badge" style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "10px 22px", borderRadius: 100,
+        }}>
+          <span style={{ fontSize: 16, lineHeight: 1, fontWeight: 300 }}>↑</span>
+          <span style={{
+            fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em",
+          }}>
+            +1 posición
+          </span>
+        </div>
+
+        {/* Before row */}
+        <div style={{
+          width: "100%",
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "9px 12px", borderRadius: 12,
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.04)",
+        }}>
+          <span style={{
+            fontSize: 10, color: "rgba(255,255,255,0.2)",
+            width: 14, textAlign: "center" as const,
+            fontFamily: "var(--font-mono-landing, monospace)",
+          }}>3</span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", flex: 1 }}>Antes</span>
+          <span style={{
+            fontSize: 11, color: "rgba(255,255,255,0.16)",
+            fontFamily: "var(--font-mono-landing, monospace)",
+          }}>31</span>
+        </div>
+
+        {/* After row — animated highlight */}
+        <div className="soc-after-row" style={{
+          width: "100%",
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "11px 12px", borderRadius: 12,
+          border: "1px solid rgba(14,165,233,0.18)",
+        }}>
+          <span style={{
+            fontSize: 10, color: "rgba(245,200,66,0.65)",
+            width: 14, textAlign: "center" as const,
+            fontFamily: "var(--font-mono-landing, monospace)",
+          }}>2</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", flex: 1 }}>Tú</span>
+          <span style={{
+            fontSize: 12, fontWeight: 600,
+            color: "rgba(255,255,255,0.8)",
+            fontFamily: "var(--font-mono-landing, monospace)",
+          }}>39</span>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        marginTop: 14, paddingTop: 18,
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <p style={{
+          margin: 0, fontSize: 13,
+          color: "rgba(255,255,255,0.36)",
+          lineHeight: 1.65, fontWeight: 400,
+        }}>
+          Cada ascensión puede<br />cambiar la clasificación.
+        </p>
+      </div>
+    </Card>
+  );
+}
+
+// ─── Card 3 — Camino a Zenith ─────────────────────────────────────────────────
+
+function CardZenith({ revealed }: { revealed: boolean }) {
+  const TRACK_L = 18; // px from left edge of content area
+
+  return (
+    <Card delay={0.34} revealed={revealed} accentGlow="0 0 40px rgba(245,200,66,0.15)">
+      {/* Label */}
+      <p style={{
+        margin: "0 0 22px", fontSize: 9, fontWeight: 700,
+        letterSpacing: "0.18em", textTransform: "uppercase" as const,
+        color: "rgba(255,255,255,0.28)",
+      }}>
+        Camino a Zenith
+      </p>
+
+      {/* Progression track */}
+      <div style={{ flex: 1, position: "relative" as const, minHeight: 210 }}>
+        {/* Background track line */}
+        <div style={{
+          position: "absolute" as const,
+          left: TRACK_L, top: 6, bottom: 6, width: 2,
+          background: "rgba(255,255,255,0.07)",
+          borderRadius: 1,
+        }} />
+
+        {/* Filled progress */}
+        <div style={{
+          position: "absolute" as const,
+          left: TRACK_L, bottom: 6, width: 2,
+          height: `calc(${USER_PCT}% - 6px)`,
+          background: "linear-gradient(to top, rgba(14,165,233,0.65), rgba(14,165,233,0.2))",
+          borderRadius: 1,
+        }} />
+
+        {/* Level nodes */}
+        {ZENITH_NODES.map((n) => {
+          const isZenith = n.pct === 100;
+          const isPast = n.pct <= USER_PCT;
+          const dotSize = isZenith ? 10 : 6;
+
+          return (
+            <div
+              key={n.label}
+              style={{
+                position: "absolute" as const,
+                bottom: `${n.pct}%`,
+                left: 0, right: 0,
+                display: "flex",
+                alignItems: "center",
+                transform: "translateY(50%)",
+                zIndex: 1,
+              }}
+            >
+              {/* Dot */}
+              <div style={{
+                width: dotSize, height: dotSize,
+                borderRadius: "50%",
+                flexShrink: 0,
+                marginLeft: TRACK_L - dotSize / 2,
+                marginRight: 12,
+                background: isZenith
+                  ? "radial-gradient(circle at 40% 35%, #F5C842, #C4862B)"
+                  : isPast
+                    ? "rgba(14,165,233,0.75)"
+                    : "rgba(255,255,255,0.1)",
+                border: isZenith ? "none" : "none",
+                animation: isZenith ? "zenithNodeGlow 3s ease-in-out infinite" : "none",
+              }} />
+
+              {/* Label */}
+              <span style={{
+                fontSize: isZenith ? 12 : 10,
+                fontWeight: isZenith ? 700 : isPast ? 500 : 400,
+                letterSpacing: isZenith ? "0.06em" : "0.02em",
+                color: isZenith
+                  ? "#F5C842"
+                  : isPast
+                    ? "rgba(255,255,255,0.55)"
+                    : "rgba(255,255,255,0.18)",
+                filter: isZenith
+                  ? "drop-shadow(0 0 7px rgba(245,200,66,0.5))"
+                  : "none",
+              }}>
+                {n.label}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* User dot — pulsing indicator */}
+        <div style={{
+          position: "absolute" as const,
+          bottom: `${USER_PCT}%`,
+          left: TRACK_L,
+          transform: "translate(-50%, 50%)",
+          width: 11, height: 11,
+          borderRadius: "50%",
+          background: "#38BDF8",
+          animation: "userLocPulse 2.2s ease-in-out infinite",
+          zIndex: 2,
+        }} />
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        marginTop: 18, paddingTop: 18,
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <p style={{
+          margin: 0, fontSize: 13,
+          color: "rgba(255,255,255,0.36)",
+          lineHeight: 1.65, fontWeight: 400,
+        }}>
+          Algunas cimas cambian tu nivel.{" "}
+          <em style={{ color: "rgba(255,255,255,0.58)", fontStyle: "italic" }}>
+            Otras cambian quién eres.
+          </em>
+        </p>
+      </div>
+    </Card>
+  );
+}
+
+// ─── Section ──────────────────────────────────────────────────────────────────
 
 export default function LandingProgression() {
   const sectionRef = useRef<HTMLElement>(null);
-  const [revealed, setRevealed] = useState(0);
+  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const thresholds = [0.04, 0.18, 0.34, 0.50, 0.64];
-    const onScroll = () => {
-      const { top, height } = el.getBoundingClientRect();
-      const progress = Math.max(0, Math.min(1, -top / (height - window.innerHeight)));
-      setRevealed(thresholds.filter(t => progress >= t).length);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setRevealed(true); },
+      { threshold: 0.08 }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
   }, []);
-
-  const lp = "clamp(24px, calc((100vw - 1160px) / 2 + 24px), 180px)";
 
   return (
     <>
       <style>{`
+        /* ── Zenith node glow ── */
+        @keyframes zenithNodeGlow {
+          0%, 100% { box-shadow: 0 0 10px rgba(245,200,66,0.55), 0 0 24px rgba(245,200,66,0.28); }
+          50%       { box-shadow: 0 0 18px rgba(245,200,66,0.85), 0 0 40px rgba(245,200,66,0.45); }
+        }
+
+        /* ── User location pulse ── */
+        @keyframes userLocPulse {
+          0%, 100% { box-shadow: 0 0 0 3px rgba(56,189,248,0.2), 0 0 14px rgba(56,189,248,0.55); }
+          50%       { box-shadow: 0 0 0 5px rgba(56,189,248,0.1), 0 0 22px rgba(56,189,248,0.8); }
+        }
+
+        /* ── Card 2 badge — looping cycle ── */
+        @keyframes socBadgeCycle {
+          0%, 55%, 100% {
+            background: rgba(255,255,255,0.025);
+            border-color: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.18);
+            box-shadow: none;
+          }
+          18%, 42% {
+            background: rgba(47,122,95,0.16);
+            border-color: rgba(47,122,95,0.38);
+            color: rgba(255,255,255,0.92);
+            box-shadow: 0 0 22px rgba(47,122,95,0.18);
+          }
+        }
+
+        /* ── Card 2 after row pulse ── */
+        @keyframes socAfterCycle {
+          0%, 55%, 100% { background: rgba(14,165,233,0.07); }
+          18%, 42%      { background: rgba(14,165,233,0.16); }
+        }
+
+        .soc-badge {
+          border: 1px solid rgba(255,255,255,0.06);
+          color: rgba(255,255,255,0.18);
+          animation: socBadgeCycle 6s ease-in-out 1.5s infinite;
+        }
+
+        .soc-after-row {
+          background: rgba(14,165,233,0.07);
+          animation: socAfterCycle 6s ease-in-out 1.5s infinite;
+        }
+
+        /* ── Responsive ── */
         @media (max-width: 767px) {
-          .pg-sticky   { position: static !important; height: auto !important; overflow: visible !important; }
-          .pg-main     { flex-direction: column !important; }
-          .pg-left     { width: 100% !important; padding-bottom: 0 !important; padding-right: 24px !important; }
-          .pg-right    { min-height: 320px; }
-          .pg-bar      { padding-left: 24px !important; padding-right: 24px !important; flex-wrap: wrap; gap: 8px !important; }
+          .soc-cards { flex-direction: column !important; }
+          .soc-cards > * { min-height: 280px; }
+        }
+
+        /* ── Reduce motion ── */
+        @media (prefers-reduced-motion: reduce) {
+          .soc-badge, .soc-after-row { animation: none !important; }
+          [style*="zenithNodeGlow"], [style*="userLocPulse"] { animation: none !important; }
         }
       `}</style>
 
       <section
         ref={sectionRef}
-        style={{ height: "300vh", background: "#F6F8FA", position: "relative" }}
+        style={{
+          background: "#F6F4F0",
+          padding: "100px 0 120px",
+          position: "relative" as const,
+        }}
       >
-        <div
-          className="pg-sticky"
-          style={{
-            position: "sticky",
-            top: 0,
-            height: "100svh",
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* ── Two-column content row ── */}
-          <div
-            className="pg-main"
-            style={{ flex: 1, display: "flex", minHeight: 0 }}
-          >
-            {/* ── LEFT: editorial text ── */}
-            <div
-              className="pg-left"
-              style={{
-                width: "46%",
-                flexShrink: 0,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                paddingLeft: lp,
-                paddingRight: "clamp(28px, 3.5vw, 56px)",
-                paddingTop: 72,
-                paddingBottom: 32,
-                position: "relative",
-                zIndex: 2,
-              }}
-            >
-              {/* Eyebrow */}
-              <p className="ld-section-label" style={{ margin: "0 0 16px" }}>
-                Sistema de progresión
-              </p>
+        {/* Very faint warm pattern overlay */}
+        <div style={{
+          position: "absolute" as const, inset: 0,
+          backgroundImage: "radial-gradient(circle at 70% 30%, rgba(47,122,95,0.04) 0%, transparent 55%), radial-gradient(circle at 20% 80%, rgba(13,37,56,0.03) 0%, transparent 50%)",
+          pointerEvents: "none",
+        }} />
 
-              {/* Headline */}
-              <h2 className="ld-display ld-section-title" style={{ margin: "0 0 20px" }}>
-                Cada cima suma.<br />
-                <span style={{ color: "var(--ld-gold)", whiteSpace: "nowrap" }}>Tu leyenda evoluciona.</span>
-              </h2>
-
-              {/* Body */}
-              <p className="ld-section-sub" style={{ margin: "0 0 32px", maxWidth: 300 }}>
-                Cinco rangos definen tu camino como montañero.
-              </p>
-
-              {/* Rarity section */}
-              <div style={{ borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: 20 }}>
-                <p style={{
-                  margin: "0 0 12px",
-                  fontSize: 9,
-                  fontWeight: 600,
-                  letterSpacing: "0.13em",
-                  textTransform: "uppercase",
-                  color: "#b0b7c3",
-                }}>
-                  Rarezas · Puntos de elevación
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {RARITIES.map((r, i) => (
-                    <div
-                      key={r.label}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        marginTop: i === RARITIES.length - 1 ? 4 : 0,
-                        filter: i === RARITIES.length - 1
-                          ? "drop-shadow(0 0 7px rgba(138,175,200,0.35))"
-                          : undefined,
-                      }}
-                    >
-                      <span style={{
-                        width: 6, height: 6,
-                        borderRadius: "50%",
-                        background: r.color,
-                        flexShrink: 0,
-                      }} />
-                      <span style={{
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: "#0D2538",
-                        letterSpacing: "0.01em",
-                      }}>
-                        {r.label}
-                      </span>
-                      <span style={{ color: "rgba(13,37,56,0.3)", fontSize: 11 }}>·</span>
-                      <span style={{
-                        fontSize: 11,
-                        color: "rgba(13,37,56,0.4)",
-                        fontFamily: "var(--font-mono-landing, monospace)",
-                      }}>
-                        {r.ep} EP
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* ── RIGHT: mountain illustration + level nodes ── */}
-            <div
-              className="pg-right"
-              style={{ flex: 1, position: "relative" }}
-            >
-              {/* Soft left-edge blend */}
-              <div style={{
-                position: "absolute",
-                top: 0, left: 0, bottom: 0,
-                width: 80,
-                background: "linear-gradient(to right, #F6F8FA 10%, transparent)",
-                zIndex: 4,
-                pointerEvents: "none",
-              }} />
-
-              {/* Mountain wrapper — aspect-ratio locked, bottom-anchored */}
-              <div style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                paddingTop: `${IMG_PT}%`,
-              }}>
-                {/* Mountain image */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/mountain-progression.png"
-                  alt=""
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    display: "block",
-                    userSelect: "none",
-                    pointerEvents: "none",
-                  }}
-                />
-
-                {/* Level nodes — positioned as % of image */}
-                {LEVELS.map((l, i) => {
-                  const on = revealed > i;
-                  return (
-                    <div
-                      key={l.name}
-                      style={{
-                        position: "absolute",
-                        left: `${l.lx}%`,
-                        top: `${l.ly}%`,
-                        zIndex: 10 + i,
-                      }}
-                    >
-                      {/* Editorial annotation — floats above summit */}
-                      <div style={{
-                        position: "absolute",
-                        bottom: 2,
-                        left: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        opacity: on ? 1 : 0,
-                        transform: on
-                          ? "translateX(-50%) translateY(-46px)"
-                          : "translateX(-50%) translateY(-34px)",
-                        transition: `opacity 0.8s ease ${i * 0.18}s, transform 0.8s ease ${i * 0.18}s`,
-                        pointerEvents: "none",
-                      }}>
-                        <div style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: l.name === "Legendary" ? 7 : 3,
-                          whiteSpace: "nowrap",
-                          padding: l.name === "Legendary" ? "0 6px" : undefined,
-                          filter: l.name === "Legendary" && on
-                            ? "drop-shadow(0 0 12px rgba(196,140,50,0.22))"
-                            : undefined,
-                        }}>
-                          <div style={{
-                            fontWeight: 500,
-                            fontSize: 11,
-                            letterSpacing: "0.16em",
-                            textTransform: "uppercase",
-                            color: l.name === "Legendary" ? "#C4862B" : "#0D2538",
-                          }}>
-                            {l.name}
-                          </div>
-                          <div style={{
-                            fontSize: 10,
-                            letterSpacing: "0.04em",
-                            color: "rgba(13,37,56,0.28)",
-                            lineHeight: 1.9,
-                            textAlign: "center",
-                          }}>
-                            {l.ascents != null && <div>{l.ascents} ascensiones</div>}
-                            {l.altReq != null && <div>{l.altReq}</div>}
-                          </div>
-                        </div>
-                        <div style={{
-                          width: 5, height: 5,
-                          borderRadius: "50%",
-                          background: l.name === "Legendary" ? "#C4862B" : "#fff",
-                          border: `1px solid ${l.name === "Legendary" ? "#C4862B" : "rgba(13,37,56,0.28)"}`,
-                          flexShrink: 0,
-                          margin: l.name === "Legendary" ? "10px 0 0" : "7px 0 0",
-                          boxShadow: l.name === "Legendary" && on ? "0 0 8px rgba(196,134,43,0.35)" : undefined,
-                        }} />
-                        <div style={{
-                          width: 1,
-                          height: l.connH,
-                          flexShrink: 0,
-                          background: l.name === "Legendary"
-                            ? "linear-gradient(to bottom, rgba(196,134,43,0.28), transparent)"
-                            : "linear-gradient(to bottom, rgba(13,37,56,0.18), transparent)",
-                        }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+        <div className="ld-container" style={{ position: "relative" as const }}>
+          {/* Editorial header */}
+          <div style={{
+            marginBottom: 64,
+            opacity: revealed ? 1 : 0,
+            transform: revealed ? "translateY(0)" : "translateY(22px)",
+            transition: "opacity 0.75s ease, transform 0.75s ease",
+          }}>
+            <p className="ld-section-label" style={{ margin: "0 0 16px" }}>
+              Sistema social
+            </p>
+            <h2 className="ld-display ld-section-title" style={{ margin: "0 0 16px" }}>
+              La montaña también<br />se comparte.
+            </h2>
+            <p className="ld-section-sub">
+              Compite con tu cordada, escala posiciones y evoluciona como montañero.
+            </p>
           </div>
 
-          {/* ── BOTTOM BAR: cordada ranking ── */}
-          <div
-            className="pg-bar"
-            style={{
-              borderTop: "1px solid rgba(0,0,0,0.05)",
-              background: "rgba(255,255,255,0.52)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
-              paddingTop: 12,
-              paddingBottom: 12,
-              paddingLeft: lp,
-              paddingRight: 32,
-              display: "flex",
-              alignItems: "center",
-              gap: 20,
-              flexShrink: 0,
-            }}
-          >
-            <span style={{
-              fontSize: 9,
-              fontWeight: 600,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: "#b0b7c3",
-              whiteSpace: "nowrap",
-            }}>
-              Tu cordada
-            </span>
-
-            {RANKING.map((r) => (
-              <div
-                key={r.name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 7,
-                  padding: "5px 11px",
-                  borderRadius: 20,
-                  background: r.isMe ? "rgba(14,165,233,0.07)" : "transparent",
-                  border: r.isMe ? "1px solid rgba(14,165,233,0.18)" : "1px solid transparent",
-                }}
-              >
-                {/* Avatar */}
-                <div style={{
-                  width: 22, height: 22,
-                  borderRadius: "50%",
-                  background: r.color,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 7.5,
-                  fontWeight: 700,
-                  color: "white",
-                  letterSpacing: "0.03em",
-                  flexShrink: 0,
-                }}>
-                  {r.initials}
-                </div>
-
-                <span style={{
-                  fontSize: 12,
-                  fontWeight: r.isMe ? 600 : 400,
-                  color: r.isMe ? "#0f1117" : "#4b5563",
-                }}>
-                  {r.name}
-                </span>
-
-                <span style={{ fontSize: 11, color: "#9ca3af" }}>
-                  {r.ascents} cimas · {r.ep} EP
-                </span>
-              </div>
-            ))}
+          {/* Three premium cards */}
+          <div className="soc-cards" style={{
+            display: "flex",
+            gap: 20,
+            alignItems: "stretch",
+          }}>
+            <CardCordada revealed={revealed} />
+            <CardClimb  revealed={revealed} />
+            <CardZenith  revealed={revealed} />
           </div>
         </div>
       </section>
