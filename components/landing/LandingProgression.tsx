@@ -95,28 +95,11 @@ function FaceAvatar({ name, isMe, accentColor }: { name: string; isMe: boolean; 
           style={{ width: 32, height: 32, display: "block", objectFit: "cover" }} />
       );
 
-      /* Luc Moreau — French, fair skin, dark brown hair, blue-grey eyes, slight smile */
+      /* Luc Moreau — photo avatar */
       case "Luc Moreau": return (
-        <svg width="32" height="32" viewBox="0 0 32 32" style={{ display: "block" }}>
-          <circle cx="16" cy="16" r="16" fill="#1A0A2A"/>
-          <path d="M10 30 Q10 26 13 25 L13.5 23 L18.5 23 L19 25 Q22 26 22 30Z" fill="#F0D8B8"/>
-          <ellipse cx="16" cy="19.5" rx="7" ry="7.5" fill="#F0D8B8"/>
-          <ellipse cx="9.2" cy="20.5" rx="1.4" ry="2" fill="#E8CCA8"/>
-          <ellipse cx="22.8" cy="20.5" rx="1.4" ry="2" fill="#E8CCA8"/>
-          <path d="M9.5 17 C9.5 9 11.5 7 16 7 C20.5 7 22.5 9 22.5 17 C22 11 20 9 16 8.5 C12 9 10 11 9.5 17Z" fill="#2A1408"/>
-          <path d="M9.5 17 L10 21.5 C9.5 20 9 18 9.5 17Z" fill="#2A1408"/>
-          <path d="M22.5 17 L22 21.5 C22.5 20 23 18 22.5 17Z" fill="#2A1408"/>
-          <path d="M11 16 Q12.5 15.2 14.5 15.6" stroke="#1A0A05" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
-          <path d="M17.5 15.6 Q19.5 15.2 21 16" stroke="#1A0A05" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
-          <ellipse cx="13" cy="18.5" rx="1.7" ry="1.4" fill="#EEF4F8"/>
-          <ellipse cx="19" cy="18.5" rx="1.7" ry="1.4" fill="#EEF4F8"/>
-          <ellipse cx="13" cy="18.6" rx="1.05" ry="0.9" fill="#5A8090"/>
-          <ellipse cx="19" cy="18.6" rx="1.05" ry="0.9" fill="#5A8090"/>
-          <ellipse cx="13.1" cy="18.6" rx="0.5" ry="0.45" fill="#0D1820"/>
-          <ellipse cx="19.1" cy="18.6" rx="0.5" ry="0.45" fill="#0D1820"/>
-          <path d="M15.2 20.2 Q16 21.4 16.8 20.2" stroke="#C0A080" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
-          <path d="M13.8 22.5 Q16 24 18.2 22.5" stroke="#C09070" strokeWidth="1" fill="none" strokeLinecap="round"/>
-        </svg>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/images/landing-avatar-luc.webp" alt="Luc Moreau"
+          style={{ width: 32, height: 32, display: "block", objectFit: "cover" }} />
       );
 
       default: return null;
