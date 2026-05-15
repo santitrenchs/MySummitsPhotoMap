@@ -41,6 +41,7 @@ export default function LegalLayout({
           font-family: var(--font-inter, sans-serif);
           color: #0D2538;
           -webkit-font-smoothing: antialiased;
+          overflow-x: hidden;
         }
 
         /* ── Hero header ── */
@@ -175,6 +176,7 @@ export default function LegalLayout({
         @media (max-width: 640px) {
           .legal-prose { padding: 40px 16px 60px; }
           .legal-header { padding: 40px 16px 32px; }
+          .legal-prose table { display: block; overflow-x: auto; }
         }
       `}</style>
 
