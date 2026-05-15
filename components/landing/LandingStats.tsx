@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { useLandingT } from "./LandingLocaleContext";
 
 type Stats = {
   totalRarities: number;
@@ -40,6 +41,7 @@ function StatCard({
   active,
   suffix = "",
   duration,
+  numberLocale = "es-ES",
 }: {
   label: string;
   sublabel: string;
@@ -47,6 +49,7 @@ function StatCard({
   active: boolean;
   suffix?: string;
   duration?: number;
+  numberLocale?: string;
 }) {
   const value = useCountUp(target, active, duration);
 
@@ -65,7 +68,7 @@ function StatCard({
           fontVariantNumeric: "tabular-nums",
         } as React.CSSProperties}
       >
-        {value.toLocaleString("es-ES")}{suffix}
+        {value.toLocaleString(numberLocale)}{suffix}
       </div>
       <div style={{ fontSize: 15, fontWeight: 700, color: "#0D2538", marginBottom: 4 }}>
         {label}
@@ -78,6 +81,7 @@ function StatCard({
 }
 
 export default function LandingStats({ stats }: { stats: Stats }) {
+  const t = useLandingT();
   const [active, setActive] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
 
@@ -115,9 +119,9 @@ export default function LandingStats({ stats }: { stats: Stats }) {
         >
           {/* Dividers between columns */}
           {[
-            { label: "Cimas en el Azimut", sublabel: "picos catalogados", target: s.totalPeaks, duration: 1600 },
-            { label: "Cimas capturadas", sublabel: "ya tiene dueño", target: s.capturedPeaks, duration: 1400 },
-            { label: "Ascensiones", sublabel: "registradas en total", target: s.totalAscents, duration: 1200 },
+            { label: t.stats_peaks_label, sublabel: t.stats_peaks_sub, target: s.totalPeaks, duration: 1600 },
+            { label: t.stats_captured_label, sublabel: t.stats_captured_sub, target: s.capturedPeaks, duration: 1400 },
+            { label: t.stats_ascents_label, sublabel: t.stats_ascents_sub, target: s.totalAscents, duration: 1200 },
           ].map((item, i) => (
             <div
               key={item.label}
@@ -125,7 +129,7 @@ export default function LandingStats({ stats }: { stats: Stats }) {
                 borderLeft: i === 0 ? "none" : "1px solid rgba(13,37,56,0.08)",
               }}
             >
-              <StatCard {...item} active={active} />
+              <StatCard {...item} active={active} numberLocale={t.numberLocale} />
             </div>
           ))}
         </div>

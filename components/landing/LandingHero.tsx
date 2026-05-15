@@ -3,8 +3,10 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import HeroMap from "./HeroMap";
+import { useLandingT } from "./LandingLocaleContext";
 
 export default function LandingHero() {
+  const t = useLandingT();
   const titleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,16 +97,16 @@ export default function LandingHero() {
               }}
             >
               <span className="hero-line" style={{ display: "block", color: "#0D2538" }}>
-                Captura cimas.
+                {t.hero_line1}
               </span>
               <span className="hero-line" style={{ display: "block", color: "var(--ld-gold)" }}>
-                Colecciona rarezas.
+                {t.hero_line2}
               </span>
               <span className="hero-line" style={{ display: "block", color: "#5A6E84" }}>
-                Conviértete en
+                {t.hero_line3}
               </span>
               <span className="hero-line" style={{ display: "block", color: "#2F7A5F" }}>
-                Legendario.
+                {t.hero_line4}
               </span>
             </h1>
           </div>
@@ -119,19 +121,18 @@ export default function LandingHero() {
               maxWidth: 480,
             }}
           >
-            Peakadex convierte cada ascensión real en una carta coleccionable.
-            Tu historia de montaña, convertida en leyenda.
+            {t.hero_body}
           </p>
 
           {/* CTAs */}
           <div style={{ display: "flex", justifyContent: "center" }}>
             <Link href="/register" className="ld-btn-primary" style={{ fontSize: 16, padding: "15px 32px" }}>
-              Empieza tu colección →
+              {t.hero_cta}
             </Link>
           </div>
 
           <p className="ld-cta-micro ld-hero-micro" style={{ textAlign: "center", marginTop: 16 }}>
-            Sin tarjeta de crédito · Gratis para empezar
+            {t.hero_micro}
           </p>
         </div>
       </div>

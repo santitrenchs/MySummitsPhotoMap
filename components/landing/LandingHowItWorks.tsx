@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useLandingT } from "./LandingLocaleContext";
 
 const STEPS = [
   {
@@ -64,6 +65,7 @@ const STEPS = [
 ];
 
 export default function LandingHowItWorks() {
+  const t = useLandingT();
   const stepsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -104,14 +106,14 @@ export default function LandingHowItWorks() {
       <div className="ld-container">
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 64 }}>
-          <div className="ld-section-label">Cómo funciona</div>
+          <div className="ld-section-label">{t.how_label}</div>
           <h2 className="ld-display ld-section-title" style={{ textAlign: "center" }}>
-            Tan simple como subir una montaña.
+            {t.how_title}
             <br />
-            <span style={{ color: "var(--ld-gold)", opacity: 0.9 }}>(Bueno, casi.)</span>
+            <span style={{ color: "var(--ld-gold)", opacity: 0.9 }}>{t.how_title_gold}</span>
           </h2>
           <p className="ld-section-sub" style={{ textAlign: "center", margin: "0 auto" }}>
-            Cuatro pasos para convertir cada ascensión en parte de tu leyenda.
+            {t.how_body}
           </p>
         </div>
 
@@ -140,7 +142,9 @@ export default function LandingHowItWorks() {
             className="ld-step-line"
           />
 
-          {STEPS.map((step, i) => (
+          {STEPS.map((step, i) => {
+            const stepT = t.how_steps[i as 0 | 1 | 2 | 3] ?? { title: step.title, desc: step.description };
+            return (
             <div
               key={step.number}
               className="step-item"
@@ -210,7 +214,7 @@ export default function LandingHowItWorks() {
                   lineHeight: 1.25,
                 }}
               >
-                {step.title}
+                {stepT.title}
               </h3>
 
               {/* Description */}
@@ -222,10 +226,11 @@ export default function LandingHowItWorks() {
                   margin: 0,
                 }}
               >
-                {step.description}
+                {stepT.desc}
               </p>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Bottom CTA */}
@@ -263,13 +268,13 @@ export default function LandingHowItWorks() {
               marginBottom: 8,
             }}
           >
-            ¿Tu próxima cima te espera?
+            {t.how_footer}
           </p>
           <p style={{ fontSize: 14, color: "rgba(13,37,56,0.5)", marginBottom: 24 }}>
-            Regístrate gratis y empieza a capturarla hoy.
+            {t.how_footer_sub}
           </p>
           <a href="/register" className="ld-btn-primary">
-            Crear cuenta gratis →
+            {t.how_cta}
           </a>
         </div>
       </div>

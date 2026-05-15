@@ -1,39 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useLandingT } from "./LandingLocaleContext";
 
-const FAQS = [
-  {
-    q: "¿Es de pago?",
-    a: "Peakadex es completamente gratuito para empezar. Regístrate y forma parte de los primeros exploradores sin coste.",
-  },
-  {
-    q: "¿Cómo se determina la rareza de una cima?",
-    a: "Según la altitud de la cima en metros. Cuanto más alta, más rara y difícil de capturar. Desde Daisy (< 1.500 m) hasta Snow Lotus (≥ 8.000 m).",
-  },
-  {
-    q: "¿Qué es una carta de montaña?",
-    a: "Cuando registras una ascensión, Peakadex genera una carta coleccionable de esa cima con su nombre, altitud, rareza, foto y tus datos de la ascensión. Es tu trofeo digital.",
-  },
-  {
-    q: "¿Necesito conexión en la cumbre?",
-    a: "No. Puedes registrar la ascensión cuando tengas conexión, aunque hayas estado offline en la cima. Lo importante es que subiste.",
-  },
-  {
-    q: "¿Es solo para alpinistas de élite?",
-    a: "Para nada. La rareza Daisy cubre cimas hasta 1.500 m. Cualquier senderista puede empezar su colección desde el primer día.",
-  },
-  {
-    q: "¿Puedo registrar cimas pasadas?",
-    a: "Sí. Puedes añadir ascensiones de cualquier fecha con foto y datos de la expedición. Tu historia no empieza hoy — empieza desde que subiste tu primera montaña.",
-  },
-  {
-    q: "¿Cómo funciona la cordada?",
-    a: "Buscas a tus amigos, les mandas una solicitud y cuando aceptan, ves su actividad en tu feed y ellos la tuya. Sin algoritmos, solo tus amigos reales.",
-  },
-];
-
-function FAQItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
+function FAQItem({ q, a, open, onToggle }: {
+  q: string; a: string; open: boolean; onToggle: () => void;
+}) {
   return (
     <div
       style={{
@@ -111,6 +83,7 @@ function FAQItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean
 }
 
 export default function LandingFAQ() {
+  const t = useLandingT();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -130,7 +103,7 @@ export default function LandingFAQ() {
         >
           {/* Left: header */}
           <div style={{ position: "sticky", top: 100 }}>
-            <div className="ld-section-label">FAQ</div>
+            <div className="ld-section-label">{t.faq_label}</div>
             <h2
               className="ld-display"
               style={{
@@ -140,16 +113,16 @@ export default function LandingFAQ() {
                 lineHeight: 1.1,
               }}
             >
-              Preguntas frecuentes
+              {t.faq_title}
             </h2>
             <p style={{ fontSize: 15, color: "#5A6E84", lineHeight: 1.6, margin: 0 }}>
-              ¿Tienes dudas? Aquí están las respuestas más habituales.
+              {t.faq_sub}
             </p>
           </div>
 
           {/* Right: accordion */}
           <div>
-            {FAQS.map((faq, i) => (
+            {t.faq_items.map((faq, i) => (
               <FAQItem
                 key={i}
                 q={faq.q}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useLandingT } from "./LandingLocaleContext";
 
 const RARITIES = [
   { id: "daisy",      name: "Daisy",      emoji: "✿", color: "#00995C", altRange: "0 – 999 m",         description: "La entrada al mundo de los coleccionistas",  ep: "10 EP"    },
@@ -15,6 +16,7 @@ const RARITIES = [
 ];
 
 export default function LandingRarities({ peakCounts }: { peakCounts: Record<string, number> }) {
+  const t = useLandingT();
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,18 +54,17 @@ export default function LandingRarities({ peakCounts }: { peakCounts: Record<str
       <div className="ld-container">
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 60 }}>
-          <div className="ld-section-label">Sistema de rarezas</div>
+          <div className="ld-section-label">{t.rarities_section_label}</div>
           <h2 className="ld-display ld-section-title" style={{ textAlign: "center" }}>
-            No todas las cimas son iguales.
+            {t.rarities_title}
             <br />
-            <span style={{ color: "var(--ld-gold)" }}>La altitud determina la rareza.</span>
+            <span style={{ color: "var(--ld-gold)" }}>{t.rarities_title_gold}</span>
           </h2>
           <p
             className="ld-section-sub"
             style={{ textAlign: "center", margin: "0 auto" }}
           >
-            Como las cartas legendarias, pero estas las ganas tú
-            escalando montañas reales.
+            {t.rarities_body}
           </p>
         </div>
 
@@ -158,7 +159,7 @@ export default function LandingRarities({ peakCounts }: { peakCounts: Record<str
                   margin: "0 0 14px",
                 }}
               >
-                {r.description}
+                {t.rarities_descs[i]}
               </p>
 
               {/* EP badge + peak count */}
@@ -185,7 +186,7 @@ export default function LandingRarities({ peakCounts }: { peakCounts: Record<str
                     color: "rgba(13,37,56,0.4)",
                     fontFamily: "var(--font-mono-landing, monospace)",
                   }}>
-                    {peakCounts[r.id].toLocaleString("es-ES")} cimas
+                    {peakCounts[r.id].toLocaleString(t.numberLocale)} {t.rarities_peaks_suffix}
                   </span>
                 )}
               </div>
@@ -196,10 +197,10 @@ export default function LandingRarities({ peakCounts }: { peakCounts: Record<str
         {/* Bottom copy */}
         <div style={{ textAlign: "center", marginTop: 52 }}>
           <p style={{ fontSize: 14, color: "rgba(13,37,56,0.4)", marginBottom: 20 }}>
-            Las Snow Lotus son la rareza más difícil. Solo unos pocos las han capturado todas.
+            {t.rarities_footer}
           </p>
           <a href="/register" className="ld-btn-primary" style={{ display: "inline-flex" }}>
-            Empieza con una Daisy →
+            {t.rarities_cta}
           </a>
         </div>
       </div>

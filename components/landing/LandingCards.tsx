@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLandingT } from "./LandingLocaleContext";
 
 // ─── Rarity helpers ──────────────────────────────────────────────────────────
 function rarityForAlt(m: number): { name: string; color: string; ep: string; flower: string } {
@@ -98,6 +99,7 @@ function MountainScene({ color, altM, uid }: { color: string; altM: number; uid:
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
 function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: number; flipped: boolean; isNearby: boolean }) {
+  const t = useLandingT();
   const { name: rarity, color, ep } = rarityForAlt(card.altitudeM);
   const uid = `c${index}`;
 
@@ -167,17 +169,17 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
         {/* Stat band — RAREZA · ALTITUD · RECOMPENSA */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: "10px" }}>
           <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RAREZA</div>
+            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>{t.cards_rarity}</div>
             <div style={{ fontSize: 10, fontWeight: 700, color, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, lineHeight: 1.2 }}>
               ✿ <span style={{ fontSize: 10 }}>{rarity}</span>
             </div>
           </div>
           <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>ALTITUD</div>
+            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>{t.cards_altitude}</div>
             <div style={{ fontSize: 10, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{card.altLabel}</div>
           </div>
           <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RECOMPENSA</div>
+            <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>{t.cards_reward}</div>
             <div style={{ fontSize: 10, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{ep}</div>
           </div>
         </div>
@@ -242,19 +244,19 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
           <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "9px 14px 6px" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
             <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(13,37,56,0.4)", textTransform: "uppercase" }}>
-              Estadísticas Peakadex
+              {t.cards_stats_label}
             </span>
           </div>
           {/* KPIs */}
           <div style={{ display: "flex", borderTop: "1px solid rgba(13,37,56,0.06)" }}>
             <div style={{ flex: 1, padding: "8px 14px" }}>
-              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.38)", textTransform: "uppercase", marginBottom: 3 }}>Ascensiones</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.ascents.toLocaleString("es")}</div>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.38)", textTransform: "uppercase", marginBottom: 3 }}>{t.cards_ascents}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.ascents.toLocaleString(t.numberLocale)}</div>
             </div>
             <div style={{ width: 1, background: "rgba(13,37,56,0.06)", margin: "8px 0" }} />
             <div style={{ flex: 1, padding: "8px 14px", textAlign: "right" }}>
-              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.38)", textTransform: "uppercase", marginBottom: 3 }}>Alpinistas</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.climbers.toLocaleString("es")}</div>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.38)", textTransform: "uppercase", marginBottom: 3 }}>{t.cards_climbers}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.climbers.toLocaleString(t.numberLocale)}</div>
             </div>
           </div>
           {/* Footer: user + message */}
@@ -280,6 +282,7 @@ const CARD_W = 240;
 const CARD_H = 410;
 
 export default function LandingCards() {
+  const t = useLandingT();
   const [active, setActive] = useState(0);
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
   const [vw, setVw] = useState(() => typeof window !== "undefined" ? window.innerWidth : 1200);
@@ -376,21 +379,20 @@ export default function LandingCards() {
 
           {/* ── Left column: text + CTA ── */}
           <div className="lc-left">
-            <div className="ld-section-label">Cartas coleccionables</div>
+            <div className="ld-section-label">{t.cards_section_label}</div>
             <h2 className="ld-display ld-section-title" style={{ marginTop: 12 }}>
-              Cada cima,<br />una carta.
+              {t.cards_title1}<br />{t.cards_title2}
               <br />
-              <span style={{ color: "var(--ld-gold)" }}>Tu colección,<br />tu leyenda.</span>
+              <span style={{ color: "var(--ld-gold)" }}>{t.cards_title3}<br />{t.cards_title4}</span>
             </h2>
             <p className="ld-section-sub" style={{ marginTop: 20 }}>
-              Cuando registras una ascensión, Peakadex genera una carta única
-              de esa montaña. Anverso y reverso. Como un trofeo, pero que cabe en el bolsillo.
+              {t.cards_body}
             </p>
             <p style={{ fontSize: 13, color: "rgba(13,37,56,0.4)", marginTop: 20, marginBottom: 28 }}>
-              Las Snow Lotus son la rareza más difícil. Solo unos pocos las han capturado todas.
+              {t.cards_footer}
             </p>
             <a href="/register" className="ld-btn-primary" style={{ display: "inline-flex" }}>
-              Empieza tu colección
+              {t.cards_cta}
             </a>
           </div>
 
@@ -419,7 +421,7 @@ export default function LandingCards() {
             {/* Dot indicators */}
             <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 28 }}>
               {RAW.map((_, i) => (
-                <button key={i} onClick={() => setActive(i)} aria-label={`Carta ${i + 1}`} style={{
+                <button key={i} onClick={() => setActive(i)} aria-label={`${t.cards_section_label} ${i + 1}`} style={{
                   width: i === active ? 20 : 7, height: 7,
                   borderRadius: 99, border: "none", padding: 0, cursor: "pointer",
                   background: i === active ? "#0D2538" : "rgba(13,37,56,0.2)",
@@ -438,7 +440,7 @@ export default function LandingCards() {
                 ✿ {rarityForAlt(RAW[active].altitudeM).name} · {RAW[active].altLabel}
               </div>
               <p style={{ fontSize: 11, color: "rgba(13,37,56,0.3)", marginTop: 6 }}>
-                Toca la carta para ver el reverso
+                {t.cards_flip}
               </p>
             </div>
           </div>

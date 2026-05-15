@@ -2,39 +2,34 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PeakadexLogo } from "@/components/brand/Logo";
-
-const NAV_LINKS = [
-  { label: "Rarezas", href: "#rarezas" },
-  { label: "Cartas", href: "#cartas" },
-];
+import { useLandingT } from "./LandingLocaleContext";
 
 const LANGS = [
-  { value: "es", flag: "/flags/es.svg", name: "Español" },
-  { value: "en", flag: "/flags/en.svg", name: "English" },
-  { value: "ca", flag: "/flags/ca.svg", name: "Català" },
-  { value: "fr", flag: "/flags/fr.svg", name: "Français" },
-  { value: "de", flag: "/flags/de.svg", name: "Deutsch" },
+  { value: "es", flag: "/flags/es.svg", name: "Español", href: "/" },
+  { value: "en", flag: "/flags/en.svg", name: "English", href: "/en" },
+  { value: "ca", flag: "/flags/ca.svg", name: "Català",  href: "/ca" },
+  { value: "fr", flag: "/flags/fr.svg", name: "Français", href: "/fr" },
+  { value: "de", flag: "/flags/de.svg", name: "Deutsch",  href: "/de" },
 ];
 
-function readLocaleCookie(): string {
-  if (typeof document === "undefined") return "es";
-  const m = document.cookie.match(/(?:^|; )locale=([^;]+)/);
-  return m?.[1] ?? "es";
-}
-
 export default function LandingNav() {
+  const t = useLandingT();
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [locale, setLocale] = useState("es");
   const [langOpen, setLangOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setLocale(readLocaleCookie());
-  }, []);
+  const locale = t.locale;
+
+  const navLinks = [
+    { label: t.nav_rarities, href: "#rarezas" },
+    { label: t.nav_cards, href: "#cartas" },
+  ];
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 60);
@@ -72,10 +67,9 @@ export default function LandingNav() {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const selectLocale = (val: string) => {
-    setLocale(val);
+  const selectLocale = (lang: typeof LANGS[number]) => {
     setLangOpen(false);
-    document.cookie = `locale=${val}; path=/; max-age=${60 * 60 * 24 * 365}`;
+    router.push(lang.href);
   };
 
   const currentLang = LANGS.find((l) => l.value === locale) ?? LANGS[0];
@@ -111,7 +105,7 @@ export default function LandingNav() {
 
         {/* Desktop nav links */}
         <nav style={{ display: "flex", gap: 4, alignItems: "center" }} className="ld-nav-links">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <button
               key={link.href}
               onClick={() => handleAnchor(link.href)}
@@ -210,7 +204,7 @@ export default function LandingNav() {
                   {LANGS.map((lang) => (
                     <button
                       key={lang.value}
-                      onClick={() => selectLocale(lang.value)}
+                      onClick={() => selectLocale(lang)}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -279,10 +273,10 @@ export default function LandingNav() {
                 }}
                 className="ld-login-link"
               >
-                Iniciar sesión
+                {t.nav_login}
               </Link>
               <Link href="/register" className="ld-btn-primary ld-register-btn" style={{ fontSize: 14, padding: "10px 20px" }}>
-                Registrarse
+                {t.nav_register}
               </Link>
             </div>
           </div>
@@ -327,7 +321,7 @@ export default function LandingNav() {
             gap: 4,
           }}
         >
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <button
               key={link.href}
               onClick={() => handleAnchor(link.href)}
@@ -350,12 +344,12 @@ export default function LandingNav() {
 
           {/* Language picker in mobile menu */}
           <div style={{ padding: "14px 0 8px", borderBottom: "1px solid rgba(13,37,56,0.06)" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(13,37,56,0.4)", margin: "0 0 10px" }}>Idioma</p>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(13,37,56,0.4)", margin: "0 0 10px" }}>{t.nav_lang}</p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {LANGS.map((lang) => (
                 <button
                   key={lang.value}
-                  onClick={() => { selectLocale(lang.value); setMenuOpen(false); }}
+                  onClick={() => { selectLocale(lang); setMenuOpen(false); }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -385,7 +379,7 @@ export default function LandingNav() {
             style={{ marginTop: 12, justifyContent: "center" }}
             onClick={() => setMenuOpen(false)}
           >
-            Registrarse gratis
+            {t.nav_register_mobile}
           </Link>
         </div>
       )}

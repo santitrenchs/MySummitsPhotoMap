@@ -1,22 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { PeakadexLogo } from "@/components/brand/Logo";
-
-const FOOTER_LINKS = {
-  Producto: [
-    { label: "Rarezas", href: "/#rarezas" },
-    { label: "Cartas", href: "/#cartas" },
-    { label: "Cómo funciona", href: "/#como-funciona" },
-    { label: "Registrarse", href: "/register" },
-    { label: "Iniciar sesión", href: "/login" },
-  ],
-  Legal: [
-    { label: "Política de privacidad", href: "/privacy" },
-    { label: "Términos de uso", href: "/terms" },
-    { label: "Política de cookies", href: "/cookies" },
-  ],
-};
+import { useLandingT } from "./LandingLocaleContext";
 
 export default function LandingFooter() {
+  const t = useLandingT();
+  const footerLinks = {
+    [t.footer_col_product]: t.footer_links_product,
+    [t.footer_col_legal]: t.footer_links_legal,
+  };
+
   return (
     <footer
       style={{
@@ -49,9 +43,9 @@ export default function LandingFooter() {
                 margin: "0 0 20px",
               }}
             >
-              Captura cimas. Colecciona rarezas.
+              {t.footer_tagline1}
               <br />
-              Conviértete en Legendario.
+              {t.footer_tagline2}
             </p>
             <p
               style={{
@@ -60,12 +54,12 @@ export default function LandingFooter() {
                 lineHeight: 1.5,
               }}
             >
-              Hecho con ✿ para los que suben montañas de verdad.
+              {t.footer_made}
             </p>
           </div>
 
           {/* Nav columns */}
-          {Object.entries(FOOTER_LINKS).map(([title, links]) => (
+          {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
               <div
                 style={{
@@ -115,7 +109,7 @@ export default function LandingFooter() {
           }}
         >
           <p style={{ fontSize: 12, color: "rgba(240,244,255,0.25)", margin: 0 }}>
-            © {new Date().getFullYear()} Peakadex. Todos los derechos reservados.
+            © {new Date().getFullYear()} {t.footer_copyright}
           </p>
           <p style={{ fontSize: 12, color: "rgba(240,244,255,0.2)", margin: 0 }}>
             Early Access — Staging

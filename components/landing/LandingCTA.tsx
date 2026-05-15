@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { useLandingT } from "./LandingLocaleContext";
 
 const RARITY_CYCLE = [
   "#00995C", // Daisy
@@ -26,6 +27,7 @@ const glowStops = RARITY_CYCLE
   .join("\n  ");
 
 export default function LandingCTA() {
+  const t = useLandingT();
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -117,7 +119,7 @@ export default function LandingCTA() {
               color: "rgba(240,244,255,0.92)",
             }}
           >
-            Toda colección empieza con una cima.
+            {t.cta_headline}
           </h2>
 
           {/* CTA */}
@@ -130,11 +132,11 @@ export default function LandingCTA() {
               display: "inline-flex",
             }}
           >
-            Captura tu primera Daisy →
+            {t.cta_button}
           </Link>
 
           <p className="ld-cta-micro" style={{ marginTop: 16 }}>
-            Sin tarjeta de crédito · Empieza en 1 minuto
+            {t.cta_micro}
           </p>
         </div>
       </div>

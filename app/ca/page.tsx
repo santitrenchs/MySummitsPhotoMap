@@ -3,21 +3,23 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/client";
 import { RARITIES } from "@/lib/rarity";
 import LandingPage from "@/components/landing/LandingPage";
+import { getLandingT } from "@/lib/i18n/landing";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
+const t = getLandingT("ca");
+
 export const metadata: Metadata = {
-  title: "Peakadex — Captura cimas. Colecciona rarezas. Conviértete en Legendario.",
-  description:
-    "La app de montaña que convierte cada ascensión en una carta coleccionable. Registra tus cimas, desbloquea rarezas según la altitud y compite con tu cordada. Gratis.",
+  title: t.meta_title,
+  description: t.meta_desc,
   openGraph: {
-    title: "Peakadex — Captura cimas. Colecciona rarezas.",
-    description: "Convierte cada ascensión en una carta coleccionable.",
+    title: t.meta_title,
+    description: t.meta_desc,
     type: "website",
   },
   alternates: {
-    canonical: "https://www.peakadex.com",
+    canonical: "https://www.peakadex.com/ca",
     languages: {
       "x-default": "https://www.peakadex.com",
       "es": "https://www.peakadex.com",
@@ -29,7 +31,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootPage() {
+export default async function CaPage() {
   const session = await auth();
   if (session) redirect("/home");
 
@@ -37,7 +39,6 @@ export default async function RootPage() {
     prisma.peak.count(),
     prisma.ascent.groupBy({ by: ["peakId"] }).then((r) => r.length),
     prisma.ascent.count(),
-    // One COUNT per rarity tier, using altitude ranges (no dependency on rarityId column)
     ...RARITIES.map((r, i) => {
       const next = RARITIES[i + 1];
       return prisma.peak.count({
@@ -54,7 +55,7 @@ export default async function RootPage() {
     <LandingPage
       stats={{ totalRarities: 9, totalPeaks, capturedPeaks, totalAscents }}
       peakCounts={peakCounts}
-      locale="es"
+      locale="ca"
     />
   );
 }

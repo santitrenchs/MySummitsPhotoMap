@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLandingT } from "./LandingLocaleContext";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -143,6 +144,7 @@ function useHover() {
 // ─── Card 1 — Tu cordada ──────────────────────────────────────────────────────
 
 function CardCordada({ revealed }: { revealed: boolean }) {
+  const t = useLandingT();
   const { hovered, bind } = useHover();
 
   return (
@@ -183,11 +185,11 @@ function CardCordada({ revealed }: { revealed: boolean }) {
           letterSpacing: "-0.02em",
           fontFamily: "var(--font-space, sans-serif)",
         }}>
-          Tu cordada
+          {t.prog_title}
         </span>
       </div>
       <p style={{ margin: "0 0 20px", fontSize: 13, color: "rgba(255,255,255,0.38)", lineHeight: 1.5 }}>
-        Compite con quienes comparten tu camino.
+        {t.prog_sub}
       </p>
 
       {/* Column headers */}
@@ -197,7 +199,7 @@ function CardCordada({ revealed }: { revealed: boolean }) {
         borderBottom: "1px solid rgba(255,255,255,0.06)",
         marginBottom: 4,
       }}>
-        {(["POS.", "MONTAÑERO", "CIMAS", "CAIRNS", "EP"] as const).map((col, i) => (
+        {([t.prog_col_pos, t.prog_col_climber, t.prog_col_summits, "CAIRNS", "EP"] as const).map((col, i) => (
           <span
             key={col}
             style={{
@@ -308,7 +310,7 @@ function CardCordada({ revealed }: { revealed: boolean }) {
       }}>
         <IconGroup/>
         <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
-          La montaña se disfruta más en buena compañía.
+          {t.prog_footer}
         </span>
       </div>
     </div>
@@ -318,6 +320,7 @@ function CardCordada({ revealed }: { revealed: boolean }) {
 // ─── Card 2 — Camino a Zenith ─────────────────────────────────────────────────
 
 function CardZenith({ revealed }: { revealed: boolean }) {
+  const t = useLandingT();
   const { hovered, bind } = useHover();
 
   return (
@@ -377,11 +380,11 @@ function CardZenith({ revealed }: { revealed: boolean }) {
             letterSpacing: "-0.02em",
             fontFamily: "var(--font-space, sans-serif)",
           }}>
-            Camino a Zenith
+            {t.prog_card2_title}
           </span>
         </div>
         <p style={{ margin: "0 0 22px", fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
-          La evolución no se mide solo en metros.
+          {t.prog_card2_sub}
         </p>
 
         {/* Progression list */}
@@ -400,7 +403,7 @@ function CardZenith({ revealed }: { revealed: boolean }) {
             borderRadius: 1,
           }}/>
 
-          {ZENITH_LEVELS.map((lv) => {
+          {ZENITH_LEVELS.map((lv, lvIdx) => {
             const dotSize = lv.isTop || lv.isUser ? 9 : 6;
             const dotBg = lv.isTop
               ? "radial-gradient(circle at 40% 35%, #F5C842, #C4862B)"
@@ -443,7 +446,7 @@ function CardZenith({ revealed }: { revealed: boolean }) {
                   color: lv.isTop || lv.isUser ? "rgba(255,255,255,0.44)" : "rgba(255,255,255,0.26)",
                   lineHeight: 1.4,
                 }}>
-                  {lv.desc}
+                  {t.prog_zenith_descs[lvIdx]}
                 </div>
               </div>
             );
@@ -457,6 +460,7 @@ function CardZenith({ revealed }: { revealed: boolean }) {
 // ─── Section ──────────────────────────────────────────────────────────────────
 
 export default function LandingProgression() {
+  const t = useLandingT();
   const sectionRef = useRef<HTMLElement>(null);
   const [revealed, setRevealed] = useState(false);
 
@@ -507,14 +511,14 @@ export default function LandingProgression() {
             transition: "opacity 0.75s ease, transform 0.75s ease",
           }}>
             <p className="ld-section-label" style={{ margin: "0 0 16px" }}>
-              Tu evolución
+              {t.prog_headline}
             </p>
             <h2 className="ld-display ld-section-title" style={{ margin: "0 0 12px" }}>
-              Cada cima es un reto.<br />
-              <span style={{ color: "#B8860B" }}>Tu cordada te impulsa a llegar más lejos.</span>
+              {t.prog_headline_gold}<br />
+              <span style={{ color: "#B8860B" }}>{t.prog_sub}</span>
             </h2>
             <p style={{ fontSize: 14, color: "rgba(13,37,56,0.42)", letterSpacing: "0.01em", margin: 0 }}>
-              El Zenith no se conquista solo.
+              {t.prog_small}
             </p>
           </div>
 

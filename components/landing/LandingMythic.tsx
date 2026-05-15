@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useLandingT } from "./LandingLocaleContext";
 
 // ─── Floating particle ────────────────────────────────────────────────────────
 function Particle({ delay, x, size, duration }: { delay: number; x: number; size: number; duration: number }) {
@@ -35,6 +36,7 @@ function FeatureBlock({ icon, title, body, delay }: { icon: string; title: strin
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function LandingMythic() {
+  const t = useLandingT();
   const sectionRef  = useRef<HTMLDivElement>(null);
   const cardRef     = useRef<HTMLDivElement>(null);
   const [revealed,  setRevealed]  = useState(false);
@@ -270,7 +272,7 @@ export default function LandingMythic() {
                 <span style={{
                   fontSize: 11, fontWeight: 700, letterSpacing: "0.18em",
                   color: "#D4A017", textTransform: "uppercase",
-                }}>Mythic Collection</span>
+                }}>{t.mythic_section_label}</span>
               </div>
 
               {/* Heading */}
@@ -279,25 +281,23 @@ export default function LandingMythic() {
                 margin: "0 0 24px",
                 lineHeight: 1.05,
               }}>
-                <span style={{ color: "#F0EDE8", display: "block" }}>Algunas cimas</span>
-                <span style={{ color: "#F0EDE8", display: "block" }}>no son raras.</span>
+                <span style={{ color: "#F0EDE8", display: "block" }}>{t.mythic_title1}</span>
+                <span style={{ color: "#F0EDE8", display: "block" }}>{t.mythic_title2}</span>
                 <span style={{
                   display: "block",
                   background: "linear-gradient(90deg, #D4A017 0%, #F5C842 45%, #D4A017 100%)",
                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
                   filter: "drop-shadow(0 0 18px rgba(212,160,23,0.4))",
-                }}>Son Mythic.</span>
+                }}>{t.mythic_title3}</span>
               </h2>
 
               {/* Sub */}
               {/* Manifesto lines */}
               <div style={{ display: "flex", flexDirection: "column", gap: 22, marginTop: 32 }}>
-                {([
-                  { d: "1", line: "Las montañas que todo alpinista conoce.", sub: null },
-                  { d: "2", line: "Contadas cimas por cordillera.", sub: "Las que definen una vida montañera." },
-                  { d: "3", line: "No son las más difíciles.", sub: "Son las que hay que subir una vez en la vida." },
-                ] as const).map(({ d, line, sub }) => (
+                {t.mythic_manifesto.map(({ line, sub }, idx) => {
+                  const d = String(idx + 1) as "1" | "2" | "3";
+                  return (
                   <div key={d} className="mythic-manifesto-line" data-d={d}
                     style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
                     <span style={{
@@ -320,7 +320,8 @@ export default function LandingMythic() {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Quote only */}
@@ -338,7 +339,7 @@ export default function LandingMythic() {
                     lineHeight: 1.35,
                     margin: 0,
                   }}>
-                    "Algunas cimas no se explican.<br />Solo se suben."
+                    <span dangerouslySetInnerHTML={{ __html: t.mythic_quote }} />
                   </p>
                 </blockquote>
               </div>
@@ -445,17 +446,17 @@ export default function LandingMythic() {
                   {/* Stat band */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: "10px", flexShrink: 0 }}>
                     <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-                      <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RAREZA</div>
+                      <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>{t.cards_rarity}</div>
                       <div style={{ fontSize: 10, fontWeight: 700, color: "#A855F7", display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
                         ✿ <span>Edelweiss</span>
                       </div>
                     </div>
                     <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-                      <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>ALTITUD</div>
+                      <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>{t.cards_altitude}</div>
                       <div style={{ fontSize: 10, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>4.808 m</div>
                     </div>
                     <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-                      <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RECOMPENSA</div>
+                      <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>{t.cards_reward}</div>
                       <div style={{ fontSize: 10, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+120 EP</div>
                     </div>
                   </div>
@@ -475,7 +476,7 @@ export default function LandingMythic() {
 
               {/* CTA below card */}
               <a href="/register" className="mythic-cta" style={{ marginTop: 36 }}>
-                Explora la Mythic →
+                {t.mythic_cta}
               </a>
             </div>
 
