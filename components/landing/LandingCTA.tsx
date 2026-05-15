@@ -51,7 +51,10 @@ export default function LandingCTA() {
         position: "relative",
         overflow: "hidden",
         background: "#07111E",
-        padding: "130px 0 110px",
+        minHeight: "50vh",
+        display: "flex",
+        alignItems: "center",
+        padding: "80px 0",
       }}
     >
       <style>{`
@@ -86,7 +89,7 @@ export default function LandingCTA() {
         }
       `}</style>
 
-      <div className="ld-container" style={{ position: "relative", zIndex: 2 }}>
+      <div className="ld-container" style={{ position: "relative", zIndex: 2, width: "100%" }}>
         <div
           ref={contentRef}
           style={{
@@ -99,7 +102,7 @@ export default function LandingCTA() {
           }}
         >
           {/* Single minimal flower */}
-          <div style={{ position: "relative", display: "inline-block", marginBottom: 40 }}>
+          <div style={{ position: "relative", display: "inline-block", marginBottom: 56 }}>
             <div className="cta-glow" />
             <span className="cta-flower">✿</span>
           </div>
@@ -108,17 +111,13 @@ export default function LandingCTA() {
           <h2
             className="ld-display"
             style={{
-              fontSize: "clamp(44px, 7vw, 84px)",
+              fontSize: "clamp(40px, 6.5vw, 80px)",
               margin: "0 0 48px",
               lineHeight: 1.05,
               color: "rgba(240,244,255,0.92)",
             }}
           >
-            Tu leyenda no empieza
-            <br />
-            en la cima.
-            <br />
-            <span style={{ color: "var(--ld-gold, #F5C842)" }}>Empieza aquí.</span>
+            Toda colección empieza con una cima.
           </h2>
 
           {/* CTA */}
