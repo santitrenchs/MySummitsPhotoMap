@@ -580,11 +580,11 @@ export default function LandingProgression() {
               Tu evolución
             </p>
             <h2 className="ld-display ld-section-title" style={{ margin: "0 0 12px" }}>
-              Cada cima pone tus límites a prueba.<br />
-              <span style={{ color: "#B8860B" }}>Tu cordada te ayuda a superarlos.</span>
+              Cada cima es un reto.<br />
+              <span style={{ color: "#B8860B" }}>Tu cordada te impulsa a llegar más lejos.</span>
             </h2>
             <p style={{ fontSize: 14, color: "rgba(13,37,56,0.42)", letterSpacing: "0.01em", margin: 0 }}>
-              Muy pocos llegan al Zenith.
+              El Zenith no se conquista solo.
             </p>
           </div>
 
