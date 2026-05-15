@@ -134,25 +134,11 @@ export default function LandingStats({ stats }: { stats: Stats }) {
       <style>{`
         @media (max-width: 680px) {
           .ld-stats-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 32px 0 !important;
-          }
-          .ld-stats-grid > div:nth-child(odd) {
-            border-left: none !important;
-          }
-          .ld-stats-grid > div:nth-child(3) {
-            border-top: 1px solid rgba(13,37,56,0.08);
-          }
-        }
-        @media (max-width: 400px) {
-          .ld-stats-grid {
             grid-template-columns: 1fr !important;
+            gap: 32px 0 !important;
           }
           .ld-stats-grid > div {
             border-left: none !important;
-            border-top: 1px solid rgba(13,37,56,0.08);
-          }
-          .ld-stats-grid > div:first-child {
             border-top: none !important;
           }
         }
