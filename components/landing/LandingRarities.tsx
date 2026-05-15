@@ -121,21 +121,20 @@ export default function LandingRarities({ peakCounts }: { peakCounts: Record<str
                 }}
               />
 
-              {/* Rarity icon — same ✿ for all, color changes per rarity */}
-              <div style={{ fontSize: 40, marginBottom: 14, lineHeight: 1, color: r.color }}>{r.emoji}</div>
-
-              {/* Name */}
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 700,
-                  fontFamily: "var(--font-space, sans-serif)",
-                  color: r.color,
-                  marginBottom: 4,
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                {r.name}
+              {/* Icon + Name inline */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                <span style={{ fontSize: 28, lineHeight: 1, color: r.color, flexShrink: 0 }}>{r.emoji}</span>
+                <span
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    fontFamily: "var(--font-space, sans-serif)",
+                    color: r.color,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {r.name}
+                </span>
               </div>
 
               {/* Altitude range */}
