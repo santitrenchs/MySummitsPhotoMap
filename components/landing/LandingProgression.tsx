@@ -68,6 +68,135 @@ function MountainBg() {
   );
 }
 
+// ─── Face avatars ─────────────────────────────────────────────────────────────
+
+function FaceAvatar({ name, isMe, accentColor }: { name: string; isMe: boolean; accentColor: string }) {
+  const face = (() => {
+    switch (name) {
+
+      /* Mathias Hornli — Swiss alpine guide, warm medium skin, chocolate hair, blue-grey eyes */
+      case "Mathias Hornli": return (
+        <svg width="32" height="32" viewBox="0 0 32 32" style={{ display: "block" }}>
+          <circle cx="16" cy="16" r="16" fill="#0D2640"/>
+          <path d="M10 30 Q10 26 13 25 L13.5 23 L18.5 23 L19 25 Q22 26 22 30Z" fill="#E0AD7A"/>
+          <ellipse cx="16" cy="19.5" rx="7" ry="7.5" fill="#E0AD7A"/>
+          <ellipse cx="9.2" cy="20" rx="1.4" ry="2" fill="#D4A272"/>
+          <ellipse cx="22.8" cy="20" rx="1.4" ry="2" fill="#D4A272"/>
+          <path d="M9 17 C9 9.5 11 7 16 7 C21 7 23 9.5 23 17 C21.5 10 10.5 10 9 17Z" fill="#5A2E14"/>
+          <path d="M9 17 L9.5 21 C9 19.5 8.5 18 9 17Z" fill="#5A2E14"/>
+          <path d="M23 17 L22.5 21 C23 19.5 23.5 18 23 17Z" fill="#5A2E14"/>
+          <path d="M11 16.2 Q12.5 15.3 14.5 15.8" stroke="#3A1E08" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+          <path d="M17.5 15.8 Q19.5 15.3 21 16.2" stroke="#3A1E08" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+          <ellipse cx="13" cy="18.5" rx="1.7" ry="1.4" fill="#EEF2F6"/>
+          <ellipse cx="19" cy="18.5" rx="1.7" ry="1.4" fill="#EEF2F6"/>
+          <ellipse cx="13" cy="18.6" rx="1.05" ry="0.9" fill="#4A7090"/>
+          <ellipse cx="19" cy="18.6" rx="1.05" ry="0.9" fill="#4A7090"/>
+          <ellipse cx="13.1" cy="18.6" rx="0.5" ry="0.45" fill="#0D1A28"/>
+          <ellipse cx="19.1" cy="18.6" rx="0.5" ry="0.45" fill="#0D1A28"/>
+          <path d="M15.2 20 Q16 21.2 16.8 20" stroke="#C09060" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
+          <ellipse cx="16" cy="23.5" rx="4.5" ry="1" fill="#9A7050" opacity="0.28"/>
+          <path d="M13.8 22.2 Q16 23 18.2 22.2" stroke="#B87050" strokeWidth="1" fill="none" strokeLinecap="round"/>
+        </svg>
+      );
+
+      /* Giulia Rinaldi — Italian, olive skin, black hair, warm brown eyes, warm smile */
+      case "Giulia Rinaldi": return (
+        <svg width="32" height="32" viewBox="0 0 32 32" style={{ display: "block" }}>
+          <circle cx="16" cy="16" r="16" fill="#0D3020"/>
+          <ellipse cx="16" cy="23" rx="10" ry="10" fill="#0A0605"/>
+          <path d="M10 30 Q10 26 13 25 L13.5 23 L18.5 23 L19 25 Q22 26 22 30Z" fill="#C47E52"/>
+          <ellipse cx="16" cy="19" rx="6.5" ry="7" fill="#C8845A"/>
+          <path d="M9.5 17 C9 9 12 6.5 16 6.5 C20 6.5 23 9 22.5 17 C21 10.5 11 10.5 9.5 17Z" fill="#0A0605"/>
+          <ellipse cx="9.3" cy="20" rx="1.3" ry="1.8" fill="#BE7A4E"/>
+          <ellipse cx="22.7" cy="20" rx="1.3" ry="1.8" fill="#BE7A4E"/>
+          <path d="M11.2 15.8 Q12.8 15 14.5 15.4" stroke="#1A0A05" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
+          <path d="M17.5 15.4 Q19.2 15 20.8 15.8" stroke="#1A0A05" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
+          <ellipse cx="13" cy="18" rx="1.6" ry="1.3" fill="#F0EAE0"/>
+          <ellipse cx="19" cy="18" rx="1.6" ry="1.3" fill="#F0EAE0"/>
+          <ellipse cx="13" cy="18.1" rx="1" ry="0.85" fill="#6B3018"/>
+          <ellipse cx="19" cy="18.1" rx="1" ry="0.85" fill="#6B3018"/>
+          <ellipse cx="13.1" cy="18.1" rx="0.48" ry="0.42" fill="#0A0605"/>
+          <ellipse cx="19.1" cy="18.1" rx="0.48" ry="0.42" fill="#0A0605"/>
+          <path d="M15.2 19 Q16 20.2 16.8 19" stroke="#A86840" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
+          <ellipse cx="11.5" cy="21" rx="1.5" ry="0.9" fill="#D08060" opacity="0.25"/>
+          <ellipse cx="20.5" cy="21" rx="1.5" ry="0.9" fill="#D08060" opacity="0.25"/>
+          <path d="M13.5 21.8 Q16 23.5 18.5 21.8" stroke="#A86040" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
+        </svg>
+      );
+
+      /* Iker Etxebarria — Basque, medium-dark skin, jet black hair, strong brows, focused */
+      case "Iker Etxebarria": return (
+        <svg width="32" height="32" viewBox="0 0 32 32" style={{ display: "block" }}>
+          <circle cx="16" cy="16" r="16" fill="#0A1535"/>
+          <path d="M10 30 Q10 26 13 25 L13.5 23 L18.5 23 L19 25 Q22 26 22 30Z" fill="#B87040"/>
+          <ellipse cx="16" cy="19" rx="7" ry="7.5" fill="#B87040"/>
+          <ellipse cx="9.2" cy="20" rx="1.4" ry="2" fill="#AA6A38"/>
+          <ellipse cx="22.8" cy="20" rx="1.4" ry="2" fill="#AA6A38"/>
+          <path d="M9 17 C9 8.5 11.5 6.5 16 6.5 C20.5 6.5 23 8.5 23 17 C21.5 9.5 10.5 9.5 9 17Z" fill="#080808"/>
+          <path d="M9 17 L9.5 19.5 C9.2 18.5 9 17.5 9 17Z" fill="#080808"/>
+          <path d="M23 17 L22.5 19.5 C22.8 18.5 23 17.5 23 17Z" fill="#080808"/>
+          <path d="M10.5 15.5 Q12.5 14.3 14.5 14.8" stroke="#080808" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+          <path d="M17.5 14.8 Q19.5 14.3 21.5 15.5" stroke="#080808" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+          <ellipse cx="13" cy="17.8" rx="1.7" ry="1.4" fill="#E8D8C0"/>
+          <ellipse cx="19" cy="17.8" rx="1.7" ry="1.4" fill="#E8D8C0"/>
+          <ellipse cx="13" cy="17.9" rx="1.1" ry="0.9" fill="#2A1408"/>
+          <ellipse cx="19" cy="17.9" rx="1.1" ry="0.9" fill="#2A1408"/>
+          <ellipse cx="13.1" cy="17.9" rx="0.5" ry="0.45" fill="#050202"/>
+          <ellipse cx="19.1" cy="17.9" rx="0.5" ry="0.45" fill="#050202"/>
+          <path d="M14.8 19.5 Q16 21.2 17.2 19.5" stroke="#8A5520" strokeWidth="0.9" fill="none" strokeLinecap="round"/>
+          <path d="M13.5 22 Q16 22.8 18.5 22" stroke="#905030" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
+        </svg>
+      );
+
+      /* Luc Moreau — French, fair skin, dark brown hair, blue-grey eyes, slight smile */
+      case "Luc Moreau": return (
+        <svg width="32" height="32" viewBox="0 0 32 32" style={{ display: "block" }}>
+          <circle cx="16" cy="16" r="16" fill="#1A0A2A"/>
+          <path d="M10 30 Q10 26 13 25 L13.5 23 L18.5 23 L19 25 Q22 26 22 30Z" fill="#F0D8B8"/>
+          <ellipse cx="16" cy="19.5" rx="7" ry="7.5" fill="#F0D8B8"/>
+          <ellipse cx="9.2" cy="20.5" rx="1.4" ry="2" fill="#E8CCA8"/>
+          <ellipse cx="22.8" cy="20.5" rx="1.4" ry="2" fill="#E8CCA8"/>
+          <path d="M9.5 17 C9.5 9 11.5 7 16 7 C20.5 7 22.5 9 22.5 17 C22 11 20 9 16 8.5 C12 9 10 11 9.5 17Z" fill="#2A1408"/>
+          <path d="M9.5 17 L10 21.5 C9.5 20 9 18 9.5 17Z" fill="#2A1408"/>
+          <path d="M22.5 17 L22 21.5 C22.5 20 23 18 22.5 17Z" fill="#2A1408"/>
+          <path d="M11 16 Q12.5 15.2 14.5 15.6" stroke="#1A0A05" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
+          <path d="M17.5 15.6 Q19.5 15.2 21 16" stroke="#1A0A05" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
+          <ellipse cx="13" cy="18.5" rx="1.7" ry="1.4" fill="#EEF4F8"/>
+          <ellipse cx="19" cy="18.5" rx="1.7" ry="1.4" fill="#EEF4F8"/>
+          <ellipse cx="13" cy="18.6" rx="1.05" ry="0.9" fill="#5A8090"/>
+          <ellipse cx="19" cy="18.6" rx="1.05" ry="0.9" fill="#5A8090"/>
+          <ellipse cx="13.1" cy="18.6" rx="0.5" ry="0.45" fill="#0D1820"/>
+          <ellipse cx="19.1" cy="18.6" rx="0.5" ry="0.45" fill="#0D1820"/>
+          <path d="M15.2 20.2 Q16 21.4 16.8 20.2" stroke="#C0A080" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
+          <path d="M13.8 22.5 Q16 24 18.2 22.5" stroke="#C09070" strokeWidth="1" fill="none" strokeLinecap="round"/>
+        </svg>
+      );
+
+      default: return null;
+    }
+  })();
+
+  return (
+    <div style={{
+      width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+      border: isMe ? "1.5px solid rgba(14,165,233,0.5)" : `1.5px solid ${accentColor}55`,
+      overflow: "hidden",
+    }}>
+      {face ?? (
+        <div style={{
+          width: "100%", height: "100%",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: isMe ? "linear-gradient(135deg,#0EA5E9,#0369A1)" : `${accentColor}2A`,
+          fontSize: 9, fontWeight: 800, letterSpacing: "0.02em",
+          color: isMe ? "#fff" : accentColor,
+        }}>
+          {name.split(" ").map((w: string) => w[0]).join("")}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Hover helper ─────────────────────────────────────────────────────────────
 
 function useHover() {
@@ -180,16 +309,7 @@ function CardCordada({ revealed }: { revealed: boolean }) {
 
             {/* Avatar + name */}
             <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-                background: r.isMe ? "linear-gradient(135deg,#0EA5E9,#0369A1)" : `${r.color}1A`,
-                border: r.isMe ? "1.5px solid rgba(14,165,233,0.45)" : `1.5px solid ${r.color}40`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 9, fontWeight: 800, letterSpacing: "0.02em",
-                color: r.isMe ? "#fff" : r.color,
-              }}>
-                {r.initials}
-              </div>
+              <FaceAvatar name={r.name} isMe={r.isMe} accentColor={r.color} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{
