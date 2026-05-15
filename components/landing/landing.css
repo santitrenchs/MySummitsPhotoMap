@@ -23,6 +23,7 @@
   --rarity-saxifrage: #F97316;
   --rarity-cinquefoil: #EAB308;
   --rarity-snowlotus: #FFD700;
+  overflow-x: hidden;
   font-family: var(--font-inter, sans-serif);
   color: var(--ld-text);
   background: var(--ld-bg-deep);
