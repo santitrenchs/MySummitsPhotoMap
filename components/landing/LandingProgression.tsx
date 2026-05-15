@@ -5,9 +5,10 @@ import { useEffect, useRef, useState } from "react";
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const CORDADA = [
-  { pos: 1, name: "Santi",           initials: "SM", color: "#0EA5E9", level: "Scout", cimas: 26, cairns: 2, ep: 93,  isMe: true  },
-  { pos: 2, name: "Clara de Miguel", initials: "CM", color: "#9A8FAE", level: "Scout", cimas: 2,  cairns: 0, ep: 8,   isMe: false },
-  { pos: 3, name: "Test Mailinator", initials: "TM", color: "#5A7A8E", level: "Scout", cimas: 2,  cairns: 0, ep: 6,   isMe: false },
+  { pos: 1, name: "Mathias Hornli",    initials: "MH", color: "#0EA5E9", level: "Explorer", cimas: 31, cairns: 3, ep: 112, isMe: true  },
+  { pos: 2, name: "Giulia Rinaldi",    initials: "GR", color: "#E879A0", level: "Guide",    cimas: 18, cairns: 1, ep: 64,  isMe: false },
+  { pos: 3, name: "Iker Etxebarria",  initials: "IE", color: "#F97316", level: "Guide",    cimas: 14, cairns: 2, ep: 51,  isMe: false },
+  { pos: 4, name: "Luc Moreau",        initials: "LM", color: "#7C9EA6", level: "Scout",    cimas: 6,  cairns: 0, ep: 22,  isMe: false },
 ] as const;
 
 const ZENITH_LEVELS = [
