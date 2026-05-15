@@ -81,29 +81,11 @@ function FaceAvatar({ name, isMe, accentColor }: { name: string; isMe: boolean; 
           style={{ width: 32, height: 32, display: "block", objectFit: "cover" }} />
       );
 
-      /* Giulia Rinaldi — Italian, olive skin, black hair, warm brown eyes, warm smile */
+      /* Giulia Rinaldi — photo avatar */
       case "Giulia Rinaldi": return (
-        <svg width="32" height="32" viewBox="0 0 32 32" style={{ display: "block" }}>
-          <circle cx="16" cy="16" r="16" fill="#0D3020"/>
-          <ellipse cx="16" cy="23" rx="10" ry="10" fill="#0A0605"/>
-          <path d="M10 30 Q10 26 13 25 L13.5 23 L18.5 23 L19 25 Q22 26 22 30Z" fill="#C47E52"/>
-          <ellipse cx="16" cy="19" rx="6.5" ry="7" fill="#C8845A"/>
-          <path d="M9.5 17 C9 9 12 6.5 16 6.5 C20 6.5 23 9 22.5 17 C21 10.5 11 10.5 9.5 17Z" fill="#0A0605"/>
-          <ellipse cx="9.3" cy="20" rx="1.3" ry="1.8" fill="#BE7A4E"/>
-          <ellipse cx="22.7" cy="20" rx="1.3" ry="1.8" fill="#BE7A4E"/>
-          <path d="M11.2 15.8 Q12.8 15 14.5 15.4" stroke="#1A0A05" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
-          <path d="M17.5 15.4 Q19.2 15 20.8 15.8" stroke="#1A0A05" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
-          <ellipse cx="13" cy="18" rx="1.6" ry="1.3" fill="#F0EAE0"/>
-          <ellipse cx="19" cy="18" rx="1.6" ry="1.3" fill="#F0EAE0"/>
-          <ellipse cx="13" cy="18.1" rx="1" ry="0.85" fill="#6B3018"/>
-          <ellipse cx="19" cy="18.1" rx="1" ry="0.85" fill="#6B3018"/>
-          <ellipse cx="13.1" cy="18.1" rx="0.48" ry="0.42" fill="#0A0605"/>
-          <ellipse cx="19.1" cy="18.1" rx="0.48" ry="0.42" fill="#0A0605"/>
-          <path d="M15.2 19 Q16 20.2 16.8 19" stroke="#A86840" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
-          <ellipse cx="11.5" cy="21" rx="1.5" ry="0.9" fill="#D08060" opacity="0.25"/>
-          <ellipse cx="20.5" cy="21" rx="1.5" ry="0.9" fill="#D08060" opacity="0.25"/>
-          <path d="M13.5 21.8 Q16 23.5 18.5 21.8" stroke="#A86040" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
-        </svg>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/images/landing-avatar-giulia.webp" alt="Giulia Rinaldi"
+          style={{ width: 32, height: 32, display: "block", objectFit: "cover" }} />
       );
 
       /* Iker Etxebarria — Basque, medium-dark skin, jet black hair, strong brows, focused */
