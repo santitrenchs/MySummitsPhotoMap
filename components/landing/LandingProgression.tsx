@@ -53,7 +53,7 @@ function MountainBg() {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/images/landing-zenith-path.png"
+      src="/images/landing-zenith-path.webp"
       alt=""
       style={{
         position: "absolute", inset: 0,
