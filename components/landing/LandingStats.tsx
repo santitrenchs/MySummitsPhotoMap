@@ -108,24 +108,21 @@ export default function LandingStats({ stats }: { stats: Stats }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(3, 1fr)",
             gap: 0,
           }}
           className="ld-stats-grid"
         >
           {/* Dividers between columns */}
-          <div style={{ position: "relative" }}>
-            <StatCard label="Rarezas" sublabel="niveles de altitud" target={s.totalRarities} active={active} duration={600} />
-          </div>
           {[
-            { label: "Cimas en el Atlas", sublabel: "picos catalogados", target: s.totalPeaks, duration: 1600 },
+            { label: "Cimas en el Azimut", sublabel: "picos catalogados", target: s.totalPeaks, duration: 1600 },
             { label: "Cimas capturadas", sublabel: "ya tiene dueño", target: s.capturedPeaks, duration: 1400 },
             { label: "Ascensiones", sublabel: "registradas en total", target: s.totalAscents, duration: 1200 },
-          ].map((item) => (
+          ].map((item, i) => (
             <div
               key={item.label}
               style={{
-                borderLeft: "1px solid rgba(13,37,56,0.08)",
+                borderLeft: i === 0 ? "none" : "1px solid rgba(13,37,56,0.08)",
               }}
             >
               <StatCard {...item} active={active} />
@@ -143,8 +140,7 @@ export default function LandingStats({ stats }: { stats: Stats }) {
           .ld-stats-grid > div:nth-child(odd) {
             border-left: none !important;
           }
-          .ld-stats-grid > div:nth-child(3),
-          .ld-stats-grid > div:nth-child(4) {
+          .ld-stats-grid > div:nth-child(3) {
             border-top: 1px solid rgba(13,37,56,0.08);
           }
         }

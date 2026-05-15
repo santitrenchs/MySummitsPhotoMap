@@ -146,7 +146,7 @@ export default function LandingHero() {
           /* Contenido más compacto en mobile para dejar sitio al mapa */
           .ld-hero-content {
             padding-top: 68px !important;
-            padding-bottom: 0 !important;
+            padding-bottom: 56px !important;
           }
           /* Párrafo más corto */
           .ld-hero-sub {
@@ -156,15 +156,15 @@ export default function LandingHero() {
           .ld-hero-micro {
             display: none !important;
           }
-          /* Gradiente: blanco sólido encima del texto → fade en botones → transparente */
-          /* Contenido ocupa ~44% del viewport → fade 44–60% → mapa visible 60%+ */
+          /* Gradiente: blanco sólido encima del texto → fade bajo el CTA → transparente */
+          /* Contenido ocupa ~52% del viewport → fade 52–68% → mapa visible 68%+ */
           .ld-hero-gradient {
             background: linear-gradient(
               to bottom,
               rgba(255,255,255,1)    0%,
-              rgba(255,255,255,1)   44%,
-              rgba(255,255,255,0.6) 54%,
-              rgba(255,255,255,0)   64%
+              rgba(255,255,255,1)   52%,
+              rgba(255,255,255,0.6) 62%,
+              rgba(255,255,255,0)   72%
             ) !important;
           }
         }
