@@ -458,11 +458,12 @@ export default function LandingProgression() {
             <p className="ld-section-label" style={{ margin: "0 0 16px" }}>
               Tu evolución
             </p>
-            <h2 className="ld-display ld-section-title" style={{ margin: "0 0 16px" }}>
-              La montaña también<br />se comparte.
+            <h2 className="ld-display ld-section-title" style={{ margin: "0 0 12px" }}>
+              Cada cima pone tus límites a prueba.<br />
+              <span style={{ color: "#B8860B" }}>Tu cordada te ayuda a superarlos.</span>
             </h2>
-            <p className="ld-section-sub">
-              Cada cima deja huella en tu evolución como montañero.
+            <p style={{ fontSize: 14, color: "rgba(13,37,56,0.42)", letterSpacing: "0.01em", margin: 0 }}>
+              Muy pocos llegan al Zenith.
             </p>
           </div>
 
