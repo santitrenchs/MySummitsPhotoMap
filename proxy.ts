@@ -9,7 +9,10 @@ export default auth((req) => {
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/forgot-password" ||
-    pathname === "/reset-password";
+    pathname === "/reset-password" ||
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname === "/cookies";
   const isAuthApi = pathname.startsWith("/api/auth");
   const isPublicApi = pathname === "/api/stats/landing";
   const isAdminLogin = pathname === "/admin/login";
