@@ -88,28 +88,11 @@ function FaceAvatar({ name, isMe, accentColor }: { name: string; isMe: boolean; 
           style={{ width: 32, height: 32, display: "block", objectFit: "cover" }} />
       );
 
-      /* Iker Etxebarria — Basque, medium-dark skin, jet black hair, strong brows, focused */
+      /* Iker Etxebarria — photo avatar */
       case "Iker Etxebarria": return (
-        <svg width="32" height="32" viewBox="0 0 32 32" style={{ display: "block" }}>
-          <circle cx="16" cy="16" r="16" fill="#0A1535"/>
-          <path d="M10 30 Q10 26 13 25 L13.5 23 L18.5 23 L19 25 Q22 26 22 30Z" fill="#B87040"/>
-          <ellipse cx="16" cy="19" rx="7" ry="7.5" fill="#B87040"/>
-          <ellipse cx="9.2" cy="20" rx="1.4" ry="2" fill="#AA6A38"/>
-          <ellipse cx="22.8" cy="20" rx="1.4" ry="2" fill="#AA6A38"/>
-          <path d="M9 17 C9 8.5 11.5 6.5 16 6.5 C20.5 6.5 23 8.5 23 17 C21.5 9.5 10.5 9.5 9 17Z" fill="#080808"/>
-          <path d="M9 17 L9.5 19.5 C9.2 18.5 9 17.5 9 17Z" fill="#080808"/>
-          <path d="M23 17 L22.5 19.5 C22.8 18.5 23 17.5 23 17Z" fill="#080808"/>
-          <path d="M10.5 15.5 Q12.5 14.3 14.5 14.8" stroke="#080808" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
-          <path d="M17.5 14.8 Q19.5 14.3 21.5 15.5" stroke="#080808" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
-          <ellipse cx="13" cy="17.8" rx="1.7" ry="1.4" fill="#E8D8C0"/>
-          <ellipse cx="19" cy="17.8" rx="1.7" ry="1.4" fill="#E8D8C0"/>
-          <ellipse cx="13" cy="17.9" rx="1.1" ry="0.9" fill="#2A1408"/>
-          <ellipse cx="19" cy="17.9" rx="1.1" ry="0.9" fill="#2A1408"/>
-          <ellipse cx="13.1" cy="17.9" rx="0.5" ry="0.45" fill="#050202"/>
-          <ellipse cx="19.1" cy="17.9" rx="0.5" ry="0.45" fill="#050202"/>
-          <path d="M14.8 19.5 Q16 21.2 17.2 19.5" stroke="#8A5520" strokeWidth="0.9" fill="none" strokeLinecap="round"/>
-          <path d="M13.5 22 Q16 22.8 18.5 22" stroke="#905030" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
-        </svg>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/images/landing-avatar-iker.webp" alt="Iker Etxebarria"
+          style={{ width: 32, height: 32, display: "block", objectFit: "cover" }} />
       );
 
       /* Luc Moreau — French, fair skin, dark brown hair, blue-grey eyes, slight smile */
