@@ -74,29 +74,11 @@ function FaceAvatar({ name, isMe, accentColor }: { name: string; isMe: boolean; 
   const face = (() => {
     switch (name) {
 
-      /* Mathias Hornli — Swiss alpine guide, warm medium skin, chocolate hair, blue-grey eyes */
+      /* Mathias Hornli — photo avatar */
       case "Mathias Hornli": return (
-        <svg width="32" height="32" viewBox="0 0 32 32" style={{ display: "block" }}>
-          <circle cx="16" cy="16" r="16" fill="#0D2640"/>
-          <path d="M10 30 Q10 26 13 25 L13.5 23 L18.5 23 L19 25 Q22 26 22 30Z" fill="#E0AD7A"/>
-          <ellipse cx="16" cy="19.5" rx="7" ry="7.5" fill="#E0AD7A"/>
-          <ellipse cx="9.2" cy="20" rx="1.4" ry="2" fill="#D4A272"/>
-          <ellipse cx="22.8" cy="20" rx="1.4" ry="2" fill="#D4A272"/>
-          <path d="M9 17 C9 9.5 11 7 16 7 C21 7 23 9.5 23 17 C21.5 10 10.5 10 9 17Z" fill="#5A2E14"/>
-          <path d="M9 17 L9.5 21 C9 19.5 8.5 18 9 17Z" fill="#5A2E14"/>
-          <path d="M23 17 L22.5 21 C23 19.5 23.5 18 23 17Z" fill="#5A2E14"/>
-          <path d="M11 16.2 Q12.5 15.3 14.5 15.8" stroke="#3A1E08" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-          <path d="M17.5 15.8 Q19.5 15.3 21 16.2" stroke="#3A1E08" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-          <ellipse cx="13" cy="18.5" rx="1.7" ry="1.4" fill="#EEF2F6"/>
-          <ellipse cx="19" cy="18.5" rx="1.7" ry="1.4" fill="#EEF2F6"/>
-          <ellipse cx="13" cy="18.6" rx="1.05" ry="0.9" fill="#4A7090"/>
-          <ellipse cx="19" cy="18.6" rx="1.05" ry="0.9" fill="#4A7090"/>
-          <ellipse cx="13.1" cy="18.6" rx="0.5" ry="0.45" fill="#0D1A28"/>
-          <ellipse cx="19.1" cy="18.6" rx="0.5" ry="0.45" fill="#0D1A28"/>
-          <path d="M15.2 20 Q16 21.2 16.8 20" stroke="#C09060" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
-          <ellipse cx="16" cy="23.5" rx="4.5" ry="1" fill="#9A7050" opacity="0.28"/>
-          <path d="M13.8 22.2 Q16 23 18.2 22.2" stroke="#B87050" strokeWidth="1" fill="none" strokeLinecap="round"/>
-        </svg>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/images/landing-avatar-mathias.webp" alt="Mathias Hornli"
+          style={{ width: 32, height: 32, display: "block", objectFit: "cover" }} />
       );
 
       /* Giulia Rinaldi — Italian, olive skin, black hair, warm brown eyes, warm smile */
