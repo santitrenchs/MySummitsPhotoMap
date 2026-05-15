@@ -46,81 +46,24 @@ function IconMountain() {
   );
 }
 
-// ─── Mountain SVG background (Card 2) ────────────────────────────────────────
+// ─── Mountain image background (Card 2) ──────────────────────────────────────
 
 function MountainBg() {
-  const stars: [number, number, number][] = [
-    [22,14,0.75],[52,7,0.6],[88,20,0.7],[118,10,0.5],[150,5,0.8],[185,17,0.6],
-    [218,9,0.7],[252,4,0.5],[288,14,0.65],[325,7,0.75],[358,19,0.5],[395,11,0.7],
-    [425,5,0.6],[452,15,0.5],[482,8,0.8],[512,21,0.6],[538,13,0.65],
-    [38,33,0.35],[98,38,0.4],[172,30,0.35],[255,36,0.4],[335,28,0.35],[430,33,0.4],
-  ];
-
   return (
-    <svg
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
-      viewBox="0 0 560 460"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id="mbSky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#01050D"/>
-          <stop offset="100%" stopColor="#050C1A"/>
-        </linearGradient>
-        <radialGradient id="mbGlow" cx="400" cy="48" r="210" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"  stopColor="rgba(238,182,52,0.52)"/>
-          <stop offset="30%" stopColor="rgba(238,182,52,0.14)"/>
-          <stop offset="100%" stopColor="rgba(238,182,52,0)"/>
-        </radialGradient>
-        <radialGradient id="mbGlow2" cx="400" cy="48" r="90" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"  stopColor="rgba(255,220,100,0.35)"/>
-          <stop offset="100%" stopColor="rgba(255,220,100,0)"/>
-        </radialGradient>
-      </defs>
-
-      {/* Sky */}
-      <rect width="560" height="460" fill="url(#mbSky)"/>
-
-      {/* Stars */}
-      {stars.map(([x, y, op], i) => (
-        <circle key={i} cx={x} cy={y} r={i % 5 === 0 ? 1.1 : 0.65}
-          fill={`rgba(255,255,255,${op})`}/>
-      ))}
-
-      {/* Far ridge */}
-      <path
-        d="M0,460 L0,325 L75,305 L155,315 L235,285 L315,272 L395,248 L455,260 L560,230 L560,460 Z"
-        fill="#071526" opacity="0.9"
-      />
-
-      {/* Main mountain — peak at (400, 48) */}
-      <path
-        d="M0,460 L0,375 L65,360 L125,368 L175,345 L210,352 L250,325 L282,330 L314,298 L338,288 L360,248 L376,200 L390,148 L396,88 L399,48 L402,88 L410,148 L428,188 L452,200 L478,212 L510,218 L542,210 L560,202 L560,460 Z"
-        fill="#060C1C"
-      />
-
-      {/* Snow */}
-      <path d="M393,72 L399,48 L405,72 L402,86 L396,86 Z" fill="rgba(215,232,255,0.68)"/>
-      <path d="M396,52 L399,48 L402,52 L401,60 L398,60 Z" fill="rgba(238,248,255,0.82)"/>
-      <path d="M388,90 L393,82 L397,90 L395,96 L390,96 Z" fill="rgba(215,232,255,0.35)"/>
-      <path d="M405,85 L409,78 L412,85 L411,90 L407,90 Z" fill="rgba(215,232,255,0.3)"/>
-
-      {/* Wide ambient glow */}
-      <ellipse cx="400" cy="48" rx="210" ry="160" fill="url(#mbGlow)"/>
-      {/* Inner tight glow */}
-      <ellipse cx="400" cy="48" rx="90"  ry="70"  fill="url(#mbGlow2)"/>
-
-      {/* Trail — winding dashed path up the right flank */}
-      <path
-        d="M408,460 L404,422 L416,394 L406,364 L418,336 L406,308 L418,278 L408,250 L416,222 L408,194 L416,162 L408,128 L412,92 L399,48"
-        fill="none"
-        stroke="rgba(242,188,52,0.2)"
-        strokeWidth="1.6"
-        strokeDasharray="5,4"
-        strokeLinecap="round"
-      />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/images/landing-zenith-path.png"
+      alt=""
+      style={{
+        position: "absolute", inset: 0,
+        width: "100%", height: "100%",
+        objectFit: "cover",
+        objectPosition: "center top",
+        display: "block",
+        userSelect: "none",
+        pointerEvents: "none",
+      }}
+    />
   );
 }
 
@@ -352,15 +295,20 @@ function CardZenith({ revealed }: { revealed: boolean }) {
       {/* Mountain background */}
       <MountainBg/>
 
-      {/* Gradient: dark left → transparent right */}
+      {/* Gradient: dark left for text readability, fades into image on right */}
       <div style={{
         position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none",
-        background: "linear-gradient(to right, rgba(6,12,28,0.97) 0%, rgba(6,12,28,0.88) 45%, rgba(6,12,28,0.52) 72%, rgba(6,12,28,0.2) 100%)",
+        background: "linear-gradient(to right, rgba(4,8,18,0.92) 0%, rgba(4,8,18,0.78) 40%, rgba(4,8,18,0.38) 65%, rgba(4,8,18,0.08) 100%)",
+      }}/>
+      {/* Top darkener so the glowing peak reads through the overlay */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 80, zIndex: 1, pointerEvents: "none",
+        background: "linear-gradient(to bottom, rgba(4,8,18,0.45), transparent)",
       }}/>
       {/* Bottom safety gradient */}
       <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0, height: 90, zIndex: 1, pointerEvents: "none",
-        background: "linear-gradient(to top, rgba(6,12,28,0.85), transparent)",
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 80, zIndex: 1, pointerEvents: "none",
+        background: "linear-gradient(to top, rgba(4,8,18,0.88), transparent)",
       }}/>
 
       {/* Content — left 62% of card */}
