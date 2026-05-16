@@ -14,6 +14,7 @@ export type LandingT = {
   nav_login: string;
   nav_register: string;
   nav_register_mobile: string;
+  nav_goToApp: string;
   nav_lang: string;
 
   // Hero
@@ -151,6 +152,7 @@ const es: LandingT = {
   nav_login: "Iniciar sesión",
   nav_register: "Registrarse",
   nav_register_mobile: "Registrarse gratis",
+  nav_goToApp: "Ir a la app",
   nav_lang: "Idioma",
 
   hero_line1: "Captura cimas.",
@@ -304,6 +306,7 @@ const en: LandingT = {
   nav_login: "Sign in",
   nav_register: "Sign up",
   nav_register_mobile: "Sign up free",
+  nav_goToApp: "Go to app",
   nav_lang: "Language",
 
   hero_line1: "Capture summits.",
@@ -457,6 +460,7 @@ const fr: LandingT = {
   nav_login: "Connexion",
   nav_register: "S'inscrire",
   nav_register_mobile: "S'inscrire gratuitement",
+  nav_goToApp: "Aller à l'app",
   nav_lang: "Langue",
 
   hero_line1: "Capture des sommets.",
@@ -610,6 +614,7 @@ const de: LandingT = {
   nav_login: "Anmelden",
   nav_register: "Registrieren",
   nav_register_mobile: "Kostenlos registrieren",
+  nav_goToApp: "Zur App",
   nav_lang: "Sprache",
 
   hero_line1: "Gipfel erobern.",
@@ -763,6 +768,7 @@ const ca: LandingT = {
   nav_login: "Inicia sessió",
   nav_register: "Registra't",
   nav_register_mobile: "Registra't gratis",
+  nav_goToApp: "Anar a l'app",
   nav_lang: "Idioma",
 
   hero_line1: "Captura cims.",

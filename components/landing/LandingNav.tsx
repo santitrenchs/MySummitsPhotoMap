@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { PeakadexLogo } from "@/components/brand/Logo";
 import { useLandingT } from "./LandingLocaleContext";
 
@@ -28,6 +29,8 @@ export default function LandingNav() {
   const localePfx = locale === "es" ? "" : `/${locale}`;
   const loginHref    = `${localePfx}/login`;
   const registerHref = `${localePfx}/register`;
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
 
   const navLinks = [
     { label: t.nav_rarities, href: "#rarezas" },
@@ -267,24 +270,32 @@ export default function LandingNav() {
                 whiteSpace: "nowrap",
               }}
             >
-              <Link
-                href={loginHref}
-                style={{
-                  color: "rgba(13,37,56,0.55)",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  fontFamily: "var(--font-space, sans-serif)",
-                  textDecoration: "none",
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                }}
-                className="ld-login-link"
-              >
-                {t.nav_login}
-              </Link>
-              <Link href={registerHref} className="ld-btn-primary ld-register-btn" style={{ fontSize: 14, padding: "10px 20px" }}>
-                {t.nav_register}
-              </Link>
+              {isLoggedIn ? (
+                <Link href="/home" className="ld-btn-primary ld-register-btn" style={{ fontSize: 14, padding: "10px 20px" }}>
+                  {t.nav_goToApp}
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href={loginHref}
+                    style={{
+                      color: "rgba(13,37,56,0.55)",
+                      fontSize: 14,
+                      fontWeight: 500,
+                      fontFamily: "var(--font-space, sans-serif)",
+                      textDecoration: "none",
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                    }}
+                    className="ld-login-link"
+                  >
+                    {t.nav_login}
+                  </Link>
+                  <Link href={registerHref} className="ld-btn-primary ld-register-btn" style={{ fontSize: 14, padding: "10px 20px" }}>
+                    {t.nav_register}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -381,12 +392,12 @@ export default function LandingNav() {
           </div>
 
           <Link
-            href={registerHref}
+            href={isLoggedIn ? "/home" : registerHref}
             className="ld-btn-primary"
             style={{ marginTop: 12, justifyContent: "center" }}
             onClick={() => setMenuOpen(false)}
           >
-            {t.nav_register_mobile}
+            {isLoggedIn ? t.nav_goToApp : t.nav_register_mobile}
           </Link>
         </div>
       )}
