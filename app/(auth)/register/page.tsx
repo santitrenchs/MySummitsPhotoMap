@@ -7,18 +7,55 @@ import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakadexLogo } from "@/components/brand/Logo";
 
+// ── Design tokens (DESIGN.md) ─────────────────────────────────────────────────
+const C = {
+  navy:        "#0D2538",
+  navyMid:     "#5A6E84",
+  navyLight:   "#94A3B8",
+  border:      "#E5E7EB",
+  green:       "#2F7A5F",
+  greenHover:  "#256650",
+  pageBg:      "#F4F7FA",
+  surface:     "#f9fafb",
+} as const;
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  border: `1px solid ${C.border}`,
+  borderRadius: 12,
+  fontSize: 15,
+  color: C.navy,
+  background: "#fff",
+  outline: "none",
+  boxSizing: "border-box",
+  fontFamily: "var(--font-inter, sans-serif)",
+  transition: "border-color 0.15s",
+};
+
+function InputField(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      style={{ ...inputStyle, ...props.style }}
+      onFocus={(e) => { e.currentTarget.style.borderColor = C.green; props.onFocus?.(e); }}
+      onBlur={(e)  => { e.currentTarget.style.borderColor = C.border; props.onBlur?.(e); }}
+    />
+  );
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const t = useT();
 
-  const [name, setName] = useState("");
-  const [username, setUsername] = useState("");
+  const [name,           setName]           = useState("");
+  const [username,       setUsername]       = useState("");
   const [usernameEdited, setUsernameEdited] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [email,          setEmail]          = useState("");
+  const [password,       setPassword]       = useState("");
+  const [showPassword,   setShowPassword]   = useState(false);
+  const [submitting,     setSubmitting]     = useState(false);
+  const [formError,      setFormError]      = useState<string | null>(null);
 
   useEffect(() => {
     if (usernameEdited) return;
@@ -35,16 +72,13 @@ export default function RegisterPage() {
     e.preventDefault();
     setFormError(null);
     setSubmitting(true);
-
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, username, email, password }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         setFormError(
           res.status === 409 && data.error === "Username already taken"
@@ -55,13 +89,8 @@ export default function RegisterPage() {
         );
         return;
       }
-
       const result = await signIn("credentials", { email, password, redirect: false });
-      if (result?.error) {
-        router.push("/login?registered=1");
-        return;
-      }
-
+      if (result?.error) { router.push("/login?registered=1"); return; }
       window.location.href = "/home";
     } catch {
       setFormError(t.auth_registrationFailed);
@@ -71,22 +100,39 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+    <div style={{
+      minHeight: "100svh",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: C.pageBg,
+      padding: "24px 16px",
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 420,
+        background: "#fff",
+        borderRadius: 20,
+        border: `1px solid ${C.border}`,
+        boxShadow: "0 4px 24px rgba(13,37,56,0.07)",
+        padding: "36px 32px 32px",
+      }}>
+        {/* Logo */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
           <PeakadexLogo height={38} iconScale={1.0} />
         </div>
 
-        <p className="mb-6 text-sm text-gray-500">
+        {/* Sign-in prompt */}
+        <p style={{ fontSize: 13, color: C.navyMid, marginBottom: 24, textAlign: "center" }}>
           {t.auth_haveAccount}{" "}
-          <Link href="/login" className="text-primary-600 hover:underline font-medium">
+          <Link href="/login" style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "none")}
+          >
             {t.auth_signIn}
           </Link>
         </p>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <input
+        <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Name */}
+          <InputField
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -94,15 +140,16 @@ export default function RegisterPage() {
             autoFocus
             autoComplete="name"
             placeholder={t.auth_yourName}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
 
+          {/* Username with @ prefix */}
           <div style={{ position: "relative" }}>
             <span style={{
               position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
-              fontSize: 14, color: "#6b7280", pointerEvents: "none",
+              fontSize: 15, color: C.navyLight, pointerEvents: "none",
+              fontFamily: "var(--font-inter, sans-serif)",
             }}>@</span>
-            <input
+            <InputField
               type="text"
               value={username}
               onChange={(e) => {
@@ -115,23 +162,23 @@ export default function RegisterPage() {
               minLength={3}
               maxLength={30}
               placeholder={t.auth_username}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               style={{ paddingLeft: 30 }}
             />
           </div>
 
-          <input
+          {/* Email */}
+          <InputField
             type="email"
             value={email}
             onChange={(e) => { setFormError(null); setEmail(e.target.value); }}
             required
             autoComplete="email"
             placeholder={t.settings_email}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
 
+          {/* Password with show/hide */}
           <div style={{ position: "relative" }}>
-            <input
+            <InputField
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -139,50 +186,75 @@ export default function RegisterPage() {
               minLength={8}
               autoComplete="new-password"
               placeholder={t.auth_password}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              style={{ paddingRight: 44 }}
+              style={{ paddingRight: 46 }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              style={{
-                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", cursor: "pointer", padding: 0, color: "#9ca3af",
-              }}
-            >
+            <button type="button" onClick={() => setShowPassword((v) => !v)} style={{
+              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+              background: "none", border: "none", cursor: "pointer", padding: 0, color: C.navyLight,
+            }}>
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
 
+          {/* Error */}
           {formError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <div style={{
+              fontSize: 13, color: "#dc2626",
+              background: "#fef2f2", border: "1px solid #fecaca",
+              borderRadius: 10, padding: "10px 14px",
+            }}>
               {formError}
-            </p>
+            </div>
           )}
 
+          {/* Submit */}
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-3 px-4 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            style={{
+              width: "100%", padding: "14px 16px", marginTop: 4,
+              background: submitting ? C.navyLight : C.green,
+              color: "#fff",
+              border: "none", borderRadius: 14,
+              fontSize: 15, fontWeight: 800,
+              cursor: submitting ? "not-allowed" : "pointer",
+              boxShadow: submitting ? "none" : "0 4px 14px rgba(47,122,95,0.32)",
+              transition: "background 0.2s, box-shadow 0.2s",
+              fontFamily: "var(--font-inter, sans-serif)",
+            }}
+            onMouseEnter={(e) => { if (!submitting) (e.currentTarget as HTMLButtonElement).style.background = C.greenHover; }}
+            onMouseLeave={(e) => { if (!submitting) (e.currentTarget as HTMLButtonElement).style.background = C.green; }}
           >
             {submitting ? t.auth_creatingAccount : t.auth_createAccountSubmit}
           </button>
         </form>
 
+        {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0" }}>
-          <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
-          <span style={{ fontSize: 12, color: "#9ca3af" }}>o</span>
-          <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: 12, color: C.navyLight }}>o</span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
         </div>
 
+        {/* Google */}
         <button
           type="button"
           onClick={() => signIn("google", { callbackUrl: "/home" })}
           style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 10, padding: "12px 16px", border: "1px solid #d1d5db", borderRadius: 8,
-            background: "white", fontSize: 14, fontWeight: 500, color: "#374151",
-            cursor: "pointer",
+            gap: 10, padding: "12px 16px",
+            border: `1px solid ${C.border}`, borderRadius: 12,
+            background: "#fff", fontSize: 14, fontWeight: 500, color: C.navy,
+            cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
+            fontFamily: "var(--font-inter, sans-serif)",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = C.surface;
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "#d1d5db";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "#fff";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = C.border;
           }}
         >
           <GoogleIcon />

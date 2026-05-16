@@ -7,122 +7,204 @@ import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakadexLogo } from "@/components/brand/Logo";
 
+// ── Design tokens (DESIGN.md) ─────────────────────────────────────────────────
+const C = {
+  navy:        "#0D2538",
+  navyMid:     "#5A6E84",
+  navyLight:   "#94A3B8",
+  border:      "#E5E7EB",
+  green:       "#2F7A5F",
+  greenHover:  "#256650",
+  blue:        "#0369a1",
+  pageBg:      "#F4F7FA",
+  surface:     "#f9fafb",
+} as const;
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  border: `1px solid ${C.border}`,
+  borderRadius: 12,
+  fontSize: 15,
+  color: C.navy,
+  background: "#fff",
+  outline: "none",
+  boxSizing: "border-box",
+  fontFamily: "var(--font-inter, sans-serif)",
+  transition: "border-color 0.15s",
+};
+
+function InputField(props: React.InputHTMLAttributes<HTMLInputElement> & { inputRef?: React.Ref<HTMLInputElement> }) {
+  const { inputRef, ...rest } = props;
+  return (
+    <input
+      ref={inputRef}
+      {...rest}
+      style={{ ...inputStyle, ...rest.style }}
+      onFocus={(e) => { e.currentTarget.style.borderColor = C.green; props.onFocus?.(e); }}
+      onBlur={(e)  => { e.currentTarget.style.borderColor = C.border; props.onBlur?.(e); }}
+    />
+  );
+}
+
 function LoginForm() {
   const searchParams = useSearchParams();
   const t = useT();
   const justRegistered = searchParams.get("registered") === "1";
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [error, setError]               = useState<string | null>(null);
+  const [loading, setLoading]           = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     const form = new FormData(e.currentTarget);
     const result = await signIn("credentials", {
       email: form.get("email"),
       password: form.get("password"),
       redirect: false,
     });
-
     if (result?.error) {
       setError(t.auth_invalidCredentials);
       setLoading(false);
       return;
     }
-
     window.location.href = "/home";
   }
 
   return (
-    <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+    <div style={{
+      width: "100%", maxWidth: 420,
+      background: "#fff",
+      borderRadius: 20,
+      border: `1px solid ${C.border}`,
+      boxShadow: "0 4px 24px rgba(13,37,56,0.07)",
+      padding: "36px 32px 32px",
+    }}>
+      {/* Logo */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
         <PeakadexLogo height={38} iconScale={1.0} />
       </div>
 
-      <p className="mb-6 text-sm text-gray-500">
+      {/* Sign-up prompt */}
+      <p style={{ fontSize: 13, color: C.navyMid, marginBottom: 24, textAlign: "center" }}>
         {t.auth_noAccount}{" "}
-        <Link href="/register" className="text-primary-600 hover:underline font-medium">
+        <Link href="/register" style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "none")}
+        >
           {t.auth_createOne}
         </Link>
       </p>
 
+      {/* Just registered banner */}
       {justRegistered && (
-        <div className="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+        <div style={{
+          marginBottom: 16, fontSize: 13, color: "#166534",
+          background: "#f0fdf4", border: "1px solid #bbf7d0",
+          borderRadius: 10, padding: "10px 14px",
+        }}>
           {t.auth_accountCreated}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <InputField
           name="email"
           type="email"
           required
           autoComplete="email"
           placeholder={t.settings_email}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
 
+        {/* Password with show/hide */}
         <div style={{ position: "relative" }}>
-          <input
+          <InputField
             name="password"
             type={showPassword ? "text" : "password"}
             required
             autoComplete="current-password"
             placeholder={t.auth_password}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            style={{ paddingRight: 44 }}
+            style={{ paddingRight: 46 }}
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            style={{
-              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-              background: "none", border: "none", cursor: "pointer", padding: 0, color: "#9ca3af",
-            }}
-          >
+          <button type="button" onClick={() => setShowPassword((v) => !v)} style={{
+            position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+            background: "none", border: "none", cursor: "pointer", padding: 0, color: C.navyLight,
+          }}>
             {showPassword ? <EyeOffIcon /> : <EyeIcon />}
           </button>
         </div>
 
-        <div>
-          <Link href="/forgot-password" className="text-sm text-gray-500 hover:underline">
+        {/* Forgot password */}
+        <div style={{ textAlign: "right", marginTop: -4 }}>
+          <Link href="/forgot-password" style={{ fontSize: 13, color: C.navyMid, textDecoration: "none" }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = C.navy)}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = C.navyMid)}
+          >
             {t.auth_forgotPassword}
           </Link>
         </div>
 
+        {/* Error */}
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <div style={{
+            fontSize: 13, color: "#dc2626",
+            background: "#fef2f2", border: "1px solid #fecaca",
+            borderRadius: 10, padding: "10px 14px",
+          }}>
             {error}
-          </p>
+          </div>
         )}
 
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 px-4 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          style={{
+            width: "100%", padding: "14px 16px", marginTop: 4,
+            background: loading ? C.navyLight : C.green,
+            color: "#fff",
+            border: "none", borderRadius: 14,
+            fontSize: 15, fontWeight: 800,
+            cursor: loading ? "not-allowed" : "pointer",
+            boxShadow: loading ? "none" : "0 4px 14px rgba(47,122,95,0.32)",
+            transition: "background 0.2s, box-shadow 0.2s",
+            fontFamily: "var(--font-inter, sans-serif)",
+          }}
+          onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = C.greenHover; }}
+          onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = C.green; }}
         >
           {loading ? t.auth_signingIn : t.auth_signIn}
         </button>
       </form>
 
+      {/* Divider */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0" }}>
-        <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
-        <span style={{ fontSize: 12, color: "#9ca3af" }}>o</span>
-        <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+        <div style={{ flex: 1, height: 1, background: C.border }} />
+        <span style={{ fontSize: 12, color: C.navyLight }}>o</span>
+        <div style={{ flex: 1, height: 1, background: C.border }} />
       </div>
 
+      {/* Google */}
       <button
         type="button"
         onClick={() => signIn("google", { callbackUrl: "/home" })}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-          gap: 10, padding: "12px 16px", border: "1px solid #d1d5db", borderRadius: 8,
-          background: "white", fontSize: 14, fontWeight: 500, color: "#374151",
-          cursor: "pointer",
+          gap: 10, padding: "12px 16px",
+          border: `1px solid ${C.border}`, borderRadius: 12,
+          background: "#fff", fontSize: 14, fontWeight: 500, color: C.navy,
+          cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
+          fontFamily: "var(--font-inter, sans-serif)",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = C.surface;
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "#d1d5db";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = "#fff";
+          (e.currentTarget as HTMLButtonElement).style.borderColor = C.border;
         }}
       >
         <GoogleIcon />
@@ -134,8 +216,15 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Suspense fallback={<div className="w-full max-w-md h-96 bg-white rounded-2xl animate-pulse" />}>
+    <div style={{
+      minHeight: "100svh",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: C.pageBg,
+      padding: "24px 16px",
+    }}>
+      <Suspense fallback={
+        <div style={{ width: "100%", maxWidth: 420, height: 400, background: "#fff", borderRadius: 20, border: `1px solid ${C.border}` }} />
+      }>
         <LoginForm />
       </Suspense>
     </div>
