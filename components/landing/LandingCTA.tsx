@@ -28,6 +28,7 @@ const glowStops = RARITY_CYCLE
 
 export default function LandingCTA() {
   const t = useLandingT();
+  const registerHref = t.locale === "es" ? "/register" : `/${t.locale}/register`;
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -124,7 +125,7 @@ export default function LandingCTA() {
 
           {/* CTA */}
           <Link
-            href="/register"
+            href={registerHref}
             className="ld-btn-primary ld-cta-btn"
             style={{
               fontSize: 17,

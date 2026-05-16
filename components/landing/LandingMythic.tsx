@@ -37,6 +37,7 @@ function FeatureBlock({ icon, title, body, delay }: { icon: string; title: strin
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function LandingMythic() {
   const t = useLandingT();
+  const registerHref = t.locale === "es" ? "/register" : `/${t.locale}/register`;
   const sectionRef  = useRef<HTMLDivElement>(null);
   const cardRef     = useRef<HTMLDivElement>(null);
   const [revealed,  setRevealed]  = useState(false);
@@ -476,7 +477,7 @@ export default function LandingMythic() {
               </div>
 
               {/* CTA below card */}
-              <a href="/register" className="mythic-cta" style={{ marginTop: 36 }}>
+              <a href={registerHref} className="mythic-cta" style={{ marginTop: 36 }}>
                 {t.mythic_cta}
               </a>
             </div>

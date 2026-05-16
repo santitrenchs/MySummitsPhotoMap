@@ -7,6 +7,7 @@ import { useLandingT } from "./LandingLocaleContext";
 
 export default function LandingHero() {
   const t = useLandingT();
+  const registerHref = t.locale === "es" ? "/register" : `/${t.locale}/register`;
   const titleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -126,7 +127,7 @@ export default function LandingHero() {
 
           {/* CTAs */}
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <Link href="/register" className="ld-btn-primary" style={{ fontSize: 16, padding: "15px 32px" }}>
+            <Link href={registerHref} className="ld-btn-primary" style={{ fontSize: 16, padding: "15px 32px" }}>
               {t.hero_cta}
             </Link>
           </div>

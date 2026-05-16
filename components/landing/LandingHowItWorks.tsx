@@ -66,6 +66,7 @@ const STEPS = [
 
 export default function LandingHowItWorks() {
   const t = useLandingT();
+  const registerHref = t.locale === "es" ? "/register" : `/${t.locale}/register`;
   const stepsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -273,7 +274,7 @@ export default function LandingHowItWorks() {
           <p style={{ fontSize: 14, color: "rgba(13,37,56,0.5)", marginBottom: 24 }}>
             {t.how_footer_sub}
           </p>
-          <a href="/register" className="ld-btn-primary">
+          <a href={registerHref} className="ld-btn-primary">
             {t.how_cta}
           </a>
         </div>

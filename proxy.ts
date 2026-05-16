@@ -1,9 +1,49 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
+const SUPPORTED_LOCALES = ["ca", "en", "fr", "de", "es"] as const;
+type SupportedLocale = typeof SUPPORTED_LOCALES[number];
+const LOCALE_COOKIE = "pdx_locale";
+
+/**
+ * Parse the Accept-Language header and return the best-matching supported locale.
+ * Falls back to "es" (Spanish) if nothing matches.
+ */
+function detectLocale(acceptLang: string): SupportedLocale {
+  const candidates = acceptLang
+    .split(",")
+    .map((part) => {
+      const [tag, q] = part.trim().split(";q=");
+      const lang = tag.split("-")[0].toLowerCase();
+      return { lang, q: q ? parseFloat(q) : 1.0 };
+    })
+    .sort((a, b) => b.q - a.q);
+
+  for (const { lang } of candidates) {
+    if (SUPPORTED_LOCALES.includes(lang as SupportedLocale)) {
+      return lang as SupportedLocale;
+    }
+  }
+  return "en";
+}
+
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const { pathname } = req.nextUrl;
+
+  // ── Locale-prefixed auth routes (/en/login, /fr/register, etc.) ───────────
+  // Strip the locale prefix, persist the locale cookie, redirect to the bare route.
+  const localePrefixMatch = pathname.match(/^\/(en|ca|fr|de)(\/.*)?$/);
+  if (localePrefixMatch) {
+    const prefixLocale = localePrefixMatch[1] as SupportedLocale;
+    const rest = localePrefixMatch[2] ?? "/";
+    const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/accept-terms"];
+    if (authRoutes.includes(rest)) {
+      const res = NextResponse.redirect(new URL(rest, req.nextUrl));
+      res.cookies.set(LOCALE_COOKIE, prefixLocale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+      return res;
+    }
+  }
 
   const isAuthPage =
     pathname === "/login" ||
@@ -13,6 +53,12 @@ export default auth((req) => {
     pathname === "/privacy" ||
     pathname === "/terms" ||
     pathname === "/cookies";
+
+  // Accept-terms is only for authenticated users; unauthenticated ones get sent to login
+  if (pathname === "/accept-terms") {
+    if (!isLoggedIn) return NextResponse.redirect(new URL("/login", req.nextUrl));
+    return NextResponse.next();
+  }
   const isAuthApi = pathname.startsWith("/api/auth");
   const isPublicApi = pathname === "/api/stats/landing";
   const isAdminLogin = pathname === "/admin/login";
@@ -53,6 +99,37 @@ export default auth((req) => {
   // Authenticated users on any landing page → send to app
   if (isLoggedIn && isLanding) {
     return NextResponse.redirect(new URL("/home", req.nextUrl));
+  }
+
+  // ── Locale auto-detection for landing ─────────────────────────────────────
+  if (!isLoggedIn && isLanding) {
+    const localeCookie = req.cookies.get(LOCALE_COOKIE)?.value as SupportedLocale | undefined;
+
+    if (pathname === "/") {
+      // Detect locale: cookie first, then Accept-Language header
+      const detected: SupportedLocale =
+        localeCookie && SUPPORTED_LOCALES.includes(localeCookie)
+          ? localeCookie
+          : detectLocale(req.headers.get("accept-language") ?? "");
+
+      if (detected !== "es") {
+        return NextResponse.redirect(new URL(`/${detected}`, req.nextUrl));
+      }
+      // Spanish is the default — serve "/" as-is but set cookie if not already set
+      if (!localeCookie) {
+        const res = NextResponse.next();
+        res.cookies.set(LOCALE_COOKIE, "es", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+        return res;
+      }
+    } else {
+      // User is on a locale page (/en, /fr, /de, /ca) — persist their choice in the cookie
+      const chosenLocale = pathname.slice(1) as SupportedLocale;
+      if (localeCookie !== chosenLocale) {
+        const res = NextResponse.next();
+        res.cookies.set(LOCALE_COOKIE, chosenLocale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+        return res;
+      }
+    }
   }
 
   // Redirect unauthenticated users to login (except landing pages and auth pages)

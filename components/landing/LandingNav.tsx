@@ -25,6 +25,9 @@ export default function LandingNav() {
   const langRef = useRef<HTMLDivElement>(null);
 
   const locale = t.locale;
+  const localePfx = locale === "es" ? "" : `/${locale}`;
+  const loginHref    = `${localePfx}/login`;
+  const registerHref = `${localePfx}/register`;
 
   const navLinks = [
     { label: t.nav_rarities, href: "#rarezas" },
@@ -265,7 +268,7 @@ export default function LandingNav() {
               }}
             >
               <Link
-                href="/login"
+                href={loginHref}
                 style={{
                   color: "rgba(13,37,56,0.55)",
                   fontSize: 14,
@@ -279,7 +282,7 @@ export default function LandingNav() {
               >
                 {t.nav_login}
               </Link>
-              <Link href="/register" className="ld-btn-primary ld-register-btn" style={{ fontSize: 14, padding: "10px 20px" }}>
+              <Link href={registerHref} className="ld-btn-primary ld-register-btn" style={{ fontSize: 14, padding: "10px 20px" }}>
                 {t.nav_register}
               </Link>
             </div>
@@ -378,7 +381,7 @@ export default function LandingNav() {
           </div>
 
           <Link
-            href="/register"
+            href={registerHref}
             className="ld-btn-primary"
             style={{ marginTop: 12, justifyContent: "center" }}
             onClick={() => setMenuOpen(false)}

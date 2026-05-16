@@ -168,6 +168,16 @@ export type Dict = {
   auth_nameHint: string; auth_emailExists: string; auth_createAccountSubmit: string;
   auth_username: string; auth_usernameHint: string; auth_usernameTaken: string; auth_usernameInvalid: string;
   auth_haveCode: string;
+  // Legal consent (register form + accept-terms page)
+  auth_legal_required: string;      // "Acepto los {terms} y la {privacy}" (required checkbox)
+  auth_legal_terms: string;         // "Términos y condiciones" (link text)
+  auth_legal_privacy: string;       // "Política de privacidad" (link text)
+  auth_legal_marketing: string;     // Optional marketing checkbox label
+  auth_legal_mustAccept: string;    // Validation error: must accept T&C
+  auth_accept_title: string;        // "Términos actualizados"
+  auth_accept_subtitle: string;     // "Hemos actualizado…"
+  auth_accept_cta: string;          // "Acepto y continuar"
+  auth_accept_accepting: string;    // "Guardando…"
 
   // Crop modal
   crop_title: string; crop_next: string;

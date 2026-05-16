@@ -117,6 +117,10 @@ model User {
   // Registration — voucher used to sign up (null for pre-voucher users)
   voucherId    String?
 
+  // Legal consent
+  marketingConsent   Boolean   @default(false)
+  marketingConsentAt DateTime?
+
   createdAt    DateTime @default(now())
 
   memberships            Membership[]
@@ -128,6 +132,7 @@ model User {
   voucherUse             VoucherUse?
   feedSeens              FeedSeen[]
   accounts               Account[]
+  legalConsents          LegalConsent[]
 
   @@map("users")
 }
@@ -379,4 +384,22 @@ model NewsletterSubscriber {
   createdAt DateTime @default(now())
 
   @@map("newsletter_subscribers")
+}
+
+// ── Legal consent audit trail ─────────────────────────────────────────────────
+// One row per (user, documentType, version) — never updated, only inserted.
+// Keeps a full history: user accepted terms v1.0 on X, then v1.1 on Y, etc.
+model LegalConsent {
+  id           String   @id @default(uuid())
+  userId       String
+  documentType String   // "terms" | "privacy"
+  version      String   // e.g. "1.0", "1.1"
+  acceptedAt   DateTime @default(now())
+  ipAddress    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentType, version])
+  @@index([userId])
+  @@map("legal_consents")
 }

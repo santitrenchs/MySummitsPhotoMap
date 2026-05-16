@@ -17,6 +17,7 @@ const RARITIES = [
 
 export default function LandingRarities({ peakCounts }: { peakCounts: Record<string, number> }) {
   const t = useLandingT();
+  const registerHref = t.locale === "es" ? "/register" : `/${t.locale}/register`;
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -199,7 +200,7 @@ export default function LandingRarities({ peakCounts }: { peakCounts: Record<str
           <p style={{ fontSize: 14, color: "rgba(13,37,56,0.4)", marginBottom: 20 }}>
             {t.rarities_footer}
           </p>
-          <a href="/register" className="ld-btn-primary" style={{ display: "inline-flex" }}>
+          <a href={registerHref} className="ld-btn-primary" style={{ display: "inline-flex" }}>
             {t.rarities_cta}
           </a>
         </div>

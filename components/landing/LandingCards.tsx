@@ -100,6 +100,7 @@ function MountainScene({ color, altM, uid }: { color: string; altM: number; uid:
 
 function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: number; flipped: boolean; isNearby: boolean }) {
   const t = useLandingT();
+  const registerHref = t.locale === "es" ? "/register" : `/${t.locale}/register`;
   const { name: rarity, color, ep } = rarityForAlt(card.altitudeM);
   const uid = `c${index}`;
 
@@ -284,6 +285,7 @@ const CARD_H = 410;
 
 export default function LandingCards() {
   const t = useLandingT();
+  const registerHref = t.locale === "es" ? "/register" : `/${t.locale}/register`;
   const [active, setActive] = useState(0);
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
   const [vw, setVw] = useState(() => typeof window !== "undefined" ? window.innerWidth : 1200);
@@ -396,7 +398,7 @@ export default function LandingCards() {
             <p style={{ fontSize: 13, color: "rgba(13,37,56,0.4)", marginTop: 20, marginBottom: 28 }}>
               {t.cards_footer}
             </p>
-            <a href="/register" className="ld-btn-primary" style={{ display: "inline-flex" }}>
+            <a href={registerHref} className="ld-btn-primary" style={{ display: "inline-flex" }}>
               {t.cards_cta}
             </a>
           </div>

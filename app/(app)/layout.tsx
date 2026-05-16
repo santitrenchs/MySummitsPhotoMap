@@ -8,6 +8,7 @@ import type { Locale } from "@/lib/i18n/types";
 import { countPendingRequests } from "@/lib/services/friendship.service";
 import { countUnseenFeed } from "@/lib/services/feed.service";
 import { prisma } from "@/lib/db/client";
+import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legal/versions";
 
 export default async function AppLayout({
   children,
@@ -17,12 +18,25 @@ export default async function AppLayout({
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [locale, pendingFriendRequests, unseenFeedCount, dbUser] = await Promise.all([
+  const userId = session.user.id;
+
+  const [locale, pendingFriendRequests, unseenFeedCount, dbUser, termsConsent, privacyConsent] = await Promise.all([
     getLocale(),
-    countPendingRequests(session.user.id),
-    countUnseenFeed(session.user.id),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { avatarUrl: true } }),
+    countPendingRequests(userId),
+    countUnseenFeed(userId),
+    prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } }),
+    prisma.legalConsent.findUnique({
+      where: { userId_documentType_version: { userId, documentType: "terms",   version: CURRENT_TERMS_VERSION   } },
+    }),
+    prisma.legalConsent.findUnique({
+      where: { userId_documentType_version: { userId, documentType: "privacy", version: CURRENT_PRIVACY_VERSION } },
+    }),
   ]);
+
+  // Redirect to re-acceptance page if user hasn't accepted current T&C or Privacy versions
+  if (!termsConsent || !privacyConsent) {
+    redirect("/accept-terms");
+  }
 
   const navProps = {
     userName: session.user.name ?? null,
@@ -31,6 +45,7 @@ export default async function AppLayout({
     pendingFriendRequests,
     unseenFeedCount,
   };
+
 
   return (
     <>

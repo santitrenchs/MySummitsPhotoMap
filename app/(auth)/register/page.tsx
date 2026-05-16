@@ -54,6 +54,8 @@ export default function RegisterPage() {
   const [email,          setEmail]          = useState("");
   const [password,       setPassword]       = useState("");
   const [showPassword,   setShowPassword]   = useState(false);
+  const [acceptedLegal,  setAcceptedLegal]  = useState(false);
+  const [marketing,      setMarketing]      = useState(false);
   const [submitting,     setSubmitting]     = useState(false);
   const [formError,      setFormError]      = useState<string | null>(null);
 
@@ -70,13 +72,17 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (!acceptedLegal) {
+      setFormError(t.auth_legal_mustAccept);
+      return;
+    }
     setFormError(null);
     setSubmitting(true);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, username, email, password }),
+        body: JSON.stringify({ name, username, email, password, acceptedTerms: true, acceptedPrivacy: true, marketing }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -194,6 +200,47 @@ export default function RegisterPage() {
             }}>
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
+          </div>
+
+          {/* Legal consent checkboxes */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
+            {/* Required: T&C + Privacy */}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={acceptedLegal}
+                onChange={(e) => { setAcceptedLegal(e.target.checked); setFormError(null); }}
+                style={{ marginTop: 2, accentColor: C.green, flexShrink: 0, width: 16, height: 16, cursor: "pointer" }}
+              />
+              <span style={{ fontSize: 13, color: C.navyMid, lineHeight: 1.5 }}>
+                {t.auth_legal_required.split("{terms}")[0]}
+                <a href="/terms" target="_blank" rel="noopener noreferrer"
+                  style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "none")}
+                >{t.auth_legal_terms}</a>
+                {t.auth_legal_required.split("{terms}")[1]?.split("{privacy}")[0]}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                  style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "none")}
+                >{t.auth_legal_privacy}</a>
+                {t.auth_legal_required.split("{privacy}")[1]}
+              </span>
+            </label>
+
+            {/* Optional: marketing */}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={marketing}
+                onChange={(e) => setMarketing(e.target.checked)}
+                style={{ marginTop: 2, accentColor: C.green, flexShrink: 0, width: 16, height: 16, cursor: "pointer" }}
+              />
+              <span style={{ fontSize: 13, color: C.navyMid, lineHeight: 1.5 }}>
+                {t.auth_legal_marketing}
+              </span>
+            </label>
           </div>
 
           {/* Error */}
