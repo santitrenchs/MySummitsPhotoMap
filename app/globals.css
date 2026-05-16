@@ -156,7 +156,7 @@
 }
 
 .card-back .image-frame {
-  flex: 1;
+  flex: 0 1 57%;
   aspect-ratio: auto;
   min-height: 0;
   margin: 0;
@@ -490,6 +490,7 @@
 
 /* ── Footer / caption ─────────────────────────────────────────────────── */
 .capture-note {
+  flex: 1;
   border-top: 1px solid rgba(13, 37, 56, 0.08);
   padding: 12px 14px;
 }
