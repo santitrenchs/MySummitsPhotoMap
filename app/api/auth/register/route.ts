@@ -4,6 +4,10 @@ import { prisma } from "@/lib/db/client";
 import { hashPassword } from "@/lib/auth/password";
 import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
 import { generateUniqueSlug, generateUsername } from "@/lib/utils/user-utils";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
+
+// Max 5 registration attempts per IP per 15 minutes
+const isRateLimited = createRateLimiter(5, 15 * 60 * 1000);
 
 const RegisterSchema = z.object({
   name:     z.string().min(2).max(100),
@@ -13,6 +17,14 @@ const RegisterSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = RegisterSchema.parse(await req.json());
     const { name, username, email, password } = body;

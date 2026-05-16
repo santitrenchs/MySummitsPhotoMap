@@ -43,19 +43,20 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/map", req.nextUrl));
   }
 
-  const isLocaleLanding =
+  const isLanding =
+    pathname === "/" ||
     pathname === "/en" ||
     pathname === "/fr" ||
     pathname === "/de" ||
     pathname === "/ca";
 
-  // Authenticated users on locale landing pages → send to app
-  if (isLoggedIn && isLocaleLanding) {
+  // Authenticated users on any landing page → send to app
+  if (isLoggedIn && isLanding) {
     return NextResponse.redirect(new URL("/home", req.nextUrl));
   }
 
-  // Redirect unauthenticated users to login (except root and locale landings, which redirect themselves)
-  if (!isLoggedIn && !isAuthPage && pathname !== "/" && !isLocaleLanding) {
+  // Redirect unauthenticated users to login (except landing pages and auth pages)
+  if (!isLoggedIn && !isAuthPage && !isLanding) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
 

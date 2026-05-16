@@ -1,12 +1,10 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/client";
 import { RARITIES } from "@/lib/rarity";
 import LandingPage from "@/components/landing/LandingPage";
 import { getLandingT } from "@/lib/i18n/landing";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const t = getLandingT("de");
 
@@ -32,9 +30,6 @@ export const metadata: Metadata = {
 };
 
 export default async function DePage() {
-  const session = await auth();
-  if (session) redirect("/home");
-
   const [totalPeaks, capturedPeaks, totalAscents, ...rarityCounts] = await Promise.all([
     prisma.peak.count(),
     prisma.ascent.groupBy({ by: ["peakId"] }).then((r) => r.length),

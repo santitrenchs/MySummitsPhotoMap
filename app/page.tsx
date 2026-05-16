@@ -1,11 +1,10 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/client";
 import { RARITIES } from "@/lib/rarity";
 import LandingPage from "@/components/landing/LandingPage";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+// Revalidate stats every hour — auth redirect is handled by middleware
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Peakadex — Captura cimas. Colecciona rarezas. Conviértete en Legendario.",
@@ -30,9 +29,6 @@ export const metadata: Metadata = {
 };
 
 export default async function RootPage() {
-  const session = await auth();
-  if (session) redirect("/home");
-
   const [totalPeaks, capturedPeaks, totalAscents, ...rarityCounts] = await Promise.all([
     prisma.peak.count(),
     prisma.ascent.groupBy({ by: ["peakId"] }).then((r) => r.length),

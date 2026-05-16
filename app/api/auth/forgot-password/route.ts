@@ -3,10 +3,20 @@ import { z } from "zod";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db/client";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
+
+// Max 3 reset requests per IP per 15 minutes
+const isRateLimited = createRateLimiter(3, 15 * 60 * 1000);
 
 const Schema = z.object({ email: z.string().email() });
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (isRateLimited(ip)) {
+    // Return 200 to avoid leaking whether the email exists
+    return NextResponse.json({ ok: true });
+  }
+
   try {
     const { email } = Schema.parse(await req.json());
 
