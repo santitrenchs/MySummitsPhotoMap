@@ -194,7 +194,6 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
         transform: "rotateY(180deg)",
         borderRadius: 18, overflow: "hidden",
         background: "#FFFFFF",
-        border: "1px solid rgba(13,37,56,0.09)",
         boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
         display: "flex", flexDirection: "column",
       }}>
