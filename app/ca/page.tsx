@@ -3,18 +3,14 @@ import { getLandingStats } from "@/lib/services/landing.service";
 import { getLandingT } from "@/lib/i18n/landing";
 import type { Metadata } from "next";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 const t = getLandingT("ca");
 
 export const metadata: Metadata = {
   title: t.meta_title,
   description: t.meta_desc,
-  openGraph: {
-    title: t.meta_title,
-    description: t.meta_desc,
-    type: "website",
-  },
+  openGraph: { title: t.meta_title, description: t.meta_desc, type: "website" },
   alternates: {
     canonical: "https://www.peakadex.com/ca",
     languages: {

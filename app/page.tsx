@@ -2,8 +2,9 @@ import LandingPage from "@/components/landing/LandingPage";
 import { getLandingStats } from "@/lib/services/landing.service";
 import type { Metadata } from "next";
 
-// ISR — revalidate stats every hour; auth redirect handled by middleware
-export const revalidate = 3600;
+// force-dynamic: never pre-render at build time (Railway DB unreachable during build).
+// Stats are cached for 1h via unstable_cache in getLandingStats().
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Peakadex — Captura cimas. Colecciona rarezas. Conviértete en Legendario.",
