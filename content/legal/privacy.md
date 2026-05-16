@@ -84,7 +84,7 @@ Si en el futuro ofrecemos servicios de pago, los datos de pago serán tratados p
 
 ### 2.5 Datos de terceros
 
-Si te registras mediante Google, Apple u otro proveedor externo, recibiremos los datos que ese proveedor nos transmita según su configuración (normalmente: nombre, correo, foto de perfil).
+Si te registras mediante Google u otro proveedor externo, recibiremos los datos que ese proveedor nos transmita según su configuración (normalmente: nombre, correo y foto de perfil). Actualmente solo está habilitado Google Sign-In.
 
 ---
 
@@ -166,13 +166,12 @@ Una vez transcurridos los plazos, los datos serán suprimidos o anonimizados de 
 
 Para prestar el servicio trabajamos con proveedores que tratan datos por nuestra cuenta bajo contrato de encargo (art. 28 RGPD):
 
-- **Alojamiento e infraestructura:** [ej. AWS / Google Cloud / Hetzner]
-- **Envío de correos:** [ej. SendGrid, Mailgun]
-- **Analítica:** [ej. Plausible, Google Analytics]
-- **Atención al cliente:** [ej. Zendesk, Intercom]
-- **Procesamiento de pagos (si aplica):** [Stripe, PayPal]
-- **Almacenamiento de imágenes:** [ej. Cloudflare R2, AWS S3]
-- **Servicios de mapas:** [ej. Mapbox, OpenStreetMap]
+- **Alojamiento e infraestructura:** Railway (base de datos y servidor de aplicaciones)
+- **Almacenamiento de imágenes:** Cloudflare R2
+- **Envío de correos transaccionales:** Resend
+- **Servicios de mapas:** Carto / OpenStreetMap
+- **Autenticación externa:** Google (solo si usas Google Sign-In)
+- **Procesamiento de pagos:** no aplica actualmente
 
 Todos los encargados están sujetos a obligaciones de confidencialidad y seguridad equivalentes a las nuestras.
 

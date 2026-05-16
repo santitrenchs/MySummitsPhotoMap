@@ -84,18 +84,15 @@ En la versión actual, Peakadex **no utiliza cookies publicitarias de terceros**
 
 ### 4.3 Cookies analíticas
 
-| Nombre | Titular | Finalidad | Duración |
-|--------|---------|-----------|----------|
-| `_pa_*` | [Plausible / proveedor analítico] | Análisis de uso agregado | [Duración] |
-| `_ga`, `_gid` | Google (si aplica) | Estadísticas de visitas | 2 años / 24 h |
+Actualmente Peakadex **no utiliza cookies analíticas de terceros**. Si en el futuro se implantara una herramienta de analítica, esta política se actualizará antes de su activación y se solicitará el consentimiento correspondiente.
 
 ### 4.4 Cookies de terceros para funcionalidades
 
 | Servicio | Finalidad | Más información |
 |----------|-----------|-----------------|
-| Mapbox / OpenStreetMap | Mostrar mapas | [Enlace política proveedor] |
-| Cloudflare | Seguridad e infraestructura | [Enlace política proveedor] |
-| Google / Apple Sign-In | Inicio de sesión externo | [Enlace política proveedor] |
+| Carto / OpenStreetMap | Renderizar el mapa interactivo de cimas | [Política de Carto](https://carto.com/privacy/) |
+| Cloudflare R2 | Servir imágenes y recursos estáticos | [Política de Cloudflare](https://www.cloudflare.com/privacypolicy/) |
+| Google Sign-In | Inicio de sesión con cuenta Google | [Política de Google](https://policies.google.com/privacy) |
 
 ---
 
