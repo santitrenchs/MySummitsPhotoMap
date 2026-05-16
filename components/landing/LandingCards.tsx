@@ -120,13 +120,11 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
       <div style={{
         position: "absolute", inset: 0,
         backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
-        borderRadius: 18,
+        borderRadius: 18, overflow: "hidden",
         background: "#FFFFFF",
         border: "1px solid rgba(13,37,56,0.09)",
         boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
         display: "flex", flexDirection: "column",
-        clipPath: "inset(0px round 18px)",
-        WebkitClipPath: "inset(0px round 18px)",
       }}>
 
         {/* User header */}
@@ -194,17 +192,15 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
         position: "absolute", inset: 0,
         backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
         transform: "rotateY(180deg)",
-        borderRadius: 18,
+        borderRadius: 18, overflow: "hidden",
         background: "#FFFFFF",
+        border: "1px solid rgba(13,37,56,0.09)",
         boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
         display: "flex", flexDirection: "column",
-        /* clip-path clips correctly inside preserve-3d; overflow:hidden does not */
-        clipPath: "inset(0px round 18px)",
-        WebkitClipPath: "inset(0px round 18px)",
       }}>
 
-        {/* Map — top ~58% of card */}
-        <div style={{ position: "relative", height: 238, flexShrink: 0 }}>
+        {/* Map — covers full top portion (~58% of card height) */}
+        <div style={{ position: "relative", height: 238, flexShrink: 0, overflow: "hidden" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={card.mapImg}
