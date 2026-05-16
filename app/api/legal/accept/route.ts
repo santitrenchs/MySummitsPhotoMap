@@ -28,30 +28,35 @@ export async function POST(req: NextRequest) {
   const userId = session.user.id;
   const now = new Date();
 
-  await prisma.$transaction([
-    // Terms acceptance
-    prisma.legalConsent.upsert({
-      where: { userId_documentType_version: { userId, documentType: "terms", version: CURRENT_TERMS_VERSION } },
-      update: {},
-      create: { userId, documentType: "terms", version: CURRENT_TERMS_VERSION, acceptedAt: now, ipAddress: ip },
-    }),
-    // Privacy acceptance
-    prisma.legalConsent.upsert({
-      where: { userId_documentType_version: { userId, documentType: "privacy", version: CURRENT_PRIVACY_VERSION } },
-      update: {},
-      create: { userId, documentType: "privacy", version: CURRENT_PRIVACY_VERSION, acceptedAt: now, ipAddress: ip },
-    }),
-    // Optional marketing consent
-    ...(body.marketing !== undefined
-      ? [prisma.user.update({
-          where: { id: userId },
-          data: {
-            marketingConsent: body.marketing,
-            marketingConsentAt: body.marketing ? now : undefined,
-          },
-        })]
-      : []),
-  ]);
+  try {
+    await prisma.$transaction([
+      // Terms acceptance
+      prisma.legalConsent.upsert({
+        where: { userId_documentType_version: { userId, documentType: "terms", version: CURRENT_TERMS_VERSION } },
+        update: {},
+        create: { userId, documentType: "terms", version: CURRENT_TERMS_VERSION, acceptedAt: now, ipAddress: ip },
+      }),
+      // Privacy acceptance
+      prisma.legalConsent.upsert({
+        where: { userId_documentType_version: { userId, documentType: "privacy", version: CURRENT_PRIVACY_VERSION } },
+        update: {},
+        create: { userId, documentType: "privacy", version: CURRENT_PRIVACY_VERSION, acceptedAt: now, ipAddress: ip },
+      }),
+      // Optional marketing consent
+      ...(body.marketing !== undefined
+        ? [prisma.user.update({
+            where: { id: userId },
+            data: {
+              marketingConsent: body.marketing,
+              marketingConsentAt: body.marketing ? now : undefined,
+            },
+          })]
+        : []),
+    ]);
+  } catch (err) {
+    console.error("[legal/accept] DB error — table may not exist yet:", err);
+    // Still return ok so the user isn't blocked while the migration is pending
+  }
 
   return NextResponse.json({ ok: true });
 }

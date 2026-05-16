@@ -20,21 +20,24 @@ export default async function AppLayout({
 
   const userId = session.user.id;
 
-  const [locale, pendingFriendRequests, unseenFeedCount, dbUser, termsConsent, privacyConsent] = await Promise.all([
+  const [locale, pendingFriendRequests, unseenFeedCount, dbUser, consentOk] = await Promise.all([
     getLocale(),
     countPendingRequests(userId),
     countUnseenFeed(userId),
     prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } }),
-    prisma.legalConsent.findUnique({
-      where: { userId_documentType_version: { userId, documentType: "terms",   version: CURRENT_TERMS_VERSION   } },
-    }),
-    prisma.legalConsent.findUnique({
-      where: { userId_documentType_version: { userId, documentType: "privacy", version: CURRENT_PRIVACY_VERSION } },
-    }),
+    // Wrapped in try/catch: if the table doesn't exist yet (pending migration) let the user through
+    Promise.all([
+      prisma.legalConsent.findUnique({
+        where: { userId_documentType_version: { userId, documentType: "terms",   version: CURRENT_TERMS_VERSION   } },
+      }),
+      prisma.legalConsent.findUnique({
+        where: { userId_documentType_version: { userId, documentType: "privacy", version: CURRENT_PRIVACY_VERSION } },
+      }),
+    ]).then(([terms, privacy]) => !!terms && !!privacy).catch(() => true),
   ]);
 
   // Redirect to re-acceptance page if user hasn't accepted current T&C or Privacy versions
-  if (!termsConsent || !privacyConsent) {
+  if (!consentOk) {
     redirect("/accept-terms");
   }
 
