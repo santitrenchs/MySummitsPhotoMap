@@ -314,7 +314,7 @@ const CSS = `
   margin-top: 48px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
