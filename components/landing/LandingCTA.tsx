@@ -125,15 +125,28 @@ export default function LandingCTA() {
           {/* CTA */}
           <Link
             href="/register"
-            className="ld-btn-primary"
+            className="ld-btn-primary ld-cta-btn"
             style={{
               fontSize: 17,
               padding: "17px 44px",
               display: "inline-flex",
+              justifyContent: "center",
             }}
           >
             {t.cta_button}
           </Link>
+
+          <style>{`
+            @media (max-width: 480px) {
+              .ld-cta-btn {
+                width: 100%;
+                max-width: 360px;
+                padding-left: 24px !important;
+                padding-right: 24px !important;
+                font-size: 15px !important;
+              }
+            }
+          `}</style>
 
           <p className="ld-cta-micro" style={{ marginTop: 16 }}>
             {t.cta_micro}
