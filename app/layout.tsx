@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Baloo_2, Nunito, Manrope, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import CookieBanner from "@/components/CookieBanner";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter" });
@@ -32,6 +33,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <Providers>{children}</Providers>
+        <CookieBanner />
       </body>
     </html>
   );

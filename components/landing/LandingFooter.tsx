@@ -111,9 +111,14 @@ export default function LandingFooter() {
           <p style={{ fontSize: 12, color: "rgba(240,244,255,0.25)", margin: 0 }}>
             © {new Date().getFullYear()} {t.footer_copyright}
           </p>
-          <p style={{ fontSize: 12, color: "rgba(240,244,255,0.2)", margin: 0 }}>
-            Early Access — Staging
-          </p>
+          <Link
+            href="/cookies"
+            style={{ fontSize: 12, color: "rgba(240,244,255,0.2)", textDecoration: "none" }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "rgba(240,244,255,0.5)")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "rgba(240,244,255,0.2)")}
+          >
+            Configuración de cookies
+          </Link>
         </div>
       </div>
 
