@@ -201,6 +201,7 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
         {/* Map — full-bleed top */}
         <div style={{
           position: "relative", height: 230, flexShrink: 0, width: "100%",
+          borderRadius: "18px 18px 0 0", overflow: "hidden",
           backgroundImage: `url(${card.mapImg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
