@@ -18,8 +18,12 @@ function initials(name: string) {
   return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
-export function UsersTable({ users }: { users: UserRow[] }) {
+export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
+  const [users, setUsers] = useState<UserRow[]>(initialUsers);
   const [query, setQuery] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const filtered = query.trim()
     ? users.filter(u => {
@@ -31,6 +35,26 @@ export function UsersTable({ users }: { users: UserRow[] }) {
         );
       })
     : users;
+
+  async function handleDelete() {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/admin/users/${confirmDelete.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        setDeleteError(data.error ?? "Error al eliminar el usuario");
+        return;
+      }
+      setUsers(prev => prev.filter(u => u.id !== confirmDelete.id));
+      setConfirmDelete(null);
+    } catch {
+      setDeleteError("Error de red. Inténtalo de nuevo.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <div>
@@ -66,12 +90,13 @@ export function UsersTable({ users }: { users: UserRow[] }) {
                 <th style={{ textAlign: "center" }}>Fotos</th>
                 <th style={{ textAlign: "center" }}>Amigos</th>
                 <th>Rol</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={9}>
                     <div className="empty-state">Sin resultados para &ldquo;{query}&rdquo;</div>
                   </td>
                 </tr>
@@ -100,20 +125,25 @@ export function UsersTable({ users }: { users: UserRow[] }) {
                       day: "2-digit", month: "short", year: "numeric",
                     })}
                   </td>
-                  <td style={{ textAlign: "center" }}>
-                    <StatNum value={user.ascents} />
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <StatNum value={user.photos} />
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <StatNum value={user.friends} />
-                  </td>
+                  <td style={{ textAlign: "center" }}><StatNum value={user.ascents} /></td>
+                  <td style={{ textAlign: "center" }}><StatNum value={user.photos} /></td>
+                  <td style={{ textAlign: "center" }}><StatNum value={user.friends} /></td>
                   <td>
                     {user.isAdmin
                       ? <span className="badge badge-admin">Admin</span>
                       : <span className="badge badge-neutral">Usuario</span>
                     }
+                  </td>
+                  <td>
+                    {!user.isAdmin && (
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => { setConfirmDelete(user); setDeleteError(null); }}
+                        style={{ border: "1px solid var(--color-red-soft)", color: "var(--color-red)", background: "none" }}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -121,6 +151,49 @@ export function UsersTable({ users }: { users: UserRow[] }) {
           </table>
         </div>
       </div>
+
+      {/* Confirm delete modal */}
+      {confirmDelete && (
+        <div
+          className="modal-backdrop"
+          onClick={e => { if (e.target === e.currentTarget && !deleting) setConfirmDelete(null); }}
+        >
+          <div className="modal-box">
+            <h2 className="modal-title" style={{ color: "var(--color-red)" }}>
+              Eliminar usuario
+            </h2>
+            <p className="modal-body">
+              Vas a eliminar permanentemente la cuenta de{" "}
+              <strong>{confirmDelete.name}</strong> ({confirmDelete.email}).
+              {confirmDelete.ascents > 0 && (
+                <> Esto borrará también sus <strong>{confirmDelete.ascents} ascensión{confirmDelete.ascents !== 1 ? "es" : ""}</strong> y todas las fotos asociadas.</>
+              )}
+              {" "}Esta acción no se puede deshacer.
+            </p>
+            {deleteError && (
+              <p style={{ fontSize: 13, color: "var(--color-red)", margin: "0 0 16px", padding: "8px 12px", background: "var(--color-red-soft)", borderRadius: 6 }}>
+                {deleteError}
+              </p>
+            )}
+            <div className="modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleting}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Eliminando..." : "Sí, eliminar cuenta"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
