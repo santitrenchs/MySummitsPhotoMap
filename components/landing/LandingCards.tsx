@@ -199,77 +199,77 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
         display: "flex", flexDirection: "column",
       }}>
 
-        {/* Map — covers full top portion (~58% of card height) */}
-        <div style={{ position: "relative", height: 238, flexShrink: 0, overflow: "hidden" }}>
+        {/* Map — full-bleed top */}
+        <div style={{ position: "relative", height: 230, flexShrink: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={card.mapImg}
             alt=""
             loading="lazy"
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           />
-          {/* Gradient */}
+          {/* Gradient overlay */}
           <div style={{
             position: "absolute", inset: 0,
-            background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)",
+            background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.20) 52%, transparent 100%)",
           }} />
-          {/* Overlay: coords + name + alt + range + bar */}
+          {/* Text overlay */}
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 14px 12px" }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.55)", marginBottom: 5, display: "flex", alignItems: "center", gap: 3 }}>
-              <span style={{ color: "#ef4444", fontSize: 10 }}>📍</span>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.55)", marginBottom: 4, display: "flex", alignItems: "center", gap: 3 }}>
+              <span style={{ fontSize: 10 }}>📍</span>
               {latStr} · {lngStr}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.1, textShadow: "0 2px 8px rgba(0,0,0,0.6)" }}>
+            <div style={{ fontSize: 21, fontWeight: 800, color: "#fff", lineHeight: 1.1, textShadow: "0 2px 8px rgba(0,0,0,0.6)" }}>
               {card.peakName}
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.92)", marginTop: 2 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.90)", marginTop: 2 }}>
               {card.altLabel}
             </div>
             {card.mountainRange && (
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.50)", marginTop: 2 }}>{card.mountainRange}</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.48)", marginTop: 2 }}>{card.mountainRange}</div>
             )}
             {/* Altitude bar */}
-            <div style={{ marginTop: 10 }}>
-              <div style={{ height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ marginTop: 9 }}>
+              <div style={{ height: 3, background: "rgba(255,255,255,0.18)", borderRadius: 3, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${barPct}%`, background: `linear-gradient(to right, ${color}99, ${color})`, borderRadius: 3 }} />
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                <span style={{ fontSize: 8, color: "rgba(255,255,255,0.40)" }}>0 m</span>
-                <span style={{ fontSize: 8, color: "rgba(255,255,255,0.40)" }}>8.849 m</span>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
+                <span style={{ fontSize: 8, color: "rgba(255,255,255,0.38)" }}>0 m</span>
+                <span style={{ fontSize: 8, color: "rgba(255,255,255,0.38)" }}>8.849 m</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Stats panel */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {/* Eyebrow */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px 0" }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px 0" }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
             <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(13,37,56,0.38)", textTransform: "uppercase" }}>
               {t.cards_stats_label}
             </span>
           </div>
-          {/* KPIs */}
-          <div style={{ display: "flex", borderTop: "1px solid rgba(13,37,56,0.07)", borderBottom: "1px solid rgba(13,37,56,0.07)", margin: "8px 0 0" }}>
-            <div style={{ flex: 1, padding: "10px 14px" }}>
-              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.35)", textTransform: "uppercase", marginBottom: 4 }}>{t.cards_ascents}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.ascents.toLocaleString(t.numberLocale)}</div>
+          {/* KPIs — ASCENTS left, CLIMBERS right */}
+          <div style={{ display: "flex", borderTop: "1px solid rgba(13,37,56,0.07)", borderBottom: "1px solid rgba(13,37,56,0.07)", margin: "6px 0 0" }}>
+            <div style={{ flex: 1, padding: "8px 14px", textAlign: "left" }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.35)", textTransform: "uppercase", marginBottom: 3 }}>{t.cards_ascents}</div>
+              <div style={{ fontSize: 21, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.ascents.toLocaleString(t.numberLocale)}</div>
             </div>
-            <div style={{ width: 1, background: "rgba(13,37,56,0.07)", margin: "10px 0" }} />
-            <div style={{ flex: 1, padding: "10px 14px", textAlign: "right" }}>
-              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.35)", textTransform: "uppercase", marginBottom: 4 }}>{t.cards_climbers}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.climbers.toLocaleString(t.numberLocale)}</div>
+            <div style={{ width: 1, background: "rgba(13,37,56,0.07)", margin: "8px 0" }} />
+            <div style={{ flex: 1, padding: "8px 14px", textAlign: "right" }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.35)", textTransform: "uppercase", marginBottom: 3 }}>{t.cards_climbers}</div>
+              <div style={{ fontSize: 21, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{card.climbers.toLocaleString(t.numberLocale)}</div>
             </div>
           </div>
-          {/* User + message */}
-          <div style={{ padding: "9px 14px 14px", flex: 1 }}>
+          {/* User + message — flex: 1 so it takes remaining space */}
+          <div style={{ flex: 1, padding: "8px 14px 14px", display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
             <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>
               {card.user}
             </p>
             <p style={{
-              margin: "4px 0 0", fontSize: 10.5, color: "#6B7280", lineHeight: 1.55,
-              display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+              margin: "5px 0 0", fontSize: 10.5, color: "#6B7280", lineHeight: 1.55,
+              display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden",
             }}>
               {card.message}
             </p>
