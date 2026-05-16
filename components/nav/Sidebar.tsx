@@ -345,17 +345,16 @@ const CSS = `
 .azisb--c .azisb-nav { padding: 4px 0; }
 .azisb--c .azisb-item { padding: 0; justify-content: center; overflow: visible; gap: 0; }
 
-/* Avatar item — separado del grupo de nav con espacio extra */
+/* Avatar item — separado del grupo de nav con espacio extra (solo expandido) */
 .azisb-item--profile {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #f0f2f5;
 }
 .azisb--c .azisb-item--profile {
-  margin-top: 16px;
+  margin-top: 0;
   padding-top: 0;
   border-top: none;
-  border-top-color: transparent;
 }
 .azisb-item:hover { background: #f8fafc; color: #0f172a; }
 .azisb-item--on { background: #eff6ff; color: #0369a1; }
