@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
 
@@ -20,8 +20,7 @@ const C = {
  * Uses the app's I18nProvider so locale is always correct.
  */
 export default function ConsentGate() {
-  const t      = useT();
-  const router = useRouter();
+  const t = useT();
 
   const [accepted,  setAccepted]  = useState(false);
   const [marketing, setMarketing] = useState(false);
@@ -139,6 +138,23 @@ export default function ConsentGate() {
           onMouseLeave={(e) => { if (!saving) (e.currentTarget as HTMLButtonElement).style.background = C.green; }}
         >
           {saving ? t.auth_accept_accepting : t.auth_accept_cta}
+        </button>
+
+        {/* Sign out escape hatch */}
+        <button
+          type="button"
+          onClick={() => signOut({ callbackUrl: "/" })}
+          style={{
+            display: "block", width: "100%", marginTop: 14,
+            background: "none", border: "none",
+            fontSize: 13, color: C.navyLight,
+            cursor: "pointer", textAlign: "center",
+            fontFamily: "var(--font-inter, sans-serif)",
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = C.navyMid; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = C.navyLight; }}
+        >
+          {t.settings_signOut}
         </button>
       </div>
     </div>
