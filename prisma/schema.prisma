@@ -371,3 +371,12 @@ model FeedSeen {
   @@index([userId, seenAt])
   @@map("feed_seen")
 }
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  locale    String   @default("es")  // landing locale at signup time
+  createdAt DateTime @default(now())
+
+  @@map("newsletter_subscribers")
+}

@@ -130,6 +130,11 @@ export type LandingT = {
   footer_col_legal: string;
   footer_links_product: { label: string; href: string }[];
   footer_links_legal: { label: string; href: string }[];
+  newsletter_label: string;
+  newsletter_placeholder: string;
+  newsletter_cta: string;
+  newsletter_success: string;
+  newsletter_error: string;
 };
 
 // ─── Spanish ────────────────────────────────────────────────────────────────────
@@ -278,6 +283,11 @@ const es: LandingT = {
     { label: "Términos de uso", href: "/terms" },
     { label: "Política de cookies", href: "/cookies" },
   ],
+  newsletter_label: "Novedades en tu bandeja",
+  newsletter_placeholder: "tu@email.com",
+  newsletter_cta: "Suscribirme",
+  newsletter_success: "¡Apuntado! Te avisamos cuando haya novedades.",
+  newsletter_error: "Algo ha fallado. Inténtalo de nuevo.",
 };
 
 // ─── English ───────────────────────────────────────────────────────────────────
@@ -426,6 +436,11 @@ const en: LandingT = {
     { label: "Terms of use", href: "/terms" },
     { label: "Cookie policy", href: "/cookies" },
   ],
+  newsletter_label: "News in your inbox",
+  newsletter_placeholder: "you@email.com",
+  newsletter_cta: "Subscribe",
+  newsletter_success: "You're in! We'll let you know when there's news.",
+  newsletter_error: "Something went wrong. Please try again.",
 };
 
 // ─── French ────────────────────────────────────────────────────────────────────
@@ -574,6 +589,11 @@ const fr: LandingT = {
     { label: "Conditions d'utilisation", href: "/terms" },
     { label: "Politique de cookies", href: "/cookies" },
   ],
+  newsletter_label: "Les actus dans ta boîte",
+  newsletter_placeholder: "toi@email.com",
+  newsletter_cta: "S'inscrire",
+  newsletter_success: "C'est noté ! On te tient au courant.",
+  newsletter_error: "Une erreur s'est produite. Réessaie.",
 };
 
 // ─── German ────────────────────────────────────────────────────────────────────
@@ -722,6 +742,11 @@ const de: LandingT = {
     { label: "Nutzungsbedingungen", href: "/terms" },
     { label: "Cookie-Richtlinie", href: "/cookies" },
   ],
+  newsletter_label: "Neuigkeiten ins Postfach",
+  newsletter_placeholder: "du@email.com",
+  newsletter_cta: "Abonnieren",
+  newsletter_success: "Eingetragen! Wir melden uns bei Neuigkeiten.",
+  newsletter_error: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
 };
 
 // ─── Catalan ───────────────────────────────────────────────────────────────────
@@ -870,6 +895,11 @@ const ca: LandingT = {
     { label: "Termes d'ús", href: "/terms" },
     { label: "Política de cookies", href: "/cookies" },
   ],
+  newsletter_label: "Novetats a la teva safata",
+  newsletter_placeholder: "tu@email.com",
+  newsletter_cta: "Subscriure'm",
+  newsletter_success: "Apuntat! T'avisem quan hi hagi novetats.",
+  newsletter_error: "Alguna cosa ha fallat. Torna-ho a intentar.",
 };
 
 // ─── Lookup ────────────────────────────────────────────────────────────────────
