@@ -99,7 +99,7 @@ export default auth((req) => {
   // Authenticated users on any landing page → let them through (don't force into app)
 
   // ── Locale auto-detection for landing ─────────────────────────────────────
-  if (!isLoggedIn && isLanding) {
+  if (isLanding) {
     const localeCookie = req.cookies.get(LOCALE_COOKIE)?.value as SupportedLocale | undefined;
 
     if (pathname === "/") {
@@ -110,22 +110,19 @@ export default auth((req) => {
           : detectLocale(req.headers.get("accept-language") ?? "");
 
       if (detected !== "es") {
+        // Redirect to the detected locale page; cookie will be set when they land there
         return NextResponse.redirect(new URL(`/${detected}`, req.nextUrl));
       }
-      // Spanish is the default — serve "/" as-is but set cookie if not already set
-      if (!localeCookie) {
-        const res = NextResponse.next();
-        res.cookies.set(LOCALE_COOKIE, "es", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
-        return res;
-      }
+      // Spanish — always refresh the cookie so auth pages pick up the right locale
+      const res = NextResponse.next();
+      res.cookies.set(LOCALE_COOKIE, "es", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+      return res;
     } else {
-      // User is on a locale page (/en, /fr, /de, /ca) — persist their choice in the cookie
+      // /en, /fr, /de, /ca — always overwrite cookie with current locale
       const chosenLocale = pathname.slice(1) as SupportedLocale;
-      if (localeCookie !== chosenLocale) {
-        const res = NextResponse.next();
-        res.cookies.set(LOCALE_COOKIE, chosenLocale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
-        return res;
-      }
+      const res = NextResponse.next();
+      res.cookies.set(LOCALE_COOKIE, chosenLocale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+      return res;
     }
   }
 
