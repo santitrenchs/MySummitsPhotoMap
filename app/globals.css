@@ -144,7 +144,6 @@
   clip-path: inset(0px round 20px);
   -webkit-clip-path: inset(0px round 20px);
   border-radius: 20px;
-  padding: 10px;
   display: flex;
   flex-direction: column;
 }
