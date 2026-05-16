@@ -199,14 +199,12 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
       }}>
 
         {/* Map — full-bleed top */}
-        <div style={{ position: "relative", height: 230, flexShrink: 0 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={card.mapImg}
-            alt=""
-            loading="lazy"
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-          />
+        <div style={{
+          position: "relative", height: 230, flexShrink: 0, width: "100%",
+          backgroundImage: `url(${card.mapImg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}>
           {/* Gradient overlay */}
           <div style={{
             position: "absolute", inset: 0,
