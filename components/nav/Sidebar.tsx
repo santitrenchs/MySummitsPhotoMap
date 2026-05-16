@@ -180,7 +180,7 @@ export function Sidebar({
           {/* Avatar → Profile (last nav item, like Instagram) */}
           <Link
             href="/profile"
-            className={`azisb-item azisb-item--profile${active("/profile") ? " azisb-item--on" : ""}`}
+            className={`azisb-item${active("/profile") ? " azisb-item--on" : ""}`}
             data-tip={t.nav_profile}
           >
             <span className="azisb-ic">
@@ -345,17 +345,6 @@ const CSS = `
 .azisb--c .azisb-nav { padding: 4px 0; }
 .azisb--c .azisb-item { padding: 0; justify-content: center; overflow: visible; gap: 0; }
 
-/* Avatar item — separado del grupo de nav con espacio extra (solo expandido) */
-.azisb-item--profile {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f2f5;
-}
-.azisb--c .azisb-item--profile {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-}
 .azisb-item:hover { background: #f8fafc; color: #0f172a; }
 .azisb-item--on { background: #eff6ff; color: #0369a1; }
 .azisb-item--on .azisb-lbl { font-weight: 600; }
