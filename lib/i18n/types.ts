@@ -179,6 +179,16 @@ export type Dict = {
   auth_accept_cta: string;          // "Acepto y continuar"
   auth_accept_accepting: string;    // "Guardando…"
 
+  // Legal pages chrome
+  legal_back: string;         // "← Volver al inicio"
+  legal_termsTitle: string;   // "Términos y Condiciones"
+  legal_privacyTitle: string; // "Política de Privacidad"
+  legal_cookiesTitle: string; // "Política de Cookies"
+  legal_termsLink: string;    // footer link text "Términos de uso"
+  legal_privacyLink: string;  // footer link text "Política de privacidad"
+  legal_cookiesLink: string;  // footer link text "Política de cookies"
+  legal_lastUpdated: string;  // "Última actualización: {date} · Versión {version}"
+
   // Crop modal
   crop_title: string; crop_next: string;
 

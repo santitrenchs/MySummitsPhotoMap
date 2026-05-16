@@ -5,10 +5,18 @@ export default function LegalLayout({
   title,
   lastUpdated,
   contentHtml,
+  backLabel = "← Volver al inicio",
+  termsLink = "Términos de uso",
+  privacyLink = "Política de privacidad",
+  cookiesLink = "Política de cookies",
 }: {
   title: string;
   lastUpdated: string;
   contentHtml: string;
+  backLabel?: string;
+  termsLink?: string;
+  privacyLink?: string;
+  cookiesLink?: string;
 }) {
   return (
     <>
@@ -188,7 +196,7 @@ export default function LegalLayout({
               <PeakadexLogo height={24} />
             </Link>
             <Link href="/" className="legal-back">
-              ← Volver al inicio
+              {backLabel}
             </Link>
           </div>
         </nav>
@@ -209,9 +217,9 @@ export default function LegalLayout({
         <footer className="legal-footer">
           <p>© {new Date().getFullYear()} Peakadex · Santi Trenchs Sainz de la Maza</p>
           <div className="legal-footer-links">
-            <Link href="/privacy">Política de privacidad</Link>
-            <Link href="/terms">Términos de uso</Link>
-            <Link href="/cookies">Política de cookies</Link>
+            <Link href="/privacy">{privacyLink}</Link>
+            <Link href="/terms">{termsLink}</Link>
+            <Link href="/cookies">{cookiesLink}</Link>
           </div>
         </footer>
       </div>
