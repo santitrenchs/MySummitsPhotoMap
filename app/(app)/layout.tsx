@@ -9,6 +9,7 @@ import { countPendingRequests } from "@/lib/services/friendship.service";
 import { countUnseenFeed } from "@/lib/services/feed.service";
 import { prisma } from "@/lib/db/client";
 import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legal/versions";
+import ConsentGate from "@/components/legal/ConsentGate";
 
 export default async function AppLayout({
   children,
@@ -36,11 +37,6 @@ export default async function AppLayout({
     ]).then(([terms, privacy]) => !!terms && !!privacy).catch(() => true),
   ]);
 
-  // Redirect to re-acceptance page if user hasn't accepted current T&C or Privacy versions
-  if (!consentOk) {
-    redirect("/accept-terms");
-  }
-
   const navProps = {
     userName: session.user.name ?? null,
     userEmail: session.user.email ?? null,
@@ -67,6 +63,9 @@ export default async function AppLayout({
         <main className="azi-main" style={{ flex: 1, paddingBottom: "var(--bottom-nav-h, 0px)" }}>
           {children}
         </main>
+
+        {/* Legal consent overlay — shown when user hasn't accepted current T&C/Privacy versions */}
+        {!consentOk && <ConsentGate />}
 
         <style>{`
           :root {
