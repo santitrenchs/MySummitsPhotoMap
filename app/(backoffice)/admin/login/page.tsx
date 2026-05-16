@@ -34,7 +34,7 @@ function AdminLoginForm() {
 
     // Let the server-side layout verify isAdmin — redirects back here with
     // ?error=unauthorized if the user doesn't have admin rights
-    router.push("/admin/users");
+    router.push("/admin");
     router.refresh();
   }
 
