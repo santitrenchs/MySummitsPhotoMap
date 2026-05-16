@@ -140,7 +140,9 @@
   position: absolute;
   inset: 0;
   transform: rotateY(180deg);
-  overflow: hidden;
+  /* clip-path clips correctly inside preserve-3d; overflow:hidden does not */
+  clip-path: inset(0px round 20px);
+  -webkit-clip-path: inset(0px round 20px);
   border-radius: 20px;
   padding: 10px;
   display: flex;
