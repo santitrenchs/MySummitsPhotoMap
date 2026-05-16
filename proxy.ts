@@ -96,10 +96,7 @@ export default auth((req) => {
     pathname === "/de" ||
     pathname === "/ca";
 
-  // Authenticated users on any landing page → send to app
-  if (isLoggedIn && isLanding) {
-    return NextResponse.redirect(new URL("/home", req.nextUrl));
-  }
+  // Authenticated users on any landing page → let them through (don't force into app)
 
   // ── Locale auto-detection for landing ─────────────────────────────────────
   if (!isLoggedIn && isLanding) {
