@@ -120,11 +120,13 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
       <div style={{
         position: "absolute", inset: 0,
         backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
-        borderRadius: 18, overflow: "hidden",
+        borderRadius: 18,
         background: "#FFFFFF",
         border: "1px solid rgba(13,37,56,0.09)",
         boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
         display: "flex", flexDirection: "column",
+        clipPath: "inset(0px round 18px)",
+        WebkitClipPath: "inset(0px round 18px)",
       }}>
 
         {/* User header */}
@@ -192,16 +194,17 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
         position: "absolute", inset: 0,
         backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
         transform: "rotateY(180deg)",
-        borderRadius: 18, overflow: "hidden",
+        borderRadius: 18,
         background: "#FFFFFF",
         boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
         display: "flex", flexDirection: "column",
+        clipPath: "inset(0px round 18px)",
+        WebkitClipPath: "inset(0px round 18px)",
       }}>
 
         {/* Map — full-bleed top */}
         <div style={{
           position: "relative", height: 230, flexShrink: 0, width: "100%",
-          borderRadius: "18px 18px 0 0", overflow: "hidden",
           backgroundImage: `url(${card.mapImg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
