@@ -224,4 +224,13 @@
   [class*="ld-float"], [class*="ld-shimmer"], [class*="ld-ping"], [class*="ld-pulse"] {
     animation: none;
   }
+  /* Shimmer on the primary CTA button */
+  .ld-btn-primary::after { animation: none; }
+  /* Mythic section animations */
+  .mythic-reveal,
+  .mythic-manifesto-line,
+  .mythic-card-reveal { transition: none; opacity: 1; transform: none; }
+  /* Progression section dot pulses */
+  [style*="zpZenithPulse"],
+  [style*="zpUserPulse"] { animation: none !important; }
 }

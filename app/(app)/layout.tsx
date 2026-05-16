@@ -33,6 +33,10 @@ export default async function AppLayout({
   };
 
   return (
+    <>
+    {/* maplibre-gl styles — only loaded for authenticated app pages, not landing */}
+    {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+    <link rel="stylesheet" href="/maplibre-gl.css" />
     <I18nProvider initialLocale={locale as Locale}>
       <div style={{ minHeight: "100svh", display: "flex", flexDirection: "column" }}>
         {/* Desktop sidebar (fixed, hidden on mobile via CSS) */}
@@ -67,5 +71,6 @@ export default async function AppLayout({
         `}</style>
       </div>
     </I18nProvider>
+    </>
   );
 }

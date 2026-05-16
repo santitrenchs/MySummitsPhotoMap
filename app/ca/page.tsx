@@ -1,6 +1,5 @@
-import { prisma } from "@/lib/db/client";
-import { RARITIES } from "@/lib/rarity";
 import LandingPage from "@/components/landing/LandingPage";
+import { getLandingStats } from "@/lib/services/landing.service";
 import { getLandingT } from "@/lib/i18n/landing";
 import type { Metadata } from "next";
 
@@ -30,27 +29,6 @@ export const metadata: Metadata = {
 };
 
 export default async function CaPage() {
-  const [totalPeaks, capturedPeaks, totalAscents, ...rarityCounts] = await Promise.all([
-    prisma.peak.count(),
-    prisma.ascent.groupBy({ by: ["peakId"] }).then((r) => r.length),
-    prisma.ascent.count(),
-    ...RARITIES.map((r, i) => {
-      const next = RARITIES[i + 1];
-      return prisma.peak.count({
-        where: { altitudeM: { gte: r.minAlt, ...(next ? { lt: next.minAlt } : {}) } },
-      });
-    }),
-  ]);
-
-  const peakCounts = Object.fromEntries(
-    RARITIES.map((r, i) => [r.id, rarityCounts[i]])
-  ) as Record<string, number>;
-
-  return (
-    <LandingPage
-      stats={{ totalRarities: 9, totalPeaks, capturedPeaks, totalAscents }}
-      peakCounts={peakCounts}
-      locale="ca"
-    />
-  );
+  const { stats, peakCounts } = await getLandingStats();
+  return <LandingPage stats={stats} peakCounts={peakCounts} locale="ca" />;
 }

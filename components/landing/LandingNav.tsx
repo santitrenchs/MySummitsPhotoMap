@@ -32,7 +32,11 @@ export default function LandingNav() {
   ];
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 60);
+    const handler = () => {
+      const next = window.scrollY > 60;
+      // Functional update avoids re-render when the boolean hasn't changed
+      setScrolled((prev) => (prev === next ? prev : next));
+    };
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);

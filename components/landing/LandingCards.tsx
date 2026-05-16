@@ -204,6 +204,7 @@ function CardFace({ card, index, flipped, isNearby }: { card: CardData; index: n
           <img
             src={card.mapImg}
             alt=""
+            loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           />
           {/* Bottom gradient */}
@@ -289,9 +290,13 @@ export default function LandingCards() {
   const total = RAW.length;
 
   useEffect(() => {
-    const onResize = () => setVw(window.innerWidth);
+    let timer: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setVw(window.innerWidth), 150);
+    };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    return () => { window.removeEventListener("resize", onResize); clearTimeout(timer); };
   }, []);
 
   const dragStart   = useRef<number | null>(null);

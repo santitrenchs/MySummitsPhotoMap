@@ -170,14 +170,13 @@ export default function LandingMythic() {
         .mythic-card-reveal {
           opacity: 0;
           transform: scale(0.88) translateY(20px);
-          filter: blur(8px);
-          transition: opacity 0.9s ease, transform 0.9s ease, filter 0.9s ease;
+          /* filter: blur removed — triggers expensive repaint on reveal */
+          transition: opacity 0.9s ease, transform 0.9s ease;
           transition-delay: 0.3s;
         }
         .mythic-revealed .mythic-card-reveal {
           opacity: 1;
           transform: scale(1) translateY(0);
-          filter: blur(0);
         }
 
         /* ── Responsive ── */
@@ -224,6 +223,7 @@ export default function LandingMythic() {
           borderRadius: "50%",
           background: "radial-gradient(circle, rgba(212,160,23,0.07) 0%, transparent 70%)",
           animation: "mythicGlow 6s ease-in-out infinite",
+          willChange: "transform, opacity",
           pointerEvents: "none",
         }} />
         <div style={{
@@ -232,6 +232,7 @@ export default function LandingMythic() {
           borderRadius: "50%",
           background: "radial-gradient(circle, rgba(15,60,100,0.35) 0%, transparent 70%)",
           animation: "mythicGlow 8s 2s ease-in-out infinite",
+          willChange: "transform, opacity",
           pointerEvents: "none",
         }} />
 

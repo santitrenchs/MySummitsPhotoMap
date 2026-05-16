@@ -424,6 +424,7 @@ function CardZenith({ revealed }: { revealed: boolean }) {
                     : lv.isUser
                       ? "zpUserPulse 2.4s ease-in-out infinite"
                       : "none",
+                  willChange: (lv.isTop || lv.isUser) ? "transform, opacity" : "auto",
                   zIndex: 1,
                 }}/>
                 {/* Label + desc */}
@@ -476,13 +477,14 @@ export default function LandingProgression() {
   return (
     <>
       <style>{`
+        /* Compositor-only pulse — opacity + scale instead of box-shadow to avoid repaint */
         @keyframes zpZenithPulse {
-          0%, 100% { box-shadow: 0 0 8px rgba(245,200,66,0.5), 0 0 18px rgba(245,200,66,0.22); }
-          50%       { box-shadow: 0 0 14px rgba(245,200,66,0.85), 0 0 30px rgba(245,200,66,0.42); }
+          0%, 100% { opacity: 0.75; transform: scale(1); }
+          50%       { opacity: 1;    transform: scale(1.55); }
         }
         @keyframes zpUserPulse {
-          0%, 100% { box-shadow: 0 0 0 3px rgba(56,189,248,0.18), 0 0 12px rgba(56,189,248,0.5); }
-          50%       { box-shadow: 0 0 0 5px rgba(56,189,248,0.09), 0 0 20px rgba(56,189,248,0.76); }
+          0%, 100% { opacity: 0.8;  transform: scale(1); }
+          50%       { opacity: 1;   transform: scale(1.6); }
         }
         @media (max-width: 767px) {
           .soc-cards { flex-direction: column !important; }
