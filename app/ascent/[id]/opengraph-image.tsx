@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 import { getPublicAscent } from "@/lib/services/public-ascent.service";
-import { getRarityId, RARITY_COLORS, RARITY_LABELS } from "@/lib/rarity";
 
 export const runtime = "nodejs";
 export const revalidate = 86400; // 24h
@@ -17,36 +16,29 @@ export default async function OgImage({
   const ascent = await getPublicAscent(id);
 
   if (!ascent) {
-    // Fallback OG image — Peakadex brand
+    // Fallback — brand-only image
     return new ImageResponse(
       <div
         style={{
           width: 1200,
           height: 630,
-          background: "linear-gradient(135deg, #0D2538 0%, #1e3a5f 100%)",
+          background: "linear-gradient(160deg, #0D2538 0%, #1a3a5c 50%, #0D2538 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           fontFamily: "sans-serif",
         }}
       >
-        <span style={{ fontSize: 64, fontWeight: 800, color: "#fff" }}>
-          Peakadex
-        </span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+          <span style={{ fontSize: 64, color: "#fff", lineHeight: 1 }}>✿</span>
+          <span style={{ fontSize: 52, fontWeight: 800, color: "#fff", letterSpacing: "-1px" }}>
+            Peakadex
+          </span>
+        </div>
       </div>,
       { width: 1200, height: 630 }
     );
   }
-
-  const rarity = getRarityId(ascent.peak.altitudeM);
-  const rarityColor = RARITY_COLORS[ascent.peak.rarityId ?? rarity] ?? RARITY_COLORS[rarity];
-  const rarityLabel = RARITY_LABELS[rarity];
-
-  const dateStr = new Date(ascent.date).toLocaleDateString("en", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 
   return new ImageResponse(
     <div
@@ -57,9 +49,10 @@ export default async function OgImage({
         position: "relative",
         fontFamily: "sans-serif",
         overflow: "hidden",
+        background: "#0D2538",
       }}
     >
-      {/* Background photo */}
+      {/* Full-frame mountain photo */}
       {ascent.photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -78,113 +71,91 @@ export default async function OgImage({
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(135deg, #1e3a5f 0%, #0D2538 100%)",
+            background: "linear-gradient(160deg, #1e3a5f 0%, #0D2538 100%)",
           }}
         />
       )}
 
-      {/* Dark overlay */}
+      {/* Subtle bottom gradient — only for text/watermark readability */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)",
+            "linear-gradient(to top, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.15) 38%, rgba(0,0,0,0) 60%)",
           display: "flex",
         }}
       />
 
-      {/* Content */}
+      {/* Peak name + altitude — bottom-left, elegant */}
       <div
         style={{
           position: "absolute",
-          inset: 0,
+          bottom: 44,
+          left: 56,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "48px 56px",
+          gap: 6,
         }}
       >
-        {/* Top: logo + rarity */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: "rgba(255,255,255,0.9)", letterSpacing: "-0.5px" }}>
-            🏔 Peakadex
-          </span>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              background: rarityColor + "30",
-              border: `1.5px solid ${rarityColor}`,
-              borderRadius: 30,
-              padding: "6px 16px",
-            }}
-          >
-            <span style={{ color: rarityColor, fontSize: 16 }}>✿</span>
-            <span style={{ color: rarityColor, fontSize: 16, fontWeight: 700 }}>{rarityLabel}</span>
-          </div>
+        <div
+          style={{
+            fontSize: ascent.peak.name.length > 22 ? 46 : 54,
+            fontWeight: 800,
+            color: "#fff",
+            lineHeight: 1.05,
+            letterSpacing: "-0.8px",
+          }}
+        >
+          {ascent.peak.name}
         </div>
-
-        {/* Bottom: peak info + user */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {/* Altitude */}
-          <div style={{ fontSize: 18, color: "rgba(255,255,255,0.7)", fontWeight: 600, marginBottom: 8 }}>
-            {ascent.peak.altitudeM.toLocaleString("en")} m
-            {ascent.peak.mountainRange ? ` · ${ascent.peak.mountainRange}` : ""}
-          </div>
-
-          {/* Peak name */}
-          <div
-            style={{
-              fontSize: ascent.peak.name.length > 20 ? 58 : 72,
-              fontWeight: 900,
-              color: "#fff",
-              lineHeight: 1,
-              letterSpacing: "-1.5px",
-              marginBottom: 24,
-            }}
-          >
-            {ascent.peak.name}
-          </div>
-
-          {/* User + date */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {ascent.user.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={ascent.user.avatarUrl}
-                style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }}
-                alt=""
-              />
-            ) : (
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg, #0369a1, #0ea5e9)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: "#fff",
-                }}
-              >
-                {ascent.user.name[0]?.toUpperCase()}
-              </div>
-            )}
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>
-                {ascent.user.name}
-              </span>
-              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>
-                {dateStr}
-              </span>
-            </div>
-          </div>
+        <div
+          style={{
+            fontSize: 20,
+            fontWeight: 500,
+            color: "rgba(255,255,255,0.72)",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {ascent.peak.altitudeM.toLocaleString("en")} m
+          {ascent.peak.mountainRange ? `  ·  ${ascent.peak.mountainRange}` : ""}
         </div>
+      </div>
+
+      {/* Peakadex watermark — bottom-right, tasteful */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 40,
+          right: 48,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          opacity: 0.30,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 22,
+            color: "#fff",
+            lineHeight: 1,
+            filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))",
+          }}
+        >
+          ✿
+        </span>
+        <span
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#fff",
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))",
+          }}
+        >
+          PEAKADEX
+        </span>
       </div>
     </div>,
     { width: 1200, height: 630 }
