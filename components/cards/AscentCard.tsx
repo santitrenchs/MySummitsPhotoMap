@@ -394,112 +394,192 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             style={{ position: "fixed", inset: 0, zIndex: 98 }}
             onClick={() => { setSharePopover(null); setLinkCopied(false); }}
           />
-          {/* Popover — anchored below share button (top-right of header) */}
+          {/* Premium dark popover — anchored below share button */}
           <div
             style={{
               position: "absolute", top: 46, right: 8, left: 12,
               zIndex: 99,
-              background: "#fff",
-              border: "1px solid #E8EBEE",
-              borderRadius: 16,
-              boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
-              padding: "16px 14px 14px",
+              background: "#0D2538",
+              borderRadius: 18,
+              boxShadow: "0 16px 48px rgba(0,0,0,0.40), 0 2px 8px rgba(0,0,0,0.20)",
+              overflow: "hidden",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Title */}
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538", marginBottom: 14, paddingLeft: 2 }}>
-              {t.card_share}
+            {/* Card preview thumbnail */}
+            <div style={{ position: "relative", width: "100%", aspectRatio: "4/3", overflow: "hidden" }}>
+              {ascent.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={ascent.photoUrl}
+                  alt={ascent.peak.name}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                />
+              ) : (
+                <div style={{ width: "100%", height: "100%", background: "linear-gradient(180deg, #1e3a52 0%, #0D2538 100%)" }} />
+              )}
+              {/* Gradient overlay */}
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,37,56,0.90) 0%, rgba(13,37,56,0.10) 55%)" }} />
+              {/* Peak info overlay */}
+              <div style={{ position: "absolute", bottom: 10, left: 12, right: 12 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.2px", lineHeight: 1.2 }}>
+                  {ascent.peak.name}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
+                  {/* Rarity badge */}
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 3,
+                    background: RARITY_COLOR[rarity] + "30",
+                    border: `1px solid ${RARITY_COLOR[rarity]}60`,
+                    borderRadius: 20, padding: "2px 7px",
+                  }}>
+                    <span style={{ color: RARITY_COLOR[rarity], fontSize: 9 }}>✿</span>
+                    <span style={{ color: RARITY_COLOR[rarity], fontSize: 10, fontWeight: 700 }}>{RARITY_LABEL[rarity]}</span>
+                  </div>
+                  <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>·</span>
+                  <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 10, fontWeight: 600 }}>
+                    {ascent.peak.altitudeM.toLocaleString(locale)} m
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Share buttons */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+            {/* Actions area */}
+            <div style={{ padding: "14px 14px 6px" }}>
+              {/* Title */}
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
+                {t.card_shareTitle}
+              </div>
 
-              {/* WhatsApp */}
+              {/* Instagram Story row — primary */}
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(sharePopover);
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 2000);
+                }}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 12,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(188,24,136,0.40)",
+                  borderRadius: 12, padding: "11px 12px",
+                  cursor: "pointer", marginBottom: 7, textAlign: "left",
+                  boxShadow: linkCopied ? "0 0 0 2px rgba(188,24,136,0.25)" : "none",
+                  transition: "box-shadow 0.2s",
+                }}
+              >
+                {/* Instagram gradient icon */}
+                <div style={{ width: 34, height: 34, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="2" width="20" height="20" rx="6" stroke="white" strokeWidth="1.8" fill="none"/>
+                    <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8" fill="none"/>
+                    <circle cx="17.2" cy="6.8" r="1.2" fill="white"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{t.card_shareInstagramStory}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>
+                    {linkCopied ? `✓ ${t.card_shareCopied}` : t.card_shareCopyLink}
+                  </div>
+                </div>
+                {!linkCopied && (
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="7 4 13 10 7 16" />
+                  </svg>
+                )}
+                {linkCopied && (
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="4 10 8 14 16 6" />
+                  </svg>
+                )}
+              </button>
+
+              {/* WhatsApp row */}
               <button
                 onClick={() => {
                   window.open(`https://wa.me/?text=${encodeURIComponent(sharePopover)}`, "_blank");
                 }}
                 style={{
-                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                  background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12,
-                  padding: "10px 6px", cursor: "pointer",
+                  width: "100%", display: "flex", alignItems: "center", gap: 12,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 12, padding: "11px 12px",
+                  cursor: "pointer", marginBottom: 7, textAlign: "left",
                 }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#25D366">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.849L0 24l6.335-1.508A11.933 11.933 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.893 0-3.667-.5-5.2-1.373l-.373-.22-3.861.919.978-3.761-.242-.387A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: "#25D366", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.849L0 24l6.335-1.508A11.933 11.933 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.893 0-3.667-.5-5.2-1.373l-.373-.22-3.861.919.978-3.761-.242-.387A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{t.card_shareWhatsapp}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>WhatsApp</div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="7 4 13 10 7 16" />
                 </svg>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#15803d" }}>WhatsApp</span>
               </button>
 
-              {/* Instagram */}
+              {/* Copy link row */}
               <button
                 onClick={async () => {
                   await navigator.clipboard.writeText(sharePopover);
                   setLinkCopied(true);
-                  setTimeout(() => { setSharePopover(null); setLinkCopied(false); }, 2000);
+                  setTimeout(() => setLinkCopied(false), 1500);
                 }}
                 style={{
-                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                  background: "#fdf4ff", border: "1px solid #e9d5ff", borderRadius: 12,
-                  padding: "10px 6px", cursor: "pointer",
+                  width: "100%", display: "flex", alignItems: "center", gap: 12,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 12, padding: "11px 12px",
+                  cursor: "pointer", textAlign: "left",
                 }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <defs>
-                    <linearGradient id="ig-grad" x1="0" y1="1" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#f09433"/>
-                      <stop offset="25%" stopColor="#e6683c"/>
-                      <stop offset="50%" stopColor="#dc2743"/>
-                      <stop offset="75%" stopColor="#cc2366"/>
-                      <stop offset="100%" stopColor="#bc1888"/>
-                    </linearGradient>
-                  </defs>
-                  <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#ig-grad)"/>
-                  <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8" fill="none"/>
-                  <circle cx="17.2" cy="6.8" r="1.2" fill="white"/>
-                </svg>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#7e22ce" }}>
-                  {linkCopied ? `✓ ${t.card_shareCopied}` : "Instagram"}
-                </span>
-              </button>
-
-              {/* Copy link */}
-              <button
-                onClick={async () => {
-                  await navigator.clipboard.writeText(sharePopover);
-                  setLinkCopied(true);
-                  setTimeout(() => { setSharePopover(null); setLinkCopied(false); }, 1500);
-                }}
-                style={{
-                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                  background: linkCopied ? "#f0fdf4" : "#f8fafc",
-                  border: `1px solid ${linkCopied ? "#bbf7d0" : "#E8EBEE"}`,
-                  borderRadius: 12,
-                  padding: "10px 6px", cursor: "pointer",
-                  transition: "background 0.2s, border 0.2s",
-                }}
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={linkCopied ? "#2F7A5F" : "#5A6E84"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  {linkCopied
-                    ? <polyline points="20 6 9 17 4 12" />
-                    : <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>
-                  }
-                </svg>
-                <span style={{ fontSize: 11, fontWeight: 600, color: linkCopied ? "#2F7A5F" : "#5A6E84" }}>
-                  {linkCopied ? t.card_shareCopied : t.card_shareCopyLink}
-                </span>
+                <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    {linkCopied
+                      ? <polyline points="20 6 9 17 4 12" />
+                      : <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>
+                    }
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{t.card_shareCopyLink}</div>
+                  <div style={{ fontSize: 11, color: linkCopied ? "#22c55e" : "rgba(255,255,255,0.45)", marginTop: 1 }}>
+                    {linkCopied ? `✓ ${t.card_shareCopied}` : sharePopover.replace(/^https?:\/\/[^/]+/, "")}
+                  </div>
+                </div>
+                {linkCopied ? (
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="4 10 8 14 16 6" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="7 4 13 10 7 16" />
+                  </svg>
+                )}
               </button>
             </div>
 
-            {/* URL preview */}
-            <div style={{
-              fontSize: 11, color: "#94A3B8",
-              background: "#f8fafc", borderRadius: 8, padding: "7px 10px",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {sharePopover.replace(/^https?:\/\//, "")}
+            {/* Download image — subtle secondary link */}
+            <div style={{ padding: "8px 14px 14px", display: "flex", justifyContent: "center" }}>
+              <a
+                href={`${APP_URL}/ascent/${ascent.id}/opengraph-image`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  fontSize: 11, color: "rgba(255,255,255,0.35)",
+                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 3v10M6 9l4 4 4-4"/><path d="M3 17h14"/>
+                </svg>
+                {t.card_shareDownload}
+              </a>
             </div>
           </div>
         </>

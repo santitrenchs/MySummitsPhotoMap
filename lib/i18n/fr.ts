@@ -327,6 +327,7 @@ export const fr: Dict = {
   card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
   card_rarity: "Rareté", card_altitude: "Altitude", card_reward: "Récompense",
   card_share: "Partager", card_shareCopied: "Copié !", card_shareError: "Erreur de partage", card_shareCopyLink: "Copier le lien",
+  card_shareTitle: "Partage ce sommet", card_shareWhatsapp: "Envoyer à des amis", card_shareInstagramStory: "Instagram Story", card_shareDownload: "Télécharger l'image",
   card_backDesc_daisy: "Sommet accessible, parfait pour commencer ton Peakadex.",
   card_backDesc_gentian: "Vraie montagne : ascensions exigeantes et meilleures récompenses.",
   card_backDesc_edelweiss: "Altitudes rares : haute montagne avec sérieux dénivelé.",

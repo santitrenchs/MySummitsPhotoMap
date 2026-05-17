@@ -327,6 +327,7 @@ export const de: Dict = {
   card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
   card_rarity: "Seltenheit", card_altitude: "Höhe", card_reward: "Belohnung",
   card_share: "Teilen", card_shareCopied: "Kopiert!", card_shareError: "Fehler beim Teilen", card_shareCopyLink: "Link kopieren",
+  card_shareTitle: "Gipfel teilen", card_shareWhatsapp: "An Freunde senden", card_shareInstagramStory: "Instagram Story", card_shareDownload: "Bild herunterladen",
   card_backDesc_daisy: "Zugänglicher Gipfel, perfekt um dein Peakadex zu beginnen.",
   card_backDesc_gentian: "Echtes Berggebiet: anspruchsvollere Aufstiege, bessere Belohnungen.",
   card_backDesc_edelweiss: "Seltene Höhen: Hochgebirge mit ernsthafter Altitude.",

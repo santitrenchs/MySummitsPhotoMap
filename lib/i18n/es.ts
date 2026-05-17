@@ -325,6 +325,7 @@ export const es: Dict = {
   card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
   card_rarity: "Rareza", card_altitude: "Altitud", card_reward: "Recompensa",
   card_share: "Compartir", card_shareCopied: "¡Copiado!", card_shareError: "Error al compartir", card_shareCopyLink: "Copiar enlace",
+  card_shareTitle: "Comparte esta cima", card_shareWhatsapp: "Enviar a amigos", card_shareInstagramStory: "Instagram Story", card_shareDownload: "Descargar imagen",
   card_backDesc_daisy: "Cima accesible y perfecta para empezar tu Peakadex.",
   card_backDesc_gentian: "Territorio de montaña real: ascensos exigentes y mejores recompensas.",
   card_backDesc_edelweiss: "Alturas poco frecuentes: alta montaña con altitud seria.",
