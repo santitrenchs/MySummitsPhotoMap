@@ -13,6 +13,7 @@ import { PickStep } from "@/components/ascents/PickStep";
 type Peak = {
   id: string;
   name: string;
+  nameEn: string | null;
   altitudeM: number;
   mountainRange: string | null;
   latitude: number;

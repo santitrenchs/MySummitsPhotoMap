@@ -13,6 +13,7 @@ import { nearestPeak } from "@/lib/nearest-peak";
 type Peak = {
   id: string;
   name: string;
+  nameEn: string | null;
   altitudeM: number;
   mountainRange: string | null;
   latitude: number;
