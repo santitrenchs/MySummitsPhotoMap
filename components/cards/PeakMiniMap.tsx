@@ -12,9 +12,9 @@ type NearbyPeak = { id: string; name: string; latitude: number; longitude: numbe
 
 const nearbyCache = new Map<string, NearbyPeak[]>();
 const inFlight = new Set<string>();
-// When the map loads before the prefetch resolves, we park the render fn here
-// so the prefetch callback can fire it immediately on completion.
-const pendingRender = new Map<string, (nearby: NearbyPeak[]) => void>();
+// Maps that load before the prefetch resolves park their render fn here.
+// Array so multiple card instances for the same peak all get rendered.
+const pendingRenders = new Map<string, Array<(nearby: NearbyPeak[]) => void>>();
 const RADIUS = 0.8;
 const MAX_NEARBY = 5;
 
@@ -25,11 +25,16 @@ function top5(peaks: NearbyPeak[], excludeId: string): NearbyPeak[] {
     .slice(0, MAX_NEARBY);
 }
 
+function firePending(peakId: string, nearby: NearbyPeak[]) {
+  const fns = pendingRenders.get(peakId);
+  if (fns?.length) fns.forEach((fn) => fn(nearby));
+  pendingRenders.delete(peakId);
+}
+
 export function prefetchNearbyPeaks(peakId: string, lat: number, lng: number): void {
   if (nearbyCache.has(peakId)) {
-    // Cache already ready — if a map is waiting, fire it immediately.
-    const fn = pendingRender.get(peakId);
-    if (fn) { fn(nearbyCache.get(peakId)!); pendingRender.delete(peakId); }
+    // Cache already ready — fire any maps that loaded while waiting.
+    firePending(peakId, nearbyCache.get(peakId)!);
     return;
   }
   if (inFlight.has(peakId)) return;
@@ -39,9 +44,7 @@ export function prefetchNearbyPeaks(peakId: string, lat: number, lng: number): v
     .then((peaks: NearbyPeak[]) => {
       const nearby = top5(peaks as NearbyPeak[], peakId);
       nearbyCache.set(peakId, nearby);
-      // If the map already loaded and is waiting, render now.
-      const fn = pendingRender.get(peakId);
-      if (fn) { fn(nearby); pendingRender.delete(peakId); }
+      firePending(peakId, nearby);
     })
     .catch(() => {})
     .finally(() => inFlight.delete(peakId));
@@ -198,12 +201,17 @@ export function PeakMiniMap({
 
       const cached = nearbyCache.get(peakId);
       if (cached) {
-        // Cache already warm (prefetch completed) — render immediately.
+        // Prefetch already finished — render immediately.
         renderNearby(cached);
       } else {
-        // Prefetch still in-flight: register so it renders the moment it lands.
-        // No second fetch needed — prefetchNearbyPeaks was already called on mount.
-        pendingRender.set(peakId, renderNearby);
+        // Prefetch still in-flight: register this instance so it renders the
+        // moment the fetch lands.  Also call prefetchNearbyPeaks as a
+        // belt-and-suspenders trigger in case AscentCard's useEffect raced
+        // (e.g., React dev double-invoke) and the fetch never started.
+        const existing = pendingRenders.get(peakId) ?? [];
+        existing.push(renderNearby);
+        pendingRenders.set(peakId, existing);
+        prefetchNearbyPeaks(peakId, lat, lng);
       }
     });
 
@@ -217,8 +225,13 @@ export function PeakMiniMap({
       ro.disconnect();
       map.remove();
       mapRef.current = null;
-      // Clean up any pending render registration for this instance.
-      pendingRender.delete(peakId);
+      // Remove this instance's render fn from the pending list on unmount.
+      const existing = pendingRenders.get(peakId);
+      if (existing) {
+        const updated = existing.filter((fn) => fn !== renderNearby);
+        if (updated.length) pendingRenders.set(peakId, updated);
+        else pendingRenders.delete(peakId);
+      }
     };
   }, [lat, lng, peakId, altitudeM]);
 
