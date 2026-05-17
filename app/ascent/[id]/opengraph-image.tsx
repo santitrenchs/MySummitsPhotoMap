@@ -7,6 +7,26 @@ export const revalidate = 86400; // 24h
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+/**
+ * Pre-fetch an external image and return it as a base64 data URL.
+ * Required for next/og on Railway: Satori cannot fetch external images
+ * reliably at render time outside Vercel's edge network.
+ */
+async function toDataUrl(url: string): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const mime = res.headers.get("content-type") ?? "image/jpeg";
+    return `data:${mime};base64,${Buffer.from(buf).toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 export default async function OgImage({
   params,
 }: {
@@ -40,6 +60,9 @@ export default async function OgImage({
     );
   }
 
+  // Pre-fetch the photo as base64 — avoids Satori external-fetch issues on Railway
+  const photoSrc = ascent.photoUrl ? await toDataUrl(ascent.photoUrl) : null;
+
   return new ImageResponse(
     <div
       style={{
@@ -53,10 +76,10 @@ export default async function OgImage({
       }}
     >
       {/* Full-frame mountain photo */}
-      {ascent.photoUrl ? (
+      {photoSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={ascent.photoUrl}
+          src={photoSrc}
           style={{
             position: "absolute",
             inset: 0,
