@@ -214,6 +214,32 @@ export default async function PublicAscentPage({
             </div>
           )}
 
+          {/* Peakadex watermark — top-left */}
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              opacity: 0.38,
+              pointerEvents: "none",
+            }}
+          >
+            <span style={{ color: "#fff", fontSize: 13, lineHeight: 1, textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>✿</span>
+            <span style={{
+              color: "#fff",
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+            }}>
+              PEAKADEX
+            </span>
+          </div>
+
           {/* Peak info overlay */}
           <div
             style={{
