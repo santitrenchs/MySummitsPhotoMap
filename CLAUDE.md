@@ -530,7 +530,7 @@ When tapping a climbed peak, the panel shows the hero photo (if any) with altitu
 ### What's still missing (not yet implemented)
 - Email verification on register
 - Rate limiting on login
-- OAuth (Google / Apple)
+- Apple Sign-In (Google Sign-In already implemented)
 - Registering with an invitation voucher doesn't auto-create the friendship or link the Person — the invitee must find the inviter manually in Amigos and send a friend request
 
 ---

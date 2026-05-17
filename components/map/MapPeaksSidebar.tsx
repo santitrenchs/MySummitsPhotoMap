@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { MapPeak, AscentMapEntry, MapBounds, RarityDef } from "./MapView";
 import { RARITY_SCORE_WEIGHTS } from "./MapView";
+import { RARITY_COLORS, RARITIES } from "@/lib/rarity";
+import { RarityFlower } from "@/components/brand/RarityFlowers";
 import MapPeakCard from "./MapPeakCard";
-import MapFilterBar from "./MapFilterBar";
 
 type Filter = "all" | "climbed" | "not-climbed";
 type SortMode = "distance" | "relevance" | "altitude";
@@ -32,6 +34,9 @@ interface Props {
   hideSearchInput?: boolean;
   hideFilters?: boolean;
   asMobileList?: boolean;
+  // Optional controlled sort (lifted to MapView for mobile)
+  sort?: SortMode;
+  onSortChange?: (s: SortMode) => void;
   // Sheet mode (mobile legacy)
   asSheet?: boolean;
   onClose?: () => void;
@@ -56,23 +61,15 @@ export default function MapPeaksSidebar({
   selectedPeakId, onSelectPeak,
   searchQuery, onSearchChange, searchResults,
   hideSearchInput = false, hideFilters = false, asMobileList = false,
+  sort: sortProp, onSortChange,
   asSheet = false, onClose,
 }: Props) {
-  const [sort, setSort] = useState<SortMode>("distance");
-  const [sortOpen, setSortOpen] = useState(false);
-  const [uncapturedOnly, setUncapturedOnly] = useState(false);
-  const sortRef = useRef<HTMLDivElement>(null);
+  const [internalSort, setInternalSort] = useState<SortMode>("distance");
+  const sort = sortProp ?? internalSort;
+  const setSort = (s: SortMode) => { onSortChange ? onSortChange(s) : setInternalSort(s); };
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const selectedCardRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-
-  // Close sort dropdown on outside click
-  useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
 
   // Drag-to-close for sheet mode
   const [dragY, setDragY] = useState(0);
@@ -90,18 +87,17 @@ export default function MapPeaksSidebar({
   const centerLng = selectedPeakCoords?.lng
     ?? (mapBounds ? (mapBounds.east + mapBounds.west) / 2 : null);
 
-  // 1. Apply status + rarity + uncaptured filters (no bounds filter)
+  // 1. Apply status + rarity filters (no bounds filter)
   const filteredPeaks = useMemo(() => {
-    const activeRarity = mythicOnly ? ["mythic"] : rarityFilter;
     return peaks.filter((p) => {
       const hasAscent = ascentByPeakId.has(p.id);
       if (filter === "climbed" && !hasAscent) return false;
       if (filter === "not-climbed" && hasAscent) return false;
-      if (uncapturedOnly && hasAscent) return false;
-      if (activeRarity.length > 0 && !activeRarity.includes(p.rarityId ?? "")) return false;
+      if (mythicOnly && !p.isMythic) return false;
+      if (rarityFilter.length > 0 && !rarityFilter.includes(p.rarityId ?? "")) return false;
       return true;
     });
-  }, [peaks, ascentByPeakId, filter, rarityFilter, mythicOnly, uncapturedOnly]);
+  }, [peaks, ascentByPeakId, filter, rarityFilter, mythicOnly]);
 
   // 2. Compute top N nearest to center, then sort by selected mode
   const sortedPeaks = useMemo(() => {
@@ -177,6 +173,21 @@ export default function MapPeaksSidebar({
     relevance: "Más relevantes",
   };
 
+  // Active filter count for badge
+  const activeFilterCount = (filter !== "all" ? 1 : 0)
+    + rarityFilter.length
+    + (mythicOnly ? 1 : 0)
+    + (sort !== "distance" ? 1 : 0);
+  const hasActiveFilters = activeFilterCount > 0;
+
+  // Rarity counts from all peaks (for the filter panel)
+  const rarityCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const p of peaks) if (p.rarityId) m[p.rarityId] = (m[p.rarityId] ?? 0) + 1;
+    return m;
+  }, [peaks]);
+  const mythicCount = useMemo(() => peaks.filter((p) => p.isMythic).length, [peaks]);
+
   // ── Sheet mode touch handlers ────────────────────────────────────────────
 
   function onSheetTouchStart(e: React.TouchEvent) {
@@ -212,7 +223,7 @@ export default function MapPeaksSidebar({
     ? {
         position: "absolute", bottom: 0, left: 0, right: 0,
         height: "62vh", zIndex: 40,
-        background: "white", borderRadius: "18px 18px 0 0",
+        background: "white", borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
         boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
         display: "flex", flexDirection: "column",
         transform: `translateY(${dragY}px)`,
@@ -222,11 +233,11 @@ export default function MapPeaksSidebar({
     : {
         position: "absolute",
         top: 12, right: 12, bottom: 12,
-        width: 320,
+        width: "var(--sidebar-w, 320px)" as unknown as number,
         display: "flex", flexDirection: "column",
-        borderRadius: 16,
+        borderRadius: "var(--radius-lg)",
         background: "white",
-        boxShadow: "0 2px 20px rgba(0,0,0,0.14)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
         overflow: "hidden",
         zIndex: 10,
       };
@@ -257,57 +268,123 @@ export default function MapPeaksSidebar({
         </div>
       )}
 
-      {/* Search input */}
-      {!hideSearchInput && (
+      {/* Search + Filter button bar */}
+      {(!hideSearchInput || !hideFilters) && (
         <div style={{ padding: "10px 12px", flexShrink: 0, borderBottom: "1px solid #f3f4f6" }}>
-          <div style={{ position: "relative" }}>
-            <span style={{
-              position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
-              fontSize: 13, pointerEvents: "none", color: "#9ca3af",
-            }}>🔍</span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Buscar cima…"
-              style={{
-                width: "100%", padding: "8px 28px 8px 30px",
-                borderRadius: 10, border: "none",
-                fontSize: 14, fontWeight: 500, color: "#111827",
-                background: "#f3f4f6", outline: "none", boxSizing: "border-box",
-              }}
-            />
-            {searchQuery && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Search input */}
+            {!hideSearchInput && (
+              <div style={{ flex: 1, position: "relative" }}>
+                <svg
+                  width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" stroke="#94A3B8" strokeWidth="2.2" strokeLinecap="round"
+                  style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                >
+                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  placeholder="Buscar cima…"
+                  style={{
+                    width: "100%", padding: "9px 28px 9px 30px",
+                    borderRadius: "var(--radius-md)",
+                    border: "1px solid #E5E7EB",
+                    boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+                    fontSize: 14, fontWeight: 500, color: "#0D2538",
+                    background: "white", outline: "none", boxSizing: "border-box",
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onMouseDown={() => onSearchChange("")}
+                    style={{
+                      position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                      background: "none", border: "none", cursor: "pointer",
+                      color: "#9ca3af", fontSize: 13, lineHeight: 1, padding: 2,
+                    }}
+                  >✕</button>
+                )}
+              </div>
+            )}
+
+            {/* Filter button */}
+            {!hideFilters && (
               <button
-                onMouseDown={() => onSearchChange("")}
+                onClick={() => setFiltersOpen(!filtersOpen)}
                 style={{
-                  position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-                  background: "none", border: "none", cursor: "pointer",
-                  color: "#9ca3af", fontSize: 13, lineHeight: 1, padding: 2,
+                  padding: "9px 12px", borderRadius: "var(--radius-md)",
+                  border: `1px solid ${filtersOpen ? "#0D2538" : "#E5E7EB"}`,
+                  background: filtersOpen ? "#0D2538" : "white",
+                  boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+                  cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 5,
+                  flexShrink: 0, position: "relative",
                 }}
-              >✕</button>
+              >
+                <svg width="14" height="12" viewBox="0 0 14 12" fill="none"
+                  stroke={filtersOpen ? "white" : "#374151"}
+                  strokeWidth="1.8" strokeLinecap="round"
+                >
+                  <line x1="0" y1="2" x2="14" y2="2" />
+                  <line x1="2" y1="6" x2="12" y2="6" />
+                  <line x1="4" y1="10" x2="10" y2="10" />
+                </svg>
+                <span style={{ fontSize: 13, fontWeight: 700, color: filtersOpen ? "white" : "#374151" }}>
+                  Filtrar
+                </span>
+                {hasActiveFilters && (
+                  <div style={{
+                    position: "absolute", top: -6, right: -6,
+                    width: 16, height: 16, borderRadius: "50%",
+                    background: filtersOpen ? "white" : "#FF5D2D",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <span style={{
+                      fontFamily: "var(--font-mono-landing, monospace)",
+                      fontSize: 10, fontWeight: 800,
+                      color: filtersOpen ? "#0D2538" : "white",
+                    }}>{activeFilterCount}</span>
+                  </div>
+                )}
+              </button>
             )}
           </div>
-        </div>
-      )}
 
-      {/* Filters */}
-      {!hideFilters && (
-        <div style={{
-          padding: "8px 12px", flexShrink: 0,
-          borderBottom: "1px solid #f3f4f6",
-          display: "flex", gap: 8, flexWrap: "wrap",
-        }}>
-          <MapFilterBar
-            filter={filter}
-            onFilterChange={onFilterChange}
-            rarityFilter={rarityFilter}
-            onRarityChange={onRarityChange}
-            mythicOnly={mythicOnly}
-            onMythicToggle={onMythicToggle}
-            rarities={rarities}
-            climbedCount={climbedCount}
-          />
+          {/* Active chips (when panel is closed) */}
+          {!hideFilters && !filtersOpen && hasActiveFilters && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {filter !== "all" && (
+                <ActiveChip
+                  label={filter === "climbed" ? `✓ Capturadas (${climbedCount})` : "Sin capturar"}
+                  color="#16a34a"
+                  onRemove={() => onFilterChange("all")}
+                />
+              )}
+              {rarityFilter.map((id) => {
+                const rEntry = RARITIES.find((r) => r.id === id);
+                return rEntry ? (
+                  <ActiveChip
+                    key={id}
+                    label={`✿ ${rEntry.label}`}
+                    color={rEntry.color}
+                    onRemove={() => onRarityChange(rarityFilter.filter((r) => r !== id))}
+                  />
+                ) : null;
+              })}
+              {mythicOnly && (
+                <ActiveChip label="⭐ Mythic" color="#f59e0b" onRemove={onMythicToggle} />
+              )}
+              {sort !== "distance" && (
+                <ActiveChip
+                  label={sortLabels[sort]}
+                  color="#0369a1"
+                  onRemove={() => setSort("distance")}
+                />
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -321,6 +398,8 @@ export default function MapPeaksSidebar({
           ) : (
             searchResults.map((peak) => {
               const isClimbed = ascentByPeakId.has(peak.id);
+              const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
+              const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
               return (
                 <button
                   key={peak.id}
@@ -328,19 +407,46 @@ export default function MapPeaksSidebar({
                   style={{
                     display: "flex", alignItems: "center", gap: 10,
                     width: "100%", padding: "10px 14px",
-                    background: "none", border: "none", borderBottom: "1px solid #f3f4f6",
+                    background: "none", border: "none",
+                    borderBottom: "1px solid #f3f4f6",
+                    borderLeft: `3px solid ${rc}`,
                     cursor: "pointer", textAlign: "left",
                   }}
                 >
-                  <span style={{ fontSize: 15, flexShrink: 0 }}>{isClimbed ? "✅" : "🏔"}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827",
-                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {peak.name}
-                    </p>
-                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                      {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
-                    </p>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827",
+                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {peak.name}
+                      </p>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
+                        {peak.altitudeM} m
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
+                      <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                        {peak.mountainRange ?? ""}
+                      </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                        {isClimbed && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "var(--radius-sm)", padding: "1px 5px" }}>
+                            ✓ Capturada
+                          </span>
+                        )}
+                        {peak.rarity && rarityEntry && (
+                          <div style={{
+                            display: "inline-flex", alignItems: "center", gap: 3,
+                            padding: "2px 7px", borderRadius: "var(--radius-full)",
+                            background: rc + "22",
+                          }}>
+                            <RarityFlower id={rarityEntry.id} size={10} />
+                            <span style={{ fontSize: 10, fontWeight: 700, color: rarityEntry.colorDark, whiteSpace: "nowrap" }}>
+                              {peak.rarity.name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </button>
               );
@@ -367,6 +473,238 @@ export default function MapPeaksSidebar({
           })
         )}
       </div>
+
+      {/* Filter panel — bottom sheet portal */}
+      {!hideFilters && typeof document !== "undefined" && createPortal(
+        <>
+          <style>{`
+            .rarity-pill-name { display: none; }
+            @media (min-width: 640px) { .rarity-pill-name { display: inline; } }
+          `}</style>
+          {/* Backdrop */}
+          <div
+            style={{
+              position: "fixed", inset: 0, zIndex: 300,
+              background: "rgba(0,0,0,0.45)",
+              opacity: filtersOpen ? 1 : 0,
+              pointerEvents: filtersOpen ? "auto" : "none",
+              transition: "opacity 0.3s",
+            }}
+            onClick={() => setFiltersOpen(false)}
+          />
+
+          {/* Sheet */}
+          <div style={{
+            position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 301,
+            background: "white", borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
+            maxHeight: "92svh", display: "flex", flexDirection: "column",
+            paddingBottom: "env(safe-area-inset-bottom)",
+            transform: filtersOpen ? "translateY(0)" : "translateY(110%)",
+            transition: "transform 0.34s cubic-bezier(0.32,0.72,0,1)",
+            boxShadow: "0 -4px 40px rgba(0,0,0,0.14)",
+          }}>
+            {/* Handle */}
+            <div style={{ width: 36, height: 4, background: "#e5e7eb", borderRadius: 2, margin: "12px auto 0", flexShrink: 0 }} />
+
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px 12px", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
+              <span style={{ fontSize: 17, fontWeight: 800, color: "#111827", letterSpacing: "-0.3px" }}>
+                Filtros
+              </span>
+              {hasActiveFilters ? (
+                <button
+                  onClick={() => {
+                    onFilterChange("all");
+                    onRarityChange([]);
+                    if (mythicOnly) onMythicToggle();
+                    setSort("distance");
+                  }}
+                  style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#0369a1", cursor: "pointer", padding: "4px 0" }}
+                >
+                  Borrar todo
+                </button>
+              ) : (
+                <button onClick={() => setFiltersOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, lineHeight: 1 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Body */}
+            <div style={{ overflowY: "auto", flex: 1, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
+
+              {/* Rareza */}
+              <div>
+                <p style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase", margin: "0 0 8px" }}>
+                  Rareza
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {RARITIES.map((r) => {
+                    const count = rarityCounts[r.id] ?? 0;
+                    const active = rarityFilter.includes(r.id);
+                    const locked = count === 0;
+                    return (
+                      <button
+                        key={r.id}
+                        disabled={locked}
+                        onClick={() => {
+                          onRarityChange(active ? rarityFilter.filter((x) => x !== r.id) : [...rarityFilter, r.id]);
+                        }}
+                        title={r.label}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          padding: "7px 11px", borderRadius: "var(--radius-full)", cursor: locked ? "default" : "pointer",
+                          border: `1.5px solid ${active ? r.color + "88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
+                          background: active ? r.color + "22" : (locked ? "#F8FAFC" : "#f9fafb"),
+                          opacity: locked ? 0.55 : 1, transition: "all 0.15s",
+                        }}
+                      >
+                        <span style={{ color: locked ? "#CBD5E1" : r.color, fontSize: 15, lineHeight: 1 }}>✿</span>
+                        <span className="rarity-pill-name" style={{ fontSize: 11, fontWeight: 600, color: active ? r.colorDark : (locked ? "#CBD5E1" : "#6b7280") }}>{r.label}</span>
+                        <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 700, color: active ? r.colorDark : (locked ? "#CBD5E1" : "#9ca3af") }}>
+                          {locked ? "—" : count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  {/* Mythic */}
+                  <button
+                    disabled={mythicCount === 0}
+                    onClick={() => { onMythicToggle(); }}
+                    title="Mythic"
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      padding: "7px 11px", borderRadius: "var(--radius-full)",
+                      cursor: mythicCount === 0 ? "default" : "pointer",
+                      border: `1.5px solid ${mythicOnly ? "#f59e0b88" : (mythicCount === 0 ? "#F1F5F9" : "#E5E7EB")}`,
+                      background: mythicOnly ? "#fffbeb" : (mythicCount === 0 ? "#F8FAFC" : "#f9fafb"),
+                      opacity: mythicCount === 0 ? 0.55 : 1, transition: "all 0.15s",
+                    }}
+                  >
+                    <span style={{ fontSize: 13, lineHeight: 1 }}>⭐</span>
+                    <span className="rarity-pill-name" style={{ fontSize: 11, fontWeight: 600, color: mythicOnly ? "#92400e" : (mythicCount === 0 ? "#CBD5E1" : "#6b7280") }}>Mythic</span>
+                    <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 700, color: mythicOnly ? "#92400e" : (mythicCount === 0 ? "#CBD5E1" : "#9ca3af") }}>
+                      {mythicCount === 0 ? "—" : mythicCount}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Estado */}
+              <div>
+                <p style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase", margin: "0 0 8px" }}>
+                  Estado
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {([
+                    { value: "all" as Filter, label: "Todas" },
+                    { value: "climbed" as Filter, label: `Capturadas (${climbedCount})` },
+                    { value: "not-climbed" as Filter, label: "Sin capturar" },
+                  ] as const).map((opt) => {
+                    const active = filter === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => onFilterChange(opt.value)}
+                        style={{
+                          display: "inline-flex", alignItems: "center",
+                          padding: "8px 14px", borderRadius: "var(--radius-full)", cursor: "pointer",
+                          border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
+                          background: active ? "#eff6ff" : "#f9fafb",
+                          color: active ? "#0369a1" : "#6b7280",
+                          fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Ordenar */}
+              <div>
+                <p style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase", margin: "0 0 8px" }}>
+                  Ordenar
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {(Object.entries(sortLabels) as [SortMode, string][]).map(([mode, label]) => {
+                    const active = sort === mode;
+                    return (
+                      <button
+                        key={mode}
+                        onClick={() => setSort(mode)}
+                        style={{
+                          display: "inline-flex", alignItems: "center",
+                          padding: "8px 14px", borderRadius: "var(--radius-full)", cursor: "pointer",
+                          border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
+                          background: active ? "#eff6ff" : "#f9fafb",
+                          color: active ? "#0369a1" : "#6b7280",
+                          fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer CTA */}
+            <div style={{ padding: "12px 20px 16px", borderTop: "1px solid #f3f4f6", flexShrink: 0 }}>
+              <button
+                onClick={() => setFiltersOpen(false)}
+                style={{
+                  width: "100%", padding: "16px",
+                  background: "#2F7A5F", color: "white", border: "none",
+                  borderRadius: "var(--radius-lg)", fontFamily: "inherit",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 4px 14px rgba(47,122,95,0.32)", cursor: "pointer",
+                }}
+              >
+                <span style={{ fontSize: 15, fontWeight: 800 }}>
+                  Ver {filteredPeaks.length} {filteredPeaks.length === 1 ? "cima" : "cimas"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+// ─── Active chip ──────────────────────────────────────────────────────────────
+
+function ActiveChip({ label, color, onRemove }: { label: string; color: string; onRemove: () => void }) {
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: "4px 8px 4px 10px",
+      background: "white",
+      border: `1px solid ${color}55`,
+      borderRadius: "var(--radius-full)",
+    }}>
+      <span style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 12, fontWeight: 600, color }}>
+        {label}
+      </span>
+      <button
+        onClick={onRemove}
+        style={{
+          width: 16, height: 16, borderRadius: "50%",
+          background: color + "1A", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+        }}
+      >
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round">
+          <line x1="1" y1="1" x2="7" y2="7" /><line x1="7" y1="1" x2="1" y2="7" />
+        </svg>
+      </button>
     </div>
   );
 }

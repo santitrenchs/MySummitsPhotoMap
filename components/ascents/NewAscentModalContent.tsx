@@ -161,7 +161,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
             form="ascent-modal-form"
             type="submit"
             style={{
-              background: "#111827", border: "none", borderRadius: 20,
+              background: "#111827", border: "none", borderRadius: "var(--radius-full)",
               cursor: "pointer", color: "white",
               fontSize: 13, fontWeight: 700,
               padding: "6px 14px", lineHeight: 1,
@@ -486,7 +486,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                 style={{
                   position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
                   background: "rgba(0,0,0,0.6)", color: "white", border: "none",
-                  borderRadius: 20, padding: "8px 18px", fontSize: 13, fontWeight: 600,
+                  borderRadius: "var(--radius-full)", padding: "8px 18px", fontSize: 13, fontWeight: 600,
                   cursor: "pointer", backdropFilter: "blur(4px)",
                 }}
               >
@@ -508,7 +508,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               <img
                 src={preview}
                 alt=""
-                style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 10, display: "block" }}
+                style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: "var(--radius-md)", display: "block" }}
               />
               {isEditMode && (
                 <button
@@ -517,7 +517,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                   style={{
                     position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
                     background: "rgba(0,0,0,0.6)", color: "white", border: "none",
-                    borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 600,
+                    borderRadius: "var(--radius-full)", padding: "6px 14px", fontSize: 12, fontWeight: 600,
                     cursor: "pointer",
                   }}
                 >
@@ -594,7 +594,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                       <span key={p.id} style={{
                         display: "inline-flex", alignItems: "center", gap: 5,
                         background: "#eff6ff", border: "1px solid #bfdbfe",
-                        borderRadius: 20, padding: "4px 10px",
+                        borderRadius: "var(--radius-full)", padding: "4px 10px",
                         fontSize: 13, fontWeight: 600, color: "#0369a1",
                       }}>
                         {p.name}
@@ -612,10 +612,10 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                   value={personSearch}
                   onChange={(e) => setPersonSearch(e.target.value)}
                   placeholder={t.tag_searchOrType}
-                  style={{ ...inputStyle, fontSize: 15 }}
+                  style={inputStyle}
                 />
                 {personResults.length > 0 && (
-                  <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden", marginTop: 4 }}>
+                  <div style={{ border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)", overflow: "hidden", marginTop: 4 }}>
                     {personResults
                       .filter((u) => !selectedPersons.some((s) => s.id === u.id))
                       .slice(0, 5)
@@ -670,7 +670,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               <p style={{
                 fontSize: 13, color: "#dc2626",
                 background: "#fef2f2", border: "1px solid #fecaca",
-                borderRadius: 8, padding: "8px 12px", margin: 0,
+                borderRadius: "var(--radius-sm)", padding: "8px 12px", margin: 0,
               }}>
                 {error}
               </p>
@@ -705,7 +705,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
           padding: "0 32px",
         }}>
           <div style={{
-            background: "white", borderRadius: 16,
+            background: "white", borderRadius: "var(--radius-lg)",
             width: "100%", maxWidth: 320,
             overflow: "hidden",
             animation: "aModalFadeIn 0.15s ease",
@@ -755,7 +755,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
           display: "flex", alignItems: "flex-end", justifyContent: "center",
         }}>
           <div style={{
-            background: "white", borderRadius: "20px 20px 0 0",
+            background: "white", borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
             width: "100%", maxWidth: 520,
             paddingBottom: "env(safe-area-inset-bottom)",
             animation: "aModalSlideUp 0.25s cubic-bezier(0.32,0.72,0,1)",
@@ -775,7 +775,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                 style={{
                   width: "100%", padding: "14px",
                   background: "#dc2626", border: "none",
-                  borderRadius: 12, fontSize: 16, fontWeight: 600,
+                  borderRadius: "var(--radius-md)", fontSize: 16, fontWeight: 600,
                   color: "white", cursor: "pointer",
                 }}
               >
@@ -786,7 +786,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                 style={{
                   width: "100%", padding: "14px",
                   background: "none", border: "1px solid #e5e7eb",
-                  borderRadius: 12, fontSize: 16, fontWeight: 400,
+                  borderRadius: "var(--radius-md)", fontSize: 16, fontWeight: 400,
                   color: "#111827", cursor: "pointer",
                 }}
               >
@@ -808,7 +808,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
 const headerBtnStyle: React.CSSProperties = {
   background: "none", border: "none", cursor: "pointer",
   padding: 4, color: "#111827", display: "flex", alignItems: "center",
-  borderRadius: 6,
+  borderRadius: "var(--radius-sm)",
 };
 
 const labelStyle: React.CSSProperties = {
@@ -818,7 +818,7 @@ const labelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "8px 12px",
-  border: "1px solid #d1d5db", borderRadius: 8,
+  border: "1px solid #d1d5db", borderRadius: "var(--radius-sm)",
   fontSize: 16, color: "#111827",
   outline: "none", boxSizing: "border-box",
 };

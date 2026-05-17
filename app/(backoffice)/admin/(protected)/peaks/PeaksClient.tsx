@@ -23,6 +23,31 @@ type EditState = Partial<Omit<Peak, "id" | "_count" | "gpsVerified" | "isMythic"
 
 const LIMIT = 50;
 
+const ALTITUDE_ZONES = [
+  { label: "Expedición extrema", min: 5000, color: "#7c3aed" },
+  { label: "Expedición",         min: 4000, color: "#2563eb" },
+  { label: "Alta montaña técnica", min: 3000, color: "#0891b2" },
+  { label: "Alta montaña",       min: 2000, color: "#059669" },
+  { label: "Media montaña",      min: 1000, color: "#65a30d" },
+  { label: "Baja montaña",       min: 0,    color: "#ca8a04" },
+];
+
+function altZone(altM: number) {
+  for (const z of ALTITUDE_ZONES) if (altM >= z.min) return z;
+  return ALTITUDE_ZONES[ALTITUDE_ZONES.length - 1];
+}
+
+const ALL_COLS = ["altitude", "country", "comarca", "range", "tags", "latlon", "gps", "mythic", "ascents"] as const;
+type ColKey = typeof ALL_COLS[number];
+const COL_LABELS: Record<ColKey, string> = {
+  altitude: "Altitud", country: "País", comarca: "Comarca", range: "Cordillera",
+  tags: "Tags", latlon: "Lat/Lon", gps: "GPS ✓", mythic: "Mythic", ascents: "Asc.",
+};
+const DEFAULT_COLS: Record<ColKey, boolean> = {
+  altitude: true, country: true, comarca: true, range: true,
+  tags: true, latlon: false, gps: true, mythic: true, ascents: true,
+};
+
 export function PeaksClient() {
   const [peaks, setPeaks] = useState<Peak[]>([]);
   const [total, setTotal] = useState(0);
@@ -33,6 +58,12 @@ export function PeaksClient() {
   const [ascentsFilter, setAscentsFilter] = useState<"all" | "with" | "without">("all");
   const [sort, setSort] = useState<"pending" | "name" | "altitude" | "ascents_desc" | "ascents_asc">("pending");
   const [loading, setLoading] = useState(false);
+
+  // View mode and column selector
+  const [viewMode, setViewMode] = useState<"table" | "country" | "altitude">("table");
+  const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>(DEFAULT_COLS);
+  const [colSelectorOpen, setColSelectorOpen] = useState(false);
+  const colSelectorRef = useRef<HTMLDivElement>(null);
 
   // Inline edit
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -71,6 +102,17 @@ export function PeaksClient() {
   useEffect(() => {
     fetchPeaks(q, page, gpsFilter, ascentsFilter, sort);
   }, [q, page, gpsFilter, ascentsFilter, sort, fetchPeaks]);
+
+  // Close col selector on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (colSelectorRef.current && !colSelectorRef.current.contains(e.target as Node)) {
+        setColSelectorOpen(false);
+      }
+    }
+    if (colSelectorOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [colSelectorOpen]);
 
   function handleSearchChange(val: string) {
     setInputQ(val);
@@ -120,7 +162,6 @@ export function PeaksClient() {
     setSaveError(null);
     try {
       const payload: EditState = { ...editState };
-      // Normalize empty strings to null
       for (const k of ["mountainRange", "comarca", "tag1", "tag2", "tag3"] as const) {
         if (payload[k] === "") (payload as Record<string, unknown>)[k] = null;
       }
@@ -159,526 +200,478 @@ export function PeaksClient() {
 
   const totalPages = Math.ceil(total / LIMIT);
 
+  // Grouped views
+  function renderCountryView() {
+    const map = new Map<string, Peak[]>();
+    for (const p of peaks) {
+      const k = p.country || "—";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(p);
+    }
+    const entries = [...map.entries()].sort((a, b) => b[1].length - a[1].length);
+    return (
+      <div className="table-container">
+        <div className="table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>País</th>
+                <th style={{ textAlign: "center" }}>Cimas</th>
+                <th style={{ textAlign: "right" }}>% del total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map(([country, ps]) => (
+                <tr key={country}>
+                  <td style={{ fontWeight: 600 }}>{country}</td>
+                  <td style={{ textAlign: "center" }}>{ps.length}</td>
+                  <td style={{ textAlign: "right", color: "var(--text-secondary)" }}>
+                    {((ps.length / peaks.length) * 100).toFixed(1)}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  function renderAltitudeView() {
+    return (
+      <div className="rarity-pills">
+        {ALTITUDE_ZONES.map(zone => {
+          const count = peaks.filter(p => altZone(p.altitudeM).label === zone.label).length;
+          if (count === 0) return null;
+          return (
+            <div
+              key={zone.label}
+              className="rarity-pill"
+              style={{ borderColor: zone.color, color: zone.color }}
+            >
+              <span style={{ fontWeight: 800 }}>{count}</span>
+              <span style={{ fontSize: 12 }}>{zone.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const col = (key: ColKey) => visibleCols[key];
+
   return (
     <div>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0 }}>Cimas</h1>
-          <p style={{ fontSize: 14, color: "#64748b", margin: "4px 0 0" }}>
-            {total.toLocaleString("es-ES")} cima{total !== 1 ? "s" : ""} en total
-          </p>
+          <h1 className="page-title">Cimas</h1>
+          <p className="page-subtitle">{total.toLocaleString("es-ES")} cima{total !== 1 ? "s" : ""} en total</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div style={{
-        marginBottom: 16,
-        padding: 14,
-        background: "white",
-        border: "1px solid #e2e8f0",
-        borderRadius: 14,
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-      }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", marginBottom: 12 }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#334155", marginBottom: 4 }}>Filtros</div>
-            <div style={{ fontSize: 12, color: "#94a3b8" }}>Encuentra rápido cimas pendientes de validar o todavía sin uso.</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 2 }}>Filtros</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Encuentra cimas pendientes de validar o sin uso.</div>
           </div>
-          <button
-            onClick={resetFilters}
-            style={{
-              border: "1px solid #e2e8f0",
-              background: "#fff",
-              color: "#64748b",
-              borderRadius: 10,
-              padding: "8px 12px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Limpiar filtros
-          </button>
+          <button onClick={resetFilters} className="btn btn-secondary btn-sm">Limpiar filtros</button>
         </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <FilterLabel>Estado</FilterLabel>
-          <div style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            padding: 4,
-            background: "#f8fafc",
-            border: "1px solid #e2e8f0",
-            borderRadius: 999,
-          }}>
-            {([
-              ["all", "Todas"],
-              ["yes", "Verificadas"],
-              ["no", "Sin verificar"],
-            ] as const).map(([val, label]) => (
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+          <FilterLabel>GPS</FilterLabel>
+          <div className="view-tabs">
+            {([["all", "Todas"], ["yes", "Verificadas"], ["no", "Sin verificar"]] as const).map(([val, label]) => (
               <button
                 key={val}
+                className={`view-tab${gpsFilter === val ? " active" : ""}`}
                 onClick={() => { setGpsFilter(val); setPage(1); }}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 999,
-                  border: "none",
-                  background: gpsFilter === val ? "#0f172a" : "transparent",
-                  color: gpsFilter === val ? "white" : "#64748b",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {label}
-              </button>
+              >{label}</button>
             ))}
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
           <FilterLabel>Ascensiones</FilterLabel>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {([
-              ["all", "Todas"],
-              ["with", "Con ascensiones"],
-              ["without", "Sin ascensiones"],
-            ] as const).map(([val, label]) => (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {([["all", "Todas"], ["with", "Con"], ["without", "Sin"]] as const).map(([val, label]) => (
               <button
                 key={val}
+                className={`btn${ascentsFilter === val ? " btn-primary" : " btn-secondary"} btn-sm`}
                 onClick={() => { setAscentsFilter(val); setPage(1); }}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: 999,
-                  border: "1px solid",
-                  borderColor: ascentsFilter === val ? "#bae6fd" : "#e2e8f0",
-                  background: ascentsFilter === val ? "#eff6ff" : "#fff",
-                  color: ascentsFilter === val ? "#0369a1" : "#64748b",
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {label}
-              </button>
+              >{label}</button>
             ))}
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ position: "relative", flex: 1, minWidth: 260, maxWidth: 520 }}>
-            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 15 }}>🔍</span>
+          <div className="search-box" style={{ flex: 1, minWidth: 260, maxWidth: 520 }}>
+            <svg className="search-box-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
             <input
               type="text"
+              className="form-input"
               placeholder="Buscar por nombre, comarca, cordillera, tag o país..."
               value={inputQ}
               onChange={(e) => handleSearchChange(e.target.value)}
-              style={{
-                width: "100%", boxSizing: "border-box",
-                border: "1px solid #e2e8f0", borderRadius: 10,
-                padding: "10px 12px 10px 36px", fontSize: 14,
-                color: "#0f172a", outline: "none", background: "#fff",
-              }}
+              style={{ paddingLeft: 32 }}
             />
-            {inputQ && (
-              <button
-                onClick={() => { setInputQ(""); handleSearchChange(""); }}
-                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 16 }}
-              >×</button>
-            )}
           </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <FilterLabel>Ordenar</FilterLabel>
-            <select
-              value={sort}
-              onChange={(e) => { setSort(e.target.value as typeof sort); setPage(1); }}
-              style={{
-                border: "1px solid #e2e8f0",
-                borderRadius: 10,
-                background: "white",
-                color: "#334155",
-                padding: "10px 12px",
-                fontSize: 13,
-                fontWeight: 600,
-                outline: "none",
-              }}
-            >
-              <option value="pending">Pendientes primero</option>
-              <option value="name">Nombre A-Z</option>
-              <option value="altitude">Altitud</option>
-              <option value="ascents_desc">Más ascensiones</option>
-              <option value="ascents_asc">Menos ascensiones</option>
-            </select>
-          </div>
-
-          {loading && <span style={{ fontSize: 13, color: "#94a3b8" }}>Cargando...</span>}
-        </div>
-
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>
-            {total.toLocaleString("es-ES")} resultado{total !== 1 ? "s" : ""}
-          </span>
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>·</span>
-          <span style={{ fontSize: 12, color: "#64748b" }}>
-            {gpsFilter === "all" ? "Todas las cimas" : gpsFilter === "yes" ? "Solo verificadas" : "Solo sin verificar"}
-          </span>
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>·</span>
-          <span style={{ fontSize: 12, color: "#64748b" }}>
-            {ascentsFilter === "all" ? "Con y sin ascensiones" : ascentsFilter === "with" ? "Con ascensiones" : "Sin ascensiones"}
-          </span>
+          <select
+            value={sort}
+            onChange={(e) => { setSort(e.target.value as typeof sort); setPage(1); }}
+            className="form-input"
+            style={{ width: "auto" }}
+          >
+            <option value="pending">Pendientes primero</option>
+            <option value="name">Nombre A-Z</option>
+            <option value="altitude">Altitud</option>
+            <option value="ascents_desc">Más ascensiones</option>
+            <option value="ascents_asc">Menos ascensiones</option>
+          </select>
+          {loading && <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Cargando...</span>}
         </div>
       </div>
 
       {/* Delete error */}
       {deleteError && (
-        <div style={{ background: "#fee2e2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: "#b91c1c", display: "flex", justifyContent: "space-between" }}>
+        <div className="alert-block" style={{ marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
           {deleteError}
-          <button onClick={() => setDeleteError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#b91c1c", fontSize: 16 }}>×</button>
+          <button onClick={() => setDeleteError(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16 }}>×</button>
         </div>
       )}
 
-      {/* Table */}
-      <div style={{ background: "white", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
-        {peaks.length === 0 && !loading ? (
-          <div style={{ padding: "48px 24px", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-            {q ? `No se encontraron cimas para "${q}"` : "No hay cimas."}
-          </div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-              <thead>
-                <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                  <Th>Nombre</Th>
-                  <Th align="right">Alt (m)</Th>
-                  <Th>País</Th>
-                  <Th>Comarca</Th>
-                  <Th>Cordillera</Th>
-                  <Th>Tags</Th>
-                  <Th align="center">Lat / Lon</Th>
-                  <Th align="center">GPS ✓</Th>
-                  <Th align="center">Mythic</Th>
-                  <Th align="center">Asc.</Th>
-                  <Th />
-                </tr>
-              </thead>
-              <tbody>
-                {peaks.map((peak, i) =>
-                  editingId === peak.id ? (
-                    <EditRowWithWiki
-                      key={peak.id}
-                      peak={peak}
-                      state={editState}
-                      onChange={(k, v) => setEditState((prev) => ({ ...prev, [k]: v }))}
-                      onSave={() => saveEdit(peak.id)}
-                      onCancel={cancelEdit}
-                      saving={saving}
-                      error={saveError}
-                      isLast={i === peaks.length - 1}
-                    />
-                  ) : (
-                    <ViewRow
-                      key={peak.id}
-                      peak={peak}
-                      isLast={i === peaks.length - 1}
-                      onEdit={() => startEdit(peak)}
-                      onDelete={() => handleDelete(peak.id)}
-                      deleting={deletingId === peak.id}
-                      onToggleGps={async () => {
-                        const res = await fetch(`/api/admin/peaks/${peak.id}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ gpsVerified: !peak.gpsVerified }),
-                        });
-                        if (res.ok) {
-                          const updated = await res.json();
-                          setPeaks((prev) => prev.map((p) => p.id === peak.id ? { ...p, gpsVerified: updated.gpsVerified } : p));
-                        }
-                      }}
-                      onToggleMythic={async () => {
-                        const res = await fetch(`/api/admin/peaks/${peak.id}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ isMythic: !peak.isMythic }),
-                        });
-                        if (res.ok) {
-                          const updated = await res.json();
-                          setPeaks((prev) => prev.map((p) => p.id === peak.id ? { ...p, isMythic: updated.isMythic } : p));
-                        }
-                      }}
-                    />
-                  )
-                )}
-              </tbody>
-            </table>
+      {/* View toggle + column selector */}
+      <div className="toolbar" style={{ marginBottom: 12 }}>
+        <div className="view-tabs">
+          <button className={`view-tab${viewMode === "table" ? " active" : ""}`} onClick={() => setViewMode("table")}>Tabla</button>
+          <button className={`view-tab${viewMode === "altitude" ? " active" : ""}`} onClick={() => setViewMode("altitude")}>Por altitud</button>
+          <button className={`view-tab${viewMode === "country" ? " active" : ""}`} onClick={() => setViewMode("country")}>Por país</button>
+        </div>
+
+        {viewMode === "table" && (
+          <div className="col-selector" ref={colSelectorRef}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setColSelectorOpen(o => !o)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+              Columnas
+            </button>
+            <div className={`col-selector-popover${colSelectorOpen ? " open" : ""}`}>
+              <div className="col-selector-title">Columnas visibles</div>
+              {ALL_COLS.map(key => (
+                <label key={key} className="col-selector-item">
+                  <input
+                    type="checkbox"
+                    checked={visibleCols[key]}
+                    onChange={e => setVisibleCols(prev => ({ ...prev, [key]: e.target.checked }))}
+                  />
+                  {COL_LABELS[key]}
+                </label>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 20 }}>
-          <PagBtn disabled={page === 1} onClick={() => setPage(1)}>«</PagBtn>
-          <PagBtn disabled={page === 1} onClick={() => setPage(page - 1)}>‹</PagBtn>
-          <span style={{ fontSize: 13, color: "#64748b", padding: "0 8px" }}>
-            Página {page} de {totalPages} · {total.toLocaleString("es-ES")} cimas
-          </span>
-          <PagBtn disabled={page === totalPages} onClick={() => setPage(page + 1)}>›</PagBtn>
-          <PagBtn disabled={page === totalPages} onClick={() => setPage(totalPages)}>»</PagBtn>
-        </div>
+      {/* Views */}
+      {viewMode === "altitude" && renderAltitudeView()}
+      {viewMode === "country" && renderCountryView()}
+
+      {viewMode === "table" && (
+        <>
+          <div className="table-container">
+            {peaks.length === 0 && !loading ? (
+              <div className="empty-state">
+                {q ? `No se encontraron cimas para "${q}"` : "No hay cimas."}
+              </div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      {col("altitude") && <th style={{ textAlign: "right" }}>Alt (m)</th>}
+                      {col("country") && <th>País</th>}
+                      {col("comarca") && <th>Comarca</th>}
+                      {col("range") && <th>Cordillera</th>}
+                      {col("tags") && <th>Tags</th>}
+                      {col("latlon") && <th style={{ textAlign: "center" }}>Lat / Lon</th>}
+                      {col("gps") && <th style={{ textAlign: "center" }}>GPS ✓</th>}
+                      {col("mythic") && <th style={{ textAlign: "center" }}>Mythic</th>}
+                      {col("ascents") && <th style={{ textAlign: "center" }}>Asc.</th>}
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {peaks.map((peak, i) =>
+                      editingId === peak.id ? (
+                        <EditRowWithWiki
+                          key={peak.id}
+                          peak={peak}
+                          state={editState}
+                          onChange={(k, v) => setEditState((prev) => ({ ...prev, [k]: v }))}
+                          onSave={() => saveEdit(peak.id)}
+                          onCancel={cancelEdit}
+                          saving={saving}
+                          error={saveError}
+                          isLast={i === peaks.length - 1}
+                          visibleCols={visibleCols}
+                        />
+                      ) : (
+                        <ViewRow
+                          key={peak.id}
+                          peak={peak}
+                          isLast={i === peaks.length - 1}
+                          onEdit={() => startEdit(peak)}
+                          onDelete={() => handleDelete(peak.id)}
+                          deleting={deletingId === peak.id}
+                          visibleCols={visibleCols}
+                          onToggleGps={async () => {
+                            const res = await fetch(`/api/admin/peaks/${peak.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ gpsVerified: !peak.gpsVerified }),
+                            });
+                            if (res.ok) {
+                              const updated = await res.json();
+                              setPeaks((prev) => prev.map((p) => p.id === peak.id ? { ...p, gpsVerified: updated.gpsVerified } : p));
+                            }
+                          }}
+                          onToggleMythic={async () => {
+                            const res = await fetch(`/api/admin/peaks/${peak.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ isMythic: !peak.isMythic }),
+                            });
+                            if (res.ok) {
+                              const updated = await res.json();
+                              setPeaks((prev) => prev.map((p) => p.id === peak.id ? { ...p, isMythic: updated.isMythic } : p));
+                            }
+                          }}
+                        />
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 20 }}>
+              <PagBtn disabled={page === 1} onClick={() => setPage(1)}>«</PagBtn>
+              <PagBtn disabled={page === 1} onClick={() => setPage(page - 1)}>‹</PagBtn>
+              <span style={{ fontSize: 13, color: "var(--text-secondary)", padding: "0 8px" }}>
+                Página {page} de {totalPages} · {total.toLocaleString("es-ES")} cimas
+              </span>
+              <PagBtn disabled={page === totalPages} onClick={() => setPage(page + 1)}>›</PagBtn>
+              <PagBtn disabled={page === totalPages} onClick={() => setPage(totalPages)}>»</PagBtn>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-// ── View row ──────────────────────────────────────────────────────────────────
+// ── Subcomponents ─────────────────────────────────────────────────────────────
 
 function FilterLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{
-      fontSize: 11,
-      fontWeight: 800,
-      letterSpacing: "0.04em",
-      textTransform: "uppercase",
-      color: "#64748b",
-    }}>
+    <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-secondary)", minWidth: 80 }}>
       {children}
     </span>
   );
 }
 
 function ViewRow({
-  peak, isLast, onEdit, onDelete, deleting, onToggleGps, onToggleMythic,
+  peak, isLast, onEdit, onDelete, deleting, onToggleGps, onToggleMythic, visibleCols,
 }: {
-  peak: Peak;
-  isLast: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  deleting: boolean;
-  onToggleGps: () => void;
-  onToggleMythic: () => void;
+  peak: Peak; isLast: boolean; onEdit: () => void; onDelete: () => void; deleting: boolean;
+  onToggleGps: () => void; onToggleMythic: () => void; visibleCols: Record<ColKey, boolean>;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const col = (key: ColKey) => visibleCols[key];
 
   return (
-    <tr style={{ borderBottom: isLast ? "none" : "1px solid #f1f5f9" }}>
-      <td style={tdStyle}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{peak.name}</span>
-      </td>
-      <td style={{ ...tdStyle, textAlign: "right" }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", fontVariantNumeric: "tabular-nums" }}>
+    <tr>
+      <td style={{ fontWeight: 600, fontSize: 13 }}>{peak.name}</td>
+      {col("altitude") && (
+        <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>
           {peak.altitudeM.toLocaleString("es-ES")}
-        </span>
-      </td>
-      <td style={tdStyle}>
-        <span style={{ fontSize: 12, background: "#f1f5f9", color: "#334155", borderRadius: 5, padding: "2px 7px", fontWeight: 600 }}>
-          {peak.country}
-        </span>
-      </td>
-      <td style={tdStyle}>
-        <span style={{ fontSize: 12, color: "#64748b" }}>{peak.comarca ?? <em style={{ color: "#cbd5e1" }}>—</em>}</span>
-      </td>
-      <td style={tdStyle}>
-        <span style={{ fontSize: 12, color: "#64748b" }}>{peak.mountainRange ?? <em style={{ color: "#cbd5e1" }}>—</em>}</span>
-      </td>
-      <td style={tdStyle}>
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-          {[peak.tag1, peak.tag2, peak.tag3].filter(Boolean).map((t) => (
-            <span key={t} style={{ fontSize: 11, background: "#eff6ff", color: "#2563eb", borderRadius: 5, padding: "2px 7px", fontWeight: 600 }}>
-              {t}
-            </span>
-          ))}
-          {!peak.tag1 && !peak.tag2 && !peak.tag3 && <span style={{ fontSize: 12, color: "#cbd5e1" }}>—</span>}
-        </div>
-      </td>
-      <td style={{ ...tdStyle, textAlign: "center" }}>
-        <span style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>
+        </td>
+      )}
+      {col("country") && (
+        <td><span className="badge badge-neutral">{peak.country}</span></td>
+      )}
+      {col("comarca") && (
+        <td style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          {peak.comarca ?? <em style={{ color: "var(--text-muted)" }}>—</em>}
+        </td>
+      )}
+      {col("range") && (
+        <td style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          {peak.mountainRange ?? <em style={{ color: "var(--text-muted)" }}>—</em>}
+        </td>
+      )}
+      {col("tags") && (
+        <td>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {[peak.tag1, peak.tag2, peak.tag3].filter(Boolean).map((t) => (
+              <span key={t} className="badge badge-info">{t}</span>
+            ))}
+            {!peak.tag1 && !peak.tag2 && !peak.tag3 && <span style={{ color: "var(--text-muted)", fontSize: 13 }}>—</span>}
+          </div>
+        </td>
+      )}
+      {col("latlon") && (
+        <td style={{ textAlign: "center", fontSize: 11, fontFamily: "monospace", color: "var(--text-muted)" }}>
           {peak.latitude.toFixed(4)}, {peak.longitude.toFixed(4)}
-        </span>
-      </td>
-      <td style={{ ...tdStyle, textAlign: "center" }}>
-        <button
-          onClick={onToggleGps}
-          title={peak.gpsVerified ? "GPS verificado — click para desmarcar" : "No verificado — click para marcar"}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 2 }}
-        >
-          {peak.gpsVerified ? "✅" : "⬜"}
-        </button>
-      </td>
-      <td style={{ ...tdStyle, textAlign: "center" }}>
-        <button
-          onClick={onToggleMythic}
-          title={peak.isMythic ? "Mythic — click para desmarcar" : "Normal — click para marcar como Mythic"}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 2 }}
-        >
-          {peak.isMythic ? "⭐" : "⬜"}
-        </button>
-      </td>
-      <td style={{ ...tdStyle, textAlign: "center" }}>
-        {peak._count.ascents > 0 ? (
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b" }}>{peak._count.ascents}</span>
-        ) : (
-          <span style={{ fontSize: 12, color: "#cbd5e1" }}>0</span>
-        )}
-      </td>
-      <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
-        <button
-          onClick={onEdit}
-          style={{ background: "none", border: "1px solid #e2e8f0", color: "#334155", borderRadius: 6, padding: "4px 10px", fontSize: 12, cursor: "pointer", marginRight: 6 }}
-        >
-          Editar
-        </button>
-        {!confirmDelete ? (
-          <button
-            onClick={() => setConfirmDelete(true)}
-            disabled={peak._count.ascents > 0}
-            title={peak._count.ascents > 0 ? `Tiene ${peak._count.ascents} ascensión(es)` : "Eliminar"}
-            style={{
-              background: "none", border: "1px solid #fecaca", color: "#ef4444",
-              borderRadius: 6, padding: "4px 10px", fontSize: 12,
-              cursor: peak._count.ascents > 0 ? "not-allowed" : "pointer",
-              opacity: peak._count.ascents > 0 ? 0.35 : 1,
-            }}
-          >
-            Eliminar
+        </td>
+      )}
+      {col("gps") && (
+        <td style={{ textAlign: "center" }}>
+          <button onClick={onToggleGps} title={peak.gpsVerified ? "GPS verificado — click para desmarcar" : "No verificado"} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 2 }}>
+            {peak.gpsVerified ? "✅" : "⬜"}
           </button>
-        ) : (
-          <span style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "#ef4444" }}>¿Seguro?</span>
+        </td>
+      )}
+      {col("mythic") && (
+        <td style={{ textAlign: "center" }}>
+          <button onClick={onToggleMythic} title={peak.isMythic ? "Mythic" : "Normal"} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 2 }}>
+            {peak.isMythic ? "⭐" : "⬜"}
+          </button>
+        </td>
+      )}
+      {col("ascents") && (
+        <td style={{ textAlign: "center", fontWeight: peak._count.ascents > 0 ? 600 : undefined, color: peak._count.ascents === 0 ? "var(--text-muted)" : undefined }}>
+          {peak._count.ascents || "—"}
+        </td>
+      )}
+      <td style={{ whiteSpace: "nowrap" }}>
+        <div className="action-btns">
+          <button className="btn btn-secondary btn-sm" onClick={onEdit}>Editar</button>
+          {!confirmDelete ? (
             <button
-              onClick={() => { setConfirmDelete(false); onDelete(); }}
-              disabled={deleting}
-              style={{ background: "#ef4444", border: "none", color: "white", borderRadius: 6, padding: "4px 8px", fontSize: 12, cursor: "pointer" }}
-            >
-              {deleting ? "..." : "Sí"}
-            </button>
-            <button
-              onClick={() => setConfirmDelete(false)}
-              style={{ background: "none", border: "1px solid #e2e8f0", color: "#64748b", borderRadius: 6, padding: "4px 8px", fontSize: 12, cursor: "pointer" }}
-            >
-              No
-            </button>
-          </span>
-        )}
+              className="btn btn-sm"
+              onClick={() => setConfirmDelete(true)}
+              disabled={peak._count.ascents > 0}
+              title={peak._count.ascents > 0 ? `Tiene ${peak._count.ascents} ascensión(es)` : "Eliminar"}
+              style={{
+                border: "1px solid var(--color-red-soft)", color: "var(--color-red)",
+                background: "none", cursor: peak._count.ascents > 0 ? "not-allowed" : "pointer",
+                opacity: peak._count.ascents > 0 ? 0.35 : 1,
+              }}
+            >Eliminar</button>
+          ) : (
+            <span style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "var(--color-red)" }}>¿Seguro?</span>
+              <button className="btn btn-danger btn-sm" onClick={() => { setConfirmDelete(false); onDelete(); }} disabled={deleting}>
+                {deleting ? "..." : "Sí"}
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={() => setConfirmDelete(false)}>No</button>
+            </span>
+          )}
+        </div>
       </td>
     </tr>
   );
 }
 
-// ── Edit row + Wiki row (combined, because tbody can't use fragments in all contexts) ─
-
 function EditRowWithWiki(props: Parameters<typeof EditRow>[0]) {
   return (
     <>
       <EditRow {...props} isLast={false} />
-      <WikiRow peakId={props.peak.id} isLast={props.isLast} />
+      <WikiRow peakId={props.peak.id} isLast={props.isLast} visibleCols={props.visibleCols} />
     </>
   );
 }
 
-// ── Edit row ──────────────────────────────────────────────────────────────────
-
 function EditRow({
-  peak, state, onChange, onSave, onCancel, saving, error, isLast,
+  peak, state, onChange, onSave, onCancel, saving, error, isLast, visibleCols,
 }: {
-  peak: Peak;
-  state: EditState;
+  peak: Peak; state: EditState;
   onChange: (k: keyof EditState, v: string | number | boolean) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  saving: boolean;
-  error: string | null;
-  isLast: boolean;
+  onSave: () => void; onCancel: () => void; saving: boolean; error: string | null;
+  isLast: boolean; visibleCols: Record<ColKey, boolean>;
 }) {
+  const col = (key: ColKey) => visibleCols[key];
+
   function inp(k: keyof EditState, type = "text", width: number | string = "100%") {
     return (
       <input
         type={type}
         value={state[k] as string ?? ""}
         onChange={(e) => onChange(k, type === "number" ? Number(e.target.value) : e.target.value)}
-        style={{
-          border: "1px solid #93c5fd", borderRadius: 6,
-          padding: "4px 7px", fontSize: 12, color: "#0f172a",
-          outline: "none", width, boxSizing: "border-box" as const,
-          background: "#eff6ff",
-        }}
+        className="form-input inline-input"
+        style={{ width, boxSizing: "border-box" as const }}
       />
     );
   }
 
+  const colSpan = 1 + (col("altitude") ? 1 : 0) + (col("country") ? 1 : 0) + (col("comarca") ? 1 : 0) +
+    (col("range") ? 1 : 0) + (col("tags") ? 1 : 0) + (col("latlon") ? 1 : 0) +
+    (col("gps") ? 1 : 0) + (col("mythic") ? 1 : 0) + (col("ascents") ? 1 : 0) + 1;
+
   return (
     <>
-      <tr style={{ background: "#f0f9ff", borderBottom: error ? "none" : isLast ? "none" : "1px solid #bfdbfe" }}>
-        <td style={tdStyle}>{inp("name")}</td>
-        <td style={{ ...tdStyle, textAlign: "right" }}>{inp("altitudeM", "number", 72)}</td>
-        <td style={tdStyle}>{inp("country", "text", 48)}</td>
-        <td style={tdStyle}>{inp("comarca")}</td>
-        <td style={tdStyle}>{inp("mountainRange")}</td>
-        <td style={tdStyle}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            {inp("tag1")}
-            {inp("tag2")}
-            {inp("tag3")}
+      <tr style={{ background: "var(--bg-secondary)" }}>
+        <td>{inp("name")}</td>
+        {col("altitude") && <td style={{ textAlign: "right" }}>{inp("altitudeM", "number", 72)}</td>}
+        {col("country") && <td>{inp("country", "text", 48)}</td>}
+        {col("comarca") && <td>{inp("comarca")}</td>}
+        {col("range") && <td>{inp("mountainRange")}</td>}
+        {col("tags") && (
+          <td>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {inp("tag1")}{inp("tag2")}{inp("tag3")}
+            </div>
+          </td>
+        )}
+        {col("latlon") && (
+          <td style={{ textAlign: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {inp("latitude", "number")}{inp("longitude", "number")}
+            </div>
+          </td>
+        )}
+        {col("gps") && (
+          <td style={{ textAlign: "center" }}>
+            <input type="checkbox" checked={state.gpsVerified ?? false}
+              onChange={(e) => onChange("gpsVerified", e.target.checked as unknown as string)}
+              style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#16a34a" }} />
+          </td>
+        )}
+        {col("mythic") && (
+          <td style={{ textAlign: "center" }}>
+            <input type="checkbox" checked={state.isMythic ?? false}
+              onChange={(e) => onChange("isMythic", e.target.checked as unknown as string)}
+              style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#f59e0b" }} />
+          </td>
+        )}
+        {col("ascents") && (
+          <td style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+            {peak._count.ascents}
+          </td>
+        )}
+        <td style={{ whiteSpace: "nowrap" }}>
+          <div className="action-btns">
+            <button className="btn btn-primary btn-sm" onClick={onSave} disabled={saving}>
+              {saving ? "..." : "Guardar"}
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={onCancel}>Cancelar</button>
           </div>
-        </td>
-        <td style={{ ...tdStyle, textAlign: "center" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            {inp("latitude", "number")}
-            {inp("longitude", "number")}
-          </div>
-        </td>
-        <td style={{ ...tdStyle, textAlign: "center" }}>
-          <input
-            type="checkbox"
-            checked={state.gpsVerified ?? false}
-            onChange={(e) => onChange("gpsVerified", e.target.checked as unknown as string)}
-            style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#16a34a" }}
-          />
-        </td>
-        <td style={{ ...tdStyle, textAlign: "center" }}>
-          <input
-            type="checkbox"
-            checked={state.isMythic ?? false}
-            onChange={(e) => onChange("isMythic", e.target.checked as unknown as string)}
-            style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#f59e0b" }}
-          />
-        </td>
-        <td style={{ ...tdStyle, textAlign: "center" }}>
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>{peak._count.ascents}</span>
-        </td>
-        <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
-          <button
-            onClick={onSave}
-            disabled={saving}
-            style={{
-              background: "#0f172a", border: "none", color: "white",
-              borderRadius: 6, padding: "5px 12px", fontSize: 12,
-              fontWeight: 600, cursor: saving ? "not-allowed" : "pointer",
-              opacity: saving ? 0.7 : 1, marginRight: 6,
-            }}
-          >
-            {saving ? "..." : "Guardar"}
-          </button>
-          <button
-            onClick={onCancel}
-            style={{
-              background: "none", border: "1px solid #e2e8f0", color: "#64748b",
-              borderRadius: 6, padding: "5px 10px", fontSize: 12, cursor: "pointer",
-            }}
-          >
-            Cancelar
-          </button>
         </td>
       </tr>
       {error && (
-        <tr style={{ background: "#fef2f2", borderBottom: isLast ? "none" : "1px solid #fecaca" }}>
-          <td colSpan={10} style={{ padding: "6px 16px", fontSize: 12, color: "#b91c1c" }}>
+        <tr>
+          <td colSpan={colSpan} style={{ padding: "6px 16px", fontSize: 12, color: "var(--color-red)", background: "var(--color-red-soft)" }}>
             {error}
           </td>
         </tr>
@@ -687,47 +680,27 @@ function EditRow({
   );
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function Th({ children, align }: { children?: React.ReactNode; align?: "center" | "right" }) {
-  return (
-    <th style={{
-      padding: "10px 16px", textAlign: align ?? "left",
-      fontSize: 11, fontWeight: 600, color: "#64748b",
-      textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap",
-    }}>
-      {children}
-    </th>
-  );
-}
-
 function PagBtn({ children, disabled, onClick }: { children: React.ReactNode; disabled: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        background: "white", border: "1px solid #e2e8f0", borderRadius: 6,
-        padding: "5px 10px", fontSize: 13, cursor: disabled ? "default" : "pointer",
-        color: disabled ? "#cbd5e1" : "#334155",
-      }}
-    >
+    <button className={`btn btn-secondary btn-sm`} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );
 }
 
-const tdStyle: React.CSSProperties = { padding: "10px 16px", verticalAlign: "middle" };
-
 // ── Wiki row ──────────────────────────────────────────────────────────────────
 
 type WikiText = { id: string; lang: string; title: string; body: string; wikiUrl: string };
 
-function WikiRow({ peakId, isLast }: { peakId: string; isLast: boolean }) {
+function WikiRow({ peakId, isLast, visibleCols }: { peakId: string; isLast: boolean; visibleCols: Record<ColKey, boolean> }) {
   const [wikiTexts, setWikiTexts] = useState<WikiText[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const colSpan = 1 + (visibleCols.altitude ? 1 : 0) + (visibleCols.country ? 1 : 0) + (visibleCols.comarca ? 1 : 0) +
+    (visibleCols.range ? 1 : 0) + (visibleCols.tags ? 1 : 0) + (visibleCols.latlon ? 1 : 0) +
+    (visibleCols.gps ? 1 : 0) + (visibleCols.mythic ? 1 : 0) + (visibleCols.ascents ? 1 : 0) + 1;
 
   useEffect(() => {
     setLoading(true);
@@ -759,47 +732,34 @@ function WikiRow({ peakId, isLast }: { peakId: string; isLast: boolean }) {
   const langEmoji: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", ca: "🏴󠁥󠁳󠁣󠁴󠁿", fr: "🇫🇷", de: "🇩🇪" };
 
   return (
-    <tr style={{ background: "#f8fafc", borderBottom: isLast ? "none" : "1px solid #bfdbfe" }}>
-      <td colSpan={11} style={{ padding: "12px 16px" }}>
+    <tr style={{ background: "var(--bg-secondary)" }}>
+      <td colSpan={colSpan} style={{ padding: "12px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Textos Wikipedia
           </span>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            style={{
-              border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff",
-              color: "#334155", fontSize: 12, fontWeight: 600, padding: "4px 10px",
-              cursor: refreshing ? "not-allowed" : "pointer", opacity: refreshing ? 0.6 : 1,
-              display: "flex", alignItems: "center", gap: 4,
-            }}
-          >
+          <button className="btn btn-secondary btn-sm" onClick={handleRefresh} disabled={refreshing}>
             {refreshing ? "Buscando…" : "🔄 Actualizar desde Wikipedia"}
           </button>
         </div>
         {loading ? (
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>Cargando…</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Cargando…</span>
         ) : error ? (
-          <span style={{ fontSize: 12, color: "#b91c1c" }}>{error}</span>
+          <span style={{ fontSize: 12, color: "var(--color-red)" }}>{error}</span>
         ) : wikiTexts.length === 0 ? (
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>{'Sin textos guardados — pulsa "Actualizar desde Wikipedia" para buscar.'}</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{'Sin textos guardados — pulsa "Actualizar desde Wikipedia" para buscar.'}</span>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
             {wikiTexts.map((wt) => (
-              <div key={wt.lang} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "10px 12px" }}>
+              <div key={wt.lang} className="card" style={{ padding: "10px 12px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                   <span style={{ fontSize: 16 }}>{langEmoji[wt.lang] ?? "🌐"}</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{wt.lang}</span>
-                  <a href={wt.wikiUrl} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: 11, color: "#2563eb", marginLeft: 2, textDecoration: "none" }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{wt.lang}</span>
+                  <a href={wt.wikiUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "var(--color-gentian)", marginLeft: 2, textDecoration: "none" }}>
                     {wt.title} ↗
                   </a>
                 </div>
-                <p style={{
-                  fontSize: 12, color: "#374151", margin: 0, lineHeight: 1.55,
-                  display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden",
-                }}>
+                <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {wt.body}
                 </p>
               </div>
@@ -810,3 +770,6 @@ function WikiRow({ peakId, isLast }: { peakId: string; isLast: boolean }) {
     </tr>
   );
 }
+
+// Unused but kept to avoid breaking existing import in case page references it
+export type { Peak };

@@ -160,7 +160,7 @@ export default async function AscentsPage() {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: 0 }}>{t.nav_ascents}</h1>
         <OpenAscentModalButton
           label={t.ascents_newAscent}
-          style={{ padding: "8px 16px", background: "#0369a1", color: "white", borderRadius: 8, fontSize: 13, fontWeight: 600 }}
+          style={{ padding: "8px 16px", background: "#0369a1", color: "white", borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600 }}
         />
       </div>
 

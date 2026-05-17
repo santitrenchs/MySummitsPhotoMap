@@ -31,3 +31,17 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude worktrees & session files
+.claude/
+.claire/
+
+# Local dev/design scratch files
+captura.html
+capture-animation.html
+feed_pokemon.html
+filter-ui-demo.html
+design_handoff_profile_cimas/
+
+# Local scripts (not part of the app)
+scripts/

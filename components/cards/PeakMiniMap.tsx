@@ -12,15 +12,39 @@ type NearbyPeak = { id: string; name: string; latitude: number; longitude: numbe
 
 const nearbyCache = new Map<string, NearbyPeak[]>();
 const inFlight = new Set<string>();
+// Maps that load before the prefetch resolves park their render fn here.
+// Array so multiple card instances for the same peak all get rendered.
+const pendingRenders = new Map<string, Array<(nearby: NearbyPeak[]) => void>>();
 const RADIUS = 0.8;
+const MAX_NEARBY = 5;
+
+function top5(peaks: NearbyPeak[], excludeId: string): NearbyPeak[] {
+  return peaks
+    .filter((p) => p.id !== excludeId)
+    .sort((a, b) => b.altitudeM - a.altitudeM)
+    .slice(0, MAX_NEARBY);
+}
+
+function firePending(peakId: string, nearby: NearbyPeak[]) {
+  const fns = pendingRenders.get(peakId);
+  if (fns?.length) fns.forEach((fn) => fn(nearby));
+  pendingRenders.delete(peakId);
+}
 
 export function prefetchNearbyPeaks(peakId: string, lat: number, lng: number): void {
-  if (nearbyCache.has(peakId) || inFlight.has(peakId)) return;
+  if (nearbyCache.has(peakId)) {
+    // Cache already ready — fire any maps that loaded while waiting.
+    firePending(peakId, nearbyCache.get(peakId)!);
+    return;
+  }
+  if (inFlight.has(peakId)) return;
   inFlight.add(peakId);
   fetch(`/api/peaks?lat=${lat}&lng=${lng}&radius=${RADIUS}`)
     .then((r) => r.json())
     .then((peaks: NearbyPeak[]) => {
-      nearbyCache.set(peakId, (peaks as NearbyPeak[]).filter((p) => p.id !== peakId));
+      const nearby = top5(peaks as NearbyPeak[], peakId);
+      nearbyCache.set(peakId, nearby);
+      firePending(peakId, nearby);
     })
     .catch(() => {})
     .finally(() => inFlight.delete(peakId));
@@ -56,11 +80,11 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
       type: "hillshade",
       source: "terrain-hillshade",
       paint: {
-        "hillshade-exaggeration": 0.7,
+        "hillshade-exaggeration": 0.45,
         "hillshade-illumination-direction": 315,
         "hillshade-illumination-anchor": "map",
-        "hillshade-highlight-color": "rgba(255,255,255,0.4)",
-        "hillshade-shadow-color": "rgba(0,0,0,0.55)",
+        "hillshade-highlight-color": "rgba(255,255,255,0.3)",
+        "hillshade-shadow-color": "rgba(0,0,0,0.3)",
       },
     },
   ],
@@ -111,7 +135,7 @@ export function PeakMiniMap({
       container: containerRef.current,
       style: MAP_STYLE,
       center: [lng, lat],
-      zoom: 12,
+      zoom: 10,
       interactive: false,
       attributionControl: false,
     });
@@ -177,16 +201,17 @@ export function PeakMiniMap({
 
       const cached = nearbyCache.get(peakId);
       if (cached) {
+        // Prefetch already finished — render immediately.
         renderNearby(cached);
       } else {
-        fetch(`/api/peaks?lat=${lat}&lng=${lng}&radius=${RADIUS}`)
-          .then((r) => r.json())
-          .then((peaks: NearbyPeak[]) => {
-            const nearby = (peaks as NearbyPeak[]).filter((p) => p.id !== peakId);
-            nearbyCache.set(peakId, nearby);
-            renderNearby(nearby);
-          })
-          .catch(() => {});
+        // Prefetch still in-flight: register this instance so it renders the
+        // moment the fetch lands.  Also call prefetchNearbyPeaks as a
+        // belt-and-suspenders trigger in case AscentCard's useEffect raced
+        // (e.g., React dev double-invoke) and the fetch never started.
+        const existing = pendingRenders.get(peakId) ?? [];
+        existing.push(renderNearby);
+        pendingRenders.set(peakId, existing);
+        prefetchNearbyPeaks(peakId, lat, lng);
       }
     });
 
@@ -196,7 +221,18 @@ export function PeakMiniMap({
     ro.observe(containerRef.current);
 
     mapRef.current = map;
-    return () => { ro.disconnect(); map.remove(); mapRef.current = null; };
+    return () => {
+      ro.disconnect();
+      map.remove();
+      mapRef.current = null;
+      // Remove this instance's render fn from the pending list on unmount.
+      const existing = pendingRenders.get(peakId);
+      if (existing) {
+        const updated = existing.filter((fn) => fn !== renderNearby);
+        if (updated.length) pendingRenders.set(peakId, updated);
+        else pendingRenders.delete(peakId);
+      }
+    };
   }, [lat, lng, peakId, altitudeM]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;

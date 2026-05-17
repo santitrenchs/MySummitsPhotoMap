@@ -33,6 +33,7 @@ model Rarity {
 model Peak {
   id            String   @id @default(uuid())
   name          String
+  nameEn        String?
   comarca       String?
   latitude      Float
   longitude     Float
@@ -54,6 +55,9 @@ model Peak {
   wikiTexts PeakWikiText[]
 
   @@index([rarityId])
+  @@index([country])
+  @@index([altitudeM])
+  @@index([latitude, longitude])
   @@map("peaks")
 }
 
@@ -82,7 +86,8 @@ model PeakWikiText {
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
-  passwordHash String
+  emailVerified DateTime?
+  passwordHash  String?
   name         String
   username     String?  @unique
   bio          String?
@@ -110,6 +115,10 @@ model User {
   // System
   isAdmin      Boolean  @default(false)
 
+  // Legal consent
+  marketingConsent   Boolean   @default(false)
+  marketingConsentAt DateTime?
+
   createdAt    DateTime @default(now())
 
   memberships            Membership[]
@@ -118,8 +127,30 @@ model User {
   receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
   faceTags               FaceTag[]    @relation("FaceTagUser")
   feedSeens              FeedSeen[]
+  accounts               Account[]
+  legalConsents          LegalConsent[]
 
   @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model Tenant {
@@ -210,6 +241,7 @@ model Ascent {
   route       String?
   description String?
   wikiloc     String?   // embed src URL, e.g. https://es.wikiloc.com/wikiloc/embedv2.do?id=...
+  isPublic    Boolean  @default(false)  // true = shareable via public link
   createdBy   String
   createdAt   DateTime @default(now())
 
@@ -310,4 +342,31 @@ model FeedSeen {
   @@id([userId, ascentId])
   @@index([userId, seenAt])
   @@map("feed_seen")
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  locale    String   @default("es")  // landing locale at signup time
+  createdAt DateTime @default(now())
+
+  @@map("newsletter_subscribers")
+}
+
+// ── Legal consent audit trail ─────────────────────────────────────────────────
+// One row per (user, documentType, version) — never updated, only inserted.
+// Keeps a full history: user accepted terms v1.0 on X, then v1.1 on Y, etc.
+model LegalConsent {
+  id           String   @id @default(uuid())
+  userId       String
+  documentType String   // "terms" | "privacy"
+  version      String   // e.g. "1.0", "1.1"
+  acceptedAt   DateTime @default(now())
+  ipAddress    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentType, version])
+  @@index([userId])
+  @@map("legal_consents")
 }

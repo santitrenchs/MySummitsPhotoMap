@@ -135,13 +135,19 @@ export type Dict = {
   settings_linkedPerson: string; settings_linkedPersonDesc: string;
   settings_claimPerson: string; settings_unclaimPerson: string;
   settings_searchPerson: string; settings_linkedPersonCurrent: string;
+  settings_changePasswordGoogleNote: string;
+  settings_connectedAccounts: string;
+  settings_googleConnected: string; settings_googleNotConnected: string;
+  settings_unlinkGoogle: string; settings_unlinkGoogleNeedPassword: string;
+  settings_unlinkGoogleConfirmNeutral: string;
+  settings_unlinkGoogleHasPassword: string; settings_unlinkGoogleNoPassword: string;
 
   // Auth
   auth_signInDesc: string; auth_accountCreated: string; auth_invalidCredentials: string;
   auth_signingIn: string; auth_signIn: string; auth_noAccount: string; auth_createOne: string;
   auth_createAccountDesc: string; auth_yourName: string; auth_password: string;
   auth_minPassword: string; auth_registrationFailed: string;
-  auth_creatingAccount: string; auth_createAccount: string; auth_haveAccount: string;
+  auth_creatingAccount: string; auth_createAccount: string; auth_haveAccount: string; auth_continueWithGoogle: string;
   auth_forgotPassword: string; auth_forgotPasswordDesc: string;
   auth_sendResetLink: string; auth_sendingResetLink: string; auth_resetLinkSent: string;
   auth_resetPassword: string; auth_resetPasswordDesc: string;
@@ -150,6 +156,27 @@ export type Dict = {
   auth_nameHint: string; auth_emailExists: string; auth_createAccountSubmit: string;
   auth_username: string; auth_usernameHint: string; auth_usernameTaken: string; auth_usernameInvalid: string;
   auth_haveCode: string;
+  // Legal consent (register form + accept-terms page)
+  auth_legal_required: string;      // "Acepto los {terms} y la {privacy}" (required checkbox)
+  auth_legal_terms: string;         // "Términos y condiciones" (link text)
+  auth_legal_privacy: string;       // "Política de privacidad" (link text)
+  auth_legal_marketing: string;     // Optional marketing checkbox label
+  auth_legal_mustAccept: string;    // Validation error: must accept T&C
+  auth_accept_title: string;        // "Términos actualizados"
+  auth_accept_subtitle: string;     // "Hemos actualizado…"
+  auth_accept_cta: string;          // "Acepto y continuar"
+  auth_accept_accepting: string;    // "Guardando…"
+  auth_accept_signOut: string;      // "Cerrar sesión"
+
+  // Legal pages chrome
+  legal_back: string;         // "← Volver al inicio"
+  legal_termsTitle: string;   // "Términos y Condiciones"
+  legal_privacyTitle: string; // "Política de Privacidad"
+  legal_cookiesTitle: string; // "Política de Cookies"
+  legal_termsLink: string;    // footer link text "Términos de uso"
+  legal_privacyLink: string;  // footer link text "Política de privacidad"
+  legal_cookiesLink: string;  // footer link text "Política de cookies"
+  legal_lastUpdated: string;  // "Última actualización: {date} · Versión {version}"
 
   // Crop modal
   crop_title: string; crop_next: string;
@@ -176,6 +203,43 @@ export type Dict = {
   profile_timesClimbed: string;
   profile_noAscents: string;
 
+  // Profile — Cimas tab v2
+  profile_collection_title: string;
+  profile_collection_unique: string;
+  profile_collection_ascents: string;
+  profile_collection_rarities: string;
+  profile_trophy_mostClimbed: string;
+  profile_trophy_highest: string;
+  profile_trophy_rarest: string;
+  profile_trophy_recent: string;
+  profile_trophy_label_ascents: string;
+  profile_trophy_label_altitude: string;
+  profile_trophy_label_species: string;
+  profile_trophy_label_conquered: string;
+  profile_filter_button: string;
+  profile_filter_searchPlaceholder: string;
+  profile_filter_title: string;
+  profile_filter_rarity: string;
+  profile_filter_range: string;
+  profile_filter_sort: string;
+  profile_filter_clearAll: string;
+  profile_filter_showN: string;
+  profile_sort_altDesc: string;
+  profile_sort_altAsc: string;
+  profile_sort_countDesc: string;
+  profile_sort_recent: string;
+  profile_sort_alpha: string;
+  profile_emptyFiltered_title: string;
+  profile_emptyFiltered_body: string;
+  profile_photos_searchPlaceholder: string;
+  profile_photos_searchTaggedPlaceholder: string;
+  profile_photos_countLabel: string;
+  profile_photos_tagAll: string;
+  profile_catalog_label: string;
+  profile_catalog_peaks: string;
+  profile_catalog_ascents: string;
+  profile_catalog_highest: string;
+
   // Home / Dashboard
   nav_home: string;
   home_greeting: string;
@@ -200,9 +264,9 @@ export type Dict = {
 
   // Level names (same in all languages)
   home_level1: string; home_level2: string; home_level3: string;
-  home_level4: string; home_level5: string;
-  // Level hero card quote (level 5 — Legendary)
-  home_level5Quote: string;
+  home_level4: string; home_level5: string; home_level6: string;
+  // Level hero card quote (level 6 — Zenith)
+  home_level6Quote: string;
   home_maxLevelHint: string;
   // Hero metrics
   home_heroSubtitle: string;
@@ -227,6 +291,9 @@ export type Dict = {
   card_capturedSummit: string; card_capturedMythicSummit: string;
   card_peakCapture: string; card_mythic: string;
   card_rarity: string; card_altitude: string; card_reward: string;
+  share_joinCta: string;
+  card_share: string; card_shareCopied: string; card_shareError: string; card_shareCopyLink: string;
+  card_shareTitle: string; card_shareWhatsapp: string; card_shareInstagramStory: string; card_shareDownload: string;
   card_backDesc_daisy: string; card_backDesc_gentian: string;
   card_backDesc_edelweiss: string; card_backDesc_saxifrage: string;
   card_backDesc_cinquefoil: string; card_backDesc_snow_lotus: string;

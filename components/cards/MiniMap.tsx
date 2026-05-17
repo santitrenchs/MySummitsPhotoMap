@@ -92,7 +92,7 @@ export function MiniMap({ latitude, longitude, label, zoom = 12 }: Props) {
       <div style={{
         position: "absolute", bottom: 6, right: 6,
         background: "rgba(255,255,255,0.88)", backdropFilter: "blur(4px)",
-        borderRadius: 8, padding: "3px 8px",
+        borderRadius: "var(--radius-md)", padding: "3px 8px",
         fontSize: 11, fontWeight: 600, color: "#374151",
         pointerEvents: "none",
       }}>

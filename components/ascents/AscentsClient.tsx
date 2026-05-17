@@ -80,14 +80,18 @@ export function AscentsClient({
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState("");
-  const [viewChip, setViewChip] = useState<ViewChip>(() =>
-    searchParams.get("highlight") ? "mine" : "friends"
-  );
+  const [viewChip, setViewChip] = useState<ViewChip>(() => {
+    if (searchParams.get("highlight")) return "mine";
+    const v = searchParams.get("view");
+    if (v === "mine" || v === "friends" || v === "with-me") return v;
+    return "friends";
+  });
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [personSearch, setPersonSearch] = useState("");
   const [rarity, setRarity] = useState<Rarity | null>(null);
   const [mythicFilter, setMythicFilter] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
+  const [monthFilter, setMonthFilter] = useState<string | null>(() => searchParams.get("month"));
   const [sort, setSort] = useState<Sort>("date-desc");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -151,7 +155,9 @@ export function AscentsClient({
     if (mythicFilter) r = r.filter((a) => a.peak.isMythic);
     else if (rarity) r = r.filter((a) => getRarity(a.peak.altitudeM) === rarity);
 
-    if (timeRange === "month") {
+    if (monthFilter) {
+      r = r.filter((a) => a.date.startsWith(monthFilter));
+    } else if (timeRange === "month") {
       const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
       r = r.filter((a) => new Date(a.date).getTime() >= cutoff);
     } else if (timeRange === "year") {
@@ -168,7 +174,7 @@ export function AscentsClient({
       if (aUnseen && bUnseen) return b.peak.altitudeM - a.peak.altitudeM;
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
-  }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, sort, currentUserId]);
+  }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, currentUserId]);
 
   const groups = useMemo(() => {
     const map = new Map<string, AscentData[]>();
@@ -265,17 +271,30 @@ export function AscentsClient({
       const c = RARITY_COLORS[rarity];
       chips.push({ key: "rarity", label: `✿ ${RARITY_LABELS[rarity]}`, color: { bg: c.bg, border: c.border, text: c.text } });
     }
-    if (timeRange === "month") chips.push({ key: "time", label: `📅 ${t.filter_lastMonth}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
-    if (timeRange === "year")  chips.push({ key: "time", label: `📅 ${new Date().getFullYear()}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    if (monthFilter) {
+      const [yr, mo] = monthFilter.split("-");
+      const label = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(new Date(`${yr}-${mo}-15`));
+      chips.push({ key: "month", label: `📅 ${label}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    } else if (timeRange === "month") {
+      chips.push({ key: "time", label: `📅 ${t.filter_lastMonth}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    } else if (timeRange === "year") {
+      chips.push({ key: "time", label: `📅 ${new Date().getFullYear()}`, color: { bg: "#f3f4f6", border: "#e5e7eb", text: "#374151" } });
+    }
     if (sort === "elev-desc") chips.push({ key: "sort", label: `⛰ ${t.ascents_sort_highest}`, color: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" } });
     if (peakFilter && peakFilterName) chips.push({ key: "peak", label: `⛰️ ${peakFilterName}`, color: { bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" } });
     return chips;
-  }, [viewChip, selectedPerson, rarity, mythicFilter, timeRange, sort, peakFilter, peakFilterName]);
+  }, [viewChip, selectedPerson, rarity, mythicFilter, timeRange, monthFilter, sort, peakFilter, peakFilterName]);
 
   function clearChip(key: string) {
     if (key === "view") { setViewChip("friends"); setSelectedPersonId(""); setPersonSearch(""); }
     if (key === "rarity") { setRarity(null); setMythicFilter(false); }
     if (key === "time") setTimeRange("all");
+    if (key === "month") {
+      setMonthFilter(null);
+      const u = new URL(window.location.href);
+      u.searchParams.delete("month");
+      window.history.replaceState(null, "", u.toString());
+    }
     if (key === "sort") setSort("date-desc");
     if (key === "peak") {
       setPeakFilter("");
@@ -306,7 +325,7 @@ export function AscentsClient({
 
   const fchip = (active: boolean, extra?: React.CSSProperties): React.CSSProperties => ({
     display: "inline-flex", alignItems: "center", gap: 5,
-    padding: "8px 14px", borderRadius: 20,
+    padding: "8px 14px", borderRadius: "var(--radius-full)",
     border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
     background: active ? "#eff6ff" : "#f9fafb",
     color: active ? "#0369a1" : "#6b7280",
@@ -319,7 +338,7 @@ export function AscentsClient({
     const c = RARITY_COLORS[r];
     return {
       display: "inline-flex", alignItems: "center", gap: 5,
-      padding: "8px 14px", borderRadius: 20,
+      padding: "8px 14px", borderRadius: "var(--radius-full)",
       border: `1.5px solid ${active ? c.border : "#e5e7eb"}`,
       background: active ? c.bg : "#f9fafb",
       color: active ? c.text : "#6b7280",
@@ -350,43 +369,67 @@ export function AscentsClient({
 
       {/* ── Search + filter button ──────────────────────────────────────── */}
       <div style={{ display: "flex", gap: 8, marginBottom: activeChips.length ? 10 : 16 }}>
-        <input
-          type="text"
-          placeholder={t.ascents_search}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            flex: 1, padding: "10px 18px", fontSize: 16,
-            border: "1.5px solid #e5e7eb", borderRadius: 24,
-            outline: "none", background: "white", boxSizing: "border-box",
-          }}
-        />
+        {/* Search input */}
+        <div style={{ flex: 1, position: "relative" }}>
+          <svg
+            width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="#94A3B8" strokeWidth="2.2" strokeLinecap="round"
+            style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+          >
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder={t.ascents_search}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%", padding: "10px 12px 10px 32px", fontSize: 16,
+              border: "1px solid #E5E7EB", borderRadius: "var(--radius-md)",
+              boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+              outline: "none", background: "white", boxSizing: "border-box",
+              color: "#0D2538",
+            }}
+          />
+        </div>
+        {/* Filter button */}
         <button
           className="asc-fchip"
           onClick={() => setFiltersOpen(true)}
           style={{
             display: "flex", alignItems: "center", gap: 6,
-            padding: "10px 16px", borderRadius: 24,
-            border: `1.5px solid ${isDirty ? "#bfdbfe" : "#e5e7eb"}`,
-            background: isDirty ? "#eff6ff" : "white",
-            color: isDirty ? "#0369a1" : "#6b7280",
-            fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink: 0,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+            padding: "10px 14px", borderRadius: "var(--radius-md)",
+            border: `1px solid ${filtersOpen ? "#0D2538" : "#E5E7EB"}`,
+            background: filtersOpen ? "#0D2538" : "white",
+            boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+            cursor: "pointer", flexShrink: 0,
+            position: "relative",
           }}
         >
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-            <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          <svg width="14" height="12" viewBox="0 0 14 12" fill="none"
+            stroke={filtersOpen ? "white" : "#374151"}
+            strokeWidth="1.8" strokeLinecap="round"
+          >
+            <line x1="0" y1="2" x2="14" y2="2" />
+            <line x1="2" y1="6" x2="12" y2="6" />
+            <line x1="4" y1="10" x2="10" y2="10" />
           </svg>
-          Filtrar
+          <span style={{ fontSize: 13, fontWeight: 700, color: filtersOpen ? "white" : "#374151" }}>
+            {t.profile_filter_button}
+          </span>
           {isDirty && (
-            <span style={{
+            <div style={{
+              position: "absolute", top: -6, right: -6,
               width: 16, height: 16, borderRadius: "50%",
-              background: "#0369a1", color: "white",
-              fontSize: 9, fontWeight: 800,
+              background: filtersOpen ? "white" : "#FF5D2D",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              {activeChips.length}
-            </span>
+              <span style={{
+                fontFamily: "var(--font-mono-landing, monospace)",
+                fontSize: 10, fontWeight: 800,
+                color: filtersOpen ? "#0D2538" : "white",
+              }}>{activeChips.length}</span>
+            </div>
           )}
         </button>
       </div>
@@ -404,7 +447,7 @@ export function AscentsClient({
               className="asc-chip-in"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 5,
-                padding: "5px 10px 5px 12px", borderRadius: 20,
+                padding: "5px 10px 5px 12px", borderRadius: "var(--radius-full)",
                 background: chip.color.bg, border: `1px solid ${chip.color.border}`,
                 color: chip.color.text, fontSize: 12, fontWeight: 600,
                 whiteSpace: "nowrap", flexShrink: 0, cursor: "pointer", lineHeight: 1,
@@ -435,7 +478,7 @@ export function AscentsClient({
         className="asc-sheet"
         style={{
           position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 201,
-          background: "white", borderRadius: "24px 24px 0 0",
+          background: "white", borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
           maxHeight: "92svh", display: "flex", flexDirection: "column",
           paddingBottom: "env(safe-area-inset-bottom)",
           transform: filtersOpen ? "translateY(0)" : "translateY(110%)",
@@ -510,13 +553,13 @@ export function AscentsClient({
                   autoFocus
                   style={{
                     width: "100%", padding: "10px 14px", fontSize: 16,
-                    border: "1.5px solid #e5e7eb", borderRadius: 10,
+                    border: "1.5px solid #e5e7eb", borderRadius: "var(--radius-md)",
                     outline: "none", background: "#f9fafb", boxSizing: "border-box",
                     fontFamily: "inherit",
                   }}
                 />
                 {filteredPersons.length > 0 && (
-                  <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", background: "white" }}>
+                  <div style={{ border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)", overflow: "hidden", background: "white" }}>
                     {filteredPersons.slice(0, 8).map((p) => (
                       <div
                         key={p.id}
@@ -566,11 +609,11 @@ export function AscentsClient({
                 <div
                   key={r}
                   className="asc-fchip"
+                  title={RARITY_LABELS[r]}
                   style={rarityChip(r, !mythicFilter && rarity === r)}
                   onClick={() => { setMythicFilter(false); setRarity(rarity === r ? null : r); }}
                 >
-                  <span style={{ color: RARITY_COLORS[r].dot, fontSize: 13, lineHeight: 1 }}>✿</span>
-                  {RARITY_LABELS[r]}
+                  <span style={{ color: RARITY_COLORS[r].dot, fontSize: 15, lineHeight: 1 }}>✿</span>
                 </div>
               ))}
               <div
@@ -635,10 +678,10 @@ export function AscentsClient({
             onClick={() => setFiltersOpen(false)}
             style={{
               width: "100%", padding: "16px",
-              background: "#0369a1", color: "white", border: "none",
-              borderRadius: 14, fontFamily: "inherit",
+              background: "#2F7A5F", color: "white", border: "none",
+              borderRadius: "var(--radius-lg)", fontFamily: "inherit",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              boxShadow: "0 4px 14px rgba(3,105,161,0.32)",
+              boxShadow: "0 4px 14px rgba(47,122,95,0.32)",
               cursor: "pointer",
             }}
           >
@@ -658,7 +701,7 @@ export function AscentsClient({
         viewChip === "friends" && !hasFriends ? (
           <div style={{
             background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
-            border: "1.5px dashed #bfdbfe", borderRadius: 16, padding: "32px 22px",
+            border: "1.5px dashed #bfdbfe", borderRadius: "var(--radius-lg)", padding: "32px 22px",
             textAlign: "center", marginTop: 16,
           }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
@@ -670,14 +713,14 @@ export function AscentsClient({
             </p>
             <Link href="/friends" style={{
               display: "inline-block", background: "#0369a1", color: "white",
-              padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: "none",
+              padding: "8px 18px", borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600, textDecoration: "none",
             }}>
               {t.home_inviteFriends}
             </Link>
           </div>
         ) : (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
-          <p style={{ fontSize: 48, margin: "0 0 12px" }}>🔍</p>
+          <p style={{ fontSize: 52, margin: "0 0 12px", color: RARITY_COLORS[rarity ?? "daisy"].dot, lineHeight: 1 }}>✿</p>
           <p style={{ fontSize: 15, fontWeight: 600, color: "#374151", margin: "0 0 4px" }}>{t.ascents_noResults}</p>
           <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>{t.ascents_noResultsSub}</p>
         </div>
@@ -694,7 +737,7 @@ export function AscentsClient({
                   id={`ascent-${a.id}`}
                   {...(a.isUnseen ? { "data-unseen-id": a.id } : {})}
                   style={{
-                    borderRadius: 16,
+                    borderRadius: "var(--radius-lg)",
                     transition: "box-shadow 0.4s ease, outline 0.4s ease",
                     ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
                   }}

@@ -53,7 +53,7 @@ function Dropdown({ label, active, children }: { label: string; active: boolean;
         onClick={() => open ? setOpen(false) : openMenu()}
         style={{
           display: "flex", alignItems: "center", gap: 5,
-          padding: "7px 13px", borderRadius: 999,
+          padding: "7px 13px", borderRadius: "var(--radius-full)",
           border: `1.5px solid ${active ? "#1e293b" : "#d1d5db"}`,
           fontSize: 13, fontWeight: 500, cursor: "pointer",
           background: active ? "#1e293b" : "white",
@@ -70,7 +70,7 @@ function Dropdown({ label, active, children }: { label: string; active: boolean;
       {open && menuPos && createPortal(
         <div ref={menuRef} style={{
           position: "fixed", top: menuPos.top, left: menuPos.left,
-          background: "white", borderRadius: 12,
+          background: "white", borderRadius: "var(--radius-md)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
           border: "1px solid #e5e7eb",
           zIndex: 9999, minWidth: 180,
@@ -173,7 +173,7 @@ export default function MapFilterBar({
         onClick={onMythicToggle}
         style={{
           display: "flex", alignItems: "center", gap: 5,
-          padding: "7px 13px", borderRadius: 999,
+          padding: "7px 13px", borderRadius: "var(--radius-full)",
           border: `1.5px solid ${mythicOnly ? "#1e293b" : "#d1d5db"}`,
           fontSize: 13, fontWeight: 500, cursor: "pointer",
           background: mythicOnly ? "#1e293b" : "white",

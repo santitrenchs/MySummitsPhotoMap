@@ -67,7 +67,7 @@ function Btn({
       onClick={onClick}
       disabled={disabled}
       style={{
-        padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+        padding: "5px 12px", borderRadius: "var(--radius-sm)", fontSize: 12, fontWeight: 600,
         cursor: disabled ? "default" : "pointer", whiteSpace: "nowrap",
         background: c.bg, color: c.color,
         border: `1px solid ${c.border}`,
@@ -291,10 +291,10 @@ export function FriendsClient({
             style={{
               width: "100%", boxSizing: "border-box",
               padding: "9px 14px 9px 38px",
-              border: "1px solid #e5e7eb", borderRadius: 10,
+              border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
               fontSize: 16, outline: "none", background: "#f9fafb",
             }}
-            onFocus={(e) => (e.target.style.borderColor = "#DC2626")}
+            onFocus={(e) => (e.target.style.borderColor = "#2F7A5F")}
             onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
           />
           <svg style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }}
@@ -304,7 +304,7 @@ export function FriendsClient({
           {query.trim().length >= 2 && (
             <div style={{
               position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-              background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+              background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
               boxShadow: "0 4px 16px rgba(0,0,0,0.1)", overflow: "hidden",
             }}>
               {searching ? (
@@ -370,7 +370,7 @@ export function FriendsClient({
                   <button
                     onClick={() => setOpenMenuId(openMenuId === f.id ? null : f.id)}
                     style={{
-                      width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb",
+                      width: 32, height: 32, borderRadius: "var(--radius-sm)", border: "1px solid #e5e7eb",
                       background: openMenuId === f.id ? "#f3f4f6" : "white",
                       cursor: "pointer", fontSize: 18, color: "#6b7280",
                       display: "flex", alignItems: "center", justifyContent: "center",
@@ -382,7 +382,7 @@ export function FriendsClient({
                   {openMenuId === f.id && (
                     <div style={{
                       position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 20,
-                      background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+                      background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
                       boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 160, overflow: "hidden",
                     }}>
                       <button
@@ -421,7 +421,7 @@ export function FriendsClient({
               onClick={() => setVisibleCount((c) => c + 20)}
               style={{
                 display: "block", width: "100%", marginTop: 8, padding: "10px 0",
-                border: "1px solid #e5e7eb", borderRadius: 10,
+                border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
                 background: "white", fontSize: 13, fontWeight: 600,
                 color: "#0369a1", cursor: "pointer",
               }}

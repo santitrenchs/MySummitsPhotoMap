@@ -101,7 +101,7 @@ export default function MapOnboardingModal() {
           zIndex: 1101,
           ...(isMobile ? {
             bottom: 0, left: 0, right: 0,
-            borderRadius: "20px 20px 0 0",
+            borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
             maxHeight: "92svh", overflowY: "auto",
             transform: `translateY(${dragY}px)`,
             transition: dragging ? "none" : "transform 0.2s ease",
@@ -110,7 +110,7 @@ export default function MapOnboardingModal() {
             top: "50%", left: "50%",
             transform: "translate(-50%, -50%)",
             width: "min(540px, 92vw)",
-            borderRadius: 20,
+            borderRadius: "var(--radius-xl)",
             maxHeight: "90svh", overflowY: "auto",
             animation: "obModalIn 0.3s cubic-bezier(0.22,1,0.36,1) forwards",
           }),
@@ -123,7 +123,7 @@ export default function MapOnboardingModal() {
         <div style={{
           height: 4,
           background: "linear-gradient(90deg,#0369a1 0%,#38bdf8 50%,#818cf8 100%)",
-          borderRadius: "20px 20px 0 0",
+          borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
         }} />
 
         {/* drag handle (mobile only) */}
@@ -168,7 +168,7 @@ export default function MapOnboardingModal() {
             return (
               <div key={r.id} style={{
                 background: cs.bg, border: `1.5px solid ${cs.border}`,
-                borderRadius: 12, padding: "12px 8px 10px",
+                borderRadius: "var(--radius-md)", padding: "12px 8px 10px",
                 display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
               }}>
                 <span style={{ fontSize: 28, lineHeight: 1, marginBottom: 6, color: r.color }}>✿</span>
@@ -193,7 +193,7 @@ export default function MapOnboardingModal() {
             style={{
               width: "100%", padding: "14px",
               background: "linear-gradient(135deg,#0369a1 0%,#0ea5e9 100%)",
-              color: "#fff", border: "none", borderRadius: 12,
+              color: "#fff", border: "none", borderRadius: "var(--radius-md)",
               fontSize: 15, fontWeight: 700, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               boxShadow: "0 4px 18px rgba(3,105,161,0.35)",

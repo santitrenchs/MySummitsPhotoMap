@@ -256,7 +256,7 @@ export function GroupedAscentCard({
           display: "inline-flex", alignItems: "center",
           background: "#fef3c7", border: "1px solid #fde68a",
           color: "#92400e", fontSize: 10, fontWeight: 800,
-          padding: "3px 9px", borderRadius: 20,
+          padding: "3px 9px", borderRadius: "var(--radius-xl)",
           letterSpacing: "0.01em", whiteSpace: "nowrap",
         }}>
           {i(t.ascents_perspectives, { n: count })}
@@ -278,7 +278,7 @@ export function GroupedAscentCard({
               <div
                 style={{
                   position: "absolute", right: 0, top: 34, zIndex: 50,
-                  background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+                  background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -368,7 +368,7 @@ export function GroupedAscentCard({
                         background: "rgba(0,0,0,0.42)", backdropFilter: "blur(8px)",
                         WebkitBackdropFilter: "blur(8px)",
                         color: "white", fontSize: 11, fontWeight: 700,
-                        padding: "4px 10px", borderRadius: 20,
+                        padding: "4px 10px", borderRadius: "var(--radius-xl)",
                         border: "1px solid rgba(255,255,255,0.18)",
                         letterSpacing: "0.03em",
                       }}>

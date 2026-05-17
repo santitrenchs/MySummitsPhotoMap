@@ -176,72 +176,56 @@ export function Sidebar({
             <span className="azisb-ic"><SbPlusIcon /></span>
             <span className="azisb-lbl">Nueva ascensión</span>
           </button>
+
+          {/* Avatar → Profile (last nav item, like Instagram) */}
+          <Link
+            href="/profile"
+            className={`azisb-item${active("/profile") ? " azisb-item--on" : ""}`}
+            data-tip={t.nav_profile}
+          >
+            <span className="azisb-ic">
+              <div className="azisb-avatar" style={{ position: "relative" }}>
+                {userAvatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={userAvatarUrl}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                  />
+                ) : (
+                  abbr
+                )}
+                {badge > 0 && <span className="azisb-badge">{badge}</span>}
+              </div>
+            </span>
+            <span className="azisb-lbl">{userName ?? t.nav_profile}</span>
+          </Link>
         </nav>
 
-        {/* ── User footer ────────────────────────── */}
+        {/* ── Footer — hamburger only, anchored to bottom ─────────────── */}
         <div className="azisb-footer" ref={menuRef}>
-          <div
-            className="azisb-user"
+
+          {/* Hamburger → Settings + Sign out */}
+          <button
+            className="azisb-item"
+            data-tip="Más"
             onClick={() => setUserMenuOpen((o) => !o)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") setUserMenuOpen((o) => !o);
-            }}
-            aria-label="User menu"
+            aria-label="Más opciones"
             aria-expanded={userMenuOpen}
-            data-tip={userName ?? undefined}
           >
-            <div className="azisb-avatar" style={{ position: "relative" }}>
-              {userAvatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={userAvatarUrl}
-                  alt=""
-                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
-                />
-              ) : (
-                abbr
-              )}
-              {badge > 0 && <span className="azisb-badge">{badge}</span>}
-            </div>
-            <div className="azisb-uinfo">
-              <p className="azisb-uname">{userName ?? "User"}</p>
-            </div>
-            <span className="azisb-uchev">
-              <SbChevronUpIcon />
-            </span>
-          </div>
+            <span className="azisb-ic"><SbHamburgerIcon /></span>
+            <span className="azisb-lbl">Más</span>
+          </button>
 
           {userMenuOpen && (
             <div className="azisb-umenu">
-              <div className="azisb-umenu-hd">
-                <p className="azisb-umenu-name">{userName ?? "User"}</p>
-                {userEmail && <p className="azisb-umenu-email">{userEmail}</p>}
-              </div>
               <div className="azisb-umenu-sec">
-                <Link
-                  href="/profile"
-                  className="azisb-umenu-item"
-                  onClick={() => setUserMenuOpen(false)}
-                >
-                  <SbProfileIcon /> {t.nav_profile}
-                </Link>
                 <Link
                   href="/friends"
                   className="azisb-umenu-item"
                   onClick={() => setUserMenuOpen(false)}
                 >
-                  <SbFriendsIcon />
-                  {t.friends_title}
-                  {badge > 0 && (
-                    <span style={{
-                      marginLeft: "auto", minWidth: 18, height: 18, borderRadius: 9,
-                      background: "#ef4444", color: "#fff", fontSize: 10,
-                      fontWeight: 700, lineHeight: "18px", textAlign: "center",
-                      padding: "0 5px", display: "inline-flex", alignItems: "center",
-                    }}>{badge}</span>
-                  )}
+                  <SbFriendsIcon /> {t.friends_title}
                 </Link>
                 <Link
                   href="/settings"
@@ -330,7 +314,7 @@ const CSS = `
   margin-top: 48px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -341,7 +325,7 @@ const CSS = `
   gap: 12px;
   padding: 0 12px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   text-decoration: none;
   border: none;
   background: none;
@@ -360,6 +344,7 @@ const CSS = `
 }
 .azisb--c .azisb-nav { padding: 4px 0; }
 .azisb--c .azisb-item { padding: 0; justify-content: center; overflow: visible; gap: 0; }
+
 .azisb-item:hover { background: #f8fafc; color: #0f172a; }
 .azisb-item--on { background: #eff6ff; color: #0369a1; }
 .azisb-item--on .azisb-lbl { font-weight: 600; }
@@ -430,28 +415,11 @@ const CSS = `
 /* ── Footer ─────────────────────────────── */
 .azisb-footer {
   padding: 10px 8px;
-  margin-top: 48px;
+  margin-top: auto;
   border-top: 1px solid #f0f2f5;
   position: relative;
   flex-shrink: 0;
 }
-
-/* ── User button ────────────────────────── */
-.azisb-user {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 12px;
-  height: 44px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 140ms, padding 220ms cubic-bezier(0.4,0,0.2,1);
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  overflow: hidden;
-}
-.azisb--c .azisb-user { overflow: visible; padding: 0; gap: 0; justify-content: center; }
-.azisb-user:hover { background: #f8fafc; }
 
 /* Avatar */
 .azisb-avatar {
@@ -474,40 +442,6 @@ const CSS = `
   text-align: center; padding: 0 3px; pointer-events: none;
 }
 
-/* User info */
-.azisb-uinfo {
-  flex: 1; min-width: 0; overflow: hidden;
-  max-width: 180px; opacity: 1;
-}
-.azisb:not(.azisb--c) .azisb-uinfo {
-  transition: opacity 150ms ease 180ms, max-width 150ms ease 180ms;
-}
-.azisb--c .azisb-uinfo {
-  opacity: 0; max-width: 0; flex: 0;
-  transition: opacity 80ms ease, max-width 80ms ease;
-}
-.azisb-uname {
-  font-size: 15px; font-weight: 600; color: #111827;
-  margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  line-height: 1;
-}
-.azisb-uemail {
-  font-size: 13px; color: #9ca3af;
-  margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.azisb-uchev {
-  color: #d1d5db; flex-shrink: 0;
-  display: flex; align-items: center;
-  max-width: 20px; opacity: 1; overflow: hidden;
-}
-.azisb:not(.azisb--c) .azisb-uchev {
-  transition: opacity 150ms ease 180ms, max-width 150ms ease 180ms;
-}
-.azisb--c .azisb-uchev {
-  opacity: 0; max-width: 0;
-  transition: opacity 80ms ease, max-width 80ms ease;
-}
-
 /* ── User menu ──────────────────────────── */
 .azisb-umenu {
   position: absolute;
@@ -515,7 +449,7 @@ const CSS = `
   left: 8px; right: 8px;
   background: #fff;
   border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 16px 40px -4px rgba(0,0,0,0.10);
   overflow: hidden;
   z-index: 200;
@@ -605,21 +539,13 @@ function SbPlusIcon() {
   );
 }
 
-function SbChevronUpIcon() {
+function SbHamburgerIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="18 15 12 9 6 15" />
-    </svg>
-  );
-}
-
-function SbProfileIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F2233"
+      strokeWidth="2" strokeLinecap="round" style={{ opacity: 0.45 }}>
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
     </svg>
   );
 }
@@ -636,6 +562,7 @@ function SbSocialIcon({ active = false }: { active?: boolean }) {
     </svg>
   );
 }
+
 
 function SbFriendsIcon() {
   return (
