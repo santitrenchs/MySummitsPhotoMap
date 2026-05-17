@@ -163,6 +163,14 @@
   border-radius: 0;
 }
 
+.card-back .stat-band {
+  grid-template-columns: 1fr 1fr;
+}
+
+.card-back .stat-value {
+  font-size: 19px;
+}
+
 .card-back h3 {
   font-size: 22px;
   font-weight: 700;
