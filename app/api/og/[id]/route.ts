@@ -176,9 +176,9 @@ export async function GET(
     // Layout (left→right): "peak"  [circle+mountain icon]  "adex"
     // Bottom-left, opacity 0.65 so it reads clearly without dominating the photo
     const logoOpacity = 0.80;
-    const logoFontSize = 46;
-    const iconR = 24; // icon circle radius
-    const logoY = H - 64; // text baseline (leaves ~64px from bottom edge)
+    const logoFontSize = 92;
+    const iconR = 48; // icon circle radius
+    const logoY = H - 96; // text baseline
     const logoX = 40;     // left margin
 
     const capH = otFont
@@ -219,9 +219,9 @@ export async function GET(
   <g filter="url(#shadow)">
     ${peakPath}
     <circle cx="${iconCX}" cy="${iconCY}" r="${iconR}"
-      fill="none" stroke="#ffffff" stroke-width="2.4" opacity="${logoOpacity}"/>
+      fill="none" stroke="#ffffff" stroke-width="4" opacity="${logoOpacity}"/>
     <polyline points="${mtn(iconCX, iconCY, iconR)}"
-      fill="none" stroke="#ffffff" stroke-width="2.4"
+      fill="none" stroke="#ffffff" stroke-width="4"
       stroke-linejoin="round" stroke-linecap="round" opacity="${logoOpacity}"/>
     ${adexPath}
   </g>
