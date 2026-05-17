@@ -13,7 +13,6 @@ import sharp from "sharp";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const opentype = require("opentype.js") as typeof import("opentype.js");
 import { getPublicAscent } from "@/lib/services/public-ascent.service";
-import { getRarityId, RARITY_COLORS, RARITY_LABELS } from "@/lib/rarity";
 
 export const runtime = "nodejs";
 
@@ -72,32 +71,6 @@ function jpegResponse(buf: Buffer, maxAge = 86400) {
   });
 }
 
-/** Escape text for safe SVG embedding */
-function esc(s: string) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/** Wrap long text to approximate max char width */
-function wrapText(text: string, maxChars: number): string[] {
-  if (text.length <= maxChars) return [text];
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let line = "";
-  for (const w of words) {
-    if ((line + " " + w).trim().length > maxChars) {
-      if (line) lines.push(line);
-      line = w;
-    } else {
-      line = (line + " " + w).trim();
-    }
-  }
-  if (line) lines.push(line);
-  return lines;
-}
 
 /**
  * Convert text to an SVG <path> element via opentype.js.
@@ -146,17 +119,6 @@ function textPath(
   return svgParts;
 }
 
-/**
- * Baseline y for text that should appear visually centered in a box.
- * Uses the font's cap-height metric for precision.
- */
-function baselineForCenter(boxCenterY: number, fontSize: number): number {
-  if (otFont) {
-    const capH = (otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * fontSize;
-    return boxCenterY + capH / 2;
-  }
-  return boxCenterY + fontSize * 0.35;
-}
 
 /** Minimal navy JPEG fallback — no SVG, no fonts needed */
 async function navyFallback(): Promise<Buffer> {
@@ -207,96 +169,56 @@ export async function GET(
       .resize(W, H, { fit: "cover", position: "centre" })
       .toBuffer({ resolveWithObject: false });
 
-    // ── Build SVG overlay ──────────────────────────────────────────────────
-    const rarity = getRarityId(ascent.peak.altitudeM);
-    const rarityColor = RARITY_COLORS[ascent.peak.rarityId ?? rarity] ?? RARITY_COLORS[rarity];
-    const rarityLabel = RARITY_LABELS[rarity];
+    // ── Logo watermark paths ───────────────────────────────────────────────
+    // Layout: [icon circle+mountain] [peak] [adex]
+    // Positioned bottom-left, opacity 0.45
+    const logoFontSize = 22;
+    const iconR = 13; // icon circle radius
+    const logoY = H - 36; // baseline y for text
+    const iconCX = 36 + iconR;
+    const iconCY = logoY - (otFont
+      ? (otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * logoFontSize / 2
+      : logoFontSize * 0.36);
 
-    const peakNameLines = wrapText(ascent.peak.name, 22);
-    const peakFontSize = peakNameLines[0].length > 18 ? 64 : 76;
-    const peakLineH = Math.round(peakFontSize * 1.15);
+    const peakAdvW = otFont ? otFont.getAdvanceWidth("peak", logoFontSize) : logoFontSize * 2.2;
+    const adexAdvW = otFont ? otFont.getAdvanceWidth("adex", logoFontSize) : logoFontSize * 2.2;
+    const textGap = 10;
 
-    // opentype baselines: text draws UPWARD from y (cap tops at y - capH).
-    // Layout from bottom to top:
-    //   peak name baseline  → H - 52
-    //   gap                 → 22px
-    //   altitude baseline
-    //   gap (above cap-top) → 14px
-    //   badge bottom
-    //   badge height        → badgeH
-    const peakBaselineY = H - 52;
-    // Altitude baseline sits above peak name block
-    const peakCapH = otFont
-      ? Math.round((otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * peakFontSize)
-      : Math.round(peakFontSize * 0.72);
-    const altY = peakBaselineY - (peakNameLines.length - 1) * peakLineH - peakCapH - 22;
+    const peakTextX = iconCX + iconR + textGap;
+    const adexTextX = peakTextX + peakAdvW + textGap * 2 + iconR * 2 + textGap;
 
-    const altText = `${ascent.peak.altitudeM.toLocaleString("en")} m${
-      ascent.peak.mountainRange ? `  ·  ${ascent.peak.mountainRange}` : ""
-    }`;
+    const peakPath  = textPath("peak", peakTextX, logoY, logoFontSize, "#ffffff", { opacity: 0.45 });
+    const adexPath  = textPath("adex", adexTextX, logoY, logoFontSize, "#ffffff", { opacity: 0.45 });
 
-    // Badge sits above altitude text (clear gap above altitude cap-top)
-    const altCapH = otFont
-      ? Math.round((otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * 22)
-      : Math.round(22 * 0.72);
-    const badgeLabel = rarityLabel;
-    const badgeW = badgeLabel.length * 10 + 40;
-    const badgeH = 30;
-    const badgeX = 52;
-    const badgeY = altY - altCapH - 14 - badgeH;
+    // Second icon circle between "peak" and "adex"
+    const icon2CX = peakTextX + peakAdvW + textGap + iconR;
 
-    // ── Text paths ──────────────────────────────────────────────────────────
-    // PEAKADEX watermark (top-left, letter-spaced)
-    const watermarkBaseline = 28 + (otFont
-      ? (otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * 14
-      : 14 * 0.7);
-    const watermarkPath = textPath("PEAKADEX", 28, watermarkBaseline, 14, "#ffffff",
-      { opacity: 0.40, letterSpacing: 3 });
-
-    // Rarity badge label (centered in badge)
-    const badgeLabelPath = textPath(
-      esc(badgeLabel),
-      badgeX + badgeW / 2,
-      baselineForCenter(badgeY + badgeH / 2, 14),
-      14,
-      rarityColor,
-      { anchor: "middle" }
-    );
-
-    // Altitude text
-    const altPath = textPath(esc(altText), 52, altY, 22, "#ffffff", { opacity: 0.75 });
-
-    // Peak name lines
-    const peakNamePaths = peakNameLines
-      .map((line, i) =>
-        textPath(esc(line), 52, peakBaselineY + i * peakLineH, peakFontSize, "#ffffff")
-      )
-      .join("\n");
+    // Mountain path points inside circle (normalized, then scaled)
+    const mtn = (cx: number, cy: number, r: number) =>
+      `${cx - r*0.55},${cy + r*0.42} ${cx - r*0.08},${cy - r*0.38} ` +
+      `${cx + r*0.18},${cy - r*0.02} ${cx + r*0.48},${cy - r*0.48} ${cx + r*0.72},${cy + r*0.42}`;
 
     const overlay = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1">
+    <!-- Subtle vignette — darkens edges, keeps centre bright -->
+    <radialGradient id="vg" cx="50%" cy="50%" r="70%" gradientUnits="objectBoundingBox">
       <stop offset="0%"   stop-color="#000000" stop-opacity="0"/>
-      <stop offset="40%"  stop-color="#000000" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.80"/>
-    </linearGradient>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.35"/>
+    </radialGradient>
   </defs>
-  <rect width="${W}" height="${H}" fill="url(#gr)"/>
+  <rect width="${W}" height="${H}" fill="url(#vg)"/>
 
-  <!-- Rarity badge -->
-  <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="15"
-    fill="${rarityColor}" fill-opacity="0.2"
-    stroke="${rarityColor}" stroke-width="1.5"/>
-  ${badgeLabelPath}
-
-  <!-- Altitude -->
-  ${altPath}
-
-  <!-- Peak name -->
-  ${peakNamePaths}
-
-  <!-- Peakadex watermark top-left -->
-  ${watermarkPath}
+  <!-- Peakadex logo watermark — bottom left -->
+  <!-- "peak" text -->
+  ${peakPath}
+  <!-- icon circle + mountain (between peak and adex) -->
+  <circle cx="${icon2CX}" cy="${iconCY}" r="${iconR}"
+    fill="none" stroke="#ffffff" stroke-width="1.4" opacity="0.45"/>
+  <polyline points="${mtn(icon2CX, iconCY, iconR)}"
+    fill="none" stroke="#ffffff" stroke-width="1.4"
+    stroke-linejoin="round" stroke-linecap="round" opacity="0.45"/>
+  <!-- "adex" text -->
+  ${adexPath}
 </svg>`;
 
     const jpg = await sharp(photo)
