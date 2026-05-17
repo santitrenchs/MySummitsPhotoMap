@@ -2,16 +2,36 @@
  * OG image generator using sharp — composes a card-style image.
  * Uses sharp instead of next/og because next/og (resvg) crashes on Railway.
  *
- * SVG rules for librsvg on Linux:
- * - No rgba() in fill/stop-color — use hex + opacity attributes
- * - No CSS filter on text elements
- * - No exotic Unicode glyphs that might be missing from system fonts
+ * Font strategy: embed Geist-Regular.ttf (bundled with next/og, always in
+ * node_modules) as a base64 @font-face in the SVG. This makes text rendering
+ * fully self-contained — no system fonts required on Railway Linux.
  */
+import path from "path";
+import fs from "fs";
 import sharp from "sharp";
 import { getPublicAscent } from "@/lib/services/public-ascent.service";
 import { getRarityId, RARITY_COLORS, RARITY_LABELS } from "@/lib/rarity";
 
 export const runtime = "nodejs";
+
+// Load once at module init — stays in memory, cached across requests.
+// Geist-Regular.ttf is ~123KB; base64 is ~164KB.
+const FONT_B64 = (() => {
+  try {
+    const p = path.join(
+      process.cwd(),
+      "node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf"
+    );
+    return fs.readFileSync(p).toString("base64");
+  } catch {
+    return null; // falls back to system fonts if somehow missing
+  }
+})();
+
+const FONT_FACE = FONT_B64
+  ? `@font-face { font-family: 'Geist'; src: url('data:font/truetype;base64,${FONT_B64}'); }`
+  : "";
+const FONT = FONT_B64 ? "Geist" : "sans-serif";
 
 const W = 1200;
 const H = 630;
@@ -127,6 +147,7 @@ export async function GET(
 
     const overlay = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
+    <style>${FONT_FACE}</style>
     <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%"   stop-color="#000000" stop-opacity="0"/>
       <stop offset="40%"  stop-color="#000000" stop-opacity="0.5"/>
@@ -141,20 +162,20 @@ export async function GET(
     stroke="${rarityColor}" stroke-width="1.5"/>
   <text x="${badgeX + badgeW / 2}" y="${badgeY + badgeH * 0.70}"
     text-anchor="middle" dominant-baseline="middle"
-    font-family="sans-serif" font-size="14" font-weight="bold"
+    font-family="${FONT}" font-size="14" font-weight="bold"
     fill="${rarityColor}">${esc(badgeLabel)}</text>
 
   <!-- Altitude -->
   <text x="52" y="${altY}"
-    font-family="sans-serif" font-size="22" font-weight="normal"
+    font-family="${FONT}" font-size="22" font-weight="normal"
     fill="#ffffff" fill-opacity="0.75">${esc(altText)}</text>
 
   <!-- Peak name -->
-  ${peakNameSvgLines}
+  ${peakNameSvgLines.replace(/font-family="sans-serif"/g, `font-family="${FONT}"`)}
 
   <!-- Peakadex watermark top-left -->
   <text x="28" y="42"
-    font-family="sans-serif" font-size="14" font-weight="bold"
+    font-family="${FONT}" font-size="14" font-weight="bold"
     fill="#ffffff" fill-opacity="0.40" letter-spacing="3">PEAKADEX</text>
 </svg>`;
 
