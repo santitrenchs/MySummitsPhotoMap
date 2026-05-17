@@ -47,8 +47,6 @@ export async function DELETE(
     // Auth
     await tx.account.deleteMany({ where: { userId: id } });
     await tx.passwordResetToken.deleteMany({ where: { email: user.email } });
-    // Invitations (vouchers created by this user)
-    await tx.voucher.deleteMany({ where: { inviterId: id } });
     // Membership
     await tx.membership.deleteMany({ where: { userId: id } });
     // Finally the user

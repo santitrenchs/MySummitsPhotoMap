@@ -82,9 +82,6 @@ export default async function AdminDashboard() {
             <a href="/admin/peaks" className="btn btn-secondary" style={{ textDecoration: "none", textAlign: "center" }}>
               Gestionar cimas
             </a>
-            <a href="/admin/vouchers" className="btn btn-secondary" style={{ textDecoration: "none", textAlign: "center" }}>
-              Gestionar vouchers
-            </a>
           </div>
         </div>
       </div>
