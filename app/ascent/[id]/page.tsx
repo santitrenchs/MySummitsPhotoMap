@@ -305,14 +305,15 @@ export default async function PublicAscentPage({
         {/* Stats band */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-around",
-            padding: "12px 16px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 8,
+            padding: "0 12px 12px",
           }}
         >
           {/* Rarity */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-            <div style={{ fontSize: 10, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: 12, padding: "8px 6px" }}>
+            <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
               Rarity
             </div>
             <div
@@ -331,8 +332,8 @@ export default async function PublicAscentPage({
           </div>
 
           {/* Altitude */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-            <div style={{ fontSize: 10, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: 12, padding: "8px 6px" }}>
+            <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
               Altitude
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538" }}>
@@ -341,8 +342,8 @@ export default async function PublicAscentPage({
           </div>
 
           {/* Reward */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-            <div style={{ fontSize: 10, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: 12, padding: "8px 6px" }}>
+            <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
               Reward
             </div>
             <div
