@@ -297,6 +297,11 @@ export default async function PublicAscentPage({
                 {ascent.peak.mountainRange}
               </div>
             )}
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 3 }}>
+              {`${Math.abs(ascent.peak.latitude).toFixed(4)}°${ascent.peak.latitude >= 0 ? "N" : "S"}`}
+              {" · "}
+              {`${Math.abs(ascent.peak.longitude).toFixed(4)}°${ascent.peak.longitude >= 0 ? "E" : "W"}`}
+            </div>
           </div>
         </div>
 

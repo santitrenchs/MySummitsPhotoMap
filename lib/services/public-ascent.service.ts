@@ -11,6 +11,8 @@ export type PublicAscentData = {
     mountainRange: string | null;
     isMythic: boolean;
     rarityId: string | null;
+    latitude: number;
+    longitude: number;
   };
   photoUrl: string | null;
   user: { name: string; avatarUrl: string | null };
@@ -32,6 +34,8 @@ export async function getPublicAscent(id: string): Promise<PublicAscentData | nu
           mountainRange: true,
           isMythic: true,
           rarityId: true,
+          latitude: true,
+          longitude: true,
         },
       },
       photos: {
