@@ -188,20 +188,35 @@ export async function GET(
     const peakNameLines = wrapText(ascent.peak.name, 22);
     const peakFontSize = peakNameLines[0].length > 18 ? 64 : 76;
     const peakLineH = Math.round(peakFontSize * 1.15);
-    // Baseline of bottom-most peak name line
-    const peakBaselineY = H - 60;
-    const altY = peakBaselineY - peakNameLines.length * peakLineH - 14;
+
+    // opentype baselines: text draws UPWARD from y (cap tops at y - capH).
+    // Layout from bottom to top:
+    //   peak name baseline  → H - 52
+    //   gap                 → 22px
+    //   altitude baseline
+    //   gap (above cap-top) → 14px
+    //   badge bottom
+    //   badge height        → badgeH
+    const peakBaselineY = H - 52;
+    // Altitude baseline sits above peak name block
+    const peakCapH = otFont
+      ? Math.round((otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * peakFontSize)
+      : Math.round(peakFontSize * 0.72);
+    const altY = peakBaselineY - (peakNameLines.length - 1) * peakLineH - peakCapH - 22;
 
     const altText = `${ascent.peak.altitudeM.toLocaleString("en")} m${
       ascent.peak.mountainRange ? `  ·  ${ascent.peak.mountainRange}` : ""
     }`;
 
-    // Badge dimensions
+    // Badge sits above altitude text (clear gap above altitude cap-top)
+    const altCapH = otFont
+      ? Math.round((otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * 22)
+      : Math.round(22 * 0.72);
     const badgeLabel = rarityLabel;
     const badgeW = badgeLabel.length * 10 + 40;
     const badgeH = 30;
     const badgeX = 52;
-    const badgeY = altY - badgeH - 14;
+    const badgeY = altY - altCapH - 14 - badgeH;
 
     // ── Text paths ──────────────────────────────────────────────────────────
     // PEAKADEX watermark (top-left, letter-spaced)
