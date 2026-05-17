@@ -1,49 +1,42 @@
 /**
- * OG image generator using sharp — composes a card-style image.
- * Uses sharp instead of next/og because next/og (resvg) crashes on Railway.
+ * OG image generator using sharp + opentype.js.
  *
- * Font strategy (two layers):
- *   1. nixpacks.toml copies Geist-Regular.ttf to /app/config/ and creates a
- *      fonts.conf pointing there; the server starts with FONTCONFIG_FILE set
- *      so librsvg finds "Geist" via fontconfig. This is the primary path.
- *   2. We also embed the TTF as a base64 @font-face data URI as a fallback
- *      for local dev where fontconfig may not be configured.
- *
- * librsvg on Railway's minimal Linux image has no system fonts, so both
- * layers are needed to guarantee text renders without □ replacement chars.
+ * Font rendering strategy: convert ALL text to SVG <path> elements via
+ * opentype.js. This completely bypasses fontconfig and librsvg's font
+ * subsystem — paths are pure geometry, no font lookup required.
+ * Works on any Linux regardless of installed system fonts.
  */
 import path from "path";
 import fs from "fs";
 import sharp from "sharp";
+// opentype.js is a pure-JS font parser; no native deps.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const opentype = require("opentype.js") as typeof import("opentype.js");
 import { getPublicAscent } from "@/lib/services/public-ascent.service";
 import { getRarityId, RARITY_COLORS, RARITY_LABELS } from "@/lib/rarity";
 
 export const runtime = "nodejs";
 
-// ── Font loading (local dev fallback via base64 data URI) ──────────────────
-// On Railway, fontconfig is configured at startup via FONTCONFIG_FILE so
-// librsvg finds Geist directly. The base64 embed is kept as a belt-and-
-// suspenders fallback — librsvg tries @font-face src before fontconfig.
-const FONT_B64 = (() => {
-  try {
-    // Primary: /app/config/Geist-Regular.ttf (copied by nixpacks build)
-    const railway = path.join(process.cwd(), "config/Geist-Regular.ttf");
-    if (fs.existsSync(railway)) return fs.readFileSync(railway).toString("base64");
-    // Fallback: node_modules (local dev)
-    const dev = path.join(
-      process.cwd(),
-      "node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf"
-    );
-    return fs.readFileSync(dev).toString("base64");
-  } catch {
-    return null;
+// ── Load Geist-Regular once at module init ─────────────────────────────────
+// Path 1: /app/config/ (Railway — copied by nixpacks build phase)
+// Path 2: node_modules (local dev)
+const otFont = (() => {
+  const candidates = [
+    path.join(process.cwd(), "config/Geist-Regular.ttf"),
+    path.join(process.cwd(), "node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf"),
+  ];
+  for (const p of candidates) {
+    try {
+      const buf = fs.readFileSync(p);
+      return opentype.parse(buf.buffer as ArrayBuffer);
+    } catch {
+      // try next
+    }
   }
+  return null;
 })();
 
-const FONT_FACE = FONT_B64
-  ? `@font-face { font-family: 'Geist'; src: url('data:font/truetype;base64,${FONT_B64}') format('truetype'); font-weight: normal; font-style: normal; }`
-  : "";
-const FONT = "Geist, sans-serif";
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 const W = 1200;
 const H = 630;
@@ -84,6 +77,65 @@ function wrapText(text: string, maxChars: number): string[] {
   return lines;
 }
 
+/**
+ * Convert text to an SVG <path> element via opentype.js.
+ * y is the text baseline position.
+ * anchor: "left" (default) or "middle" (horizontally centered on x).
+ * letterSpacing: extra pixels between characters (renders glyph-by-glyph).
+ */
+function textPath(
+  text: string,
+  x: number,
+  y: number,
+  fontSize: number,
+  fill: string,
+  opts: { anchor?: "left" | "middle"; opacity?: number; letterSpacing?: number } = {}
+): string {
+  if (!otFont) return "";
+  const { anchor = "left", opacity, letterSpacing = 0 } = opts;
+
+  let startX = x;
+  if (anchor === "middle") {
+    let totalW = 0;
+    for (const ch of text) totalW += otFont.getAdvanceWidth(ch, fontSize) + letterSpacing;
+    totalW -= letterSpacing; // no trailing spacing
+    startX = x - totalW / 2;
+  }
+
+  let svgParts = "";
+  if (letterSpacing !== 0) {
+    // Render char-by-char for letter-spacing support
+    let cx = startX;
+    for (const ch of text) {
+      const p = otFont.getPath(ch, cx, y, fontSize);
+      p.fill = fill;
+      svgParts += p.toSVG(1);
+      cx += otFont.getAdvanceWidth(ch, fontSize) + letterSpacing;
+    }
+  } else {
+    const p = otFont.getPath(text, startX, y, fontSize);
+    p.fill = fill;
+    svgParts = p.toSVG(1);
+  }
+
+  if (opacity !== undefined && opacity < 1) {
+    return `<g opacity="${opacity}">${svgParts}</g>`;
+  }
+  return svgParts;
+}
+
+/**
+ * Baseline y for text that should appear visually centered in a box.
+ * Uses the font's cap-height metric for precision.
+ */
+function baselineForCenter(boxCenterY: number, fontSize: number): number {
+  if (otFont) {
+    const capH = (otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * fontSize;
+    return boxCenterY + capH / 2;
+  }
+  return boxCenterY + fontSize * 0.35;
+}
+
 /** Minimal guaranteed-to-work PNG (navy solid color, no SVG) */
 async function navyFallback(): Promise<Buffer> {
   const buf = Buffer.alloc(W * H * 3);
@@ -92,6 +144,8 @@ async function navyFallback(): Promise<Buffer> {
   }
   return sharp(buf, { raw: { width: W, height: H, channels: 3 } }).png().toBuffer();
 }
+
+// ── Route handler ──────────────────────────────────────────────────────────
 
 export async function GET(
   _req: Request,
@@ -126,7 +180,7 @@ export async function GET(
       .png()
       .toBuffer();
 
-    // ── SVG overlay (librsvg-safe: hex colors, no CSS filters) ─────────────
+    // ── Build SVG overlay ──────────────────────────────────────────────────
     const rarity = getRarityId(ascent.peak.altitudeM);
     const rarityColor = RARITY_COLORS[ascent.peak.rarityId ?? rarity] ?? RARITY_COLORS[rarity];
     const rarityLabel = RARITY_LABELS[rarity];
@@ -134,8 +188,9 @@ export async function GET(
     const peakNameLines = wrapText(ascent.peak.name, 22);
     const peakFontSize = peakNameLines[0].length > 18 ? 64 : 76;
     const peakLineH = Math.round(peakFontSize * 1.15);
-    const peakBaseY = H - 60;
-    const altY = peakBaseY - peakNameLines.length * peakLineH - 14;
+    // Baseline of bottom-most peak name line
+    const peakBaselineY = H - 60;
+    const altY = peakBaselineY - peakNameLines.length * peakLineH - 14;
 
     const altText = `${ascent.peak.altitudeM.toLocaleString("en")} m${
       ascent.peak.mountainRange ? `  ·  ${ascent.peak.mountainRange}` : ""
@@ -148,18 +203,36 @@ export async function GET(
     const badgeX = 52;
     const badgeY = altY - badgeH - 14;
 
-    const peakNameSvgLines = peakNameLines
-      .map(
-        (line, i) =>
-          `<text x="52" y="${peakBaseY + i * peakLineH}"
-            font-family="sans-serif" font-size="${peakFontSize}"
-            font-weight="bold" fill="#ffffff" letter-spacing="-1">${esc(line)}</text>`
+    // ── Text paths ──────────────────────────────────────────────────────────
+    // PEAKADEX watermark (top-left, letter-spaced)
+    const watermarkBaseline = 28 + (otFont
+      ? (otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * 14
+      : 14 * 0.7);
+    const watermarkPath = textPath("PEAKADEX", 28, watermarkBaseline, 14, "#ffffff",
+      { opacity: 0.40, letterSpacing: 3 });
+
+    // Rarity badge label (centered in badge)
+    const badgeLabelPath = textPath(
+      esc(badgeLabel),
+      badgeX + badgeW / 2,
+      baselineForCenter(badgeY + badgeH / 2, 14),
+      14,
+      rarityColor,
+      { anchor: "middle" }
+    );
+
+    // Altitude text
+    const altPath = textPath(esc(altText), 52, altY, 22, "#ffffff", { opacity: 0.75 });
+
+    // Peak name lines
+    const peakNamePaths = peakNameLines
+      .map((line, i) =>
+        textPath(esc(line), 52, peakBaselineY + i * peakLineH, peakFontSize, "#ffffff")
       )
       .join("\n");
 
     const overlay = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <style>${FONT_FACE}</style>
     <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%"   stop-color="#000000" stop-opacity="0"/>
       <stop offset="40%"  stop-color="#000000" stop-opacity="0.5"/>
@@ -172,23 +245,16 @@ export async function GET(
   <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="15"
     fill="${rarityColor}" fill-opacity="0.2"
     stroke="${rarityColor}" stroke-width="1.5"/>
-  <text x="${badgeX + badgeW / 2}" y="${badgeY + badgeH * 0.70}"
-    text-anchor="middle" dominant-baseline="middle"
-    font-family="${FONT}" font-size="14" font-weight="bold"
-    fill="${rarityColor}">${esc(badgeLabel)}</text>
+  ${badgeLabelPath}
 
   <!-- Altitude -->
-  <text x="52" y="${altY}"
-    font-family="${FONT}" font-size="22" font-weight="normal"
-    fill="#ffffff" fill-opacity="0.75">${esc(altText)}</text>
+  ${altPath}
 
   <!-- Peak name -->
-  ${peakNameSvgLines.replace(/font-family="sans-serif"/g, `font-family="${FONT}"`)}
+  ${peakNamePaths}
 
   <!-- Peakadex watermark top-left -->
-  <text x="28" y="42"
-    font-family="${FONT}" font-size="14" font-weight="bold"
-    fill="#ffffff" fill-opacity="0.40" letter-spacing="3">PEAKADEX</text>
+  ${watermarkPath}
 </svg>`;
 
     const png = await sharp(photo)
@@ -198,7 +264,6 @@ export async function GET(
 
     return pngResponse(png);
   } catch (err) {
-    // Last resort: return a plain navy PNG so the browser never shows a broken image
     console.error("[og-image] unhandled error:", err);
     try {
       const png = await navyFallback();
