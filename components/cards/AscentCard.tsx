@@ -458,54 +458,11 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             </div>
 
             {/* Actions area */}
-            <div style={{ padding: "14px 14px 6px" }}>
+            <div style={{ padding: "14px 14px 16px" }}>
               {/* Title */}
               <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
                 {t.card_shareTitle}
               </div>
-
-              {/* Instagram Story row — primary */}
-              <button
-                onClick={async () => {
-                  await navigator.clipboard.writeText(sharePopover);
-                  setLinkCopied(true);
-                  setTimeout(() => setLinkCopied(false), 2000);
-                }}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: 12,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(188,24,136,0.40)",
-                  borderRadius: 12, padding: "11px 12px",
-                  cursor: "pointer", marginBottom: 7, textAlign: "left",
-                  boxShadow: linkCopied ? "0 0 0 2px rgba(188,24,136,0.25)" : "none",
-                  transition: "box-shadow 0.2s",
-                }}
-              >
-                {/* Instagram gradient icon */}
-                <div style={{ width: 34, height: 34, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <rect x="2" y="2" width="20" height="20" rx="6" stroke="white" strokeWidth="1.8" fill="none"/>
-                    <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8" fill="none"/>
-                    <circle cx="17.2" cy="6.8" r="1.2" fill="white"/>
-                  </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{t.card_shareInstagramStory}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>
-                    {linkCopied ? `✓ ${t.card_shareCopied}` : t.card_shareCopyLink}
-                  </div>
-                </div>
-                {!linkCopied && (
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="7 4 13 10 7 16" />
-                  </svg>
-                )}
-                {linkCopied && (
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="4 10 8 14 16 6" />
-                  </svg>
-                )}
-              </button>
 
               {/* WhatsApp row */}
               <button
@@ -576,24 +533,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               </button>
             </div>
 
-            {/* Download image — subtle secondary link */}
-            <div style={{ padding: "8px 14px 14px", display: "flex", justifyContent: "center" }}>
-              <a
-                href={`${APP_URL}/ascent/${ascent.id}/opengraph-image`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  fontSize: 11, color: "rgba(255,255,255,0.35)",
-                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
-                }}
-              >
-                <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10 3v10M6 9l4 4 4-4"/><path d="M3 17h14"/>
-                </svg>
-                {t.card_shareDownload}
-              </a>
-            </div>
           </div>
         </>
       )}
