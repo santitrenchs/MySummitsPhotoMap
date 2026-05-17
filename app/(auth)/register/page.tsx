@@ -23,7 +23,7 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "12px 14px",
   border: `1px solid ${C.border}`,
-  borderRadius: 12,
+  borderRadius: "var(--radius-md)",
   fontSize: 15,
   color: C.navy,
   background: "#fff",
@@ -115,7 +115,7 @@ export default function RegisterPage() {
       <div style={{
         width: "100%", maxWidth: 420,
         background: "#fff",
-        borderRadius: 20,
+        borderRadius: "var(--radius-xl)",
         border: `1px solid ${C.border}`,
         boxShadow: "0 4px 24px rgba(13,37,56,0.07)",
         padding: "36px 32px 32px",
@@ -248,7 +248,7 @@ export default function RegisterPage() {
             <div style={{
               fontSize: 13, color: "#dc2626",
               background: "#fef2f2", border: "1px solid #fecaca",
-              borderRadius: 10, padding: "10px 14px",
+              borderRadius: "var(--radius-md)", padding: "10px 14px",
             }}>
               {formError}
             </div>
@@ -262,7 +262,7 @@ export default function RegisterPage() {
               width: "100%", padding: "14px 16px", marginTop: 4,
               background: submitting ? C.navyLight : C.green,
               color: "#fff",
-              border: "none", borderRadius: 14,
+              border: "none", borderRadius: "var(--radius-lg)",
               fontSize: 15, fontWeight: 800,
               cursor: submitting ? "not-allowed" : "pointer",
               boxShadow: submitting ? "none" : "0 4px 14px rgba(47,122,95,0.32)",
@@ -290,7 +290,7 @@ export default function RegisterPage() {
           style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
             gap: 10, padding: "12px 16px",
-            border: `1px solid ${C.border}`, borderRadius: 12,
+            border: `1px solid ${C.border}`, borderRadius: "var(--radius-md)",
             background: "#fff", fontSize: 14, fontWeight: 500, color: C.navy,
             cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
             fontFamily: "var(--font-inter, sans-serif)",

@@ -171,7 +171,7 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
               {" "}Esta acción no se puede deshacer.
             </p>
             {deleteError && (
-              <p style={{ fontSize: 13, color: "var(--color-red)", margin: "0 0 16px", padding: "8px 12px", background: "var(--color-red-soft)", borderRadius: 6 }}>
+              <p style={{ fontSize: 13, color: "var(--color-red)", margin: "0 0 16px", padding: "8px 12px", background: "var(--color-red-soft)", borderRadius: "var(--radius-sm)" }}>
                 {deleteError}
               </p>
             )}

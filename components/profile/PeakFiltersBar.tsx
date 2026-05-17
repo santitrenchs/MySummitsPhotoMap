@@ -54,7 +54,7 @@ export function PeakFiltersBar({
               width: "100%", padding: "10px 12px 10px 32px",
               background: "white",
               border: "1px solid #E5E7EB",
-              borderRadius: 12,
+              borderRadius: "var(--radius-md)",
               boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
               fontSize: 16,
               color: "#0D2538",
@@ -68,7 +68,7 @@ export function PeakFiltersBar({
         <button
           onClick={() => setFiltersOpen(!filtersOpen)}
           style={{
-            padding: "10px 14px", borderRadius: 12,
+            padding: "10px 14px", borderRadius: "var(--radius-md)",
             border: `1px solid ${filtersOpen ? "#0D2538" : "#E5E7EB"}`,
             background: filtersOpen ? "#0D2538" : "white",
             boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
@@ -148,7 +148,7 @@ function ActiveChip({ label, color, onRemove }: { label: string; color: string; 
       padding: "4px 8px 4px 10px",
       background: "white",
       border: `1px solid ${color}55`,
-      borderRadius: 999,
+      borderRadius: "var(--radius-full)",
     }}>
       <span style={{
         fontFamily: "var(--font-inter, sans-serif)",

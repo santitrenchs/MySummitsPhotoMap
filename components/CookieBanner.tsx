@@ -84,7 +84,7 @@ export default function CookieBanner() {
             background: "transparent",
             border: "1px solid rgba(240,244,255,0.2)",
             color: "rgba(240,244,255,0.65)",
-            borderRadius: 8,
+            borderRadius: "var(--radius-md)",
             cursor: "pointer",
             whiteSpace: "nowrap",
           }}
@@ -100,7 +100,7 @@ export default function CookieBanner() {
             background: "#2F7A5F",
             border: "none",
             color: "#fff",
-            borderRadius: 8,
+            borderRadius: "var(--radius-md)",
             cursor: "pointer",
             whiteSpace: "nowrap",
           }}

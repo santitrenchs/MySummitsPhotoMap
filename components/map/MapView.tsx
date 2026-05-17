@@ -1362,7 +1362,7 @@ export default function MapView({
             <div style={{
               position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 301,
               background: "white",
-              borderRadius: "24px 24px 0 0",
+              borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
               maxHeight: "92svh",
               boxShadow: "0 -4px 40px rgba(0,0,0,0.14)",
               paddingBottom: "env(safe-area-inset-bottom)",
@@ -1487,7 +1487,7 @@ export default function MapView({
                         className="filter-chip"
                         style={{
                           display: "inline-flex", alignItems: "center",
-                          padding: "8px 14px", borderRadius: 20,
+                          padding: "8px 14px", borderRadius: "var(--radius-full)",
                           fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
                           border: `1.5px solid ${filter === value ? "#0369a1" : "#e5e7eb"}`,
                           background: filter === value ? "#eff6ff" : "#f9fafb",
@@ -1518,7 +1518,7 @@ export default function MapView({
                         className="filter-chip"
                         style={{
                           display: "inline-flex", alignItems: "center",
-                          padding: "8px 14px", borderRadius: 20,
+                          padding: "8px 14px", borderRadius: "var(--radius-full)",
                           fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
                           border: `1.5px solid ${mobileSort === value ? "#0369a1" : "#e5e7eb"}`,
                           background: mobileSort === value ? "#eff6ff" : "#f9fafb",
@@ -1537,7 +1537,7 @@ export default function MapView({
                 <button
                   onClick={() => setMobileFiltersOpen(false)}
                   style={{
-                    width: "100%", padding: 16, borderRadius: 14,
+                    width: "100%", padding: 16, borderRadius: "var(--radius-lg)",
                     background: "#2F7A5F", color: "white", border: "none",
                     fontSize: 15, fontWeight: 800, cursor: "pointer",
                     boxShadow: "0 4px 14px rgba(47,122,95,0.32)",
@@ -1572,7 +1572,7 @@ export default function MapView({
               background: "rgba(17,24,39,0.78)", backdropFilter: "blur(8px)",
               WebkitBackdropFilter: "blur(8px)",
               color: "white", fontSize: 12, fontWeight: 600,
-              padding: "5px 13px", borderRadius: 20,
+              padding: "5px 13px", borderRadius: "var(--radius-full)",
               whiteSpace: "nowrap",
               boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
             }}>
@@ -1606,7 +1606,7 @@ export default function MapView({
                   transform: peakPopup.above ? "translate(-50%, -100%)" : "translateX(-50%)",
                   zIndex: 50,
                   background: "white",
-                  borderRadius: 14,
+                  borderRadius: "var(--radius-lg)",
                   boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
                   overflow: "hidden",
                   minWidth: 260,
@@ -1678,7 +1678,7 @@ export default function MapView({
                         style={{
                           flex: 1, padding: "9px 0",
                           background: "white", border: "1.5px solid #e5e7eb",
-                          borderRadius: 10, fontSize: 12, fontWeight: 600,
+                          borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600,
                           color: "#374151", cursor: "pointer",
                         }}
                       >
@@ -1689,7 +1689,7 @@ export default function MapView({
                         style={{
                           flex: 1, padding: "9px 0",
                           background: "#2F7A5F", border: "none",
-                          borderRadius: 10, fontSize: 12, fontWeight: 600,
+                          borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600,
                           color: "white", cursor: "pointer",
                           boxShadow: "0 2px 8px rgba(47,122,95,0.28)",
                         }}
@@ -1703,7 +1703,7 @@ export default function MapView({
                       style={{
                         flex: 1, padding: "10px 0",
                         background: "#2F7A5F", border: "none",
-                        borderRadius: 10, fontSize: 13, fontWeight: 600,
+                        borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600,
                         color: "white", cursor: "pointer",
                         boxShadow: "0 2px 8px rgba(47,122,95,0.28)",
                       }}

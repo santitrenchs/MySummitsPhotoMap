@@ -77,7 +77,7 @@ export function PeakFiltersPanel({
       <div
         style={{
           position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 301,
-          background: "white", borderRadius: "24px 24px 0 0",
+          background: "white", borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
           maxHeight: "92svh", display: "flex", flexDirection: "column",
           paddingBottom: "env(safe-area-inset-bottom)",
           transform: isOpen ? "translateY(0)" : "translateY(110%)",
@@ -125,7 +125,7 @@ export function PeakFiltersPanel({
                     title={r.label}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 5,
-                      padding: "7px 11px", borderRadius: 999, cursor: locked ? "default" : "pointer",
+                      padding: "7px 11px", borderRadius: "var(--radius-full)", cursor: locked ? "default" : "pointer",
                       border: `1.5px solid ${active ? r.color + "88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
                       background: active ? r.color + "22" : (locked ? "#F8FAFC" : "#f9fafb"),
                       opacity: locked ? 0.55 : 1,
@@ -147,7 +147,7 @@ export function PeakFiltersPanel({
                 title="Mythic"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
-                  padding: "7px 11px", borderRadius: 999,
+                  padding: "7px 11px", borderRadius: "var(--radius-full)",
                   cursor: mythicCount === 0 ? "default" : "pointer",
                   border: `1.5px solid ${mythic ? "#f59e0b88" : (mythicCount === 0 ? "#F1F5F9" : "#E5E7EB")}`,
                   background: mythic ? "#fffbeb" : (mythicCount === 0 ? "#F8FAFC" : "#f9fafb"),
@@ -177,7 +177,7 @@ export function PeakFiltersPanel({
                       onClick={() => setRange(active ? null : r)}
                       style={{
                         display: "inline-flex", alignItems: "center", gap: 5,
-                        padding: "8px 14px", borderRadius: 20, cursor: "pointer",
+                        padding: "8px 14px", borderRadius: "var(--radius-full)", cursor: "pointer",
                         border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
                         background: active ? "#eff6ff" : "#f9fafb",
                         color: active ? "#0369a1" : "#6b7280",
@@ -207,7 +207,7 @@ export function PeakFiltersPanel({
                     onClick={() => setSort(opt.id)}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 5,
-                      padding: "8px 14px", borderRadius: 20, cursor: "pointer",
+                      padding: "8px 14px", borderRadius: "var(--radius-full)", cursor: "pointer",
                       border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
                       background: active ? "#eff6ff" : "#f9fafb",
                       color: active ? "#0369a1" : "#6b7280",
@@ -230,7 +230,7 @@ export function PeakFiltersPanel({
             style={{
               width: "100%", padding: "16px",
               background: "#2F7A5F", color: "white", border: "none",
-              borderRadius: 14, fontFamily: "inherit",
+              borderRadius: "var(--radius-lg)", fontFamily: "inherit",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               boxShadow: "0 4px 14px rgba(47,122,95,0.32)",
               cursor: "pointer",

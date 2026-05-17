@@ -57,7 +57,7 @@ export default function ConsentGate() {
       <div style={{
         width: "100%", maxWidth: 440,
         background: "#fff",
-        borderRadius: 20,
+        borderRadius: "var(--radius-xl)",
         border: `1px solid ${C.border}`,
         boxShadow: "0 8px 40px rgba(13,37,56,0.18)",
         padding: "36px 32px 32px",
@@ -112,7 +112,7 @@ export default function ConsentGate() {
           <div style={{
             fontSize: 13, color: "#dc2626",
             background: "#fef2f2", border: "1px solid #fecaca",
-            borderRadius: 10, padding: "10px 14px", marginBottom: 16,
+            borderRadius: "var(--radius-md)", padding: "10px 14px", marginBottom: 16,
           }}>
             {error}
           </div>
@@ -127,7 +127,7 @@ export default function ConsentGate() {
             width: "100%", padding: "14px 16px",
             background: saving ? C.navyLight : C.green,
             color: "#fff",
-            border: "none", borderRadius: 14,
+            border: "none", borderRadius: "var(--radius-lg)",
             fontSize: 15, fontWeight: 800,
             cursor: saving ? "not-allowed" : "pointer",
             boxShadow: saving ? "none" : "0 4px 14px rgba(47,122,95,0.32)",

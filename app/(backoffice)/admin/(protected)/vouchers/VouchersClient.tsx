@@ -130,7 +130,7 @@ export function VouchersClient({ initialVouchers }: { initialVouchers: Voucher[]
                           <code style={{
                             fontFamily: "monospace", fontSize: 13, fontWeight: 700,
                             color: "var(--text-primary)", background: "var(--bg-secondary)",
-                            border: "1px solid var(--border)", borderRadius: 6,
+                            border: "1px solid var(--border)", borderRadius: "var(--radius-sm)",
                             padding: "3px 8px", letterSpacing: "0.05em",
                           }}>
                             {v.code}

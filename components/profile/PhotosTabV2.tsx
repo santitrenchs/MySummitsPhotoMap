@@ -96,7 +96,7 @@ function PhotoTile({ photo, isTagged, dateLocale }: { photo: PhotoForFilter; isT
 
   return (
     <Link href={`/ascents?highlight=${photo.ascentId}${isTagged ? "" : "&view=mine"}`} style={{ textDecoration: "none" }}>
-      <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden", background: imgError ? "#E8EFF6" : "#0D2538", borderRadius: 8 }}>
+      <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden", background: imgError ? "#E8EFF6" : "#0D2538", borderRadius: "var(--radius-md)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {!imgError && <img src={photo.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => setImgError(true)} />}
         {imgError && (
@@ -118,7 +118,7 @@ function PhotoTile({ photo, isTagged, dateLocale }: { photo: PhotoForFilter; isT
               </span>
             </div>
             {/* Desktop: full username pill */}
-            <div className="tag-full" style={{ position: "absolute", top: 5, right: 5, background: "rgba(13,37,56,0.78)", backdropFilter: "blur(4px)", borderRadius: 999, padding: "3px 8px", display: "none", alignItems: "center", justifyContent: "center" }}>
+            <div className="tag-full" style={{ position: "absolute", top: 5, right: 5, background: "rgba(13,37,56,0.78)", backdropFilter: "blur(4px)", borderRadius: "var(--radius-full)", padding: "3px 8px", display: "none", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 9, fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: 1 }}>
                 @{photo.creatorName}
               </span>

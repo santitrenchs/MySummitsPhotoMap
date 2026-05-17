@@ -122,7 +122,7 @@ export function TrophyCarousel({ peaks }: { peaks: PeakForFilter[] }) {
             style={{
               width: activeIdx === idx ? 22 : 6,
               height: 6,
-              borderRadius: 999,
+              borderRadius: "var(--radius-full)",
               background: activeIdx === idx ? "#0D2538" : "rgba(13,37,56,0.22)",
               border: "none",
               padding: 0,
@@ -145,7 +145,7 @@ function TrophyHeroCard({ trophy, index, total }: { trophy: Trophy; index: numbe
   return (
     <div style={{
       background: "white",
-      borderRadius: 18,
+      borderRadius: "var(--radius-lg)",
       padding: 14,
       border: "1px solid rgba(13,37,56,0.07)",
       boxShadow: "0 1px 3px rgba(13,37,56,0.06), 0 12px 32px rgba(13,37,56,0.10)",
@@ -155,7 +155,7 @@ function TrophyHeroCard({ trophy, index, total }: { trophy: Trophy; index: numbe
       {/* Left: photo */}
       <div style={{ position: "relative", flexShrink: 0, width: 84, height: 108 }}>
         <div style={{
-          width: 84, height: 108, borderRadius: 10,
+          width: 84, height: 108, borderRadius: "var(--radius-md)",
           background: "#0D2538",
           overflow: "hidden",
         }}>

@@ -82,7 +82,7 @@ export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
       {/* Rarity distribution bar */}
       {barSegments.length > 0 && (
         <div style={{
-          display: "flex", height: 8, borderRadius: 999,
+          display: "flex", height: 8, borderRadius: "var(--radius-full)",
           overflow: "hidden", marginBottom: 14, gap: 2,
         }}>
           {barSegments.map((seg) => (
@@ -91,7 +91,7 @@ export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
               style={{
                 flex: seg.pct,
                 background: seg.color,
-                borderRadius: 999,
+                borderRadius: "var(--radius-full)",
                 cursor: "pointer",
                 opacity: tier && tier !== seg.id ? 0.35 : 1,
                 transition: "opacity 0.15s",

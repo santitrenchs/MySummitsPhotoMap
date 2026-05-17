@@ -33,7 +33,7 @@ export function PeakRowCard({ peak, dateLocale }: Props) {
       <div style={{
         display: "flex",
         background: "white",
-        borderRadius: 16,
+        borderRadius: "var(--radius-lg)",
         border: "1px solid rgba(13,37,56,0.06)",
         boxShadow: "0 1px 3px rgba(13,37,56,0.06), 0 4px 12px rgba(13,37,56,0.05)",
         overflow: "hidden",
@@ -97,7 +97,7 @@ export function PeakRowCard({ peak, dateLocale }: Props) {
           {/* Rarity pill */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 4,
-            padding: "2px 7px", borderRadius: 999,
+            padding: "2px 7px", borderRadius: "var(--radius-full)",
             background: r.color + "22",
             alignSelf: "flex-start",
           }}>

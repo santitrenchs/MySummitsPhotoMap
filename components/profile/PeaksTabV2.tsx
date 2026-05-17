@@ -83,7 +83,7 @@ export function PeaksTabV2({ peaks }: Props) {
         <div style={{
           margin: "24px 0",
           background: "white",
-          borderRadius: 16,
+          borderRadius: "var(--radius-lg)",
           border: "1px solid #E5E7EB",
           padding: "32px 20px",
           textAlign: "center",

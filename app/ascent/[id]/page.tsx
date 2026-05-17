@@ -159,7 +159,7 @@ export default async function PublicAscentPage({
           width: "100%",
           maxWidth: 400,
           background: "#fff",
-          borderRadius: 20,
+          borderRadius: "var(--radius-xl)",
           overflow: "hidden",
           boxShadow: "0 8px 40px rgba(13,37,56,0.13), 0 1px 4px rgba(13,37,56,0.06)",
         }}
@@ -196,7 +196,7 @@ export default async function PublicAscentPage({
               padding: "7px 14px",
               background: "#2F7A5F",
               color: "#fff",
-              borderRadius: 20,
+              borderRadius: "var(--radius-full)",
               fontSize: 12,
               fontWeight: 700,
               textDecoration: "none",
@@ -210,7 +210,7 @@ export default async function PublicAscentPage({
 
         {/* Photo */}
         <div style={{ padding: "0 12px 12px" }}>
-        <div style={{ position: "relative", aspectRatio: "4/5", background: "#e2e8f0", overflow: "hidden", borderRadius: 16 }}>
+        <div style={{ position: "relative", aspectRatio: "4/5", background: "#e2e8f0", overflow: "hidden", borderRadius: "var(--radius-lg)" }}>
           {ascent.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -243,7 +243,7 @@ export default async function PublicAscentPage({
                 fontSize: 10,
                 fontWeight: 800,
                 padding: "3px 8px",
-                borderRadius: 20,
+                borderRadius: "var(--radius-full)",
                 letterSpacing: "0.08em",
               }}
             >
@@ -325,7 +325,7 @@ export default async function PublicAscentPage({
           }}
         >
           {/* Rarity */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: 12, padding: "8px 6px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: "var(--radius-md)", padding: "8px 6px" }}>
             <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
               {t.card_rarity}
             </div>
@@ -335,7 +335,7 @@ export default async function PublicAscentPage({
                 alignItems: "center",
                 gap: 4,
                 background: rarityColor + "20",
-                borderRadius: 20,
+                borderRadius: "var(--radius-full)",
                 padding: "3px 8px",
               }}
             >
@@ -345,7 +345,7 @@ export default async function PublicAscentPage({
           </div>
 
           {/* Altitude */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: 12, padding: "8px 6px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: "var(--radius-md)", padding: "8px 6px" }}>
             <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
               {t.card_altitude}
             </div>
@@ -355,7 +355,7 @@ export default async function PublicAscentPage({
           </div>
 
           {/* Reward */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: 12, padding: "8px 6px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: "var(--radius-md)", padding: "8px 6px" }}>
             <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
               {t.card_reward}
             </div>
@@ -365,7 +365,7 @@ export default async function PublicAscentPage({
                 alignItems: "center",
                 gap: 4,
                 background: "#fef3c7",
-                borderRadius: 20,
+                borderRadius: "var(--radius-full)",
                 padding: "3px 8px",
               }}
             >

@@ -43,7 +43,7 @@ function AdminLoginForm() {
       <div className="mb-8 text-center">
         <div
           style={{
-            width: 48, height: 48, borderRadius: 12,
+            width: 48, height: 48, borderRadius: "var(--radius-md)",
             background: "#1e293b", display: "inline-flex",
             alignItems: "center", justifyContent: "center",
             fontSize: 22, marginBottom: 12,
@@ -96,7 +96,7 @@ function AdminLoginForm() {
           style={{
             width: "100%", padding: "10px 16px",
             background: loading ? "#94a3b8" : "#1e293b",
-            color: "white", border: "none", borderRadius: 8,
+            color: "white", border: "none", borderRadius: "var(--radius-md)",
             fontSize: 14, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer",
             transition: "background 0.15s",
           }}
@@ -116,7 +116,7 @@ export default function AdminLoginPage() {
         justifyContent: "center", background: "#f1f5f9", padding: "0 16px",
       }}
     >
-      <Suspense fallback={<div style={{ width: 448, height: 320, background: "white", borderRadius: 16 }} />}>
+      <Suspense fallback={<div style={{ width: 448, height: 320, background: "white", borderRadius: "var(--radius-lg)" }} />}>
         <AdminLoginForm />
       </Suspense>
     </div>

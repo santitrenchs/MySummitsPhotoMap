@@ -110,7 +110,7 @@ export function PeakPicker({
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
           padding: "8px 12px",
-          border: "1px solid #bfdbfe", borderRadius: 8,
+          border: "1px solid #bfdbfe", borderRadius: "var(--radius-md)",
           background: "#eff6ff", cursor: "default",
         }}>
           <span style={{ fontSize: 14, flexShrink: 0 }}>📍</span>
@@ -174,7 +174,7 @@ export function PeakPicker({
             }}
             style={{
               width: "100%", padding: "8px 12px",
-              border: "1px solid #d1d5db", borderRadius: 8,
+              border: "1px solid #d1d5db", borderRadius: "var(--radius-md)",
               fontSize: 16, color: "#111827",
               outline: "none", boxSizing: "border-box" as const,
               background: "white",
@@ -184,7 +184,7 @@ export function PeakPicker({
             <div ref={listRef} style={{
               position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
               background: "white", border: "1px solid #d1d5db",
-              borderRadius: 8, maxHeight: 240, overflowY: "auto",
+              borderRadius: "var(--radius-md)", maxHeight: 240, overflowY: "auto",
               zIndex: 50, boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
             }}>
               {filtered.length === 0 ? (

@@ -199,7 +199,7 @@ export function NewAscentForm({
 
   const inputStyle = {
     width: "100%", padding: "8px 12px",
-    border: "1px solid #d1d5db", borderRadius: 8,
+    border: "1px solid #d1d5db", borderRadius: "var(--radius-md)",
     fontSize: 16, color: "#111827",
     outline: "none", boxSizing: "border-box" as const,
   };
@@ -254,7 +254,7 @@ export function NewAscentForm({
           >
             <div style={{
               border: `2px dashed ${dragging ? "#0369a1" : "#d1d5db"}`,
-              borderRadius: 10, padding: "28px 16px",
+              borderRadius: "var(--radius-md)", padding: "28px 16px",
               textAlign: "center", cursor: "pointer",
               background: dragging ? "#eff6ff" : "#f9fafb",
               transition: "all 0.15s",
@@ -345,7 +345,7 @@ export function NewAscentForm({
           onClick={() => inputRef.current?.click()}
           style={{
             border: `2px dashed ${dragging ? "#0369a1" : "#d1d5db"}`,
-            borderRadius: 10, padding: "20px 16px",
+            borderRadius: "var(--radius-md)", padding: "20px 16px",
             textAlign: "center", cursor: "pointer",
             background: dragging ? "#eff6ff" : "#f9fafb",
             transition: "all 0.15s",
@@ -376,14 +376,14 @@ export function NewAscentForm({
             {readyItems.map((item, i) => {
               const taggedCount = item.faces.filter((f) => f.userId).length;
               return (
-                <div key={i} style={{ position: "relative", aspectRatio: "4/5", borderRadius: 8, overflow: "hidden", background: "#f3f4f6" }}>
+                <div key={i} style={{ position: "relative", aspectRatio: "4/5", borderRadius: "var(--radius-md)", overflow: "hidden", background: "#f3f4f6" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   {taggedCount > 0 && (
                     <span style={{
                       position: "absolute", bottom: 4, left: 4,
                       background: "rgba(34,197,94,0.88)", backdropFilter: "blur(4px)",
-                      borderRadius: 10, padding: "2px 6px",
+                      borderRadius: "var(--radius-md)", padding: "2px 6px",
                       fontSize: 9, fontWeight: 700, color: "white",
                     }}>
                       {fmt(t.newAscent_tagged, { n: taggedCount })}
@@ -410,7 +410,7 @@ export function NewAscentForm({
       {error && (
         <p style={{
           fontSize: 13, color: "#dc2626", background: "#fef2f2",
-          border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", margin: 0,
+          border: "1px solid #fecaca", borderRadius: "var(--radius-md)", padding: "8px 12px", margin: 0,
         }}>
           {error}
         </p>
@@ -423,7 +423,7 @@ export function NewAscentForm({
           style={{
             padding: "9px 18px", border: "1px solid #e5e7eb",
             background: "white", color: "#374151",
-            borderRadius: 8, fontSize: 13, fontWeight: 600,
+            borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600,
             cursor: "pointer", opacity: loading ? 0.5 : 1,
           }}
         >
@@ -433,7 +433,7 @@ export function NewAscentForm({
           type="submit" disabled={loading}
           style={{
             padding: "9px 18px", background: "#0369a1", color: "white",
-            border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
+            border: "none", borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600,
             cursor: loading ? "default" : "pointer",
             opacity: loading ? 0.75 : 1,
             display: "flex", alignItems: "center", gap: 7,
