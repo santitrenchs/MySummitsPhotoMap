@@ -17,6 +17,28 @@ import { getRarityId, RARITY_COLORS, RARITY_LABELS } from "@/lib/rarity";
 
 export const runtime = "nodejs";
 
+// ── In-memory image cache ──────────────────────────────────────────────────
+// Railway runs a persistent Node.js process, so module-level state survives
+// between requests. Caching the JPEG output means WhatsApp's second scrape
+// (after the share button pre-warms it) returns in <50ms.
+const OG_CACHE = new Map<string, { buf: Buffer; ts: number }>();
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
+function getCached(id: string): Buffer | null {
+  const entry = OG_CACHE.get(id);
+  if (entry && Date.now() - entry.ts < CACHE_TTL_MS) return entry.buf;
+  OG_CACHE.delete(id);
+  return null;
+}
+function setCached(id: string, buf: Buffer) {
+  // Evict oldest entries if cache grows too large (keep max 200 images ~30MB)
+  if (OG_CACHE.size >= 200) {
+    const oldest = [...OG_CACHE.entries()].sort((a, b) => a[1].ts - b[1].ts)[0];
+    if (oldest) OG_CACHE.delete(oldest[0]);
+  }
+  OG_CACHE.set(id, { buf, ts: Date.now() });
+}
+
 // ── Load Geist-Regular once at module init ─────────────────────────────────
 // Path 1: /app/config/ (Railway — copied by nixpacks build phase)
 // Path 2: node_modules (local dev)
@@ -41,10 +63,10 @@ const otFont = (() => {
 const W = 1200;
 const H = 630;
 
-function pngResponse(buf: Buffer, maxAge = 86400) {
+function jpegResponse(buf: Buffer, maxAge = 86400) {
   return new Response(new Uint8Array(buf), {
     headers: {
-      "Content-Type": "image/png",
+      "Content-Type": "image/jpeg",
       "Cache-Control": `public, max-age=${maxAge}, stale-while-revalidate=3600`,
     },
   });
@@ -136,13 +158,13 @@ function baselineForCenter(boxCenterY: number, fontSize: number): number {
   return boxCenterY + fontSize * 0.35;
 }
 
-/** Minimal guaranteed-to-work PNG (navy solid color, no SVG) */
+/** Minimal navy JPEG fallback — no SVG, no fonts needed */
 async function navyFallback(): Promise<Buffer> {
   const buf = Buffer.alloc(W * H * 3);
   for (let i = 0; i < W * H; i++) {
     buf[i * 3] = 13; buf[i * 3 + 1] = 37; buf[i * 3 + 2] = 56; // #0D2538
   }
-  return sharp(buf, { raw: { width: W, height: H, channels: 3 } }).png().toBuffer();
+  return sharp(buf, { raw: { width: W, height: H, channels: 3 } }).jpeg({ quality: 80 }).toBuffer();
 }
 
 // ── Route handler ──────────────────────────────────────────────────────────
@@ -153,12 +175,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
+    // ── Serve from cache if available (instant response) ──────────────────
+    const cached = getCached(id);
+    if (cached) return jpegResponse(cached);
+
     const ascent = await getPublicAscent(id);
 
     // ── No ascent / no photo → brand fallback ──────────────────────────────
     if (!ascent?.photoUrl) {
-      const png = await navyFallback();
-      return pngResponse(png);
+      const jpg = await navyFallback();
+      return jpegResponse(jpg);
     }
 
     // ── Fetch and resize photo ─────────────────────────────────────────────
@@ -171,14 +198,14 @@ export async function GET(
       if (!res.ok) throw new Error("fetch failed");
       photoBuffer = Buffer.from(await res.arrayBuffer());
     } catch {
-      const png = await navyFallback();
-      return pngResponse(png, 60);
+      const jpg = await navyFallback();
+      return jpegResponse(jpg, 60);
     }
 
+    // Resize to target dimensions as a raw buffer for compositing
     const photo = await sharp(photoBuffer)
       .resize(W, H, { fit: "cover", position: "centre" })
-      .png()
-      .toBuffer();
+      .toBuffer({ resolveWithObject: false });
 
     // ── Build SVG overlay ──────────────────────────────────────────────────
     const rarity = getRarityId(ascent.peak.altitudeM);
@@ -272,17 +299,20 @@ export async function GET(
   ${watermarkPath}
 </svg>`;
 
-    const png = await sharp(photo)
+    const jpg = await sharp(photo)
       .composite([{ input: Buffer.from(overlay), blend: "over" }])
-      .png()
+      .jpeg({ quality: 88, mozjpeg: true })
       .toBuffer();
 
-    return pngResponse(png);
+    // Cache for subsequent requests (WhatsApp may scrape multiple times)
+    setCached(id, jpg);
+
+    return jpegResponse(jpg);
   } catch (err) {
     console.error("[og-image] unhandled error:", err);
     try {
-      const png = await navyFallback();
-      return pngResponse(png, 60);
+      const jpg = await navyFallback();
+      return jpegResponse(jpg, 60);
     } catch {
       return new Response("error", { status: 500 });
     }

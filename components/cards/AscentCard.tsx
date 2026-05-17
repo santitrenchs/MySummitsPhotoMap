@@ -15,14 +15,16 @@ function getShareUrl(ascentId: string) {
 }
 
 async function activatePublicShare(ascentId: string): Promise<void> {
-  // Awaitable — callers on mobile must await this before opening the native
-  // share sheet so WhatsApp/Telegram don't scrape the OG image before
-  // isPublic=true is committed (race condition fix).
+  // 1. Set isPublic=true — must complete before sharing so OG endpoint works
   await fetch(`/api/ascents/${ascentId}/share`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ isPublic: true }),
-  }).catch(() => {/* ignore errors — share still proceeds */});
+  }).catch(() => {});
+
+  // 2. Pre-warm the OG image cache — the server renders and caches the image
+  //    so WhatsApp's scrape gets an instant response instead of timing out.
+  await fetch(`/api/og/${ascentId}`).catch(() => {});
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
