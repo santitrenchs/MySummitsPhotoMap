@@ -419,44 +419,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Card preview thumbnail */}
-            <div style={{ position: "relative", width: "100%", aspectRatio: "4/3", overflow: "hidden" }}>
-              {ascent.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={ascent.photoUrl}
-                  alt={ascent.peak.name}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                />
-              ) : (
-                <div style={{ width: "100%", height: "100%", background: "linear-gradient(180deg, #1e3a52 0%, #0D2538 100%)" }} />
-              )}
-              {/* Gradient overlay */}
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,37,56,0.90) 0%, rgba(13,37,56,0.10) 55%)" }} />
-              {/* Peak info overlay */}
-              <div style={{ position: "absolute", bottom: 10, left: 12, right: 12 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.2px", lineHeight: 1.2 }}>
-                  {ascent.peak.name}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
-                  {/* Rarity badge */}
-                  <div style={{
-                    display: "inline-flex", alignItems: "center", gap: 3,
-                    background: RARITY_COLOR[rarity] + "30",
-                    border: `1px solid ${RARITY_COLOR[rarity]}60`,
-                    borderRadius: 20, padding: "2px 7px",
-                  }}>
-                    <span style={{ color: RARITY_COLOR[rarity], fontSize: 9 }}>✿</span>
-                    <span style={{ color: RARITY_COLOR[rarity], fontSize: 10, fontWeight: 700 }}>{RARITY_LABEL[rarity]}</span>
-                  </div>
-                  <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>·</span>
-                  <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 10, fontWeight: 600 }}>
-                    {ascent.peak.altitudeM.toLocaleString(locale)} m
-                  </span>
-                </div>
-              </div>
-            </div>
-
             {/* Actions area */}
             <div style={{ padding: "14px 14px 16px" }}>
               {/* Title */}
