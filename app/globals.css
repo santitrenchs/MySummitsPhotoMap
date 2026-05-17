@@ -190,7 +190,7 @@
 .peak-card {
   background: #fff;
   border-radius: 28px;
-  padding: 10px;
+  padding: 7px;
   border: 1px solid rgba(13, 37, 56, 0.07);
   box-shadow:
     0 1px 3px rgba(13, 37, 56, 0.10),
@@ -229,7 +229,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px 12px;
+  padding: 3px 8px 6px;
 }
 
 .pc-avatar {
@@ -314,7 +314,7 @@
 /* ── Image ────────────────────────────────────────────────────────────── */
 .image-frame {
   position: relative;
-  margin: 10px;
+  margin: 6px;
   border-radius: 18px;
   overflow: hidden;
   aspect-ratio: 4 / 5;
@@ -401,9 +401,9 @@
 
 /* ── Stat band ────────────────────────────────────────────────────────── */
 .stat-band {
-  margin: 0 10px 10px;
+  margin: 0 7px 5px;
   border-radius: 16px;
-  padding: 10px;
+  padding: 7px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
@@ -411,7 +411,7 @@
 
 .stat-item {
   border-radius: 12px;
-  padding: 9px 8px;
+  padding: 6px 8px;
   background: #F8FAFC;
   min-width: 0;
 }
@@ -492,7 +492,7 @@
 .capture-note {
   flex: 1;
   border-top: 1px solid rgba(13, 37, 56, 0.08);
-  padding: 12px 14px;
+  padding: 8px 14px;
 }
 
 .note-byline {
@@ -626,7 +626,7 @@
   font-size: 9px; font-weight: 700;
   text-transform: uppercase; letter-spacing: .07em;
   color: #94a3b8; display: flex; align-items: center; gap: 5px;
-  padding: 10px 20px 0;
+  padding: 6px 14px 0;
 }
 
 .back-stats-eyebrow::before {
