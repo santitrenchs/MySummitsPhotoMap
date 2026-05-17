@@ -1,0 +1,15 @@
+# Railway Nixpacks configuration
+# Adds system fonts so sharp/librsvg can render SVG text overlays in OG images.
+# Without these, all text renders as empty boxes (□□□) on the minimal Node image.
+
+[phases.setup]
+nixPkgs = [
+  "dejavu_fonts",     # DejaVu Sans — covers full Latin, maps to "sans-serif"
+  "fontconfig",       # Font configuration / fc-cache
+]
+
+[phases.build]
+cmds = [
+  "fc-cache -fv",     # Register fonts with fontconfig before Next.js build
+  "npm run build",
+]
