@@ -19,8 +19,6 @@ Esta política cumple con:
 
 ## 1. Responsable del tratamiento
 
-- **Identidad:** Santi Trenchs Sainz de la Maza
-- **Domicilio:** Calle Ernest Rufastes 9, 2º1ª, 25720 Bellver de Cerdanya (Lleida)
 - **Nombre comercial:** Peakadex
 - **Correo electrónico:** contact@peakadex.com
 - **Delegado de Protección de Datos (DPO):** No designado — no concurren los supuestos del art. 37 RGPD
@@ -306,8 +304,6 @@ Mantendremos un archivo de versiones anteriores accesible.
 Para cualquier consulta sobre privacidad:
 
 **Peakadex**
-Santi Trenchs Sainz de la Maza
-Calle Ernest Rufastes 9, 2º1ª, 25720 Bellver de Cerdanya (Lleida)
 Email: contact@peakadex.com
 
 **Autoridad de control:**

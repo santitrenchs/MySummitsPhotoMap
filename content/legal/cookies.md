@@ -168,8 +168,6 @@ Actualizaremos esta política cuando se introduzcan nuevas cookies o cambien sus
 Para cualquier consulta sobre el uso de cookies:
 
 **Peakadex**
-Santi Trenchs Sainz de la Maza
-Calle Ernest Rufastes 9, 2º1ª, 25720 Bellver de Cerdanya (Lleida)
 Email: contact@peakadex.com
 
 Para reclamaciones, puedes contactar con la **Agencia Española de Protección de Datos** (www.aepd.es).

@@ -9,11 +9,8 @@
 
 En cumplimiento del artículo 10 de la Ley 34/2002 de Servicios de la Sociedad de la Información y Comercio Electrónico (LSSI-CE):
 
-- **Titular:** Santi Trenchs Sainz de la Maza
-- **Domicilio:** Calle Ernest Rufastes 9, 2º1ª, 25720 Bellver de Cerdanya (Lleida)
-- **Datos registrales:** No aplica (persona física)
-- **Correo de contacto:** contact@peakadex.com
 - **Nombre comercial:** Peakadex
+- **Correo de contacto:** contact@peakadex.com
 
 ---
 
@@ -272,7 +269,7 @@ Peakadex no será responsable de incumplimientos derivados de causas de fuerza m
 
 ### 8.1 Derechos de Peakadex
 
-Peakadex, su diseño, marca, logotipo, sistema de cartas, rarezas, rankings, sistemas de gamificación, elementos gráficos, código fuente, bases de datos y funcionalidades son propiedad exclusiva de Santi Trenchs Sainz de la Maza o de sus licenciantes, y están protegidos por la legislación de propiedad intelectual e industrial.
+Peakadex, su diseño, marca, logotipo, sistema de cartas, rarezas, rankings, sistemas de gamificación, elementos gráficos, código fuente, bases de datos y funcionalidades son propiedad exclusiva de Peakadex o de sus licenciantes, y están protegidos por la legislación de propiedad intelectual e industrial.
 
 ### 8.2 Usos prohibidos
 
@@ -423,8 +420,6 @@ Estos Términos, junto con la Política de Privacidad y la Política de Cookies,
 Para cualquier consulta:
 
 **Peakadex**
-Santi Trenchs Sainz de la Maza
-Calle Ernest Rufastes 9, 2º1ª, 25720 Bellver de Cerdanya (Lleida)
 Email: contact@peakadex.com
 
 ---
