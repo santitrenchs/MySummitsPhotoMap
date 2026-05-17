@@ -175,11 +175,11 @@ export async function GET(
     // ── Logo watermark ─────────────────────────────────────────────────────
     // Layout (left→right): "peak"  [circle+mountain icon]  "adex"
     // Bottom-left, opacity 0.65 so it reads clearly without dominating the photo
-    const logoOpacity = 0.65;
-    const logoFontSize = 26;
-    const iconR = 15; // icon circle radius
-    const logoY = H - 48; // text baseline (leaves ~48px from bottom edge)
-    const logoX = 36;     // left margin
+    const logoOpacity = 0.80;
+    const logoFontSize = 46;
+    const iconR = 24; // icon circle radius
+    const logoY = H - 64; // text baseline (leaves ~64px from bottom edge)
+    const logoX = 40;     // left margin
 
     const capH = otFont
       ? (otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * logoFontSize
@@ -210,7 +210,7 @@ export async function GET(
     </radialGradient>
     <!-- Small dark shadow behind the logo so it reads on any photo -->
     <filter id="shadow">
-      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#000000" flood-opacity="0.5"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="0.7"/>
     </filter>
   </defs>
   <rect width="${W}" height="${H}" fill="url(#vg)"/>
@@ -219,9 +219,9 @@ export async function GET(
   <g filter="url(#shadow)">
     ${peakPath}
     <circle cx="${iconCX}" cy="${iconCY}" r="${iconR}"
-      fill="none" stroke="#ffffff" stroke-width="1.6" opacity="${logoOpacity}"/>
+      fill="none" stroke="#ffffff" stroke-width="2.4" opacity="${logoOpacity}"/>
     <polyline points="${mtn(iconCX, iconCY, iconR)}"
-      fill="none" stroke="#ffffff" stroke-width="1.6"
+      fill="none" stroke="#ffffff" stroke-width="2.4"
       stroke-linejoin="round" stroke-linecap="round" opacity="${logoOpacity}"/>
     ${adexPath}
   </g>
