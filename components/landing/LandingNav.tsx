@@ -114,7 +114,7 @@ export default function LandingNav() {
         </Link>
 
         {/* Desktop nav links */}
-        <nav style={{ display: "flex", gap: 4, alignItems: "center" }} className="ld-nav-links">
+        <nav style={{ display: "flex", gap: 5, alignItems: "center" }} className="ld-nav-links">
           {navLinks.map((link) => (
             <button
               key={link.href}

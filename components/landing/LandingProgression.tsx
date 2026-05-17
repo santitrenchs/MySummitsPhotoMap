@@ -517,7 +517,7 @@ export default function LandingProgression() {
             </p>
             <h2 className="ld-display ld-section-title" style={{ margin: "0 0 12px" }}>
               {t.prog_headline_gold}<br />
-              <span style={{ color: "#B8860B" }}>{t.prog_sub}</span>
+              <span style={{ color: "var(--ld-gold)" }}>{t.prog_sub}</span>
             </h2>
             <p style={{ fontSize: 14, color: "rgba(13,37,56,0.42)", letterSpacing: "0.01em", margin: 0 }}>
               {t.prog_small}
