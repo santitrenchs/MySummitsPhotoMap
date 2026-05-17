@@ -172,31 +172,31 @@ export async function GET(
       .resize(W, H, { fit: "cover", position: "centre" })
       .toBuffer({ resolveWithObject: false });
 
-    // ── Logo watermark paths ───────────────────────────────────────────────
-    // Layout: [icon circle+mountain] [peak] [adex]
-    // Positioned bottom-left, opacity 0.45
-    const logoFontSize = 22;
-    const iconR = 13; // icon circle radius
-    const logoY = H - 36; // baseline y for text
-    const iconCX = 36 + iconR;
-    const iconCY = logoY - (otFont
-      ? (otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * logoFontSize / 2
-      : logoFontSize * 0.36);
+    // ── Logo watermark ─────────────────────────────────────────────────────
+    // Layout (left→right): "peak"  [circle+mountain icon]  "adex"
+    // Bottom-left, opacity 0.65 so it reads clearly without dominating the photo
+    const logoOpacity = 0.65;
+    const logoFontSize = 26;
+    const iconR = 15; // icon circle radius
+    const logoY = H - 48; // text baseline (leaves ~48px from bottom edge)
+    const logoX = 36;     // left margin
+
+    const capH = otFont
+      ? (otFont.tables.os2.sCapHeight / otFont.unitsPerEm) * logoFontSize
+      : logoFontSize * 0.72;
+    const iconCY = logoY - capH / 2; // vertically center icon on text cap-height
 
     const peakAdvW = otFont ? otFont.getAdvanceWidth("peak", logoFontSize) : logoFontSize * 2.2;
-    const adexAdvW = otFont ? otFont.getAdvanceWidth("adex", logoFontSize) : logoFontSize * 2.2;
-    const textGap = 10;
+    const textGap = 11;
 
-    const peakTextX = iconCX + iconR + textGap;
-    const adexTextX = peakTextX + peakAdvW + textGap * 2 + iconR * 2 + textGap;
+    const peakTextX = logoX;
+    const iconCX    = peakTextX + peakAdvW + textGap + iconR;
+    const adexTextX = iconCX + iconR + textGap;
 
-    const peakPath  = textPath("peak", peakTextX, logoY, logoFontSize, "#ffffff", { opacity: 0.45 });
-    const adexPath  = textPath("adex", adexTextX, logoY, logoFontSize, "#ffffff", { opacity: 0.45 });
+    const peakPath = textPath("peak", peakTextX, logoY, logoFontSize, "#ffffff", { opacity: logoOpacity });
+    const adexPath = textPath("adex", adexTextX, logoY, logoFontSize, "#ffffff", { opacity: logoOpacity });
 
-    // Second icon circle between "peak" and "adex"
-    const icon2CX = peakTextX + peakAdvW + textGap + iconR;
-
-    // Mountain path points inside circle (normalized, then scaled)
+    // Mountain silhouette inside the circle
     const mtn = (cx: number, cy: number, r: number) =>
       `${cx - r*0.55},${cy + r*0.42} ${cx - r*0.08},${cy - r*0.38} ` +
       `${cx + r*0.18},${cy - r*0.02} ${cx + r*0.48},${cy - r*0.48} ${cx + r*0.72},${cy + r*0.42}`;
@@ -208,20 +208,23 @@ export async function GET(
       <stop offset="0%"   stop-color="#000000" stop-opacity="0"/>
       <stop offset="100%" stop-color="#000000" stop-opacity="0.35"/>
     </radialGradient>
+    <!-- Small dark shadow behind the logo so it reads on any photo -->
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
   </defs>
   <rect width="${W}" height="${H}" fill="url(#vg)"/>
 
   <!-- Peakadex logo watermark — bottom left -->
-  <!-- "peak" text -->
-  ${peakPath}
-  <!-- icon circle + mountain (between peak and adex) -->
-  <circle cx="${icon2CX}" cy="${iconCY}" r="${iconR}"
-    fill="none" stroke="#ffffff" stroke-width="1.4" opacity="0.45"/>
-  <polyline points="${mtn(icon2CX, iconCY, iconR)}"
-    fill="none" stroke="#ffffff" stroke-width="1.4"
-    stroke-linejoin="round" stroke-linecap="round" opacity="0.45"/>
-  <!-- "adex" text -->
-  ${adexPath}
+  <g filter="url(#shadow)">
+    ${peakPath}
+    <circle cx="${iconCX}" cy="${iconCY}" r="${iconR}"
+      fill="none" stroke="#ffffff" stroke-width="1.6" opacity="${logoOpacity}"/>
+    <polyline points="${mtn(iconCX, iconCY, iconR)}"
+      fill="none" stroke="#ffffff" stroke-width="1.6"
+      stroke-linejoin="round" stroke-linecap="round" opacity="${logoOpacity}"/>
+    ${adexPath}
+  </g>
 </svg>`;
 
     const jpg = await sharp(photo)
