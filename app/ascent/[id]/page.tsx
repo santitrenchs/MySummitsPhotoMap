@@ -34,6 +34,11 @@ export async function generateMetadata({
     ?? ascent.route
     ?? `${ascent.peak.mountainRange ?? "Mountain"} summit ascent`;
 
+  // Use the ascent photo directly as the OG image — no server-side generation needed.
+  // Photos are stored as 4:5 crops on R2 (CDN public URL), accessible to all crawlers.
+  // Fallback to the Peakadex logo if the ascent has no photo.
+  const ogImage = ascent.photoUrl ?? `${baseUrl}/brand/logo2.png`;
+
   return {
     title,
     description,
@@ -44,9 +49,7 @@ export async function generateMetadata({
       siteName: "Peakadex",
       images: [
         {
-          url: `${baseUrl}/ascent/${id}/opengraph-image`,
-          width: 1200,
-          height: 630,
+          url: ogImage,
           alt: title,
         },
       ],
@@ -56,7 +59,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: [`${baseUrl}/ascent/${id}/opengraph-image`],
+      images: [ogImage],
     },
   };
 }
