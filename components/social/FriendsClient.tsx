@@ -18,13 +18,6 @@ type SearchResult = UserStub & {
   friendshipId?: string;
 };
 
-type InvitationEntry = {
-  id: string;
-  inviteeEmail: string;
-  usedCount: number;
-  expiresAt: string;
-  createdAt: string;
-};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -257,92 +250,13 @@ export function FriendsClient({
     setBlocked((prev) => prev.filter((b) => b.id !== entry.id));
   }
 
-  // ── Invite ───────────────────────────────────────────────────────────────────
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteStatus, setInviteStatus] = useState<
-    null | "sending" | "invited" | "already_invited" | "already_registered" | "error"
-  >(null);
-  const [invitations, setInvitations] = useState<InvitationEntry[]>([]);
-
-  useEffect(() => {
-    fetch("/api/invitations")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setInvitations(data); })
-      .catch(() => {});
-  }, []);
-
-  async function sendInvite() {
-    const email = inviteEmail.trim().toLowerCase();
-    if (!email) return;
-    if (!email.includes("@") || !email.includes(".")) { setInviteStatus("error"); return; }
-    setInviteStatus("sending");
-    try {
-      const res = await fetch("/api/invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setInviteStatus("error"); return; }
-      if (data.status === "already_registered") { setInviteStatus("already_registered"); return; }
-      if (data.status === "already_invited") { setInviteStatus("already_invited"); return; }
-      setInviteStatus("invited");
-      setInviteEmail("");
-      setInvitations((prev) => [
-        { id: data.id ?? String(Date.now()), inviteeEmail: email, usedCount: 0, expiresAt: data.expiresAt, createdAt: new Date().toISOString() },
-        ...prev,
-      ]);
-    } catch {
-      setInviteStatus("error");
-    }
-  }
-
-  function inviteStatusMsg(): { text: string; color: string } | null {
-    if (!inviteStatus || inviteStatus === "sending") return null;
-    if (inviteStatus === "invited")              return { text: t.friends_inviteSent,              color: "#16a34a" };
-    if (inviteStatus === "already_invited")      return { text: t.friends_inviteAlreadyInvited,    color: "#ea580c" };
-    if (inviteStatus === "already_registered")   return { text: t.friends_inviteAlreadyRegistered, color: "#0369a1" };
-    return { text: t.friends_inviteError, color: "#ef4444" };
-  }
-
-  function getInviteEntryStatus(inv: InvitationEntry): { label: string; color: string } {
-    if (inv.usedCount > 0)                        return { label: t.friends_inviteStatusUsed,    color: "#16a34a" };
-    if (new Date(inv.expiresAt) < new Date())     return { label: t.friends_inviteStatusExpired, color: "#9ca3af" };
-    return { label: t.friends_inviteStatusPending, color: "#ea580c" };
-  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div>
-      {/* ── Add friends (invite + search grouped) ── */}
+      {/* ── Add friends (search) ── */}
       <div style={{ marginBottom: 28, paddingBottom: 24, borderBottom: "1px solid #f3f4f6" }}>
         <SectionHeader label={t.friends_addSection} />
-
-        {/* Invite by email */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <input
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => { setInviteEmail(e.target.value); setInviteStatus(null); }}
-            onKeyDown={(e) => { if (e.key === "Enter") sendInvite(); }}
-            placeholder={t.friends_invitePlaceholder}
-            style={{
-              flex: 1, padding: "9px 12px",
-              border: "1px solid #e5e7eb", borderRadius: 8,
-              fontSize: 16, outline: "none", background: "#f9fafb",
-            }}
-            onFocus={(e) => (e.target.style.borderColor = "#DC2626")}
-            onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-          />
-          <Btn onClick={sendInvite} disabled={inviteStatus === "sending" || !inviteEmail.trim()}>
-            {inviteStatus === "sending" ? t.friends_inviteSending : t.friends_inviteBtn}
-          </Btn>
-        </div>
-        {inviteStatusMsg() && (
-          <p style={{ fontSize: 12, color: inviteStatusMsg()!.color, margin: "0 0 8px" }}>
-            {inviteStatusMsg()!.text}
-          </p>
-        )}
       </div>
 
       {/* ── Incoming requests ── */}

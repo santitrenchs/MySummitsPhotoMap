@@ -106,13 +106,6 @@ export type Dict = {
   friends_taggedSection: string;
   friends_block: string; friends_blocked: string; friends_unblock: string;
   friends_blockedSection: string; friends_friendsSection: string; friends_addSection: string;
-  friends_inviteSection: string; friends_invitePlaceholder: string;
-  friends_inviteBtn: string; friends_inviteSending: string;
-  friends_inviteSent: string; friends_inviteAlreadyInvited: string;
-  friends_inviteAlreadyRegistered: string; friends_inviteError: string;
-  friends_inviteListSection: string;
-  friends_inviteStatusPending: string; friends_inviteStatusUsed: string; friends_inviteStatusExpired: string;
-
 
   // Settings
   settings_title: string; settings_subtitle: string; settings_language: string;
@@ -154,11 +147,6 @@ export type Dict = {
   auth_resetPassword: string; auth_resetPasswordDesc: string;
   auth_passwordsNoMatch: string; auth_resettingPassword: string;
   auth_resetSuccess: string; auth_invalidResetToken: string; auth_backToLogin: string;
-  // Voucher gate (register flow)
-  auth_voucher_title: string; auth_voucher_subtitle: string;
-  auth_voucher_placeholder: string; auth_voucher_btn: string; auth_voucher_verifying: string;
-  auth_voucher_invalid: string; auth_voucher_verified: string;
-  auth_voucher_noCode: string; auth_voucher_tokenExpired: string;
   auth_nameHint: string; auth_emailExists: string; auth_createAccountSubmit: string;
   auth_username: string; auth_usernameHint: string; auth_usernameTaken: string; auth_usernameInvalid: string;
   auth_haveCode: string;

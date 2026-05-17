@@ -91,14 +91,6 @@ export const en: Dict = {
   friends_noResults: "No users found", friends_since: "Friends since",
   friends_block: "Block", friends_blocked: "Blocked", friends_unblock: "Unblock",
   friends_blockedSection: "Blocked users", friends_friendsSection: "Friends", friends_addSection: "Add friends",
-  friends_inviteSection: "Invite a friend", friends_invitePlaceholder: "email@example.com",
-  friends_inviteBtn: "Send invitation", friends_inviteSending: "Sending…",
-  friends_inviteSent: "Invitation sent! Expires in 7 days.",
-  friends_inviteAlreadyInvited: "Already has an active invitation pending",
-  friends_inviteAlreadyRegistered: "This email already has an Peakadex account",
-  friends_inviteError: "Error sending. Please try again.",
-  friends_inviteListSection: "Sent invitations",
-  friends_inviteStatusPending: "Pending", friends_inviteStatusUsed: "Registered", friends_inviteStatusExpired: "Expired",
 
 
 
@@ -232,15 +224,6 @@ export const en: Dict = {
   home_altZone3: "High mountain", home_altZone4: "Technical alpine",
   home_altZone5: "Expedition", home_altZone6: "Extreme expedition",
 
-  auth_voucher_title: "Peakadex is invite-only",
-  auth_voucher_subtitle: "Enter your access code to continue.",
-  auth_voucher_placeholder: "AZIT-XXXX-XXXX",
-  auth_voucher_btn: "Verify code",
-  auth_voucher_verifying: "Verifying…",
-  auth_voucher_invalid: "Invalid or already used code. Double-check what you typed.",
-  auth_voucher_verified: "✓ Access code verified",
-  auth_voucher_noCode: "No code? Ask whoever invited you.",
-  auth_voucher_tokenExpired: "Session expired. Please enter the code again.",
   auth_nameHint: "This is how your friends will see you in the app",
   auth_username: "Username", auth_usernameHint: "Lowercase letters, numbers and _ only (min. 3 characters)",
   auth_usernameTaken: "This username is already taken.", auth_usernameInvalid: "Lowercase letters, numbers and _ only (minimum 3 characters).",

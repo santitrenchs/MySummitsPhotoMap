@@ -7,21 +7,10 @@ import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakadexLogo } from "@/components/brand/Logo";
 
-type Step = "voucher" | "form";
-
 export default function RegisterPage() {
   const router = useRouter();
   const t = useT();
 
-  const [step, setStep] = useState<Step>("voucher");
-  const [registrationToken, setRegistrationToken] = useState<string>("");
-
-  // Voucher step state
-  const [code, setCode] = useState("");
-  const [verifying, setVerifying] = useState(false);
-  const [voucherError, setVoucherError] = useState<string | null>(null);
-
-  // Form step state
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [usernameEdited, setUsernameEdited] = useState(false);
@@ -34,7 +23,7 @@ export default function RegisterPage() {
   useEffect(() => {
     if (usernameEdited) return;
     const suggested = name.toLowerCase().trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
       .replace(/[^a-z0-9_]/g, "_")
       .replace(/_+/g, "_")
       .replace(/^_|_$/g, "")
@@ -42,36 +31,6 @@ export default function RegisterPage() {
     setUsername(suggested);
   }, [name, usernameEdited]);
 
-  // ── Step A: verify voucher ────────────────────────────────────────────────
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
-    setVoucherError(null);
-    setVerifying(true);
-
-    try {
-      const res = await fetch("/api/auth/validate-voucher", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim().toUpperCase() }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setVoucherError(data.error ?? t.auth_voucher_invalid);
-        return;
-      }
-
-      setRegistrationToken(data.registrationToken);
-      setStep("form");
-    } catch {
-      setVoucherError(t.auth_voucher_invalid);
-    } finally {
-      setVerifying(false);
-    }
-  }
-
-  // ── Step B: register + auto-login ─────────────────────────────────────────
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -81,19 +40,12 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, username, email, password, registrationToken }),
+        body: JSON.stringify({ name, username, email, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        // Token expired → send back to voucher step
-        if (res.status === 401) {
-          setRegistrationToken("");
-          setStep("voucher");
-          setVoucherError(t.auth_voucher_tokenExpired);
-          return;
-        }
         setFormError(
           res.status === 409 && data.error === "Username already taken"
             ? t.auth_usernameTaken
@@ -107,7 +59,6 @@ export default function RegisterPage() {
       // Auto-login after successful registration
       const result = await signIn("credentials", { email, password, redirect: false });
       if (result?.error) {
-        // Registration succeeded but auto-login failed — send to login
         router.push("/login?registered=1");
         return;
       }
@@ -121,7 +72,6 @@ export default function RegisterPage() {
     }
   }
 
-  // ── Shared card wrapper ───────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
@@ -133,172 +83,106 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {step === "voucher" ? (
-          // ── Voucher gate ────────────────────────────────────────────────
-          <>
-            <div className="mb-6 text-center">
-              <p className="text-base font-semibold text-gray-900">{t.auth_voucher_title}</p>
-              <p className="mt-1 text-sm text-gray-500">{t.auth_voucher_subtitle}</p>
+        <form onSubmit={handleRegister} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              {t.auth_yourName}
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              autoFocus
+              autoComplete="name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">{t.auth_nameHint}</p>
+          </div>
+
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+              {t.auth_username}
+            </label>
+            <div style={{ position: "relative" }}>
+              <span style={{
+                position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
+                fontSize: 14, color: "#6b7280", pointerEvents: "none",
+              }}>@</span>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => {
+                  setUsernameEdited(true);
+                  setFormError(null);
+                  setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+                }}
+                required
+                autoComplete="username"
+                minLength={3}
+                maxLength={30}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                style={{ paddingLeft: 28 }}
+              />
             </div>
+            <p className="mt-1 text-xs text-gray-400">{t.auth_usernameHint}</p>
+          </div>
 
-            <form onSubmit={handleVerify} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => {
-                    setVoucherError(null);
-                    setCode(e.target.value.toUpperCase());
-                  }}
-                  placeholder={t.auth_voucher_placeholder}
-                  required
-                  autoFocus
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-primary-500 uppercase"
-                  style={{ borderColor: voucherError ? "#ef4444" : undefined }}
-                />
-                {voucherError && (
-                  <p className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                    {voucherError}
-                  </p>
-                )}
-              </div>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              {t.settings_email}
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => { setFormError(null); setEmail(e.target.value); }}
+              required
+              autoComplete="email"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
 
-              <button
-                type="submit"
-                disabled={verifying || !code.trim()}
-                className="w-full py-2 px-4 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {verifying ? t.auth_voucher_verifying : t.auth_voucher_btn}
-              </button>
-            </form>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              {t.auth_password}
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              autoComplete="new-password"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">{t.auth_minPassword}</p>
+          </div>
 
-            <p className="mt-6 text-center text-sm text-gray-400">
-              {t.auth_voucher_noCode}
+          {formError && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {formError}
             </p>
+          )}
 
-            <p className="mt-4 text-center text-sm text-gray-500">
-              {t.auth_haveAccount}{" "}
-              <Link href="/login" className="text-primary-600 hover:underline font-medium">
-                {t.auth_signIn}
-              </Link>
-            </p>
-          </>
-        ) : (
-          // ── Registration form ────────────────────────────────────────────
-          <>
-            {/* Verified badge */}
-            <div className="mb-6 flex items-center justify-center">
-              <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-semibold px-3 py-1 rounded-full border border-green-200">
-                {t.auth_voucher_verified}
-              </span>
-            </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full py-2 px-4 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {submitting ? t.auth_creatingAccount : t.auth_createAccountSubmit}
+          </button>
+        </form>
 
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t.auth_yourName}
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  autoFocus
-                  autoComplete="name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <p className="mt-1 text-xs text-gray-400">{t.auth_nameHint}</p>
-              </div>
-
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t.auth_username}
-                </label>
-                <div style={{ position: "relative" }}>
-                  <span style={{
-                    position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
-                    fontSize: 14, color: "#6b7280", pointerEvents: "none",
-                  }}>@</span>
-                  <input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => {
-                      setUsernameEdited(true);
-                      setFormError(null);
-                      setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
-                    }}
-                    required
-                    autoComplete="username"
-                    minLength={3}
-                    maxLength={30}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    style={{ paddingLeft: 28 }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-gray-400">{t.auth_usernameHint}</p>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t.settings_email}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setFormError(null); setEmail(e.target.value); }}
-                  required
-                  autoComplete="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t.auth_password}
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <p className="mt-1 text-xs text-gray-400">{t.auth_minPassword}</p>
-              </div>
-
-              {formError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {formError}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-2 px-4 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? t.auth_creatingAccount : t.auth_createAccountSubmit}
-              </button>
-            </form>
-
-            <p className="mt-4 text-center text-sm text-gray-500">
-              <button
-                onClick={() => { setStep("voucher"); setFormError(null); }}
-                className="text-gray-400 hover:underline text-xs"
-              >
-                ← {t.auth_voucher_btn}
-              </button>
-            </p>
-          </>
-        )}
+        <p className="mt-4 text-center text-sm text-gray-500">
+          {t.auth_haveAccount}{" "}
+          <Link href="/login" className="text-primary-600 hover:underline font-medium">
+            {t.auth_signIn}
+          </Link>
+        </p>
       </div>
     </div>
   );

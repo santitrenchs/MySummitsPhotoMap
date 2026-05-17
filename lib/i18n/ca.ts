@@ -91,14 +91,6 @@ export const ca: Dict = {
   friends_noResults: "No s'han trobat usuaris", friends_since: "Amics des de",
   friends_block: "Bloquejar", friends_blocked: "Bloquejat", friends_unblock: "Desbloquejar",
   friends_blockedSection: "Bloquejats", friends_friendsSection: "Amics", friends_addSection: "Afegir amics",
-  friends_inviteSection: "Convidar un amic", friends_invitePlaceholder: "email@exemple.com",
-  friends_inviteBtn: "Enviar invitació", friends_inviteSending: "Enviant…",
-  friends_inviteSent: "Invitació enviada! Caduca en 7 dies.",
-  friends_inviteAlreadyInvited: "Ja té una invitació activa pendent",
-  friends_inviteAlreadyRegistered: "Aquest email ja té compte a Peakadex",
-  friends_inviteError: "Error en enviar. Torna-ho a intentar.",
-  friends_inviteListSection: "Invitacions enviades",
-  friends_inviteStatusPending: "Pendent", friends_inviteStatusUsed: "Registrat", friends_inviteStatusExpired: "Caducada",
 
 
 
@@ -232,15 +224,6 @@ export const ca: Dict = {
   home_chartTitle: "Últims 6 mesos", home_chartMeters: "metres ascendits",
   home_rarityChartTitle: "Cims per raresa",
 
-  auth_voucher_title: "Peakadex és només per invitació",
-  auth_voucher_subtitle: "Introdueix el teu codi d'accés per continuar.",
-  auth_voucher_placeholder: "AZIT-XXXX-XXXX",
-  auth_voucher_btn: "Verificar codi",
-  auth_voucher_verifying: "Verificant…",
-  auth_voucher_invalid: "Codi invàlid o ja utilitzat. Comprova que l'has escrit bé.",
-  auth_voucher_verified: "✓ Codi d'accés verificat",
-  auth_voucher_noCode: "No tens codi? Demana'l a qui t'ha convidat.",
-  auth_voucher_tokenExpired: "La sessió ha expirat. Torna a introduir el codi.",
   auth_nameHint: "Així et veuran els teus amics a l'app",
   auth_username: "Nom d'usuari", auth_usernameHint: "Només lletres minúscules, números i _ (mín. 3 caràcters)",
   auth_usernameTaken: "Aquest nom d'usuari ja està en ús.", auth_usernameInvalid: "Només lletres minúscules, números i _ (mínim 3 caràcters).",

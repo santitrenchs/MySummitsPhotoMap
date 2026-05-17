@@ -91,14 +91,6 @@ export const es: Dict = {
   friends_noResults: "No se encontraron usuarios", friends_since: "Amigos desde",
   friends_block: "Bloquear", friends_blocked: "Bloqueado", friends_unblock: "Desbloquear",
   friends_blockedSection: "Bloqueados", friends_friendsSection: "Amigos", friends_addSection: "Añadir amigos",
-  friends_inviteSection: "Invitar a un amigo", friends_invitePlaceholder: "email@ejemplo.com",
-  friends_inviteBtn: "Enviar invitación", friends_inviteSending: "Enviando…",
-  friends_inviteSent: "¡Invitación enviada! Caduca en 7 días.",
-  friends_inviteAlreadyInvited: "Ya tiene una invitación activa pendiente",
-  friends_inviteAlreadyRegistered: "Este email ya tiene cuenta en Peakadex",
-  friends_inviteError: "Error al enviar. Inténtalo de nuevo.",
-  friends_inviteListSection: "Invitaciones enviadas",
-  friends_inviteStatusPending: "Pendiente", friends_inviteStatusUsed: "Registrado", friends_inviteStatusExpired: "Expirada",
 
 
 
@@ -230,15 +222,6 @@ export const es: Dict = {
   home_chartTitle: "Últimos 6 meses", home_chartMeters: "metros ascendidos",
   home_rarityChartTitle: "Cimas por rareza",
 
-  auth_voucher_title: "Peakadex es solo por invitación",
-  auth_voucher_subtitle: "Introduce tu código de acceso para continuar.",
-  auth_voucher_placeholder: "AZIT-XXXX-XXXX",
-  auth_voucher_btn: "Verificar código",
-  auth_voucher_verifying: "Verificando…",
-  auth_voucher_invalid: "Código inválido o ya utilizado. Comprueba que lo escribiste bien.",
-  auth_voucher_verified: "✓ Código de acceso verificado",
-  auth_voucher_noCode: "¿No tienes código? Pídelo a quien te invitó.",
-  auth_voucher_tokenExpired: "La sesión expiró. Vuelve a introducir el código.",
   auth_nameHint: "Así te verán tus amigos en la app",
   auth_username: "Nombre de usuario", auth_usernameHint: "Solo letras minúsculas, números y _ (mín. 3 caracteres)",
   auth_usernameTaken: "Este nombre de usuario ya está en uso.", auth_usernameInvalid: "Solo letras minúsculas, números y _ (mínimo 3 caracteres).",

@@ -91,14 +91,6 @@ export const de: Dict = {
   friends_noResults: "Keine Benutzer gefunden", friends_since: "Freunde seit",
   friends_block: "Blockieren", friends_blocked: "Blockiert", friends_unblock: "Entblocken",
   friends_blockedSection: "Blockierte Nutzer", friends_friendsSection: "Freunde", friends_addSection: "Freunde hinzufügen",
-  friends_inviteSection: "Freund einladen", friends_invitePlaceholder: "email@beispiel.de",
-  friends_inviteBtn: "Einladung senden", friends_inviteSending: "Senden…",
-  friends_inviteSent: "Einladung gesendet! Läuft in 7 Tagen ab.",
-  friends_inviteAlreadyInvited: "Hat bereits eine aktive Einladung",
-  friends_inviteAlreadyRegistered: "Diese E-Mail hat bereits ein Peakadex-Konto",
-  friends_inviteError: "Fehler beim Senden. Bitte erneut versuchen.",
-  friends_inviteListSection: "Gesendete Einladungen",
-  friends_inviteStatusPending: "Ausstehend", friends_inviteStatusUsed: "Registriert", friends_inviteStatusExpired: "Abgelaufen",
 
 
 
@@ -232,15 +224,6 @@ export const de: Dict = {
   home_chartTitle: "Letzte 6 Monate", home_chartMeters: "Höhenmeter",
   home_rarityChartTitle: "Gipfel nach Seltenheit",
 
-  auth_voucher_title: "Peakadex ist nur auf Einladung",
-  auth_voucher_subtitle: "Gib deinen Zugangscode ein um fortzufahren.",
-  auth_voucher_placeholder: "AZIT-XXXX-XXXX",
-  auth_voucher_btn: "Code prüfen",
-  auth_voucher_verifying: "Wird geprüft…",
-  auth_voucher_invalid: "Ungültiger oder bereits verwendeter Code. Überprüfe deine Eingabe.",
-  auth_voucher_verified: "✓ Zugangscode bestätigt",
-  auth_voucher_noCode: "Kein Code? Frag denjenigen, der dich eingeladen hat.",
-  auth_voucher_tokenExpired: "Sitzung abgelaufen. Bitte gib den Code erneut ein.",
   auth_nameHint: "So sehen dich deine Freunde in der App",
   auth_username: "Benutzername", auth_usernameHint: "Nur Kleinbuchstaben, Zahlen und _ (min. 3 Zeichen)",
   auth_usernameTaken: "Dieser Benutzername ist bereits vergeben.", auth_usernameInvalid: "Nur Kleinbuchstaben, Zahlen und _ (mindestens 3 Zeichen).",

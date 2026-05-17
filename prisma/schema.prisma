@@ -110,9 +110,6 @@ model User {
   // System
   isAdmin      Boolean  @default(false)
 
-  // Registration — voucher used to sign up (null for pre-voucher users)
-  voucherId    String?
-
   createdAt    DateTime @default(now())
 
   memberships            Membership[]
@@ -120,8 +117,6 @@ model User {
   sentFriendRequests     Friendship[] @relation("SentFriendRequests")
   receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
   faceTags               FaceTag[]    @relation("FaceTagUser")
-  sentInvitations        Voucher[]    @relation("SentInvitations")
-  voucherUse             VoucherUse?
   feedSeens              FeedSeen[]
 
   @@map("users")
@@ -166,38 +161,6 @@ enum MembershipRole {
   MEMBER
 }
 
-model Voucher {
-  id           String    @id @default(uuid())
-  code         String    @unique
-  maxUses      Int       @default(1)
-  usedCount    Int       @default(0)
-  note         String?
-  expiresAt    DateTime?
-  createdAt    DateTime  @default(now())
-  // Invitation fields — null for admin-created vouchers
-  inviterId    String?
-  inviteeEmail String?
-
-  uses    VoucherUse[]
-  inviter User?        @relation("SentInvitations", fields: [inviterId], references: [id], onDelete: SetNull)
-
-  @@index([inviterId])
-  @@map("vouchers")
-}
-
-model VoucherUse {
-  id        String   @id @default(uuid())
-  voucherId String
-  userId    String
-  usedAt    DateTime @default(now())
-
-  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId])
-  @@index([voucherId])
-  @@map("voucher_uses")
-}
 
 model PasswordResetToken {
   id        String    @id @default(uuid())
@@ -258,6 +221,8 @@ model Ascent {
 
   @@index([tenantId])
   @@index([tenantId, peakId])
+  @@index([createdBy])
+  @@index([createdBy, date])
   @@map("ascents")
 }
 

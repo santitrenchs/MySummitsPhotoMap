@@ -91,14 +91,6 @@ export const fr: Dict = {
   friends_noResults: "Aucun utilisateur trouvé", friends_since: "Amis depuis",
   friends_block: "Bloquer", friends_blocked: "Bloqué", friends_unblock: "Débloquer",
   friends_blockedSection: "Utilisateurs bloqués", friends_friendsSection: "Amis", friends_addSection: "Ajouter des amis",
-  friends_inviteSection: "Inviter un ami", friends_invitePlaceholder: "email@exemple.com",
-  friends_inviteBtn: "Envoyer l'invitation", friends_inviteSending: "Envoi…",
-  friends_inviteSent: "Invitation envoyée ! Expire dans 7 jours.",
-  friends_inviteAlreadyInvited: "A déjà une invitation active en attente",
-  friends_inviteAlreadyRegistered: "Cet email a déjà un compte Peakadex",
-  friends_inviteError: "Erreur lors de l'envoi. Réessayez.",
-  friends_inviteListSection: "Invitations envoyées",
-  friends_inviteStatusPending: "En attente", friends_inviteStatusUsed: "Inscrit", friends_inviteStatusExpired: "Expirée",
 
 
 
@@ -232,15 +224,6 @@ export const fr: Dict = {
   home_chartTitle: "6 derniers mois", home_chartMeters: "mètres gravis",
   home_rarityChartTitle: "Sommets par rareté",
 
-  auth_voucher_title: "Peakadex est sur invitation uniquement",
-  auth_voucher_subtitle: "Entrez votre code d'accès pour continuer.",
-  auth_voucher_placeholder: "AZIT-XXXX-XXXX",
-  auth_voucher_btn: "Vérifier le code",
-  auth_voucher_verifying: "Vérification…",
-  auth_voucher_invalid: "Code invalide ou déjà utilisé. Vérifiez ce que vous avez saisi.",
-  auth_voucher_verified: "✓ Code d'accès vérifié",
-  auth_voucher_noCode: "Pas de code ? Demandez à celui qui vous a invité.",
-  auth_voucher_tokenExpired: "Session expirée. Veuillez ressaisir le code.",
   auth_nameHint: "C'est ainsi que vos amis vous verront dans l'app",
   auth_username: "Nom d'utilisateur", auth_usernameHint: "Lettres minuscules, chiffres et _ uniquement (min. 3 caractères)",
   auth_usernameTaken: "Ce nom d'utilisateur est déjà pris.", auth_usernameInvalid: "Lettres minuscules, chiffres et _ uniquement (minimum 3 caractères).",
