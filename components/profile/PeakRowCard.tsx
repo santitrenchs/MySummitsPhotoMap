@@ -29,7 +29,7 @@ export function PeakRowCard({ peak, dateLocale }: Props) {
   const r = getRarityEntry(peak.rarityId);
 
   return (
-    <Link href={`/ascents?peakId=${peak.id}`} style={{ textDecoration: "none" }}>
+    <Link href={`/ascents?peak=${peak.id}&view=mine`} style={{ textDecoration: "none" }}>
       <div style={{
         display: "flex",
         background: "white",
