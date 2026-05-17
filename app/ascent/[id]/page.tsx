@@ -306,7 +306,6 @@ export default async function PublicAscentPage({
             display: "flex",
             justifyContent: "space-around",
             padding: "12px 16px",
-            borderBottom: "1px solid #f3f4f6",
           }}
         >
           {/* Rarity */}
@@ -367,7 +366,6 @@ export default async function PublicAscentPage({
               fontSize: 13,
               color: "#374151",
               lineHeight: 1.6,
-              borderBottom: "1px solid #f3f4f6",
             }}
           >
             {ascent.description}

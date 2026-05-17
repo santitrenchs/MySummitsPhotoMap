@@ -322,8 +322,8 @@
 /* ── Image ────────────────────────────────────────────────────────────── */
 .image-frame {
   position: relative;
-  margin: 6px 10px;
-  border-radius: 18px;
+  margin: 0;
+  border-radius: 0;
   overflow: hidden;
   aspect-ratio: 4 / 5;
   background: #E5E7EB;
@@ -409,9 +409,9 @@
 
 /* ── Stat band ────────────────────────────────────────────────────────── */
 .stat-band {
-  margin: 0 10px 5px;
-  border-radius: 16px;
-  padding: 7px;
+  margin: 0;
+  border-radius: 0;
+  padding: 8px 10px 5px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
@@ -420,7 +420,7 @@
 .stat-item {
   border-radius: 12px;
   padding: 6px 8px;
-  background: #F8FAFC;
+  background: transparent;
   min-width: 0;
 }
 
