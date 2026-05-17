@@ -10,29 +10,17 @@ const APP_URL =
     ? window.location.origin
     : (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.peakadex.com");
 
-async function shareAscent(ascentId: string): Promise<"copied" | "error"> {
-  const url = `${APP_URL}/ascent/${ascentId}`;
-  try {
-    // Fire API call and clipboard copy in parallel — don't await API before clipboard
-    // (navigator.share / clipboard needs to run within the user gesture window on iOS)
-    const apiCall = fetch(`/api/ascents/${ascentId}/share`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isPublic: true }),
-    });
+function getShareUrl(ascentId: string) {
+  return `${APP_URL}/ascent/${ascentId}`;
+}
 
-    if (typeof navigator !== "undefined" && navigator.share) {
-      // navigator.share must be called synchronously within the gesture — fire it now
-      navigator.share({ url, title: "Peakadex" }).catch(() => {/* dismissed = ok */});
-    } else {
-      await navigator.clipboard.writeText(url);
-    }
-
-    await apiCall; // wait for API in background (we already showed the share/copy UI)
-    return "copied";
-  } catch {
-    return "error";
-  }
+function activatePublicShare(ascentId: string) {
+  // Fire and forget — sets isPublic=true in the background
+  fetch(`/api/ascents/${ascentId}/share`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isPublic: true }),
+  }).catch(() => {/* ignore */});
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -143,7 +131,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   const [menuOpen, setMenuOpen] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [preloading, setPreloading] = useState(false);
-  const [shareToast, setShareToast] = useState<string | null>(null);
+  const [sharePopover, setSharePopover] = useState<string | null>(null); // URL string when open
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const isProfile = variant === "profile";
 
@@ -265,13 +254,15 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
               }} onClick={(e) => e.stopPropagation()}>
                 <button
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
                     setMenuOpen(false);
-                    const result = await shareAscent(ascent.id);
-                    if (result === "copied") {
-                      setShareToast(t.card_shareCopied);
-                      setTimeout(() => setShareToast(null), 2500);
+                    activatePublicShare(ascent.id);
+                    const url = getShareUrl(ascent.id);
+                    if (typeof navigator !== "undefined" && navigator.share) {
+                      navigator.share({ url, title: "Peakadex" }).catch(() => {});
+                    } else {
+                      setSharePopover(url);
                     }
                   }}
                   style={{
@@ -399,16 +390,58 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           <div className="card-face card-back">{buildBack()}</div>
         </article>
       </div>
-      {shareToast && (
-        <div style={{
-          position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)",
-          background: "rgba(13,37,56,0.92)", color: "#fff",
-          fontSize: 12, fontWeight: 600, padding: "7px 14px",
-          borderRadius: 20, whiteSpace: "nowrap", pointerEvents: "none",
-          zIndex: 100,
-        }}>
-          {shareToast}
-        </div>
+      {sharePopover && (
+        <>
+          {/* Backdrop — tap outside to close */}
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 98 }}
+            onClick={() => { setSharePopover(null); setLinkCopied(false); }}
+          />
+          {/* Popover */}
+          <div
+            style={{
+              position: "absolute", bottom: 14, left: 12, right: 12,
+              zIndex: 99,
+              background: "#fff",
+              border: "1px solid #E8EBEE",
+              borderRadius: 14,
+              boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
+              padding: "12px 14px",
+              display: "flex", alignItems: "center", gap: 10,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Link icon */}
+            <span style={{ fontSize: 16, flexShrink: 0 }}>🔗</span>
+            {/* URL */}
+            <span style={{
+              flex: 1, fontSize: 12, color: "#5A6E84",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              {sharePopover.replace(/^https?:\/\//, "")}
+            </span>
+            {/* Copy button */}
+            <button
+              onClick={async () => {
+                await navigator.clipboard.writeText(sharePopover);
+                setLinkCopied(true);
+                setTimeout(() => { setSharePopover(null); setLinkCopied(false); }, 1500);
+              }}
+              style={{
+                flexShrink: 0,
+                background: linkCopied ? "#2F7A5F" : "#0D2538",
+                color: "#fff",
+                border: "none", borderRadius: 8,
+                fontSize: 12, fontWeight: 600,
+                padding: "6px 12px", cursor: "pointer",
+                transition: "background 0.2s",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {linkCopied ? `✓ ${t.card_shareCopied}` : t.card_share}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
