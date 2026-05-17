@@ -38,6 +38,23 @@ function setCached(id: string, buf: Buffer) {
   OG_CACHE.set(id, { buf, ts: Date.now() });
 }
 
+// ── Extract real Peakadex logo icon PNG from public/logo-icon.svg ─────────
+// The SVG contains a raster PNG embedded as a base64 data URI.
+// We extract it once at module init and composite it as a white-tinted layer.
+const LOGO_ICON_PNG = (() => {
+  try {
+    const svgContent = fs.readFileSync(
+      path.join(process.cwd(), "public/logo-icon.svg"),
+      "utf8"
+    );
+    const match = svgContent.match(/xlink:href="data:image\/png;base64,([^"]+)"/);
+    if (!match) return null;
+    return Buffer.from(match[1], "base64");
+  } catch {
+    return null;
+  }
+})();
+
 // ── Load Geist-Regular once at module init ─────────────────────────────────
 // Path 1: /app/config/ (Railway — copied by nixpacks build phase)
 // Path 2: node_modules (local dev)
@@ -173,11 +190,12 @@ export async function GET(
       .toBuffer({ resolveWithObject: false });
 
     // ── Logo watermark ─────────────────────────────────────────────────────
-    // Layout (left→right): "peak"  [circle+mountain icon]  "adex"
-    // Bottom-left, opacity 0.65 so it reads clearly without dominating the photo
+    // Layout (left→right): "peak"  [real logo icon]  "adex"
+    // Bottom-left, opacity 0.80 so it reads clearly without dominating the photo
     const logoOpacity = 0.80;
     const logoFontSize = 92;
-    const iconR = 48; // icon circle radius
+    const iconSize = 96; // icon bounding box (matches iconR*2 from before)
+    const iconR = iconSize / 2;
     const logoY = H - 96; // text baseline
     const logoX = 40;     // left margin
 
@@ -193,13 +211,12 @@ export async function GET(
     const iconCX    = peakTextX + peakAdvW + textGap + iconR;
     const adexTextX = iconCX + iconR + textGap;
 
+    // Icon top-left corner for compositing
+    const iconLeft = Math.round(iconCX - iconR);
+    const iconTop  = Math.round(iconCY - iconR);
+
     const peakPath = textPath("peak", peakTextX, logoY, logoFontSize, "#ffffff", { opacity: logoOpacity });
     const adexPath = textPath("adex", adexTextX, logoY, logoFontSize, "#ffffff", { opacity: logoOpacity });
-
-    // Mountain silhouette inside the circle
-    const mtn = (cx: number, cy: number, r: number) =>
-      `${cx - r*0.55},${cy + r*0.42} ${cx - r*0.08},${cy - r*0.38} ` +
-      `${cx + r*0.18},${cy - r*0.02} ${cx + r*0.48},${cy - r*0.48} ${cx + r*0.72},${cy + r*0.42}`;
 
     const overlay = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -215,20 +232,58 @@ export async function GET(
   </defs>
   <rect width="${W}" height="${H}" fill="url(#vg)"/>
 
-  <!-- Peakadex logo watermark — bottom left -->
+  <!-- Peakadex logo text watermark — bottom left (icon composited separately) -->
   <g filter="url(#shadow)">
     ${peakPath}
-    <circle cx="${iconCX}" cy="${iconCY}" r="${iconR}"
-      fill="none" stroke="#ffffff" stroke-width="4" opacity="${logoOpacity}"/>
-    <polyline points="${mtn(iconCX, iconCY, iconR)}"
-      fill="none" stroke="#ffffff" stroke-width="4"
-      stroke-linejoin="round" stroke-linecap="round" opacity="${logoOpacity}"/>
     ${adexPath}
   </g>
 </svg>`;
 
+    // ── Build real logo icon layer ─────────────────────────────────────────
+    // Extract the PNG from logo-icon.svg, convert to white (preserve alpha),
+    // apply logoOpacity, and composite it between the text glyphs.
+    const compositeInputs: sharp.OverlayOptions[] = [
+      { input: Buffer.from(overlay), blend: "over" },
+    ];
+
+    if (LOGO_ICON_PNG) {
+      try {
+        const { data, info } = await sharp(LOGO_ICON_PNG)
+          .resize(iconSize, iconSize, {
+            fit: "contain",
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+          })
+          .ensureAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true });
+
+        // Tint every pixel white, preserve alpha * logoOpacity
+        for (let i = 0; i < data.length; i += 4) {
+          data[i]     = 255; // R
+          data[i + 1] = 255; // G
+          data[i + 2] = 255; // B
+          data[i + 3] = Math.round(data[i + 3] * logoOpacity); // A
+        }
+
+        const whiteIcon = await sharp(Buffer.from(data), {
+          raw: { width: info.width, height: info.height, channels: 4 },
+        })
+          .png()
+          .toBuffer();
+
+        compositeInputs.push({
+          input: whiteIcon,
+          blend: "over",
+          left: iconLeft,
+          top: iconTop,
+        });
+      } catch {
+        // Icon processing failed — skip icon layer, text watermark still renders
+      }
+    }
+
     const jpg = await sharp(photo)
-      .composite([{ input: Buffer.from(overlay), blend: "over" }])
+      .composite(compositeInputs)
       .jpeg({ quality: 88, mozjpeg: true })
       .toBuffer();
 
