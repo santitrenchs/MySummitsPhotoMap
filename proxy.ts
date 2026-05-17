@@ -72,7 +72,8 @@ export default auth((req) => {
   const isPublicApi =
     pathname === "/api/stats/landing" ||
     pathname.match(/^\/api\/ascents\/[^/]+\/share$/) !== null ||
-    pathname.match(/^\/api\/og-data\/[^/]+$/) !== null; // OG image data — public, used by edge renderer
+    pathname.match(/^\/api\/og-data\/[^/]+$/) !== null || // OG data endpoint
+    pathname.match(/^\/api\/og\/[^/]+$/) !== null;       // OG image (sharp-composed card)
   const isAdminLogin = pathname === "/admin/login";
   const isAdminRoute = pathname.startsWith("/admin") && !isAdminLogin;
 
