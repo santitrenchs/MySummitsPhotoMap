@@ -128,20 +128,12 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 
 export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Props) {
   const t = useT();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [preloading, setPreloading] = useState(false);
   const [sharePopover, setSharePopover] = useState<string | null>(null); // URL string when open
   const [linkCopied, setLinkCopied] = useState(false);
 
   const isProfile = variant === "profile";
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const close = () => setMenuOpen(false);
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
-  }, [menuOpen]);
 
   useEffect(() => {
     prefetchNearbyPeaks(ascent.peak.id, ascent.peak.latitude, ascent.peak.longitude);
@@ -271,51 +263,43 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               </svg>
             </button>
 
-            {/* Edit menu ⋮ */}
+            {/* Edit icon */}
             <button
-              onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                document.dispatchEvent(new CustomEvent("open-ascent-modal", {
+                  detail: {
+                    editAscent: {
+                      id: ascent.id,
+                      peakId: ascent.peak.id,
+                      peakName: ascent.peak.name,
+                      date: ascent.date.slice(0, 10),
+                      route: ascent.route ?? null,
+                      description: ascent.description ?? null,
+                      wikiloc: ascent.wikiloc ?? null,
+                      photoUrl: ascent.photoUrl ?? null,
+                      photoId: ascent.photoId ?? null,
+                      originalStorageKey: ascent.originalStorageKey ?? null,
+                      persons: ascent.persons.map((p) => ({ id: p.id, name: p.name })),
+                    },
+                  },
+                }));
+              }}
+              title={t.edit}
               style={{
                 background: "none", border: "none", cursor: "pointer",
                 width: 30, height: 30, borderRadius: "50%",
-                color: "#9CA3AF", fontSize: 20, lineHeight: 1,
-                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 0,
               }}
-            >⋮</button>
-            {menuOpen && (
-              <div style={{
-                position: "absolute", right: 14, zIndex: 50,
-                background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
-                boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
-              }} onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    document.dispatchEvent(new CustomEvent("open-ascent-modal", {
-                      detail: {
-                        editAscent: {
-                          id: ascent.id,
-                          peakId: ascent.peak.id,
-                          peakName: ascent.peak.name,
-                          date: ascent.date.slice(0, 10),
-                          route: ascent.route ?? null,
-                          description: ascent.description ?? null,
-                          wikiloc: ascent.wikiloc ?? null,
-                          photoUrl: ascent.photoUrl ?? null,
-                          photoId: ascent.photoId ?? null,
-                          originalStorageKey: ascent.originalStorageKey ?? null,
-                          persons: ascent.persons.map((p) => ({ id: p.id, name: p.name })),
-                        },
-                      },
-                    }));
-                  }}
-                  style={{
-                    display: "block", width: "100%", padding: "10px 16px",
-                    textAlign: "left", background: "none", border: "none",
-                    fontSize: 13, color: "#111827", cursor: "pointer",
-                  }}
-                >{t.edit}</button>
-              </div>
-            )}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#2F7A5F"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#9CA3AF"; }}
+            >
+              {/* Pencil edit icon */}
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.5 2.5a2.121 2.121 0 0 1 3 3L6 17H3v-3L14.5 2.5z" />
+              </svg>
+            </button>
           </div>
         ) : null}
       </header>
