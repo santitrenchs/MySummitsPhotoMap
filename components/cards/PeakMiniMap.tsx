@@ -12,15 +12,36 @@ type NearbyPeak = { id: string; name: string; latitude: number; longitude: numbe
 
 const nearbyCache = new Map<string, NearbyPeak[]>();
 const inFlight = new Set<string>();
+// When the map loads before the prefetch resolves, we park the render fn here
+// so the prefetch callback can fire it immediately on completion.
+const pendingRender = new Map<string, (nearby: NearbyPeak[]) => void>();
 const RADIUS = 0.8;
+const MAX_NEARBY = 5;
+
+function top5(peaks: NearbyPeak[], excludeId: string): NearbyPeak[] {
+  return peaks
+    .filter((p) => p.id !== excludeId)
+    .sort((a, b) => b.altitudeM - a.altitudeM)
+    .slice(0, MAX_NEARBY);
+}
 
 export function prefetchNearbyPeaks(peakId: string, lat: number, lng: number): void {
-  if (nearbyCache.has(peakId) || inFlight.has(peakId)) return;
+  if (nearbyCache.has(peakId)) {
+    // Cache already ready — if a map is waiting, fire it immediately.
+    const fn = pendingRender.get(peakId);
+    if (fn) { fn(nearbyCache.get(peakId)!); pendingRender.delete(peakId); }
+    return;
+  }
+  if (inFlight.has(peakId)) return;
   inFlight.add(peakId);
   fetch(`/api/peaks?lat=${lat}&lng=${lng}&radius=${RADIUS}`)
     .then((r) => r.json())
     .then((peaks: NearbyPeak[]) => {
-      nearbyCache.set(peakId, (peaks as NearbyPeak[]).filter((p) => p.id !== peakId));
+      const nearby = top5(peaks as NearbyPeak[], peakId);
+      nearbyCache.set(peakId, nearby);
+      // If the map already loaded and is waiting, render now.
+      const fn = pendingRender.get(peakId);
+      if (fn) { fn(nearby); pendingRender.delete(peakId); }
     })
     .catch(() => {})
     .finally(() => inFlight.delete(peakId));
@@ -177,16 +198,12 @@ export function PeakMiniMap({
 
       const cached = nearbyCache.get(peakId);
       if (cached) {
+        // Cache already warm (prefetch completed) — render immediately.
         renderNearby(cached);
       } else {
-        fetch(`/api/peaks?lat=${lat}&lng=${lng}&radius=${RADIUS}`)
-          .then((r) => r.json())
-          .then((peaks: NearbyPeak[]) => {
-            const nearby = (peaks as NearbyPeak[]).filter((p) => p.id !== peakId);
-            nearbyCache.set(peakId, nearby);
-            renderNearby(nearby);
-          })
-          .catch(() => {});
+        // Prefetch still in-flight: register so it renders the moment it lands.
+        // No second fetch needed — prefetchNearbyPeaks was already called on mount.
+        pendingRender.set(peakId, renderNearby);
       }
     });
 
@@ -196,7 +213,13 @@ export function PeakMiniMap({
     ro.observe(containerRef.current);
 
     mapRef.current = map;
-    return () => { ro.disconnect(); map.remove(); mapRef.current = null; };
+    return () => {
+      ro.disconnect();
+      map.remove();
+      mapRef.current = null;
+      // Clean up any pending render registration for this instance.
+      pendingRender.delete(peakId);
+    };
   }, [lat, lng, peakId, altitudeM]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
