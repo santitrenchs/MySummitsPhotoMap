@@ -170,12 +170,29 @@ export default async function PublicAscentPage({
           ) : (
             <InitialsAvatar name={ascent.user.name} size={40} />
           )}
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#0D2538" }}>
               {ascent.user.name}
             </div>
             <div style={{ fontSize: 12, color: "#5A6E84" }}>{formatDate(ascent.date)}</div>
           </div>
+          <Link
+            href={`${APP_URL}/register`}
+            style={{
+              flexShrink: 0,
+              padding: "7px 14px",
+              background: "#2F7A5F",
+              color: "#fff",
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 700,
+              textDecoration: "none",
+              letterSpacing: "0.01em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Join Peakadex →
+          </Link>
         </div>
 
         {/* Photo */}
@@ -357,30 +374,8 @@ export default async function PublicAscentPage({
           </div>
         )}
 
-        {/* CTA */}
-        <div style={{ padding: "20px 16px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-          <div style={{ fontSize: 12, color: "#94A3B8", textAlign: "center" }}>
-            Log your own summits on Peakadex
-          </div>
-          <Link
-            href={`${APP_URL}/register`}
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "13px 16px",
-              background: "#2F7A5F",
-              color: "#fff",
-              borderRadius: 14,
-              fontSize: 14,
-              fontWeight: 700,
-              textAlign: "center",
-              textDecoration: "none",
-              letterSpacing: "0.01em",
-            }}
-          >
-            Join Peakadex →
-          </Link>
-        </div>
+        {/* Bottom padding */}
+        <div style={{ paddingBottom: 20 }} />
       </div>
 
       {/* Footer */}
