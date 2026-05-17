@@ -1,14 +1,20 @@
 /**
- * OG image generator using sharp — composes a card-style image
- * (mountain photo + gradient + peak info overlay + Peakadex watermark)
- * that appears in WhatsApp/social previews.
- *
+ * OG image generator using sharp — composes a card-style image.
  * Uses sharp instead of next/og because next/og (resvg) crashes on Railway.
- * sharp is bundled with Next.js for image optimization and works reliably.
+ *
+ * SVG rules for librsvg on Linux:
+ * - No rgba() in fill/stop-color — use hex + opacity attributes
+ * - No CSS filter on text elements
+ * - No exotic Unicode glyphs that might be missing from system fonts
  */
 import sharp from "sharp";
 import { getPublicAscent } from "@/lib/services/public-ascent.service";
 import { getRarityId, RARITY_COLORS, RARITY_LABELS } from "@/lib/rarity";
+
+export const runtime = "nodejs";
+
+const W = 1200;
+const H = 630;
 
 function pngResponse(buf: Buffer, maxAge = 86400) {
   return new Response(new Uint8Array(buf), {
@@ -19,17 +25,16 @@ function pngResponse(buf: Buffer, maxAge = 86400) {
   });
 }
 
-export const runtime = "nodejs";
-
-const W = 1200;
-const H = 630;
-
 /** Escape text for safe SVG embedding */
 function esc(s: string) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
-/** Wrap long text to max width (approximate, char-based) */
+/** Wrap long text to approximate max char width */
 function wrapText(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
   const words = text.split(" ");
@@ -47,121 +52,126 @@ function wrapText(text: string, maxChars: number): string[] {
   return lines;
 }
 
+/** Minimal guaranteed-to-work PNG (navy solid color, no SVG) */
+async function navyFallback(): Promise<Buffer> {
+  const buf = Buffer.alloc(W * H * 3);
+  for (let i = 0; i < W * H; i++) {
+    buf[i * 3] = 13; buf[i * 3 + 1] = 37; buf[i * 3 + 2] = 56; // #0D2538
+  }
+  return sharp(buf, { raw: { width: W, height: H, channels: 3 } }).png().toBuffer();
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const ascent = await getPublicAscent(id);
-
-  // ── Fallback: brand-only image (no photo / not public) ─────────────────────
-  if (!ascent || !ascent.photoUrl) {
-    const fallbackSvg = `
-      <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#0D2538"/>
-            <stop offset="100%" stop-color="#1a3a5c"/>
-          </linearGradient>
-        </defs>
-        <rect width="${W}" height="${H}" fill="url(#bg)"/>
-        <text x="${W / 2}" y="${H / 2 - 24}" text-anchor="middle" font-family="serif" font-size="72" fill="white">✿</text>
-        <text x="${W / 2}" y="${H / 2 + 48}" text-anchor="middle" font-family="sans-serif" font-size="56" font-weight="bold" fill="white">Peakadex</text>
-      </svg>`;
-    const png = await sharp(Buffer.from(fallbackSvg)).png().toBuffer();
-    return pngResponse(png);
-  }
-
-  // ── Fetch and resize the ascent photo ──────────────────────────────────────
-  let photoBuffer: Buffer;
   try {
-    const res = await fetch(ascent.photoUrl, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) throw new Error("photo fetch failed");
-    photoBuffer = Buffer.from(await res.arrayBuffer());
-  } catch {
-    // If photo fetch fails, fall back to brand image
-    const fallbackSvg = `
-      <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-        <rect width="${W}" height="${H}" fill="#0D2538"/>
-        <text x="${W / 2}" y="${H / 2}" text-anchor="middle" font-family="sans-serif" font-size="48" fill="white">${esc(ascent.peak.name)}</text>
-      </svg>`;
-    const png = await sharp(Buffer.from(fallbackSvg)).png().toBuffer();
-    return pngResponse(png, 3600);
+    const { id } = await params;
+    const ascent = await getPublicAscent(id);
+
+    // ── No ascent / no photo → brand fallback ──────────────────────────────
+    if (!ascent?.photoUrl) {
+      const png = await navyFallback();
+      return pngResponse(png);
+    }
+
+    // ── Fetch and resize photo ─────────────────────────────────────────────
+    let photoBuffer: Buffer;
+    try {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(ascent.photoUrl, { signal: controller.signal });
+      clearTimeout(t);
+      if (!res.ok) throw new Error("fetch failed");
+      photoBuffer = Buffer.from(await res.arrayBuffer());
+    } catch {
+      const png = await navyFallback();
+      return pngResponse(png, 60);
+    }
+
+    const photo = await sharp(photoBuffer)
+      .resize(W, H, { fit: "cover", position: "centre" })
+      .png()
+      .toBuffer();
+
+    // ── SVG overlay (librsvg-safe: hex colors, no CSS filters) ─────────────
+    const rarity = getRarityId(ascent.peak.altitudeM);
+    const rarityColor = RARITY_COLORS[ascent.peak.rarityId ?? rarity] ?? RARITY_COLORS[rarity];
+    const rarityLabel = RARITY_LABELS[rarity];
+
+    const peakNameLines = wrapText(ascent.peak.name, 22);
+    const peakFontSize = peakNameLines[0].length > 18 ? 64 : 76;
+    const peakLineH = Math.round(peakFontSize * 1.15);
+    const peakBaseY = H - 60;
+    const altY = peakBaseY - peakNameLines.length * peakLineH - 14;
+
+    const altText = `${ascent.peak.altitudeM.toLocaleString("en")} m${
+      ascent.peak.mountainRange ? `  ·  ${ascent.peak.mountainRange}` : ""
+    }`;
+
+    // Badge dimensions
+    const badgeLabel = rarityLabel;
+    const badgeW = badgeLabel.length * 10 + 40;
+    const badgeH = 30;
+    const badgeX = 52;
+    const badgeY = altY - badgeH - 14;
+
+    const peakNameSvgLines = peakNameLines
+      .map(
+        (line, i) =>
+          `<text x="52" y="${peakBaseY + i * peakLineH}"
+            font-family="sans-serif" font-size="${peakFontSize}"
+            font-weight="bold" fill="#ffffff" letter-spacing="-1">${esc(line)}</text>`
+      )
+      .join("\n");
+
+    const overlay = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#000000" stop-opacity="0"/>
+      <stop offset="40%"  stop-color="#000000" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.80"/>
+    </linearGradient>
+  </defs>
+  <rect width="${W}" height="${H}" fill="url(#gr)"/>
+
+  <!-- Rarity badge -->
+  <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="15"
+    fill="${rarityColor}" fill-opacity="0.2"
+    stroke="${rarityColor}" stroke-width="1.5"/>
+  <text x="${badgeX + badgeW / 2}" y="${badgeY + badgeH * 0.70}"
+    text-anchor="middle" dominant-baseline="middle"
+    font-family="sans-serif" font-size="14" font-weight="bold"
+    fill="${rarityColor}">${esc(badgeLabel)}</text>
+
+  <!-- Altitude -->
+  <text x="52" y="${altY}"
+    font-family="sans-serif" font-size="22" font-weight="normal"
+    fill="#ffffff" fill-opacity="0.75">${esc(altText)}</text>
+
+  <!-- Peak name -->
+  ${peakNameSvgLines}
+
+  <!-- Peakadex watermark top-left -->
+  <text x="28" y="42"
+    font-family="sans-serif" font-size="14" font-weight="bold"
+    fill="#ffffff" fill-opacity="0.40" letter-spacing="3">PEAKADEX</text>
+</svg>`;
+
+    const png = await sharp(photo)
+      .composite([{ input: Buffer.from(overlay), blend: "over" }])
+      .png()
+      .toBuffer();
+
+    return pngResponse(png);
+  } catch (err) {
+    // Last resort: return a plain navy PNG so the browser never shows a broken image
+    console.error("[og-image] unhandled error:", err);
+    try {
+      const png = await navyFallback();
+      return pngResponse(png, 60);
+    } catch {
+      return new Response("error", { status: 500 });
+    }
   }
-
-  // Resize + crop to 1200×630
-  const photo = await sharp(photoBuffer)
-    .resize(W, H, { fit: "cover", position: "centre" })
-    .toBuffer();
-
-  // ── Build SVG overlay ──────────────────────────────────────────────────────
-  const rarity = getRarityId(ascent.peak.altitudeM);
-  const rarityColor = RARITY_COLORS[ascent.peak.rarityId ?? rarity] ?? RARITY_COLORS[rarity];
-  const rarityLabel = RARITY_LABELS[rarity];
-
-  const peakNameLines = wrapText(ascent.peak.name, 22);
-  const peakFontSize = peakNameLines[0].length > 18 ? 64 : 76;
-  const peakLineH = peakFontSize * 1.1;
-  // Bottom of the peak name block (text anchored at baseline from bottom-up)
-  const peakBaseY = H - 56 - (peakNameLines.length - 1) * peakLineH;
-  const altY = peakBaseY - peakFontSize * 0.35 - 16;
-  const mountainRangeY = altY - 30;
-
-  const altText = `${ascent.peak.altitudeM.toLocaleString("en")} m${ascent.peak.mountainRange ? `  ·  ${ascent.peak.mountainRange}` : ""}`;
-
-  // Rarity badge (pill shape)
-  const badgeText = `✿  ${rarityLabel}`;
-  const badgeW = badgeText.length * 9 + 24;
-  const badgeH = 28;
-  const badgeX = 52;
-  const badgeY = H - 52 - (peakNameLines.length - 1) * peakLineH - peakFontSize - 52;
-
-  const peakNameSvgLines = peakNameLines
-    .map((line, i) =>
-      `<text x="52" y="${peakBaseY + i * peakLineH}" font-family="sans-serif" font-size="${peakFontSize}" font-weight="900" fill="white" letter-spacing="-1">${esc(line)}</text>`
-    )
-    .join("\n");
-
-  const overlay = `
-    <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Bottom gradient for text readability -->
-      <defs>
-        <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="rgba(0,0,0,0)" stop-opacity="0"/>
-          <stop offset="42%" stop-color="rgba(0,0,0,0.55)" stop-opacity="1"/>
-          <stop offset="100%" stop-color="rgba(0,0,0,0.82)" stop-opacity="1"/>
-        </linearGradient>
-      </defs>
-      <rect width="${W}" height="${H}" fill="url(#grad)"/>
-
-      <!-- Rarity badge -->
-      <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="14"
-        fill="${rarityColor}33" stroke="${rarityColor}" stroke-width="1.5"/>
-      <text x="${badgeX + badgeW / 2}" y="${badgeY + badgeH * 0.72}" text-anchor="middle"
-        font-family="sans-serif" font-size="13" font-weight="700" fill="${rarityColor}">${esc(badgeText)}</text>
-
-      <!-- Altitude + mountain range -->
-      <text x="52" y="${altY}" font-family="sans-serif" font-size="22" font-weight="500"
-        fill="rgba(255,255,255,0.75)">${esc(altText)}</text>
-
-      <!-- Peak name -->
-      ${peakNameSvgLines}
-
-      <!-- Peakadex watermark — top-left -->
-      <g opacity="0.38">
-        <text x="28" y="44" font-family="sans-serif" font-size="20" fill="white"
-          style="filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6))">✿</text>
-        <text x="52" y="44" font-family="sans-serif" font-size="13" font-weight="700"
-          letter-spacing="3" fill="white"
-          style="filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6))">PEAKADEX</text>
-      </g>
-    </svg>`;
-
-  // Composite overlay onto photo
-  const png = await sharp(photo)
-    .composite([{ input: Buffer.from(overlay), blend: "over" }])
-    .png()
-    .toBuffer();
-
-  return pngResponse(png);
 }
