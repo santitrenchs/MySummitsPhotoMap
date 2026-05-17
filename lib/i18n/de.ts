@@ -326,6 +326,7 @@ export const de: Dict = {
   card_capturedSummit: "hat einen Gipfel erklommen", card_capturedMythicSummit: "hat einen mythischen Gipfel erklommen",
   card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
   card_rarity: "Seltenheit", card_altitude: "Höhe", card_reward: "Belohnung",
+  share_joinCta: "Peakadex beitreten →",
   card_share: "Teilen", card_shareCopied: "Kopiert!", card_shareError: "Fehler beim Teilen", card_shareCopyLink: "Link kopieren",
   card_shareTitle: "Gipfel teilen", card_shareWhatsapp: "An Freunde senden", card_shareInstagramStory: "Instagram Story", card_shareDownload: "Bild herunterladen",
   card_backDesc_daisy: "Zugänglicher Gipfel, perfekt um dein Peakadex zu beginnen.",

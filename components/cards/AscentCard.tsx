@@ -10,8 +10,8 @@ const APP_URL =
     ? window.location.origin
     : (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.peakadex.com");
 
-function getShareUrl(ascentId: string) {
-  return `${APP_URL}/ascent/${ascentId}`;
+function getShareUrl(ascentId: string, locale: string) {
+  return `${APP_URL}/ascent/${ascentId}?lang=${locale}`;
 }
 
 async function activatePublicShare(ascentId: string): Promise<void> {
@@ -238,7 +238,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             <button
               onClick={async (e) => {
                 e.stopPropagation();
-                const url = getShareUrl(ascent.id);
+                const url = getShareUrl(ascent.id, locale);
                 const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
                 if (isMobile && typeof navigator !== "undefined" && navigator.share) {
                   // Await before opening native share sheet — prevents race condition
@@ -329,7 +329,11 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             <div className="peak-name">{ascent.peak.name}</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
             <div className="peak-meta">
-              <span>{latStr} · {lngStr}</span>
+              <span>
+                {ascent.peak.mountainRange
+                  ? ascent.peak.mountainRange
+                  : `${ascent.peak.altitudeM.toLocaleString(locale)} m`}
+              </span>
             </div>
           </div>
         </div>

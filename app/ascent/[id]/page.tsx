@@ -5,6 +5,7 @@ import { getPublicAscent } from "@/lib/services/public-ascent.service";
 import { getRarityId, RARITY_COLORS, RARITY_LABELS, RARITY_EP } from "@/lib/rarity";
 import { PeakadexLogo } from "@/components/brand/Logo";
 import Link from "next/link";
+import { getT, isValidLocale } from "@/lib/i18n";
 
 const APP_URL =
   process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? "https://www.peakadex.com";
@@ -22,18 +23,24 @@ async function getBaseUrl(): Promise<string> {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
+  const { lang } = await searchParams;
+  const locale = isValidLocale(lang ?? "") ? lang! : "es";
+  const t = getT(locale);
+
   const [ascent, baseUrl] = await Promise.all([getPublicAscent(id), getBaseUrl()]);
   if (!ascent) return { title: "Peakadex" };
 
   const rarity = getRarityId(ascent.peak.altitudeM);
   const rarityLabel = RARITY_LABELS[rarity];
 
-  // Social-first title: "Santi ha capturado una cima Heather"
-  const title = `${ascent.user.name} ha capturado una cima ${rarityLabel}`;
+  // Social-first title using sharer's locale
+  const title = `${ascent.user.name} ${t.card_capturedSummit} ${rarityLabel}`;
   // Description: peak name + altitude (+ mountain range if available)
   const description = `${ascent.peak.name} · ${ascent.peak.altitudeM.toLocaleString("en")} m${
     ascent.peak.mountainRange ? ` · ${ascent.peak.mountainRange}` : ""
@@ -72,8 +79,8 @@ export async function generateMetadata({
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en", {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -111,10 +118,16 @@ function InitialsAvatar({ name, size = 40 }: { name: string; size?: number }) {
 
 export default async function PublicAscentPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }) {
   const { id } = await params;
+  const { lang } = await searchParams;
+  const locale = isValidLocale(lang ?? "") ? lang! : "es";
+  const t = getT(locale);
+
   const ascent = await getPublicAscent(id);
   if (!ascent) notFound();
 
@@ -174,7 +187,7 @@ export default async function PublicAscentPage({
             <div style={{ fontSize: 14, fontWeight: 700, color: "#0D2538" }}>
               {ascent.user.name}
             </div>
-            <div style={{ fontSize: 12, color: "#5A6E84" }}>{formatDate(ascent.date)}</div>
+            <div style={{ fontSize: 12, color: "#5A6E84" }}>{formatDate(ascent.date, t.dateLocale)}</div>
           </div>
           <Link
             href={`${APP_URL}/register`}
@@ -191,7 +204,7 @@ export default async function PublicAscentPage({
               whiteSpace: "nowrap",
             }}
           >
-            Join Peakadex →
+            {t.share_joinCta}
           </Link>
         </div>
 
@@ -314,7 +327,7 @@ export default async function PublicAscentPage({
           {/* Rarity */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: 12, padding: "8px 6px" }}>
             <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
-              Rarity
+              {t.card_rarity}
             </div>
             <div
               style={{
@@ -334,7 +347,7 @@ export default async function PublicAscentPage({
           {/* Altitude */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: 12, padding: "8px 6px" }}>
             <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
-              Altitude
+              {t.card_altitude}
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538" }}>
               {ascent.peak.altitudeM.toLocaleString("en")} m
@@ -344,7 +357,7 @@ export default async function PublicAscentPage({
           {/* Reward */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: 12, padding: "8px 6px" }}>
             <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
-              Reward
+              {t.card_reward}
             </div>
             <div
               style={{

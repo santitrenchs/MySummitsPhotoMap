@@ -326,6 +326,7 @@ export const ca: Dict = {
   card_capturedSummit: "ha capturat un cim", card_capturedMythicSummit: "ha capturat una cima mítica",
   card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
   card_rarity: "Raresa", card_altitude: "Altitud", card_reward: "Recompensa",
+  share_joinCta: "Uneix-te a Peakadex →",
   card_share: "Compartir", card_shareCopied: "Copiat!", card_shareError: "Error en compartir", card_shareCopyLink: "Copiar enllaç",
   card_shareTitle: "Comparteix aquest cim", card_shareWhatsapp: "Enviar a amics", card_shareInstagramStory: "Instagram Story", card_shareDownload: "Descarregar imatge",
   card_backDesc_daisy: "Cim accessible i perfecte per començar el teu Peakadex.",
