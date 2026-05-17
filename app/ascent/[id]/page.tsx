@@ -196,7 +196,8 @@ export default async function PublicAscentPage({
         </div>
 
         {/* Photo */}
-        <div style={{ position: "relative", aspectRatio: "4/5", background: "#e2e8f0", overflow: "hidden" }}>
+        <div style={{ padding: "0 12px 12px" }}>
+        <div style={{ position: "relative", aspectRatio: "4/5", background: "#e2e8f0", overflow: "hidden", borderRadius: 16 }}>
           {ascent.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -298,6 +299,7 @@ export default async function PublicAscentPage({
               {`${Math.abs(ascent.peak.longitude).toFixed(4)}°${ascent.peak.longitude >= 0 ? "E" : "W"}`}
             </div>
           </div>
+        </div>
         </div>
 
         {/* Stats band */}
