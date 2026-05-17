@@ -317,9 +317,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               </div>
             )}
           </div>
-        ) : (
-          <span style={{ color: "#9CA3AF", fontSize: 20 }}>⋮</span>
-        )}
+        ) : null}
       </header>
 
       {/* Inner frame */}
@@ -412,10 +410,10 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             style={{ position: "fixed", inset: 0, zIndex: 98 }}
             onClick={() => { setSharePopover(null); setLinkCopied(false); }}
           />
-          {/* Popover */}
+          {/* Popover — anchored below share button (top-right of header) */}
           <div
             style={{
-              position: "absolute", bottom: 14, left: 12, right: 12,
+              position: "absolute", top: 46, right: 8, left: 12,
               zIndex: 99,
               background: "#fff",
               border: "1px solid #E8EBEE",
