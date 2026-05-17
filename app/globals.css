@@ -156,7 +156,7 @@
 }
 
 .card-back .image-frame {
-  flex: 0 1 57%;
+  flex: 0 1 65%;
   aspect-ratio: auto;
   min-height: 0;
   margin: 0;
@@ -314,7 +314,7 @@
 /* ── Image ────────────────────────────────────────────────────────────── */
 .image-frame {
   position: relative;
-  margin: 6px;
+  margin: 6px 10px;
   border-radius: 18px;
   overflow: hidden;
   aspect-ratio: 4 / 5;
@@ -401,7 +401,7 @@
 
 /* ── Stat band ────────────────────────────────────────────────────────── */
 .stat-band {
-  margin: 0 7px 5px;
+  margin: 0 10px 5px;
   border-radius: 16px;
   padding: 7px;
   display: grid;
