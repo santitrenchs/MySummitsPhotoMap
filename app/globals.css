@@ -131,7 +131,7 @@
 .card-front {
   position: relative;
   overflow: hidden;
-  border-radius: 0;
+  border-radius: 20px;
   animation: cardFadeUp 0.4s ease both;
   animation-delay: calc(var(--card-i, 0) * 55ms);
 }
@@ -197,13 +197,12 @@
 /* ── Outer card ───────────────────────────────────────────────────────── */
 .peak-card {
   background: #fff;
-  border-radius: 22px;
-  padding: 0;
+  border-radius: 28px;
+  padding: 7px;
   border: 1px solid rgba(13, 37, 56, 0.07);
   box-shadow:
     0 1px 3px rgba(13, 37, 56, 0.10),
     0 20px 50px rgba(13, 37, 56, 0.10);
-  overflow: hidden;
 }
 
 /* Grain texture */
@@ -211,7 +210,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 22px;
+  border-radius: 28px;
   pointer-events: none;
   opacity: .025;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
@@ -323,8 +322,8 @@
 /* ── Image ────────────────────────────────────────────────────────────── */
 .image-frame {
   position: relative;
-  margin: 0;
-  border-radius: 0;
+  margin: 6px 10px;
+  border-radius: 18px;
   overflow: hidden;
   aspect-ratio: 4 / 5;
   background: #E5E7EB;
@@ -410,9 +409,9 @@
 
 /* ── Stat band ────────────────────────────────────────────────────────── */
 .stat-band {
-  margin: 0;
-  border-radius: 0;
-  padding: 8px 10px 5px;
+  margin: 0 10px 5px;
+  border-radius: 16px;
+  padding: 7px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
@@ -421,7 +420,7 @@
 .stat-item {
   border-radius: 12px;
   padding: 6px 8px;
-  background: transparent;
+  background: #F8FAFC;
   min-width: 0;
 }
 
