@@ -33,6 +33,7 @@ model Rarity {
 model Peak {
   id            String   @id @default(uuid())
   name          String
+  nameEn        String?
   comarca       String?
   latitude      Float
   longitude     Float
@@ -277,6 +278,7 @@ model Ascent {
   route       String?
   description String?
   wikiloc     String?   // embed src URL, e.g. https://es.wikiloc.com/wikiloc/embedv2.do?id=...
+  isPublic    Boolean  @default(false)  // true = shareable via public link
   createdBy   String
   createdAt   DateTime @default(now())
 

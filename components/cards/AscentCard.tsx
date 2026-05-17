@@ -5,6 +5,35 @@ import { useT } from "@/components/providers/I18nProvider";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 
+const APP_URL =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.peakadex.com");
+
+async function shareAscent(ascentId: string): Promise<"shared" | "copied" | "error"> {
+  try {
+    // Activate public sharing
+    const res = await fetch(`/api/ascents/${ascentId}/share`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isPublic: true }),
+    });
+    if (!res.ok) return "error";
+
+    const url = `${APP_URL}/ascent/${ascentId}`;
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      await navigator.share({ url, title: "Peakadex" });
+      return "shared";
+    } else {
+      await navigator.clipboard.writeText(url);
+      return "copied";
+    }
+  } catch {
+    return "error";
+  }
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type AscentCardData = {
@@ -113,6 +142,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   const [menuOpen, setMenuOpen] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [preloading, setPreloading] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
 
   const isProfile = variant === "profile";
 
@@ -234,6 +264,22 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
               }} onClick={(e) => e.stopPropagation()}>
                 <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    const result = await shareAscent(ascent.id);
+                    if (result === "copied") setShareToast(t.card_shareCopied);
+                    else if (result === "error") setShareToast(t.card_shareError);
+                    if (result !== "error") setTimeout(() => setShareToast(null), 2500);
+                  }}
+                  style={{
+                    display: "block", width: "100%", padding: "10px 16px",
+                    textAlign: "left", background: "none", border: "none",
+                    fontSize: 13, color: "#111827", cursor: "pointer",
+                    borderBottom: "1px solid #f3f4f6",
+                  }}
+                >{t.card_share}</button>
+                <button
                   onClick={() => {
                     setMenuOpen(false);
                     document.dispatchEvent(new CustomEvent("open-ascent-modal", {
@@ -335,20 +381,33 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   );
 
   return (
-    <div
-      className={`flip-card${isFlipped ? " is-flipped" : ""}`}
-      onClick={() => setIsFlipped(f => !f)}
-      onMouseEnter={() => setPreloading(true)}
-      onTouchStart={() => setPreloading(true)}
-    >
-      <article
-        className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
-        // @ts-expect-error CSS custom property
-        style={{ "--card-i": Math.min(animationIndex, 8) }}
+    <div style={{ position: "relative" }}>
+      <div
+        className={`flip-card${isFlipped ? " is-flipped" : ""}`}
+        onClick={() => setIsFlipped(f => !f)}
+        onMouseEnter={() => setPreloading(true)}
+        onTouchStart={() => setPreloading(true)}
       >
-        <div className="card-face card-front">{buildFace(false)}</div>
-        <div className="card-face card-back">{buildBack()}</div>
-      </article>
+        <article
+          className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
+          // @ts-expect-error CSS custom property
+          style={{ "--card-i": Math.min(animationIndex, 8) }}
+        >
+          <div className="card-face card-front">{buildFace(false)}</div>
+          <div className="card-face card-back">{buildBack()}</div>
+        </article>
+      </div>
+      {shareToast && (
+        <div style={{
+          position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)",
+          background: "rgba(13,37,56,0.92)", color: "#fff",
+          fontSize: 12, fontWeight: 600, padding: "7px 14px",
+          borderRadius: 20, whiteSpace: "nowrap", pointerEvents: "none",
+          zIndex: 100,
+        }}>
+          {shareToast}
+        </div>
+      )}
     </div>
   );
 }

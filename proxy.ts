@@ -59,8 +59,13 @@ export default auth((req) => {
     if (!isLoggedIn) return NextResponse.redirect(new URL("/login", req.nextUrl));
     return NextResponse.next();
   }
+  // Public ascent share pages — accessible without auth
+  const isPublicAscentPage = pathname.startsWith("/ascent/");
+
   const isAuthApi = pathname.startsWith("/api/auth");
-  const isPublicApi = pathname === "/api/stats/landing";
+  const isPublicApi =
+    pathname === "/api/stats/landing" ||
+    pathname.match(/^\/api\/ascents\/[^/]+\/share$/) !== null;
   const isAdminLogin = pathname === "/admin/login";
   const isAdminRoute = pathname.startsWith("/admin") && !isAdminLogin;
 
@@ -126,8 +131,8 @@ export default auth((req) => {
     }
   }
 
-  // Redirect unauthenticated users to login (except landing pages and auth pages)
-  if (!isLoggedIn && !isAuthPage && !isLanding) {
+  // Redirect unauthenticated users to login (except landing pages, auth pages, and public ascent pages)
+  if (!isLoggedIn && !isAuthPage && !isLanding && !isPublicAscentPage) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
 

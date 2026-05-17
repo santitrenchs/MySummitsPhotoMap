@@ -178,6 +178,7 @@ export type Dict = {
   auth_accept_subtitle: string;     // "Hemos actualizado…"
   auth_accept_cta: string;          // "Acepto y continuar"
   auth_accept_accepting: string;    // "Guardando…"
+  auth_accept_signOut: string;      // "Cerrar sesión"
 
   // Legal pages chrome
   legal_back: string;         // "← Volver al inicio"
@@ -302,6 +303,7 @@ export type Dict = {
   card_capturedSummit: string; card_capturedMythicSummit: string;
   card_peakCapture: string; card_mythic: string;
   card_rarity: string; card_altitude: string; card_reward: string;
+  card_share: string; card_shareCopied: string; card_shareError: string;
   card_backDesc_daisy: string; card_backDesc_gentian: string;
   card_backDesc_edelweiss: string; card_backDesc_saxifrage: string;
   card_backDesc_cinquefoil: string; card_backDesc_snow_lotus: string;
