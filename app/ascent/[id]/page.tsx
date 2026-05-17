@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { getPublicAscent } from "@/lib/services/public-ascent.service";
 import { getRarityId, RARITY_COLORS, RARITY_LABELS, RARITY_EP } from "@/lib/rarity";
@@ -8,6 +9,15 @@ import Link from "next/link";
 const APP_URL =
   process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? "https://www.peakadex.com";
 
+async function getBaseUrl(): Promise<string> {
+  try {
+    const h = await headers();
+    const host = h.get("host");
+    if (host) return host.includes("localhost") ? `http://${host}` : `https://${host}`;
+  } catch {}
+  return APP_URL;
+}
+
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
@@ -16,7 +26,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const ascent = await getPublicAscent(id);
+  const [ascent, baseUrl] = await Promise.all([getPublicAscent(id), getBaseUrl()]);
   if (!ascent) return { title: "Peakadex" };
 
   const title = `${ascent.user.name} · ${ascent.peak.name} ${ascent.peak.altitudeM} m`;
@@ -30,11 +40,11 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `${APP_URL}/ascent/${id}`,
+      url: `${baseUrl}/ascent/${id}`,
       siteName: "Peakadex",
       images: [
         {
-          url: `${APP_URL}/ascent/${id}/opengraph-image`,
+          url: `${baseUrl}/ascent/${id}/opengraph-image`,
           width: 1200,
           height: 630,
           alt: title,
@@ -46,7 +56,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: [`${APP_URL}/ascent/${id}/opengraph-image`],
+      images: [`${baseUrl}/ascent/${id}/opengraph-image`],
     },
   };
 }
