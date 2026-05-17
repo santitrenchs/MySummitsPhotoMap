@@ -237,7 +237,41 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           <div className="user-date">{dateStr}</div>
         </div>
         {isProfile ? (
-          <div onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }} onClick={(e) => e.stopPropagation()}>
+            {/* Share icon — always visible */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                activatePublicShare(ascent.id);
+                const url = getShareUrl(ascent.id);
+                const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+                if (isMobile && typeof navigator !== "undefined" && navigator.share) {
+                  navigator.share({ url, title: "Peakadex" }).catch(() => {});
+                } else {
+                  setSharePopover(url);
+                }
+              }}
+              title={t.card_share}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                width: 30, height: 30, borderRadius: "50%",
+                color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 0,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#2F7A5F"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#9CA3AF"; }}
+            >
+              {/* Share network icon — 3 nodes connected */}
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="16" cy="4" r="2" />
+                <circle cx="4" cy="10" r="2" />
+                <circle cx="16" cy="16" r="2" />
+                <line x1="6" y1="9" x2="14" y2="5" />
+                <line x1="6" y1="11" x2="14" y2="15" />
+              </svg>
+            </button>
+
+            {/* Edit menu ⋮ */}
             <button
               onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
               style={{
@@ -253,25 +287,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
                 boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
               }} onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpen(false);
-                    activatePublicShare(ascent.id);
-                    const url = getShareUrl(ascent.id);
-                    if (typeof navigator !== "undefined" && navigator.share) {
-                      navigator.share({ url, title: "Peakadex" }).catch(() => {});
-                    } else {
-                      setSharePopover(url);
-                    }
-                  }}
-                  style={{
-                    display: "block", width: "100%", padding: "10px 16px",
-                    textAlign: "left", background: "none", border: "none",
-                    fontSize: 13, color: "#111827", cursor: "pointer",
-                    borderBottom: "1px solid #f3f4f6",
-                  }}
-                >{t.card_share}</button>
                 <button
                   onClick={() => {
                     setMenuOpen(false);
