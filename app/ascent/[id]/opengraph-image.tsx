@@ -1,31 +1,24 @@
 import { ImageResponse } from "next/og";
-import { getPublicAscent } from "@/lib/services/public-ascent.service";
+import type { PublicAscentData } from "@/lib/services/public-ascent.service";
 
-export const runtime = "nodejs";
+/**
+ * Edge runtime uses WASM-based resvg (bundled with next/og) — no native
+ * binaries, works reliably on Railway. The nodejs runtime uses @resvg/resvg-js
+ * whose native binary crashes on Railway's Linux environment.
+ *
+ * Because edge cannot use Prisma directly, ascent data is fetched from the
+ * lightweight /api/og-data/[id] Node.js endpoint.
+ */
+export const runtime = "edge";
 export const revalidate = 86400; // 24h
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-/**
- * Pre-fetch an external image and return it as a base64 data URL.
- * Required for next/og on Railway: Satori cannot fetch external images
- * reliably at render time outside Vercel's edge network.
- */
-async function toDataUrl(url: string): Promise<string | null> {
-  try {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(t);
-    if (!res.ok) return null;
-    const buf = await res.arrayBuffer();
-    const mime = res.headers.get("content-type") ?? "image/jpeg";
-    return `data:${mime};base64,${Buffer.from(buf).toString("base64")}`;
-  } catch {
-    return null;
-  }
-}
+const BASE_URL =
+  process.env.APP_URL ??
+  process.env.NEXTAUTH_URL ??
+  "https://www.peakadex.com";
 
 export default async function OgImage({
   params,
@@ -33,7 +26,17 @@ export default async function OgImage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const ascent = await getPublicAscent(id);
+
+  // Fetch ascent data from our Node.js endpoint (edge can't use Prisma directly)
+  let ascent: PublicAscentData | null = null;
+  try {
+    const res = await fetch(`${BASE_URL}/api/og-data/${id}`, {
+      next: { revalidate: 3600 },
+    });
+    if (res.ok) ascent = await res.json();
+  } catch {
+    // fall through to brand fallback
+  }
 
   if (!ascent) {
     // Fallback — brand-only image
@@ -60,9 +63,6 @@ export default async function OgImage({
     );
   }
 
-  // Pre-fetch the photo as base64 — avoids Satori external-fetch issues on Railway
-  const photoSrc = ascent.photoUrl ? await toDataUrl(ascent.photoUrl) : null;
-
   return new ImageResponse(
     <div
       style={{
@@ -76,10 +76,10 @@ export default async function OgImage({
       }}
     >
       {/* Full-frame mountain photo */}
-      {photoSrc ? (
+      {ascent.photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={photoSrc}
+          src={ascent.photoUrl}
           style={{
             position: "absolute",
             inset: 0,
@@ -162,7 +162,6 @@ export default async function OgImage({
             fontSize: 22,
             color: "#fff",
             lineHeight: 1,
-            filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))",
           }}
         >
           ✿
@@ -174,7 +173,6 @@ export default async function OgImage({
             color: "#fff",
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))",
           }}
         >
           PEAKADEX

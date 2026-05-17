@@ -27,6 +27,12 @@ function detectLocale(acceptLang: string): SupportedLocale {
   return "en";
 }
 
+function withPathname(pathname: string): NextResponse {
+  const res = NextResponse.next();
+  res.headers.set("x-pathname", pathname);
+  return res;
+}
+
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const { pathname } = req.nextUrl;
@@ -57,7 +63,7 @@ export default auth((req) => {
   // Accept-terms is only for authenticated users; unauthenticated ones get sent to login
   if (pathname === "/accept-terms") {
     if (!isLoggedIn) return NextResponse.redirect(new URL("/login", req.nextUrl));
-    return NextResponse.next();
+    return withPathname(pathname);
   }
   // Public ascent share pages — accessible without auth
   const isPublicAscentPage = pathname.startsWith("/ascent/");
@@ -65,12 +71,13 @@ export default auth((req) => {
   const isAuthApi = pathname.startsWith("/api/auth");
   const isPublicApi =
     pathname === "/api/stats/landing" ||
-    pathname.match(/^\/api\/ascents\/[^/]+\/share$/) !== null;
+    pathname.match(/^\/api\/ascents\/[^/]+\/share$/) !== null ||
+    pathname.match(/^\/api\/og-data\/[^/]+$/) !== null; // OG image data — public, used by edge renderer
   const isAdminLogin = pathname === "/admin/login";
   const isAdminRoute = pathname.startsWith("/admin") && !isAdminLogin;
 
   // Always allow NextAuth internal API routes, health check and public stats
-  if (isAuthApi || isPublicApi || pathname === "/api/health") return NextResponse.next();
+  if (isAuthApi || isPublicApi || pathname === "/api/health") return withPathname(pathname);
 
   // ── Backoffice (/admin/*) ──────────────────────────────────
   if (isAdminLogin) {
@@ -78,14 +85,14 @@ export default auth((req) => {
     if (isLoggedIn && req.auth?.user?.isAdmin) {
       return NextResponse.redirect(new URL("/admin/users", req.nextUrl));
     }
-    return NextResponse.next();
+    return withPathname(pathname);
   }
 
   if (isAdminRoute) {
     if (!isLoggedIn) {
       return NextResponse.redirect(new URL("/admin/login", req.nextUrl));
     }
-    return NextResponse.next();
+    return withPathname(pathname);
   }
 
   // ── Main app ───────────────────────────────────────────────
@@ -119,13 +126,13 @@ export default auth((req) => {
         return NextResponse.redirect(new URL(`/${detected}`, req.nextUrl));
       }
       // Spanish — always refresh the cookie so auth pages pick up the right locale
-      const res = NextResponse.next();
+      const res = withPathname(pathname);
       res.cookies.set(LOCALE_COOKIE, "es", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
       return res;
     } else {
       // /en, /fr, /de, /ca — always overwrite cookie with current locale
       const chosenLocale = pathname.slice(1) as SupportedLocale;
-      const res = NextResponse.next();
+      const res = withPathname(pathname);
       res.cookies.set(LOCALE_COOKIE, chosenLocale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
       return res;
     }
@@ -136,7 +143,7 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
 
-  return NextResponse.next();
+  return withPathname(pathname);
 });
 
 export const config = {
