@@ -234,7 +234,7 @@ export function NewAscentForm({
       {step === "pick" && (
         <div style={{
           background: "white", border: "1px solid #e5e7eb",
-          borderRadius: 12, padding: 32,
+          borderRadius: "var(--radius-md)", padding: 32,
           display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
         }}>
           <div style={{ textAlign: "center" }}>
@@ -282,7 +282,7 @@ export function NewAscentForm({
       onSubmit={handleSubmit}
       style={{
         background: "white", border: "1px solid #e5e7eb",
-        borderRadius: 12, padding: 24,
+        borderRadius: "var(--radius-md)", padding: 24,
         display: "flex", flexDirection: "column" as const, gap: 20,
       }}
     >

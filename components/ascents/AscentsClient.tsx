@@ -325,7 +325,7 @@ export function AscentsClient({
 
   const fchip = (active: boolean, extra?: React.CSSProperties): React.CSSProperties => ({
     display: "inline-flex", alignItems: "center", gap: 5,
-    padding: "8px 14px", borderRadius: 20,
+    padding: "8px 14px", borderRadius: "var(--radius-full)",
     border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
     background: active ? "#eff6ff" : "#f9fafb",
     color: active ? "#0369a1" : "#6b7280",
@@ -338,7 +338,7 @@ export function AscentsClient({
     const c = RARITY_COLORS[r];
     return {
       display: "inline-flex", alignItems: "center", gap: 5,
-      padding: "8px 14px", borderRadius: 20,
+      padding: "8px 14px", borderRadius: "var(--radius-full)",
       border: `1.5px solid ${active ? c.border : "#e5e7eb"}`,
       background: active ? c.bg : "#f9fafb",
       color: active ? c.text : "#6b7280",
@@ -385,7 +385,7 @@ export function AscentsClient({
             onChange={(e) => setSearch(e.target.value)}
             style={{
               width: "100%", padding: "10px 12px 10px 32px", fontSize: 16,
-              border: "1px solid #E5E7EB", borderRadius: 12,
+              border: "1px solid #E5E7EB", borderRadius: "var(--radius-md)",
               boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
               outline: "none", background: "white", boxSizing: "border-box",
               color: "#0D2538",
@@ -398,7 +398,7 @@ export function AscentsClient({
           onClick={() => setFiltersOpen(true)}
           style={{
             display: "flex", alignItems: "center", gap: 6,
-            padding: "10px 14px", borderRadius: 12,
+            padding: "10px 14px", borderRadius: "var(--radius-md)",
             border: `1px solid ${filtersOpen ? "#0D2538" : "#E5E7EB"}`,
             background: filtersOpen ? "#0D2538" : "white",
             boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
@@ -447,7 +447,7 @@ export function AscentsClient({
               className="asc-chip-in"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 5,
-                padding: "5px 10px 5px 12px", borderRadius: 20,
+                padding: "5px 10px 5px 12px", borderRadius: "var(--radius-full)",
                 background: chip.color.bg, border: `1px solid ${chip.color.border}`,
                 color: chip.color.text, fontSize: 12, fontWeight: 600,
                 whiteSpace: "nowrap", flexShrink: 0, cursor: "pointer", lineHeight: 1,
@@ -478,7 +478,7 @@ export function AscentsClient({
         className="asc-sheet"
         style={{
           position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 201,
-          background: "white", borderRadius: "24px 24px 0 0",
+          background: "white", borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
           maxHeight: "92svh", display: "flex", flexDirection: "column",
           paddingBottom: "env(safe-area-inset-bottom)",
           transform: filtersOpen ? "translateY(0)" : "translateY(110%)",
@@ -553,13 +553,13 @@ export function AscentsClient({
                   autoFocus
                   style={{
                     width: "100%", padding: "10px 14px", fontSize: 16,
-                    border: "1.5px solid #e5e7eb", borderRadius: 10,
+                    border: "1.5px solid #e5e7eb", borderRadius: "var(--radius-md)",
                     outline: "none", background: "#f9fafb", boxSizing: "border-box",
                     fontFamily: "inherit",
                   }}
                 />
                 {filteredPersons.length > 0 && (
-                  <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", background: "white" }}>
+                  <div style={{ border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)", overflow: "hidden", background: "white" }}>
                     {filteredPersons.slice(0, 8).map((p) => (
                       <div
                         key={p.id}
@@ -679,7 +679,7 @@ export function AscentsClient({
             style={{
               width: "100%", padding: "16px",
               background: "#2F7A5F", color: "white", border: "none",
-              borderRadius: 14, fontFamily: "inherit",
+              borderRadius: "var(--radius-lg)", fontFamily: "inherit",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               boxShadow: "0 4px 14px rgba(47,122,95,0.32)",
               cursor: "pointer",
@@ -701,7 +701,7 @@ export function AscentsClient({
         viewChip === "friends" && !hasFriends ? (
           <div style={{
             background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
-            border: "1.5px dashed #bfdbfe", borderRadius: 16, padding: "32px 22px",
+            border: "1.5px dashed #bfdbfe", borderRadius: "var(--radius-lg)", padding: "32px 22px",
             textAlign: "center", marginTop: 16,
           }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
@@ -713,7 +713,7 @@ export function AscentsClient({
             </p>
             <Link href="/friends" style={{
               display: "inline-block", background: "#0369a1", color: "white",
-              padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: "none",
+              padding: "8px 18px", borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600, textDecoration: "none",
             }}>
               {t.home_inviteFriends}
             </Link>
@@ -737,7 +737,7 @@ export function AscentsClient({
                   id={`ascent-${a.id}`}
                   {...(a.isUnseen ? { "data-unseen-id": a.id } : {})}
                   style={{
-                    borderRadius: 16,
+                    borderRadius: "var(--radius-lg)",
                     transition: "box-shadow 0.4s ease, outline 0.4s ease",
                     ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
                   }}

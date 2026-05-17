@@ -325,7 +325,7 @@ const CSS = `
   gap: 12px;
   padding: 0 12px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   text-decoration: none;
   border: none;
   background: none;
@@ -449,7 +449,7 @@ const CSS = `
   left: 8px; right: 8px;
   background: #fff;
   border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 16px 40px -4px rgba(0,0,0,0.10);
   overflow: hidden;
   z-index: 200;

@@ -24,7 +24,7 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "12px 14px",
   border: `1px solid ${C.border}`,
-  borderRadius: 12,
+  borderRadius: "var(--radius-md)",
   fontSize: 15,
   color: C.navy,
   background: "#fff",
@@ -77,7 +77,7 @@ function LoginForm() {
     <div style={{
       width: "100%", maxWidth: 420,
       background: "#fff",
-      borderRadius: 20,
+      borderRadius: "var(--radius-xl)",
       border: `1px solid ${C.border}`,
       boxShadow: "0 4px 24px rgba(13,37,56,0.07)",
       padding: "36px 32px 32px",
@@ -103,7 +103,7 @@ function LoginForm() {
         <div style={{
           marginBottom: 16, fontSize: 13, color: "#166534",
           background: "#f0fdf4", border: "1px solid #bbf7d0",
-          borderRadius: 10, padding: "10px 14px",
+          borderRadius: "var(--radius-md)", padding: "10px 14px",
         }}>
           {t.auth_accountCreated}
         </div>
@@ -151,7 +151,7 @@ function LoginForm() {
           <div style={{
             fontSize: 13, color: "#dc2626",
             background: "#fef2f2", border: "1px solid #fecaca",
-            borderRadius: 10, padding: "10px 14px",
+            borderRadius: "var(--radius-md)", padding: "10px 14px",
           }}>
             {error}
           </div>
@@ -165,7 +165,7 @@ function LoginForm() {
             width: "100%", padding: "14px 16px", marginTop: 4,
             background: loading ? C.navyLight : C.green,
             color: "#fff",
-            border: "none", borderRadius: 14,
+            border: "none", borderRadius: "var(--radius-lg)",
             fontSize: 15, fontWeight: 800,
             cursor: loading ? "not-allowed" : "pointer",
             boxShadow: loading ? "none" : "0 4px 14px rgba(47,122,95,0.32)",
@@ -193,7 +193,7 @@ function LoginForm() {
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
           gap: 10, padding: "12px 16px",
-          border: `1px solid ${C.border}`, borderRadius: 12,
+          border: `1px solid ${C.border}`, borderRadius: "var(--radius-md)",
           background: "#fff", fontSize: 14, fontWeight: 500, color: C.navy,
           cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
           fontFamily: "var(--font-inter, sans-serif)",
@@ -223,7 +223,7 @@ export default function LoginPage() {
       padding: "24px 16px",
     }}>
       <Suspense fallback={
-        <div style={{ width: "100%", maxWidth: 420, height: 400, background: "#fff", borderRadius: 20, border: `1px solid ${C.border}` }} />
+        <div style={{ width: "100%", maxWidth: 420, height: 400, background: "#fff", borderRadius: "var(--radius-xl)", border: `1px solid ${C.border}` }} />
       }>
         <LoginForm />
       </Suspense>

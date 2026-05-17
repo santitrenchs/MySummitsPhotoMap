@@ -1128,7 +1128,7 @@ export default function MapView({
                     placeholder="Buscar cima…"
                     style={{
                       width: "100%", padding: "10px 28px 10px 32px",
-                      borderRadius: 12, border: "1px solid #E5E7EB",
+                      borderRadius: "var(--radius-md)", border: "1px solid #E5E7EB",
                       fontSize: 16, color: "#0D2538",
                       background: "white", outline: "none", boxSizing: "border-box",
                       boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
@@ -1156,7 +1156,7 @@ export default function MapView({
                   onClick={() => setMobileFiltersOpen((v) => !v)}
                   style={{
                     display: "flex", alignItems: "center", gap: 6,
-                    padding: "10px 14px", borderRadius: 12,
+                    padding: "10px 14px", borderRadius: "var(--radius-md)",
                     border: `1px solid ${mobileFiltersOpen ? "#0D2538" : "#E5E7EB"}`,
                     background: mobileFiltersOpen ? "#0D2538" : "white",
                     boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
@@ -1192,7 +1192,7 @@ export default function MapView({
                   {filter !== "all" && (
                     <span style={{
                       display: "inline-flex", alignItems: "center", gap: 4,
-                      padding: "4px 8px 4px 10px", borderRadius: 999,
+                      padding: "4px 8px 4px 10px", borderRadius: "var(--radius-full)",
                       background: "white", border: "1px solid #16a34a55",
                     }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: "#16a34a" }}>
@@ -1212,7 +1212,7 @@ export default function MapView({
                   {mythicOnly && (
                     <span style={{
                       display: "inline-flex", alignItems: "center", gap: 4,
-                      padding: "4px 8px 4px 10px", borderRadius: 999,
+                      padding: "4px 8px 4px 10px", borderRadius: "var(--radius-full)",
                       background: "white", border: "1px solid #f59e0b55",
                     }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: "#92400e" }}>⭐ Mythic</span>
@@ -1233,7 +1233,7 @@ export default function MapView({
                     return (
                       <span key={rid} style={{
                         display: "inline-flex", alignItems: "center", gap: 4,
-                        padding: "4px 8px 4px 10px", borderRadius: 999,
+                        padding: "4px 8px 4px 10px", borderRadius: "var(--radius-full)",
                         background: "white", border: `1px solid ${rEntry.color}55`,
                       }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: rEntry.colorDark }}>
@@ -1254,7 +1254,7 @@ export default function MapView({
                   {mobileSort !== "distance" && (
                     <span style={{
                       display: "inline-flex", alignItems: "center", gap: 4,
-                      padding: "4px 8px 4px 10px", borderRadius: 999,
+                      padding: "4px 8px 4px 10px", borderRadius: "var(--radius-full)",
                       background: "white", border: "1px solid #0369a155",
                     }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: "#0369a1" }}>
@@ -1321,14 +1321,14 @@ export default function MapView({
                               </p>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                                 {isClimbed && (
-                                  <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 5px" }}>
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "var(--radius-sm)", padding: "1px 5px" }}>
                                     ✓ Capturada
                                   </span>
                                 )}
                                 {peak.rarity && reEntry && (
                                   <div style={{
                                     display: "inline-flex", alignItems: "center", gap: 3,
-                                    padding: "2px 7px", borderRadius: 999,
+                                    padding: "2px 7px", borderRadius: "var(--radius-full)",
                                     background: rc + "22",
                                   }}>
                                     <RarityFlower id={reEntry.id} size={10} />
@@ -1424,7 +1424,7 @@ export default function MapView({
                           }}
                           style={{
                             display: "inline-flex", alignItems: "center", gap: 5,
-                            padding: "7px 11px", borderRadius: 999,
+                            padding: "7px 11px", borderRadius: "var(--radius-full)",
                             border: `1.5px solid ${active ? r.color + "88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
                             background: active ? r.color + "22" : (locked ? "#F8FAFC" : "#f9fafb"),
                             opacity: locked ? 0.55 : 1,
@@ -1451,7 +1451,7 @@ export default function MapView({
                           onClick={() => { if (!locked) { setMythicOnly((v) => !v); } }}
                           style={{
                             display: "inline-flex", alignItems: "center", gap: 5,
-                            padding: "7px 11px", borderRadius: 999,
+                            padding: "7px 11px", borderRadius: "var(--radius-full)",
                             border: `1.5px solid ${mythicOnly ? "#f59e0b88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
                             background: mythicOnly ? "#fffbeb" : (locked ? "#F8FAFC" : "#f9fafb"),
                             opacity: locked ? 0.55 : 1,
@@ -1641,7 +1641,7 @@ export default function MapView({
                     {peak.rarity && rarityEntry && (
                       <div style={{
                         display: "inline-flex", alignItems: "center", gap: 3,
-                        padding: "2px 7px", borderRadius: 999,
+                        padding: "2px 7px", borderRadius: "var(--radius-full)",
                         background: rarityColor + "22",
                       }}>
                         <RarityFlower id={rarityEntry.id} size={10} />
@@ -1764,7 +1764,7 @@ export default function MapView({
               position: "absolute", top: isMobile && topBarVisible ? MOBILE_TOP_BAR_H + 12 : 70, left: "50%", transform: "translateX(-50%)",
               zIndex: 26, pointerEvents: "none",
               background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)",
-              padding: "6px 14px", borderRadius: 999,
+              padding: "6px 14px", borderRadius: "var(--radius-full)",
               display: "flex", alignItems: "center", gap: 7,
               fontSize: 12, fontWeight: 600, color: "#374151",
               boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
@@ -1825,7 +1825,7 @@ export default function MapView({
               left: "50%", transform: "translateX(-50%)",
               zIndex: 30,
               display: "flex", alignItems: "center", gap: 7,
-              padding: "12px 28px", borderRadius: 999,
+              padding: "12px 28px", borderRadius: "var(--radius-full)",
               background: "#16a34a",
               border: "none",
               boxShadow: "0 4px 16px rgba(0,0,0,0.28)",

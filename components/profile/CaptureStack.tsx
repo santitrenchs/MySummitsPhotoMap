@@ -23,7 +23,7 @@ export function CaptureStack({ count, rarityId }: { count: number; rarityId: Rar
         <div
           key={i}
           style={{
-            width: 18, height: 22, borderRadius: 4,
+            width: 18, height: 22, borderRadius: "var(--radius-sm)",
             border: `1.5px solid ${accent}`,
             marginLeft: i === 0 ? 0 : -6,
             background: i === 0 ? accent : "white",

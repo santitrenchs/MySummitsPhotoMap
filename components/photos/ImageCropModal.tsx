@@ -430,7 +430,7 @@ export function ImageCropModal({
                 {zoomOpen && (
                   <div style={{
                     background: "rgba(0,0,0,0.52)",
-                    borderRadius: 24, padding: "7px 14px",
+                    borderRadius: "var(--radius-xl)", padding: "7px 14px",
                     display: "flex", alignItems: "center", gap: 10,
                     pointerEvents: "auto",
                   }}>
@@ -549,7 +549,7 @@ export function ImageCropModal({
             <button
               onClick={handleRotate}
               style={{
-                background: "none", border: "1px solid #444", borderRadius: 8,
+                background: "none", border: "1px solid #444", borderRadius: "var(--radius-sm)",
                 color: "white", fontSize: 13, cursor: "pointer",
                 padding: "6px 16px", display: "flex", alignItems: "center", gap: 6,
               }}

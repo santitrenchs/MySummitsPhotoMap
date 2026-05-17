@@ -59,7 +59,7 @@ export default function AcceptTermsPage() {
       <div style={{
         width: "100%", maxWidth: 420,
         background: C.cardBg,
-        borderRadius: 24,
+        borderRadius: "var(--radius-xl)",
         border: `1px solid ${C.border}`,
         boxShadow: "0 8px 40px rgba(13,37,56,0.11), 0 1px 4px rgba(13,37,56,0.06)",
         padding: "40px 32px 36px",
@@ -119,7 +119,7 @@ export default function AcceptTermsPage() {
           <div style={{
             fontSize: 13, color: "#dc2626",
             background: "#fef2f2", border: "1px solid #fecaca",
-            borderRadius: 10, padding: "10px 14px", marginBottom: 18,
+            borderRadius: "var(--radius-md)", padding: "10px 14px", marginBottom: 18,
           }}>
             {error}
           </div>
@@ -134,7 +134,7 @@ export default function AcceptTermsPage() {
             width: "100%", padding: "14px 16px",
             background: C.green,
             color: "#fff",
-            border: "none", borderRadius: 14,
+            border: "none", borderRadius: "var(--radius-lg)",
             fontSize: 15, fontWeight: 700,
             cursor: isDisabled ? "not-allowed" : "pointer",
             opacity: isDisabled ? 0.42 : 1,

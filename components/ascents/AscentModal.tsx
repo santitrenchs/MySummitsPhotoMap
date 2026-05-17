@@ -61,7 +61,7 @@ export function AscentModal({
         .ascent-modal-container {
           position: relative;
           background: white;
-          border-radius: 12px;
+          border-radius: var(--radius-md);
           width: min(940px, 92vw);
           height: min(680px, 92svh);
           display: flex;
@@ -154,7 +154,7 @@ export function AscentModal({
                   style={{
                     background: "none", border: "none", cursor: "pointer",
                     padding: 4, color: "#111827", display: "flex", alignItems: "center",
-                    borderRadius: 6,
+                    borderRadius: "var(--radius-sm)",
                   }}
                   aria-label="Cerrar"
                 >

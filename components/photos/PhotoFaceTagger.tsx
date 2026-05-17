@@ -176,7 +176,7 @@ export function PhotoFaceTagger({
     >
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div style={{
-        background: "white", borderRadius: 16,
+        background: "white", borderRadius: "var(--radius-lg)",
         width: "min(900px, 100%)", maxHeight: "calc(100vh - 32px)",
         display: "flex", flexDirection: "column", overflow: "hidden",
       }}>
@@ -191,7 +191,7 @@ export function PhotoFaceTagger({
               <span style={{
                 fontSize: 12, color: detecting ? "#0369a1" : "#6b7280",
                 background: detecting ? "#eff6ff" : "#f3f4f6",
-                padding: "3px 8px", borderRadius: 10, fontWeight: 500,
+                padding: "3px 8px", borderRadius: "var(--radius-md)", fontWeight: 500,
               }}>{status}</span>
             )}
             <button
@@ -199,7 +199,7 @@ export function PhotoFaceTagger({
               disabled={detecting || !imgLoaded || loadingInitial}
               style={{
                 padding: "6px 14px", background: "#0369a1", color: "white",
-                border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                border: "none", borderRadius: "var(--radius-sm)", fontSize: 13, fontWeight: 600,
                 cursor: "pointer", opacity: detecting || !imgLoaded || loadingInitial ? 0.6 : 1,
                 display: "flex", alignItems: "center", gap: 6,
               }}
@@ -213,7 +213,7 @@ export function PhotoFaceTagger({
               onClick={onClose}
               style={{
                 width: 28, height: 28, border: "none", background: "#f3f4f6",
-                borderRadius: 8, cursor: "pointer", fontSize: 14, color: "#6b7280",
+                borderRadius: "var(--radius-sm)", cursor: "pointer", fontSize: 14, color: "#6b7280",
               }}
             >✕</button>
           </div>
@@ -226,7 +226,7 @@ export function PhotoFaceTagger({
               <div style={{
                 position: "absolute", inset: 0, zIndex: 10,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                background: "rgba(255,255,255,0.7)", borderRadius: 8,
+                background: "rgba(255,255,255,0.7)", borderRadius: "var(--radius-sm)",
                 pointerEvents: "none",
               }}>
                 <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid #e5e7eb", borderTopColor: "#0369a1", animation: "spin 0.7s linear infinite" }} />
@@ -238,7 +238,7 @@ export function PhotoFaceTagger({
               src={`/api/photos/${photo.id}/proxy`}
               alt="Photo"
               onLoad={() => setImgLoaded(true)}
-              style={{ display: "block", maxWidth: "100%", maxHeight: "calc(100vh - 200px)", borderRadius: 8 }}
+              style={{ display: "block", maxWidth: "100%", maxHeight: "calc(100vh - 200px)", borderRadius: "var(--radius-sm)" }}
             />
 
             {/* SVG overlay — guaranteed to cover image exactly */}
@@ -296,7 +296,7 @@ export function PhotoFaceTagger({
                     left: `${box.x * 100}%`,
                     top: `${(box.y + box.height) * 100 + 1}%`,
                     background: "white", border: "1px solid #e5e7eb",
-                    borderRadius: 8, padding: 10,
+                    borderRadius: "var(--radius-sm)", padding: 10,
                     zIndex: 10, width: 200,
                     boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
                   }}
@@ -312,7 +312,7 @@ export function PhotoFaceTagger({
                         }}
                         style={{
                           width: "100%", padding: "5px 8px", background: "#eff6ff",
-                          color: "#1d4ed8", border: "1px solid #bfdbfe", borderRadius: 6,
+                          color: "#1d4ed8", border: "1px solid #bfdbfe", borderRadius: "var(--radius-sm)",
                           fontSize: 12, fontWeight: 600, cursor: "pointer", textAlign: "left",
                         }}
                       >
@@ -331,7 +331,7 @@ export function PhotoFaceTagger({
                     placeholder="Person name…"
                     style={{
                       width: "100%", padding: "6px 8px",
-                      border: "1px solid #d1d5db", borderRadius: 6,
+                      border: "1px solid #d1d5db", borderRadius: "var(--radius-sm)",
                       fontSize: 16, outline: "none", boxSizing: "border-box",
                     }}
                   />
@@ -341,7 +341,7 @@ export function PhotoFaceTagger({
                         <div
                           key={p.id}
                           onClick={() => saveTag(det.id, p.id)}
-                          style={{ padding: "4px 8px", fontSize: 12, cursor: "pointer", borderRadius: 4, color: "#374151" }}
+                          style={{ padding: "4px 8px", fontSize: 12, cursor: "pointer", borderRadius: "var(--radius-sm)", color: "#374151" }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f4f6")}
                           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                         >
@@ -356,7 +356,7 @@ export function PhotoFaceTagger({
                       disabled={saving || persons.length !== 1}
                       style={{
                         flex: 1, padding: "5px 8px", background: "#0369a1",
-                        color: "white", border: "none", borderRadius: 6,
+                        color: "white", border: "none", borderRadius: "var(--radius-sm)",
                         fontSize: 12, fontWeight: 600, cursor: "pointer",
                         opacity: saving || persons.length !== 1 ? 0.5 : 1,
                       }}
@@ -368,7 +368,7 @@ export function PhotoFaceTagger({
                         onClick={() => { removeTag(det.id); setActiveBox(null); }}
                         style={{
                           padding: "5px 8px", background: "#fee2e2",
-                          color: "#dc2626", border: "none", borderRadius: 6,
+                          color: "#dc2626", border: "none", borderRadius: "var(--radius-sm)",
                           fontSize: 12, fontWeight: 600, cursor: "pointer",
                         }}
                       >
@@ -396,7 +396,7 @@ export function PhotoFaceTagger({
                   style={{
                     fontSize: 12, fontWeight: 600, color: "#16a34a",
                     background: "#f0fdf4", border: "1px solid #bbf7d0",
-                    borderRadius: 20, padding: "2px 10px",
+                    borderRadius: "var(--radius-full)", padding: "2px 10px",
                   }}
                 >
                   {d.faceTags[0].user?.username ?? d.faceTags[0].user?.name ?? ""}

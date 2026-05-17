@@ -109,7 +109,7 @@ export function PhotoFiltersPanel({ isOpen, photos, filteredCount, tier, setTier
                     title={r.label}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 5,
-                      padding: "7px 11px", borderRadius: 999, cursor: locked ? "default" : "pointer",
+                      padding: "7px 11px", borderRadius: "var(--radius-full)", cursor: locked ? "default" : "pointer",
                       border: `1.5px solid ${active ? r.color + "88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
                       background: active ? r.color + "22" : (locked ? "#F8FAFC" : "#f9fafb"),
                       opacity: locked ? 0.55 : 1,
@@ -135,7 +135,7 @@ export function PhotoFiltersPanel({ isOpen, photos, filteredCount, tier, setTier
                 const active = sort === opt.id;
                 return (
                   <button key={opt.id} onClick={() => setSort(opt.id)}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 20, cursor: "pointer", border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`, background: active ? "#eff6ff" : "#f9fafb", color: active ? "#0369a1" : "#6b7280", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+                    style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: "var(--radius-xl)", cursor: "pointer", border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`, background: active ? "#eff6ff" : "#f9fafb", color: active ? "#0369a1" : "#6b7280", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
                     {t[opt.labelKey]}
                   </button>
                 );
@@ -152,7 +152,7 @@ export function PhotoFiltersPanel({ isOpen, photos, filteredCount, tier, setTier
             style={{
               width: "100%", padding: "16px",
               background: "#2F7A5F", color: "white", border: "none",
-              borderRadius: 14, fontFamily: "inherit",
+              borderRadius: "var(--radius-lg)", fontFamily: "inherit",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               boxShadow: "0 4px 14px rgba(47,122,95,0.32)",
               cursor: "pointer",

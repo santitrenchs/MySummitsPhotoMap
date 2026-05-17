@@ -223,7 +223,7 @@ export default function MapPeaksSidebar({
     ? {
         position: "absolute", bottom: 0, left: 0, right: 0,
         height: "62vh", zIndex: 40,
-        background: "white", borderRadius: "18px 18px 0 0",
+        background: "white", borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
         boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
         display: "flex", flexDirection: "column",
         transform: `translateY(${dragY}px)`,
@@ -235,7 +235,7 @@ export default function MapPeaksSidebar({
         top: 12, right: 12, bottom: 12,
         width: "var(--sidebar-w, 320px)" as unknown as number,
         display: "flex", flexDirection: "column",
-        borderRadius: 16,
+        borderRadius: "var(--radius-lg)",
         background: "white",
         boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
         overflow: "hidden",
@@ -289,7 +289,7 @@ export default function MapPeaksSidebar({
                   placeholder="Buscar cima…"
                   style={{
                     width: "100%", padding: "9px 28px 9px 30px",
-                    borderRadius: 10,
+                    borderRadius: "var(--radius-md)",
                     border: "1px solid #E5E7EB",
                     boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
                     fontSize: 14, fontWeight: 500, color: "#0D2538",
@@ -314,7 +314,7 @@ export default function MapPeaksSidebar({
               <button
                 onClick={() => setFiltersOpen(!filtersOpen)}
                 style={{
-                  padding: "9px 12px", borderRadius: 10,
+                  padding: "9px 12px", borderRadius: "var(--radius-md)",
                   border: `1px solid ${filtersOpen ? "#0D2538" : "#E5E7EB"}`,
                   background: filtersOpen ? "#0D2538" : "white",
                   boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
@@ -429,14 +429,14 @@ export default function MapPeaksSidebar({
                       </p>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                         {isClimbed && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 5px" }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "var(--radius-sm)", padding: "1px 5px" }}>
                             ✓ Capturada
                           </span>
                         )}
                         {peak.rarity && rarityEntry && (
                           <div style={{
                             display: "inline-flex", alignItems: "center", gap: 3,
-                            padding: "2px 7px", borderRadius: 999,
+                            padding: "2px 7px", borderRadius: "var(--radius-full)",
                             background: rc + "22",
                           }}>
                             <RarityFlower id={rarityEntry.id} size={10} />
@@ -496,7 +496,7 @@ export default function MapPeaksSidebar({
           {/* Sheet */}
           <div style={{
             position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 301,
-            background: "white", borderRadius: "24px 24px 0 0",
+            background: "white", borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
             maxHeight: "92svh", display: "flex", flexDirection: "column",
             paddingBottom: "env(safe-area-inset-bottom)",
             transform: filtersOpen ? "translateY(0)" : "translateY(110%)",
@@ -555,7 +555,7 @@ export default function MapPeaksSidebar({
                         title={r.label}
                         style={{
                           display: "inline-flex", alignItems: "center", gap: 5,
-                          padding: "7px 11px", borderRadius: 999, cursor: locked ? "default" : "pointer",
+                          padding: "7px 11px", borderRadius: "var(--radius-full)", cursor: locked ? "default" : "pointer",
                           border: `1.5px solid ${active ? r.color + "88" : (locked ? "#F1F5F9" : "#E5E7EB")}`,
                           background: active ? r.color + "22" : (locked ? "#F8FAFC" : "#f9fafb"),
                           opacity: locked ? 0.55 : 1, transition: "all 0.15s",
@@ -576,7 +576,7 @@ export default function MapPeaksSidebar({
                     title="Mythic"
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 5,
-                      padding: "7px 11px", borderRadius: 999,
+                      padding: "7px 11px", borderRadius: "var(--radius-full)",
                       cursor: mythicCount === 0 ? "default" : "pointer",
                       border: `1.5px solid ${mythicOnly ? "#f59e0b88" : (mythicCount === 0 ? "#F1F5F9" : "#E5E7EB")}`,
                       background: mythicOnly ? "#fffbeb" : (mythicCount === 0 ? "#F8FAFC" : "#f9fafb"),
@@ -610,7 +610,7 @@ export default function MapPeaksSidebar({
                         onClick={() => onFilterChange(opt.value)}
                         style={{
                           display: "inline-flex", alignItems: "center",
-                          padding: "8px 14px", borderRadius: 20, cursor: "pointer",
+                          padding: "8px 14px", borderRadius: "var(--radius-full)", cursor: "pointer",
                           border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
                           background: active ? "#eff6ff" : "#f9fafb",
                           color: active ? "#0369a1" : "#6b7280",
@@ -638,7 +638,7 @@ export default function MapPeaksSidebar({
                         onClick={() => setSort(mode)}
                         style={{
                           display: "inline-flex", alignItems: "center",
-                          padding: "8px 14px", borderRadius: 20, cursor: "pointer",
+                          padding: "8px 14px", borderRadius: "var(--radius-full)", cursor: "pointer",
                           border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
                           background: active ? "#eff6ff" : "#f9fafb",
                           color: active ? "#0369a1" : "#6b7280",
@@ -661,7 +661,7 @@ export default function MapPeaksSidebar({
                 style={{
                   width: "100%", padding: "16px",
                   background: "#2F7A5F", color: "white", border: "none",
-                  borderRadius: 14, fontFamily: "inherit",
+                  borderRadius: "var(--radius-lg)", fontFamily: "inherit",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   boxShadow: "0 4px 14px rgba(47,122,95,0.32)", cursor: "pointer",
                 }}
@@ -688,7 +688,7 @@ function ActiveChip({ label, color, onRemove }: { label: string; color: string; 
       padding: "4px 8px 4px 10px",
       background: "white",
       border: `1px solid ${color}55`,
-      borderRadius: 999,
+      borderRadius: "var(--radius-full)",
     }}>
       <span style={{ fontFamily: "var(--font-inter, sans-serif)", fontSize: 12, fontWeight: 600, color }}>
         {label}

@@ -103,7 +103,7 @@ function LevelCard({ def, status, stats, t, locale }: {
       borderRight:  `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
       borderBottom: `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
       borderLeft:   isCurrent ? `4px solid #0369a1` : `1.5px solid #e5e7eb`,
-      borderRadius: 16,
+      borderRadius: "var(--radius-lg)",
       boxShadow: isCurrent ? "0 2px 12px rgba(3,105,161,0.10)" : "0 1px 3px rgba(0,0,0,0.04)",
       opacity: status === "locked" ? 0.5 : 1,
       marginBottom: 10,
@@ -134,7 +134,7 @@ function LevelCard({ def, status, stats, t, locale }: {
           </span>
           <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, justifyContent: "flex-end" }}>
             {def.targetAscents != null && (
-              <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: "var(--radius-sm)", background: "#f3f4f6", color: "#374151" }}>
                 {def.targetAscents} {t.home_statSummits.toLowerCase()}
               </span>
             )}
@@ -143,7 +143,7 @@ function LevelCard({ def, status, stats, t, locale }: {
                 ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
                 : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
               return (
-                <span key={r.threshold} style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
+                <span key={r.threshold} style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: "var(--radius-sm)", background: "#f3f4f6", color: "#374151" }}>
                   {label}
                 </span>
               );
@@ -155,8 +155,8 @@ function LevelCard({ def, status, stats, t, locale }: {
       {/* ── Progress row (current only, indented to align with name) ── */}
       {isCurrent && def.targetAscents != null && (
         <div style={{ paddingLeft: leftW, marginTop: 12 }}>
-          <div style={{ height: 6, borderRadius: 99, background: "#dbeafe", overflow: "hidden", marginBottom: 6 }}>
-            <div style={{ height: "100%", borderRadius: 99, width: `${ascentPct}%`, background: "linear-gradient(90deg,#0369a1,#0ea5e9)" }} />
+          <div style={{ height: 6, borderRadius: "var(--radius-full)", background: "#dbeafe", overflow: "hidden", marginBottom: 6 }}>
+            <div style={{ height: "100%", borderRadius: "var(--radius-full)", width: `${ascentPct}%`, background: "linear-gradient(90deg,#0369a1,#0ea5e9)" }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
@@ -198,7 +198,7 @@ function BadgeCard({ emoji, title, sub, howTo, rarity, cairns, earned, current, 
       borderBottom: isLast ? "none" : "1px solid #f3f4f6",
     }}>
       <div style={{
-        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+        width: 44, height: 44, borderRadius: "var(--radius-md)", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 22, position: "relative",
         background: earned ? "#fef3c7" : "#f3f4f6",
@@ -229,8 +229,8 @@ function BadgeCard({ emoji, title, sub, howTo, rarity, cairns, earned, current, 
           )}
         </div>
         {!earned && target > 1 && (
-          <div style={{ height: 3, borderRadius: 99, background: "#f3f4f6", marginTop: 3 }}>
-            <div style={{ height: "100%", width: `${progress * 100}%`, borderRadius: 99, background: "#0369a1" }} />
+          <div style={{ height: 3, borderRadius: "var(--radius-full)", background: "#f3f4f6", marginTop: 3 }}>
+            <div style={{ height: "100%", width: `${progress * 100}%`, borderRadius: "var(--radius-full)", background: "#0369a1" }} />
           </div>
         )}
       </div>
@@ -279,7 +279,7 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
             </span>
             <div style={{
               width: "100%", height: totalH,
-              borderRadius: "3px 3px 0 0",
+              borderRadius: "var(--radius-sm) var(--radius-sm) 0 0",
               overflow: "hidden",
               display: "flex",
               flexDirection: "column-reverse",
@@ -408,7 +408,7 @@ export function HomeClient({ data, locale, t }: {
         return (
           <div style={{
             position: "relative",
-            borderRadius: 20,
+            borderRadius: "var(--radius-xl)",
             overflow: "hidden",
             margin: "12px 12px 0",
             backgroundImage: "url('/brand/hero.png')",
@@ -449,7 +449,7 @@ export function HomeClient({ data, locale, t }: {
               {/* Level pill */}
               <div style={{
                 display: "inline-flex", alignItems: "center",
-                padding: "2px 11px", borderRadius: 20,
+                padding: "2px 11px", borderRadius: "var(--radius-full)",
                 background: "#eff6ff",
                 fontSize: 12, fontWeight: 700, color: "#0369a1",
                 letterSpacing: "0.01em",
@@ -483,7 +483,7 @@ export function HomeClient({ data, locale, t }: {
                 display: "flex", alignItems: "center", gap: 6,
                 fontSize: 12.5, letterSpacing: "-0.01em", marginTop: 6,
                 background: "rgba(255,255,255,0.15)",
-                borderRadius: 20, padding: "5px 14px",
+                borderRadius: "var(--radius-full)", padding: "5px 14px",
               }}>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="#fbbf24">
                   <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
@@ -507,7 +507,7 @@ export function HomeClient({ data, locale, t }: {
           <div style={{
             background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
             border: "1.5px solid #86efac",
-            borderRadius: 20, padding: "24px 20px",
+            borderRadius: "var(--radius-xl)", padding: "24px 20px",
             textAlign: "center",
           }}>
             <p style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 800, color: "#14532d", letterSpacing: "-0.02em" }}>
@@ -521,7 +521,7 @@ export function HomeClient({ data, locale, t }: {
               style={{
                 display: "inline-block",
                 background: "#16a34a", color: "white",
-                padding: "11px 24px", borderRadius: 12,
+                padding: "11px 24px", borderRadius: "var(--radius-md)",
                 fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
                 boxShadow: "0 4px 12px rgba(22,163,74,0.35)",
               }}
@@ -557,7 +557,7 @@ export function HomeClient({ data, locale, t }: {
             onClick={() => setProgressionExpanded(true)}
             style={{
               width: "100%", marginTop: 2,
-              background: "none", border: "1.5px solid #e5e7eb", borderRadius: 10,
+              background: "none", border: "1.5px solid #e5e7eb", borderRadius: "var(--radius-md)",
               padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#374151",
               cursor: "pointer",
             }}
@@ -584,7 +584,7 @@ export function HomeClient({ data, locale, t }: {
         <section style={{ padding: "20px 16px 0" }}>
           <div style={{
             background: "white", border: "1px solid #e5e7eb",
-            borderRadius: 16, padding: "16px 16px 12px",
+            borderRadius: "var(--radius-lg)", padding: "16px 16px 12px",
             boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
           }}>
             {(() => {
@@ -621,7 +621,7 @@ export function HomeClient({ data, locale, t }: {
       {/* ── Rarity chart ────────────────────────────────────────────────── */}
       {stats.totalAscents >= 1 && (
         <section style={{ padding: "16px 16px 0" }}>
-          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 16, padding: "16px 16px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", padding: "16px 16px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
             <h2 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#111827" }}>
               {t.home_rarityChartTitle}
             </h2>
@@ -640,7 +640,7 @@ export function HomeClient({ data, locale, t }: {
             </h2>
           </div>
 
-          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
             {leaderboard.slice(0, 5).map((entry, idx) => {
               const rank = idx + 1;
               const isMe = entry.isCurrentUser;
@@ -683,7 +683,7 @@ export function HomeClient({ data, locale, t }: {
                         <span style={{
                           display: "inline-block", marginTop: 2,
                           fontSize: 10, fontWeight: 700, color: "#374151",
-                          background: "#f3f4f6", borderRadius: 6, padding: "1px 6px",
+                          background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px",
                         }}>{levelName}</span>
                       </div>
                       {/* Cimas + Cairns + EP */}
@@ -725,7 +725,7 @@ export function HomeClient({ data, locale, t }: {
                     <span style={{
                       display: "inline-block", marginTop: 1,
                       fontSize: 10, fontWeight: 700, color: "#374151",
-                      background: "#f3f4f6", borderRadius: 6, padding: "1px 6px",
+                      background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px",
                     }}>{levelName}</span>
                   </div>
                   {/* Cimas + Cairns + EP */}
@@ -755,7 +755,7 @@ export function HomeClient({ data, locale, t }: {
         <section style={{ padding: "20px 16px 0" }}>
           <div style={{
             background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
-            border: "1.5px dashed #bfdbfe", borderRadius: 16, padding: "22px",
+            border: "1.5px dashed #bfdbfe", borderRadius: "var(--radius-lg)", padding: "22px",
             textAlign: "center",
           }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
@@ -768,7 +768,7 @@ export function HomeClient({ data, locale, t }: {
             <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
               <Link href="/friends" style={{
                 display: "inline-block", background: "#0369a1", color: "white",
-                padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: "none",
+                padding: "8px 18px", borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600, textDecoration: "none",
               }}>
                 {t.home_inviteFriends}
               </Link>
@@ -797,7 +797,7 @@ export function HomeClient({ data, locale, t }: {
           {recentAscents.map((a) => (
               <Link key={a.id} href={`/ascents?highlight=${a.id}`} style={{ textDecoration: "none", flexShrink: 0 }}>
                 <div style={{
-                  width: 150, borderRadius: 14,
+                  width: 150, borderRadius: "var(--radius-lg)",
                   border: "1px solid #e5e7eb", overflow: "hidden",
                   boxShadow: "0 2px 6px rgba(0,0,0,0.07)",
                 }}>

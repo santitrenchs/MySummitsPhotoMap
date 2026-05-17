@@ -56,7 +56,7 @@ function LayerCard({
         flex: 1,
         display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
         padding: "10px 8px 8px",
-        borderRadius: 12,
+        borderRadius: "var(--radius-md)",
         border: `2px solid ${active ? "#0369a1" : "#e5e7eb"}`,
         background: active ? "#eff6ff" : "#f9fafb",
         cursor: "pointer",
@@ -81,7 +81,7 @@ function LayerCard({
       <div style={{
         width: 44, height: 36,
         display: "flex", alignItems: "center", justifyContent: "center",
-        borderRadius: 8,
+        borderRadius: "var(--radius-sm)",
         background: active ? "rgba(3,105,161,0.1)" : "rgba(0,0,0,0.04)",
         color: active ? "#0369a1" : "#6b7280",
         transition: "background 0.15s, color 0.15s",
@@ -289,7 +289,7 @@ export default function MapControls({
           top: geoBtnPos.top + 8,
           right: window.innerWidth - geoBtnPos.left + 8,
           background: "white",
-          borderRadius: 10,
+          borderRadius: "var(--radius-md)",
           boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
           border: "1px solid #fecaca",
           padding: "8px 12px",
@@ -309,7 +309,7 @@ export default function MapControls({
       {layersOpen && menuPos && createPortal(
         <div ref={menuRef} style={{
           position: "fixed", top: menuPos.top, left: menuPos.left,
-          background: "white", borderRadius: 16,
+          background: "white", borderRadius: "var(--radius-lg)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.16)",
           border: "1px solid #e5e7eb",
           zIndex: 9999, width: 212,

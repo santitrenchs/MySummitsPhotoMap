@@ -60,7 +60,7 @@ export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClic
           {peak.rarity && rarityEntry && (
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 3,
-              padding: "2px 7px", borderRadius: 999,
+              padding: "2px 7px", borderRadius: "var(--radius-full)",
               background: rarityColor + "22", flexShrink: 0,
             }}>
               <RarityFlower id={rarityEntry.id} size={10} />
