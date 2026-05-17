@@ -56,11 +56,11 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
       type: "hillshade",
       source: "terrain-hillshade",
       paint: {
-        "hillshade-exaggeration": 0.7,
+        "hillshade-exaggeration": 0.45,
         "hillshade-illumination-direction": 315,
         "hillshade-illumination-anchor": "map",
-        "hillshade-highlight-color": "rgba(255,255,255,0.4)",
-        "hillshade-shadow-color": "rgba(0,0,0,0.55)",
+        "hillshade-highlight-color": "rgba(255,255,255,0.3)",
+        "hillshade-shadow-color": "rgba(0,0,0,0.3)",
       },
     },
   ],
@@ -111,7 +111,7 @@ export function PeakMiniMap({
       container: containerRef.current,
       style: MAP_STYLE,
       center: [lng, lat],
-      zoom: 12,
+      zoom: 10,
       interactive: false,
       attributionControl: false,
     });
