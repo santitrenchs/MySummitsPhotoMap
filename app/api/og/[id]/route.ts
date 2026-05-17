@@ -2,9 +2,15 @@
  * OG image generator using sharp — composes a card-style image.
  * Uses sharp instead of next/og because next/og (resvg) crashes on Railway.
  *
- * Font strategy: embed Geist-Regular.ttf (bundled with next/og, always in
- * node_modules) as a base64 @font-face in the SVG. This makes text rendering
- * fully self-contained — no system fonts required on Railway Linux.
+ * Font strategy (two layers):
+ *   1. nixpacks.toml copies Geist-Regular.ttf to /app/config/ and creates a
+ *      fonts.conf pointing there; the server starts with FONTCONFIG_FILE set
+ *      so librsvg finds "Geist" via fontconfig. This is the primary path.
+ *   2. We also embed the TTF as a base64 @font-face data URI as a fallback
+ *      for local dev where fontconfig may not be configured.
+ *
+ * librsvg on Railway's minimal Linux image has no system fonts, so both
+ * layers are needed to guarantee text renders without □ replacement chars.
  */
 import path from "path";
 import fs from "fs";
@@ -14,24 +20,30 @@ import { getRarityId, RARITY_COLORS, RARITY_LABELS } from "@/lib/rarity";
 
 export const runtime = "nodejs";
 
-// Load once at module init — stays in memory, cached across requests.
-// Geist-Regular.ttf is ~123KB; base64 is ~164KB.
+// ── Font loading (local dev fallback via base64 data URI) ──────────────────
+// On Railway, fontconfig is configured at startup via FONTCONFIG_FILE so
+// librsvg finds Geist directly. The base64 embed is kept as a belt-and-
+// suspenders fallback — librsvg tries @font-face src before fontconfig.
 const FONT_B64 = (() => {
   try {
-    const p = path.join(
+    // Primary: /app/config/Geist-Regular.ttf (copied by nixpacks build)
+    const railway = path.join(process.cwd(), "config/Geist-Regular.ttf");
+    if (fs.existsSync(railway)) return fs.readFileSync(railway).toString("base64");
+    // Fallback: node_modules (local dev)
+    const dev = path.join(
       process.cwd(),
       "node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf"
     );
-    return fs.readFileSync(p).toString("base64");
+    return fs.readFileSync(dev).toString("base64");
   } catch {
-    return null; // falls back to system fonts if somehow missing
+    return null;
   }
 })();
 
 const FONT_FACE = FONT_B64
-  ? `@font-face { font-family: 'Geist'; src: url('data:font/truetype;base64,${FONT_B64}'); }`
+  ? `@font-face { font-family: 'Geist'; src: url('data:font/truetype;base64,${FONT_B64}') format('truetype'); font-weight: normal; font-style: normal; }`
   : "";
-const FONT = FONT_B64 ? "Geist" : "sans-serif";
+const FONT = "Geist, sans-serif";
 
 const W = 1200;
 const H = 630;

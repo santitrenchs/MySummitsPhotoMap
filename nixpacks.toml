@@ -1,15 +1,26 @@
 # Railway Nixpacks configuration
-# Adds system fonts so sharp/librsvg can render SVG text overlays in OG images.
-# Without these, all text renders as empty boxes (□□□) on the minimal Node image.
+# Sets up fontconfig so librsvg (used by sharp) can render SVG text in OG images.
+# Strategy:
+#   1. Copy Geist-Regular.ttf from node_modules to /app/config/ (stable path)
+#   2. Write a minimal fonts.conf pointing at that directory
+#   3. Start the server with FONTCONFIG_FILE set so librsvg finds it
 
 [phases.setup]
 nixPkgs = [
-  "dejavu_fonts",     # DejaVu Sans — covers full Latin, maps to "sans-serif"
-  "fontconfig",       # Font configuration / fc-cache
+  "fontconfig",   # provides fc-cache and fontconfig libs used by librsvg
 ]
 
 [phases.build]
 cmds = [
-  "fc-cache -fv",     # Register fonts with fontconfig before Next.js build
+  # Create config dir and copy font
+  "mkdir -p /app/config",
+  "cp node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf /app/config/Geist-Regular.ttf || true",
+  # Write minimal fonts.conf
+  "printf '<?xml version=\"1.0\"?>\\n<!DOCTYPE fontconfig SYSTEM \"urn:fontconfig:fonts.dtd\">\\n<fontconfig>\\n  <dir>/app/config</dir>\\n  <cachedir>/tmp/fc-cache</cachedir>\\n</fontconfig>' > /app/config/fonts.conf",
+  # Pre-warm font cache
+  "FONTCONFIG_FILE=/app/config/fonts.conf fc-cache -fv || true",
   "npm run build",
 ]
+
+[start]
+cmd = "FONTCONFIG_FILE=/app/config/fonts.conf npm start"
