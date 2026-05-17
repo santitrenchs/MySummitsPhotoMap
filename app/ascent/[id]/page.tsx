@@ -220,7 +220,7 @@ export default async function PublicAscentPage({
             </div>
           )}
 
-          {/* Peakadex watermark — top-left */}
+          {/* Peakadex watermark — top-left, matches OG image style */}
           <div
             style={{
               position: "absolute",
@@ -228,22 +228,33 @@ export default async function PublicAscentPage({
               left: 12,
               display: "flex",
               alignItems: "center",
-              gap: 4,
-              opacity: 0.38,
+              gap: 0,
+              opacity: 0.80,
               pointerEvents: "none",
+              filter: "drop-shadow(0px 1px 6px rgba(0,0,0,0.7))",
+              fontFamily: "var(--font-manrope), 'Manrope', sans-serif",
+              fontSize: 18,
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+              whiteSpace: "nowrap",
             }}
           >
-            <span style={{ color: "#fff", fontSize: 13, lineHeight: 1, textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>✿</span>
-            <span style={{
-              color: "#fff",
-              fontSize: 9,
-              fontWeight: 700,
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              textShadow: "0 1px 4px rgba(0,0,0,0.6)",
-            }}>
-              PEAKADEX
-            </span>
+            <span style={{ color: "#fff", marginRight: 5 }}>peak</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-icon.svg"
+              width={22}
+              height={22}
+              alt=""
+              style={{
+                display: "block",
+                flexShrink: 0,
+                filter: "brightness(0) invert(1)",
+                transform: "translateY(1px)",
+              }}
+            />
+            <span style={{ color: "#fff", marginLeft: 5 }}>adex</span>
           </div>
 
           {/* Peak info overlay */}
