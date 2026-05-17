@@ -29,6 +29,14 @@ type Stats = {
   totalAscents: number;
 };
 
+const LOCALE_URL: Record<LandingLocale, string> = {
+  es: "https://www.peakadex.com",
+  en: "https://www.peakadex.com/en",
+  fr: "https://www.peakadex.com/fr",
+  de: "https://www.peakadex.com/de",
+  ca: "https://www.peakadex.com/ca",
+};
+
 export default function LandingPage({
   stats,
   peakCounts,
@@ -41,9 +49,51 @@ export default function LandingPage({
   const t = getLandingT(locale);
   // Font variables are scoped to the landing root div — no effect outside landing pages
   const fontClasses = `${baloo2.variable} ${nunito.variable} ${manrope.variable} ${jetbrainsMono.variable}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        name: "Peakadex",
+        url: "https://www.peakadex.com",
+        email: "contact@peakadex.com",
+        sameAs: [],
+      },
+      {
+        "@type": "WebSite",
+        name: "Peakadex",
+        url: "https://www.peakadex.com",
+        inLanguage: locale,
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: "https://www.peakadex.com/map?q={search_term_string}",
+          },
+          "query-input": "required name=search_term_string",
+        },
+      },
+      {
+        "@type": "SoftwareApplication",
+        name: "Peakadex",
+        applicationCategory: "SportsApplication",
+        operatingSystem: "Web",
+        url: LOCALE_URL[locale],
+        inLanguage: locale,
+        description: t.meta_desc,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+      },
+    ],
+  };
+
   return (
     <LandingTProvider value={t}>
       <div className={`ld-root ${fontClasses}`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <LandingNav />
         <main>
           <LandingHero />
