@@ -303,7 +303,7 @@ export type Dict = {
   card_capturedSummit: string; card_capturedMythicSummit: string;
   card_peakCapture: string; card_mythic: string;
   card_rarity: string; card_altitude: string; card_reward: string;
-  card_share: string; card_shareCopied: string; card_shareError: string;
+  card_share: string; card_shareCopied: string; card_shareError: string; card_shareCopyLink: string;
   card_backDesc_daisy: string; card_backDesc_gentian: string;
   card_backDesc_edelweiss: string; card_backDesc_saxifrage: string;
   card_backDesc_cinquefoil: string; card_backDesc_snow_lotus: string;

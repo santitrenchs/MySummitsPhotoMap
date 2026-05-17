@@ -326,7 +326,7 @@ export const fr: Dict = {
   card_capturedSummit: "a capturé un sommet", card_capturedMythicSummit: "a capturé un sommet mythique",
   card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
   card_rarity: "Rareté", card_altitude: "Altitude", card_reward: "Récompense",
-  card_share: "Partager", card_shareCopied: "Lien copié !", card_shareError: "Erreur de partage",
+  card_share: "Partager", card_shareCopied: "Copié !", card_shareError: "Erreur de partage", card_shareCopyLink: "Copier le lien",
   card_backDesc_daisy: "Sommet accessible, parfait pour commencer ton Peakadex.",
   card_backDesc_gentian: "Vraie montagne : ascensions exigeantes et meilleures récompenses.",
   card_backDesc_edelweiss: "Altitudes rares : haute montagne avec sérieux dénivelé.",
