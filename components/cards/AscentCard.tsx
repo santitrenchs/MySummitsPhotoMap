@@ -10,25 +10,26 @@ const APP_URL =
     ? window.location.origin
     : (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.peakadex.com");
 
-async function shareAscent(ascentId: string): Promise<"shared" | "copied" | "error"> {
+async function shareAscent(ascentId: string): Promise<"copied" | "error"> {
+  const url = `${APP_URL}/ascent/${ascentId}`;
   try {
-    // Activate public sharing
-    const res = await fetch(`/api/ascents/${ascentId}/share`, {
+    // Fire API call and clipboard copy in parallel — don't await API before clipboard
+    // (navigator.share / clipboard needs to run within the user gesture window on iOS)
+    const apiCall = fetch(`/api/ascents/${ascentId}/share`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isPublic: true }),
     });
-    if (!res.ok) return "error";
-
-    const url = `${APP_URL}/ascent/${ascentId}`;
 
     if (typeof navigator !== "undefined" && navigator.share) {
-      await navigator.share({ url, title: "Peakadex" });
-      return "shared";
+      // navigator.share must be called synchronously within the gesture — fire it now
+      navigator.share({ url, title: "Peakadex" }).catch(() => {/* dismissed = ok */});
     } else {
       await navigator.clipboard.writeText(url);
-      return "copied";
     }
+
+    await apiCall; // wait for API in background (we already showed the share/copy UI)
+    return "copied";
   } catch {
     return "error";
   }
@@ -268,9 +269,10 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                     e.stopPropagation();
                     setMenuOpen(false);
                     const result = await shareAscent(ascent.id);
-                    if (result === "copied") setShareToast(t.card_shareCopied);
-                    else if (result === "error") setShareToast(t.card_shareError);
-                    if (result !== "error") setTimeout(() => setShareToast(null), 2500);
+                    if (result === "copied") {
+                      setShareToast(t.card_shareCopied);
+                      setTimeout(() => setShareToast(null), 2500);
+                    }
                   }}
                   style={{
                     display: "block", width: "100%", padding: "10px 16px",
