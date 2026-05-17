@@ -14,13 +14,15 @@ function getShareUrl(ascentId: string) {
   return `${APP_URL}/ascent/${ascentId}`;
 }
 
-function activatePublicShare(ascentId: string) {
-  // Fire and forget — sets isPublic=true in the background
-  fetch(`/api/ascents/${ascentId}/share`, {
+async function activatePublicShare(ascentId: string): Promise<void> {
+  // Awaitable — callers on mobile must await this before opening the native
+  // share sheet so WhatsApp/Telegram don't scrape the OG image before
+  // isPublic=true is committed (race condition fix).
+  await fetch(`/api/ascents/${ascentId}/share`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ isPublic: true }),
-  }).catch(() => {/* ignore */});
+  }).catch(() => {/* ignore errors — share still proceeds */});
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -232,14 +234,19 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           <div style={{ display: "flex", alignItems: "center", gap: 2 }} onClick={(e) => e.stopPropagation()}>
             {/* Share icon — always visible */}
             <button
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                activatePublicShare(ascent.id);
                 const url = getShareUrl(ascent.id);
                 const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
                 if (isMobile && typeof navigator !== "undefined" && navigator.share) {
+                  // Await before opening native share sheet — prevents race condition
+                  // where WhatsApp/Telegram scrape the OG image while isPublic is
+                  // still false and cache the navy fallback.
+                  await activatePublicShare(ascent.id);
                   navigator.share({ url, title: "Peakadex" }).catch(() => {});
                 } else {
+                  // Desktop: fire-and-forget is fine (user copies URL manually)
+                  activatePublicShare(ascent.id);
                   setSharePopover(url);
                 }
               }}
