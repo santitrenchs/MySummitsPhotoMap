@@ -59,8 +59,11 @@ const otFont = (() => {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const W = 1200;
-const H = 630;
+// 4:5 portrait — matches the app's photo crop ratio.
+// WhatsApp displays portrait og:images as a tall card (much more impactful
+// than the standard 1200×630 landscape which shows as a short horizontal strip).
+const W = 1080;
+const H = 1350;
 
 function jpegResponse(buf: Buffer, maxAge = 86400) {
   return new Response(new Uint8Array(buf), {
