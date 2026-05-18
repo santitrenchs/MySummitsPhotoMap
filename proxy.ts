@@ -75,22 +75,31 @@ export default auth((req) => {
     pathname.match(/^\/api\/og-data\/[^/]+$/) !== null || // OG data endpoint
     pathname.match(/^\/api\/og\/[^/]+$/) !== null;       // OG image (sharp-composed card)
   const isAdminLogin = pathname === "/admin/login";
-  const isAdminRoute = pathname.startsWith("/admin") && !isAdminLogin;
+  const isAdminPageRoute = pathname.startsWith("/admin") && !isAdminLogin;
+  const isAdminApiRoute = pathname.startsWith("/api/admin");
+  const isAdmin = !!req.auth?.user?.isAdmin;
 
   // Always allow NextAuth internal API routes, health check and public stats
   if (isAuthApi || isPublicApi || pathname === "/api/health") return withPathname(pathname);
 
-  // ── Backoffice (/admin/*) ──────────────────────────────────
+  // ── Backoffice (/admin/* and /api/admin/*) ────────────────────
   if (isAdminLogin) {
     // Already logged in as admin → skip login page
-    if (isLoggedIn && req.auth?.user?.isAdmin) {
+    if (isLoggedIn && isAdmin) {
       return NextResponse.redirect(new URL("/admin/users", req.nextUrl));
     }
     return withPathname(pathname);
   }
 
-  if (isAdminRoute) {
-    if (!isLoggedIn) {
+  if (isAdminApiRoute) {
+    if (!isLoggedIn || !isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
+  if (isAdminPageRoute) {
+    if (!isLoggedIn || !isAdmin) {
       return NextResponse.redirect(new URL("/admin/login", req.nextUrl));
     }
     return withPathname(pathname);

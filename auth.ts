@@ -74,6 +74,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           name: user.name,
           tenantId: user.memberships[0]?.tenantId ?? null,
+          isAdmin: user.isAdmin,
         };
       },
     }),
@@ -83,7 +84,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id ?? "";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.tenantId = (user as any).tenantId;
+        const u = user as any;
+        token.tenantId = u.tenantId;
+        token.isAdmin = u.isAdmin ?? false;
       }
       // For OAuth sign-ins, tenantId may not be in user — fetch from DB
       if (account && !token.tenantId) {
@@ -99,6 +102,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     session({ session, token }) {
       session.user.id = token.id as string;
       session.user.tenantId = token.tenantId as string;
+      session.user.isAdmin = token.isAdmin ?? false;
       return session;
     },
   },
