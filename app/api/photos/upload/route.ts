@@ -22,6 +22,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "file and ascentId are required" }, { status: 400 });
   }
 
+  // Verify the ascent belongs to the authenticated user before accepting the upload
+  const db = await getTenantConnection(session.user.tenantId);
+  const ascent = await db.ascent.findFirst({
+    where: { id: ascentId, tenantId: session.user.tenantId, createdBy: session.user.id },
+    select: { id: true },
+  });
+  if (!ascent) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   if (!ALLOWED_TYPES.includes(file.type)) {
     return NextResponse.json({ error: "Invalid file type. Use JPEG, PNG or WebP." }, { status: 400 });
   }
@@ -43,7 +51,6 @@ export async function POST(req: NextRequest) {
 
     if (reuseOriginalPhotoId && cropMetaRaw) {
       // Re-crop: look up the originalStorageKey of the source photo and reuse it
-      const db = await getTenantConnection(session.user.tenantId);
       const sourcePhoto = await db.photo.findFirst({
         where: { id: reuseOriginalPhotoId, tenantId: session.user.tenantId },
         select: { originalStorageKey: true },

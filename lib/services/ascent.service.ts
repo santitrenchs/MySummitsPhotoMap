@@ -125,11 +125,10 @@ export async function createAscent(
   });
 }
 
-export async function deleteAscent(tenantId: string, ascentId: string) {
+export async function deleteAscent(tenantId: string, ascentId: string, userId: string) {
   const db = await getTenantConnection(tenantId);
-  // Verify ownership before deleting
   const existing = await db.ascent.findFirst({
-    where: { id: ascentId, tenantId },
+    where: { id: ascentId, tenantId, createdBy: userId },
   });
   if (!existing) return null;
   return db.ascent.delete({ where: { id: ascentId } });

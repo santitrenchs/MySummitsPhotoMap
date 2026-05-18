@@ -34,7 +34,9 @@ export async function PATCH(
   }
 
   const db = await getTenantConnection(session.user.tenantId);
-  const existing = await db.ascent.findFirst({ where: { id, tenantId: session.user.tenantId } });
+  const existing = await db.ascent.findFirst({
+    where: { id, tenantId: session.user.tenantId, createdBy: session.user.id },
+  });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const input = parsed.data;
@@ -58,7 +60,7 @@ export async function DELETE(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const deleted = await deleteAscent(session.user.tenantId, id);
+  const deleted = await deleteAscent(session.user.tenantId, id, session.user.id);
   if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json({ ok: true });
