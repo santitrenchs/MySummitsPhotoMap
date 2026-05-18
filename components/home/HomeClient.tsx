@@ -382,7 +382,7 @@ export function HomeClient({ data, locale, t }: {
   }
 
   const SECONDARY_STATS = [
-    { emoji: "📸", value: stats.totalPhotos,  label: t.home_statPhotos,  href: "/ascents" },
+    { emoji: "📸", value: stats.totalPhotos,  label: t.home_statPhotos,  href: "/ascents?view=mine" },
     { emoji: "📍", value: stats.totalRegions, label: t.home_statRegions, href: "/map" },
     { emoji: "👥", value: stats.friendsCount, label: t.home_statFriends, href: "/friends" },
   ];
@@ -784,7 +784,7 @@ export function HomeClient({ data, locale, t }: {
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
             {t.home_recentAscents}
           </h2>
-          <Link href="/ascents" style={{ fontSize: 13, fontWeight: 600, color: "#0369a1", textDecoration: "none" }}>
+          <Link href="/ascents?view=mine" style={{ fontSize: 13, fontWeight: 600, color: "#0369a1", textDecoration: "none" }}>
             {t.home_seeAll} →
           </Link>
         </div>
