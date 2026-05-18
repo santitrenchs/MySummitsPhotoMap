@@ -79,6 +79,8 @@ export default function LandingNav() {
 
   const selectLocale = (lang: typeof LANGS[number]) => {
     setLangOpen(false);
+    // Set cookie before navigating so the middleware doesn't auto-redirect away from "/"
+    document.cookie = `pdx_locale=${lang.value}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
     router.push(lang.href);
   };
 
