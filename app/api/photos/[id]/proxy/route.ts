@@ -22,7 +22,7 @@ export async function GET(
   return new Response(blob, {
     headers: {
       "Content-Type": res.headers.get("Content-Type") ?? "image/jpeg",
-      "Cache-Control": "public, max-age=86400",
+      "Cache-Control": "private, max-age=86400",
     },
   });
 }
