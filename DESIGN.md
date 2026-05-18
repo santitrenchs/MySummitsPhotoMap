@@ -41,6 +41,22 @@ Colors in the icon mark:
 - Snow cap: white `#ffffff`
 - Background: transparent
 
+### Branch note
+
+> **`develop` (staging) has the current logo.** `main` (production) still has the old red flower logo (`#DC2626`). Always read `Logo.tsx` and `public/logo-icon.svg` from `develop`.
+
+### Email header
+
+Emails use `renderBrandHeader()` in `lib/email.ts`. The icon is loaded as a remote image:
+
+```html
+<img src="${APP_URL}/logo-icon.svg" width="32" height="32" alt="">
+```
+
+- "peak": `font-size 28px · font-weight 800 · color #0D2538 · padding-right 9px`
+- "adex": `font-size 28px · font-weight 800 · color #4E6178 · padding-left 9px`
+- CTA buttons: `background #2F7A5F` (Green CTA, never `#0369a1`)
+
 ---
 
 ## Fonts
