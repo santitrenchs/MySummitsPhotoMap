@@ -1,5 +1,7 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { detectLocale } from "@/lib/i18n/detect";
+import { isValidLocale } from "@/lib/i18n";
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
@@ -44,7 +46,19 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+
+  // Auto-set locale cookie on first visit (never overwrite an explicit user preference)
+  const localeCookie = req.cookies.get("locale")?.value;
+  if (!localeCookie || !isValidLocale(localeCookie)) {
+    res.cookies.set("locale", detectLocale(req), {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
+
+  return res;
 });
 
 export const config = {
