@@ -92,6 +92,9 @@ Emails use `renderBrandHeader()` in `lib/email.ts`. The icon is loaded as a remo
 | Green CTA | `#2F7A5F` | Primary CTA buttons (show results) |
 
 ### Rarity colors
+
+> **The rarity emoji is always `✿`** — the same symbol for all rarities, only the color changes. Never use a different emoji (mountain, star, etc.) for rarity indicators.
+
 Each rarity has a vivid `color` and a darker `colorDark`. Used as:
 - **Pill bg**: `color + "22"` (hex alpha ~13%)
 - **Pill border active**: `color + "88"` (hex alpha ~53%)
