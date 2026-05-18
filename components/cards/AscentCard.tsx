@@ -453,9 +453,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               {/* Copy link row */}
               <button
                 onClick={async () => {
-                  const rarityLabel = RARITY_LABELS[getRarity(ascent.peak.altitudeM)];
-                  const copyText = `${ascent.user.name} ha capturado ${ascent.peak.name}\nAltitud: ${ascent.peak.altitudeM} m · Rareza: ${rarityLabel}\n${sharePopover}`;
-                  await navigator.clipboard.writeText(copyText);
+                  await navigator.clipboard.writeText(sharePopover);
                   setLinkCopied(true);
                   setTimeout(() => setLinkCopied(false), 1500);
                 }}
