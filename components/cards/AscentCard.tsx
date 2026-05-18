@@ -236,18 +236,18 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           <div style={{ display: "flex", alignItems: "center", gap: 2 }} onClick={(e) => e.stopPropagation()}>
             {/* Share icon — always visible */}
             <button
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.stopPropagation();
                 const url = getShareUrl(ascent.id, locale);
                 const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
                 if (isMobile && typeof navigator !== "undefined" && navigator.share) {
-                  // Await before opening native share sheet — prevents race condition
-                  // where WhatsApp/Telegram scrape the OG image while isPublic is
-                  // still false and cache the navy fallback.
-                  await activatePublicShare(ascent.id);
+                  // Fire activatePublicShare in parallel — do NOT await before navigator.share()
+                  // iOS Safari requires navigator.share() to be called synchronously within
+                  // the user gesture handler; any await breaks the gesture chain and the
+                  // share sheet silently fails or behaves randomly.
+                  activatePublicShare(ascent.id);
                   navigator.share({ url, title: "Peakadex" }).catch(() => {});
                 } else {
-                  // Desktop: fire-and-forget is fine (user copies URL manually)
                   activatePublicShare(ascent.id);
                   setSharePopover(url);
                 }
