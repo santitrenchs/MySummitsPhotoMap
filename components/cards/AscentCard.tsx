@@ -241,12 +241,10 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 const url = getShareUrl(ascent.id, locale);
                 const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
                 if (isMobile && typeof navigator !== "undefined" && navigator.share) {
-                  // Fire activatePublicShare in parallel — do NOT await before navigator.share()
-                  // iOS Safari requires navigator.share() to be called synchronously within
-                  // the user gesture handler; any await breaks the gesture chain and the
-                  // share sheet silently fails or behaves randomly.
                   activatePublicShare(ascent.id);
-                  navigator.share({ url, title: "Peakadex" }).catch(() => {});
+                  const rarityLabel = RARITY_LABELS[getRarity(ascent.peak.altitudeM)];
+                  const shareText = `${ascent.user.name} ha capturado ${ascent.peak.name}\nAltitud: ${ascent.peak.altitudeM} m\nRareza: ✿ ${rarityLabel}\n${url}`;
+                  navigator.share({ text: shareText, title: "Peakadex" }).catch(() => {});
                 } else {
                   activatePublicShare(ascent.id);
                   setSharePopover(url);
@@ -429,7 +427,9 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               {/* WhatsApp row */}
               <button
                 onClick={() => {
-                  window.open(`https://wa.me/?text=${encodeURIComponent(sharePopover)}`, "_blank");
+                  const rarityLabel = RARITY_LABELS[getRarity(ascent.peak.altitudeM)];
+                  const waText = `${ascent.user.name} ha capturado ${ascent.peak.name}\nAltitud: ${ascent.peak.altitudeM} m\nRareza: ✿ ${rarityLabel}\n${sharePopover}`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(waText)}`, "_blank");
                 }}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", gap: 12,
