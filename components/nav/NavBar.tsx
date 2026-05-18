@@ -173,17 +173,6 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           width: 28px;
           height: 28px;
         }
-        .tab-item.active .tab-icon-wrap::after {
-          content: '';
-          position: absolute;
-          bottom: -2px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: #0369a1;
-        }
         .tab-label {
           font-size: 9.5px;
           font-weight: 500;

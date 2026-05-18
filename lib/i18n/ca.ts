@@ -4,7 +4,7 @@ export const ca: Dict = {
   dateLocale: "ca-ES",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Azimut", nav_ascents: "Activitat",
+  nav_map: "Azimut", nav_ascents: "Bitàcola",
   nav_settings: "Configuració", nav_signOut: "Tancar sessió", nav_profile: "Perfil",
   nav_comingSoon: "Aviat", nav_logAscent: "Registrar ascensió",
 
