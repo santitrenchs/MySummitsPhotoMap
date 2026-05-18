@@ -243,8 +243,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 if (isMobile && typeof navigator !== "undefined" && navigator.share) {
                   activatePublicShare(ascent.id);
                   const rarityLabel = RARITY_LABELS[getRarity(ascent.peak.altitudeM)];
-                  const shareText = `${ascent.user.name} ha capturado ${ascent.peak.name}\nAltitud: ${ascent.peak.altitudeM} m\nRareza: ✿ ${rarityLabel}\n${url}`;
-                  navigator.share({ text: shareText, title: "Peakadex" }).catch(() => {});
+                  const shareText = `${ascent.user.name} ha capturado ${ascent.peak.name}\nAltitud: ${ascent.peak.altitudeM} m\nRareza: ✿ ${rarityLabel}`;
+                  navigator.share({ url, text: shareText, title: "Peakadex" }).catch(() => {});
                 } else {
                   activatePublicShare(ascent.id);
                   setSharePopover(url);
@@ -429,7 +429,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 onClick={() => {
                   const rarityLabel = RARITY_LABELS[getRarity(ascent.peak.altitudeM)];
                   const waText = `${ascent.user.name} ha capturado ${ascent.peak.name}\nAltitud: ${ascent.peak.altitudeM} m\nRareza: ✿ ${rarityLabel}\n${sharePopover}`;
-                  window.open(`https://wa.me/?text=${encodeURIComponent(waText)}`, "_blank");
+                  window.open(`https://wa.me/?text=${encodeURIComponent(waText)}`, "_blank"); // sharePopover = URL, needed for WA preview
                 }}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", gap: 12,
