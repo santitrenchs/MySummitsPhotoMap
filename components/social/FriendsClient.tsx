@@ -257,32 +257,7 @@ export function FriendsClient({
       {/* ── Add friends (search) ── */}
       <div style={{ marginBottom: 28, paddingBottom: 24, borderBottom: "1px solid #f3f4f6" }}>
         <SectionHeader label={t.friends_addSection} />
-      </div>
-
-      {/* ── Incoming requests ── */}
-      {incoming.length > 0 && (
-        <div style={{ marginBottom: 28 }}>
-          <SectionHeader label={i(t.friends_pendingSection, { n: incoming.length })} />
-          {incoming.map((req) => (
-            <UserRow key={req.id}>
-              <Avatar name={req.requester.name} size={38} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{req.requester.name}</p>
-                {req.requester.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{req.requester.username}</p>}
-              </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <Btn onClick={() => accept(req)}>{t.friends_accept}</Btn>
-                <Btn variant="ghost" onClick={() => reject(req.id)}>{t.friends_reject}</Btn>
-              </div>
-            </UserRow>
-          ))}
-        </div>
-      )}
-
-
-      {/* ── Search (filters friend list) ── */}
-      {friends.length > 0 && (
-        <div style={{ position: "relative", marginBottom: 12 }}>
+        <div style={{ position: "relative" }}>
           <input
             type="search"
             value={query}
@@ -343,7 +318,28 @@ export function FriendsClient({
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Incoming requests ── */}
+      {incoming.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <SectionHeader label={i(t.friends_pendingSection, { n: incoming.length })} />
+          {incoming.map((req) => (
+            <UserRow key={req.id}>
+              <Avatar name={req.requester.name} size={38} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{req.requester.name}</p>
+                {req.requester.username && <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>@{req.requester.username}</p>}
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <Btn onClick={() => accept(req)}>{t.friends_accept}</Btn>
+                <Btn variant="ghost" onClick={() => reject(req.id)}>{t.friends_reject}</Btn>
+              </div>
+            </UserRow>
+          ))}
+        </div>
       )}
+
 
       {/* ── Friends management (remove / block) ── */}
       {friends.length > 0 && (
