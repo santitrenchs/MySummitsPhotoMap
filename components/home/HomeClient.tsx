@@ -799,7 +799,7 @@ export function HomeClient({ data, locale, t }: {
                 <div style={{
                   width: 150, borderRadius: "var(--radius-lg)",
                   border: "1px solid #e5e7eb", overflow: "hidden",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.07)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
                 }}>
                   <div style={{ height: 120, background: "#e5e7eb", position: "relative", overflow: "hidden" }}>
                     {a.photoUrl
