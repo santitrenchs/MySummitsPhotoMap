@@ -5,6 +5,7 @@ import type * as FaceApiType from "@vladmandic/face-api";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { getFaceApi } from "./faceApiSingleton";
+import { Button } from "@/components/ui/Button";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -713,19 +714,16 @@ export function PhotoTagStep({
               <span style={{ fontSize: 16 }}>{drawMode ? "✕" : "+"}</span>
               {drawMode ? t.tag_cancelDraw : t.tag_addManual}
             </button>
-            <button
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
               onClick={handleDone}
               disabled={phase === "detecting"}
-              style={{
-                width: "100%", padding: "15px",
-                background: phase === "detecting" ? "rgba(255,255,255,0.2)" : "white",
-                color: "#111827", border: "none", borderRadius: 14,
-                fontSize: 15, fontWeight: 700,
-                cursor: phase === "detecting" ? "default" : "pointer",
-              }}
+              style={{ borderRadius: 14 }}
             >
               {phase === "detecting" ? t.tag_detecting2 : taggedCount > 0 ? i(t.tag_continueTagged, { n: taggedCount }) : t.tag_continue}
-            </button>
+            </Button>
           </div>
         )}
       </div>

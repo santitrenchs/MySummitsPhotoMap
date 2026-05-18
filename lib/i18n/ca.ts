@@ -89,6 +89,8 @@ export const ca: Dict = {
   friends_noPending: "Sense sol·licituds pendents", friends_noFriends: "Encara no tens amics a Peakadex",
   friends_noFriendsSub: "Cerca els teus companys de muntanya aquí dalt",
   friends_noResults: "No s'han trobat usuaris", friends_since: "Amics des de",
+  friends_filterResults: "{n} resultat{n,plural,=1{}other{s}}",
+  friends_seeMore: "Veure'n més ({n} restants)",
   friends_block: "Bloquejar", friends_blocked: "Bloquejat", friends_unblock: "Desbloquejar",
   friends_blockedSection: "Bloquejats", friends_friendsSection: "Amics", friends_addSection: "Afegir amics",
   friends_inviteSection: "Convidar un amic", friends_invitePlaceholder: "email@exemple.com",

@@ -89,6 +89,8 @@ export const en: Dict = {
   friends_noPending: "No pending requests", friends_noFriends: "No friends yet on Peakadex",
   friends_noFriendsSub: "Search for your mountain companions above",
   friends_noResults: "No users found", friends_since: "Friends since",
+  friends_filterResults: "{n} result{n,plural,=1{}other{s}}",
+  friends_seeMore: "See more ({n} remaining)",
   friends_block: "Block", friends_blocked: "Blocked", friends_unblock: "Unblock",
   friends_blockedSection: "Blocked users", friends_friendsSection: "Friends", friends_addSection: "Add friends",
   friends_inviteSection: "Invite a friend", friends_invitePlaceholder: "email@example.com",

@@ -9,6 +9,7 @@ import { useT } from "@/components/providers/I18nProvider";
 import { i as fmt } from "@/lib/i18n";
 import { extractImageMeta } from "@/lib/exif";
 import { nearestPeak } from "@/lib/nearest-peak";
+import { Button } from "@/components/ui/Button";
 
 type Peak = {
   id: string;
@@ -417,37 +418,24 @@ export function NewAscentForm({
       )}
 
       <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", alignItems: "center" }}>
-        <button
-          type="button" onClick={() => router.back()}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => router.back()}
           disabled={loading}
-          style={{
-            padding: "9px 18px", border: "1px solid #e5e7eb",
-            background: "white", color: "#374151",
-            borderRadius: 8, fontSize: 13, fontWeight: 600,
-            cursor: "pointer", opacity: loading ? 0.5 : 1,
-          }}
         >
           {t.cancel}
-        </button>
-        <button
-          type="submit" disabled={loading}
-          style={{
-            padding: "9px 18px", background: "#0369a1", color: "white",
-            border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
-            cursor: loading ? "default" : "pointer",
-            opacity: loading ? 0.75 : 1,
-            display: "flex", alignItems: "center", gap: 7,
-            minWidth: 90, justifyContent: "center",
-          }}
+        </Button>
+        <Button
+          type="submit"
+          variant="primary"
+          size="sm"
+          loading={loading}
+          style={{ minWidth: 90 }}
         >
-          {loading && (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
-              <style>{`@keyframes naSpin{to{transform:rotate(360deg)}} .na-sp{animation:naSpin 0.75s linear infinite;transform-origin:12px 12px;}`}</style>
-              <g className="na-sp"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 2a10 10 0 0 0-10 10" opacity="0.25"/></g>
-            </svg>
-          )}
           {t.newAscent_save}
-        </button>
+        </Button>
       </div>
     </form>}
     </>

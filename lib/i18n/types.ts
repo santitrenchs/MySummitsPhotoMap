@@ -102,7 +102,7 @@ export type Dict = {
   friends_accept: string; friends_reject: string; friends_remove: string; friends_cancel: string;
   friends_pendingSection: string; friends_noPending: string;
   friends_noFriends: string; friends_noFriendsSub: string; friends_noResults: string;
-  friends_since: string;
+  friends_since: string; friends_filterResults: string; friends_seeMore: string;
   friends_taggedSection: string;
   friends_block: string; friends_blocked: string; friends_unblock: string;
   friends_blockedSection: string; friends_friendsSection: string; friends_addSection: string;

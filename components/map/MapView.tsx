@@ -9,6 +9,7 @@ import MapFilterBar from "./MapFilterBar";
 import MapControls from "./MapControls";
 import MapPeaksSidebar from "./MapPeaksSidebar";
 import MapOnboardingModal from "./MapOnboardingModal";
+import { Button } from "@/components/ui/Button";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1228,41 +1229,32 @@ export default function MapView({
                 <div style={{ padding: "10px 12px 12px", display: "flex", gap: 8 }}>
                   {ascent ? (
                     <>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => { window.location.href = `/ascents?highlight=${ascent.ascentId}&peak=${peak.id}`; }}
-                        style={{
-                          flex: 1, padding: "9px 0",
-                          background: "white", border: "1.5px solid #e5e7eb",
-                          borderRadius: 10, fontSize: 12, fontWeight: 600,
-                          color: "#374151", cursor: "pointer",
-                        }}
+                        style={{ flex: 1, borderRadius: 10 }}
                       >
                         Ver capturas
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="dark"
+                        size="sm"
                         onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peak.name } }))}
-                        style={{
-                          flex: 1, padding: "9px 0",
-                          background: "#111827", border: "none",
-                          borderRadius: 10, fontSize: 12, fontWeight: 600,
-                          color: "white", cursor: "pointer",
-                        }}
+                        style={{ flex: 1, borderRadius: 10 }}
                       >
                         Capturar
-                      </button>
+                      </Button>
                     </>
                   ) : (
-                    <button
+                    <Button
+                      variant="dark"
+                      size="sm"
                       onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peak.name } }))}
-                      style={{
-                        flex: 1, padding: "10px 0",
-                        background: "#111827", border: "none",
-                        borderRadius: 10, fontSize: 13, fontWeight: 600,
-                        color: "white", cursor: "pointer",
-                      }}
+                      style={{ flex: 1, borderRadius: 10 }}
                     >
                       + Capturar
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -1360,7 +1352,10 @@ export default function MapView({
 
         {/* ── Mobile toggle button (Mapa / Lista) ──────────────────────── */}
         {isMobile && (
-          <button
+          <Button
+            variant="success"
+            size="lg"
+            pill
             onClick={() => {
               searchOpenedListRef.current = false;
               setMobileView((v) => {
@@ -1373,17 +1368,13 @@ export default function MapView({
               bottom: "var(--bottom-nav-h, 0px)",
               left: "50%", transform: "translateX(-50%)",
               zIndex: 30,
-              display: "flex", alignItems: "center", gap: 7,
-              padding: "12px 28px", borderRadius: 999,
-              background: "#16a34a",
-              border: "none",
               boxShadow: "0 4px 16px rgba(0,0,0,0.28)",
-              fontSize: 14, fontWeight: 700, color: "white", cursor: "pointer",
               whiteSpace: "nowrap",
+              gap: 7,
             }}
           >
             {mobileView === "map" ? "≡ Lista" : "◀ Mapa"}
-          </button>
+          </Button>
         )}
 
         {/* ── Desktop sidebar — OUTSIDE containerRef, next to map ─────── */}

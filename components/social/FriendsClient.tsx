@@ -438,7 +438,7 @@ export function FriendsClient({
             <SectionHeader label={`${t.friends_friendsSection} · ${friends.length}`} />
             {query.trim().length >= 2 && filteredFriends.length !== friends.length && (
               <span style={{ fontSize: 11, color: "#9ca3af" }}>
-                ({filteredFriends.length} resultado{filteredFriends.length !== 1 ? "s" : ""})
+                ({i(t.friends_filterResults, { n: filteredFriends.length })})
               </span>
             )}
           </div>
@@ -512,7 +512,7 @@ export function FriendsClient({
                 color: "#0369a1", cursor: "pointer",
               }}
             >
-              Ver más ({filteredFriends.length - visibleCount} restantes)
+              {i(t.friends_seeMore, { n: filteredFriends.length - visibleCount })}
             </button>
           )}
         </div>

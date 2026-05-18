@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
+import { Button } from "@/components/ui/Button";
 
 export type PersonCard = {
   id: string;
@@ -271,20 +272,25 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setEditingPerson(null)}
                 disabled={saving}
-                style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}
+                style={{ borderRadius: 10 }}
               >
                 {t.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleSaveEdit}
                 disabled={saving || !editName.trim()}
-                style={{ padding: "9px 18px", background: "#0369a1", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
+                loading={saving}
+                style={{ borderRadius: 10 }}
               >
-                {saving ? t.saving : t.save}
-              </button>
+                {t.save}
+              </Button>
             </div>
           </div>
         </div>
@@ -313,14 +319,25 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
               <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 22px" }}>{t.people_delete_body_simple}</p>
             )}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => setDeleteConfirm(null)} disabled={deleting}
-                style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                style={{ borderRadius: 10 }}
+              >
                 {t.cancel}
-              </button>
-              <button onClick={confirmDelete} disabled={deleting}
-                style={{ padding: "9px 18px", background: "#ef4444", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer", opacity: deleting ? 0.6 : 1 }}>
-                {deleting ? t.deleting : t.delete}
-              </button>
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={confirmDelete}
+                disabled={deleting}
+                loading={deleting}
+                style={{ borderRadius: 10 }}
+              >
+                {t.delete}
+              </Button>
             </div>
           </div>
         </div>
@@ -386,24 +403,25 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
             )}
 
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setReconciling(null)}
                 disabled={reconcileSaving}
-                style={{ padding: "9px 18px", background: "#f3f4f6", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }}
+                style={{ borderRadius: 10 }}
               >
                 {t.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleReconcile}
                 disabled={!selectedFriendId || reconcileSaving}
-                style={{
-                  padding: "9px 18px", background: "#0369a1", border: "none", borderRadius: 10,
-                  fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer",
-                  opacity: !selectedFriendId || reconcileSaving ? 0.5 : 1,
-                }}
+                loading={reconcileSaving}
+                style={{ borderRadius: 10 }}
               >
-                {reconcileSaving ? "…" : t.people_reconcileConfirm}
-              </button>
+                {t.people_reconcileConfirm}
+              </Button>
             </div>
           </div>
         </div>

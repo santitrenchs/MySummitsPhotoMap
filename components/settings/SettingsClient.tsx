@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { LOCALE_OPTIONS } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n/types";
+import { Button } from "@/components/ui/Button";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -251,15 +252,16 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
         <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
           {accountSuccess && <span style={{ fontSize: 13, color: "#16a34a", fontWeight: 600 }}>{t.settings_saved}</span>}
           {accountError && <span style={{ fontSize: 13, color: "#dc2626" }}>{accountError}</span>}
-          <button onClick={saveAccount} disabled={!canSaveAccount || accountSaving}
-            style={{
-              marginLeft: "auto", padding: "9px 20px", background: "#111827", color: "white",
-              border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
-              cursor: canSaveAccount && !accountSaving ? "pointer" : "default",
-              opacity: canSaveAccount && !accountSaving ? 1 : 0.45, transition: "opacity 0.15s",
-            }}>
-            {accountSaving ? t.saving : t.settings_saveChanges}
-          </button>
+          <Button
+            variant="dark"
+            size="sm"
+            onClick={saveAccount}
+            disabled={!canSaveAccount || accountSaving}
+            loading={accountSaving}
+            style={{ marginLeft: "auto" }}
+          >
+            {t.settings_saveChanges}
+          </Button>
         </div>
       </Card>
 
@@ -296,14 +298,23 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
               {pwError && <p style={{ fontSize: 13, color: "#dc2626", margin: 0 }}>{pwError}</p>}
               {pwSuccess && <p style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, margin: 0 }}>{t.settings_passwordChanged}</p>}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingTop: 4 }}>
-                <button type="button" onClick={() => { setPwOpen(false); setPwError(null); setCurrentPw(""); setNewPw(""); setConfirmPw(""); }}
-                  style={{ padding: "9px 16px", background: "white", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setPwOpen(false); setPwError(null); setCurrentPw(""); setNewPw(""); setConfirmPw(""); }}
+                >
                   {t.cancel}
-                </button>
-                <button type="submit" disabled={pwSaving}
-                  style={{ padding: "9px 20px", background: "#111827", color: "white", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: pwSaving ? "default" : "pointer", opacity: pwSaving ? 0.5 : 1 }}>
-                  {pwSaving ? t.saving : t.settings_changePassword}
-                </button>
+                </Button>
+                <Button
+                  type="submit"
+                  variant="dark"
+                  size="sm"
+                  disabled={pwSaving}
+                  loading={pwSaving}
+                >
+                  {t.settings_changePassword}
+                </Button>
               </div>
             </form>
           )}
@@ -336,17 +347,27 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
       <SectionHeader label={t.settings_dangerZone} />
       <Card>
         <SettingsRow label={t.settings_signOut} description={t.settings_signOutDesc}>
-          <button onClick={() => signOut({ callbackUrl: "/login" })}
-            style={{ padding: "8px 16px", background: "white", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            style={{ flexShrink: 0 }}
+          >
             {t.settings_signOut}
-          </button>
+          </Button>
         </SettingsRow>
         <div style={{ padding: "14px 16px", borderTop: "1px solid #f3f4f6" }}>
           {!deleteOpen ? (
-            <button type="button" onClick={() => setDeleteOpen(true)}
-              style={{ width: "100%", padding: "10px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            <Button
+              type="button"
+              variant="danger-subtle"
+              size="sm"
+              fullWidth
+              onClick={() => setDeleteOpen(true)}
+              style={{ border: "1px solid #fecaca" }}
+            >
               {t.settings_deleteAccount}
-            </button>
+            </Button>
           ) : (
             <div>
               <p style={{ fontSize: 13, color: "#dc2626", fontWeight: 600, margin: "0 0 4px" }}>{t.settings_deletePermanent}</p>
@@ -357,20 +378,26 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
                 placeholder={t.settings_deleteConfirmPlaceholder.replace("DELETE", deleteWord).replace("ELIMINAR", deleteWord).replace("LÖSCHEN", deleteWord).replace("SUPPRIMER", deleteWord)}
                 style={{ ...inputStyle, borderColor: "#fca5a5", marginBottom: 12, fontFamily: "monospace" }} />
               <div style={{ display: "flex", gap: 8 }}>
-                <button type="button" onClick={() => { setDeleteOpen(false); setDeleteConfirm(""); }}
-                  style={{ flex: 1, padding: "10px", background: "white", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setDeleteOpen(false); setDeleteConfirm(""); }}
+                  style={{ flex: 1 }}
+                >
                   {t.cancel}
-                </button>
-                <button type="button" onClick={deleteAccount} disabled={!canDeleteConfirm || deleting}
-                  style={{
-                    flex: 1, padding: "10px", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                    background: canDeleteConfirm ? "#dc2626" : "#fef2f2",
-                    color: canDeleteConfirm ? "white" : "#fca5a5",
-                    cursor: canDeleteConfirm && !deleting ? "pointer" : "default",
-                    transition: "background 0.2s, color 0.2s",
-                  }}>
-                  {deleting ? t.settings_deleting : t.settings_deleteConfirmButton}
-                </button>
+                </Button>
+                <Button
+                  type="button"
+                  variant={canDeleteConfirm ? "danger" : "danger-subtle"}
+                  size="sm"
+                  onClick={deleteAccount}
+                  disabled={!canDeleteConfirm || deleting}
+                  loading={deleting}
+                  style={{ flex: 1 }}
+                >
+                  {t.settings_deleteConfirmButton}
+                </Button>
               </div>
             </div>
           )}

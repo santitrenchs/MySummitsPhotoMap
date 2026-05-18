@@ -7,6 +7,7 @@ import { i } from "@/lib/i18n";
 import { AscentCard } from "@/components/cards/AscentCard";
 import { GroupedAscentCard } from "@/components/cards/GroupedAscentCard";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 export type AscentData = {
   id: string;
@@ -631,16 +632,12 @@ export function AscentsClient({
 
         {/* CTA */}
         <div style={{ padding: "12px 20px 16px", borderTop: "1px solid #f3f4f6", flexShrink: 0 }}>
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
             onClick={() => setFiltersOpen(false)}
-            style={{
-              width: "100%", padding: "16px",
-              background: "#0369a1", color: "white", border: "none",
-              borderRadius: 14, fontFamily: "inherit",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              boxShadow: "0 4px 14px rgba(3,105,161,0.32)",
-              cursor: "pointer",
-            }}
+            style={{ borderRadius: 14, fontFamily: "inherit", boxShadow: "0 4px 14px rgba(3,105,161,0.32)", gap: 6 }}
           >
             <span style={{ fontSize: 15, fontWeight: 800 }}>
               {i(t.filter_results, { n: filtered.length })}
@@ -649,7 +646,7 @@ export function AscentsClient({
             <span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>
               {i(t.filter_uniquePeaks, { n: uniquePeaks })}
             </span>
-          </button>
+          </Button>
         </div>
       </div>
 

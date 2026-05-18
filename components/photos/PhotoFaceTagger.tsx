@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getFaceApi } from "./faceApiSingleton";
+import { Button } from "@/components/ui/Button";
 
 type BoundingBox = { x: number; y: number; width: number; height: number };
 type TaggedUser = { id: string; name: string; username: string | null };
@@ -194,21 +195,15 @@ export function PhotoFaceTagger({
                 padding: "3px 8px", borderRadius: 10, fontWeight: 500,
               }}>{status}</span>
             )}
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={detectFaces}
               disabled={detecting || !imgLoaded || loadingInitial}
-              style={{
-                padding: "6px 14px", background: "#0369a1", color: "white",
-                border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                cursor: "pointer", opacity: detecting || !imgLoaded || loadingInitial ? 0.6 : 1,
-                display: "flex", alignItems: "center", gap: 6,
-              }}
+              loading={detecting || loadingInitial}
             >
-              {(detecting || loadingInitial) && (
-                <span style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "white", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />
-              )}
               {loadingInitial ? "Carregant…" : detecting ? "Detectant…" : !imgLoaded ? "Carregant…" : detections.length > 0 ? "Re-detectar" : "Detectar cares"}
-            </button>
+            </Button>
             <button
               onClick={onClose}
               style={{
@@ -351,29 +346,25 @@ export function PhotoFaceTagger({
                     </div>
                   )}
                   <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                    <button
+                    <Button
+                      variant="primary"
+                      size="sm"
                       onClick={() => persons.length === 1 && saveTag(det.id, persons[0].id)}
                       disabled={saving || persons.length !== 1}
-                      style={{
-                        flex: 1, padding: "5px 8px", background: "#0369a1",
-                        color: "white", border: "none", borderRadius: 6,
-                        fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        opacity: saving || persons.length !== 1 ? 0.5 : 1,
-                      }}
+                      loading={saving}
+                      style={{ flex: 1, borderRadius: 6 }}
                     >
                       Save
-                    </button>
+                    </Button>
                     {tagged && (
-                      <button
+                      <Button
+                        variant="danger-subtle"
+                        size="sm"
                         onClick={() => { removeTag(det.id); setActiveBox(null); }}
-                        style={{
-                          padding: "5px 8px", background: "#fee2e2",
-                          color: "#dc2626", border: "none", borderRadius: 6,
-                          fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        }}
+                        style={{ borderRadius: 6 }}
                       >
                         Remove
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
