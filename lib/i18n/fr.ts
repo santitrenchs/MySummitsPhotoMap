@@ -322,7 +322,7 @@ export const fr: Dict = {
   card_backDesc_snow_lotus: "Le toit du monde. Seuls les sommets de plus de 8000 mètres portent cette rareté.",
   map_onboarding_title: "Collectionne les raretés\nde la montagne",
   map_onboarding_sub: "Chaque sommet cache une fleur unique. Plus tu grimpes haut, plus la trouvaille est rare. Explore, ascends et construis ta collection.",
-  map_onboarding_rarities: "Les 6 raretés",
+  map_onboarding_rarities: "Niveaux de rareté",
   map_onboarding_cta: "Explorer la carte",
   map_onboarding_dontShow: "Ne plus afficher",
 };

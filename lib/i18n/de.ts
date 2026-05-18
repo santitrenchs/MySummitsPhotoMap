@@ -322,7 +322,7 @@ export const de: Dict = {
   card_backDesc_snow_lotus: "Das Dach der Welt. Nur Gipfel über 8000 Meter tragen diese Seltenheit.",
   map_onboarding_title: "Sammle die seltenen\nBlumen der Berge",
   map_onboarding_sub: "Jeder Gipfel birgt eine einzigartige Blume. Je höher du steigst, desto seltener der Fund. Erkunde, besteige und baue deine Sammlung auf.",
-  map_onboarding_rarities: "Die 6 Seltenheiten",
+  map_onboarding_rarities: "Seltenheitsstufen",
   map_onboarding_cta: "Karte erkunden",
   map_onboarding_dontShow: "Nicht mehr anzeigen",
 };

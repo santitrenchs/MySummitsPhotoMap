@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { RARITIES } from "@/lib/rarity";
 import { useT } from "@/components/providers/I18nProvider";
 
@@ -15,11 +15,14 @@ function altRange(idx: number, locale: string): string {
 
 const CARD_STYLES: Record<string, { bg: string; border: string; text: string }> = {
   daisy:      { bg: "#f0fdf7", border: "#6ee7b7", text: "#007a46" },
-  gentian:    { bg: "#faf5ff", border: "#d8b4fe", text: "#7e22ce" },
-  edelweiss:  { bg: "#eff6ff", border: "#93c5fd", text: "#1d4ed8" },
+  heather:    { bg: "#ecfeff", border: "#67e8f9", text: "#0e7490" },
+  gentian:    { bg: "#eff6ff", border: "#93c5fd", text: "#1e40af" },
+  tundra:     { bg: "#f0f9ff", border: "#7dd3fc", text: "#0c4a6e" },
+  edelweiss:  { bg: "#faf5ff", border: "#d8b4fe", text: "#7c3aed" },
+  draba:      { bg: "#fdf2f8", border: "#f9a8d4", text: "#be185d" },
   saxifrage:  { bg: "#fff7ed", border: "#fdba74", text: "#c2410c" },
   cinquefoil: { bg: "#fefce8", border: "#fde047", text: "#854d0e" },
-  snow_lotus: { bg: "#fffbeb", border: "#fcd34d", text: "#92400e" },
+  snow_lotus: { bg: "#f8fafc", border: "#cbd5e1", text: "#475569" },
 };
 
 export default function MapOnboardingModal() {
@@ -31,17 +34,10 @@ export default function MapOnboardingModal() {
   const touchStartY = useRef(0);
   const isDragging = useRef(false);
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem("peakadex_map_onboarding") === "seen") {
-      setVisible(false);
-    }
-  }, []);
-
   if (!visible) return null;
 
   async function handleClose(persist: boolean) {
     if (persist) {
-      localStorage.setItem("peakadex_map_onboarding", "seen");
       await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

@@ -322,7 +322,7 @@ export const en: Dict = {
   card_backDesc_snow_lotus: "The roof of the world. Only summits above 8000 metres earn this rarity.",
   map_onboarding_title: "Collect the mountain's\nrarest flowers",
   map_onboarding_sub: "Every summit hides a unique flower. The higher you climb, the rarer the find. Explore, ascend and build your collection.",
-  map_onboarding_rarities: "The 6 rarities",
+  map_onboarding_rarities: "Rarity tiers",
   map_onboarding_cta: "Explore the map",
   map_onboarding_dontShow: "Don't show again",
 };
