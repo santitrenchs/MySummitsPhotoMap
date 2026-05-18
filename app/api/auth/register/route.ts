@@ -1,60 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { jwtVerify } from "jose";
 import { prisma } from "@/lib/db/client";
 import { hashPassword } from "@/lib/auth/password";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
+import { generateUniqueSlug, generateUsername } from "@/lib/utils/user-utils";
+import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
+import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legal/versions";
 
-const SECRET = new TextEncoder().encode(process.env.AUTH_SECRET ?? "");
+// Max 5 registration attempts per IP per 15 minutes
+const isRateLimited = createRateLimiter(5, 15 * 60 * 1000);
 
 const RegisterSchema = z.object({
-  name:              z.string().min(2).max(100),
-  username:          z.string().min(3).max(30).regex(/^[a-z0-9_]+$/, "Invalid username"),
-  email:             z.string().email(),
-  password:          z.string().min(8),
-  registrationToken: z.string().min(1),
+  name:            z.string().min(2).max(100),
+  username:        z.string().min(3).max(30).regex(/^[a-z0-9_]+$/, "Invalid username"),
+  email:           z.string().email(),
+  password:        z.string().min(8),
+  acceptedTerms:   z.literal(true, { errorMap: () => ({ message: "Must accept terms" }) }),
+  acceptedPrivacy: z.literal(true, { errorMap: () => ({ message: "Must accept privacy policy" }) }),
+  marketing:       z.boolean().optional().default(false),
 });
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-async function uniqueSlug(base: string): Promise<string> {
-  let slug = slugify(base);
-  let suffix = 0;
-  while (await prisma.tenant.findUnique({ where: { slug } })) {
-    suffix++;
-    slug = `${slugify(base)}-${suffix}`;
-  }
-  return slug;
-}
-
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = RegisterSchema.parse(await req.json());
-    const { name, username, email, password, registrationToken } = body;
+    const { name, username, email, password, marketing } = body;
 
-    // ── Verify registration token ──────────────────────────────────────────
-    let voucherId: string;
-    try {
-      const { payload } = await jwtVerify(registrationToken, SECRET);
-      if (payload.sub !== "registration" || typeof payload.voucherId !== "string") {
-        throw new Error("invalid payload");
-      }
-      voucherId = payload.voucherId;
-    } catch {
-      return NextResponse.json(
-        { error: "Sesión de registro expirada o inválida. Vuelve a introducir el código." },
-        { status: 401 }
-      );
-    }
-
-    // ── Check uniqueness before opening transaction ────────────────────────
     const [existingEmail, existingUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email } }),
       prisma.user.findUnique({ where: { username } }),
@@ -68,27 +46,18 @@ export async function POST(req: NextRequest) {
 
     const [passwordHash, slug] = await Promise.all([
       hashPassword(password),
-      uniqueSlug(name),
+      generateUniqueSlug(name),
     ]);
 
-    // ── Atomic: user + tenant + membership + person + voucher consumption ──
+    const now = new Date();
+
     await prisma.$transaction(async (tx) => {
-      // Re-validate voucher inside transaction (guard against race conditions)
-      const voucher = await tx.voucher.findUnique({
-        where: { id: voucherId },
-        select: { id: true, maxUses: true, usedCount: true, expiresAt: true },
-      });
-
-      if (
-        !voucher ||
-        voucher.usedCount >= voucher.maxUses ||
-        (voucher.expiresAt && voucher.expiresAt < new Date())
-      ) {
-        throw Object.assign(new Error("VOUCHER_INVALID"), { code: "VOUCHER_INVALID" });
-      }
-
       const user = await tx.user.create({
-        data: { email, name, username, passwordHash, voucherId },
+        data: {
+          email, name, username, passwordHash,
+          marketingConsent: marketing,
+          marketingConsentAt: marketing ? now : undefined,
+        },
       });
 
       const tenant = await tx.tenant.create({
@@ -99,22 +68,22 @@ export async function POST(req: NextRequest) {
         data: { userId: user.id, tenantId: tenant.id, role: "OWNER" },
       });
 
-      // Consume voucher
-      await tx.voucher.update({
-        where: { id: voucherId },
-        data: { usedCount: { increment: 1 } },
-      });
-
-      await tx.voucherUse.create({
-        data: { voucherId, userId: user.id },
+      // Record legal consent
+      await tx.legalConsent.createMany({
+        data: [
+          { userId: user.id, documentType: "terms",   version: CURRENT_TERMS_VERSION,   acceptedAt: now, ipAddress: ip },
+          { userId: user.id, documentType: "privacy",  version: CURRENT_PRIVACY_VERSION, acceptedAt: now, ipAddress: ip },
+        ],
       });
     });
 
-    // Fire-and-forget — a failed email must never block registration
     const acceptLang = req.headers.get("accept-language") ?? "";
     const locale = ["es", "ca", "en", "fr", "de"].find((l) => acceptLang.toLowerCase().includes(l)) ?? "es";
     sendWelcomeEmail(email, name, locale).catch((err) =>
       console.error("[register] welcome email failed:", err)
+    );
+    sendNewUserNotification(name, email).catch((err) =>
+      console.error("[register] new user notification failed:", err)
     );
 
     return NextResponse.json({ ok: true }, { status: 201 });
@@ -122,13 +91,9 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    if (err instanceof Error && (err as NodeJS.ErrnoException).code === "VOUCHER_INVALID") {
-      return NextResponse.json(
-        { error: "El código de acceso ya no es válido. Inténtalo de nuevo." },
-        { status: 409 }
-      );
-    }
     console.error("[register]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export { generateUsername };

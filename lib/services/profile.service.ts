@@ -1,5 +1,6 @@
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { prisma } from "@/lib/db/client";
+import { getRarityId, type RarityId } from "@/lib/rarity";
 
 export async function getProfileData(tenantId: string, userId: string) {
   const user = await prisma.user.findUnique({
@@ -20,12 +21,15 @@ export async function getProfileData(tenantId: string, userId: string) {
       where: { tenantId, createdBy: userId },
       orderBy: { date: "desc" },
       include: {
-        peak: { select: { id: true, name: true, altitudeM: true, mountainRange: true } },
+        peak: {
+          select: {
+            id: true, name: true, altitudeM: true,
+            mountainRange: true, country: true, rarityId: true, isMythic: true,
+          },
+        },
         photos: { orderBy: { createdAt: "asc" }, select: { id: true, url: true } },
       },
     }),
-    // Photos where this user is tagged by others — friends may be in different tenants,
-    // so we query globally (no tenantId filter), same pattern as friends' ascents.
     prisma.faceTag.findMany({
       where: { userId, status: "ACCEPTED" },
       select: {
@@ -37,7 +41,7 @@ export async function getProfileData(tenantId: string, userId: string) {
                 ascent: {
                   select: {
                     id: true, date: true, createdBy: true,
-                    peak: { select: { name: true, altitudeM: true } },
+                    peak: { select: { name: true, altitudeM: true, rarityId: true } },
                     user: { select: { name: true, username: true } },
                   },
                 },
@@ -49,42 +53,70 @@ export async function getProfileData(tenantId: string, userId: string) {
     }),
   ]);
 
-  // Aggregate peaks with climb count, sorted by altitude desc
+  // Aggregate peaks: count, firstDate, lastDate, firstPhotoUrl, rarityId, country
   const peakMap = new Map<string, {
     id: string; name: string; altitudeM: number;
-    mountainRange: string | null; count: number;
+    mountainRange: string | null; country: string | null;
+    rarityId: RarityId; isMythic: boolean;
+    count: number;
+    firstDate: Date; lastDate: Date;
+    firstPhotoUrl: string | null;
   }>();
+
+  // Process ascents newest-first (already ordered desc by date)
   for (const a of ascents) {
     const pk = a.peak;
+    const rarityId = (pk.rarityId as RarityId | null) ?? getRarityId(pk.altitudeM);
     if (!peakMap.has(pk.id)) {
-      peakMap.set(pk.id, { id: pk.id, name: pk.name, altitudeM: pk.altitudeM, mountainRange: pk.mountainRange, count: 0 });
+      peakMap.set(pk.id, {
+        id: pk.id, name: pk.name, altitudeM: pk.altitudeM,
+        mountainRange: pk.mountainRange, country: pk.country ?? null,
+        rarityId, isMythic: pk.isMythic ?? false,
+        count: 0,
+        firstDate: a.date, lastDate: a.date,
+        firstPhotoUrl: a.photos[0]?.url ?? null,
+      });
     }
-    peakMap.get(pk.id)!.count++;
+    const entry = peakMap.get(pk.id)!;
+    entry.count++;
+    // track date range
+    if (a.date < entry.firstDate) entry.firstDate = a.date;
+    if (a.date > entry.lastDate) {
+      entry.lastDate = a.date;
+      // most-recent ascent's first photo is the hero
+      entry.firstPhotoUrl = a.photos[0]?.url ?? null;
+    }
   }
   const peaks = Array.from(peakMap.values()).sort((a, b) => b.altitudeM - a.altitudeM);
 
   // Flat photos list for the grid (oldest→newest within each ascent, ascents newest→oldest)
-  const allPhotos = ascents.flatMap((a) =>
-    a.photos.map((p) => ({
+  const allPhotos = ascents.flatMap((a) => {
+    const rarityId = (a.peak.rarityId as RarityId | null) ?? getRarityId(a.peak.altitudeM);
+    return a.photos.map((p) => ({
       id: p.id, url: p.url, ascentId: a.id,
-      peakName: a.peak.name, altitudeM: a.peak.altitudeM, date: a.date,
-    }))
-  );
+      peakName: a.peak.name, altitudeM: a.peak.altitudeM,
+      rarityId,
+      date: a.date,
+    }));
+  });
 
   // Flatten tagged photos, deduplicate by photoId, exclude own ascents
   const taggedPhotosMap = new Map<string, {
     id: string; url: string; ascentId: string;
-    peakName: string; altitudeM: number; date: Date;
-    creatorName: string;
+    peakName: string; altitudeM: number;
+    rarityId: RarityId;
+    date: Date; creatorName: string;
   }>();
   for (const tag of taggedPersons) {
     const photo = tag.faceDetection.photo;
     if (!photo?.ascent) continue;
     if (photo.ascent.createdBy === userId) continue;
     if (!taggedPhotosMap.has(photo.id)) {
+      const rarityId = (photo.ascent.peak.rarityId as RarityId | null) ?? getRarityId(photo.ascent.peak.altitudeM);
       taggedPhotosMap.set(photo.id, {
         id: photo.id, url: photo.url, ascentId: photo.ascentId,
         peakName: photo.ascent.peak.name, altitudeM: photo.ascent.peak.altitudeM,
+        rarityId,
         date: photo.ascent.date,
         creatorName: photo.ascent.user?.username ?? photo.ascent.user?.name ?? "",
       });

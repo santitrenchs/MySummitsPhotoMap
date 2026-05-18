@@ -228,7 +228,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
           display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
         }}>
           <div style={{
-            background: "white", borderRadius: 18,
+            background: "white", borderRadius: "var(--radius-lg)",
             padding: 28, width: "100%", maxWidth: 380,
             boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
           }}>
@@ -248,7 +248,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                   placeholder={t.people_fullName}
                   style={{
                     width: "100%", padding: "10px 12px", fontSize: 16, fontWeight: 600,
-                    border: "1.5px solid #e5e7eb", borderRadius: 10, outline: "none",
+                    border: "1.5px solid #e5e7eb", borderRadius: "var(--radius-md)", outline: "none",
                     boxSizing: "border-box",
                   }}
                 />
@@ -265,7 +265,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                   placeholder="name@example.com"
                   style={{
                     width: "100%", padding: "10px 12px", fontSize: 16,
-                    border: "1.5px solid #e5e7eb", borderRadius: 10, outline: "none",
+                    border: "1.5px solid #e5e7eb", borderRadius: "var(--radius-md)", outline: "none",
                     boxSizing: "border-box", color: "#374151",
                   }}
                 />
@@ -304,7 +304,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
           display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
         }}>
           <div style={{
-            background: "white", borderRadius: 18,
+            background: "white", borderRadius: "var(--radius-lg)",
             padding: 28, width: "100%", maxWidth: 360,
             boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
           }}>
@@ -351,7 +351,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
           display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
         }}>
           <div style={{
-            background: "white", borderRadius: 18,
+            background: "white", borderRadius: "var(--radius-lg)",
             padding: 28, width: "100%", maxWidth: 380,
             boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
           }}>
@@ -376,7 +376,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                     onClick={() => setSelectedFriendId(f.id)}
                     style={{
                       display: "flex", alignItems: "center", gap: 10,
-                      padding: "10px 14px", borderRadius: 10, border: "1.5px solid",
+                      padding: "10px 14px", borderRadius: "var(--radius-md)", border: "1.5px solid",
                       borderColor: selectedFriendId === f.id ? "#0369a1" : "#e5e7eb",
                       background: selectedFriendId === f.id ? "#eff6ff" : "white",
                       cursor: "pointer", textAlign: "left",
@@ -440,7 +440,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
         ].map(({ emoji, value, label }) => (
           <div key={label} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
-            background: "white", border: "1px solid #e5e7eb", borderRadius: 24,
+            background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-xl)",
             padding: "6px 14px", fontSize: 13, fontWeight: 600, color: "#374151",
           }}>
             <span>{emoji}</span>
@@ -451,7 +451,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
         {metrics.mostFrequent !== "—" && (
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 5,
-            background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 24,
+            background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "var(--radius-xl)",
             padding: "6px 14px", fontSize: 13, fontWeight: 600, color: "#0369a1",
           }}>
             <span>🥇</span><span>{metrics.mostFrequent}</span>
@@ -468,14 +468,14 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
           onChange={(e) => setSearch(e.target.value)}
           style={{
             width: "100%", padding: "10px 18px", fontSize: 16,
-            border: "1.5px solid #e5e7eb", borderRadius: 24,
+            border: "1.5px solid #e5e7eb", borderRadius: "var(--radius-xl)",
             outline: "none", background: "white", boxSizing: "border-box",
           }}
         />
-        <div style={{ display: "inline-flex", background: "#f3f4f6", borderRadius: 24, padding: 3, gap: 2, alignSelf: "flex-start" }}>
+        <div style={{ display: "inline-flex", background: "#f3f4f6", borderRadius: "var(--radius-xl)", padding: 3, gap: 2, alignSelf: "flex-start" }}>
           {SORTS.map(({ value, label }) => (
             <button key={value} className="sort-pill" onClick={() => setSort(value)} style={{
-              padding: "6px 16px", borderRadius: 20, border: "none",
+              padding: "6px 16px", borderRadius: "var(--radius-full)", border: "none",
               fontSize: 12, fontWeight: 600, cursor: "pointer",
               background: sort === value ? "white" : "transparent",
               color: sort === value ? "#111827" : "#6b7280",
@@ -499,7 +499,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
               className={openMenuId === person.id ? "" : "person-card"}
               style={{
                 background: "white", border: "1px solid #e5e7eb",
-                borderRadius: 16,
+                borderRadius: "var(--radius-lg)",
                 // NO overflow:hidden here — would clip the dropdown menu
                 boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                 cursor: navigatingTo === `/persons/${person.id}` ? "wait" : "pointer",
@@ -533,7 +533,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                       <span style={{
                         fontSize: 10, fontWeight: 700, color: "#0369a1",
                         background: "#eff6ff", border: "1px solid #bfdbfe",
-                        borderRadius: 6, padding: "1px 6px", flexShrink: 0,
+                        borderRadius: "var(--radius-sm)", padding: "1px 6px", flexShrink: 0,
                       }}>
                         ✓ {t.people_reconcileLinked}
                       </span>
@@ -562,7 +562,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                     <div
                       style={{
                         position: "absolute", right: 0, top: 34, zIndex: 30,
-                        background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+                        background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
                         boxShadow: "0 4px 16px rgba(0,0,0,0.14)", minWidth: 130, overflow: "hidden",
                       }}
                       onClick={(e) => e.stopPropagation()}
@@ -611,7 +611,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                         <div style={{ position: "relative" }}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={a.photoUrl} alt="" className="photo-thumb"
-                            style={{ width: 88, height: 88, borderRadius: 10, objectFit: "cover", display: "block" }} />
+                            style={{ width: 88, height: 88, borderRadius: "var(--radius-md)", objectFit: "cover", display: "block" }} />
                           <div style={{ position: "absolute", bottom: 4, left: 0, right: 0, padding: "0 5px" }}>
                             <p style={{ fontSize: 9, fontWeight: 700, color: "white", margin: 0, textShadow: "0 1px 3px rgba(0,0,0,0.7)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                               {a.peakName}
@@ -632,7 +632,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                 <div style={{
                   borderTop: "1px solid #f3f4f6", padding: "10px 16px",
                   display: "flex", gap: 12, flexWrap: "wrap",
-                  borderRadius: "0 0 16px 16px",
+                  borderRadius: "0 0 var(--radius-lg) var(--radius-lg)",
                 }}>
                   {person.highestPeak && (
                     <span style={{ fontSize: 11, color: "#6b7280" }}>

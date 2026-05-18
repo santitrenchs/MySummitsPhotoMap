@@ -235,116 +235,6 @@ ${renderBrandHeader()}
   console.log("[email] welcome sent OK, id:", data?.id);
 }
 
-const INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: (n: string) => string; body: (n: string) => string; codeLabel: string; cta: string; footer: (n: string) => string }> = {
-  es: {
-    subject: (n) => `${n} te invita a Peakadex`,
-    h1: (n) => `${n} te invita a Peakadex`,
-    body: (_n) => `Cada cima tiene una historia.<br>Ahora es tu momento de empezar la tuya. Únete a Peakadex, registra tus ascensiones y vive la aventura con tu cordada.`,
-    codeLabel: "Tu código de acceso",
-    cta: "Crear mi cuenta →",
-    footer: (n) => `Una vez registrado/a, busca a <strong>${n}</strong> en la sección <strong>Amigos</strong> y envíale una solicitud. El código caduca en <strong>7 días</strong> y es de un solo uso.`,
-  },
-  ca: {
-    subject: (n) => `${n} t'invita a Peakadex`,
-    h1: (n) => `${n} t'invita a Peakadex`,
-    body: (_n) => `Cada cim té una història.<br>Ara és el teu moment de començar la teva. Uneix-te a Peakadex, registra les teves ascensions i viu l'aventura amb la teva cordada.`,
-    codeLabel: "El teu codi d'accés",
-    cta: "Unir-me a Peakadex →",
-    footer: (n) => `Un cop registrat/da, cerca a <strong>${n}</strong> a la secció <strong>Amics</strong> i envia-li una sol·licitud. El codi caduca en <strong>7 dies</strong> i és d'un sol ús.`,
-  },
-  en: {
-    subject: (n) => `${n} invites you to Peakadex`,
-    h1: (n) => `${n} invites you to Peakadex`,
-    body: (_n) => `Every summit has a story.<br>Now it's your turn to start yours. Join Peakadex, log your ascents and live the adventure with your rope team.`,
-    codeLabel: "Your access code",
-    cta: "Create my account →",
-    footer: (n) => `Once registered, search for <strong>${n}</strong> in the <strong>Friends</strong> section and send them a request. The code expires in <strong>7 days</strong> and can only be used once.`,
-  },
-  fr: {
-    subject: (n) => `${n} t'invite sur Peakadex`,
-    h1: (n) => `${n} t'invite sur Peakadex`,
-    body: (_n) => `Chaque sommet a une histoire.<br>C'est maintenant ton tour de commencer la tienne. Rejoins Peakadex, enregistre tes ascensions et vis l'aventure avec ta cordée.`,
-    codeLabel: "Ton code d'accès",
-    cta: "Créer mon compte →",
-    footer: (n) => `Une fois inscrit(e), recherche <strong>${n}</strong> dans la section <strong>Amis</strong> et envoie-lui une demande. Le code expire dans <strong>7 jours</strong> et n'est utilisable qu'une seule fois.`,
-  },
-  de: {
-    subject: (n) => `${n} lädt dich zu Peakadex ein`,
-    h1: (n) => `${n} lädt dich zu Peakadex ein`,
-    body: (_n) => `Jeder Gipfel hat eine Geschichte.<br>Jetzt ist dein Moment, deine eigene zu beginnen. Tritt Peakadex bei, erfasse deine Aufstiege und erlebe das Abenteuer mit deiner Seilschaft.`,
-    codeLabel: "Dein Zugangscode",
-    cta: "Konto erstellen →",
-    footer: (n) => `Nach der Registrierung suche <strong>${n}</strong> im Bereich <strong>Freunde</strong> und sende eine Anfrage. Der Code läuft in <strong>7 Tagen</strong> ab und kann nur einmal verwendet werden.`,
-  },
-};
-
-export async function sendFriendInvitationEmail(
-  to: string,
-  inviterName: string,
-  voucherCode: string,
-  locale = "es",
-) {
-  const registerUrl = `${APP_URL}/register`;
-  const copy = INVITATION_COPY[locale] ?? INVITATION_COPY.es;
-
-  const { data, error } = await resend.emails.send({
-    from: FROM,
-    to,
-    subject: copy.subject(inviterName),
-    html: `
-<!DOCTYPE html>
-<html lang="${locale}">
-${renderEmailHead()}
-<body style="margin:0;padding:0;background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
-    <tr><td align="center">
-      <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
-${renderBrandHeader()}
-        <tr>
-          <td style="padding:32px;">
-            <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body(inviterName)}</p>
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-              <tr>
-                <td style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px 20px;text-align:center;">
-                  <p style="margin:0 0 6px;font-size:13px;color:#0369a1;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">${copy.codeLabel}</p>
-                  <p style="margin:0;font-size:26px;font-weight:800;color:#0f172a;letter-spacing:0.12em;">${voucherCode}</p>
-                </td>
-              </tr>
-            </table>
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td align="center">
-                  <a href="${registerUrl}"
-                     style="display:inline-block;background:#0369a1;color:#ffffff;font-size:15px;font-weight:700;
-                            text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
-                    ${copy.cta}
-                  </a>
-                </td>
-              </tr>
-            </table>
-            <p style="margin:24px 0 0;font-size:13px;color:#94a3b8;line-height:1.6;">${copy.footer(inviterName)}</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
-  });
-
-  if (error) {
-    console.error("[email] invitation Resend error:", error);
-    throw new Error(`Resend failed: ${JSON.stringify(error)}`);
-  }
-
-  console.log("[email] invitation sent OK, id:", data?.id);
-}
-
 const FRIEND_REQUEST_COPY: Record<string, { subject: (n: string) => string; h1: string; body: (n: string) => string; cta: string }> = {
   es: {
     subject: (n) => `${n} quiere unirse a tu cordada en Peakadex 🧗`,
@@ -618,4 +508,58 @@ ${renderBrandHeader()}
   }
 
   console.log("[email] photo tag sent OK, id:", data?.id);
+}
+
+export async function sendNewUserNotification(userName: string, userEmail: string) {
+  const now = new Date().toLocaleString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "full", timeStyle: "short" });
+
+  const { data, error } = await resend.emails.send({
+    from: FROM,
+    to: "santitrenchs@gmail.com",
+    subject: `🧗 Nuevo usuario en Peakadex: ${userName}`,
+    html: `
+<!DOCTYPE html>
+<html>
+${renderEmailHead()}
+<body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+${renderBrandHeader()}
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="margin:0 0 20px;font-size:20px;font-weight:700;color:#0f172a;">Nuevo registro</h1>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+              <tr style="background:#f8fafc;">
+                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;width:110px;">Nombre</td>
+                <td style="padding:12px 16px;font-size:14px;color:#0f172a;font-weight:600;">${userName}</td>
+              </tr>
+              <tr style="border-top:1px solid #e2e8f0;">
+                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Email</td>
+                <td style="padding:12px 16px;font-size:14px;color:#0369a1;">${userEmail}</td>
+              </tr>
+              <tr style="border-top:1px solid #e2e8f0;background:#f8fafc;">
+                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Fecha</td>
+                <td style="padding:12px 16px;font-size:14px;color:#0f172a;">${now}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">Peakadex · Panel de administración</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+
+  if (error) {
+    console.error("[email] new user notification error:", error);
+  } else {
+    console.log("[email] new user notification sent OK, id:", data?.id);
+  }
 }

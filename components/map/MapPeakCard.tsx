@@ -2,6 +2,8 @@
 
 import type { MapPeak, AscentMapEntry } from "./MapView";
 import { RARITY_COLORS } from "./MapView";
+import { RARITIES } from "@/lib/rarity";
+import { RarityFlower } from "@/components/brand/RarityFlowers";
 
 interface MapPeakCardProps {
   peak: MapPeak;
@@ -19,6 +21,7 @@ function formatDist(km: number): string {
 
 export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClick }: MapPeakCardProps) {
   const rarityColor = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
+  const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
 
   return (
     <button
@@ -54,10 +57,17 @@ export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClic
               {peak.mountainRange}
             </p>
           ) : <span />}
-          {peak.rarity && (
-            <span style={{ fontSize: 11, fontWeight: 600, color: rarityColor, flexShrink: 0, whiteSpace: "nowrap" }}>
-              ✿ {peak.rarity.name}
-            </span>
+          {peak.rarity && rarityEntry && (
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 3,
+              padding: "2px 7px", borderRadius: "var(--radius-full)",
+              background: rarityColor + "22", flexShrink: 0,
+            }}>
+              <RarityFlower id={rarityEntry.id} size={10} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: rarityEntry.colorDark, whiteSpace: "nowrap" }}>
+                {peak.rarity.name}
+              </span>
+            </div>
           )}
         </div>
 

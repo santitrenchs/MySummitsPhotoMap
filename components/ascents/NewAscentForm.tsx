@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 type Peak = {
   id: string;
   name: string;
+  nameEn: string | null;
   altitudeM: number;
   mountainRange: string | null;
   latitude: number;
@@ -200,7 +201,7 @@ export function NewAscentForm({
 
   const inputStyle = {
     width: "100%", padding: "8px 12px",
-    border: "1px solid #d1d5db", borderRadius: 8,
+    border: "1px solid #d1d5db", borderRadius: "var(--radius-md)",
     fontSize: 16, color: "#111827",
     outline: "none", boxSizing: "border-box" as const,
   };
@@ -235,7 +236,7 @@ export function NewAscentForm({
       {step === "pick" && (
         <div style={{
           background: "white", border: "1px solid #e5e7eb",
-          borderRadius: 12, padding: 32,
+          borderRadius: "var(--radius-md)", padding: 32,
           display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
         }}>
           <div style={{ textAlign: "center" }}>
@@ -255,7 +256,7 @@ export function NewAscentForm({
           >
             <div style={{
               border: `2px dashed ${dragging ? "#0369a1" : "#d1d5db"}`,
-              borderRadius: 10, padding: "28px 16px",
+              borderRadius: "var(--radius-md)", padding: "28px 16px",
               textAlign: "center", cursor: "pointer",
               background: dragging ? "#eff6ff" : "#f9fafb",
               transition: "all 0.15s",
@@ -283,7 +284,7 @@ export function NewAscentForm({
       onSubmit={handleSubmit}
       style={{
         background: "white", border: "1px solid #e5e7eb",
-        borderRadius: 12, padding: 24,
+        borderRadius: "var(--radius-md)", padding: 24,
         display: "flex", flexDirection: "column" as const, gap: 20,
       }}
     >
@@ -346,7 +347,7 @@ export function NewAscentForm({
           onClick={() => inputRef.current?.click()}
           style={{
             border: `2px dashed ${dragging ? "#0369a1" : "#d1d5db"}`,
-            borderRadius: 10, padding: "20px 16px",
+            borderRadius: "var(--radius-md)", padding: "20px 16px",
             textAlign: "center", cursor: "pointer",
             background: dragging ? "#eff6ff" : "#f9fafb",
             transition: "all 0.15s",
@@ -377,14 +378,14 @@ export function NewAscentForm({
             {readyItems.map((item, i) => {
               const taggedCount = item.faces.filter((f) => f.userId).length;
               return (
-                <div key={i} style={{ position: "relative", aspectRatio: "4/5", borderRadius: 8, overflow: "hidden", background: "#f3f4f6" }}>
+                <div key={i} style={{ position: "relative", aspectRatio: "4/5", borderRadius: "var(--radius-md)", overflow: "hidden", background: "#f3f4f6" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   {taggedCount > 0 && (
                     <span style={{
                       position: "absolute", bottom: 4, left: 4,
                       background: "rgba(34,197,94,0.88)", backdropFilter: "blur(4px)",
-                      borderRadius: 10, padding: "2px 6px",
+                      borderRadius: "var(--radius-md)", padding: "2px 6px",
                       fontSize: 9, fontWeight: 700, color: "white",
                     }}>
                       {fmt(t.newAscent_tagged, { n: taggedCount })}
@@ -411,7 +412,7 @@ export function NewAscentForm({
       {error && (
         <p style={{
           fontSize: 13, color: "#dc2626", background: "#fef2f2",
-          border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", margin: 0,
+          border: "1px solid #fecaca", borderRadius: "var(--radius-md)", padding: "8px 12px", margin: 0,
         }}>
           {error}
         </p>

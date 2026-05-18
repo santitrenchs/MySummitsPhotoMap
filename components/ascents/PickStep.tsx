@@ -71,7 +71,7 @@ export function PickStep({ onFiles, error }: PickStepProps) {
           background: "#0369a1",
           color: "white",
           border: "none",
-          borderRadius: 8,
+          borderRadius: "var(--radius-md)",
           padding: "10px 24px",
           fontSize: 15,
           fontWeight: 600,

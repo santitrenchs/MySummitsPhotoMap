@@ -8,6 +8,8 @@ import type { Locale } from "@/lib/i18n/types";
 import { countPendingRequests } from "@/lib/services/friendship.service";
 import { countUnseenFeed } from "@/lib/services/feed.service";
 import { prisma } from "@/lib/db/client";
+import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legal/versions";
+import ConsentGate from "@/components/legal/ConsentGate";
 
 export default async function AppLayout({
   children,
@@ -17,11 +19,22 @@ export default async function AppLayout({
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [locale, pendingFriendRequests, unseenFeedCount, dbUser] = await Promise.all([
+  const userId = session.user.id;
+
+  const [locale, pendingFriendRequests, unseenFeedCount, dbUser, consentOk] = await Promise.all([
     getLocale(),
-    countPendingRequests(session.user.id),
-    countUnseenFeed(session.user.id),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { avatarUrl: true } }),
+    countPendingRequests(userId),
+    countUnseenFeed(userId),
+    prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } }),
+    // Wrapped in try/catch: if the table doesn't exist yet (pending migration) let the user through
+    Promise.all([
+      prisma.legalConsent.findUnique({
+        where: { userId_documentType_version: { userId, documentType: "terms",   version: CURRENT_TERMS_VERSION   } },
+      }),
+      prisma.legalConsent.findUnique({
+        where: { userId_documentType_version: { userId, documentType: "privacy", version: CURRENT_PRIVACY_VERSION } },
+      }),
+    ]).then(([terms, privacy]) => !!terms && !!privacy).catch(() => true),
   ]);
 
   const navProps = {
@@ -32,7 +45,12 @@ export default async function AppLayout({
     unseenFeedCount,
   };
 
+
   return (
+    <>
+    {/* maplibre-gl styles — only loaded for authenticated app pages, not landing */}
+    {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+    <link rel="stylesheet" href="/maplibre-gl.css" />
     <I18nProvider initialLocale={locale as Locale}>
       <div style={{ minHeight: "100svh", display: "flex", flexDirection: "column" }}>
         {/* Desktop sidebar (fixed, hidden on mobile via CSS) */}
@@ -45,6 +63,9 @@ export default async function AppLayout({
         <main className="azi-main" style={{ flex: 1, paddingBottom: "var(--bottom-nav-h, 0px)" }}>
           {children}
         </main>
+
+        {/* Legal consent overlay — shown when user hasn't accepted current T&C/Privacy versions */}
+        {!consentOk && <ConsentGate />}
 
         <style>{`
           :root {
@@ -67,5 +88,6 @@ export default async function AppLayout({
         `}</style>
       </div>
     </I18nProvider>
+    </>
   );
 }

@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { AvatarCropModal } from "@/components/photos/AvatarCropModal";
+import { PeaksTabV2 } from "@/components/profile/PeaksTabV2";
+import { PhotosTabV2 } from "@/components/profile/PhotosTabV2";
+import type { RarityId } from "@/lib/rarity";
+import type { PeakForFilter } from "@/components/profile/usePeakFilters";
 
 type Ascent = {
   id: string;
@@ -17,13 +21,7 @@ type Ascent = {
   photoCount: number;
 };
 
-type Peak = {
-  id: string;
-  name: string;
-  altitudeM: number;
-  mountainRange: string | null;
-  count: number;
-};
+type Peak = PeakForFilter;
 
 type Photo = {
   id: string;
@@ -31,6 +29,7 @@ type Photo = {
   ascentId: string;
   peakName: string;
   altitudeM: number;
+  rarityId: RarityId;
   date: Date;
   creatorName?: string;
 };
@@ -85,16 +84,33 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
             )}
           </div>
 
-          {/* Name / username / stats */}
+          {/* Name / username / bio */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: "0 0 2px", lineHeight: 1.2 }}>
               {user.name}
             </h1>
             {user.username && (
-              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 8px" }}>@{user.username}</p>
+              <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 6px" }}>@{user.username}</p>
             )}
-            {user.bio && (
-              <p style={{ fontSize: 13, color: "#374151", margin: "8px 0 0", lineHeight: 1.5 }}>{user.bio}</p>
+            {user.bio ? (
+              <p style={{
+                fontSize: 13, color: "#4b5563", margin: 0, lineHeight: 1.55,
+                display: "-webkit-box", WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical", overflow: "hidden",
+              }}>
+                {user.bio}
+              </p>
+            ) : (
+              <button
+                onClick={() => setEditOpen(true)}
+                style={{
+                  background: "none", border: "none", padding: 0, cursor: "pointer",
+                  fontSize: 13, color: "#9ca3af", lineHeight: 1.55,
+                  fontStyle: "italic", fontFamily: "inherit",
+                }}
+              >
+                {t.profile_bioPlaceholder}
+              </button>
             )}
           </div>
 
@@ -104,7 +120,7 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
             style={{
               padding: "7px 14px", border: "1px solid #d1d5db",
               background: "white", color: "#374151",
-              borderRadius: 8, fontSize: 12, fontWeight: 600,
+              borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600,
               cursor: "pointer", flexShrink: 0,
             }}
           >
@@ -141,15 +157,15 @@ export function ProfileClient({ user: initialUser, ascents, peaks, photos, tagge
       </div>
 
       {/* ── Tab content ── */}
-      <div style={{ padding: "16px" }}>
+      <div style={{ padding: "0 16px" }}>
         {tab === "peaks" && (
-          <PeaksTab peaks={peaks} dateLocale={t.dateLocale} timesClimbed={t.profile_timesClimbed} />
+          <PeaksTabV2 peaks={peaks} />
         )}
         {tab === "photos" && (
-          <PhotosTab photos={photos} />
+          <PhotosTabV2 photos={photos} />
         )}
         {tab === "tagged" && (
-          <PhotosTab photos={taggedPhotos} showCreator />
+          <PhotosTabV2 photos={taggedPhotos} isTagged />
         )}
       </div>
 
@@ -202,12 +218,12 @@ function AscentsTab({ ascents, dateLocale, noAscents }: {
           <div style={{
             display: "flex", gap: 12, alignItems: "center",
             background: "white", border: "1px solid #e5e7eb",
-            borderRadius: 12, padding: "10px 12px",
+            borderRadius: "var(--radius-md)", padding: "10px 12px",
             transition: "border-color 0.15s",
           }}>
             {/* Thumbnail */}
             <div style={{
-              width: 56, height: 56, borderRadius: 8,
+              width: 56, height: 56, borderRadius: "var(--radius-md)",
               background: "#f3f4f6", flexShrink: 0, overflow: "hidden",
             }}>
               {a.firstPhoto ? (
@@ -236,7 +252,7 @@ function AscentsTab({ ascents, dateLocale, noAscents }: {
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{
                   fontSize: 11, fontWeight: 700, color: "#0369a1",
-                  background: "#eff6ff", borderRadius: 20, padding: "1px 6px",
+                  background: "#eff6ff", borderRadius: "var(--radius-full)", padding: "1px 6px",
                 }}>
                   {a.altitudeM.toLocaleString(dateLocale)} m
                 </span>
@@ -288,7 +304,7 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
+      <div style={{ border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
         {shown.map((pk) => (
           <div key={pk.id} style={{
             display: "flex", alignItems: "center",
@@ -310,7 +326,7 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
           style={{
             marginTop: 8, padding: "10px",
             background: "white", border: "1px solid #e5e7eb",
-            borderRadius: 10, fontSize: 13, fontWeight: 600,
+            borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600,
             color: "#0369a1", cursor: "pointer", width: "100%",
           }}
         >
@@ -338,7 +354,7 @@ function PhotosTab({ photos, showCreator = false }: { photos: Photo[]; showCreat
         const dateStr = new Date(p.date).toLocaleDateString("ca", { day: "numeric", month: "short", year: "2-digit" });
         return (
           <Link key={p.id} href={`/ascents/${p.ascentId}`} style={{ textDecoration: "none" }}>
-            <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden", background: "#f3f4f6", borderRadius: 4 }}>
+            <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden", background: "#f3f4f6", borderRadius: "var(--radius-sm)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               {/* Top overlay — peak name + altitude */}
@@ -367,7 +383,7 @@ function PhotosTab({ photos, showCreator = false }: { photos: Photo[]; showCreat
                   <div style={{
                     fontSize: 8, fontWeight: 700, color: "white", lineHeight: 1,
                     background: "rgba(3,105,161,0.82)", backdropFilter: "blur(4px)",
-                    borderRadius: 20, padding: "2px 6px",
+                    borderRadius: "var(--radius-full)", padding: "2px 6px",
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "55%",
                   }}>
                     @{p.creatorName}
@@ -470,7 +486,7 @@ function EditProfileModal({
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "8px 12px",
-    border: "1px solid #d1d5db", borderRadius: 8,
+    border: "1px solid #d1d5db", borderRadius: "var(--radius-md)",
     fontSize: 16, color: "#111827",
     outline: "none", boxSizing: "border-box",
     background: "white",
@@ -504,7 +520,7 @@ function EditProfileModal({
       <div style={{
         width: "100%", maxWidth: 480,
         background: "white",
-        borderRadius: "16px 16px 0 0",
+        borderRadius: "var(--radius-lg) var(--radius-lg) 0 0",
         padding: "20px 20px 28px",
         boxShadow: "0 -4px 32px rgba(0,0,0,0.12)",
       }}>
@@ -608,7 +624,7 @@ function EditProfileModal({
         {error && (
           <p style={{
             fontSize: 13, color: "#dc2626", background: "#fef2f2",
-            border: "1px solid #fecaca", borderRadius: 8,
+            border: "1px solid #fecaca", borderRadius: "var(--radius-md)",
             padding: "8px 12px", margin: "16px 0 0",
           }}>
             {error}
@@ -621,7 +637,7 @@ function EditProfileModal({
             style={{
               flex: 1, padding: "10px 16px",
               border: "1px solid #e5e7eb", background: "white",
-              color: "#374151", borderRadius: 8,
+              color: "#374151", borderRadius: "var(--radius-md)",
               fontSize: 14, fontWeight: 600, cursor: "pointer",
               opacity: saving ? 0.5 : 1,
             }}
@@ -633,7 +649,7 @@ function EditProfileModal({
             style={{
               flex: 2, padding: "10px 16px",
               background: "#0369a1", color: "white",
-              border: "none", borderRadius: 8,
+              border: "none", borderRadius: "var(--radius-md)",
               fontSize: 14, fontWeight: 600, cursor: "pointer",
               opacity: (saving || !name.trim() || uploadingAvatar) ? 0.6 : 1,
             }}

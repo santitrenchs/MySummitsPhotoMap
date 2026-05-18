@@ -5,6 +5,28 @@ import { useT } from "@/components/providers/I18nProvider";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 
+const APP_URL =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.peakadex.com");
+
+function getShareUrl(ascentId: string, locale: string) {
+  return `${APP_URL}/ascent/${ascentId}?lang=${locale}`;
+}
+
+async function activatePublicShare(ascentId: string): Promise<void> {
+  // 1. Set isPublic=true — must complete before sharing so OG endpoint works
+  await fetch(`/api/ascents/${ascentId}/share`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isPublic: true }),
+  }).catch(() => {});
+
+  // 2. Pre-warm the OG image cache — the server renders and caches the image
+  //    so WhatsApp's scrape gets an instant response instead of timing out.
+  await fetch(`/api/og/${ascentId}`).catch(() => {});
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type AscentCardData = {
@@ -110,18 +132,12 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 
 export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Props) {
   const t = useT();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [preloading, setPreloading] = useState(false);
+  const [sharePopover, setSharePopover] = useState<string | null>(null); // URL string when open
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const isProfile = variant === "profile";
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const close = () => setMenuOpen(false);
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
-  }, [menuOpen]);
 
   useEffect(() => {
     prefetchNearbyPeaks(ascent.peak.id, ascent.peak.latitude, ascent.peak.longitude);
@@ -179,6 +195,25 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               <div className="stat-value">{ascent.peakStats?.uniqueClimbers ?? "—"}</div>
             </div>
           </div>
+          <footer className="capture-note">
+            <p className="note-byline">
+              <strong>{ascent.user.name}</strong>
+              {ascent.persons.length > 0 && (
+                <>
+                  {" "}{t.detail_with.toLowerCase()}{" "}
+                  {ascent.persons.map((p, i) => (
+                    <span key={p.id}>
+                      {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
+                      <strong>{p.name}</strong>
+                    </span>
+                  ))}
+                </>
+              )}
+            </p>
+            {ascent.description && (
+              <p className="note-text">{ascent.description}</p>
+            )}
+          </footer>
         </section>
       </>
     );
@@ -195,57 +230,87 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
         }
         <div className="user-copy">
           <div className="user-name">{ascent.user.name}</div>
+          <div className="user-date">{dateStr}</div>
         </div>
         {isProfile ? (
-          <div onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }} onClick={(e) => e.stopPropagation()}>
+            {/* Share icon — always visible */}
             <button
-              onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+              onClick={async (e) => {
+                e.stopPropagation();
+                const url = getShareUrl(ascent.id, locale);
+                const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+                if (isMobile && typeof navigator !== "undefined" && navigator.share) {
+                  // Await before opening native share sheet — prevents race condition
+                  // where WhatsApp/Telegram scrape the OG image while isPublic is
+                  // still false and cache the navy fallback.
+                  await activatePublicShare(ascent.id);
+                  navigator.share({ url, title: "Peakadex" }).catch(() => {});
+                } else {
+                  // Desktop: fire-and-forget is fine (user copies URL manually)
+                  activatePublicShare(ascent.id);
+                  setSharePopover(url);
+                }
+              }}
+              title={t.card_share}
               style={{
                 background: "none", border: "none", cursor: "pointer",
                 width: 30, height: 30, borderRadius: "50%",
-                color: "#9CA3AF", fontSize: 20, lineHeight: 1,
-                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 0,
               }}
-            >⋮</button>
-            {menuOpen && (
-              <div style={{
-                position: "absolute", right: 14, zIndex: 50,
-                background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
-                boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 120, overflow: "hidden",
-              }} onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    document.dispatchEvent(new CustomEvent("open-ascent-modal", {
-                      detail: {
-                        editAscent: {
-                          id: ascent.id,
-                          peakId: ascent.peak.id,
-                          peakName: ascent.peak.name,
-                          date: ascent.date.slice(0, 10),
-                          route: ascent.route ?? null,
-                          description: ascent.description ?? null,
-                          wikiloc: ascent.wikiloc ?? null,
-                          photoUrl: ascent.photoUrl ?? null,
-                          photoId: ascent.photoId ?? null,
-                          originalStorageKey: ascent.originalStorageKey ?? null,
-                          persons: ascent.persons.map((p) => ({ id: p.id, name: p.name })),
-                        },
-                      },
-                    }));
-                  }}
-                  style={{
-                    display: "block", width: "100%", padding: "10px 16px",
-                    textAlign: "left", background: "none", border: "none",
-                    fontSize: 13, color: "#111827", cursor: "pointer",
-                  }}
-                >{t.edit}</button>
-              </div>
-            )}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#2F7A5F"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#9CA3AF"; }}
+            >
+              {/* Share network icon — 3 nodes connected */}
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="16" cy="4" r="2" />
+                <circle cx="4" cy="10" r="2" />
+                <circle cx="16" cy="16" r="2" />
+                <line x1="6" y1="9" x2="14" y2="5" />
+                <line x1="6" y1="11" x2="14" y2="15" />
+              </svg>
+            </button>
+
+            {/* Edit icon */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                document.dispatchEvent(new CustomEvent("open-ascent-modal", {
+                  detail: {
+                    editAscent: {
+                      id: ascent.id,
+                      peakId: ascent.peak.id,
+                      peakName: ascent.peak.name,
+                      date: ascent.date.slice(0, 10),
+                      route: ascent.route ?? null,
+                      description: ascent.description ?? null,
+                      wikiloc: ascent.wikiloc ?? null,
+                      photoUrl: ascent.photoUrl ?? null,
+                      photoId: ascent.photoId ?? null,
+                      originalStorageKey: ascent.originalStorageKey ?? null,
+                      persons: ascent.persons.map((p) => ({ id: p.id, name: p.name })),
+                    },
+                  },
+                }));
+              }}
+              title={t.edit}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                width: 30, height: 30, borderRadius: "50%",
+                color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 0,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#2F7A5F"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#9CA3AF"; }}
+            >
+              {/* Pencil edit icon */}
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.5 2.5a2.121 2.121 0 0 1 3 3L6 17H3v-3L14.5 2.5z" />
+              </svg>
+            </button>
           </div>
-        ) : (
-          <span style={{ color: "#9CA3AF", fontSize: 20 }}>⋮</span>
-        )}
+        ) : null}
       </header>
 
       {/* Inner frame */}
@@ -264,80 +329,175 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             <div className="peak-name">{ascent.peak.name}</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
             <div className="peak-meta">
-              <span>{dateStr}</span>
-              <span>{latStr} · {lngStr}</span>
+              <span>
+                {ascent.peak.mountainRange
+                  ? ascent.peak.mountainRange
+                  : `${ascent.peak.altitudeM.toLocaleString(locale)} m`}
+              </span>
             </div>
           </div>
         </div>
         <div className="stat-band">
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_rarity}</span>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-              <span style={{ color: RARITY_COLOR[rarity], fontSize: 13 }}>✿</span>
-              <span className="stat-value" style={{ color: RARITY_COLOR[rarity] }}>{RARITY_LABEL[rarity]}</span>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                background: RARITY_COLOR[rarity] + "20",
+                borderRadius: "var(--radius-full)", padding: "4px 10px",
+              }}>
+                <span style={{ color: RARITY_COLOR[rarity], fontSize: 11, lineHeight: 1 }}>✿</span>
+                <span style={{ color: RARITY_COLOR[rarity], fontSize: 11, fontWeight: 700 }}>{RARITY_LABEL[rarity]}</span>
+              </div>
             </div>
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_altitude}</span>
-            <div className="stat-value" style={{ textAlign: "center" }}>{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+            <div className="stat-value" style={{ textAlign: "center", marginTop: 2, fontSize: 11, whiteSpace: "nowrap" }}>{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_reward}</span>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
-              {isMythic && (
-                <>
-                  <svg width="13" height="13" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
-                    <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
-                    <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
-                    <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
-                    <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
-                  </svg>
-                  <span className="stat-value" style={{ color: "#f59e0b" }}>1 Cairn</span>
-                  <span style={{ color: "#d1d5db", fontSize: 12 }}>·</span>
-                </>
-              )}
-              <span className="stat-value ep">+{RARITY_EP[rarity]} EP</span>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                background: "#fef3c7", borderRadius: "var(--radius-full)", padding: "4px 10px",
+                whiteSpace: "nowrap",
+              }}>
+                {isMythic && (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
+                      <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
+                      <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
+                      <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
+                      <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
+                    </svg>
+                    <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 700 }}>1 Cairn ·</span>
+                  </>
+                )}
+                <span style={{ color: "#d97706", fontSize: 13, fontWeight: 700 }}>+{RARITY_EP[rarity]} EP</span>
+              </div>
             </div>
           </div>
         </div>
-        <footer className="capture-note">
-          <p className="note-byline">
-            <strong>{ascent.user.name}</strong>
-            {ascent.persons.length > 0 && (
-              <>
-                {" "}{t.detail_with.toLowerCase()}{" "}
-                {ascent.persons.map((p, i) => (
-                  <span key={p.id}>
-                    {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
-                    <strong>{p.name}</strong>
-                  </span>
-                ))}
-              </>
-            )}
-          </p>
-          {ascent.description && (
-            <p className="note-text">{ascent.description}</p>
-          )}
-        </footer>
       </section>
     </>
   );
 
   return (
-    <div
-      className={`flip-card${isFlipped ? " is-flipped" : ""}`}
-      onClick={() => setIsFlipped(f => !f)}
-      onMouseEnter={() => setPreloading(true)}
-      onTouchStart={() => setPreloading(true)}
-    >
-      <article
-        className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
-        // @ts-expect-error CSS custom property
-        style={{ "--card-i": Math.min(animationIndex, 8) }}
+    <div style={{ position: "relative" }}>
+      <div
+        className={`flip-card${isFlipped ? " is-flipped" : ""}`}
+        onClick={() => setIsFlipped(f => !f)}
+        onMouseEnter={() => setPreloading(true)}
+        onTouchStart={() => setPreloading(true)}
       >
-        <div className="card-face card-front">{buildFace(false)}</div>
-        <div className="card-face card-back">{buildBack()}</div>
-      </article>
+        <article
+          className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
+          // @ts-expect-error CSS custom property
+          style={{ "--card-i": Math.min(animationIndex, 8) }}
+        >
+          <div className="card-face card-front">{buildFace(false)}</div>
+          <div className="card-face card-back">{buildBack()}</div>
+        </article>
+      </div>
+      {sharePopover && (
+        <>
+          {/* Backdrop — tap outside to close */}
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 98 }}
+            onClick={() => { setSharePopover(null); setLinkCopied(false); }}
+          />
+          {/* Premium dark popover — anchored below share button */}
+          <div
+            style={{
+              position: "absolute", top: 46, right: 8, left: 12,
+              zIndex: 99,
+              background: "#0D2538",
+              borderRadius: "var(--radius-lg)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.40), 0 2px 8px rgba(0,0,0,0.20)",
+              overflow: "hidden",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Actions area */}
+            <div style={{ padding: "14px 14px 16px" }}>
+              {/* Title */}
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
+                {t.card_shareTitle}
+              </div>
+
+              {/* WhatsApp row */}
+              <button
+                onClick={() => {
+                  window.open(`https://wa.me/?text=${encodeURIComponent(sharePopover)}`, "_blank");
+                }}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 12,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "var(--radius-md)", padding: "11px 12px",
+                  cursor: "pointer", marginBottom: 7, textAlign: "left",
+                }}
+              >
+                <div style={{ width: 34, height: 34, borderRadius: "var(--radius-md)", flexShrink: 0, background: "#25D366", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.849L0 24l6.335-1.508A11.933 11.933 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.893 0-3.667-.5-5.2-1.373l-.373-.22-3.861.919.978-3.761-.242-.387A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{t.card_shareWhatsapp}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>WhatsApp</div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="7 4 13 10 7 16" />
+                </svg>
+              </button>
+
+              {/* Copy link row */}
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(sharePopover);
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 1500);
+                }}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 12,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "var(--radius-md)", padding: "11px 12px",
+                  cursor: "pointer", textAlign: "left",
+                }}
+              >
+                <div style={{ width: 34, height: 34, borderRadius: "var(--radius-md)", flexShrink: 0, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    {linkCopied
+                      ? <polyline points="20 6 9 17 4 12" />
+                      : <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>
+                    }
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{t.card_shareCopyLink}</div>
+                  <div style={{ fontSize: 11, color: linkCopied ? "#22c55e" : "rgba(255,255,255,0.45)", marginTop: 1 }}>
+                    {linkCopied ? `✓ ${t.card_shareCopied}` : sharePopover.replace(/^https?:\/\/[^/]+/, "")}
+                  </div>
+                </div>
+                {linkCopied ? (
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="4 10 8 14 16 6" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="7 4 13 10 7 16" />
+                  </svg>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </>
+      )}
     </div>
   );
 }

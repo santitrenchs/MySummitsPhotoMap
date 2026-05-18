@@ -396,7 +396,7 @@ export function PhotoTagStep({
         }
         .face-box {
           position: absolute;
-          border-radius: 8px;
+          border-radius: var(--radius-sm);
           border: 2.5px solid rgba(255,255,255,0.85);
           box-shadow: 0 0 0 1.5px rgba(0,0,0,0.35), 0 3px 12px rgba(0,0,0,0.35);
           cursor: pointer;
@@ -507,7 +507,7 @@ export function PhotoTagStep({
                 position: "absolute", inset: 0,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 background: "rgba(0,0,0,0.35)",
-                borderRadius: 4,
+                borderRadius: "var(--radius-sm)",
               }}>
                 <div style={{
                   width: 36, height: 36, borderRadius: "50%",
@@ -548,7 +548,7 @@ export function PhotoTagStep({
                         transform: "translateX(-50%)",
                         whiteSpace: "nowrap", padding: "3px 10px",
                         background: "rgba(0,0,0,0.68)", backdropFilter: "blur(6px)",
-                        borderRadius: 20, fontSize: 11, fontWeight: 700, color: "white",
+                        borderRadius: "var(--radius-full)", fontSize: 11, fontWeight: 700, color: "white",
                         pointerEvents: "none", boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
                       }}>
                         {face.userLabel}
@@ -556,7 +556,7 @@ export function PhotoTagStep({
                     )}
                     {!isTagged && !isActive && (
                       <div style={{
-                        position: "absolute", inset: 0, borderRadius: 6,
+                        position: "absolute", inset: 0, borderRadius: "var(--radius-sm)",
                         background: "rgba(255,255,255,0.07)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}>
@@ -591,7 +591,7 @@ export function PhotoTagStep({
                       style={{
                         position: "absolute", top: -32, left: "50%",
                         transform: "translateX(-50%)",
-                        display: "flex", borderRadius: 20, overflow: "hidden",
+                        display: "flex", borderRadius: "var(--radius-full)", overflow: "hidden",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
                         animation: "tagFadeIn 0.2s ease",
                       }}
@@ -627,7 +627,7 @@ export function PhotoTagStep({
                       transform: "translateX(-50%)",
                       whiteSpace: "nowrap", padding: "3px 10px",
                       background: "rgba(0,0,0,0.68)", backdropFilter: "blur(6px)",
-                      borderRadius: 20, fontSize: 11, fontWeight: 700, color: "white",
+                      borderRadius: "var(--radius-full)", fontSize: 11, fontWeight: 700, color: "white",
                       pointerEvents: "none", boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
                     }}>
                       {face.userLabel}
@@ -656,7 +656,7 @@ export function PhotoTagStep({
               }}>
                 <div style={{
                   background: "rgba(0,0,0,0.78)", backdropFilter: "blur(8px)",
-                  borderRadius: 18, padding: "14px 24px",
+                  borderRadius: "var(--radius-lg)", padding: "14px 24px",
                   display: "flex", alignItems: "center", gap: 10,
                 }}>
                   <Spinner />
@@ -676,7 +676,7 @@ export function PhotoTagStep({
               <span style={{
                 fontSize: 12, color: "white",
                 background: "rgba(14,165,233,0.85)", backdropFilter: "blur(6px)",
-                borderRadius: 20, padding: "6px 18px", fontWeight: 600,
+                borderRadius: "var(--radius-full)", padding: "6px 18px", fontWeight: 600,
               }}>
                 {t.tag_drawHint}
               </span>
@@ -684,7 +684,7 @@ export function PhotoTagStep({
               <span style={{
                 fontSize: 12, color: "rgba(255,255,255,0.5)",
                 background: "rgba(255,255,255,0.08)",
-                borderRadius: 20, padding: "6px 18px",
+                borderRadius: "var(--radius-full)", padding: "6px 18px",
               }}>
                 {t.tag_noFaces}
               </span>
@@ -705,7 +705,7 @@ export function PhotoTagStep({
                 width: "100%", padding: "12px",
                 background: drawMode ? "rgba(14,165,233,0.2)" : "rgba(255,255,255,0.1)",
                 border: drawMode ? "1.5px solid rgba(14,165,233,0.6)" : "1.5px solid rgba(255,255,255,0.15)",
-                borderRadius: 14, fontSize: 14, fontWeight: 600,
+                borderRadius: "var(--radius-lg)", fontSize: 14, fontWeight: 600,
                 color: drawMode ? "#7dd3fc" : "rgba(255,255,255,0.75)",
                 cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -742,7 +742,7 @@ export function PhotoTagStep({
             className="tag-sheet"
             style={{
               background: "white",
-              borderRadius: "22px 22px 0 0",
+              borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
               maxHeight: "65svh",
               display: "flex", flexDirection: "column",
               paddingBottom: "env(safe-area-inset-bottom)",
@@ -763,7 +763,7 @@ export function PhotoTagStep({
                     style={{
                       width: "100%", padding: "12px 16px",
                       background: "#eff6ff", border: "1.5px solid #bfdbfe",
-                      borderRadius: 12, cursor: "pointer", marginBottom: 6,
+                      borderRadius: "var(--radius-md)", cursor: "pointer", marginBottom: 6,
                       display: "flex", alignItems: "center", justifyContent: "space-between",
                       textAlign: "left",
                     }}
@@ -774,7 +774,7 @@ export function PhotoTagStep({
                     </div>
                     <span style={{
                       fontSize: 12, fontWeight: 700, color: "white",
-                      background: "#0369a1", borderRadius: 20, padding: "5px 14px",
+                      background: "#0369a1", borderRadius: "var(--radius-full)", padding: "5px 14px",
                       flexShrink: 0,
                     }}>{t.tag_confirmCta}</span>
                   </button>
@@ -802,7 +802,7 @@ export function PhotoTagStep({
                 placeholder={t.tag_searchOrType}
                 style={{
                   width: "100%", padding: "10px 14px",
-                  border: "1.5px solid #e5e7eb", borderRadius: 10,
+                  border: "1.5px solid #e5e7eb", borderRadius: "var(--radius-md)",
                   fontSize: 16, outline: "none",
                   background: "#f9fafb", boxSizing: "border-box",
                 }}

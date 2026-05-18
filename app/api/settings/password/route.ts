@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     where: { id: session.user.id },
     select: { passwordHash: true },
   });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!user || !user.passwordHash) return NextResponse.json({ error: "No password set — use Google to sign in" }, { status: 400 });
 
   const valid = await verifyPassword(currentPassword, user.passwordHash);
   if (!valid) return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 });

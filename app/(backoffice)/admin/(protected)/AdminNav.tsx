@@ -3,43 +3,74 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV_ITEMS = [
-  { href: "/admin/users",       label: "Usuarios",    icon: "👥" },
-  { href: "/admin/vouchers",    label: "Vouchers",    icon: "🎟️" },
-  { href: "/admin/peaks",       label: "Cimas",       icon: "⛰️" },
-  { href: "/admin/geoposicion", label: "Geoposición", icon: "📍" },
+const ICON_DASHBOARD = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+  </svg>
+);
+const ICON_USERS = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+const ICON_PEAKS = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="12 2 22 20 2 20"/>
+  </svg>
+);
+
+const NAV_SECTIONS = [
+  {
+    label: "Principal",
+    items: [
+      { href: "/admin", label: "Dashboard", icon: ICON_DASHBOARD, exact: true as const },
+    ],
+  },
+  {
+    label: "Contenido",
+    items: [
+      { href: "/admin/users", label: "Usuarios", icon: ICON_USERS, exact: false as const },
+      { href: "/admin/peaks", label: "Cimas",    icon: ICON_PEAKS, exact: false as const },
+    ],
+  },
 ];
 
 export function AdminNav() {
   const pathname = usePathname();
 
+  function isActive(href: string, exact?: boolean) {
+    return exact ? pathname === href : pathname.startsWith(href);
+  }
+
   return (
-    <nav style={{
-      width: 200, background: "white",
-      borderRight: "1px solid #e2e8f0",
-      padding: "24px 0",
-    }}>
-      {NAV_ITEMS.map(({ href, label, icon }) => {
-        const active = pathname === href;
-        return (
-          <Link
-            key={href}
-            href={href}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 20px", fontSize: 14, fontWeight: active ? 600 : 500,
-              color: active ? "#2563eb" : "#334155",
-              textDecoration: "none",
-              background: active ? "#eff6ff" : "transparent",
-              borderLeft: active ? "3px solid #2563eb" : "3px solid transparent",
-              transition: "background 0.1s",
-            }}
-          >
-            <span>{icon}</span>
+    <nav className="admin-sidebar">
+      {NAV_SECTIONS.map(({ label, items }) => (
+        <div key={label} style={{ marginBottom: 8 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+            color: "var(--text-muted)", padding: "8px 16px 4px",
+          }}>
             {label}
-          </Link>
-        );
-      })}
+          </div>
+          {items.map(({ href, label: itemLabel, icon, exact }) => {
+            const active = isActive(href, exact);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`admin-sidebar-item${active ? " active" : ""}`}
+              >
+                <span className="admin-sidebar-icon">{icon}</span>
+                {itemLabel}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
     </nav>
   );
 }

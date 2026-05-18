@@ -205,7 +205,7 @@ export function PhotoUploader({
         onClick={() => { if (!uploading) inputRef.current?.click(); }}
         style={{
           border: `2px dashed ${uploading ? "#bfdbfe" : dragging ? "#0369a1" : "#d1d5db"}`,
-          borderRadius: 12, padding: "32px 16px",
+          borderRadius: "var(--radius-md)", padding: "32px 16px",
           textAlign: "center", cursor: uploading ? "wait" : "pointer",
           background: uploading ? "#eff6ff" : dragging ? "#eff6ff" : "#f9fafb",
           transition: "all 0.15s", marginBottom: 16,
@@ -238,7 +238,7 @@ export function PhotoUploader({
       {error && (
         <p style={{
           fontSize: 13, color: "#dc2626", background: "#fef2f2",
-          border: "1px solid #fecaca", borderRadius: 8,
+          border: "1px solid #fecaca", borderRadius: "var(--radius-sm)",
           padding: "8px 12px", marginBottom: 16,
         }}>
           {error}
@@ -255,7 +255,7 @@ export function PhotoUploader({
           {previews.map((photo) => (
             <div
               key={photo.id}
-              style={{ position: "relative", aspectRatio: "1", borderRadius: 8, overflow: "hidden", background: "#f3f4f6" }}
+              style={{ position: "relative", aspectRatio: "1", borderRadius: "var(--radius-sm)", overflow: "hidden", background: "#f3f4f6" }}
             >
               <Image
                 src={photo.url}
@@ -269,7 +269,7 @@ export function PhotoUploader({
                 onClick={(e) => { e.stopPropagation(); openRetag(photo); }}
                 style={{
                   position: "absolute", bottom: 4, left: 4,
-                  height: 22, borderRadius: 11,
+                  height: 22, borderRadius: "var(--radius-md)",
                   background: "rgba(0,0,0,0.55)", border: "none",
                   color: "white", fontSize: 10, fontWeight: 700,
                   cursor: "pointer", padding: "0 7px",

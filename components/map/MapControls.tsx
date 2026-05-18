@@ -11,6 +11,8 @@ interface MapControlsProps {
   onTerrain3dToggle: () => void;
   trails: boolean;
   onTrailsToggle: () => void;
+  huts: boolean;
+  onHutsToggle: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onGeolocate: (lat: number, lng: number) => void;
@@ -32,11 +34,77 @@ const BTN = (active = false): React.CSSProperties => ({
   transition: "background 0.15s, color 0.15s",
 });
 
+const sectionLabel: React.CSSProperties = {
+  fontFamily: "var(--font-inter, sans-serif)",
+  fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
+  color: "#9ca3af", textTransform: "uppercase",
+  margin: "0 0 10px",
+};
+
+function LayerCard({
+  label, active, onClick, icon,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1,
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+        padding: "10px 8px 8px",
+        borderRadius: "var(--radius-md)",
+        border: `2px solid ${active ? "#0369a1" : "#e5e7eb"}`,
+        background: active ? "#eff6ff" : "#f9fafb",
+        cursor: "pointer",
+        transition: "border-color 0.15s, background 0.15s",
+        position: "relative",
+      }}
+    >
+      {/* Active checkmark */}
+      {active && (
+        <div style={{
+          position: "absolute", top: 5, right: 5,
+          width: 14, height: 14, borderRadius: "50%",
+          background: "#0369a1",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+            <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      )}
+      {/* Icon area */}
+      <div style={{
+        width: 44, height: 36,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        borderRadius: "var(--radius-sm)",
+        background: active ? "rgba(3,105,161,0.1)" : "rgba(0,0,0,0.04)",
+        color: active ? "#0369a1" : "#6b7280",
+        transition: "background 0.15s, color 0.15s",
+      }}>
+        {icon}
+      </div>
+      <span style={{
+        fontSize: 11, fontWeight: active ? 700 : 500,
+        color: active ? "#0369a1" : "#374151",
+        lineHeight: 1, whiteSpace: "nowrap",
+      }}>
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export default function MapControls({
   isMobile,
   hillshade, onHillshadeToggle,
   terrain3d, onTerrain3dToggle,
   trails, onTrailsToggle,
+  huts, onHutsToggle,
   onZoomIn, onZoomOut,
   onGeolocate,
   topBarVisible, onTopBarToggle,
@@ -51,10 +119,13 @@ export default function MapControls({
   const menuRef = useRef<HTMLDivElement>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Layers button is "active" when any non-default layer is on
+  const hasActiveLayers = hillshade || trails || huts;
+
   function openLayers() {
     if (!layersBtnRef.current) return;
     const r = layersBtnRef.current.getBoundingClientRect();
-    setMenuPos({ top: r.top, left: r.left - 160 });
+    setMenuPos({ top: r.top, left: r.left - 220 });
     setLayersOpen(true);
   }
 
@@ -112,7 +183,6 @@ export default function MapControls({
     };
 
     if (isMobile) {
-      // Mobile: try GPS first, fall back to network triangulation
       navigator.geolocation.getCurrentPosition(
         onSuccess,
         (err) => {
@@ -123,17 +193,14 @@ export default function MapControls({
         { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
       );
     } else {
-      // Desktop: go straight to network-based location (no GPS hardware)
       navigator.geolocation.getCurrentPosition(onSuccess, onError,
         { enableHighAccuracy: false, maximumAge: 0, timeout: 10000 });
     }
   }
 
-  // Desktop: right of map, left of sidebar (right: 344px)
-  // Mobile: bottom-right where zoom buttons used to be
   const containerStyle: React.CSSProperties = isMobile
     ? { position: "absolute", right: 12, bottom: 100, zIndex: 10, display: "flex", flexDirection: "column", gap: 8 }
-    : { position: "absolute", right: 344, bottom: 80, zIndex: 10, display: "flex", flexDirection: "column", gap: 8 };
+    : { position: "absolute", right: "calc(var(--sidebar-w, 320px) + 24px)" as unknown as number, bottom: 80, zIndex: 10, display: "flex", flexDirection: "column", gap: 8 };
 
   const geoColor = geoState === "error" ? "#dc2626" : geoState === "locating" ? "#0369a1" : "#1e293b";
 
@@ -159,7 +226,7 @@ export default function MapControls({
         {/* Layers */}
         <button
           ref={layersBtnRef}
-          style={BTN(layersOpen)}
+          style={BTN(layersOpen || hasActiveLayers)}
           onClick={() => layersOpen ? setLayersOpen(false) : openLayers()}
           aria-label="Capas"
           title="Capas"
@@ -222,7 +289,7 @@ export default function MapControls({
           top: geoBtnPos.top + 8,
           right: window.innerWidth - geoBtnPos.left + 8,
           background: "white",
-          borderRadius: 10,
+          borderRadius: "var(--radius-md)",
           boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
           border: "1px solid #fecaca",
           padding: "8px 12px",
@@ -238,60 +305,85 @@ export default function MapControls({
         document.body
       )}
 
-      {/* Layers popup */}
+      {/* Layers panel — card grid */}
       {layersOpen && menuPos && createPortal(
         <div ref={menuRef} style={{
           position: "fixed", top: menuPos.top, left: menuPos.left,
-          background: "white", borderRadius: 12,
-          boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+          background: "white", borderRadius: "var(--radius-lg)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.16)",
           border: "1px solid #e5e7eb",
-          zIndex: 9999, minWidth: 160, overflow: "hidden",
+          zIndex: 9999, width: 212,
+          padding: "16px 14px",
+          display: "flex", flexDirection: "column", gap: 16,
         }}>
-          {[
-            { label: "Normal", active: !hillshade },
-            { label: "Relieve", active: hillshade },
-          ].map((opt) => (
-            <button
-              key={opt.label}
-              onClick={() => { if (!opt.active) onHillshadeToggle(); setLayersOpen(false); }}
-              style={{
-                display: "flex", alignItems: "center", gap: 10,
-                width: "100%", padding: "11px 16px",
-                background: opt.active ? "#f3f4f6" : "none",
-                border: "none", borderBottom: "1px solid #f3f4f6",
-                cursor: "pointer", textAlign: "left",
-                fontSize: 13, fontWeight: opt.active ? 700 : 500,
-                color: "#111827",
-              }}
-            >
-              {opt.active && <span style={{ fontSize: 11 }}>✓</span>}
-              {opt.label}
-            </button>
-          ))}
-          {/* Trails toggle — independent checkbox */}
-          <button
-            onClick={onTrailsToggle}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              width: "100%", padding: "11px 16px",
-              background: "none",
-              border: "none",
-              cursor: "pointer", textAlign: "left",
-              fontSize: 13, fontWeight: 500,
-              color: "#111827",
-            }}
-          >
-            <span style={{
-              width: 16, height: 16, borderRadius: 4, flexShrink: 0,
-              border: `2px solid ${trails ? "#b45309" : "#d1d5db"}`,
-              background: trails ? "#b45309" : "white",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "background 0.15s, border-color 0.15s",
-            }}>
-              {trails && <span style={{ color: "white", fontSize: 10, fontWeight: 700, lineHeight: 1 }}>✓</span>}
-            </span>
-            Senderos
-          </button>
+
+          {/* Tipo de mapa */}
+          <div>
+            <p style={sectionLabel}>Tipo de mapa</p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <LayerCard
+                label="Normal"
+                active={!hillshade}
+                onClick={() => { if (hillshade) onHillshadeToggle(); }}
+                icon={
+                  <svg width="26" height="22" viewBox="0 0 26 22" fill="none">
+                    <rect x="1" y="1" width="24" height="20" rx="3" fill="currentColor" opacity="0.12"/>
+                    <rect x="1" y="1" width="24" height="20" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                    <line x1="1" y1="8" x2="25" y2="8" stroke="currentColor" strokeWidth="1" opacity="0.4"/>
+                    <line x1="1" y1="14" x2="25" y2="14" stroke="currentColor" strokeWidth="1" opacity="0.4"/>
+                    <line x1="9" y1="1" x2="9" y2="21" stroke="currentColor" strokeWidth="1" opacity="0.4"/>
+                    <line x1="17" y1="1" x2="17" y2="21" stroke="currentColor" strokeWidth="1" opacity="0.4"/>
+                  </svg>
+                }
+              />
+              <LayerCard
+                label="Relieve"
+                active={hillshade}
+                onClick={() => { if (!hillshade) onHillshadeToggle(); }}
+                icon={
+                  <svg width="26" height="22" viewBox="0 0 26 22" fill="none">
+                    <path d="M1 18 L8 8 L13 13 L18 5 L25 18 Z" fill="currentColor" opacity="0.2"/>
+                    <path d="M1 18 L8 8 L13 13 L18 5 L25 18" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
+                    <path d="M16 5 L18 5 L20 8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+                  </svg>
+                }
+              />
+            </div>
+          </div>
+
+          {/* Capas */}
+          <div>
+            <p style={sectionLabel}>Capas</p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <LayerCard
+                label="Senderos"
+                active={trails}
+                onClick={onTrailsToggle}
+                icon={
+                  <svg width="26" height="22" viewBox="0 0 26 22" fill="none">
+                    <path d="M2 19 Q7 14 10 11 Q13 8 16 10 Q19 12 24 5"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                      strokeDasharray="3 2.5" fill="none"/>
+                  </svg>
+                }
+              />
+              <LayerCard
+                label="Refugios"
+                active={huts}
+                onClick={onHutsToggle}
+                icon={
+                  <svg width="26" height="22" viewBox="0 0 26 22" fill="none">
+                    <path d="M13 3 L23 10 L21 10 L21 19 L5 19 L5 10 L3 10 Z"
+                      fill="currentColor" opacity="0.15" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                    <rect x="10" y="12" width="6" height="7" rx="1"
+                      fill="currentColor" opacity="0.3" stroke="currentColor" strokeWidth="1.2"/>
+                    <circle cx="20" cy="5" r="2.5" fill="#f59e0b" stroke="white" strokeWidth="1.2"/>
+                  </svg>
+                }
+              />
+            </div>
+          </div>
+
         </div>,
         document.body
       )}

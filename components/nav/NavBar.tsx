@@ -145,7 +145,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         .tab-inner {
           display: flex;
           align-items: center;
-          height: 62px;
+          height: 60px;
         }
         .tab-item {
           flex: 1;
@@ -237,7 +237,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
           left: 0;
           right: 0;
           background: white;
-          border-radius: 20px 20px 0 0;
+          border-radius: var(--radius-xl) var(--radius-xl) 0 0;
           padding-bottom: env(safe-area-inset-bottom);
           animation: sheetUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
           overflow: hidden;
@@ -299,7 +299,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         .sheet-item-icon {
           width: 36px;
           height: 36px;
-          border-radius: 10px;
+          border-radius: var(--radius-md);
           background: #f3f4f6;
           display: flex;
           align-items: center;

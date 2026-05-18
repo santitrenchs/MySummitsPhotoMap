@@ -30,6 +30,7 @@ export async function GET(request: Request) {
     where = {
       OR: [
         { name:          { contains: q, mode: "insensitive" } },
+        { nameEn:        { contains: q, mode: "insensitive" } },
         { mountainRange: { contains: q, mode: "insensitive" } },
       ],
     };
@@ -55,6 +56,7 @@ export async function GET(request: Request) {
     select: {
       id: true,
       name: true,
+      nameEn: true,
       latitude: true,
       longitude: true,
       altitudeM: true,

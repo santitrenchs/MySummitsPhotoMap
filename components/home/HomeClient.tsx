@@ -69,8 +69,9 @@ const LEVEL_COLORS = [
   { accent: "#16a34a", light: "#f0fdf4", mid: "#dcfce7", dark: "#166534" }, // 1 Scout    — green
   { accent: "#d97706", light: "#fffbeb", mid: "#fef3c7", dark: "#92400e" }, // 2 Guide    — amber
   { accent: "#ea580c", light: "#fff7ed", mid: "#ffedd5", dark: "#9a3412" }, // 3 Explorer — orange
-  { accent: "#1d4ed8", light: "#eff6ff", mid: "#dbeafe", dark: "#1e40af" }, // 4 Master   — blue
-  { accent: "#7c3aed", light: "#faf5ff", mid: "#ede9fe", dark: "#5b21b6" }, // 5 Legendary — purple
+  { accent: "#1d4ed8", light: "#eff6ff", mid: "#dbeafe", dark: "#1e40af" }, // 4 Alpinist — blue
+  { accent: "#7c3aed", light: "#faf5ff", mid: "#ede9fe", dark: "#5b21b6" }, // 5 Master   — purple
+  { accent: "#b45309", light: "#fefce8", mid: "#fef9c3", dark: "#78350f" }, // 6 Zenith   — gold
 ];
 
 
@@ -87,7 +88,7 @@ function LevelCard({ def, status, stats, t, locale }: {
   const isCurrent   = status === "current";
   const color       = LEVEL_COLORS[def.idx - 1];
   const ascentPct   = def.targetAscents
-    ? Math.min(stats.totalAscents / def.targetAscents * 100, 100)
+    ? Math.min(stats.uniquePeaks / def.targetAscents * 100, 100)
     : 100;
 
   // badge + name + pills always on one centered row; progress below indented
@@ -102,7 +103,7 @@ function LevelCard({ def, status, stats, t, locale }: {
       borderRight:  `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
       borderBottom: `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
       borderLeft:   isCurrent ? `4px solid #0369a1` : `1.5px solid #e5e7eb`,
-      borderRadius: 16,
+      borderRadius: "var(--radius-lg)",
       boxShadow: isCurrent ? "0 2px 12px rgba(3,105,161,0.10)" : "0 1px 3px rgba(0,0,0,0.04)",
       opacity: status === "locked" ? 0.5 : 1,
       marginBottom: 10,
@@ -133,7 +134,7 @@ function LevelCard({ def, status, stats, t, locale }: {
           </span>
           <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, justifyContent: "flex-end" }}>
             {def.targetAscents != null && (
-              <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: "var(--radius-sm)", background: "#f3f4f6", color: "#374151" }}>
                 {def.targetAscents} {t.home_statSummits.toLowerCase()}
               </span>
             )}
@@ -142,7 +143,7 @@ function LevelCard({ def, status, stats, t, locale }: {
                 ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
                 : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
               return (
-                <span key={r.threshold} style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8, background: "#f3f4f6", color: "#374151" }}>
+                <span key={r.threshold} style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: "var(--radius-sm)", background: "#f3f4f6", color: "#374151" }}>
                   {label}
                 </span>
               );
@@ -154,20 +155,20 @@ function LevelCard({ def, status, stats, t, locale }: {
       {/* ── Progress row (current only, indented to align with name) ── */}
       {isCurrent && def.targetAscents != null && (
         <div style={{ paddingLeft: leftW, marginTop: 12 }}>
-          <div style={{ height: 6, borderRadius: 99, background: "#dbeafe", overflow: "hidden", marginBottom: 6 }}>
-            <div style={{ height: "100%", borderRadius: 99, width: `${ascentPct}%`, background: "linear-gradient(90deg,#0369a1,#0ea5e9)" }} />
+          <div style={{ height: 6, borderRadius: "var(--radius-full)", background: "#dbeafe", overflow: "hidden", marginBottom: 6 }}>
+            <div style={{ height: "100%", borderRadius: "var(--radius-full)", width: `${ascentPct}%`, background: "linear-gradient(90deg,#0369a1,#0ea5e9)" }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
-              {i(t.home_levelProgress, { current: stats.totalAscents, total: def.targetAscents })}
+              {i(t.home_levelProgress, { current: stats.uniquePeaks, total: def.targetAscents })}
             </span>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
               {Math.round(ascentPct)}%
             </span>
           </div>
-          {stats.totalAscents < def.targetAscents && (
+          {stats.uniquePeaks < def.targetAscents && (
             <div style={{ fontSize: 12, color: "#6b7280" }}>
-              → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.totalAscents })}
+              → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.uniquePeaks })}
             </div>
           )}
           {def.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
@@ -197,7 +198,7 @@ function BadgeCard({ emoji, title, sub, howTo, rarity, cairns, earned, current, 
       borderBottom: isLast ? "none" : "1px solid #f3f4f6",
     }}>
       <div style={{
-        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+        width: 44, height: 44, borderRadius: "var(--radius-md)", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 22, position: "relative",
         background: earned ? "#fef3c7" : "#f3f4f6",
@@ -228,8 +229,8 @@ function BadgeCard({ emoji, title, sub, howTo, rarity, cairns, earned, current, 
           )}
         </div>
         {!earned && target > 1 && (
-          <div style={{ height: 3, borderRadius: 99, background: "#f3f4f6", marginTop: 3 }}>
-            <div style={{ height: "100%", width: `${progress * 100}%`, borderRadius: 99, background: "#0369a1" }} />
+          <div style={{ height: 3, borderRadius: "var(--radius-full)", background: "#f3f4f6", marginTop: 3 }}>
+            <div style={{ height: "100%", width: `${progress * 100}%`, borderRadius: "var(--radius-full)", background: "#0369a1" }} />
           </div>
         )}
       </div>
@@ -244,12 +245,32 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
       {data.map((d) => {
-        const barH = d.summits > 0 ? Math.max(Math.round((d.summits / max) * 64), 8) : 3;
+        const totalH = d.summits > 0 ? Math.max(Math.round((d.summits / max) * 64), 8) : 3;
         const label = new Intl.DateTimeFormat(locale, { month: "short" }).format(
           new Date(`${d.isoMonth}-15`)
         );
+
+        // Build stacked segments (daisy → snow_lotus, bottom to top)
+        type Seg = { color: string; h: number };
+        const segments: Seg[] = [];
+        if (d.summits > 0) {
+          let usedH = 0;
+          const raritiesWithCount = RARITIES.filter((r) => (d.rarityBreakdown[r.id] ?? 0) > 0);
+          raritiesWithCount.forEach((r, idx) => {
+            const count = d.rarityBreakdown[r.id]!;
+            const isLast = idx === raritiesWithCount.length - 1;
+            const h = isLast ? totalH - usedH : Math.max(1, Math.round((count / d.summits) * totalH));
+            usedH += h;
+            segments.push({ color: r.color, h });
+          });
+        }
+
         return (
-          <div key={d.isoMonth} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+          <Link
+            key={d.isoMonth}
+            href={`/ascents?month=${d.isoMonth}&view=mine`}
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}
+          >
             <span style={{
               fontSize: 10, fontWeight: 700, lineHeight: 1,
               color: d.summits > 0 ? "#0369a1" : "transparent",
@@ -257,12 +278,19 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
               {d.summits || "0"}
             </span>
             <div style={{
-              width: "100%", height: barH,
-              background: d.summits > 0 ? "#0369a1" : "#e5e7eb",
-              borderRadius: "3px 3px 0 0",
-            }} />
+              width: "100%", height: totalH,
+              borderRadius: "var(--radius-sm) var(--radius-sm) 0 0",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column-reverse",
+              background: d.summits === 0 ? "#e5e7eb" : undefined,
+            }}>
+              {segments.map((seg, i) => (
+                <div key={i} style={{ width: "100%", height: seg.h, background: seg.color, flexShrink: 0 }} />
+              ))}
+            </div>
             <span style={{ fontSize: 10, color: "#94a3b8", textTransform: "capitalize" }}>{label}</span>
-          </div>
+          </Link>
         );
       })}
     </div>
@@ -275,20 +303,20 @@ const RARITY_BARS: { key: keyof HomeData["stats"]["rarityBreakdown"]; color: str
   RARITIES.map((r) => ({ key: r.id as keyof HomeData["stats"]["rarityBreakdown"], color: r.color, label: r.label }));
 
 function RarityChart({ breakdown }: { breakdown: HomeData["stats"]["rarityBreakdown"] }) {
-  const values = RARITY_BARS.map((b) => breakdown[b.key]);
+  const values = RARITY_BARS.map((b) => breakdown[b.key] ?? 0);
   const max = Math.max(...values, 1);
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 4 }}>
       {RARITY_BARS.map((b, i) => {
         const val = values[i];
-        const barH = val > 0 ? Math.max(Math.round((val / max) * 64), 8) : 3;
+        const barH = val > 0 && max > 0 ? Math.max(Math.round((val / max) * 96), 8) : 3;
         return (
           <div key={b.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
             <span style={{ fontSize: 10, fontWeight: 700, lineHeight: 1, color: val > 0 ? b.color : "transparent" }}>
               {val || "0"}
             </span>
             <div style={{ width: "100%", height: barH, background: val > 0 ? b.color : "#e5e7eb", borderRadius: "3px 3px 0 0" }} />
-            <span style={{ fontSize: 9, color: "#94a3b8", textAlign: "center", lineHeight: 1.2, height: 22, display: "flex", alignItems: "flex-start", justifyContent: "center" }}>{b.label}</span>
+            <span title={b.label} style={{ fontSize: 14, lineHeight: 1, color: val > 0 ? b.color : "#e5e7eb", height: 22, display: "flex", alignItems: "flex-start", justifyContent: "center" }}>✿</span>
           </div>
         );
       })}
@@ -323,7 +351,7 @@ export function HomeClient({ data, locale, t }: {
   // Altitude breakdown for summit card (only non-zero buckets)
   const fmt = (n: number) => n.toLocaleString(locale);
   const altBuckets = [
-    { icon: "🌿", name: t.home_altZone1, range: `0–${fmt(1000)} m`,             count: stats.totalAscents - stats.peaks1000plus },
+    { icon: "🌿", name: t.home_altZone1, range: `0–${fmt(1000)} m`,             count: stats.uniquePeaks - stats.peaks1000plus },
     { icon: "⛰️", name: t.home_altZone2, range: `${fmt(1000)}–${fmt(2000)} m`,  count: stats.peaks1000plus - stats.peaks2000plus },
     { icon: "🏔️", name: t.home_altZone3, range: `${fmt(2000)}–${fmt(3000)} m`,  count: stats.peaks2000plus - stats.peaks3000plus },
     { icon: "❄️", name: t.home_altZone4, range: `${fmt(3000)}–${fmt(4000)} m`,  count: stats.peaks3000plus - stats.peaks4000plus },
@@ -380,7 +408,7 @@ export function HomeClient({ data, locale, t }: {
         return (
           <div style={{
             position: "relative",
-            borderRadius: 20,
+            borderRadius: "var(--radius-xl)",
             overflow: "hidden",
             margin: "12px 12px 0",
             backgroundImage: "url('/brand/hero.png')",
@@ -421,7 +449,7 @@ export function HomeClient({ data, locale, t }: {
               {/* Level pill */}
               <div style={{
                 display: "inline-flex", alignItems: "center",
-                padding: "2px 11px", borderRadius: 20,
+                padding: "2px 11px", borderRadius: "var(--radius-full)",
                 background: "#eff6ff",
                 fontSize: 12, fontWeight: 700, color: "#0369a1",
                 letterSpacing: "0.01em",
@@ -455,10 +483,8 @@ export function HomeClient({ data, locale, t }: {
                 display: "flex", alignItems: "center", gap: 6,
                 fontSize: 12.5, letterSpacing: "-0.01em", marginTop: 6,
                 background: "rgba(255,255,255,0.15)",
-                borderRadius: 20, padding: "5px 14px",
+                borderRadius: "var(--radius-full)", padding: "5px 14px",
               }}>
-                <span style={{ fontWeight: 700, color: "#ffffff" }}>+{myEp} EP</span>
-                <span style={{ fontSize: 18, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>·</span>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="#fbbf24">
                   <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
                   <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
@@ -467,6 +493,8 @@ export function HomeClient({ data, locale, t }: {
                 </svg>
                 <span style={{ fontWeight: 700, color: "#fbbf24" }}>{myCairns}</span>
                 <span style={{ fontWeight: 400, color: "#fbbf24" }}>Cairns</span>
+                <span style={{ fontSize: 18, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>·</span>
+                <span style={{ fontWeight: 700, color: "#ffffff" }}>+{myEp} EP</span>
               </div>
             </div>
           </div>
@@ -479,7 +507,7 @@ export function HomeClient({ data, locale, t }: {
           <div style={{
             background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
             border: "1.5px solid #86efac",
-            borderRadius: 20, padding: "24px 20px",
+            borderRadius: "var(--radius-xl)", padding: "24px 20px",
             textAlign: "center",
           }}>
             <p style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 800, color: "#14532d", letterSpacing: "-0.02em" }}>
@@ -493,7 +521,7 @@ export function HomeClient({ data, locale, t }: {
               style={{
                 display: "inline-block",
                 background: "#16a34a", color: "white",
-                padding: "11px 24px", borderRadius: 12,
+                padding: "11px 24px", borderRadius: "var(--radius-md)",
                 fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
                 boxShadow: "0 4px 12px rgba(22,163,74,0.35)",
               }}
@@ -529,7 +557,7 @@ export function HomeClient({ data, locale, t }: {
             onClick={() => setProgressionExpanded(true)}
             style={{
               width: "100%", marginTop: 2,
-              background: "none", border: "1.5px solid #e5e7eb", borderRadius: 10,
+              background: "none", border: "1.5px solid #e5e7eb", borderRadius: "var(--radius-md)",
               padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#374151",
               cursor: "pointer",
             }}
@@ -556,7 +584,7 @@ export function HomeClient({ data, locale, t }: {
         <section style={{ padding: "20px 16px 0" }}>
           <div style={{
             background: "white", border: "1px solid #e5e7eb",
-            borderRadius: 16, padding: "16px 16px 12px",
+            borderRadius: "var(--radius-lg)", padding: "16px 16px 12px",
             boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
           }}>
             {(() => {
@@ -593,7 +621,7 @@ export function HomeClient({ data, locale, t }: {
       {/* ── Rarity chart ────────────────────────────────────────────────── */}
       {stats.totalAscents >= 1 && (
         <section style={{ padding: "16px 16px 0" }}>
-          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 16, padding: "16px 16px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", padding: "16px 16px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
             <h2 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#111827" }}>
               {t.home_rarityChartTitle}
             </h2>
@@ -612,7 +640,7 @@ export function HomeClient({ data, locale, t }: {
             </h2>
           </div>
 
-          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
             {leaderboard.slice(0, 5).map((entry, idx) => {
               const rank = idx + 1;
               const isMe = entry.isCurrentUser;
@@ -621,7 +649,7 @@ export function HomeClient({ data, locale, t }: {
               const lvlColor = LEVEL_COLORS[(entry.levelIdx - 1) % LEVEL_COLORS.length];
               const levelName = t[LEVEL_DEFS[(entry.levelIdx - 1) % LEVEL_DEFS.length].nameKey];
               const progressPct = entry.nextLevelTarget
-                ? Math.min(100, Math.round((entry.ep / entry.nextLevelTarget) * 100))
+                ? Math.min(100, Math.round((entry.uniquePeakCount / entry.nextLevelTarget) * 100))
                 : 100;
 
               // Hint for current user
@@ -655,22 +683,22 @@ export function HomeClient({ data, locale, t }: {
                         <span style={{
                           display: "inline-block", marginTop: 2,
                           fontSize: 10, fontWeight: 700, color: "#374151",
-                          background: "#f3f4f6", borderRadius: 6, padding: "1px 6px",
+                          background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px",
                         }}>{levelName}</span>
                       </div>
-                      {/* Cimas + EP + Cairns */}
+                      {/* Cimas + Cairns + EP */}
                       <div style={{ display: "flex", gap: 0, flexShrink: 0 }}>
                         <div style={{ textAlign: "center", width: 52 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ascentCount}</div>
                           <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
                         </div>
-                        <div style={{ textAlign: "center", width: 44 }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
-                        </div>
                         <div style={{ textAlign: "center", width: 52 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
                           <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
+                        </div>
+                        <div style={{ textAlign: "center", width: 44 }}>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
                         </div>
                       </div>
                     </div>
@@ -697,22 +725,22 @@ export function HomeClient({ data, locale, t }: {
                     <span style={{
                       display: "inline-block", marginTop: 1,
                       fontSize: 10, fontWeight: 700, color: "#374151",
-                      background: "#f3f4f6", borderRadius: 6, padding: "1px 6px",
+                      background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px",
                     }}>{levelName}</span>
                   </div>
-                  {/* Cimas + EP + Cairns */}
+                  {/* Cimas + Cairns + EP */}
                   <div style={{ display: "flex", gap: 0, flexShrink: 0 }}>
                     <div style={{ textAlign: "center", width: 52 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ascentCount}</div>
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
                     </div>
-                    <div style={{ textAlign: "center", width: 44 }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
-                    </div>
                     <div style={{ textAlign: "center", width: 52 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
+                    </div>
+                    <div style={{ textAlign: "center", width: 44 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
                     </div>
                   </div>
                 </div>
@@ -727,7 +755,7 @@ export function HomeClient({ data, locale, t }: {
         <section style={{ padding: "20px 16px 0" }}>
           <div style={{
             background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
-            border: "1.5px dashed #bfdbfe", borderRadius: 16, padding: "22px",
+            border: "1.5px dashed #bfdbfe", borderRadius: "var(--radius-lg)", padding: "22px",
             textAlign: "center",
           }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
@@ -740,7 +768,7 @@ export function HomeClient({ data, locale, t }: {
             <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
               <Link href="/friends" style={{
                 display: "inline-block", background: "#0369a1", color: "white",
-                padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: "none",
+                padding: "8px 18px", borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600, textDecoration: "none",
               }}>
                 {t.home_inviteFriends}
               </Link>
@@ -769,9 +797,9 @@ export function HomeClient({ data, locale, t }: {
           {recentAscents.map((a) => (
               <Link key={a.id} href={`/ascents?highlight=${a.id}`} style={{ textDecoration: "none", flexShrink: 0 }}>
                 <div style={{
-                  width: 150, borderRadius: 14,
+                  width: 150, borderRadius: "var(--radius-lg)",
                   border: "1px solid #e5e7eb", overflow: "hidden",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.07)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
                 }}>
                   <div style={{ height: 120, background: "#e5e7eb", position: "relative", overflow: "hidden" }}>
                     {a.photoUrl

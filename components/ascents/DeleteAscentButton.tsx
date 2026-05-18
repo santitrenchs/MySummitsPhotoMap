@@ -22,7 +22,7 @@ export function DeleteAscentButton({ id }: { id: string }) {
       disabled={loading}
       style={{
         border: "1px solid #fee2e2", background: "white", color: "#ef4444",
-        borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600,
+        borderRadius: "var(--radius-md)", padding: "6px 12px", fontSize: 12, fontWeight: 600,
         cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
       }}
     >

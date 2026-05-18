@@ -18,13 +18,6 @@ type SearchResult = UserStub & {
   friendshipId?: string;
 };
 
-type InvitationEntry = {
-  id: string;
-  inviteeEmail: string;
-  usedCount: number;
-  expiresAt: string;
-  createdAt: string;
-};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -74,7 +67,7 @@ function Btn({
       onClick={onClick}
       disabled={disabled}
       style={{
-        padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+        padding: "5px 12px", borderRadius: "var(--radius-sm)", fontSize: 12, fontWeight: 600,
         cursor: disabled ? "default" : "pointer", whiteSpace: "nowrap",
         background: c.bg, color: c.color,
         border: `1px solid ${c.border}`,
@@ -257,92 +250,13 @@ export function FriendsClient({
     setBlocked((prev) => prev.filter((b) => b.id !== entry.id));
   }
 
-  // ── Invite ───────────────────────────────────────────────────────────────────
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteStatus, setInviteStatus] = useState<
-    null | "sending" | "invited" | "already_invited" | "already_registered" | "error"
-  >(null);
-  const [invitations, setInvitations] = useState<InvitationEntry[]>([]);
-
-  useEffect(() => {
-    fetch("/api/invitations")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setInvitations(data); })
-      .catch(() => {});
-  }, []);
-
-  async function sendInvite() {
-    const email = inviteEmail.trim().toLowerCase();
-    if (!email) return;
-    if (!email.includes("@") || !email.includes(".")) { setInviteStatus("error"); return; }
-    setInviteStatus("sending");
-    try {
-      const res = await fetch("/api/invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setInviteStatus("error"); return; }
-      if (data.status === "already_registered") { setInviteStatus("already_registered"); return; }
-      if (data.status === "already_invited") { setInviteStatus("already_invited"); return; }
-      setInviteStatus("invited");
-      setInviteEmail("");
-      setInvitations((prev) => [
-        { id: data.id ?? String(Date.now()), inviteeEmail: email, usedCount: 0, expiresAt: data.expiresAt, createdAt: new Date().toISOString() },
-        ...prev,
-      ]);
-    } catch {
-      setInviteStatus("error");
-    }
-  }
-
-  function inviteStatusMsg(): { text: string; color: string } | null {
-    if (!inviteStatus || inviteStatus === "sending") return null;
-    if (inviteStatus === "invited")              return { text: t.friends_inviteSent,              color: "#16a34a" };
-    if (inviteStatus === "already_invited")      return { text: t.friends_inviteAlreadyInvited,    color: "#ea580c" };
-    if (inviteStatus === "already_registered")   return { text: t.friends_inviteAlreadyRegistered, color: "#0369a1" };
-    return { text: t.friends_inviteError, color: "#ef4444" };
-  }
-
-  function getInviteEntryStatus(inv: InvitationEntry): { label: string; color: string } {
-    if (inv.usedCount > 0)                        return { label: t.friends_inviteStatusUsed,    color: "#16a34a" };
-    if (new Date(inv.expiresAt) < new Date())     return { label: t.friends_inviteStatusExpired, color: "#9ca3af" };
-    return { label: t.friends_inviteStatusPending, color: "#ea580c" };
-  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div>
-      {/* ── Add friends (invite + search grouped) ── */}
+      {/* ── Add friends (search) ── */}
       <div style={{ marginBottom: 28, paddingBottom: 24, borderBottom: "1px solid #f3f4f6" }}>
         <SectionHeader label={t.friends_addSection} />
-
-        {/* Invite by email */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <input
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => { setInviteEmail(e.target.value); setInviteStatus(null); }}
-            onKeyDown={(e) => { if (e.key === "Enter") sendInvite(); }}
-            placeholder={t.friends_invitePlaceholder}
-            style={{
-              flex: 1, padding: "9px 12px",
-              border: "1px solid #e5e7eb", borderRadius: 8,
-              fontSize: 16, outline: "none", background: "#f9fafb",
-            }}
-            onFocus={(e) => (e.target.style.borderColor = "#DC2626")}
-            onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-          />
-          <Btn onClick={sendInvite} disabled={inviteStatus === "sending" || !inviteEmail.trim()}>
-            {inviteStatus === "sending" ? t.friends_inviteSending : t.friends_inviteBtn}
-          </Btn>
-        </div>
-        {inviteStatusMsg() && (
-          <p style={{ fontSize: 12, color: inviteStatusMsg()!.color, margin: "0 0 8px" }}>
-            {inviteStatusMsg()!.text}
-          </p>
-        )}
       </div>
 
       {/* ── Incoming requests ── */}
@@ -377,10 +291,10 @@ export function FriendsClient({
             style={{
               width: "100%", boxSizing: "border-box",
               padding: "9px 14px 9px 38px",
-              border: "1px solid #e5e7eb", borderRadius: 10,
+              border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
               fontSize: 16, outline: "none", background: "#f9fafb",
             }}
-            onFocus={(e) => (e.target.style.borderColor = "#DC2626")}
+            onFocus={(e) => (e.target.style.borderColor = "#2F7A5F")}
             onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
           />
           <svg style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }}
@@ -390,7 +304,7 @@ export function FriendsClient({
           {query.trim().length >= 2 && (
             <div style={{
               position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-              background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+              background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
               boxShadow: "0 4px 16px rgba(0,0,0,0.1)", overflow: "hidden",
             }}>
               {searching ? (
@@ -456,7 +370,7 @@ export function FriendsClient({
                   <button
                     onClick={() => setOpenMenuId(openMenuId === f.id ? null : f.id)}
                     style={{
-                      width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb",
+                      width: 32, height: 32, borderRadius: "var(--radius-sm)", border: "1px solid #e5e7eb",
                       background: openMenuId === f.id ? "#f3f4f6" : "white",
                       cursor: "pointer", fontSize: 18, color: "#6b7280",
                       display: "flex", alignItems: "center", justifyContent: "center",
@@ -468,7 +382,7 @@ export function FriendsClient({
                   {openMenuId === f.id && (
                     <div style={{
                       position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 20,
-                      background: "white", border: "1px solid #e5e7eb", borderRadius: 10,
+                      background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
                       boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 160, overflow: "hidden",
                     }}>
                       <button
@@ -507,7 +421,7 @@ export function FriendsClient({
               onClick={() => setVisibleCount((c) => c + 20)}
               style={{
                 display: "block", width: "100%", marginTop: 8, padding: "10px 0",
-                border: "1px solid #e5e7eb", borderRadius: 10,
+                border: "1px solid #e5e7eb", borderRadius: "var(--radius-md)",
                 background: "white", fontSize: 13, fontWeight: 600,
                 color: "#0369a1", cursor: "pointer",
               }}
