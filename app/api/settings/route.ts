@@ -89,6 +89,7 @@ export async function PATCH(req: Request) {
     if (msg.includes("Unique constraint") && msg.includes("username")) {
       return NextResponse.json({ error: "Username already taken" }, { status: 409 });
     }
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[settings PATCH]", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

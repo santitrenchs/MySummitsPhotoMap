@@ -30,7 +30,7 @@ export async function GET(
     return NextResponse.json({ wikiTexts });
   } catch (err) {
     console.error("[wiki GET]", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -73,6 +73,6 @@ export async function POST(
     return NextResponse.json({ wikiTexts, fetched: results.length });
   } catch (err) {
     console.error("[wiki POST]", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

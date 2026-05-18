@@ -53,6 +53,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(friendship);
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 400 });
+    console.error("[friendships POST]", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
