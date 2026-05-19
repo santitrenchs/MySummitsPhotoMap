@@ -147,8 +147,6 @@ export function AscentsClient({
   const pendingSeenRef = useRef<Set<string>>(new Set());
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
-  // Image unloading — release decoded bitmap memory for cards far from viewport
-  const imgUnloadObserverRef = useRef<IntersectionObserver | null>(null);
 
   // Peak filter seeded from ?peak= URL param
   const [peakFilter, setPeakFilter] = useState<string>(() => searchParams.get("peak") ?? "");
@@ -237,45 +235,24 @@ export function AscentsClient({
   // Reset render window whenever filters change
   useEffect(() => { setVisibleCount(PAGE_SIZE); setTopSpacerHeight(0); }, [filtered]);
 
-  // Unload <img> src for cards more than 2 viewports away; restore on re-entry
+  // Bound localAscents to avoid unbounded React state + useMemo cost as the user scrolls.
+  // Drops scrolled-past groups (front of date-desc array) once we're well above the visible window.
+  const MAX_LOADED_ASCENTS = 60;
+  const TRIM_BUFFER_GROUPS = 5;
   useEffect(() => {
-    imgUnloadObserverRef.current?.disconnect();
-    const wrappers = document.querySelectorAll("[data-card-wrapper]");
-    if (wrappers.length === 0) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const imgs = (entry.target as HTMLElement).querySelectorAll<HTMLImageElement>("img");
-          if (entry.isIntersecting) {
-            imgs.forEach((img) => {
-              if (img.dataset.lazySrc) {
-                img.setAttribute("src", img.dataset.lazySrc);
-                img.style.width = "";
-                img.style.height = "";
-                delete img.dataset.lazySrc;
-              }
-            });
-          } else {
-            imgs.forEach((img) => {
-              const src = img.getAttribute("src");
-              const h = img.offsetHeight;
-              if (src && !img.dataset.lazySrc && h > 0) {
-                img.dataset.lazySrc = src;
-                img.style.width = img.offsetWidth + "px";
-                img.style.height = h + "px";
-                img.removeAttribute("src");
-              }
-            });
-          }
-        }
-      },
-      { rootMargin: "200% 0px" }
-    );
-    wrappers.forEach((el) => obs.observe(el));
-    imgUnloadObserverRef.current = obs;
-    return () => obs.disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleCount]);
+    if (localAscents.length <= MAX_LOADED_ASCENTS) return;
+    const visibleStart = Math.max(0, visibleCount - MAX_RENDERED);
+    const trimUpTo = visibleStart - TRIM_BUFFER_GROUPS;
+    if (trimUpTo <= 0) return;
+    const idsToTrim = new Set<string>();
+    for (let i = 0; i < trimUpTo; i++) {
+      groups[i]?.forEach((a) => idsToTrim.add(a.id));
+    }
+    if (idsToTrim.size === 0) return;
+    setLocalAscents((prev) => prev.filter((a) => !idsToTrim.has(a.id)));
+    setVisibleCount((c) => c - trimUpTo);
+    // topSpacerHeight stays — it visually represents the trimmed groups
+  }, [localAscents.length, visibleCount, groups]);
 
   // Measure actual heights of groups about to leave the DOM (called before advancing visibleCount)
   function measureRemovedHeight(currentGroups: typeof groups, currentVisible: number, nextVisible: number): number {
@@ -517,6 +494,12 @@ export function AscentsClient({
         }
         .asc-chip-in { animation: chipIn 0.18s ease forwards; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        /* Off-screen cards: browser skips render + frees decoded bitmaps.
+           iOS Safari 15.4+. Falls back to no-op on older browsers. */
+        [data-card-wrapper] {
+          content-visibility: auto;
+          contain-intrinsic-size: 0 644px;
+        }
       `}</style>
 
       {/* ── Search + filter button ──────────────────────────────────────── */}
