@@ -133,7 +133,6 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Props) {
   const t = useT();
   const [isFlipped, setIsFlipped] = useState(false);
-  const [preloading, setPreloading] = useState(false);
   const [sharePopover, setSharePopover] = useState<string | null>(null); // URL string when open
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -158,7 +157,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
       <>
         <section className="capture-frame">
           <div className="image-frame">
-            {(isFlipped || preloading) && (
+            {isFlipped && (
               <PeakMiniMap
                 lat={ascent.peak.latitude}
                 lng={ascent.peak.longitude}
@@ -384,7 +383,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
       <div
         className={`flip-card${isFlipped ? " is-flipped" : ""}`}
         onClick={() => setIsFlipped(f => !f)}
-        onMouseEnter={() => setPreloading(true)}
       >
         <article
           className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
