@@ -144,6 +144,8 @@ export function AscentsClient({
   const pendingSeenRef = useRef<Set<string>>(new Set());
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  // Image unloading — release decoded bitmap memory for cards far from viewport
+  const imgUnloadObserverRef = useRef<IntersectionObserver | null>(null);
 
   // Peak filter seeded from ?peak= URL param
   const [peakFilter, setPeakFilter] = useState<string>(() => searchParams.get("peak") ?? "");
@@ -231,6 +233,39 @@ export function AscentsClient({
 
   // Reset render window whenever filters change
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filtered]);
+
+  // Unload <img> src for cards more than 2 viewports away; restore on re-entry
+  useEffect(() => {
+    imgUnloadObserverRef.current?.disconnect();
+    const wrappers = document.querySelectorAll("[data-card-wrapper]");
+    if (wrappers.length === 0) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const imgs = (entry.target as HTMLElement).querySelectorAll<HTMLImageElement>("img");
+          if (entry.isIntersecting) {
+            imgs.forEach((img) => {
+              if (img.dataset.lazySrc) {
+                img.src = img.dataset.lazySrc;
+                delete img.dataset.lazySrc;
+              }
+            });
+          } else {
+            imgs.forEach((img) => {
+              if (img.src && !img.dataset.lazySrc) {
+                img.dataset.lazySrc = img.src;
+                img.src = "";
+              }
+            });
+          }
+        }
+      },
+      { rootMargin: "200% 0px" }
+    );
+    wrappers.forEach((el) => obs.observe(el));
+    imgUnloadObserverRef.current = obs;
+    return () => obs.disconnect();
+  }, [visibleCount, groups]);
 
   // IntersectionObserver: load more cards when sentinel enters viewport
   useEffect(() => {
@@ -813,6 +848,7 @@ export function AscentsClient({
                 <div
                   key={a.id}
                   id={`ascent-${a.id}`}
+                  data-card-wrapper
                   {...(a.isUnseen ? { "data-unseen-id": a.id } : {})}
                   style={{
                     borderRadius: "var(--radius-lg)",
@@ -846,7 +882,7 @@ export function AscentsClient({
             const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
             const groupUnseenIds = group.filter((a) => a.isUnseen).map((a) => a.id).join(",");
             return (
-              <div key={groupKey} {...(groupUnseenIds ? { "data-unseen-id": groupUnseenIds } : {})}>
+              <div key={groupKey} data-card-wrapper {...(groupUnseenIds ? { "data-unseen-id": groupUnseenIds } : {})}>
                 <GroupedAscentCard
                   ascents={group}
                   currentUserEmail={currentUserEmail}
