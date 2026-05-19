@@ -6,6 +6,7 @@ import type { RarityId } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { useT } from "@/components/providers/I18nProvider";
 import type { PeakForFilter } from "./usePeakFilters";
+import { imgUrl } from "@/lib/storage/image-url";
 
 type Trophy = {
   id: string;
@@ -162,7 +163,7 @@ function TrophyHeroCard({ trophy, index, total }: { trophy: Trophy; index: numbe
           {trophy.peak.firstPhotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={trophy.peak.firstPhotoUrl}
+              src={imgUrl(trophy.peak.firstPhotoUrl, 400)}
               alt=""
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />

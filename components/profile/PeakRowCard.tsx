@@ -6,6 +6,7 @@ import type { RarityId } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { CaptureStack } from "./CaptureStack";
 import type { PeakForFilter } from "./usePeakFilters";
+import { imgUrl } from "@/lib/storage/image-url";
 
 type RarityEntry = { id: string; label: string; color: string; colorDark: string; minAlt: number };
 
@@ -46,7 +47,7 @@ export function PeakRowCard({ peak, dateLocale }: Props) {
           {peak.firstPhotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={peak.firstPhotoUrl}
+              src={imgUrl(peak.firstPhotoUrl, 400)}
               alt=""
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />

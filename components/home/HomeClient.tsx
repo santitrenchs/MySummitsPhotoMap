@@ -9,6 +9,7 @@ import { i } from "@/lib/i18n";
 import { LEVEL_DEFS, getAltCount, meetsLevel, getLevelState } from "@/lib/level-utils";
 import { RARITIES } from "@/lib/rarity";
 import type { LevelDef } from "@/lib/level-utils";
+import { imgUrl } from "@/lib/storage/image-url";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -804,7 +805,7 @@ export function HomeClient({ data, locale, t }: {
                   <div style={{ height: 120, background: "#e5e7eb", position: "relative", overflow: "hidden" }}>
                     {a.photoUrl
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={a.photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ? <img src={imgUrl(a.photoUrl, 400)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>🏔️</div>
                     }
                     {/* Gradient overlay with text */}
