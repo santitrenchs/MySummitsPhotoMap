@@ -150,6 +150,31 @@ export default function LandingNav() {
         {/* Right side: language selector ↔ CTA (cross-fade) + hamburger */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 
+          {/* Login link — desktop only, visible before scroll, fades out when CTA appears */}
+          {!isLoggedIn && (
+            <Link
+              href={loginHref}
+              className="ld-login-pre-scroll"
+              style={{
+                opacity: scrolled ? 0 : 1,
+                pointerEvents: scrolled ? "none" : "auto",
+                transition: "opacity 0.25s ease",
+                color: "rgba(13,37,56,0.55)",
+                fontSize: 14,
+                fontWeight: 500,
+                fontFamily: "var(--font-space, sans-serif)",
+                textDecoration: "none",
+                padding: "8px 12px",
+                borderRadius: 8,
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#0D2538"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(13,37,56,0.55)"; }}
+            >
+              {t.nav_login}
+            </Link>
+          )}
+
           {/* Wrapper that holds both — language fades out, CTA fades in */}
           <div style={{ position: "relative", height: 38, display: "flex", alignItems: "center" }} className="ld-right-swap">
 
@@ -393,22 +418,57 @@ export default function LandingNav() {
             </div>
           </div>
 
-          <Link
-            href={isLoggedIn ? "/home" : registerHref}
-            className="ld-btn-primary"
-            style={{ marginTop: 12, justifyContent: "center" }}
-            onClick={() => setMenuOpen(false)}
-          >
-            {isLoggedIn ? t.nav_goToApp : t.nav_register_mobile}
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/home"
+              className="ld-btn-primary"
+              style={{ marginTop: 12, justifyContent: "center" }}
+              onClick={() => setMenuOpen(false)}
+            >
+              {t.nav_goToApp}
+            </Link>
+          ) : (
+            <>
+              <Link
+                href={registerHref}
+                className="ld-btn-primary"
+                style={{ marginTop: 12, justifyContent: "center" }}
+                onClick={() => setMenuOpen(false)}
+              >
+                {t.nav_register_mobile}
+              </Link>
+              <Link
+                href={loginHref}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginTop: 8,
+                  padding: "12px 16px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(13,37,56,0.15)",
+                  color: "rgba(13,37,56,0.65)",
+                  fontSize: 15,
+                  fontWeight: 500,
+                  fontFamily: "var(--font-space, sans-serif)",
+                  textDecoration: "none",
+                  textAlign: "center",
+                }}
+                onClick={() => setMenuOpen(false)}
+              >
+                {t.nav_login}
+              </Link>
+            </>
+          )}
         </div>
       )}
 
       <style>{`
         @media (max-width: 680px) {
-          .ld-nav-links  { display: none !important; }
-          .ld-login-link { display: none !important; }
-          .ld-hamburger  { display: flex !important; }
+          .ld-nav-links        { display: none !important; }
+          .ld-login-link       { display: none !important; }
+          .ld-login-pre-scroll { display: none !important; }
+          .ld-hamburger        { display: flex !important; }
 
           /* Keep ld-right-swap visible on mobile — shows lang selector OR CTA on scroll */
           /* Give it a fixed min-width so the absolutely-positioned CTA fits */

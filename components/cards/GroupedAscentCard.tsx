@@ -131,7 +131,6 @@ export function GroupedAscentCard({
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [preloading, setPreloading] = useState(false);
   const [currentDisplay, setCurrentDisplay] = useState(0);
 
   const currentRef = useRef(0);
@@ -176,7 +175,7 @@ export function GroupedAscentCard({
     return (
       <section className="capture-frame">
         <div className="image-frame">
-          {(isFlipped || preloading) && (
+          {isFlipped && (
             <PeakMiniMap
               lat={peak.latitude}
               lng={peak.longitude}
@@ -487,7 +486,6 @@ export function GroupedAscentCard({
     <div
       className={`flip-card${isFlipped ? " is-flipped" : ""}`}
       onClick={() => setIsFlipped((f) => !f)}
-      onMouseEnter={() => setPreloading(true)}
     >
       <article
         className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}

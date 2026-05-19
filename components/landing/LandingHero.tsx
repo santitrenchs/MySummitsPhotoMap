@@ -8,6 +8,7 @@ import { useLandingT } from "./LandingLocaleContext";
 export default function LandingHero() {
   const t = useLandingT();
   const registerHref = t.locale === "es" ? "/register" : `/${t.locale}/register`;
+  const loginHref    = t.locale === "es" ? "/login"    : `/${t.locale}/login`;
   const titleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -135,6 +136,21 @@ export default function LandingHero() {
           <p className="ld-cta-micro ld-hero-micro" style={{ textAlign: "center", marginTop: 16 }}>
             {t.hero_micro}
           </p>
+          <p style={{ textAlign: "center", marginTop: 10, margin: "10px 0 0", fontSize: 14 }}>
+            <Link
+              href={loginHref}
+              style={{
+                color: "rgba(13,37,56,0.5)",
+                fontWeight: 500,
+                fontFamily: "var(--font-space, sans-serif)",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#0D2538"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(13,37,56,0.5)"; }}
+            >
+              {t.hero_login}
+            </Link>
+          </p>
         </div>
       </div>
 
@@ -167,6 +183,27 @@ export default function LandingHero() {
               rgba(255,255,255,1)   52%,
               rgba(255,255,255,0.6) 62%,
               rgba(255,255,255,0)   72%
+            ) !important;
+          }
+        }
+
+        /* Narrow phones (iPhone SE 375px, iPhone 12/13/14 390px, 15 Pro 393px) */
+        @media (max-width: 400px) {
+          .ld-hero-content {
+            padding-top: 60px !important;
+            padding-bottom: 32px !important;
+          }
+          .ld-hero-sub {
+            margin-bottom: 20px !important;
+          }
+          /* Gradient covers ~62% so button never bleeds into the map */
+          .ld-hero-gradient {
+            background: linear-gradient(
+              to bottom,
+              rgba(255,255,255,1)    0%,
+              rgba(255,255,255,1)   62%,
+              rgba(255,255,255,0.5) 72%,
+              rgba(255,255,255,0)   80%
             ) !important;
           }
         }
