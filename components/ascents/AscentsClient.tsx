@@ -292,7 +292,8 @@ export function AscentsClient({
     return () => clearTimeout(timer);
   }, [highlightId, groups]);
 
-  // Scroll to top when filter set changes (skip initial mount)
+  // Scroll to top when the filter SET changes — NOT on data updates (which also re-derive `filtered`).
+  // Depend on the raw filter inputs so pagination/localAscents updates don't trigger a scroll reset.
   const isInitialMount = useRef(true);
   useEffect(() => {
     if (isInitialMount.current) {
@@ -300,7 +301,7 @@ export function AscentsClient({
       return;
     }
     window.scrollTo({ top: 0, behavior: "auto" });
-  }, [filtered]);
+  }, [viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, peakFilter, search]);
 
   const uniquePeaks = useMemo(
     () => new Set(filtered.map((a) => a.peak.id)).size,
