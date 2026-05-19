@@ -254,8 +254,12 @@ export function AscentsClient({
     // topSpacerHeight stays — it visually represents the trimmed groups
   }, [localAscents.length, visibleCount, groups]);
 
-  // Measure actual heights of groups about to leave the DOM (called before advancing visibleCount)
-  function measureRemovedHeight(currentGroups: typeof groups, currentVisible: number, nextVisible: number): number {
+  // Measure actual heights of groups about to leave the DOM (called before advancing visibleCount).
+  // Formula derivation:
+  //   Per group slid out, the spacer must absorb: group_height + 24 (its trailing gap to next group).
+  //   But on the FIRST slide there's no preceding "spacer + 24" gap to merge with the new spacer's
+  //   leading gap — so we subtract 24 once for the first slide.
+  function measureRemovedHeight(currentGroups: typeof groups, currentVisible: number, nextVisible: number, isFirstSlide: boolean): number {
     const oldStart = Math.max(0, currentVisible - MAX_RENDERED);
     const newStart = Math.max(0, nextVisible - MAX_RENDERED);
     if (newStart <= oldStart) return 0;
@@ -268,6 +272,7 @@ export function AscentsClient({
         : document.getElementById(`group-${group[0].peak.id}__${group[0].date.substring(0, 10)}`);
       h += el ? (el as HTMLElement).offsetHeight + 24 : ESTIMATED_GROUP_HEIGHT;
     }
+    if (isFirstSlide) h -= 24;
     return h;
   }
 
@@ -281,7 +286,7 @@ export function AscentsClient({
         // Local case: still have unloaded groups in state — just render more (clamped to groups.length)
         if (visibleCount < groups.length) {
           const nextVisible = Math.min(visibleCount + PAGE_SIZE, groups.length);
-          const delta = measureRemovedHeight(groups, visibleCount, nextVisible);
+          const delta = measureRemovedHeight(groups, visibleCount, nextVisible, topSpacerHeight === 0);
           if (delta > 0) setTopSpacerHeight((h) => h + delta);
           setVisibleCount(nextVisible);
           return;
@@ -305,7 +310,7 @@ export function AscentsClient({
             // Advance visibleCount by the ACTUAL number of new items (not PAGE_SIZE) to keep
             // it aligned with groups.length — prevents drift when server returns fewer items
             const nextVisible = oldVisible + newItems.length;
-            const delta = measureRemovedHeight(groups, oldVisible, nextVisible);
+            const delta = measureRemovedHeight(groups, oldVisible, nextVisible, topSpacerHeight === 0);
             if (delta > 0) setTopSpacerHeight((h) => h + delta);
             setVisibleCount(nextVisible);
           })
@@ -499,12 +504,6 @@ export function AscentsClient({
         }
         .asc-chip-in { animation: chipIn 0.18s ease forwards; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        /* Off-screen cards: browser skips render + frees decoded bitmaps.
-           iOS Safari 15.4+. Falls back to no-op on older browsers. */
-        [data-card-wrapper] {
-          content-visibility: auto;
-          contain-intrinsic-size: 0 644px;
-        }
       `}</style>
 
       {/* ── Search + filter button ──────────────────────────────────────── */}
