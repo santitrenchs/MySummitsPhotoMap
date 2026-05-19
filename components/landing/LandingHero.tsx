@@ -189,6 +189,10 @@ export default function LandingHero() {
 
         /* Narrow phones (iPhone SE 375px, iPhone 12/13/14 390px, 15 Pro 393px) */
         @media (max-width: 400px) {
+          /* 32px makes "Colecciona rarezas." fit in 1 line → 4 lines total (~74px saved) */
+          .ld-display {
+            font-size: 32px !important;
+          }
           .ld-hero-content {
             padding-top: 60px !important;
             padding-bottom: 32px !important;
@@ -196,14 +200,18 @@ export default function LandingHero() {
           .ld-hero-sub {
             margin-bottom: 20px !important;
           }
-          /* Gradient covers ~62% so button never bleeds into the map */
+          /* Compound selector for higher specificity — reliably hides micro-copy */
+          .ld-cta-micro.ld-hero-micro {
+            display: none !important;
+          }
+          /* 64% covers all content with ~66px buffer on SE (667px) */
           .ld-hero-gradient {
             background: linear-gradient(
               to bottom,
               rgba(255,255,255,1)    0%,
-              rgba(255,255,255,1)   62%,
-              rgba(255,255,255,0.5) 72%,
-              rgba(255,255,255,0)   80%
+              rgba(255,255,255,1)   64%,
+              rgba(255,255,255,0.5) 74%,
+              rgba(255,255,255,0)   82%
             ) !important;
           }
         }
