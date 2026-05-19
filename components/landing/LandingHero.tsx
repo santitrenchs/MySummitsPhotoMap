@@ -187,6 +187,27 @@ export default function LandingHero() {
           }
         }
 
+        /* Narrow phones (iPhone SE 375px, iPhone 12/13/14 390px, 15 Pro 393px) */
+        @media (max-width: 400px) {
+          .ld-hero-content {
+            padding-top: 60px !important;
+            padding-bottom: 32px !important;
+          }
+          .ld-hero-sub {
+            margin-bottom: 20px !important;
+          }
+          /* Gradient covers ~62% so button never bleeds into the map */
+          .ld-hero-gradient {
+            background: linear-gradient(
+              to bottom,
+              rgba(255,255,255,1)    0%,
+              rgba(255,255,255,1)   62%,
+              rgba(255,255,255,0.5) 72%,
+              rgba(255,255,255,0)   80%
+            ) !important;
+          }
+        }
+
         /* Tablet */
         @media (min-width: 640px) and (max-width: 899px) {
           .ld-hero-section { min-height: 72svh !important; }
