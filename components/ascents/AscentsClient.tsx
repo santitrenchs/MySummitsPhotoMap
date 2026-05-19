@@ -246,15 +246,16 @@ export function AscentsClient({
           if (entry.isIntersecting) {
             imgs.forEach((img) => {
               if (img.dataset.lazySrc) {
-                img.src = img.dataset.lazySrc;
+                img.setAttribute("src", img.dataset.lazySrc);
                 delete img.dataset.lazySrc;
               }
             });
           } else {
             imgs.forEach((img) => {
-              if (img.src && !img.dataset.lazySrc) {
-                img.dataset.lazySrc = img.src;
-                img.src = "";
+              const src = img.getAttribute("src");
+              if (src && !img.dataset.lazySrc) {
+                img.dataset.lazySrc = src;
+                img.removeAttribute("src");
               }
             });
           }
