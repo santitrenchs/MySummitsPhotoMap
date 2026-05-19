@@ -278,29 +278,34 @@ export function AscentsClient({
     const obs = new IntersectionObserver(
       (entries) => {
         if (!entries[0].isIntersecting) return;
-        // If there are still locally-loaded items to show, just render more
+        // Local case: still have unloaded groups in state — just render more (clamped to groups.length)
         if (visibleCount < groups.length) {
-          const nextVisible = visibleCount + PAGE_SIZE;
+          const nextVisible = Math.min(visibleCount + PAGE_SIZE, groups.length);
           const delta = measureRemovedHeight(groups, visibleCount, nextVisible);
           if (delta > 0) setTopSpacerHeight((h) => h + delta);
           setVisibleCount(nextVisible);
           return;
         }
-        // We've rendered all locally loaded data — fetch more from server
+        // Server case: we've shown everything local — fetch more
         if (!hasMore || isFetchingMore) return;
         setIsFetchingMore(true);
-        // Measure now, while the groups are still in the DOM (before async gap)
-        const nextVisible = visibleCount + PAGE_SIZE;
-        const delta = measureRemovedHeight(groups, visibleCount, nextVisible);
+        const oldVisible = visibleCount;
+        const oldIds = new Set(localAscents.map((a) => a.id));
         const lastDate = localAscents[localAscents.length - 1]?.date;
         fetch(`/api/ascents/feed?before=${encodeURIComponent(lastDate ?? "")}`)
           .then((r) => r.json())
           .then(({ ascents: more, hasMore: moreHasMore }: { ascents: AscentData[]; hasMore: boolean }) => {
-            setLocalAscents((prev) => {
-              const ids = new Set(prev.map((a) => a.id));
-              return [...prev, ...more.filter((a) => !ids.has(a.id))];
-            });
+            const newItems = more.filter((a) => !oldIds.has(a.id));
+            if (newItems.length === 0) {
+              setHasMore(false);
+              return;
+            }
+            setLocalAscents((prev) => [...prev, ...newItems]);
             setHasMore(moreHasMore);
+            // Advance visibleCount by the ACTUAL number of new items (not PAGE_SIZE) to keep
+            // it aligned with groups.length — prevents drift when server returns fewer items
+            const nextVisible = oldVisible + newItems.length;
+            const delta = measureRemovedHeight(groups, oldVisible, nextVisible);
             if (delta > 0) setTopSpacerHeight((h) => h + delta);
             setVisibleCount(nextVisible);
           })
