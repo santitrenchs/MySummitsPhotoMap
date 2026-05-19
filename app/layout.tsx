@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import { headers } from "next/headers";
 import { Providers } from "@/components/providers";
 import CookieBanner from "@/components/CookieBanner";
+import Script from "next/script";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter" });
@@ -34,6 +35,15 @@ export default async function RootLayout({
 
   return (
     <html lang={lang} className={`${inter.variable} ${spaceGrotesk.variable}`}>
+      <head>
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-X4DRCNLPJ0" strategy="afterInteractive" />
+        <Script id="ga-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-X4DRCNLPJ0');
+        `}</Script>
+      </head>
       <body className={inter.className}>
         <Providers>{children}</Providers>
         <CookieBanner />
