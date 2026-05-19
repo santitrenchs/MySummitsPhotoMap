@@ -357,6 +357,7 @@ export function GroupedAscentCard({
                         ? <img
                             src={a.firstPhotoUrl}
                             alt={a.peak.name}
+                            loading="lazy"
                             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
                           />
                         : <MountainPlaceholder />
@@ -487,7 +488,6 @@ export function GroupedAscentCard({
       className={`flip-card${isFlipped ? " is-flipped" : ""}`}
       onClick={() => setIsFlipped((f) => !f)}
       onMouseEnter={() => setPreloading(true)}
-      onTouchStart={() => setPreloading(true)}
     >
       <article
         className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}

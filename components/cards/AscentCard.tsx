@@ -316,7 +316,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={ascent.peak.name} altitudeM={ascent.peak.altitudeM} />
             : ascent.photoUrl
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={ascent.photoUrl} alt={ascent.peak.name} />
+              ? <img src={ascent.photoUrl} alt={ascent.peak.name} loading="lazy" />
               : <MountainPlaceholder />
           }
           <div className="image-overlay" />
@@ -385,7 +385,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
         className={`flip-card${isFlipped ? " is-flipped" : ""}`}
         onClick={() => setIsFlipped(f => !f)}
         onMouseEnter={() => setPreloading(true)}
-        onTouchStart={() => setPreloading(true)}
       >
         <article
           className={`peak-card ${rarity} flip-inner${isMythic ? " mythic" : ""}`}
