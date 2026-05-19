@@ -128,7 +128,7 @@ export function AscentsClient({
   const dragStartY = useRef(0);
 
   // Render window state (effects that depend on `filtered` are declared after its useMemo)
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 10;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadMoreObserverRef = useRef<IntersectionObserver | null>(null);
