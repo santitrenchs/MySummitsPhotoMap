@@ -316,6 +316,9 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       userId: p.id,
     }));
 
+    let newPhotoId: string | null = null;
+    let newPhotoOriginalKey: string | null = null;
+
     if (pendingPhoto) {
       const fd = new FormData();
       fd.append("file", pendingPhoto.blob, "photo.jpg");
@@ -332,6 +335,8 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
       if (photoRes.ok) {
         const photo = await photoRes.json();
+        newPhotoId = photo.id ?? null;
+        newPhotoOriginalKey = photo.originalStorageKey ?? null;
         await fetch(`/api/photos/${photo.id}/faces`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -363,6 +368,8 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         description: newDescription,
         persons: selectedPersons.map((p) => ({ id: p.id, name: p.name })),
         photoUrl: editPhotoUrl,
+        photoId: newPhotoId ?? editAscent.photoId,
+        photoOriginalKey: newPhotoOriginalKey ?? (newPhotoId ? null : editAscent.originalStorageKey),
         peakId: newPeakId,
         peakName: peaks.find((p) => p.id === newPeakId)?.name ?? editAscent.peakName,
         peakAltitudeM: peaks.find((p) => p.id === newPeakId)?.altitudeM ?? null,

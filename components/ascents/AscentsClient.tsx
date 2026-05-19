@@ -84,7 +84,7 @@ export function AscentsClient({
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const { id, date, route, description, persons, photoUrl, peakId, peakName, peakAltitudeM } =
+      const { id, date, route, description, persons, photoUrl, photoId, photoOriginalKey, peakId, peakName, peakAltitudeM } =
         (e as CustomEvent).detail;
       setLocalAscents((prev) =>
         prev.map((a) => {
@@ -96,6 +96,8 @@ export function AscentsClient({
             description,
             persons,
             firstPhotoUrl: photoUrl ?? a.firstPhotoUrl,
+            firstPhotoId: photoId !== undefined ? photoId : a.firstPhotoId,
+            firstPhotoOriginalKey: photoOriginalKey !== undefined ? photoOriginalKey : a.firstPhotoOriginalKey,
             peak: peakId && peakId !== a.peak.id
               ? { ...a.peak, id: peakId, name: peakName, altitudeM: peakAltitudeM ?? a.peak.altitudeM }
               : a.peak,
