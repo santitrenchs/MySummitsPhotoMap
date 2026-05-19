@@ -1,30 +1,20 @@
-"use client";
-
-import { useState } from "react";
 import { useLandingT } from "./LandingLocaleContext";
 
-function FAQItem({ q, a, open, onToggle }: {
-  q: string; a: string; open: boolean; onToggle: () => void;
-}) {
+function FAQItem({ q, a }: { q: string; a: string }) {
   return (
-    <div
-      style={{
-        borderBottom: "1px solid rgba(13,37,56,0.08)",
-      }}
+    <details
+      style={{ borderBottom: "1px solid rgba(13,37,56,0.08)" }}
+      className="ld-faq-item"
     >
-      <button
-        onClick={onToggle}
+      <summary
         style={{
-          width: "100%",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           gap: 16,
           padding: "20px 0",
-          background: "none",
-          border: "none",
           cursor: "pointer",
-          textAlign: "left",
+          listStyle: "none",
         }}
       >
         <span
@@ -38,7 +28,7 @@ function FAQItem({ q, a, open, onToggle }: {
         >
           {q}
         </span>
-        <span
+        <span className="ld-faq-icon" aria-hidden="true"
           style={{
             flexShrink: 0,
             width: 24,
@@ -52,39 +42,28 @@ function FAQItem({ q, a, open, onToggle }: {
             fontSize: 16,
             lineHeight: 1,
             transition: "transform 0.25s ease",
-            transform: open ? "rotate(45deg)" : "rotate(0deg)",
           }}
         >
           +
         </span>
-      </button>
-
-      <div
+      </summary>
+      <p
         style={{
-          overflow: "hidden",
-          maxHeight: open ? 300 : 0,
-          transition: "max-height 0.3s ease",
+          fontSize: 15,
+          color: "#5A6E84",
+          lineHeight: 1.65,
+          margin: "0 0 20px",
+          paddingRight: 40,
         }}
       >
-        <p
-          style={{
-            fontSize: 15,
-            color: "#5A6E84",
-            lineHeight: 1.65,
-            margin: "0 0 20px",
-            paddingRight: 40,
-          }}
-        >
-          {a}
-        </p>
-      </div>
-    </div>
+        {a}
+      </p>
+    </details>
   );
 }
 
 export default function LandingFAQ() {
   const t = useLandingT();
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <section
@@ -123,19 +102,15 @@ export default function LandingFAQ() {
           {/* Right: accordion */}
           <div>
             {t.faq_items.map((faq, i) => (
-              <FAQItem
-                key={i}
-                q={faq.q}
-                a={faq.a}
-                open={openIndex === i}
-                onToggle={() => setOpenIndex(openIndex === i ? null : i)}
-              />
+              <FAQItem key={i} q={faq.q} a={faq.a} />
             ))}
           </div>
         </div>
       </div>
 
       <style>{`
+        .ld-faq-item summary::-webkit-details-marker { display: none; }
+        .ld-faq-item[open] .ld-faq-icon { transform: rotate(45deg); }
         @media (max-width: 768px) {
           .ld-faq-grid {
             grid-template-columns: 1fr !important;

@@ -84,6 +84,14 @@ export default function LandingPage({
         description: t.meta_desc,
         offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
       },
+      {
+        "@type": "FAQPage",
+        mainEntity: t.faq_items.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      },
     ],
   };
 
