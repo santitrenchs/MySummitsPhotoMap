@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
@@ -139,9 +139,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
 
   const isProfile = variant === "profile";
 
-  useEffect(() => {
-    prefetchNearbyPeaks(ascent.peak.id, ascent.peak.latitude, ascent.peak.longitude);
-  }, [ascent.peak.id, ascent.peak.latitude, ascent.peak.longitude]);
 
   const rarity = getRarity(ascent.peak.altitudeM);
   const isMythic = ascent.peak.isMythic ?? false;

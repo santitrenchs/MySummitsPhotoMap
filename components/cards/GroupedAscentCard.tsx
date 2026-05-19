@@ -152,9 +152,6 @@ export function GroupedAscentCard({
     return () => document.removeEventListener("click", close);
   }, [menuOpen]);
 
-  useEffect(() => {
-    prefetchNearbyPeaks(peak.id, peak.latitude, peak.longitude);
-  }, [peak.id, peak.latitude, peak.longitude]);
 
   function goTo(idx: number) {
     const next = Math.max(0, Math.min(idx, count - 1));
