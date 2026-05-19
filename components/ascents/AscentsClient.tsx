@@ -135,6 +135,8 @@ export function AscentsClient({
 
   // Render window state (effects that depend on `filtered` are declared after its useMemo)
   const PAGE_SIZE = 10;
+  const MAX_RENDERED = 20; // max card groups kept in DOM — older ones replaced by spacer
+  const ESTIMATED_GROUP_HEIGHT = 644; // approximate px per group (4:5 card + 24px gap)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadMoreObserverRef = useRef<IntersectionObserver | null>(null);
@@ -271,7 +273,8 @@ export function AscentsClient({
     wrappers.forEach((el) => obs.observe(el));
     imgUnloadObserverRef.current = obs;
     return () => obs.disconnect();
-  }, [visibleCount, groups]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleCount]);
 
   // IntersectionObserver: load more cards when sentinel enters viewport
   useEffect(() => {
@@ -846,7 +849,15 @@ export function AscentsClient({
         )
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
-          {groups.slice(0, visibleCount).map((group, i) => {
+          {/* Top spacer replaces DOM nodes scrolled far above — keeps scroll position stable */}
+          {(() => {
+            const visibleStart = Math.max(0, visibleCount - MAX_RENDERED);
+            const topSpacerHeight = visibleStart * ESTIMATED_GROUP_HEIGHT;
+            return topSpacerHeight > 0 ? (
+              <div style={{ height: topSpacerHeight, flexShrink: 0 }} aria-hidden="true" />
+            ) : null;
+          })()}
+          {groups.slice(Math.max(0, visibleCount - MAX_RENDERED), Math.min(visibleCount, groups.length)).map((group, i) => {
             if (group.length === 1) {
               const a = group[0];
               const others = a.persons.filter((p) => p.id !== a.createdByUserId);
