@@ -136,8 +136,9 @@ export function AscentsClient({
   // Render window state (effects that depend on `filtered` are declared after its useMemo)
   const PAGE_SIZE = 10;
   const MAX_RENDERED = 20; // max card groups kept in DOM — older ones replaced by spacer
-  const ESTIMATED_GROUP_HEIGHT = 644; // approximate px per group (4:5 card + 24px gap)
+  const ESTIMATED_GROUP_HEIGHT = 644; // fallback estimate px per group (4:5 card + 24px gap)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [topSpacerHeight, setTopSpacerHeight] = useState(0); // actual measured height of removed groups
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadMoreObserverRef = useRef<IntersectionObserver | null>(null);
 
@@ -234,7 +235,7 @@ export function AscentsClient({
   }, [filtered]);
 
   // Reset render window whenever filters change
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filtered]);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); setTopSpacerHeight(0); }, [filtered]);
 
   // Unload <img> src for cards more than 2 viewports away; restore on re-entry
   useEffect(() => {
@@ -276,6 +277,23 @@ export function AscentsClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleCount]);
 
+  // Measure actual heights of groups about to leave the DOM (called before advancing visibleCount)
+  function measureRemovedHeight(currentGroups: typeof groups, currentVisible: number, nextVisible: number): number {
+    const oldStart = Math.max(0, currentVisible - MAX_RENDERED);
+    const newStart = Math.max(0, nextVisible - MAX_RENDERED);
+    if (newStart <= oldStart) return 0;
+    let h = 0;
+    for (let gi = oldStart; gi < newStart; gi++) {
+      const group = currentGroups[gi];
+      if (!group) { h += ESTIMATED_GROUP_HEIGHT; continue; }
+      const el = group.length === 1
+        ? document.getElementById(`ascent-${group[0].id}`)
+        : document.getElementById(`group-${group[0].peak.id}__${group[0].date.substring(0, 10)}`);
+      h += el ? (el as HTMLElement).offsetHeight + 24 : ESTIMATED_GROUP_HEIGHT;
+    }
+    return h;
+  }
+
   // IntersectionObserver: load more cards when sentinel enters viewport
   useEffect(() => {
     loadMoreObserverRef.current?.disconnect();
@@ -285,12 +303,18 @@ export function AscentsClient({
         if (!entries[0].isIntersecting) return;
         // If there are still locally-loaded items to show, just render more
         if (visibleCount < groups.length) {
-          setVisibleCount((n) => n + PAGE_SIZE);
+          const nextVisible = visibleCount + PAGE_SIZE;
+          const delta = measureRemovedHeight(groups, visibleCount, nextVisible);
+          if (delta > 0) setTopSpacerHeight((h) => h + delta);
+          setVisibleCount(nextVisible);
           return;
         }
         // We've rendered all locally loaded data — fetch more from server
         if (!hasMore || isFetchingMore) return;
         setIsFetchingMore(true);
+        // Measure now, while the groups are still in the DOM (before async gap)
+        const nextVisible = visibleCount + PAGE_SIZE;
+        const delta = measureRemovedHeight(groups, visibleCount, nextVisible);
         const lastDate = localAscents[localAscents.length - 1]?.date;
         fetch(`/api/ascents/feed?before=${encodeURIComponent(lastDate ?? "")}`)
           .then((r) => r.json())
@@ -300,7 +324,8 @@ export function AscentsClient({
               return [...prev, ...more.filter((a) => !ids.has(a.id))];
             });
             setHasMore(moreHasMore);
-            setVisibleCount((n) => n + PAGE_SIZE);
+            if (delta > 0) setTopSpacerHeight((h) => h + delta);
+            setVisibleCount(nextVisible);
           })
           .catch(() => {})
           .finally(() => setIsFetchingMore(false));
@@ -310,6 +335,7 @@ export function AscentsClient({
     obs.observe(sentinelRef.current);
     loadMoreObserverRef.current = obs;
     return () => obs.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, visibleCount, groups.length, hasMore, isFetchingMore, localAscents]);
 
   // IntersectionObserver: mark unseen friend ascents as seen after 1s of visibility
@@ -849,14 +875,10 @@ export function AscentsClient({
         )
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
-          {/* Top spacer replaces DOM nodes scrolled far above — keeps scroll position stable */}
-          {(() => {
-            const visibleStart = Math.max(0, visibleCount - MAX_RENDERED);
-            const topSpacerHeight = visibleStart * ESTIMATED_GROUP_HEIGHT;
-            return topSpacerHeight > 0 ? (
-              <div style={{ height: topSpacerHeight, flexShrink: 0 }} aria-hidden="true" />
-            ) : null;
-          })()}
+          {/* Top spacer replaces DOM nodes scrolled far above — actual measured height */}
+          {topSpacerHeight > 0 && (
+            <div style={{ height: topSpacerHeight, flexShrink: 0 }} aria-hidden="true" />
+          )}
           {groups.slice(Math.max(0, visibleCount - MAX_RENDERED), Math.min(visibleCount, groups.length)).map((group, i) => {
             if (group.length === 1) {
               const a = group[0];
@@ -899,7 +921,7 @@ export function AscentsClient({
             const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
             const groupUnseenIds = group.filter((a) => a.isUnseen).map((a) => a.id).join(",");
             return (
-              <div key={groupKey} data-card-wrapper {...(groupUnseenIds ? { "data-unseen-id": groupUnseenIds } : {})}>
+              <div key={groupKey} id={`group-${groupKey}`} data-card-wrapper {...(groupUnseenIds ? { "data-unseen-id": groupUnseenIds } : {})}>
                 <GroupedAscentCard
                   ascents={group}
                   currentUserEmail={currentUserEmail}
