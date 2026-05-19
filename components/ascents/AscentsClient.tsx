@@ -68,6 +68,8 @@ export function AscentsClient({
   currentUserName,
   currentUserId,
   hasFriends = true,
+  hasMore: initialHasMore = false,
+  friendUserIds = [],
 }: {
   ascents: AscentData[];
   allPersons: { id: string; name: string }[];
@@ -76,11 +78,15 @@ export function AscentsClient({
   currentUserName?: string;
   currentUserId?: string;
   hasFriends?: boolean;
+  hasMore?: boolean;
+  friendUserIds?: string[];
 }) {
   const t = useT();
   const searchParams = useSearchParams();
 
   const [localAscents, setLocalAscents] = useState<AscentData[]>(ascents);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -232,14 +238,35 @@ export function AscentsClient({
     if (!sentinelRef.current) return;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) setVisibleCount((n) => n + PAGE_SIZE);
+        if (!entries[0].isIntersecting) return;
+        // If there are still locally-loaded items to show, just render more
+        if (visibleCount < groups.length) {
+          setVisibleCount((n) => n + PAGE_SIZE);
+          return;
+        }
+        // We've rendered all locally loaded data — fetch more from server
+        if (!hasMore || isFetchingMore) return;
+        setIsFetchingMore(true);
+        const lastDate = localAscents[localAscents.length - 1]?.date;
+        fetch(`/api/ascents/feed?before=${encodeURIComponent(lastDate ?? "")}`)
+          .then((r) => r.json())
+          .then(({ ascents: more, hasMore: moreHasMore }: { ascents: AscentData[]; hasMore: boolean }) => {
+            setLocalAscents((prev) => {
+              const ids = new Set(prev.map((a) => a.id));
+              return [...prev, ...more.filter((a) => !ids.has(a.id))];
+            });
+            setHasMore(moreHasMore);
+            setVisibleCount((n) => n + PAGE_SIZE);
+          })
+          .catch(() => {})
+          .finally(() => setIsFetchingMore(false));
       },
       { rootMargin: "200px" }
     );
     obs.observe(sentinelRef.current);
     loadMoreObserverRef.current = obs;
     return () => obs.disconnect();
-  }, [filtered, visibleCount]);
+  }, [filtered, visibleCount, groups.length, hasMore, isFetchingMore, localAscents]);
 
   // IntersectionObserver: mark unseen friend ascents as seen after 1s of visibility
   useEffect(() => {
@@ -831,9 +858,11 @@ export function AscentsClient({
             );
           })}
           {/* Sentinel: entering viewport triggers loading next batch */}
-          {visibleCount < groups.length && (
+          {(visibleCount < groups.length || hasMore) && (
             <div ref={sentinelRef} style={{ height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: 24, height: 24, border: "2.5px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+              {isFetchingMore && (
+                <div style={{ width: 24, height: 24, border: "2.5px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+              )}
             </div>
           )}
         </div>

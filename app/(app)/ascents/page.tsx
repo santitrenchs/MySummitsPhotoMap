@@ -5,153 +5,35 @@ import { AscentsClient } from "@/components/ascents/AscentsClient";
 import { OpenAscentModalButton } from "@/components/ascents/OpenAscentModalButton";
 import { getServerT, getLocale } from "@/lib/i18n/server";
 import { prisma } from "@/lib/db/client";
-import { getTenantConnection } from "@/lib/db/tenant-resolver";
-import { getPeakStats } from "@/lib/services/peak.service";
-
-const PHOTOS_INCLUDE = {
-  orderBy: { createdAt: "asc" as const },
-  select: {
-    id: true,
-    url: true,
-    originalStorageKey: true,
-    faceDetections: {
-      select: {
-        faceTags: {
-          select: {
-            userId: true,
-            user: { select: { id: true, name: true, username: true } },
-          },
-        },
-      },
-    },
-  },
-} as const;
-
-function enrichAscent(
-  a: {
-    id: string;
-    date: Date;
-    route: string | null;
-    description: string | null;
-    wikiloc: string | null;
-    createdBy: string;
-    peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number; wikiTexts?: { lang: string; wikiUrl: string; body: string }[] };
-    photos: { id: string; url: string; originalStorageKey: string | null; faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[] }[];
-  },
-  isOwn: boolean,
-  userName: string,
-  userAvatarUrl: string | null,
-  locale: string,
-) {
-  const firstPhoto = a.photos[0] ?? null;
-  const personMap = new Map<string, { id: string; name: string; email: string | null }>();
-  for (const photo of a.photos) {
-    for (const fd of photo.faceDetections) {
-      for (const tag of fd.faceTags) {
-        if (tag.userId && tag.user) {
-          personMap.set(tag.userId, { id: tag.userId, name: tag.user.username ?? tag.user.name, email: null });
-        }
-      }
-    }
-  }
-  const wikiTexts = a.peak.wikiTexts ?? [];
-  const wikiText = wikiTexts.find(w => w.lang === locale) ?? wikiTexts.find(w => w.lang === "en") ?? wikiTexts[0] ?? null;
-  return {
-    id: a.id,
-    date: a.date.toISOString(),
-    route: a.route,
-    description: a.description,
-    wikiloc: a.wikiloc,
-    createdByUserId: a.createdBy,
-    peak: { ...a.peak, wikiTexts: undefined, wikiUrl: wikiText?.wikiUrl ?? null, wikiBody: wikiText?.body ?? null },
-    firstPhotoId: firstPhoto?.id ?? null,
-    firstPhotoUrl: firstPhoto?.url ?? null,
-    firstPhotoOriginalKey: firstPhoto?.originalStorageKey ?? null,
-    persons: Array.from(personMap.values()),
-    isOwn,
-    userName,
-    userAvatarUrl,
-  };
-}
+import { fetchFeedPage } from "@/lib/services/ascent-feed";
 
 export default async function AscentsPage() {
   const session = await auth();
   if (!session) redirect("/login");
   const [t, locale] = await Promise.all([getServerT(), getLocale()]);
 
-  // Fetch friendships + tenant DB in parallel
-  const [friendships, db] = await Promise.all([
-    prisma.friendship.findMany({
-      where: { status: "ACCEPTED", OR: [{ requesterId: session.user.id }, { addresseeId: session.user.id }] },
-      select: { requesterId: true, addresseeId: true },
-    }),
-    getTenantConnection(session.user.tenantId),
-  ]);
+  const friendships = await prisma.friendship.findMany({
+    where: { status: "ACCEPTED", OR: [{ requesterId: session.user.id }, { addresseeId: session.user.id }] },
+    select: { requesterId: true, addresseeId: true },
+  });
 
   const friendUserIds = friendships.map((f) =>
     f.requesterId === session.user.id ? f.addresseeId : f.requesterId
   );
 
-  // Own ascents: scoped to own tenant
-  // Friends' ascents: by createdBy only — friends may be in different tenants
-  const [myRaw, friendsRaw] = await Promise.all([
-    db.ascent.findMany({
-      where: { tenantId: session.user.tenantId, createdBy: session.user.id },
-      orderBy: { date: "desc" },
-      include: {
-        peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { lang: true, wikiUrl: true, body: true } } } },
-        photos: PHOTOS_INCLUDE,
-        user: { select: { id: true, name: true, avatarUrl: true } },
-      },
-    }),
-    friendUserIds.length > 0
-      ? prisma.ascent.findMany({
-          where: { createdBy: { in: friendUserIds } },
-          orderBy: { date: "desc" },
-          include: {
-            peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { lang: true, wikiUrl: true, body: true } } } },
-            photos: PHOTOS_INCLUDE,
-            user: { select: { id: true, name: true, avatarUrl: true } },
-            feedSeens: { where: { userId: session.user.id }, select: { seenAt: true } },
-          },
-        })
-      : Promise.resolve([]),
-  ]);
-
-  const allRaw = [...myRaw, ...friendsRaw];
-  const uniquePeakIds = [...new Set(allRaw.map((a) => a.peakId))];
-  const peakStatsMap = await getPeakStats(uniquePeakIds);
-
-  const myAscents = myRaw.map((a) => {
-    const u = a.user as { name?: string | null; avatarUrl?: string | null } | null;
-    return { ...enrichAscent(a as Parameters<typeof enrichAscent>[0], true, u?.name ?? session.user.name ?? "", u?.avatarUrl ?? null, locale), peakStats: peakStatsMap.get(a.peakId) };
-  });
-  const friendAscents = friendsRaw.map((a) => {
-    const u = a.user as { name?: string | null; avatarUrl?: string | null } | null;
-    const feedSeens = (a as { feedSeens?: { seenAt: Date }[] }).feedSeens ?? [];
-    return {
-      ...enrichAscent(a as Parameters<typeof enrichAscent>[0], false, u?.name ?? "?", u?.avatarUrl ?? null, locale),
-      peakStats: peakStatsMap.get(a.peakId),
-      isUnseen: feedSeens.length === 0,
-    };
+  const { ascents, hasMore } = await fetchFeedPage({
+    userId: session.user.id,
+    tenantId: session.user.tenantId,
+    friendUserIds,
+    locale,
   });
 
-  // Unseen friends' ascents first, then own + seen (all by date desc)
-  const byDate = (a: { date: string }, b: { date: string }) =>
-    new Date(b.date).getTime() - new Date(a.date).getTime();
-  const unseenFriends = friendAscents.filter((a) => a.isUnseen).sort(byDate);
-  const rest = [...myAscents, ...friendAscents.filter((a) => !a.isUnseen)].sort(byDate);
-  const ascents = [...unseenFriends, ...rest];
-
-  // All unique persons across all ascents (authors + face-tagged), sorted by name
   const allPersonsMap = new Map<string, { id: string; name: string }>();
   for (const a of ascents) {
     allPersonsMap.set(a.createdByUserId, { id: a.createdByUserId, name: a.userName });
     for (const p of a.persons) allPersonsMap.set(p.id, p);
   }
   const allPersons = Array.from(allPersonsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-
-  // All unique years, newest first
   const allYears = [...new Set(ascents.map((a) => new Date(a.date).getFullYear()))].sort((a, b) => b - a);
 
   return (
@@ -165,7 +47,17 @@ export default async function AscentsPage() {
       </div>
 
       <Suspense>
-        <AscentsClient ascents={ascents} allPersons={allPersons} allYears={allYears} currentUserEmail={session.user.email} currentUserName={session.user.name ?? ""} currentUserId={session.user.id} hasFriends={friendUserIds.length > 0} />
+        <AscentsClient
+          ascents={ascents}
+          allPersons={allPersons}
+          allYears={allYears}
+          currentUserEmail={session.user.email}
+          currentUserName={session.user.name ?? ""}
+          currentUserId={session.user.id}
+          hasFriends={friendUserIds.length > 0}
+          hasMore={hasMore}
+          friendUserIds={friendUserIds}
+        />
       </Suspense>
     </div>
   );
