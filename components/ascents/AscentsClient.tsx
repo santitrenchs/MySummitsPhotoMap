@@ -127,29 +127,11 @@ export function AscentsClient({
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
 
-  // Render window — only mount N cards at a time, append more on scroll
+  // Render window state (effects that depend on `filtered` are declared after its useMemo)
   const PAGE_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadMoreObserverRef = useRef<IntersectionObserver | null>(null);
-
-  // Reset window whenever filters change
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filtered]);
-
-  // IntersectionObserver: load more when sentinel enters viewport
-  useEffect(() => {
-    loadMoreObserverRef.current?.disconnect();
-    if (!sentinelRef.current) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) setVisibleCount((n) => n + PAGE_SIZE);
-      },
-      { rootMargin: "200px" }
-    );
-    obs.observe(sentinelRef.current);
-    loadMoreObserverRef.current = obs;
-    return () => obs.disconnect();
-  }, [filtered, visibleCount]);
 
   // "Mark as seen" tracking refs
   const cardTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -240,6 +222,24 @@ export function AscentsClient({
     }
     return Array.from(map.values());
   }, [filtered]);
+
+  // Reset render window whenever filters change
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filtered]);
+
+  // IntersectionObserver: load more cards when sentinel enters viewport
+  useEffect(() => {
+    loadMoreObserverRef.current?.disconnect();
+    if (!sentinelRef.current) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setVisibleCount((n) => n + PAGE_SIZE);
+      },
+      { rootMargin: "200px" }
+    );
+    obs.observe(sentinelRef.current);
+    loadMoreObserverRef.current = obs;
+    return () => obs.disconnect();
+  }, [filtered, visibleCount]);
 
   // IntersectionObserver: mark unseen friend ascents as seen after 1s of visibility
   useEffect(() => {
