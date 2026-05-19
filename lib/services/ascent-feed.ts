@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db/client";
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { getPeakStats } from "@/lib/services/peak.service";
 
-export const PAGE_SIZE = 20;
+export const PAGE_SIZE = 5;
 
 export const PHOTOS_INCLUDE = {
   orderBy: { createdAt: "asc" as const },
