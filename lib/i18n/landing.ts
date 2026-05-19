@@ -25,6 +25,7 @@ export type LandingT = {
   hero_body: string;
   hero_cta: string;
   hero_micro: string;
+  hero_login: string;
 
   // Stats
   stats_peaks_label: string;
@@ -162,6 +163,7 @@ const es: LandingT = {
   hero_body: "Peakadex convierte cada ascensión real en una carta coleccionable. Tu historia de montaña, convertida en leyenda.",
   hero_cta: "Empieza tu colección →",
   hero_micro: "Sin tarjeta de crédito · Gratis para empezar",
+  hero_login: "¿Ya tienes cuenta? Iniciar sesión →",
 
   stats_peaks_label: "Cimas en el Azimut",
   stats_peaks_sub: "picos catalogados",
@@ -316,6 +318,7 @@ const en: LandingT = {
   hero_body: "Peakadex turns every real ascent into a collectible card. Your mountain story, turned into legend.",
   hero_cta: "Start your collection →",
   hero_micro: "No credit card · Free to start",
+  hero_login: "Already have an account? Sign in →",
 
   stats_peaks_label: "Summits in the Atlas",
   stats_peaks_sub: "catalogued peaks",
@@ -470,6 +473,7 @@ const fr: LandingT = {
   hero_body: "Peakadex transforme chaque ascension réelle en une carte à collectionner. Ton histoire de montagne, transformée en légende.",
   hero_cta: "Lance ta collection →",
   hero_micro: "Sans carte de crédit · Gratuit pour commencer",
+  hero_login: "Déjà un compte ? Se connecter →",
 
   stats_peaks_label: "Sommets dans l'Atlas",
   stats_peaks_sub: "sommets catalogués",
@@ -624,6 +628,7 @@ const de: LandingT = {
   hero_body: "Peakadex verwandelt jede echte Besteigung in eine Sammelkarte. Deine Berggeschichte, zur Legende gemacht.",
   hero_cta: "Sammlung starten →",
   hero_micro: "Keine Kreditkarte · Kostenlos starten",
+  hero_login: "Bereits ein Konto? Anmelden →",
 
   stats_peaks_label: "Gipfel im Atlas",
   stats_peaks_sub: "katalogisierte Gipfel",
@@ -778,6 +783,7 @@ const ca: LandingT = {
   hero_body: "Peakadex converteix cada ascensió real en una carta col·leccionable. La teva història de muntanya, convertida en llegenda.",
   hero_cta: "Comença la teva col·lecció →",
   hero_micro: "Sense targeta de crèdit · Gratis per començar",
+  hero_login: "Ja tens compte? Inicia sessió →",
 
   stats_peaks_label: "Cims a l'Atlas",
   stats_peaks_sub: "pics catalogats",

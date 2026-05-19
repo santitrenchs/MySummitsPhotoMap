@@ -8,6 +8,7 @@ import { useLandingT } from "./LandingLocaleContext";
 export default function LandingHero() {
   const t = useLandingT();
   const registerHref = t.locale === "es" ? "/register" : `/${t.locale}/register`;
+  const loginHref    = t.locale === "es" ? "/login"    : `/${t.locale}/login`;
   const titleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -134,6 +135,21 @@ export default function LandingHero() {
 
           <p className="ld-cta-micro ld-hero-micro" style={{ textAlign: "center", marginTop: 16 }}>
             {t.hero_micro}
+          </p>
+          <p style={{ textAlign: "center", marginTop: 10, margin: "10px 0 0", fontSize: 14 }}>
+            <Link
+              href={loginHref}
+              style={{
+                color: "rgba(13,37,56,0.5)",
+                fontWeight: 500,
+                fontFamily: "var(--font-space, sans-serif)",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#0D2538"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(13,37,56,0.5)"; }}
+            >
+              {t.hero_login}
+            </Link>
           </p>
         </div>
       </div>
