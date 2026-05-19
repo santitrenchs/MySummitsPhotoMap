@@ -247,14 +247,19 @@ export function AscentsClient({
             imgs.forEach((img) => {
               if (img.dataset.lazySrc) {
                 img.setAttribute("src", img.dataset.lazySrc);
+                img.style.width = "";
+                img.style.height = "";
                 delete img.dataset.lazySrc;
               }
             });
           } else {
             imgs.forEach((img) => {
               const src = img.getAttribute("src");
-              if (src && !img.dataset.lazySrc) {
+              const h = img.offsetHeight;
+              if (src && !img.dataset.lazySrc && h > 0) {
                 img.dataset.lazySrc = src;
+                img.style.width = img.offsetWidth + "px";
+                img.style.height = h + "px";
                 img.removeAttribute("src");
               }
             });
