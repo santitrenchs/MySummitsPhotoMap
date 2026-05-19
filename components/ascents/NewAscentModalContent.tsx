@@ -300,7 +300,6 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         date: form.get("date"),
         route: form.get("route") || null,
         description: form.get("description") || null,
-        wikiloc: form.get("wikiloc") || null,
       }),
     });
 
@@ -657,20 +656,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                 )}
             </div>
 
-            {/* Wikiloc (edit mode only) */}
-            {isEditMode && (
-              <div>
-                <label htmlFor="modal-wikiloc" style={labelStyle}>
-                  Wikiloc <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
-                </label>
-                <input
-                  id="modal-wikiloc" name="wikiloc" type="url"
-                  defaultValue={editAscent!.wikiloc ?? ""}
-                  placeholder="https://www.wikiloc.com/…"
-                  style={inputStyle}
-                />
-              </div>
-            )}
+
 
             {error && (
               <p style={{

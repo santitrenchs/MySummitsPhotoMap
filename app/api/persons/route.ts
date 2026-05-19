@@ -25,8 +25,8 @@ export async function GET(req: Request) {
     f.requesterId === session.user.id ? f.addresseeId : f.requesterId
   );
 
-  // Self + friends, filtered by name/username search
-  const allowedIds = [session.user.id, ...friendIds];
+  // Friends only (exclude self)
+  const allowedIds = friendIds;
   const users = await prisma.user.findMany({
     where: {
       id: { in: allowedIds },
@@ -39,12 +39,5 @@ export async function GET(req: Request) {
     take: 5,
   });
 
-  // Self first, then friends
-  return NextResponse.json(
-    users.sort((a, b) => {
-      if (a.id === session.user.id) return -1;
-      if (b.id === session.user.id) return 1;
-      return 0;
-    })
-  );
+  return NextResponse.json(users);
 }
