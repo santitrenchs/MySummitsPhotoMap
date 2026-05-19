@@ -279,7 +279,12 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    if (!form.get("peakId")) {
+    const newPeakId = form.get("peakId") as string | null;
+    const newDate = form.get("date") as string;
+    const newRoute = (form.get("route") as string) || null;
+    const newDescription = (form.get("description") as string) || null;
+
+    if (!newPeakId) {
       setError(t.field_peak);
       setLoading(false);
       return;
@@ -295,12 +300,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     const patchRes = await fetch(`/api/ascents/${editAscent.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        peakId: form.get("peakId"),
-        date: form.get("date"),
-        route: form.get("route") || null,
-        description: form.get("description") || null,
-      }),
+      body: JSON.stringify({ peakId: newPeakId, date: newDate, route: newRoute, description: newDescription }),
     });
 
     if (!patchRes.ok) {
@@ -353,6 +353,21 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         body: JSON.stringify({ faces: facesPayload }),
       });
     }
+
+    // Optimistic update: notify feed immediately so it doesn't flash stale data
+    document.dispatchEvent(new CustomEvent("ascent-updated", {
+      detail: {
+        id: editAscent.id,
+        date: newDate,
+        route: newRoute,
+        description: newDescription,
+        persons: selectedPersons.map((p) => ({ id: p.id, name: p.name })),
+        photoUrl: editPhotoUrl,
+        peakId: newPeakId,
+        peakName: peaks.find((p) => p.id === newPeakId)?.name ?? editAscent.peakName,
+        peakAltitudeM: peaks.find((p) => p.id === newPeakId)?.altitudeM ?? null,
+      },
+    }));
 
     setLoading(false);
     router.refresh();

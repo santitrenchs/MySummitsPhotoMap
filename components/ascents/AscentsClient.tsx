@@ -80,6 +80,33 @@ export function AscentsClient({
   const t = useT();
   const searchParams = useSearchParams();
 
+  const [localAscents, setLocalAscents] = useState<AscentData[]>(ascents);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { id, date, route, description, persons, photoUrl, peakId, peakName, peakAltitudeM } =
+        (e as CustomEvent).detail;
+      setLocalAscents((prev) =>
+        prev.map((a) => {
+          if (a.id !== id) return a;
+          return {
+            ...a,
+            date,
+            route,
+            description,
+            persons,
+            firstPhotoUrl: photoUrl ?? a.firstPhotoUrl,
+            peak: peakId && peakId !== a.peak.id
+              ? { ...a.peak, id: peakId, name: peakName, altitudeM: peakAltitudeM ?? a.peak.altitudeM }
+              : a.peak,
+          };
+        })
+      );
+    };
+    document.addEventListener("ascent-updated", handler);
+    return () => document.removeEventListener("ascent-updated", handler);
+  }, []);
+
   const [search, setSearch] = useState("");
   const [viewChip, setViewChip] = useState<ViewChip>(() => {
     if (searchParams.get("highlight")) return "mine";
@@ -107,7 +134,7 @@ export function AscentsClient({
   // Peak filter seeded from ?peak= URL param
   const [peakFilter, setPeakFilter] = useState<string>(() => searchParams.get("peak") ?? "");
   const peakFilterName = peakFilter
-    ? (ascents.find((a) => a.peak.id === peakFilter)?.peak.name ?? "")
+    ? (localAscents.find((a) => a.peak.id === peakFilter)?.peak.name ?? "")
     : "";
 
   const selectedPerson = allPersons.find((p) => p.id === selectedPersonId);
@@ -135,7 +162,7 @@ export function AscentsClient({
   }, [filtersOpen]);
 
   const filtered = useMemo(() => {
-    let r = ascents;
+    let r = localAscents;
 
     if (peakFilter) r = r.filter((a) => a.peak.id === peakFilter);
 
@@ -175,7 +202,7 @@ export function AscentsClient({
       if (aUnseen && bUnseen) return b.peak.altitudeM - a.peak.altitudeM;
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
-  }, [ascents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, currentUserId]);
+  }, [localAscents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, currentUserId]);
 
   const groups = useMemo(() => {
     const map = new Map<string, AscentData[]>();
