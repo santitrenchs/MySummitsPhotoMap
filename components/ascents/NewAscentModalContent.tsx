@@ -71,7 +71,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [suggestedDate, setSuggestedDate] = useState<string | null>(null);
   const [suggestedPeakId, setSuggestedPeakId] = useState<string | null>(null);
-  const [pendingPhoto, setPendingPhoto] = useState<{ blob: Blob; preview: string } | null>(null);
+  const [pendingPhoto, setPendingPhoto] = useState<{ blob: Blob; preview: string; cropMeta: CropMeta; originalFile?: File } | null>(null);
   const [selectedPersons, setSelectedPersons] = useState<Person[]>(
     editAscent?.persons.map((p) => ({ id: p.id, name: p.name, username: null })) ?? []
   );
@@ -190,7 +190,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   // ── File handling ────────────────────────────────────────────────────────
 
   function handlePickFiles(files: FileList) {
-    const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const arr = Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, 1);
     const oversized = arr.find((f) => f.size > MAX_PHOTO_BYTES);
     if (oversized) { setError(t.photo_tooLarge); return; }
     if (!arr.length) return;
@@ -226,7 +226,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     setCropQueue((q) => q.slice(1));
     if (isEditPhotoReplaceRef.current) {
       isEditPhotoReplaceRef.current = false;
-      setPendingPhoto({ blob, preview });
+      setPendingPhoto({ blob, preview, cropMeta, originalFile });
       setEditPhotoUrl(preview);
       setCropApplying(false);
       setModalStep("form");
@@ -321,11 +321,14 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       const fd = new FormData();
       fd.append("file", pendingPhoto.blob, "photo.jpg");
       fd.append("ascentId", editAscent.id);
-      if (editOrigKey) {
-        fd.append("reuseOriginalPhotoId", editPhotoId ?? "");
-      } else {
-        const cropMeta: CropMeta = { x: 0, y: 0, w: 1, h: 1, aspect: "4:5", rotation: 0 };
-        fd.append("cropMeta", JSON.stringify(cropMeta));
+      fd.append("cropMeta", JSON.stringify(pendingPhoto.cropMeta));
+      if (editOrigKey && editPhotoId) {
+        // Re-crop: reuse the existing original stored in R2
+        fd.append("reuseOriginalPhotoId", editPhotoId);
+      } else if (pendingPhoto.originalFile) {
+        // New file from picker: upload original for future re-crops
+        const originalBlob = await resizeForStorage(pendingPhoto.originalFile);
+        fd.append("originalFile", originalBlob, "original.jpg");
       }
       const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
       if (photoRes.ok) {
@@ -336,11 +339,13 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
           body: JSON.stringify({ faces: facesPayload }),
         });
       }
-      // Delete old photo
-      if (editPhotoId && !editOrigKey) {
-        await fetch(`/api/photos/${editPhotoId}`, { method: "DELETE" }).catch(() => {});
-      } else if (editAscent.photoId && editAscent.photoId !== editPhotoId) {
-        await fetch(`/api/photos/${editAscent.photoId}?keepOriginal=1`, { method: "DELETE" }).catch(() => {});
+      // Delete old photo — always delete if one existed; keep original R2 file only
+      // when re-cropping (the new photo already references the same original key)
+      if (editAscent.photoId) {
+        const deleteUrl = editOrigKey
+          ? `/api/photos/${editAscent.photoId}?keepOriginal=1`
+          : `/api/photos/${editAscent.photoId}`;
+        await fetch(deleteUrl, { method: "DELETE" }).catch(() => {});
       }
     } else if (editAscent.photoId) {
       await fetch(`/api/photos/${editAscent.photoId}/faces`, {

@@ -39,7 +39,6 @@ export function PickStep({ onFiles, error }: PickStepProps) {
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-        multiple
         style={{ display: "none" }}
         onChange={(e) => {
           if (e.target.files?.length) onFiles(e.target.files);
