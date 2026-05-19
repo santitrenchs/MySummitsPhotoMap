@@ -127,6 +127,30 @@ export function AscentsClient({
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
 
+  // Render window — only mount N cards at a time, append more on scroll
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadMoreObserverRef = useRef<IntersectionObserver | null>(null);
+
+  // Reset window whenever filters change
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filtered]);
+
+  // IntersectionObserver: load more when sentinel enters viewport
+  useEffect(() => {
+    loadMoreObserverRef.current?.disconnect();
+    if (!sentinelRef.current) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setVisibleCount((n) => n + PAGE_SIZE);
+      },
+      { rootMargin: "200px" }
+    );
+    obs.observe(sentinelRef.current);
+    loadMoreObserverRef.current = obs;
+    return () => obs.disconnect();
+  }, [filtered, visibleCount]);
+
   // "Mark as seen" tracking refs
   const cardTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const pendingSeenRef = useRef<Set<string>>(new Set());
@@ -395,6 +419,7 @@ export function AscentsClient({
           to   { opacity:1; transform:scale(1); }
         }
         .asc-chip-in { animation: chipIn 0.18s ease forwards; }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       {/* ── Search + filter button ──────────────────────────────────────── */}
@@ -753,7 +778,7 @@ export function AscentsClient({
         )
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
-          {groups.map((group, i) => {
+          {groups.slice(0, visibleCount).map((group, i) => {
             if (group.length === 1) {
               const a = group[0];
               const others = a.persons.filter((p) => p.id !== a.createdByUserId);
@@ -805,6 +830,12 @@ export function AscentsClient({
               </div>
             );
           })}
+          {/* Sentinel: entering viewport triggers loading next batch */}
+          {visibleCount < groups.length && (
+            <div ref={sentinelRef} style={{ height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 24, height: 24, border: "2.5px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            </div>
+          )}
         </div>
       )}
     </>
