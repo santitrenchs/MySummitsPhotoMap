@@ -10,6 +10,7 @@ import { PeaksTabV2 } from "@/components/profile/PeaksTabV2";
 import { PhotosTabV2 } from "@/components/profile/PhotosTabV2";
 import type { RarityId } from "@/lib/rarity";
 import type { PeakForFilter } from "@/components/profile/usePeakFilters";
+import { imgUrl } from "@/lib/storage/image-url";
 
 type Ascent = {
   id: string;
@@ -229,7 +230,7 @@ function AscentsTab({ ascents, dateLocale, noAscents }: {
               {a.firstPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={a.firstPhoto.url}
+                  src={imgUrl(a.firstPhoto.url, 400)}
                   alt=""
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
@@ -356,7 +357,7 @@ function PhotosTab({ photos, showCreator = false }: { photos: Photo[]; showCreat
           <Link key={p.id} href={`/ascents/${p.ascentId}`} style={{ textDecoration: "none" }}>
             <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden", background: "#f3f4f6", borderRadius: "var(--radius-sm)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={imgUrl(p.url, 400)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               {/* Top overlay — peak name + altitude */}
               <div style={{
                 position: "absolute", top: 0, left: 0, right: 0,

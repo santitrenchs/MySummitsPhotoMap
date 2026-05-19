@@ -11,6 +11,7 @@ import MapControls from "./MapControls";
 import MapPeaksSidebar from "./MapPeaksSidebar";
 import MapOnboardingModal from "./MapOnboardingModal";
 import { Button } from "@/components/ui/Button";
+import { imgUrl } from "@/lib/storage/image-url";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1658,7 +1659,7 @@ export default function MapView({
                 {ascent?.photoUrl && (
                   <div style={{ width: "100%", aspectRatio: "3/2", overflow: "hidden" }}>
                     <img
-                      src={ascent.photoUrl}
+                      src={imgUrl(ascent.photoUrl, 400)}
                       alt=""
                       style={{
                         width: "100%", height: "100%",

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
+import { imgUrl } from "@/lib/storage/image-url";
 
 const APP_URL =
   typeof window !== "undefined"
@@ -315,7 +316,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={ascent.peak.name} altitudeM={ascent.peak.altitudeM} />
             : ascent.photoUrl
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={ascent.photoUrl} alt={ascent.peak.name} loading="lazy" />
+              ? <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.name} loading="lazy" />
               : <MountainPlaceholder />
           }
           <div className="image-overlay" />

@@ -10,6 +10,7 @@ import { PeakFiltersBar } from "./PeakFiltersBar";
 import { PhotoFiltersPanel } from "./PhotoFiltersPanel";
 import { usePhotoFilters } from "./usePhotoFilters";
 import type { PhotoForFilter } from "./usePhotoFilters";
+import { imgUrl } from "@/lib/storage/image-url";
 
 type Props = {
   photos: PhotoForFilter[];
@@ -98,7 +99,7 @@ function PhotoTile({ photo, isTagged, dateLocale }: { photo: PhotoForFilter; isT
     <Link href={`/ascents?highlight=${photo.ascentId}${isTagged ? "" : "&view=mine"}`} style={{ textDecoration: "none" }}>
       <div style={{ position: "relative", aspectRatio: "1", overflow: "hidden", background: imgError ? "#E8EFF6" : "#0D2538", borderRadius: "var(--radius-md)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {!imgError && <img src={photo.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => setImgError(true)} />}
+        {!imgError && <img src={imgUrl(photo.url, 400)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => setImgError(true)} />}
         {imgError && (
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>🏔</div>
         )}

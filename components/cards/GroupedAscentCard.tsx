@@ -6,6 +6,7 @@ import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
+import { imgUrl } from "@/lib/storage/image-url";
 
 // ─── Rarity aliases (lib/rarity.ts is the source of truth) ───────────────────
 
@@ -354,7 +355,7 @@ export function GroupedAscentCard({
                       {a.firstPhotoUrl
                         // eslint-disable-next-line @next/next/no-img-element
                         ? <img
-                            src={a.firstPhotoUrl}
+                            src={imgUrl(a.firstPhotoUrl, 800)}
                             alt={a.peak.name}
                             loading="lazy"
                             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
