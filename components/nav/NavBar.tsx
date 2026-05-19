@@ -109,6 +109,23 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   }, []);
 
   useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    function update() {
+      const nav = document.querySelector(".bottom-tab-bar") as HTMLElement | null;
+      if (!nav) return;
+      const offset = Math.max(0, window.innerHeight - vv!.height - vv!.offsetTop);
+      nav.style.bottom = offset > 0 ? `${offset}px` : "";
+    }
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+
+  useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
     } else {
