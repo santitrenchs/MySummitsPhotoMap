@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { AscentCard } from "@/components/cards/AscentCard";
@@ -133,20 +134,13 @@ export function AscentsClient({
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
 
-  // Render window state (effects that depend on `filtered` are declared after its useMemo)
-  const PAGE_SIZE = 10;
-  const MAX_RENDERED = 20; // max card groups kept in DOM — older ones replaced by spacer
-  const ESTIMATED_GROUP_HEIGHT = 644; // fallback estimate px per group (4:5 card + 24px gap)
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [topSpacerHeight, setTopSpacerHeight] = useState(0); // actual measured height of removed groups
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const loadMoreObserverRef = useRef<IntersectionObserver | null>(null);
+  // Virtuoso handle for imperative scroll (highlight from URL)
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
 
-  // "Mark as seen" tracking refs
+  // "Mark as seen" tracking refs — driven by Virtuoso's rangeChanged
   const cardTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const pendingSeenRef = useRef<Set<string>>(new Set());
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Peak filter seeded from ?peak= URL param
   const [peakFilter, setPeakFilter] = useState<string>(() => searchParams.get("peak") ?? "");
@@ -158,15 +152,6 @@ export function AscentsClient({
 
   // Highlight + scroll to newly created ascent from ?highlight= URL param
   const [highlightId, setHighlightId] = useState<string | null>(() => searchParams.get("highlight"));
-  useEffect(() => {
-    if (!highlightId) return;
-    const el = document.getElementById(`ascent-${highlightId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      const timer = setTimeout(() => setHighlightId(null), 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [highlightId]);
 
   // Lock body scroll when sheet open
   useEffect(() => {
@@ -232,149 +217,89 @@ export function AscentsClient({
     return Array.from(map.values());
   }, [filtered]);
 
-  // Reset render window whenever filters change
-  useEffect(() => { setVisibleCount(PAGE_SIZE); setTopSpacerHeight(0); }, [filtered]);
-
-  // Bound localAscents to avoid unbounded React state + useMemo cost as the user scrolls.
-  // Drops scrolled-past groups (front of date-desc array) once we're well above the visible window.
-  const MAX_LOADED_ASCENTS = 60;
-  const TRIM_BUFFER_GROUPS = 5;
+  // Cleanup mark-as-seen timers on unmount
   useEffect(() => {
-    if (localAscents.length <= MAX_LOADED_ASCENTS) return;
-    const visibleStart = Math.max(0, visibleCount - MAX_RENDERED);
-    const trimUpTo = visibleStart - TRIM_BUFFER_GROUPS;
-    if (trimUpTo <= 0) return;
-    const idsToTrim = new Set<string>();
-    for (let i = 0; i < trimUpTo; i++) {
-      groups[i]?.forEach((a) => idsToTrim.add(a.id));
-    }
-    if (idsToTrim.size === 0) return;
-    setLocalAscents((prev) => prev.filter((a) => !idsToTrim.has(a.id)));
-    setVisibleCount((c) => c - trimUpTo);
-    // topSpacerHeight stays — it visually represents the trimmed groups
-  }, [localAscents.length, visibleCount, groups]);
-
-  // Measure actual heights of groups about to leave the DOM (called before advancing visibleCount).
-  // Formula derivation:
-  //   Per group slid out, the spacer must absorb: group_height + 24 (its trailing gap to next group).
-  //   But on the FIRST slide there's no preceding "spacer + 24" gap to merge with the new spacer's
-  //   leading gap — so we subtract 24 once for the first slide.
-  function measureRemovedHeight(currentGroups: typeof groups, currentVisible: number, nextVisible: number, isFirstSlide: boolean): number {
-    const oldStart = Math.max(0, currentVisible - MAX_RENDERED);
-    const newStart = Math.max(0, nextVisible - MAX_RENDERED);
-    if (newStart <= oldStart) return 0;
-    let h = 0;
-    for (let gi = oldStart; gi < newStart; gi++) {
-      const group = currentGroups[gi];
-      if (!group) { h += ESTIMATED_GROUP_HEIGHT; continue; }
-      const el = group.length === 1
-        ? document.getElementById(`ascent-${group[0].id}`)
-        : document.getElementById(`group-${group[0].peak.id}__${group[0].date.substring(0, 10)}`);
-      h += el ? (el as HTMLElement).offsetHeight + 24 : ESTIMATED_GROUP_HEIGHT;
-    }
-    if (isFirstSlide) h -= 24;
-    return h;
-  }
-
-  // IntersectionObserver: load more cards when sentinel enters viewport
-  useEffect(() => {
-    loadMoreObserverRef.current?.disconnect();
-    if (!sentinelRef.current) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0].isIntersecting) return;
-        // Local case: still have unloaded groups in state — just render more (clamped to groups.length)
-        if (visibleCount < groups.length) {
-          const nextVisible = Math.min(visibleCount + PAGE_SIZE, groups.length);
-          const delta = measureRemovedHeight(groups, visibleCount, nextVisible, topSpacerHeight === 0);
-          if (delta > 0) setTopSpacerHeight((h) => h + delta);
-          setVisibleCount(nextVisible);
-          return;
-        }
-        // Server case: we've shown everything local — fetch more
-        if (!hasMore || isFetchingMore) return;
-        setIsFetchingMore(true);
-        const oldVisible = visibleCount;
-        const oldIds = new Set(localAscents.map((a) => a.id));
-        const lastDate = localAscents[localAscents.length - 1]?.date;
-        fetch(`/api/ascents/feed?before=${encodeURIComponent(lastDate ?? "")}`)
-          .then((r) => r.json())
-          .then(({ ascents: more, hasMore: moreHasMore }: { ascents: AscentData[]; hasMore: boolean }) => {
-            const newItems = more.filter((a) => !oldIds.has(a.id));
-            if (newItems.length === 0) {
-              setHasMore(false);
-              return;
-            }
-            setLocalAscents((prev) => [...prev, ...newItems]);
-            setHasMore(moreHasMore);
-            // Advance visibleCount by the ACTUAL number of new items (not PAGE_SIZE) to keep
-            // it aligned with groups.length — prevents drift when server returns fewer items
-            const nextVisible = oldVisible + newItems.length;
-            const delta = measureRemovedHeight(groups, oldVisible, nextVisible, topSpacerHeight === 0);
-            if (delta > 0) setTopSpacerHeight((h) => h + delta);
-            setVisibleCount(nextVisible);
-          })
-          .catch(() => {})
-          .finally(() => setIsFetchingMore(false));
-      },
-      { rootMargin: "200px" }
-    );
-    obs.observe(sentinelRef.current);
-    loadMoreObserverRef.current = obs;
-    return () => obs.disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, visibleCount, groups.length, hasMore, isFetchingMore, localAscents]);
-
-  // IntersectionObserver: mark unseen friend ascents as seen after 1s of visibility
-  useEffect(() => {
-    const hasUnseen = filtered.some((a) => a.isUnseen);
-    if (!hasUnseen) return;
-
-    observerRef.current?.disconnect();
-
-    const flush = () => {
-      const ids = Array.from(pendingSeenRef.current);
-      if (ids.length === 0) return;
-      pendingSeenRef.current.clear();
-      document.dispatchEvent(new CustomEvent("unseen-feed-count-changed", { detail: { delta: -ids.length } }));
-      fetch("/api/feed/seen", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ascentIds: ids }),
-      }).catch(() => {});
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          // data-unseen-id may contain comma-separated IDs for grouped cards
-          const raw = (entry.target as HTMLElement).dataset.unseenId;
-          if (!raw || !entry.isIntersecting) continue;
-          // Start timer once on first intersection — don't cancel if user scrolls past
-          if (!cardTimersRef.current.has(raw)) {
-            cardTimersRef.current.set(raw, setTimeout(() => {
-              cardTimersRef.current.delete(raw);
-              observer.unobserve(entry.target);
-              for (const id of raw.split(",")) pendingSeenRef.current.add(id);
-              if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = setTimeout(flush, 1000);
-            }, 1000));
-          }
-        }
-      },
-      { threshold: 0.3 }
-    );
-    observerRef.current = observer;
-
-    // Observe ALL elements with data-unseen-id (single cards + grouped wrappers)
-    document.querySelectorAll("[data-unseen-id]").forEach((el) => observer.observe(el));
-
     return () => {
-      observer.disconnect();
       for (const timer of cardTimersRef.current.values()) clearTimeout(timer);
       cardTimersRef.current.clear();
       if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
     };
+  }, []);
+
+  // Load more from server when Virtuoso reaches the end
+  const loadMore = useCallback(() => {
+    if (!hasMore || isFetchingMore) return;
+    setIsFetchingMore(true);
+    const oldIds = new Set(localAscents.map((a) => a.id));
+    const lastDate = localAscents[localAscents.length - 1]?.date;
+    fetch(`/api/ascents/feed?before=${encodeURIComponent(lastDate ?? "")}`)
+      .then((r) => r.json())
+      .then(({ ascents: more, hasMore: moreHasMore }: { ascents: AscentData[]; hasMore: boolean }) => {
+        const newItems = more.filter((a) => !oldIds.has(a.id));
+        if (newItems.length === 0) {
+          setHasMore(false);
+          return;
+        }
+        setLocalAscents((prev) => [...prev, ...newItems]);
+        setHasMore(moreHasMore);
+      })
+      .catch(() => {})
+      .finally(() => setIsFetchingMore(false));
+  }, [hasMore, isFetchingMore, localAscents]);
+
+  // Mark unseen friend ascents as seen after 1s in the rendered range
+  const handleRangeChanged = useCallback(
+    ({ startIndex, endIndex }: { startIndex: number; endIndex: number }) => {
+      const flush = () => {
+        const ids = Array.from(pendingSeenRef.current);
+        if (ids.length === 0) return;
+        pendingSeenRef.current.clear();
+        document.dispatchEvent(new CustomEvent("unseen-feed-count-changed", { detail: { delta: -ids.length } }));
+        fetch("/api/feed/seen", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ascentIds: ids }),
+        }).catch(() => {});
+      };
+      for (let i = startIndex; i <= endIndex; i++) {
+        const group = groups[i];
+        if (!group) continue;
+        const unseenIds = group.filter((a) => a.isUnseen).map((a) => a.id);
+        if (unseenIds.length === 0) continue;
+        const key = unseenIds.join(",");
+        if (cardTimersRef.current.has(key)) continue;
+        cardTimersRef.current.set(
+          key,
+          setTimeout(() => {
+            cardTimersRef.current.delete(key);
+            for (const id of unseenIds) pendingSeenRef.current.add(id);
+            if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+            flushTimerRef.current = setTimeout(flush, 1000);
+          }, 1000)
+        );
+      }
+    },
+    [groups]
+  );
+
+  // Scroll to highlighted ascent when present in groups
+  useEffect(() => {
+    if (!highlightId) return;
+    const idx = groups.findIndex((g) => g.some((a) => a.id === highlightId));
+    if (idx < 0) return;
+    virtuosoRef.current?.scrollToIndex({ index: idx, align: "center", behavior: "smooth" });
+    const timer = setTimeout(() => setHighlightId(null), 2500);
+    return () => clearTimeout(timer);
+  }, [highlightId, groups]);
+
+  // Scroll to top when filter set changes (skip initial mount)
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [filtered]);
 
   const uniquePeaks = useMemo(
@@ -861,72 +786,76 @@ export function AscentsClient({
         </div>
         )
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
-          {/* Top spacer replaces DOM nodes scrolled far above — actual measured height */}
-          {topSpacerHeight > 0 && (
-            <div style={{ height: topSpacerHeight, flexShrink: 0 }} aria-hidden="true" />
-          )}
-          {groups.slice(Math.max(0, visibleCount - MAX_RENDERED), Math.min(visibleCount, groups.length)).map((group, i) => {
-            if (group.length === 1) {
-              const a = group[0];
-              const others = a.persons.filter((p) => p.id !== a.createdByUserId);
+        <div style={{ marginTop: 8 }}>
+          <Virtuoso
+            ref={virtuosoRef}
+            useWindowScroll
+            data={groups}
+            endReached={loadMore}
+            rangeChanged={handleRangeChanged}
+            increaseViewportBy={{ top: 200, bottom: 800 }}
+            computeItemKey={(_index, group) => {
+              if (group.length === 1) return group[0].id;
+              return `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
+            }}
+            itemContent={(index, group) => {
+              if (group.length === 1) {
+                const a = group[0];
+                const others = a.persons.filter((p) => p.id !== a.createdByUserId);
+                return (
+                  <div
+                    id={`ascent-${a.id}`}
+                    style={{
+                      paddingBottom: 24,
+                      borderRadius: "var(--radius-lg)",
+                      transition: "box-shadow 0.4s ease, outline 0.4s ease",
+                      ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
+                    }}
+                  >
+                    <AscentCard
+                      variant={a.isOwn ? "profile" : "social"}
+                      locale={t.dateLocale}
+                      animationIndex={index}
+                      ascent={{
+                        id: a.id,
+                        date: a.date,
+                        route: a.route,
+                        description: a.description,
+                        wikiloc: a.wikiloc,
+                        peak: a.peak,
+                        photoUrl: a.firstPhotoUrl,
+                        photoId: a.firstPhotoId,
+                        originalStorageKey: a.firstPhotoOriginalKey,
+                        persons: others,
+                        user: { name: a.userName, avatarUrl: a.userAvatarUrl },
+                        peakStats: a.peakStats,
+                      }}
+                    />
+                  </div>
+                );
+              }
+              const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
               return (
-                <div
-                  key={a.id}
-                  id={`ascent-${a.id}`}
-                  data-card-wrapper
-                  {...(a.isUnseen ? { "data-unseen-id": a.id } : {})}
-                  style={{
-                    borderRadius: "var(--radius-lg)",
-                    transition: "box-shadow 0.4s ease, outline 0.4s ease",
-                    ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
-                  }}
-                >
-                <AscentCard
-                  variant={a.isOwn ? "profile" : "social"}
-                  locale={t.dateLocale}
-                  animationIndex={i}
-                  ascent={{
-                    id: a.id,
-                    date: a.date,
-                    route: a.route,
-                    description: a.description,
-                    wikiloc: a.wikiloc,
-                    peak: a.peak,
-                    photoUrl: a.firstPhotoUrl,
-                    photoId: a.firstPhotoId,
-                    originalStorageKey: a.firstPhotoOriginalKey,
-                    persons: others,
-                    user: { name: a.userName, avatarUrl: a.userAvatarUrl },
-                    peakStats: a.peakStats,
-                  }}
-                />
+                <div id={`group-${groupKey}`} style={{ paddingBottom: 24 }}>
+                  <GroupedAscentCard
+                    ascents={group}
+                    currentUserEmail={currentUserEmail}
+                    currentUserName={currentUserName}
+                    animationIndex={index}
+                    peakStats={group[0].peakStats}
+                  />
                 </div>
               );
-            }
-
-            const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
-            const groupUnseenIds = group.filter((a) => a.isUnseen).map((a) => a.id).join(",");
-            return (
-              <div key={groupKey} id={`group-${groupKey}`} data-card-wrapper {...(groupUnseenIds ? { "data-unseen-id": groupUnseenIds } : {})}>
-                <GroupedAscentCard
-                  ascents={group}
-                  currentUserEmail={currentUserEmail}
-                  currentUserName={currentUserName}
-                  animationIndex={i}
-                  peakStats={group[0].peakStats}
-                />
-              </div>
-            );
-          })}
-          {/* Sentinel: entering viewport triggers loading next batch */}
-          {(visibleCount < groups.length || hasMore) && (
-            <div ref={sentinelRef} style={{ height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {isFetchingMore && (
-                <div style={{ width: 24, height: 24, border: "2.5px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-              )}
-            </div>
-          )}
+            }}
+            components={{
+              Footer: () =>
+                isFetchingMore ? (
+                  <div style={{ height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 24, height: 24, border: "2.5px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                  </div>
+                ) : null,
+            }}
+          />
         </div>
       )}
     </>
