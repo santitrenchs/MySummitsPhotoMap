@@ -39,12 +39,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.3,
   }));
 
-  const peakPages: MetadataRoute.Sitemap = LANDING_PEAKS.map((peak) => ({
-    url: `${BASE}/peaks/${slugifyPeak(peak.peakName)}`,
-    lastModified: now,
-    changeFrequency: "monthly" as const,
-    priority: 0.7,
-  }));
+  const peakPages: MetadataRoute.Sitemap = LANDING_PEAKS.flatMap((peak) => {
+    const slug = slugifyPeak(peak.peakName);
+    const peakHreflang = {
+      "x-default": `${BASE}/en/peaks/${slug}`,
+      es:  `${BASE}/peaks/${slug}`,
+      en:  `${BASE}/en/peaks/${slug}`,
+      fr:  `${BASE}/fr/peaks/${slug}`,
+      de:  `${BASE}/de/peaks/${slug}`,
+      ca:  `${BASE}/ca/peaks/${slug}`,
+    };
+    return [
+      { url: `${BASE}/peaks/${slug}`,      locale: "es" },
+      { url: `${BASE}/en/peaks/${slug}`,   locale: "en" },
+      { url: `${BASE}/fr/peaks/${slug}`,   locale: "fr" },
+      { url: `${BASE}/de/peaks/${slug}`,   locale: "de" },
+      { url: `${BASE}/ca/peaks/${slug}`,   locale: "ca" },
+    ].map(({ url }) => ({
+      url,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+      alternates: { languages: peakHreflang },
+    }));
+  });
 
   return [...landingPages, ...legalPages, ...peakPages];
 }

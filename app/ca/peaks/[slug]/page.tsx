@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LANDING_PEAKS, slugifyPeak, getPeakBySlug, rarityForAlt } from "@/lib/data/landing-peaks";
 import { getPeakPageT } from "@/lib/i18n/peaks";
-import { PeakPageContent } from "./PeakPageContent";
+import { PeakPageContent } from "@/app/peaks/[slug]/PeakPageContent";
 
 const BASE = "https://www.peakadex.com";
-const t = getPeakPageT("es");
+const t = getPeakPageT("ca");
 
 export function generateStaticParams() {
   return LANDING_PEAKS.map((p) => ({ slug: slugifyPeak(p.peakName) }));
@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (!peak) return {};
 
   const rarity = rarityForAlt(peak.altitudeM);
-  const url = `${BASE}/peaks/${slug}`;
+  const url = `${BASE}/ca/peaks/${slug}`;
   const title = t.meta_title(peak);
   const description = t.meta_desc(peak, rarity.name);
 
@@ -32,18 +32,18 @@ export async function generateMetadata({
       canonical: url,
       languages: {
         "x-default": `${BASE}/en/peaks/${slug}`,
-        es:  url,
+        es:  `${BASE}/peaks/${slug}`,
         en:  `${BASE}/en/peaks/${slug}`,
         fr:  `${BASE}/fr/peaks/${slug}`,
         de:  `${BASE}/de/peaks/${slug}`,
-        ca:  `${BASE}/ca/peaks/${slug}`,
+        ca:  url,
       },
     },
-    openGraph: { type: "website", url, title, description },
+    openGraph: { type: "website", url, title, description, locale: "ca_ES" },
   };
 }
 
-export default async function PeakPage({
+export default async function PeakPageCa({
   params,
 }: {
   params: Promise<{ slug: string }>;
