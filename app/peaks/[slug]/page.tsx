@@ -4,19 +4,6 @@ import { LANDING_PEAKS, rarityForAlt, slugifyPeak, getPeakBySlug, type PeakCardD
 import { PeakadexLogo } from "@/components/brand/Logo";
 import { PeakCard } from "./PeakCard";
 
-// Pick 4 deterministically so each peak page always shows the same related peaks
-function pickFour(slug: string, peaks: PeakCardData[]): PeakCardData[] {
-  let h = 0;
-  for (const c of slug) h = (Math.imul(31, h) + c.charCodeAt(0)) | 0;
-  h = Math.abs(h);
-  const arr = [...peaks];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = h % (i + 1);
-    h = Math.abs((Math.imul(31, h) + 17) | 0);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr.slice(0, 4);
-}
 
 const MINI_W = 120;
 const MINI_H = 205;
@@ -128,7 +115,7 @@ export default async function PeakPage({
   const rarity = rarityForAlt(peak.altitudeM);
   const uid = slug;
 
-  const relatedPeaks = pickFour(slug, LANDING_PEAKS.filter((p) => p.peakName !== peak.peakName));
+  const relatedPeaks = LANDING_PEAKS.filter((p) => p.peakName !== peak.peakName);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -171,13 +158,18 @@ export default async function PeakPage({
           margin: 0 auto;
           padding: 48px 24px 64px;
         }
-        .pk-mini-grid {
+        .pk-mini-scroll {
           display: flex;
           gap: 16px;
-          justify-content: center;
-          flex-wrap: wrap;
-          padding: 0 24px;
+          overflow-x: auto;
+          overflow-y: visible;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
+          padding: 8px 24px 16px;
+          scrollbar-width: none;
         }
+        .pk-mini-scroll::-webkit-scrollbar { display: none; }
+        .pk-mini-scroll > a { scroll-snap-align: start; flex-shrink: 0; }
         @media (max-width: 640px) {
           .pk-hero-grid {
             grid-template-columns: 1fr;
@@ -313,7 +305,7 @@ export default async function PeakPage({
           <h2 style={{ margin: "0 0 24px", fontSize: 20, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.01em", textAlign: "center" }}>
             Otras cimas
           </h2>
-          <div className="pk-mini-grid">
+          <div className="pk-mini-scroll">
             {relatedPeaks.map((p) => <MiniPeakCard key={p.peakName} peak={p} />)}
           </div>
         </section>
