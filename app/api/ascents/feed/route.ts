@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const before = req.nextUrl.searchParams.get("before");
-  const beforeDate = before ? new Date(before) : undefined;
+  const beforeOwn = req.nextUrl.searchParams.get("beforeOwn");
+  const beforeFriends = req.nextUrl.searchParams.get("beforeFriends");
 
   const locale = await getLocale();
 
@@ -21,14 +21,15 @@ export async function GET(req: NextRequest) {
     f.requesterId === session.user.id ? f.addresseeId : f.requesterId
   );
 
-  const { ascents, hasMore } = await fetchFeedPage({
+  const result = await fetchFeedPage({
     userId: session.user.id,
     tenantId: session.user.tenantId,
     friendUserIds,
     locale,
-    before: beforeDate,
+    beforeOwn: beforeOwn ? new Date(beforeOwn) : undefined,
+    beforeFriends: beforeFriends ? new Date(beforeFriends) : undefined,
     skipUnseen: true,
   });
 
-  return NextResponse.json({ ascents, hasMore });
+  return NextResponse.json(result);
 }

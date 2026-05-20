@@ -86,23 +86,23 @@ export async function fetchFeedPage({
   tenantId,
   friendUserIds,
   locale,
-  before,        // cursor: load items older than this date
-  skipUnseen,    // true after first page (unseen-first only applies to initial load)
+  beforeOwn,      // per-stream cursor: load own items older than this date
+  beforeFriends,  // per-stream cursor: load friends items older than this date
+  skipUnseen,     // true after first page (unseen-first only applies to initial load)
 }: {
   userId: string;
   tenantId: string;
   friendUserIds: string[];
   locale: string;
-  before?: Date;
+  beforeOwn?: Date;
+  beforeFriends?: Date;
   skipUnseen?: boolean;
 }) {
   const db = await getTenantConnection(tenantId);
 
-  const dateFilter = before ? { lt: before } : undefined;
-
   const [myRaw, friendsRaw] = await Promise.all([
     db.ascent.findMany({
-      where: { tenantId, createdBy: userId, ...(dateFilter ? { date: dateFilter } : {}) },
+      where: { tenantId, createdBy: userId, ...(beforeOwn ? { date: { lt: beforeOwn } } : {}) },
       orderBy: { date: "desc" },
       take: PAGE_SIZE,
       include: {
@@ -113,7 +113,7 @@ export async function fetchFeedPage({
     }),
     friendUserIds.length > 0
       ? prisma.ascent.findMany({
-          where: { createdBy: { in: friendUserIds }, ...(dateFilter ? { date: dateFilter } : {}) },
+          where: { createdBy: { in: friendUserIds }, ...(beforeFriends ? { date: { lt: beforeFriends } } : {}) },
           orderBy: { date: "desc" },
           take: PAGE_SIZE,
           include: {
@@ -157,7 +157,14 @@ export async function fetchFeedPage({
     ascents = [...myAscents, ...friendAscents].sort(byDate);
   }
 
-  const hasMore = myRaw.length === PAGE_SIZE || friendsRaw.length === PAGE_SIZE;
+  // Per-stream cursors for next page. A stream is "exhausted" when it returns less than PAGE_SIZE
+  // (no more items older than its current cursor). Tracking them separately prevents one stream's
+  // older items from causing the other stream's items to be skipped.
+  const nextBeforeOwn =
+    myRaw.length === PAGE_SIZE ? myRaw[myRaw.length - 1].date.toISOString() : null;
+  const nextBeforeFriends =
+    friendsRaw.length === PAGE_SIZE ? friendsRaw[friendsRaw.length - 1].date.toISOString() : null;
+  const hasMore = nextBeforeOwn !== null || nextBeforeFriends !== null;
 
-  return { ascents, hasMore };
+  return { ascents, hasMore, nextBeforeOwn, nextBeforeFriends };
 }
