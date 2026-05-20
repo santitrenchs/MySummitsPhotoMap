@@ -139,6 +139,11 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
     pendingPath === href || (pendingPath === null && isActive(href));
 
   function handleTabClick(href: string) {
+    // iOS pattern: tapping the already-active tab scrolls to top
+    if (pathname === href) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     setPendingPath(href);
   }
 

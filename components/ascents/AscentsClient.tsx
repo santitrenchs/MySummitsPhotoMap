@@ -9,6 +9,7 @@ import { AscentCard } from "@/components/cards/AscentCard";
 import { GroupedAscentCard } from "@/components/cards/GroupedAscentCard";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 
 export type AscentData = {
   id: string;
@@ -881,6 +882,8 @@ export function AscentsClient({
           />
         </div>
       )}
+
+      <ScrollToTopButton />
     </>
   );
 }
