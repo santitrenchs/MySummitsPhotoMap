@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * limit;
   const gpsVerified = searchParams.get("gpsVerified"); // "yes" | "no" | null
   const ascents = searchParams.get("ascents"); // "with" | "without" | null
+  const osmId = searchParams.get("osmId"); // "with" | "without" | null
   const sort = searchParams.get("sort") ?? "pending";
 
   const where: Record<string, unknown> = {};
@@ -42,6 +43,8 @@ export async function GET(req: NextRequest) {
   if (gpsVerified === "no") where.gpsVerified = false;
   if (ascents === "with") where.ascents = { some: {} };
   if (ascents === "without") where.ascents = { none: {} };
+  if (osmId === "with") where.osmId = { not: null };
+  if (osmId === "without") where.osmId = null;
 
   const orderBy =
     sort === "name"
@@ -64,7 +67,7 @@ export async function GET(req: NextRequest) {
         id: true, name: true, latitude: true, longitude: true,
         altitudeM: true, country: true, mountainRange: true,
         comarca: true, tag1: true, tag2: true, tag3: true,
-        gpsVerified: true,
+        osmId: true, gpsVerified: true, isMythic: true,
         _count: { select: { ascents: true } },
       },
     }),

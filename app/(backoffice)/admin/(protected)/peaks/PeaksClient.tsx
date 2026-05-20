@@ -14,6 +14,7 @@ type Peak = {
   tag1: string | null;
   tag2: string | null;
   tag3: string | null;
+  osmId: string | null;
   gpsVerified: boolean;
   isMythic: boolean;
   _count: { ascents: number };
@@ -37,15 +38,15 @@ function altZone(altM: number) {
   return ALTITUDE_ZONES[ALTITUDE_ZONES.length - 1];
 }
 
-const ALL_COLS = ["altitude", "country", "comarca", "range", "tags", "latlon", "gps", "mythic", "ascents"] as const;
+const ALL_COLS = ["altitude", "country", "comarca", "range", "tags", "osmId", "latlon", "gps", "mythic", "ascents"] as const;
 type ColKey = typeof ALL_COLS[number];
 const COL_LABELS: Record<ColKey, string> = {
   altitude: "Altitud", country: "País", comarca: "Comarca", range: "Cordillera",
-  tags: "Tags", latlon: "Lat/Lon", gps: "GPS ✓", mythic: "Mythic", ascents: "Asc.",
+  tags: "Tags", osmId: "OSM Id", latlon: "Lat/Lon", gps: "GPS ✓", mythic: "Mythic", ascents: "Asc.",
 };
 const DEFAULT_COLS: Record<ColKey, boolean> = {
   altitude: true, country: true, comarca: true, range: true,
-  tags: true, latlon: false, gps: true, mythic: true, ascents: true,
+  tags: true, osmId: true, latlon: false, gps: true, mythic: true, ascents: true,
 };
 
 export function PeaksClient() {
@@ -54,7 +55,7 @@ export function PeaksClient() {
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
   const [inputQ, setInputQ] = useState("");
-  const [gpsFilter, setGpsFilter] = useState<"all" | "yes" | "no">("all");
+  const [osmIdFilter, setOsmIdFilter] = useState<"all" | "with" | "without">("all");
   const [ascentsFilter, setAscentsFilter] = useState<"all" | "with" | "without">("all");
   const [sort, setSort] = useState<"pending" | "name" | "altitude" | "ascents_desc" | "ascents_asc">("pending");
   const [loading, setLoading] = useState(false);
@@ -80,14 +81,14 @@ export function PeaksClient() {
   const fetchPeaks = useCallback(async (
     query: string,
     pg: number,
-    gps: "all" | "yes" | "no",
+    osmId: "all" | "with" | "without",
     ascents: "all" | "with" | "without",
     sortBy: "pending" | "name" | "altitude" | "ascents_desc" | "ascents_asc"
   ) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ q: query, page: String(pg), limit: String(LIMIT) });
-      if (gps !== "all") params.set("gpsVerified", gps);
+      if (osmId !== "all") params.set("osmId", osmId);
       if (ascents !== "all") params.set("ascents", ascents);
       params.set("sort", sortBy);
       const res = await fetch(`/api/admin/peaks?${params}`);
@@ -100,8 +101,8 @@ export function PeaksClient() {
   }, []);
 
   useEffect(() => {
-    fetchPeaks(q, page, gpsFilter, ascentsFilter, sort);
-  }, [q, page, gpsFilter, ascentsFilter, sort, fetchPeaks]);
+    fetchPeaks(q, page, osmIdFilter, ascentsFilter, sort);
+  }, [q, page, osmIdFilter, ascentsFilter, sort, fetchPeaks]);
 
   // Close col selector on outside click
   useEffect(() => {
@@ -126,7 +127,7 @@ export function PeaksClient() {
   function resetFilters() {
     setInputQ("");
     setQ("");
-    setGpsFilter("all");
+    setOsmIdFilter("all");
     setAscentsFilter("all");
     setSort("pending");
     setPage(1);
@@ -145,6 +146,7 @@ export function PeaksClient() {
       tag1: peak.tag1 ?? "",
       tag2: peak.tag2 ?? "",
       tag3: peak.tag3 ?? "",
+      osmId: peak.osmId ?? "",
       gpsVerified: peak.gpsVerified,
       isMythic: peak.isMythic,
     });
@@ -162,7 +164,7 @@ export function PeaksClient() {
     setSaveError(null);
     try {
       const payload: EditState = { ...editState };
-      for (const k of ["mountainRange", "comarca", "tag1", "tag2", "tag3"] as const) {
+      for (const k of ["mountainRange", "comarca", "tag1", "tag2", "tag3", "osmId"] as const) {
         if (payload[k] === "") (payload as Record<string, unknown>)[k] = null;
       }
       const res = await fetch(`/api/admin/peaks/${id}`, {
@@ -281,13 +283,13 @@ export function PeaksClient() {
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-          <FilterLabel>GPS</FilterLabel>
+          <FilterLabel>OSM Id</FilterLabel>
           <div className="view-tabs">
-            {([["all", "Todas"], ["yes", "Verificadas"], ["no", "Sin verificar"]] as const).map(([val, label]) => (
+            {([["all", "Todas"], ["with", "Con OsmId"], ["without", "Sin OsmId"]] as const).map(([val, label]) => (
               <button
                 key={val}
-                className={`view-tab${gpsFilter === val ? " active" : ""}`}
-                onClick={() => { setGpsFilter(val); setPage(1); }}
+                className={`view-tab${osmIdFilter === val ? " active" : ""}`}
+                onClick={() => { setOsmIdFilter(val); setPage(1); }}
               >{label}</button>
             ))}
           </div>
@@ -400,6 +402,7 @@ export function PeaksClient() {
                       {col("comarca") && <th>Comarca</th>}
                       {col("range") && <th>Cordillera</th>}
                       {col("tags") && <th>Tags</th>}
+                      {col("osmId") && <th>OSM Id</th>}
                       {col("latlon") && <th style={{ textAlign: "center" }}>Lat / Lon</th>}
                       {col("gps") && <th style={{ textAlign: "center" }}>GPS ✓</th>}
                       {col("mythic") && <th style={{ textAlign: "center" }}>Mythic</th>}
@@ -530,6 +533,11 @@ function ViewRow({
           </div>
         </td>
       )}
+      {col("osmId") && (
+        <td style={{ fontSize: 12, fontFamily: "monospace", color: "var(--text-secondary)" }}>
+          {peak.osmId ?? <em style={{ color: "var(--text-muted)" }}>—</em>}
+        </td>
+      )}
       {col("latlon") && (
         <td style={{ textAlign: "center", fontSize: 11, fontFamily: "monospace", color: "var(--text-muted)" }}>
           {peak.latitude.toFixed(4)}, {peak.longitude.toFixed(4)}
@@ -616,7 +624,7 @@ function EditRow({
   }
 
   const colSpan = 1 + (col("altitude") ? 1 : 0) + (col("country") ? 1 : 0) + (col("comarca") ? 1 : 0) +
-    (col("range") ? 1 : 0) + (col("tags") ? 1 : 0) + (col("latlon") ? 1 : 0) +
+    (col("range") ? 1 : 0) + (col("tags") ? 1 : 0) + (col("osmId") ? 1 : 0) + (col("latlon") ? 1 : 0) +
     (col("gps") ? 1 : 0) + (col("mythic") ? 1 : 0) + (col("ascents") ? 1 : 0) + 1;
 
   return (
@@ -634,6 +642,7 @@ function EditRow({
             </div>
           </td>
         )}
+        {col("osmId") && <td>{inp("osmId")}</td>}
         {col("latlon") && (
           <td style={{ textAlign: "center" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -699,7 +708,7 @@ function WikiRow({ peakId, isLast, visibleCols }: { peakId: string; isLast: bool
   const [error, setError] = useState<string | null>(null);
 
   const colSpan = 1 + (visibleCols.altitude ? 1 : 0) + (visibleCols.country ? 1 : 0) + (visibleCols.comarca ? 1 : 0) +
-    (visibleCols.range ? 1 : 0) + (visibleCols.tags ? 1 : 0) + (visibleCols.latlon ? 1 : 0) +
+    (visibleCols.range ? 1 : 0) + (visibleCols.tags ? 1 : 0) + (visibleCols.osmId ? 1 : 0) + (visibleCols.latlon ? 1 : 0) +
     (visibleCols.gps ? 1 : 0) + (visibleCols.mythic ? 1 : 0) + (visibleCols.ascents ? 1 : 0) + 1;
 
   useEffect(() => {
