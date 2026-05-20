@@ -238,16 +238,20 @@ export default async function PeakPage({
                 <span style={{ color: "#F5A623" }}>{peak.peakName}</span>
               </h1>
 
-              {/* Altitude */}
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "#2F7A5F" }}>Altitud</span>
-                <span style={{ fontSize: 20, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.02em" }}>{peak.altLabel}</span>
-              </div>
-
-              {/* Rarity + EP */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: rarity.color }}>✿ {rarity.name}</span>
-                <span style={{ fontSize: 13, color: "#F97316", fontWeight: 600 }}>+{rarity.ep}</span>
+              {/* Stat band */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 24, maxWidth: 360 }}>
+                <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Rareza</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: rarity.color, display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>✿ {rarity.name}</div>
+                </div>
+                <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Altitud</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{peak.altLabel}</div>
+                </div>
+                <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Recompensa</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{rarity.ep}</div>
+                </div>
               </div>
 
               {/* Stats row */}
