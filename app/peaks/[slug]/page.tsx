@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { LANDING_PEAKS, rarityForAlt, slugifyPeak, getPeakBySlug, type PeakCardData } from "@/lib/data/landing-peaks";
+import { LANDING_PEAKS, rarityForAlt, slugifyPeak, getPeakBySlug } from "@/lib/data/landing-peaks";
 import { PeakadexLogo } from "@/components/brand/Logo";
 import { PeakCard } from "./PeakCard";
+import { PeakCarousel } from "./PeakCarousel";
 
 const BASE = "https://www.peakadex.com";
 
@@ -39,109 +40,6 @@ export async function generateMetadata({
   };
 }
 
-// ─── Mountain scene SVG for related peak cards ────────────────────────────────
-function MountainScene({ color, altM, uid }: { color: string; altM: number; uid: string }) {
-  let skyTop: string, skyBot: string, terrainFar: string, terrainNear: string;
-  if (altM >= 5000) {
-    skyTop = "#04040F"; skyBot = "#141430"; terrainFar = color + "25"; terrainNear = color + "45";
-  } else if (altM >= 3000) {
-    skyTop = "#0D2248"; skyBot = "#2A5080"; terrainFar = color + "30"; terrainNear = color + "55";
-  } else if (altM >= 1000) {
-    skyTop = "#1A4B8F"; skyBot = "#5A8FBF"; terrainFar = color + "35"; terrainNear = color + "60";
-  } else {
-    skyTop = "#3A76BF"; skyBot = "#8AB8D8"; terrainFar = color + "40"; terrainNear = color + "65";
-  }
-  return (
-    <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 240 200" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={skyTop} /><stop offset="100%" stopColor={skyBot} />
-        </linearGradient>
-        <linearGradient id={`ov-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(0,0,0,0)" /><stop offset="50%" stopColor="rgba(0,0,0,0)" /><stop offset="100%" stopColor="rgba(0,0,0,0.72)" />
-        </linearGradient>
-      </defs>
-      <rect width="240" height="200" fill={`url(#sky-${uid})`} />
-      <path d="M0 155 L40 110 L80 130 L130 90 L175 115 L210 85 L240 105 L240 200 L0 200Z" fill={terrainFar} />
-      <path d="M30 200 L120 55 L210 200Z" fill={terrainNear} />
-      <path d="M120 55 L104 92 L120 84 L136 92Z" fill="rgba(255,255,255,0.88)" />
-      <path d="M120 55 L104 92 L120 84Z" fill="rgba(255,255,255,0.25)" />
-      <rect width="240" height="200" fill={`url(#ov-${uid})`} />
-    </svg>
-  );
-}
-
-// ─── Mini card — exactly half the main card (120×205px) ───────────────────────
-function RelatedPeakCard({ peak, slug }: { peak: PeakCardData; slug: string }) {
-  const rarity = rarityForAlt(peak.altitudeM);
-  const uid = `rel-${slug}`;
-  const initials = peak.user.split(" ").map((w: string) => w[0]).join("");
-  const latStr = `${Math.abs(peak.lat).toFixed(2)}°${peak.lat >= 0 ? "N" : "S"}`;
-  const lngStr = `${Math.abs(peak.lng).toFixed(2)}°${peak.lng >= 0 ? "E" : "W"}`;
-
-  return (
-    <a
-      href={`/peaks/${slug}`}
-      style={{
-        display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit",
-        width: 120, height: 205, flexShrink: 0,
-        borderRadius: 9, overflow: "hidden", background: "#FFFFFF",
-        border: "1px solid rgba(13,37,56,0.09)", boxShadow: "0 4px 16px rgba(13,37,56,0.12)",
-      }}
-    >
-      {/* User header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 6px" }}>
-        <div style={{
-          width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
-          background: peak.userColor,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 6, fontWeight: 700, color: "#fff",
-        }}>
-          {initials}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 7, fontWeight: 700, color: "#0D2538", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{peak.user}</div>
-          <div style={{ fontSize: 6, color: "#6B7280" }}>{peak.date}</div>
-        </div>
-      </div>
-
-      {/* Photo area */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "0 5px", borderRadius: 7 }}>
-        {peak.photo
-          // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={peak.photo} alt={peak.peakName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          : <MountainScene color={rarity.color} altM={peak.altitudeM} uid={uid} />
-        }
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 50%, transparent 100%)" }} />
-        <div style={{ position: "absolute", bottom: 6, left: 7, right: 7 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2, textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>
-            {peak.peakName}
-          </div>
-          <div style={{ fontSize: 6, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>
-            📍 {latStr} · {lngStr}
-          </div>
-        </div>
-      </div>
-
-      {/* Stat band */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 3, padding: "5px" }}>
-        <div style={{ background: "#F8FAFC", borderRadius: 6, padding: "4px 2px", textAlign: "center" }}>
-          <div style={{ fontSize: 5, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>RAREZA</div>
-          <div style={{ fontSize: 6, fontWeight: 700, color: rarity.color }}>✿ {rarity.name}</div>
-        </div>
-        <div style={{ background: "#F8FAFC", borderRadius: 6, padding: "4px 2px", textAlign: "center" }}>
-          <div style={{ fontSize: 5, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>ALT</div>
-          <div style={{ fontSize: 6, fontWeight: 800, color: "#0D2538" }}>{peak.altLabel}</div>
-        </div>
-        <div style={{ background: "#F8FAFC", borderRadius: 6, padding: "4px 2px", textAlign: "center" }}>
-          <div style={{ fontSize: 5, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>EP</div>
-          <div style={{ fontSize: 6, fontWeight: 700, color: "#F97316" }}>+{rarity.ep}</div>
-        </div>
-      </div>
-    </a>
-  );
-}
-
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default async function PeakPage({
   params,
@@ -155,18 +53,8 @@ export default async function PeakPage({
   const rarity = rarityForAlt(peak.altitudeM);
   const uid = slug;
 
-  // Related peaks: same mountain range (excluding self), up to 3
-  const related = LANDING_PEAKS.filter(
-    (p) => p.mountainRange === peak.mountainRange && p.peakName !== peak.peakName
-  ).slice(0, 3);
-  const relatedFinal = related.length >= 3
-    ? related
-    : [
-        ...related,
-        ...LANDING_PEAKS.filter(
-          (p) => p.country === peak.country && p.peakName !== peak.peakName && !related.includes(p)
-        ),
-      ].slice(0, 3);
+  // All other peaks for the carousel
+  const otherPeaks = LANDING_PEAKS.filter((p) => p.peakName !== peak.peakName);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -361,23 +249,13 @@ export default async function PeakPage({
           </p>
         </section>
 
-        {/* ── Related peaks ── */}
-        {relatedFinal.length > 0 && (
-          <section style={{ padding: "48px 24px 64px", maxWidth: 860, margin: "0 auto" }}>
-            <h2 style={{ margin: "0 0 24px", fontSize: 20, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.01em" }}>
-              Más cimas en {peak.mountainRange}
-            </h2>
-            <div className="pk-related-grid">
-              {relatedFinal.map((p) => (
-                <RelatedPeakCard
-                  key={p.peakName}
-                  peak={p}
-                  slug={slugifyPeak(p.peakName)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+        {/* ── Other peaks carousel ── */}
+        <section style={{ padding: "48px 0 64px", background: "#F4F7FA" }}>
+          <h2 style={{ margin: "0 0 32px", fontSize: 20, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.01em", textAlign: "center" }}>
+            Otras cimas
+          </h2>
+          <PeakCarousel peaks={otherPeaks} />
+        </section>
 
         {/* ── Footer ── */}
         <footer style={{
