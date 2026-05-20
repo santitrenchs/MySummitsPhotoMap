@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 const BASE = "https://www.peakadex.com";
 
 const LANG_ALTERNATES = {
+  "x-default": `${BASE}/en`,
   es: BASE,
   en: `${BASE}/en`,
   ca: `${BASE}/ca`,
