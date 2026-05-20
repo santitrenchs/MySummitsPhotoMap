@@ -238,16 +238,15 @@ export default async function PeakPage({
                 <span style={{ color: "#F5A623" }}>{peak.peakName}</span>
               </h1>
 
-              {/* Altitude badge */}
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(13,37,56,0.08)", color: "#0D2538", borderRadius: 99, padding: "6px 16px", fontSize: 15, fontWeight: 700, marginBottom: 16 }}>
-                ⛰️ {peak.altLabel}
+              {/* Altitude */}
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "#2F7A5F" }}>Altitud</span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.02em" }}>{peak.altLabel}</span>
               </div>
 
               {/* Rarity + EP */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: rarity.color, flexShrink: 0 }} />
                 <span style={{ fontSize: 14, fontWeight: 600, color: rarity.color }}>✿ {rarity.name}</span>
-                <span style={{ fontSize: 13, color: "#9CA3AF" }}>·</span>
                 <span style={{ fontSize: 13, color: "#F97316", fontWeight: 600 }}>+{rarity.ep}</span>
               </div>
 
@@ -280,10 +279,15 @@ export default async function PeakPage({
                 </footer>
               </blockquote>
 
-              {/* Route chip */}
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#FFFFFF", border: "1px solid rgba(13,37,56,0.1)", borderRadius: 99, padding: "6px 14px", fontSize: 13, color: "#374151", fontWeight: 500 }}>
-                🗺️ {peak.route}
-              </div>
+              {/* CTA */}
+              <a href="/register" style={{
+                display: "inline-block",
+                background: "#2F7A5F", color: "#FFFFFF",
+                fontSize: 15, fontWeight: 700, padding: "12px 28px",
+                borderRadius: 99, textDecoration: "none", letterSpacing: "-0.01em",
+              }}>
+                Captura {peak.peakName}
+              </a>
             </div>
 
           </div>
