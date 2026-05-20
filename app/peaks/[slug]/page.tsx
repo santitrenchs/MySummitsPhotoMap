@@ -187,22 +187,28 @@ export default async function PeakPage({
 
         {/* ── Nav strip ── */}
         <header style={{
-          height: 52, background: "#FFFFFF",
-          borderBottom: "1px solid rgba(13,37,56,0.08)",
+          height: 60, background: "#FFFFFF",
+          borderBottom: "1px solid rgba(13,37,56,0.07)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 24px", position: "sticky", top: 0, zIndex: 10,
+          padding: "0 32px", position: "sticky", top: 0, zIndex: 10,
         }}>
           <a href="/" style={{ textDecoration: "none" }}>
             <PeakadexLogo height={32} />
           </a>
-          <a href="/register" style={{
-            background: "#2F7A5F", color: "#FFFFFF",
-            fontSize: 13, fontWeight: 700, padding: "7px 16px",
-            borderRadius: 99, textDecoration: "none",
-            letterSpacing: "-0.01em",
-          }}>
-            Registrarse gratis →
-          </a>
+          <nav style={{ display: "flex", gap: 32, alignItems: "center" }}>
+            <a href="/#rarities" style={{ fontSize: 14, fontWeight: 500, color: "#6B7280", textDecoration: "none" }}>Rarezas</a>
+            <a href="/#cards" style={{ fontSize: 14, fontWeight: 500, color: "#6B7280", textDecoration: "none" }}>Cartas</a>
+          </nav>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <a href="/login" style={{ fontSize: 14, fontWeight: 500, color: "#0D2538", textDecoration: "none" }}>Iniciar sesión</a>
+            <a href="/register" style={{
+              background: "#2F7A5F", color: "#FFFFFF",
+              fontSize: 13, fontWeight: 700, padding: "8px 20px",
+              borderRadius: 99, textDecoration: "none", letterSpacing: "-0.01em",
+            }}>
+              Registrarse
+            </a>
+          </div>
         </header>
 
         {/* ── Hero ── */}
@@ -213,17 +219,22 @@ export default async function PeakPage({
             <div className="pk-card-wrap">
               <div>
                 <PeakCard peak={peak} uid={uid} />
-                <p style={{ textAlign: "center", fontSize: 11, color: "rgba(13,37,56,0.3)", marginTop: 10 }}>
-                  Toca la carta para girarla
+                <p style={{ textAlign: "center", fontSize: 12, color: "rgba(13,37,56,0.35)", marginTop: 10, letterSpacing: "0.01em" }}>
+                  Toca para ver el reverso
                 </p>
               </div>
             </div>
 
             {/* Right: info */}
             <div>
+              {/* Label */}
+              <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "#2F7A5F" }}>
+                Collectible Summit Cards
+              </p>
               {/* H1 */}
-              <h1 style={{ margin: "0 0 16px", fontSize: 32, fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#0D2538" }}>
-                Ascensión al {peak.peakName}
+              <h1 style={{ margin: "0 0 16px", fontSize: 36, fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#0D2538" }}>
+                Ascensión al{" "}
+                <span style={{ color: "#F5A623" }}>{peak.peakName}</span>
               </h1>
 
               {/* Altitude badge */}
@@ -278,24 +289,25 @@ export default async function PeakPage({
         </section>
 
         {/* ── CTA section ── */}
-        <section style={{ background: "#0D2538", padding: "64px 24px", textAlign: "center" }}>
-          <h2 style={{ margin: "0 0 12px", fontSize: 28, fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-            ¿Has subido el {peak.peakName}?
+        <section style={{ background: "#FFFFFF", borderTop: "1px solid rgba(13,37,56,0.07)", borderBottom: "1px solid rgba(13,37,56,0.07)", padding: "64px 24px", textAlign: "center" }}>
+          <p style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "#2F7A5F" }}>
+            Collectible Summit Cards
+          </p>
+          <h2 style={{ margin: "0 0 12px", fontSize: 28, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+            ¿Has subido el <span style={{ color: "#F5A623" }}>{peak.peakName}</span>?
           </h2>
-          <p style={{ margin: "0 0 32px", fontSize: 16, color: "rgba(255,255,255,0.65)", maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
+          <p style={{ margin: "0 0 32px", fontSize: 16, color: "#6B7280", maxWidth: 440, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>
             Regístralo en Peakadex y consigue tu carta {rarity.name}
           </p>
           <a href="/register" style={{
             display: "inline-block",
-            background: "#FFFFFF", color: "#0D2538",
-            fontSize: 16, fontWeight: 800, padding: "14px 32px",
-            borderRadius: 99, textDecoration: "none",
-            letterSpacing: "-0.01em",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+            background: "#2F7A5F", color: "#FFFFFF",
+            fontSize: 15, fontWeight: 700, padding: "14px 32px",
+            borderRadius: 99, textDecoration: "none", letterSpacing: "-0.01em",
           }}>
-            Registrar mi ascensión →
+            Empieza tu colección
           </a>
-          <p style={{ marginTop: 14, fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+          <p style={{ marginTop: 12, fontSize: 12, color: "#9CA3AF" }}>
             Gratis · Sin tarjeta de crédito · En 1 minuto
           </p>
         </section>
