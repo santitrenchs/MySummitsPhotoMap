@@ -1,9 +1,84 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { LANDING_PEAKS, rarityForAlt, slugifyPeak, getPeakBySlug } from "@/lib/data/landing-peaks";
+import { LANDING_PEAKS, rarityForAlt, slugifyPeak, getPeakBySlug, type PeakCardData } from "@/lib/data/landing-peaks";
 import { PeakadexLogo } from "@/components/brand/Logo";
 import { PeakCard } from "./PeakCard";
-import { PeakCarousel } from "./PeakCarousel";
+
+// Pick 4 deterministically so each peak page always shows the same related peaks
+function pickFour(slug: string, peaks: PeakCardData[]): PeakCardData[] {
+  let h = 0;
+  for (const c of slug) h = (Math.imul(31, h) + c.charCodeAt(0)) | 0;
+  h = Math.abs(h);
+  const arr = [...peaks];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = h % (i + 1);
+    h = Math.abs((Math.imul(31, h) + 17) | 0);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, 4);
+}
+
+const MINI_W = 120;
+const MINI_H = 205;
+
+function MiniPeakCard({ peak }: { peak: PeakCardData }) {
+  const rarity = rarityForAlt(peak.altitudeM);
+  const slug = slugifyPeak(peak.peakName);
+  const initials = peak.user.split(" ").map((w) => w[0]).join("");
+  return (
+    <a href={`/peaks/${slug}`} style={{
+      display: "flex", flexDirection: "column",
+      width: MINI_W, height: MINI_H, textDecoration: "none", flexShrink: 0,
+      borderRadius: 9, overflow: "hidden", background: "#FFFFFF",
+      border: "1px solid rgba(13,37,56,0.09)", boxShadow: "0 4px 16px rgba(13,37,56,0.12)",
+    }}>
+      {/* User header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 6px" }}>
+        <div style={{
+          width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
+          background: peak.userColor,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 5.5, fontWeight: 700, color: "#fff",
+        }}>{initials}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 6.5, fontWeight: 700, color: "#0D2538", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{peak.user}</div>
+          <div style={{ fontSize: 5.5, color: "#6B7280" }}>{peak.date}</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 1.5, opacity: 0.3 }}>
+          {[0,1,2].map(d => <div key={d} style={{ width: 1.5, height: 1.5, borderRadius: "50%", background: "#0D2538" }} />)}
+        </div>
+      </div>
+      {/* Photo */}
+      <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "0 5px", borderRadius: 7 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {peak.photo
+          ? <img src={peak.photo} alt={peak.peakName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          : <div style={{ width: "100%", height: "100%", background: `linear-gradient(to bottom, ${rarity.color}44, ${rarity.color}88)` }} />
+        }
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 50%, transparent 100%)" }} />
+        <div style={{ position: "absolute", bottom: 6, left: 7, right: 7 }}>
+          <div style={{ fontSize: 8.5, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2, marginBottom: 1.5, textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>{peak.peakName}</div>
+          <div style={{ fontSize: 5.5, color: "rgba(255,255,255,0.7)" }}>📍 {Math.abs(peak.lat).toFixed(2)}°{peak.lat >= 0 ? "N" : "S"}</div>
+        </div>
+      </div>
+      {/* Stat band */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 3, padding: "5px" }}>
+        <div style={{ background: "#F8FAFC", borderRadius: 6, padding: "4px 2px", textAlign: "center" }}>
+          <div style={{ fontSize: 4, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>RAREZA</div>
+          <div style={{ fontSize: 5, fontWeight: 700, color: rarity.color }}>✿ {rarity.name}</div>
+        </div>
+        <div style={{ background: "#F8FAFC", borderRadius: 6, padding: "4px 2px", textAlign: "center" }}>
+          <div style={{ fontSize: 4, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>ALTITUD</div>
+          <div style={{ fontSize: 5, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{peak.altLabel}</div>
+        </div>
+        <div style={{ background: "#F8FAFC", borderRadius: 6, padding: "4px 2px", textAlign: "center" }}>
+          <div style={{ fontSize: 4, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>EP</div>
+          <div style={{ fontSize: 5, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{rarity.ep}</div>
+        </div>
+      </div>
+    </a>
+  );
+}
 
 const BASE = "https://www.peakadex.com";
 
@@ -53,8 +128,7 @@ export default async function PeakPage({
   const rarity = rarityForAlt(peak.altitudeM);
   const uid = slug;
 
-  // All other peaks for the carousel
-  const otherPeaks = LANDING_PEAKS.filter((p) => p.peakName !== peak.peakName);
+  const relatedPeaks = pickFour(slug, LANDING_PEAKS.filter((p) => p.peakName !== peak.peakName));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -97,10 +171,12 @@ export default async function PeakPage({
           margin: 0 auto;
           padding: 48px 24px 64px;
         }
-        .pk-related-grid {
+        .pk-mini-grid {
           display: flex;
           gap: 16px;
-          flex-wrap: nowrap;
+          justify-content: center;
+          flex-wrap: wrap;
+          padding: 0 24px;
         }
         @media (max-width: 640px) {
           .pk-hero-grid {
@@ -111,12 +187,6 @@ export default async function PeakPage({
           .pk-card-wrap {
             display: flex;
             justify-content: center;
-          }
-          .pk-related-grid {
-            flex-wrap: wrap;
-          }
-          .pk-related-grid > * {
-            flex: 1 1 140px !important;
           }
         }
       `}</style>
@@ -238,12 +308,14 @@ export default async function PeakPage({
           </p>
         </section>
 
-        {/* ── Other peaks carousel ── */}
+        {/* ── Other peaks ── */}
         <section style={{ padding: "48px 0 64px", background: "#F4F7FA" }}>
-          <h2 style={{ margin: "0 0 32px", fontSize: 20, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.01em", textAlign: "center" }}>
+          <h2 style={{ margin: "0 0 24px", fontSize: 20, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.01em", textAlign: "center" }}>
             Otras cimas
           </h2>
-          <PeakCarousel peaks={otherPeaks} />
+          <div className="pk-mini-grid">
+            {relatedPeaks.map((p) => <MiniPeakCard key={p.peakName} peak={p} />)}
+          </div>
         </section>
 
         {/* ── Footer ── */}
