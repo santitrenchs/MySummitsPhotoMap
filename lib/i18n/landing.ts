@@ -145,8 +145,8 @@ const es: LandingT = {
   locale: "es",
   numberLocale: "es-ES",
 
-  meta_title: "Peakadex — Captura cimas. Colecciona rarezas. Conviértete en Legendario.",
-  meta_desc: "La app de montaña que convierte cada ascensión en una carta coleccionable. Registra tus cimas, desbloquea rarezas según la altitud y compite con tu cordada. Gratis.",
+  meta_title: "App para registrar cimas de montaña | Peakadex — Gratis",
+  meta_desc: "Registra cada cima que subes, consigue cartas coleccionables según la altitud y compite con tu cordada. App de montañismo gratuita para senderistas y alpinistas.",
 
   nav_rarities: "Rarezas",
   nav_cards: "Cartas",
@@ -300,8 +300,8 @@ const en: LandingT = {
   locale: "en",
   numberLocale: "en-US",
 
-  meta_title: "Peakadex — Capture summits. Collect rarities. Become Legendary.",
-  meta_desc: "The mountain app that turns every ascent into a collectible card. Log your summits, unlock rarities by altitude and compete with your crew. Free.",
+  meta_title: "Mountain Summit Tracker & Logbook App | Peakadex — Free",
+  meta_desc: "Log every summit you climb, collect cards by altitude and compete with your crew. Free mountain app for hikers and mountaineers.",
 
   nav_rarities: "Rarities",
   nav_cards: "Cards",
@@ -455,8 +455,8 @@ const fr: LandingT = {
   locale: "fr",
   numberLocale: "fr-FR",
 
-  meta_title: "Peakadex — Capture des sommets. Collectionne des raretés. Deviens Légendaire.",
-  meta_desc: "L'app montagne qui transforme chaque ascension en carte à collectionner. Enregistre tes sommets, débloque des raretés selon l'altitude et rivalise avec ta cordée. Gratuit.",
+  meta_title: "App pour enregistrer vos sommets de montagne | Peakadex — Gratuit",
+  meta_desc: "Enregistre chaque sommet que tu gravis, collectionne des cartes selon l'altitude et rivalise avec ta cordée. Application montagne gratuite pour randonneurs et alpinistes.",
 
   nav_rarities: "Raretés",
   nav_cards: "Cartes",
@@ -610,8 +610,8 @@ const de: LandingT = {
   locale: "de",
   numberLocale: "de-DE",
 
-  meta_title: "Peakadex — Gipfel erobern. Raritäten sammeln. Zur Legende werden.",
-  meta_desc: "Die Berg-App, die jede Besteigung in eine Sammelkarte verwandelt. Logge deine Gipfel, schalte Raritäten nach Höhe frei und tritt gegen deine Seilschaft an. Kostenlos.",
+  meta_title: "App zum Erfassen von Berggipfeln & Gipfeltagebuch | Peakadex — Kostenlos",
+  meta_desc: "Erfasse jeden Gipfel, den du besteigst, sammle Karten nach Höhe und tritt gegen deine Seilschaft an. Kostenlose Berg-App für Wanderer und Bergsteiger.",
 
   nav_rarities: "Raritäten",
   nav_cards: "Karten",
@@ -765,8 +765,8 @@ const ca: LandingT = {
   locale: "ca",
   numberLocale: "ca-ES",
 
-  meta_title: "Peakadex — Captura cims. Col·lecciona rarezas. Converteix-te en Llegendari.",
-  meta_desc: "L'app de muntanya que converteix cada ascensió en una carta col·leccionable. Registra els teus cims, desbloqueja rarezas segons l'altitud i competeix amb la teva cordada. Gratis.",
+  meta_title: "App per registrar cims de muntanya | Peakadex — Gratis",
+  meta_desc: "Registra cada cim que puges, aconsegueix cartes col·leccionables per altitud i competeix amb la teva cordada. App de muntanyisme gratuïta per a senderistes i alpinistes.",
 
   nav_rarities: "Rarezas",
   nav_cards: "Cartes",
