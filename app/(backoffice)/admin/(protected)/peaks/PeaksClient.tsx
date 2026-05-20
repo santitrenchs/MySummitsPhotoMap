@@ -56,6 +56,9 @@ export function PeaksClient() {
   const [q, setQ] = useState("");
   const [inputQ, setInputQ] = useState("");
   const [osmIdFilter, setOsmIdFilter] = useState<"all" | "with" | "without">("all");
+  const [mythicFilter, setMythicFilter] = useState<"all" | "yes" | "no">("all");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [inputCountry, setInputCountry] = useState("");
   const [ascentsFilter, setAscentsFilter] = useState<"all" | "with" | "without">("all");
   const [sort, setSort] = useState<"pending" | "name" | "altitude" | "ascents_desc" | "ascents_asc">("pending");
   const [loading, setLoading] = useState(false);
@@ -82,6 +85,8 @@ export function PeaksClient() {
     query: string,
     pg: number,
     osmId: "all" | "with" | "without",
+    mythic: "all" | "yes" | "no",
+    country: string,
     ascents: "all" | "with" | "without",
     sortBy: "pending" | "name" | "altitude" | "ascents_desc" | "ascents_asc"
   ) => {
@@ -89,6 +94,8 @@ export function PeaksClient() {
     try {
       const params = new URLSearchParams({ q: query, page: String(pg), limit: String(LIMIT) });
       if (osmId !== "all") params.set("osmId", osmId);
+      if (mythic !== "all") params.set("mythic", mythic);
+      if (country) params.set("country", country);
       if (ascents !== "all") params.set("ascents", ascents);
       params.set("sort", sortBy);
       const res = await fetch(`/api/admin/peaks?${params}`);
@@ -101,8 +108,8 @@ export function PeaksClient() {
   }, []);
 
   useEffect(() => {
-    fetchPeaks(q, page, osmIdFilter, ascentsFilter, sort);
-  }, [q, page, osmIdFilter, ascentsFilter, sort, fetchPeaks]);
+    fetchPeaks(q, page, osmIdFilter, mythicFilter, countryFilter, ascentsFilter, sort);
+  }, [q, page, osmIdFilter, mythicFilter, countryFilter, ascentsFilter, sort, fetchPeaks]);
 
   // Close col selector on outside click
   useEffect(() => {
@@ -128,9 +135,22 @@ export function PeaksClient() {
     setInputQ("");
     setQ("");
     setOsmIdFilter("all");
+    setMythicFilter("all");
+    setInputCountry("");
+    setCountryFilter("");
     setAscentsFilter("all");
     setSort("pending");
     setPage(1);
+  }
+
+  const countryTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function handleCountryChange(val: string) {
+    setInputCountry(val);
+    if (countryTimeout.current) clearTimeout(countryTimeout.current);
+    countryTimeout.current = setTimeout(() => {
+      setCountryFilter(val.trim().toUpperCase());
+      setPage(1);
+    }, 350);
   }
 
   function startEdit(peak: Peak) {
@@ -293,6 +313,32 @@ export function PeaksClient() {
               >{label}</button>
             ))}
           </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+          <FilterLabel>Mythic</FilterLabel>
+          <div className="view-tabs">
+            {([["all", "Todas"], ["yes", "Mythic"], ["no", "No mythic"]] as const).map(([val, label]) => (
+              <button
+                key={val}
+                className={`view-tab${mythicFilter === val ? " active" : ""}`}
+                onClick={() => { setMythicFilter(val); setPage(1); }}
+              >{label}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+          <FilterLabel>País</FilterLabel>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="ES, FR, DE…"
+            value={inputCountry}
+            onChange={(e) => handleCountryChange(e.target.value)}
+            style={{ width: 100, textTransform: "uppercase" }}
+            maxLength={2}
+          />
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>

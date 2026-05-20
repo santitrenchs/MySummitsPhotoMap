@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
   const gpsVerified = searchParams.get("gpsVerified"); // "yes" | "no" | null
   const ascents = searchParams.get("ascents"); // "with" | "without" | null
   const osmId = searchParams.get("osmId"); // "with" | "without" | null
+  const mythic = searchParams.get("mythic"); // "yes" | "no" | null
+  const country = searchParams.get("country")?.trim().toUpperCase() || null; // 2-letter code
   const sort = searchParams.get("sort") ?? "pending";
 
   const where: Record<string, unknown> = {};
@@ -45,6 +47,9 @@ export async function GET(req: NextRequest) {
   if (ascents === "without") where.ascents = { none: {} };
   if (osmId === "with") where.osmId = { not: null };
   if (osmId === "without") where.osmId = null;
+  if (mythic === "yes") where.isMythic = true;
+  if (mythic === "no") where.isMythic = false;
+  if (country) where.country = country;
 
   const orderBy =
     sort === "name"
