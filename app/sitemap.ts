@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { LANDING_PEAKS, slugifyPeak } from "@/lib/data/landing-peaks";
 
 const BASE = "https://www.peakadex.com";
 
@@ -38,5 +39,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.3,
   }));
 
-  return [...landingPages, ...legalPages];
+  const peakPages: MetadataRoute.Sitemap = LANDING_PEAKS.map((peak) => ({
+    url: `${BASE}/peaks/${slugifyPeak(peak.peakName)}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  return [...landingPages, ...legalPages, ...peakPages];
 }
