@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { LANDING_PEAKS, rarityForAlt, slugifyPeak, getPeakBySlug } from "@/lib/data/landing-peaks";
+import { LANDING_PEAKS, rarityForAlt, slugifyPeak, getPeakBySlug, type PeakCardData } from "@/lib/data/landing-peaks";
 import { PeakadexLogo } from "@/components/brand/Logo";
 import { PeakCard } from "./PeakCard";
 
@@ -71,36 +71,74 @@ function MountainScene({ color, altM, uid }: { color: string; altM: number; uid:
   );
 }
 
-// ─── Small card for related peaks ─────────────────────────────────────────────
-function RelatedPeakCard({ peakName, altitudeM, altLabel, mountainRange, color, slug }: {
-  peakName: string; altitudeM: number; altLabel: string; mountainRange: string; color: string; slug: string;
-}) {
+// ─── Mini card for related peaks — same look as main card front, smaller ───────
+function RelatedPeakCard({ peak, slug }: { peak: PeakCardData; slug: string }) {
+  const rarity = rarityForAlt(peak.altitudeM);
   const uid = `rel-${slug}`;
+  const initials = peak.user.split(" ").map((w: string) => w[0]).join("");
+  const latStr = `${Math.abs(peak.lat).toFixed(3)}°${peak.lat >= 0 ? "N" : "S"}`;
+  const lngStr = `${Math.abs(peak.lng).toFixed(3)}°${peak.lng >= 0 ? "E" : "W"}`;
+
   return (
     <a
       href={`/peaks/${slug}`}
       style={{
         display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit",
         borderRadius: 14, overflow: "hidden", background: "#FFFFFF",
-        border: "1px solid rgba(13,37,56,0.09)", boxShadow: "0 2px 12px rgba(13,37,56,0.08)",
+        border: "1px solid rgba(13,37,56,0.09)", boxShadow: "0 8px 24px rgba(13,37,56,0.12)",
         flex: "1 1 0", minWidth: 0,
       }}
     >
-      <div style={{ position: "relative", height: 120, overflow: "hidden" }}>
-        <MountainScene color={color} altM={altitudeM} uid={uid} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }} />
+      {/* User header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 9px" }}>
         <div style={{
-          position: "absolute", top: 8, right: 8,
-          background: color, color: "#fff",
-          fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 99,
-          letterSpacing: "0.04em",
+          width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+          background: peak.userColor,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 8, fontWeight: 700, color: "#fff",
         }}>
-          {rarityForAlt(altitudeM).name}
+          {initials}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#0D2538", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{peak.user}</div>
+          <div style={{ fontSize: 9, color: "#6B7280" }}>{peak.date}</div>
         </div>
       </div>
-      <div style={{ padding: "10px 12px 12px" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538", lineHeight: 1.2 }}>{peakName}</div>
-        <div style={{ fontSize: 11, color: "#6B7280", marginTop: 3 }}>{altLabel} · {mountainRange}</div>
+
+      {/* Photo area */}
+      <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "0 7px", borderRadius: 10, minHeight: 120 }}>
+        {peak.photo
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={peak.photo} alt={peak.peakName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          : <MountainScene color={rarity.color} altM={peak.altitudeM} uid={uid} />
+        }
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 50%, transparent 100%)" }} />
+        <div style={{ position: "absolute", bottom: 8, left: 10, right: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2, textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>
+            {peak.peakName}
+          </div>
+          <div style={{ fontSize: 8, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>
+            📍 {latStr} · {lngStr}
+          </div>
+        </div>
+      </div>
+
+      {/* Stat band */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, padding: "7px" }}>
+        <div style={{ background: "#F8FAFC", borderRadius: 8, padding: "5px 2px", textAlign: "center" }}>
+          <div style={{ fontSize: 6, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 3 }}>RAREZA</div>
+          <div style={{ fontSize: 8, fontWeight: 700, color: rarity.color, display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
+            ✿ <span>{rarity.name}</span>
+          </div>
+        </div>
+        <div style={{ background: "#F8FAFC", borderRadius: 8, padding: "5px 2px", textAlign: "center" }}>
+          <div style={{ fontSize: 6, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 3 }}>ALTITUD</div>
+          <div style={{ fontSize: 8, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{peak.altLabel}</div>
+        </div>
+        <div style={{ background: "#F8FAFC", borderRadius: 8, padding: "5px 2px", textAlign: "center" }}>
+          <div style={{ fontSize: 6, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 3 }}>EP</div>
+          <div style={{ fontSize: 8, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{rarity.ep}</div>
+        </div>
       </div>
     </a>
   );
@@ -335,11 +373,7 @@ export default async function PeakPage({
               {relatedFinal.map((p) => (
                 <RelatedPeakCard
                   key={p.peakName}
-                  peakName={p.peakName}
-                  altitudeM={p.altitudeM}
-                  altLabel={p.altLabel}
-                  mountainRange={p.mountainRange}
-                  color={rarityForAlt(p.altitudeM).color}
+                  peak={p}
                   slug={slugifyPeak(p.peakName)}
                 />
               ))}
