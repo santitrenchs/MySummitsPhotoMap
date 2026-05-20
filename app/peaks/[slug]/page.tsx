@@ -170,6 +170,8 @@ export default async function PeakPage({
         }
         .pk-mini-scroll::-webkit-scrollbar { display: none; }
         .pk-mini-scroll > a { scroll-snap-align: start; flex-shrink: 0; }
+        .pk-cta { transition: background 0.18s ease, transform 0.18s ease; }
+        .pk-cta:hover { background: #236047 !important; transform: translateY(-1px); }
         @media (max-width: 640px) {
           .pk-hero-grid {
             grid-template-columns: 1fr;
@@ -254,19 +256,6 @@ export default async function PeakPage({
                 </div>
               </div>
 
-              {/* Stats row */}
-              <div style={{ display: "flex", gap: 20, marginBottom: 24, flexWrap: "wrap" }}>
-                <div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{peak.ascents.toLocaleString("es")}</div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 3, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Ascensiones</div>
-                </div>
-                <div style={{ width: 1, background: "#E5E7EB" }} />
-                <div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{peak.climbers.toLocaleString("es")}</div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 3, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Alpinistas</div>
-                </div>
-              </div>
-
               {/* Quote */}
               <blockquote style={{
                 margin: "0 0 20px",
@@ -284,13 +273,13 @@ export default async function PeakPage({
               </blockquote>
 
               {/* CTA */}
-              <a href="/register" style={{
+              <a href="/register" className="pk-cta" style={{
                 display: "inline-block",
                 background: "#2F7A5F", color: "#FFFFFF",
                 fontSize: 15, fontWeight: 700, padding: "12px 28px",
                 borderRadius: 99, textDecoration: "none", letterSpacing: "-0.01em",
               }}>
-                Captura {peak.peakName}
+                Captura {peak.peakName} →
               </a>
             </div>
 
@@ -308,13 +297,13 @@ export default async function PeakPage({
           <p style={{ margin: "0 0 32px", fontSize: 16, color: "#6B7280", maxWidth: 440, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>
             Regístralo en Peakadex y consigue tu carta {rarity.name}
           </p>
-          <a href="/register" style={{
+          <a href="/register" className="pk-cta" style={{
             display: "inline-block",
             background: "#2F7A5F", color: "#FFFFFF",
             fontSize: 15, fontWeight: 700, padding: "14px 32px",
             borderRadius: 99, textDecoration: "none", letterSpacing: "-0.01em",
           }}>
-            Empieza tu colección
+            Empieza tu colección →
           </a>
           <p style={{ marginTop: 12, fontSize: 12, color: "#9CA3AF" }}>
             Gratis · Sin tarjeta de crédito · En 1 minuto
