@@ -150,6 +150,30 @@ export function PeakCard({ peak, uid }: { peak: PeakCardData; uid: string }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={peak.mapImg} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)" }} />
+            {/* Rarity flower marker — centered on the peak (map image is always centered on the peak) */}
+            <div style={{
+              position: "absolute",
+              top: "38%", left: "50%",
+              transform: "translate(-50%, -50%)",
+              pointerEvents: "none",
+              width: 80, height: 80,
+            }}>
+              <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" style={{ position: "absolute", inset: 0 }}>
+                <circle cx="40" cy="40" r="37" fill="none" stroke={rarity.color} strokeWidth="1" opacity="0.18" />
+                <circle cx="40" cy="40" r="30" fill="none" stroke={rarity.color} strokeWidth="1.1" opacity="0.3" />
+                <circle cx="40" cy="40" r="22" fill="none" stroke={rarity.color} strokeWidth="1.2" opacity="0.48" />
+                <circle cx="40" cy="40" r="14" fill="none" stroke={rarity.color} strokeWidth="1.4" opacity="0.65" />
+              </svg>
+              <div style={{
+                position: "absolute", inset: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 22, color: rarity.color,
+                filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))",
+                lineHeight: 1,
+              }}>
+                ✿
+              </div>
+            </div>
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 14px 12px" }}>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.55)", marginBottom: 5, display: "flex", alignItems: "center", gap: 3 }}>
                 <span style={{ color: "#ef4444", fontSize: 10 }}>📍</span>
