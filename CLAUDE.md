@@ -631,3 +631,42 @@ Keep these in mind but do not over-engineer for them in the MVP:
 - **Explore evolution**: Filter peaks by range, altitude, country; suggested peaks based on history
 - **Profile page**: Public-facing summary of a user's ascents and stats
 - **Per-tenant DBs**: `Tenant.dbUrl` is already wired; migration path exists when needed
+
+---
+
+## SEO
+
+### Infrastructure (done)
+- **Google Search Console**: verified as Domain property (`peakadex.com`) via TXT record in GoDaddy. Sitemap submitted: `https://www.peakadex.com/sitemap.xml`.
+- **GA4**: Measurement ID `G-X4DRCNLPJ0`, integrated in `app/layout.tsx` via `next/script strategy="afterInteractive"`.
+- **Sitemap**: `app/sitemap.ts` — 5 landing pages (es/en/ca/fr/de) + 3 legal pages. Includes `x-default` → `/en` and full hreflang alternates per entry.
+- **robots.ts**: allows landing + legal pages, disallows all authenticated app routes.
+- **hreflang**: set in both `app/sitemap.ts` and each locale's `page.tsx` (`alternates.languages`). `x-default` → `/en`.
+
+### Structured data (done)
+`LandingPage.tsx` injects a `<script type="application/ld+json">` with a `@graph` containing:
+- `Organization` — name, url, email, sameAs (currently empty — add social profiles when available)
+- `WebSite` — with `SearchAction` potentialAction
+- `SoftwareApplication` — free, SportsApplication category, per-locale URL and description
+- `FAQPage` — generated dynamically from `t.faq_items`, works across all 5 locales automatically → enables Google FAQ rich snippets in SERPs
+
+### Meta titles & descriptions (done — 2026-05-20)
+All 5 locales updated in `lib/i18n/landing.ts` and `app/layout.tsx` to keyword-rich titles:
+- **ES**: `App para registrar cimas de montaña | Peakadex — Gratis`
+- **EN**: `Mountain Summit Tracker & Logbook App | Peakadex — Free`
+- **FR**: `App pour enregistrer vos sommets de montagne | Peakadex — Gratuit`
+- **DE**: `App zum Erfassen von Berggipfeln & Gipfeltagebuch | Peakadex — Kostenlos`
+- **CA**: `App per registrar cims de muntanya | Peakadex — Gratis`
+
+### FAQ component gotcha
+`LandingFAQ.tsx` uses `useLandingT()` (React context hook) — it **must keep `"use client"`**. The accordion uses `<details>/<summary>` (no useState) so content is in the SSR HTML and Google indexes it. Removing `"use client"` breaks the context hook and causes a 500 on all landing pages.
+
+### Keywords sheet
+Google Sheet with all target keywords, volume estimates, competition and status:
+https://docs.google.com/spreadsheets/d/149JB1xq3wqxELqYj85SAhCCRshaISq2jWbQDhHeXa-w/edit
+Covers es / en / fr / de / ca. Status column: pendiente / optimizada / rankeando / descartada.
+
+### Next SEO priorities
+1. **Public peak pages** (`/peaks/[slug]`) — biggest SEO multiplier: thousands of indexable URLs with long-tail mountain keywords ("subir al Aneto", "ascensión Puigmal"). Each page: name, altitude, rarity, ascent count, photo, Schema.org `Mountain`, CTA to log ascent. Add all to sitemap.
+2. **sameAs in Organization schema** — add Instagram/X profiles when created
+3. **Content / blog** — articles like "Las 10 cimas más fáciles del Pirineo" to capture informational traffic
