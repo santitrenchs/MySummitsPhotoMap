@@ -145,12 +145,15 @@ export function PeakCarousel({ peaks }: { peaks: PeakCardData[] }) {
     if (dist > total / 2) dist -= total;
     if (dist < -total / 2) dist += total;
     const absDist = Math.abs(dist);
-    if (absDist > 2) return { display: "none" };
-    // On desktop use ~28% of viewport width per step so cards spread wider
-    const step = vw >= 640 ? Math.max(CARD_W * 0.6, vw * 0.22) : Math.min(CARD_W * 0.43, vw * 0.35);
-    const scale = absDist === 0 ? 1 : absDist === 1 ? 0.84 : 0.71;
-    const rotateY = dist === 0 ? 0 : dist > 0 ? Math.min(dist * 24, 55) : Math.max(dist * 24, -55);
-    const opacity = absDist === 0 ? 1 : absDist === 1 ? 0.72 : 0.38;
+    const maxVisible = vw >= 640 ? 4 : 2;
+    if (absDist > maxVisible) return { display: "none" };
+    // Desktop: tighter step so 4 side cards fit; mobile: narrower
+    const step = vw >= 640 ? vw * 0.14 : Math.min(CARD_W * 0.43, vw * 0.35);
+    const scaleMap = [1, 0.84, 0.71, 0.60, 0.50];
+    const opacityMap = [1, 0.72, 0.50, 0.30, 0.16];
+    const scale = scaleMap[absDist] ?? 0.50;
+    const rotateY = dist === 0 ? 0 : dist > 0 ? Math.min(dist * 20, 55) : Math.max(dist * 20, -55);
+    const opacity = opacityMap[absDist] ?? 0.16;
     return {
       position: "absolute", left: "50%", top: "50%",
       width: CARD_W, height: CARD_H,
