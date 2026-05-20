@@ -1,3 +1,5 @@
+"use client";
+
 import { useLandingT } from "./LandingLocaleContext";
 
 function FAQItem({ q, a }: { q: string; a: string }) {
