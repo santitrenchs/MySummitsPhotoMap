@@ -170,8 +170,8 @@ export default async function PeakPage({
         }
         .pk-mini-scroll::-webkit-scrollbar { display: none; }
         .pk-mini-scroll > a { scroll-snap-align: start; flex-shrink: 0; }
-        .pk-cta { transition: background 0.18s ease, transform 0.18s ease; }
-        .pk-cta:hover { background: #236047 !important; transform: translateY(-1px); }
+        .pk-cta { transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+        .pk-cta:hover { background: #2F7A5F !important; transform: translateY(-1px); box-shadow: 0 8px 40px rgba(220, 80, 60, 0.38); }
         @media (max-width: 640px) {
           .pk-hero-grid {
             grid-template-columns: 1fr;
@@ -303,7 +303,7 @@ export default async function PeakPage({
             fontSize: 15, fontWeight: 700, padding: "14px 32px",
             borderRadius: 99, textDecoration: "none", letterSpacing: "-0.01em",
           }}>
-            Empieza tu colección →
+            Empieza tu colección
           </a>
           <p style={{ marginTop: 12, fontSize: 12, color: "#9CA3AF" }}>
             Gratis · Sin tarjeta de crédito · En 1 minuto
