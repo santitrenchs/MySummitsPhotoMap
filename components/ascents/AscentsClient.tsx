@@ -247,6 +247,18 @@ export function AscentsClient({
       .finally(() => setIsFetchingMore(false));
   }, [hasMore, isFetchingMore, localAscents]);
 
+  // Auto-fetch more when client-side filters reduce the result set below the viewport-fill threshold.
+  // Without this, with restrictive filters (e.g. by person) the rendered list can stay so short that
+  // the user never scrolls — and Virtuoso's endReached fires once but never re-fires, leaving the
+  // user thinking there are no more items even though the server still has data.
+  const MIN_GROUPS_TO_FILL = 15;
+  useEffect(() => {
+    if (!hasMore || isFetchingMore) return;
+    if (groups.length < MIN_GROUPS_TO_FILL) {
+      loadMore();
+    }
+  }, [groups.length, hasMore, isFetchingMore, loadMore]);
+
   // Mark unseen friend ascents as seen after 1s in the rendered range
   const handleRangeChanged = useCallback(
     ({ startIndex, endIndex }: { startIndex: number; endIndex: number }) => {
