@@ -235,12 +235,27 @@ export function AscentsClient({
     };
   }, []);
 
-  // Load more from server when Virtuoso reaches the end
+  // Build URL params from current filter state. Sent to server on every fetch (initial + loadMore +
+  // filter-triggered refetch). Server applies these as WHERE clauses so pagination only returns
+  // items that match — no more endless auto-retry just to find one matching ascent.
+  const buildFilterParams = useCallback(() => {
+    const p = new URLSearchParams();
+    if (viewChip !== "friends") p.set("view", viewChip);
+    if (viewChip === "person" && selectedPersonId) p.set("personId", selectedPersonId);
+    if (peakFilter) p.set("peakId", peakFilter);
+    if (monthFilter) p.set("month", monthFilter);
+    if (rarity) p.set("rarity", rarity);
+    if (mythicFilter) p.set("mythic", "1");
+    if (timeRange !== "all") p.set("timeRange", timeRange);
+    return p;
+  }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange]);
+
+  // Load more from server when Virtuoso reaches the end — APPENDS to localAscents
   const loadMore = useCallback(() => {
     if (!hasMore || isFetchingMore) return;
     setIsFetchingMore(true);
     const oldIds = new Set(localAscents.map((a) => a.id));
-    const params = new URLSearchParams();
+    const params = buildFilterParams();
     if (beforeOwn) params.set("beforeOwn", beforeOwn);
     if (beforeFriends) params.set("beforeFriends", beforeFriends);
     fetch(`/api/ascents/feed?${params.toString()}`)
@@ -256,7 +271,29 @@ export function AscentsClient({
       })
       .catch(() => {})
       .finally(() => setIsFetchingMore(false));
-  }, [hasMore, isFetchingMore, localAscents, beforeOwn, beforeFriends]);
+  }, [hasMore, isFetchingMore, localAscents, beforeOwn, beforeFriends, buildFilterParams]);
+
+  // Refetch from scratch when a server-affecting filter changes — REPLACES localAscents
+  const isInitialFilterMount = useRef(true);
+  useEffect(() => {
+    if (isInitialFilterMount.current) {
+      isInitialFilterMount.current = false;
+      return;
+    }
+    const params = buildFilterParams();
+    setIsFetchingMore(true);
+    fetch(`/api/ascents/feed?${params.toString()}`)
+      .then((r) => r.json())
+      .then((data: { ascents: AscentData[]; hasMore: boolean; nextBeforeOwn: string | null; nextBeforeFriends: string | null }) => {
+        setLocalAscents(data.ascents);
+        setHasMore(data.hasMore);
+        setBeforeOwn(data.nextBeforeOwn);
+        setBeforeFriends(data.nextBeforeFriends);
+      })
+      .catch(() => {})
+      .finally(() => setIsFetchingMore(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange]);
 
   // Auto-fetch more when client-side filters reduce the result set below the viewport-fill threshold.
   // Without this, with restrictive filters (e.g. by person) the rendered list can stay so short that
