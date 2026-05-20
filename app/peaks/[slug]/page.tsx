@@ -187,27 +187,31 @@ export default async function PeakPage({
 
         {/* ── Nav strip ── */}
         <header style={{
-          height: 60, background: "#FFFFFF",
+          background: "#FFFFFF",
           borderBottom: "1px solid rgba(13,37,56,0.07)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 32px", position: "sticky", top: 0, zIndex: 10,
+          position: "sticky", top: 0, zIndex: 10,
         }}>
-          <a href="/" style={{ textDecoration: "none" }}>
-            <PeakadexLogo height={32} />
-          </a>
-          <nav style={{ display: "flex", gap: 32, alignItems: "center" }}>
-            <a href="/#rarities" style={{ fontSize: 14, fontWeight: 500, color: "#6B7280", textDecoration: "none" }}>Rarezas</a>
-            <a href="/#cards" style={{ fontSize: 14, fontWeight: 500, color: "#6B7280", textDecoration: "none" }}>Cartas</a>
-          </nav>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <a href="/login" style={{ fontSize: 14, fontWeight: 500, color: "#0D2538", textDecoration: "none" }}>Iniciar sesión</a>
-            <a href="/register" style={{
-              background: "#2F7A5F", color: "#FFFFFF",
-              fontSize: 13, fontWeight: 700, padding: "8px 20px",
-              borderRadius: 99, textDecoration: "none", letterSpacing: "-0.01em",
-            }}>
-              Registrarse
+          <div style={{
+            maxWidth: 1200, margin: "0 auto", padding: "0 32px",
+            height: 60, display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <a href="/" style={{ textDecoration: "none" }}>
+              <PeakadexLogo height={32} />
             </a>
+            <nav style={{ display: "flex", gap: 32, alignItems: "center" }}>
+              <a href="/#rarities" style={{ fontSize: 14, fontWeight: 500, color: "#6B7280", textDecoration: "none" }}>Rarezas</a>
+              <a href="/#cards" style={{ fontSize: 14, fontWeight: 500, color: "#6B7280", textDecoration: "none" }}>Cartas</a>
+            </nav>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <a href="/login" style={{ fontSize: 14, fontWeight: 500, color: "#0D2538", textDecoration: "none" }}>Iniciar sesión</a>
+              <a href="/register" style={{
+                background: "#2F7A5F", color: "#FFFFFF",
+                fontSize: 13, fontWeight: 700, padding: "8px 20px",
+                borderRadius: 99, textDecoration: "none", letterSpacing: "-0.01em",
+              }}>
+                Registrarse
+              </a>
+            </div>
           </div>
         </header>
 
