@@ -66,7 +66,7 @@ export default auth((req) => {
     return withPathname(pathname);
   }
   // Public ascent share pages — accessible without auth
-  const isPublicAscentPage = pathname.startsWith("/ascent/") || pathname.startsWith("/peaks/");
+  const isPublicAscentPage = pathname.startsWith("/ascent/");
 
   const isAuthApi = pathname.startsWith("/api/auth");
   const isPublicApi =
