@@ -373,3 +373,43 @@ title:    fontSize 15 · fontWeight 600 · color #374151
 subtitle: fontSize 13 · color #9ca3af
 container: textAlign center · padding 80px 0
 ```
+
+---
+
+## Back-to-top — two complementary patterns
+
+Long feeds (Bitácora and any future scrollable list) provide two ways to return to top.
+
+### 1. Tap active tab → scroll to top (iOS-native convention)
+
+Tapping the bottom nav tab that is **already active** scrolls the page to top instead of re-navigating. Lives in `NavBar.tsx` `handleTabClick`:
+
+```ts
+function handleTabClick(href: string) {
+  if (pathname === href) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  setPendingPath(href);
+}
+```
+
+This matches what iPhone users instinctively try. Works on all tabs (Mi Progreso, Atlas, Bitácora, Social).
+
+### 2. Floating Action Button (FAB)
+
+Reusable component: `components/ui/ScrollToTopButton.tsx`. Drop it inline anywhere a long scroll exists. Currently mounted in `AscentsClient`.
+
+```
+size:        44 × 44 px circle
+background:  rgba(13, 37, 56, 0.92)   (--brand-ink with 8% transparency)
+icon:        ↑ arrow, 18 × 18, stroke 2.5, white
+shadow:      0 4px 14px rgba(13, 37, 56, 0.25)
+position:    fixed · right 16px · bottom calc(var(--bottom-nav-h, 0px) + 16px + env(safe-area-inset-bottom))
+z-index:     90
+visibility:  fade + slide 8px when scrollY crosses 1500px
+transition:  opacity 0.18s, transform 0.18s
+behavior:    onClick → window.scrollTo({ top: 0, behavior: "smooth" })
+```
+
+**Why both patterns**: tap-active-tab is iOS convention but invisible to users who don't know it; FAB is discoverable but adds visual weight. Coexist without conflict.
