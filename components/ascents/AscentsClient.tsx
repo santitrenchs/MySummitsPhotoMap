@@ -250,9 +250,14 @@ export function AscentsClient({
     return p;
   }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange]);
 
+  // Fetch sequence: prevents stale responses from contaminating localAscents when the user changes
+  // a filter while a previous loadMore is in flight (and only the latest fetch clears isFetchingMore).
+  const fetchSeqRef = useRef(0);
+
   // Load more from server when Virtuoso reaches the end — APPENDS to localAscents
   const loadMore = useCallback(() => {
     if (!hasMore || isFetchingMore) return;
+    const seq = ++fetchSeqRef.current;
     setIsFetchingMore(true);
     const oldIds = new Set(localAscents.map((a) => a.id));
     const params = buildFilterParams();
@@ -261,6 +266,7 @@ export function AscentsClient({
     fetch(`/api/ascents/feed?${params.toString()}`)
       .then((r) => r.json())
       .then((data: { ascents: AscentData[]; hasMore: boolean; nextBeforeOwn: string | null; nextBeforeFriends: string | null }) => {
+        if (fetchSeqRef.current !== seq) return; // stale — a newer fetch superseded us
         const newItems = data.ascents.filter((a) => !oldIds.has(a.id));
         if (newItems.length > 0) {
           setLocalAscents((prev) => [...prev, ...newItems]);
@@ -270,7 +276,9 @@ export function AscentsClient({
         setBeforeFriends(data.nextBeforeFriends);
       })
       .catch(() => {})
-      .finally(() => setIsFetchingMore(false));
+      .finally(() => {
+        if (fetchSeqRef.current === seq) setIsFetchingMore(false);
+      });
   }, [hasMore, isFetchingMore, localAscents, beforeOwn, beforeFriends, buildFilterParams]);
 
   // Refetch from scratch when a server-affecting filter changes — REPLACES localAscents
@@ -280,18 +288,22 @@ export function AscentsClient({
       isInitialFilterMount.current = false;
       return;
     }
+    const seq = ++fetchSeqRef.current;
     const params = buildFilterParams();
     setIsFetchingMore(true);
     fetch(`/api/ascents/feed?${params.toString()}`)
       .then((r) => r.json())
       .then((data: { ascents: AscentData[]; hasMore: boolean; nextBeforeOwn: string | null; nextBeforeFriends: string | null }) => {
+        if (fetchSeqRef.current !== seq) return; // stale — a newer fetch superseded us
         setLocalAscents(data.ascents);
         setHasMore(data.hasMore);
         setBeforeOwn(data.nextBeforeOwn);
         setBeforeFriends(data.nextBeforeFriends);
       })
       .catch(() => {})
-      .finally(() => setIsFetchingMore(false));
+      .finally(() => {
+        if (fetchSeqRef.current === seq) setIsFetchingMore(false);
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange]);
 
