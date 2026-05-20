@@ -239,7 +239,7 @@ export default async function PeakPage({
               </h1>
 
               {/* Stat band */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 24, maxWidth: 360 }}>
+              <div style={{ display: "inline-grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 24, minWidth: 280 }}>
                 <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
                   <div style={{ fontSize: 9, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>Rareza</div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: rarity.color, display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>✿ {rarity.name}</div>
