@@ -159,24 +159,13 @@ export default async function PeakPage({
 
             {/* Right: info */}
             <div>
-              {/* Breadcrumb */}
-              <nav style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 16, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                <a href="/" style={{ color: "#9CA3AF", textDecoration: "none" }}>Peakadex</a>
-                <span>›</span>
-                <span>Atlas</span>
-                <span>›</span>
-                <span>{peak.mountainRange}</span>
-                <span>›</span>
-                <span style={{ color: "#0D2538", fontWeight: 600 }}>{peak.peakName}</span>
-              </nav>
-
               {/* H1 */}
               <h1 style={{ margin: "0 0 16px", fontSize: 32, fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.02em", color: "#0D2538" }}>
                 Ascensión al {peak.peakName}
               </h1>
 
               {/* Altitude badge */}
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#2F7A5F", color: "#FFFFFF", borderRadius: 99, padding: "6px 16px", fontSize: 15, fontWeight: 700, marginBottom: 16 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(13,37,56,0.08)", color: "#0D2538", borderRadius: 99, padding: "6px 16px", fontSize: 15, fontWeight: 700, marginBottom: 16 }}>
                 ⛰️ {peak.altLabel}
               </div>
 
