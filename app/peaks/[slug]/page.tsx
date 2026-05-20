@@ -198,10 +198,7 @@ export default async function PeakPage({
             <a href="/" style={{ textDecoration: "none" }}>
               <PeakadexLogo height={32} />
             </a>
-            <nav style={{ display: "flex", gap: 32, alignItems: "center" }}>
-              <a href="/#rarities" style={{ fontSize: 14, fontWeight: 500, color: "#6B7280", textDecoration: "none" }}>Rarezas</a>
-              <a href="/#cards" style={{ fontSize: 14, fontWeight: 500, color: "#6B7280", textDecoration: "none" }}>Cartas</a>
-            </nav>
+            <div />
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <a href="/login" style={{ fontSize: 14, fontWeight: 500, color: "#0D2538", textDecoration: "none" }}>Iniciar sesión</a>
               <a href="/register" style={{
@@ -317,10 +314,7 @@ export default async function PeakPage({
         </section>
 
         {/* ── Other peaks ── */}
-        <section style={{ padding: "48px 0 64px", background: "#F4F7FA" }}>
-          <h2 style={{ margin: "0 0 24px", fontSize: 20, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.01em", textAlign: "center" }}>
-            Otras cimas
-          </h2>
+        <section style={{ padding: "32px 0 48px", background: "#F4F7FA" }}>
           <div className="pk-mini-scroll">
             {relatedPeaks.map((p) => <MiniPeakCard key={p.peakName} peak={p} />)}
           </div>
