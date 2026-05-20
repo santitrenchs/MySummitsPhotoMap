@@ -101,9 +101,10 @@ function CardFront({ card, index }: { card: PeakCardData; index: number }) {
 export function PeakCarousel({ peaks }: { peaks: PeakCardData[] }) {
   const total = peaks.length;
   const [active, setActive] = useState(0);
-  const [vw, setVw] = useState(() => typeof window !== "undefined" ? window.innerWidth : 1200);
+  const [vw, setVw] = useState(1200);
 
   useEffect(() => {
+    setVw(window.innerWidth);
     let t: ReturnType<typeof setTimeout>;
     const onResize = () => { clearTimeout(t); t = setTimeout(() => setVw(window.innerWidth), 150); };
     window.addEventListener("resize", onResize);
