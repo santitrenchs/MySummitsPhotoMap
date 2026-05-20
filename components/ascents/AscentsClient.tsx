@@ -70,6 +70,8 @@ export function AscentsClient({
   currentUserId,
   hasFriends = true,
   hasMore: initialHasMore = false,
+  initialBeforeOwn = null,
+  initialBeforeFriends = null,
   friendUserIds = [],
 }: {
   ascents: AscentData[];
@@ -80,6 +82,8 @@ export function AscentsClient({
   currentUserId?: string;
   hasFriends?: boolean;
   hasMore?: boolean;
+  initialBeforeOwn?: string | null;
+  initialBeforeFriends?: string | null;
   friendUserIds?: string[];
 }) {
   const t = useT();
@@ -88,6 +92,10 @@ export function AscentsClient({
   const [localAscents, setLocalAscents] = useState<AscentData[]>(ascents);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  // Per-stream cursors — each stream advances independently to prevent one stream's older items
+  // from causing the other stream's items to be skipped (see ascent-feed.ts comments).
+  const [beforeOwn, setBeforeOwn] = useState<string | null>(initialBeforeOwn);
+  const [beforeFriends, setBeforeFriends] = useState<string | null>(initialBeforeFriends);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -231,21 +239,23 @@ export function AscentsClient({
     if (!hasMore || isFetchingMore) return;
     setIsFetchingMore(true);
     const oldIds = new Set(localAscents.map((a) => a.id));
-    const lastDate = localAscents[localAscents.length - 1]?.date;
-    fetch(`/api/ascents/feed?before=${encodeURIComponent(lastDate ?? "")}`)
+    const params = new URLSearchParams();
+    if (beforeOwn) params.set("beforeOwn", beforeOwn);
+    if (beforeFriends) params.set("beforeFriends", beforeFriends);
+    fetch(`/api/ascents/feed?${params.toString()}`)
       .then((r) => r.json())
-      .then(({ ascents: more, hasMore: moreHasMore }: { ascents: AscentData[]; hasMore: boolean }) => {
-        const newItems = more.filter((a) => !oldIds.has(a.id));
-        if (newItems.length === 0) {
-          setHasMore(false);
-          return;
+      .then((data: { ascents: AscentData[]; hasMore: boolean; nextBeforeOwn: string | null; nextBeforeFriends: string | null }) => {
+        const newItems = data.ascents.filter((a) => !oldIds.has(a.id));
+        if (newItems.length > 0) {
+          setLocalAscents((prev) => [...prev, ...newItems]);
         }
-        setLocalAscents((prev) => [...prev, ...newItems]);
-        setHasMore(moreHasMore);
+        setHasMore(data.hasMore);
+        setBeforeOwn(data.nextBeforeOwn);
+        setBeforeFriends(data.nextBeforeFriends);
       })
       .catch(() => {})
       .finally(() => setIsFetchingMore(false));
-  }, [hasMore, isFetchingMore, localAscents]);
+  }, [hasMore, isFetchingMore, localAscents, beforeOwn, beforeFriends]);
 
   // Auto-fetch more when client-side filters reduce the result set below the viewport-fill threshold.
   // Without this, with restrictive filters (e.g. by person) the rendered list can stay so short that

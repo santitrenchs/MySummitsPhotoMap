@@ -21,7 +21,7 @@ export default async function AscentsPage() {
     f.requesterId === session.user.id ? f.addresseeId : f.requesterId
   );
 
-  const { ascents, hasMore } = await fetchFeedPage({
+  const { ascents, hasMore, nextBeforeOwn, nextBeforeFriends } = await fetchFeedPage({
     userId: session.user.id,
     tenantId: session.user.tenantId,
     friendUserIds,
@@ -56,6 +56,8 @@ export default async function AscentsPage() {
           currentUserId={session.user.id}
           hasFriends={friendUserIds.length > 0}
           hasMore={hasMore}
+          initialBeforeOwn={nextBeforeOwn}
+          initialBeforeFriends={nextBeforeFriends}
           friendUserIds={friendUserIds}
         />
       </Suspense>
