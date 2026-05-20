@@ -94,7 +94,6 @@ function RelatedPeakCard({ peakName, altitudeM, altLabel, mountainRange, color, 
         display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit",
         borderRadius: 14, overflow: "hidden", background: "#FFFFFF",
         border: "1px solid rgba(13,37,56,0.09)", boxShadow: "0 2px 12px rgba(13,37,56,0.08)",
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
         flex: "1 1 0", minWidth: 0,
       }}
     >
@@ -131,11 +130,14 @@ export default async function PeakPage({
   const rarity = rarityForAlt(peak.altitudeM);
   const uid = slug;
 
+  const initials = peak.user.split(" ").map((w: string) => w[0]).join("");
+  const latStr = `${Math.abs(peak.lat).toFixed(4)}°${peak.lat >= 0 ? "N" : "S"}`;
+  const lngStr = `${Math.abs(peak.lng).toFixed(4)}°${peak.lng >= 0 ? "E" : "W"}`;
+
   // Related peaks: same mountain range (excluding self), up to 3
   const related = LANDING_PEAKS.filter(
     (p) => p.mountainRange === peak.mountainRange && p.peakName !== peak.peakName
   ).slice(0, 3);
-  // Fallback: same country if range has fewer than 3
   const relatedFinal = related.length >= 3
     ? related
     : [
@@ -167,24 +169,26 @@ export default async function PeakPage({
     ],
   };
 
+  // Card dimensions (same ratio as landing: 240×410, scaled up slightly)
+  const CARD_W = 240;
+  const CARD_H = 410;
+
   return (
     <>
-      {/* ── JSON-LD ── */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* ── Responsive styles ── */}
       <style>{`
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; }
         .pk-hero-grid {
           display: grid;
-          grid-template-columns: 280px 1fr;
+          grid-template-columns: ${CARD_W}px 1fr;
           gap: 48px;
           align-items: start;
-          max-width: 900px;
+          max-width: 860px;
           margin: 0 auto;
           padding: 48px 24px 64px;
         }
@@ -238,47 +242,79 @@ export default async function PeakPage({
         <section style={{ background: "#F4F7FA" }}>
           <div className="pk-hero-grid">
 
-            {/* Left: card visual */}
+            {/* Left: exact landing card front */}
             <div className="pk-card-wrap">
               <div style={{
-                width: 280, height: 380,
-                borderRadius: 20, overflow: "hidden",
+                width: CARD_W,
+                height: CARD_H,
+                borderRadius: 18,
+                overflow: "hidden",
                 background: "#FFFFFF",
                 border: "1px solid rgba(13,37,56,0.09)",
-                boxShadow: "0 12px 40px rgba(13,37,56,0.16)",
-                position: "relative", flexShrink: 0,
-                display: "flex", flexDirection: "column",
+                boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
+                display: "flex",
+                flexDirection: "column",
+                flexShrink: 0,
               }}>
-                {/* Scene fills most of the card */}
-                <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "10px 10px 0", borderRadius: 14 }}>
-                  <MountainScene color={rarity.color} altM={peak.altitudeM} uid={uid} />
-                  {/* Gradient overlay */}
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.05) 55%, transparent 100%)" }} />
-                  {/* Rarity badge */}
+
+                {/* User header */}
+                <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px" }}>
                   <div style={{
-                    position: "absolute", top: 10, right: 10,
-                    background: rarity.color, color: "#fff",
-                    fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 99,
-                    letterSpacing: "0.04em",
+                    width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                    background: peak.userColor,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 700, color: "#fff",
                   }}>
-                    ✿ {rarity.name}
+                    {initials}
                   </div>
-                  {/* Peak name + altitude */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538" }}>{peak.user}</div>
+                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{peak.date}</div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3, opacity: 0.3 }}>
+                    {[0, 1, 2].map((d) => (
+                      <div key={d} style={{ width: 3, height: 3, borderRadius: "50%", background: "#0D2538" }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Photo area */}
+                <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "0 10px", borderRadius: 14 }}>
+                  {peak.photo
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={peak.photo} alt={peak.peakName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    : <MountainScene color={rarity.color} altM={peak.altitudeM} uid={uid} />
+                  }
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 50%, transparent 100%)" }} />
+                  {/* Peak name + coords overlay */}
                   <div style={{ position: "absolute", bottom: 12, left: 14, right: 14 }}>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.15, textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2, marginBottom: 3, textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}>
                       {peak.peakName}
                     </div>
-                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 3, fontWeight: 600 }}>
-                      {peak.altLabel}
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>
+                      📍 {latStr} · {lngStr}
                     </div>
                   </div>
                 </div>
-                {/* Bottom strip: range + country */}
-                <div style={{ padding: "10px 14px 14px", display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 18 }}>{peak.flag}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{peak.mountainRange}</span>
-                  <span style={{ fontSize: 12, color: "#9CA3AF" }}>· {peak.country}</span>
+
+                {/* Stat band: RAREZA · ALTITUD · RECOMPENSA */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: "10px" }}>
+                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
+                    <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RAREZA</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: rarity.color, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, lineHeight: 1.2 }}>
+                      ✿ <span style={{ fontSize: 10 }}>{rarity.name}</span>
+                    </div>
+                  </div>
+                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
+                    <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>ALTITUD</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{peak.altLabel}</div>
+                  </div>
+                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
+                    <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RECOMPENSA</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{rarity.ep}</div>
+                  </div>
                 </div>
+
               </div>
             </div>
 
@@ -305,10 +341,10 @@ export default async function PeakPage({
                 ⛰️ {peak.altLabel}
               </div>
 
-              {/* Rarity row */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              {/* Rarity + EP */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: rarity.color, flexShrink: 0 }} />
-                <span style={{ fontSize: 14, fontWeight: 600, color: rarity.color }}>{rarity.name}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: rarity.color }}>✿ {rarity.name}</span>
                 <span style={{ fontSize: 13, color: "#9CA3AF" }}>·</span>
                 <span style={{ fontSize: 13, color: "#F97316", fontWeight: 600 }}>+{rarity.ep}</span>
               </div>
@@ -376,7 +412,7 @@ export default async function PeakPage({
 
         {/* ── Related peaks ── */}
         {relatedFinal.length > 0 && (
-          <section style={{ padding: "48px 24px 64px", maxWidth: 900, margin: "0 auto" }}>
+          <section style={{ padding: "48px 24px 64px", maxWidth: 860, margin: "0 auto" }}>
             <h2 style={{ margin: "0 0 24px", fontSize: 20, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.01em" }}>
               Más cimas en {peak.mountainRange}
             </h2>
