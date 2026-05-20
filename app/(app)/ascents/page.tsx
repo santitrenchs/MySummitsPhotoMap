@@ -5,12 +5,19 @@ import { AscentsClient } from "@/components/ascents/AscentsClient";
 import { OpenAscentModalButton } from "@/components/ascents/OpenAscentModalButton";
 import { getServerT, getLocale } from "@/lib/i18n/server";
 import { prisma } from "@/lib/db/client";
-import { fetchFeedPage } from "@/lib/services/ascent-feed";
+import { fetchFeedPage, type View, type Rarity } from "@/lib/services/ascent-feed";
 
-export default async function AscentsPage() {
+const RARITIES: ReadonlySet<Rarity> = new Set(["daisy", "gentian", "edelweiss", "saxifrage", "cinquefoil", "snow_lotus"]);
+const VIEWS: ReadonlySet<View> = new Set(["mine", "friends", "with-me", "person"]);
+
+export default async function AscentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const session = await auth();
   if (!session) redirect("/login");
-  const [t, locale] = await Promise.all([getServerT(), getLocale()]);
+  const [t, locale, sp] = await Promise.all([getServerT(), getLocale(), searchParams]);
 
   const friendships = await prisma.friendship.findMany({
     where: { status: "ACCEPTED", OR: [{ requesterId: session.user.id }, { addresseeId: session.user.id }] },
@@ -21,11 +28,24 @@ export default async function AscentsPage() {
     f.requesterId === session.user.id ? f.addresseeId : f.requesterId
   );
 
+  // Read URL params for initial server-side filtering (matches what AscentsClient will hydrate)
+  const getStr = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : undefined);
+  const highlight = getStr("highlight");
+  const viewParam = getStr("view");
+  const initialView: View = highlight ? "mine" : (viewParam && VIEWS.has(viewParam as View) ? viewParam as View : "friends");
+  const rarityParam = getStr("rarity");
+  const initialRarity = rarityParam && RARITIES.has(rarityParam as Rarity) ? rarityParam as Rarity : undefined;
+
   const { ascents, hasMore, nextBeforeOwn, nextBeforeFriends } = await fetchFeedPage({
     userId: session.user.id,
     tenantId: session.user.tenantId,
     friendUserIds,
     locale,
+    view: initialView,
+    peakId: getStr("peak"),
+    month: getStr("month"),
+    rarity: initialRarity,
+    highlightId: highlight,
   });
 
   const allPersonsMap = new Map<string, { id: string; name: string }>();
