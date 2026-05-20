@@ -11,8 +11,8 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", 
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.peakadex.com"),
-  title: "Peakadex — Captura cimas. Colecciona rarezas.",
-  description: "La app de montaña que convierte cada ascensión en una carta coleccionable. Registra tus cimas, desbloquea rarezas según la altitud y compite con tu cordada.",
+  title: "App para registrar cimas de montaña | Peakadex — Gratis",
+  description: "Registra cada cima que subes, consigue cartas coleccionables según la altitud y compite con tu cordada. App de montañismo gratuita para senderistas y alpinistas.",
 };
 
 export const viewport: Viewport = {
