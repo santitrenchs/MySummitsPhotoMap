@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LANDING_PEAKS, rarityForAlt, slugifyPeak, getPeakBySlug } from "@/lib/data/landing-peaks";
+import { PeakadexLogo } from "@/components/brand/Logo";
+import { PeakCard } from "./PeakCard";
 
 const BASE = "https://www.peakadex.com";
 
@@ -37,43 +39,30 @@ export async function generateMetadata({
   };
 }
 
-// ─── Mountain scene SVG (server-renderable, no hooks) ─────────────────────────
+// ─── Mountain scene SVG for related peak cards ────────────────────────────────
 function MountainScene({ color, altM, uid }: { color: string; altM: number; uid: string }) {
   let skyTop: string, skyBot: string, terrainFar: string, terrainNear: string;
   if (altM >= 5000) {
-    skyTop = "#04040F"; skyBot = "#141430";
-    terrainFar = color + "25"; terrainNear = color + "45";
+    skyTop = "#04040F"; skyBot = "#141430"; terrainFar = color + "25"; terrainNear = color + "45";
   } else if (altM >= 3000) {
-    skyTop = "#0D2248"; skyBot = "#2A5080";
-    terrainFar = color + "30"; terrainNear = color + "55";
+    skyTop = "#0D2248"; skyBot = "#2A5080"; terrainFar = color + "30"; terrainNear = color + "55";
   } else if (altM >= 1000) {
-    skyTop = "#1A4B8F"; skyBot = "#5A8FBF";
-    terrainFar = color + "35"; terrainNear = color + "60";
+    skyTop = "#1A4B8F"; skyBot = "#5A8FBF"; terrainFar = color + "35"; terrainNear = color + "60";
   } else {
-    skyTop = "#3A76BF"; skyBot = "#8AB8D8";
-    terrainFar = color + "40"; terrainNear = color + "65";
+    skyTop = "#3A76BF"; skyBot = "#8AB8D8"; terrainFar = color + "40"; terrainNear = color + "65";
   }
-
   return (
-    <svg
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-      viewBox="0 0 240 200"
-      preserveAspectRatio="xMidYMid slice"
-    >
+    <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 240 200" preserveAspectRatio="xMidYMid slice">
       <defs>
         <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={skyTop} />
-          <stop offset="100%" stopColor={skyBot} />
+          <stop offset="0%" stopColor={skyTop} /><stop offset="100%" stopColor={skyBot} />
         </linearGradient>
         <linearGradient id={`ov-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="rgba(0,0,0,0)" />
-          <stop offset="50%"  stopColor="rgba(0,0,0,0)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0.72)" />
+          <stop offset="0%" stopColor="rgba(0,0,0,0)" /><stop offset="50%" stopColor="rgba(0,0,0,0)" /><stop offset="100%" stopColor="rgba(0,0,0,0.72)" />
         </linearGradient>
       </defs>
       <rect width="240" height="200" fill={`url(#sky-${uid})`} />
-      <path d="M0 155 L40 110 L80 130 L130 90 L175 115 L210 85 L240 105 L240 200 L0 200Z"
-        fill={terrainFar} />
+      <path d="M0 155 L40 110 L80 130 L130 90 L175 115 L210 85 L240 105 L240 200 L0 200Z" fill={terrainFar} />
       <path d="M30 200 L120 55 L210 200Z" fill={terrainNear} />
       <path d="M120 55 L104 92 L120 84 L136 92Z" fill="rgba(255,255,255,0.88)" />
       <path d="M120 55 L104 92 L120 84Z" fill="rgba(255,255,255,0.25)" />
@@ -130,10 +119,6 @@ export default async function PeakPage({
   const rarity = rarityForAlt(peak.altitudeM);
   const uid = slug;
 
-  const initials = peak.user.split(" ").map((w: string) => w[0]).join("");
-  const latStr = `${Math.abs(peak.lat).toFixed(4)}°${peak.lat >= 0 ? "N" : "S"}`;
-  const lngStr = `${Math.abs(peak.lng).toFixed(4)}°${peak.lng >= 0 ? "E" : "W"}`;
-
   // Related peaks: same mountain range (excluding self), up to 3
   const related = LANDING_PEAKS.filter(
     (p) => p.mountainRange === peak.mountainRange && p.peakName !== peak.peakName
@@ -169,10 +154,6 @@ export default async function PeakPage({
     ],
   };
 
-  // Card dimensions (same ratio as landing: 240×410, scaled up slightly)
-  const CARD_W = 240;
-  const CARD_H = 410;
-
   return (
     <>
       <script
@@ -185,7 +166,7 @@ export default async function PeakPage({
         body { margin: 0; }
         .pk-hero-grid {
           display: grid;
-          grid-template-columns: ${CARD_W}px 1fr;
+          grid-template-columns: 240px 1fr;
           gap: 48px;
           align-items: start;
           max-width: 860px;
@@ -225,8 +206,8 @@ export default async function PeakPage({
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "0 24px", position: "sticky", top: 0, zIndex: 10,
         }}>
-          <a href="/" style={{ fontWeight: 800, fontSize: 18, color: "#0D2538", textDecoration: "none", letterSpacing: "-0.02em" }}>
-            Peakadex
+          <a href="/" style={{ textDecoration: "none" }}>
+            <PeakadexLogo height={32} />
           </a>
           <a href="/register" style={{
             background: "#2F7A5F", color: "#FFFFFF",
@@ -242,79 +223,13 @@ export default async function PeakPage({
         <section style={{ background: "#F4F7FA" }}>
           <div className="pk-hero-grid">
 
-            {/* Left: exact landing card front */}
+            {/* Left: flippable card (client component) */}
             <div className="pk-card-wrap">
-              <div style={{
-                width: CARD_W,
-                height: CARD_H,
-                borderRadius: 18,
-                overflow: "hidden",
-                background: "#FFFFFF",
-                border: "1px solid rgba(13,37,56,0.09)",
-                boxShadow: "0 8px 32px rgba(13,37,56,0.14)",
-                display: "flex",
-                flexDirection: "column",
-                flexShrink: 0,
-              }}>
-
-                {/* User header */}
-                <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px" }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-                    background: peak.userColor,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 11, fontWeight: 700, color: "#fff",
-                  }}>
-                    {initials}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538" }}>{peak.user}</div>
-                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{peak.date}</div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 3, opacity: 0.3 }}>
-                    {[0, 1, 2].map((d) => (
-                      <div key={d} style={{ width: 3, height: 3, borderRadius: "50%", background: "#0D2538" }} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Photo area */}
-                <div style={{ flex: 1, position: "relative", overflow: "hidden", margin: "0 10px", borderRadius: 14 }}>
-                  {peak.photo
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img src={peak.photo} alt={peak.peakName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                    : <MountainScene color={rarity.color} altM={peak.altitudeM} uid={uid} />
-                  }
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 50%, transparent 100%)" }} />
-                  {/* Peak name + coords overlay */}
-                  <div style={{ position: "absolute", bottom: 12, left: 14, right: 14 }}>
-                    <div style={{ fontSize: 17, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2, marginBottom: 3, textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}>
-                      {peak.peakName}
-                    </div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>
-                      📍 {latStr} · {lngStr}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stat band: RAREZA · ALTITUD · RECOMPENSA */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: "10px" }}>
-                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-                    <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RAREZA</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: rarity.color, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, lineHeight: 1.2 }}>
-                      ✿ <span style={{ fontSize: 10 }}>{rarity.name}</span>
-                    </div>
-                  </div>
-                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-                    <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>ALTITUD</div>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{peak.altLabel}</div>
-                  </div>
-                  <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-                    <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RECOMPENSA</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{rarity.ep}</div>
-                  </div>
-                </div>
-
+              <div>
+                <PeakCard peak={peak} uid={uid} />
+                <p style={{ textAlign: "center", fontSize: 11, color: "rgba(13,37,56,0.3)", marginTop: 10 }}>
+                  Toca la carta para girarla
+                </p>
               </div>
             </div>
 
