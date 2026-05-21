@@ -177,11 +177,18 @@ export function Sidebar({
             <span className="azisb-lbl">Nueva ascensión</span>
           </button>
 
-          {/* Avatar → Profile (last nav item, like Instagram) */}
-          <Link
-            href="/profile"
-            className={`azisb-item${active("/profile") ? " azisb-item--on" : ""}`}
-            data-tip={t.nav_profile}
+        </nav>
+
+        {/* ── Footer — hamburger only, anchored to bottom ─────────────── */}
+        <div className="azisb-footer" ref={menuRef}>
+
+          {/* Avatar + name → Settings + Sign out */}
+          <button
+            className="azisb-item"
+            data-tip={userName ?? t.nav_profile}
+            onClick={() => setUserMenuOpen((o) => !o)}
+            aria-label="Más opciones"
+            aria-expanded={userMenuOpen}
           >
             <span className="azisb-ic">
               <div className="azisb-avatar" style={{ position: "relative" }}>
@@ -199,27 +206,18 @@ export function Sidebar({
               </div>
             </span>
             <span className="azisb-lbl">{userName ?? t.nav_profile}</span>
-          </Link>
-        </nav>
-
-        {/* ── Footer — hamburger only, anchored to bottom ─────────────── */}
-        <div className="azisb-footer" ref={menuRef}>
-
-          {/* Hamburger → Settings + Sign out */}
-          <button
-            className="azisb-item"
-            data-tip="Más"
-            onClick={() => setUserMenuOpen((o) => !o)}
-            aria-label="Más opciones"
-            aria-expanded={userMenuOpen}
-          >
-            <span className="azisb-ic"><SbHamburgerIcon /></span>
-            <span className="azisb-lbl">Más</span>
           </button>
 
           {userMenuOpen && (
             <div className="azisb-umenu">
               <div className="azisb-umenu-sec">
+                <Link
+                  href="/profile"
+                  className="azisb-umenu-item"
+                  onClick={() => setUserMenuOpen(false)}
+                >
+                  <SbProfileIcon /> {t.nav_profile}
+                </Link>
                 <Link
                   href="/friends"
                   className="azisb-umenu-item"
@@ -423,7 +421,7 @@ const CSS = `
 
 /* Avatar */
 .azisb-avatar {
-  width: 32px; height: 32px; min-width: 32px;
+  width: 26px; height: 26px; min-width: 26px;
   border-radius: 50%;
   background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
   color: #fff;
@@ -563,6 +561,16 @@ function SbSocialIcon({ active = false }: { active?: boolean }) {
   );
 }
 
+
+function SbProfileIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+    </svg>
+  );
+}
 
 function SbFriendsIcon() {
   return (

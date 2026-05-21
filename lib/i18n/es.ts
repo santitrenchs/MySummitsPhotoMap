@@ -4,7 +4,7 @@ export const es: Dict = {
   dateLocale: "es-ES",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Azimut", nav_ascents: "Bitácora",
+  nav_map: "Atlas", nav_ascents: "Bitácora",
   nav_settings: "Ajustes", nav_signOut: "Cerrar sesión", nav_profile: "Perfil",
   nav_comingSoon: "Pronto", nav_logAscent: "Registrar ascensión",
 
@@ -221,7 +221,7 @@ export const es: Dict = {
   profile_catalog_ascents: "ascensiones",
   profile_catalog_highest: "Más alta",
 
-  nav_home: "Peakadex",
+  nav_home: "Peakadex stats",
   home_greeting: "Hola, {name} 👋",
   home_statSummits: "Cimas", home_statPhotos: "Fotos",
   home_statRegions: "Regiones", home_statFriends: "Amigos",
