@@ -85,8 +85,7 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Peakadex", item: BASE },
           { "@type": "ListItem", position: 2, name: t.schema_atlas, item: `${BASE}${t.urlPrefix}/peaks` },
-          { "@type": "ListItem", position: 3, name: peak.mountainRange },
-          { "@type": "ListItem", position: 4, name: peak.peakName },
+          { "@type": "ListItem", position: 3, name: peak.peakName },
         ],
       },
     ],
