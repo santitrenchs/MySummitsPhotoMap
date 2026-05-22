@@ -72,6 +72,7 @@ export default auth((req) => {
     pathname.match(/^\/(en|fr|de|ca)\/peaks\//) !== null;
 
   const isAuthApi = pathname.startsWith("/api/auth");
+  const isV1Api = pathname.startsWith("/api/v1");
   const isPublicApi =
     pathname === "/api/stats/landing" ||
     pathname.match(/^\/api\/ascents\/[^/]+\/share$/) !== null ||
@@ -82,8 +83,8 @@ export default auth((req) => {
   const isAdminApiRoute = pathname.startsWith("/api/admin");
   const isAdmin = !!req.auth?.user?.isAdmin;
 
-  // Always allow NextAuth internal API routes, health check and public stats
-  if (isAuthApi || isPublicApi || pathname === "/api/health") return withPathname(pathname);
+  // Always allow NextAuth internal API routes, health check, public stats, and mobile API v1
+  if (isAuthApi || isPublicApi || isV1Api || pathname === "/api/health") return withPathname(pathname);
 
   // ── Backoffice (/admin/* and /api/admin/*) ────────────────────
   if (isAdminLogin) {
