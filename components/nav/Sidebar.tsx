@@ -421,11 +421,11 @@ const CSS = `
 
 /* Avatar */
 .azisb-avatar {
-  width: 26px; height: 26px; min-width: 26px;
+  width: 30px; height: 30px; min-width: 30px;
   border-radius: 50%;
   background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
   color: #fff;
-  font-size: 9px; font-weight: 700;
+  font-size: 11px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   border: 1.5px solid rgba(255,255,255,0.8);
   box-shadow: 0 0 0 1.5px #e0e7ef;
