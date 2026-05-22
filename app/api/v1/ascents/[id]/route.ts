@@ -72,7 +72,7 @@ export async function DELETE(
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const deleted = await deleteAscent(session.tenantId, id);
+  const deleted = await deleteAscent(session.tenantId, id, session.userId);
   if (!deleted) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   return NextResponse.json({ ok: true });

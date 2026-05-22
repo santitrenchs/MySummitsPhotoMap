@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { passwordHash: true } });
   if (!user) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  if (!(await verifyPassword(currentPassword, user.passwordHash))) {
+  if (!user.passwordHash || !(await verifyPassword(currentPassword, user.passwordHash))) {
     return NextResponse.json({ error: "wrong_password" }, { status: 400 });
   }
 
