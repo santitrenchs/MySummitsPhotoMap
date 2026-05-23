@@ -1,0 +1,81 @@
+# Ascensiones / Bitácora — Feed
+
+Vive en `app/(app)/ascents/page.tsx` + `components/ascents/AscentsClient.tsx`.
+
+## Algoritmo de ordenación
+
+Orden de dos niveles (client-side en `useMemo`):
+
+1. **Ascensos NO vistos de amigos** → ordenados por altitud desc (rareza)
+2. **Resto** (propios + vistos de amigos) → ordenados por fecha desc
+
+```typescript
+if (sort === "elev-desc") return b.peak.altitudeM - a.peak.altitudeM;
+const aUnseen = a.isUnseen ?? false;
+const bUnseen = b.isUnseen ?? false;
+if (aUnseen !== bUnseen) return bUnseen ? 1 : -1;
+if (aUnseen && bUnseen) return b.peak.altitudeM - a.peak.altitudeM;
+return new Date(b.date).getTime() - new Date(a.date).getTime();
+```
+
+## Filtros
+
+Tipo `ViewChip = "mine" | "friends" | "person" | "with-me"` — **NO existe `"all"`** (causó un build failure).
+
+| Chip | Qué muestra |
+|---|---|
+| `"friends"` | Solo ascensos de amigos (default) |
+| `"mine"` | Solo propios |
+| `"person"` | Ascensos de una persona específica |
+| `"with-me"` | Ascensos de amigos donde el usuario aparece etiquetado |
+
+Sort options: `"date-desc"` (default) \| `"elev-desc"`.
+
+`clearChip("view")` resetea a `"friends"`, nunca a `"all"`.
+
+### Fix highlight post-creación
+
+Al llegar desde `/ascents?highlight=xyz`, `viewChip` se inicializa a `"mine"` para que la ascensión recién creada (propia) sea visible:
+
+```typescript
+const [viewChip, setViewChip] = useState<ViewChip>(() =>
+  searchParams.get("highlight") ? "mine" : "friends"
+);
+```
+
+## Badge de ascensos no vistos
+
+- Calculado en `app/(app)/layout.tsx` via `countUnseenFeed(userId)` en cada carga de página
+- Mostrado en `NavBar` (móvil) y `Sidebar` (desktop) como número rojo
+- **Reactivo en sesión**: escuchan el evento DOM `unseen-feed-count-changed` y decrementan `liveFeedCount` en tiempo real
+
+## Sistema de marcado como visto
+
+Modelo Prisma: `FeedSeen { userId, ascentId, seenAt }` — `@@id([userId, ascentId])`.
+
+Flujo en `AscentsClient`:
+1. `useEffect([filtered])` configura `IntersectionObserver` con `threshold: 0.3`
+2. Card ≥30% visible → timer de 1000ms
+3. El timer **NO se cancela** si el card sale del viewport (si lo viste aunque sea 1s, cuenta)
+4. Al disparar: añade IDs a `pendingSeenRef`, debounce 1000ms para flush
+5. Flush: `POST /api/feed/seen` con `{ ascentIds }` + dispara `CustomEvent("unseen-feed-count-changed", { detail: { delta: -n } })`
+
+**Cards agrupadas**: `GroupedAscentCard` usa `data-unseen-id="id1,id2,..."`. El observer usa `querySelectorAll("[data-unseen-id]")`.
+
+## Archivos clave
+
+| Archivo | Rol |
+|---|---|
+| `app/(app)/ascents/page.tsx` | Fetch con `feedSeens`, setea `isUnseen` |
+| `components/ascents/AscentsClient.tsx` | Filtros, sort, IntersectionObserver, flush |
+| `app/api/feed/seen/route.ts` | POST batch mark seen |
+| `lib/services/feed.service.ts` | `markSeen()`, `countUnseenFeed()` |
+| `components/nav/NavBar.tsx` | Badge móvil reactivo |
+| `components/nav/Sidebar.tsx` | Badge desktop reactivo |
+| `app/(app)/layout.tsx` | Fetch inicial de `unseenFeedCount` |
+
+## Decisiones de diseño
+
+- Sin separador visual entre vistos/no vistos — flujo continuo
+- Threshold 0.3 (no 0.5) — cards altas en móvil no siempre llegan al 50% visible
+- Batch + debounce — evita una petición por card

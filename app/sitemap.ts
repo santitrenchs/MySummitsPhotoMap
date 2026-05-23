@@ -39,6 +39,29 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.3,
   }));
 
+  const peakIndexHreflang = {
+    "x-default": `${BASE}/en/peaks`,
+    es: `${BASE}/peaks`,
+    en: `${BASE}/en/peaks`,
+    fr: `${BASE}/fr/peaks`,
+    de: `${BASE}/de/peaks`,
+    ca: `${BASE}/ca/peaks`,
+  };
+
+  const peakIndexPages: MetadataRoute.Sitemap = [
+    `${BASE}/peaks`,
+    `${BASE}/en/peaks`,
+    `${BASE}/fr/peaks`,
+    `${BASE}/de/peaks`,
+    `${BASE}/ca/peaks`,
+  ].map((url) => ({
+    url,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+    alternates: { languages: peakIndexHreflang },
+  }));
+
   const peakPages: MetadataRoute.Sitemap = LANDING_PEAKS.flatMap((peak) => {
     const slug = slugifyPeak(peak.peakName);
     const peakHreflang = {
@@ -64,5 +87,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }));
   });
 
-  return [...landingPages, ...legalPages, ...peakPages];
+  return [...landingPages, ...legalPages, ...peakIndexPages, ...peakPages];
 }

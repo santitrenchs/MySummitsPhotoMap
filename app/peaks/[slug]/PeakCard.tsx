@@ -45,7 +45,7 @@ function MountainScene({ color, altM, uid }: { color: string; altM: number; uid:
   );
 }
 
-export function PeakCard({ peak, uid }: { peak: PeakCardData; uid: string }) {
+export function PeakCard({ peak, uid, href }: { peak: PeakCardData; uid: string; href?: string }) {
   const [flipped, setFlipped] = useState(false);
   const rarity = rarityForAlt(peak.altitudeM);
   const initials = peak.user.split(" ").map((w: string) => w[0]).join("");
@@ -53,12 +53,8 @@ export function PeakCard({ peak, uid }: { peak: PeakCardData; uid: string }) {
   const lngStr = `${Math.abs(peak.lng).toFixed(4)}°${peak.lng >= 0 ? "E" : "W"}`;
   const barPct = Math.min(100, (peak.altitudeM / 8849) * 100).toFixed(1);
 
-  return (
-    <div
-      style={{ width: CARD_W, height: CARD_H, perspective: 1200, cursor: "pointer", flexShrink: 0 }}
-      onClick={() => setFlipped((f) => !f)}
-      title="Toca para ver el reverso"
-    >
+  const cardStyle = { width: CARD_W, height: CARD_H, perspective: 1200, cursor: "pointer", flexShrink: 0 } as const;
+  const inner = (
       <div style={{
         width: "100%", height: "100%",
         transformStyle: "preserve-3d",
@@ -232,6 +228,23 @@ export function PeakCard({ peak, uid }: { peak: PeakCardData; uid: string }) {
         </div>
 
       </div>
+  );
+
+  if (href) {
+    return (
+      <a href={href} style={{ ...cardStyle, display: "block", textDecoration: "none" }}>
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <div
+      style={cardStyle}
+      onClick={() => setFlipped((f) => !f)}
+      title="Toca para ver el reverso"
+    >
+      {inner}
     </div>
   );
 }

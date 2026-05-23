@@ -129,7 +129,6 @@ model User {
   feedSeens              FeedSeen[]
   accounts               Account[]
   legalConsents          LegalConsent[]
-
   @@map("users")
 }
 
@@ -370,3 +369,4 @@ model LegalConsent {
   @@index([userId])
   @@map("legal_consents")
 }
+

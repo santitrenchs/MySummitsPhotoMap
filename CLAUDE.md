@@ -171,15 +171,14 @@ FaceDetection / FaceTag
 
 ## Key Rules
 
-### Social & Privacy
-- The **Social feed shows only accepted friends' activity** — never strangers, never everyone.
+### Ascents & Privacy
 - Sending/accepting friend requests is the only way to create a friendship. No auto-follow.
 - **Tagging a user in a photo does NOT make them a friend.** These are independent concepts.
 - A user can be tagged in an ascent photo without any friendship relationship with the author.
 
 ### Friendships
 - A friendship has two states: `PENDING` (request sent) and `ACCEPTED`.
-- Only `ACCEPTED` friendships appear in ranking comparisons and the Social feed.
+- Only `ACCEPTED` friendships appear in ranking comparisons and the ascents feed.
 - Friendship is bidirectional — both users see each other's ascents once accepted.
 
 ### Gamification
@@ -206,8 +205,8 @@ FaceDetection / FaceTag
 - Services live in `lib/services/`. Never put business logic in API route handlers.
 
 ### Navigation
-- Mobile bottom tab bar: **Mi Progreso · Mapa · + (log ascent, center CTA) · Ascensiones · Social** (5 zones, profile accessible from Mi Progreso header).
-- Desktop top nav: Mi Progreso · Mapa · Ascensiones · Social + avatar button.
+- Mobile bottom tab bar: **Mi Progreso · Mapa · + (log ascent, center CTA) · Ascensiones** (5 zones, profile accessible from Mi Progreso header).
+- Desktop top nav: Mi Progreso · Mapa · Ascensiones + avatar button.
 - Home tab = Mi Progreso (gamification dashboard). Root `/` redirects to `/home` when authenticated.
 - **Mobile header** (`components/nav/NavBar.tsx`): sticky 52px bar shown only on mobile (`<640px`). Contains the Peakadex logo **absolutely centered** (`position: absolute; left: 50%; transform: translateX(-50%)`) so it stays visually centered regardless of avatar width. The avatar div uses `justify-content: flex-end` on the header.
 - **`--top-nav-h` CSS variable**: set to `52px` on mobile (in `app/(app)/layout.tsx`) to match the mobile header height. Map and other full-height containers use `calc(100svh - var(--top-nav-h) - var(--bottom-nav-h))` — this variable must stay in sync with the actual `.mobile-header` height (currently `52px`).
@@ -337,7 +336,7 @@ A "↻ Girar 90°" button below the zoom slider allows rotating the photo in 90�
 
 ## Feed Card Caption Format
 
-`AscentCard` (both `social` and `profile` variants) shows below the image:
+`AscentCard`  shows below the image:
 
 ```tsx
 <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.5, margin: 0 }}>
@@ -437,12 +436,12 @@ cropAspect String?           // "4:5" | "1:1"
 
 | Tab | es | ca | en | fr | de |
 |-----|----|----|----|----|-----|
-| Home | Mi Progreso | Mi Progrés | My Progress | Ma Progression | Mein Fortschritt |
+| Home | Peakadex stats| Peakadex stats | Peakadex stats | Peakadex stats | Peakadex stats |
 | Map | **Atlas** | **Atlas** | **Atlas** | **Atlas** | **Atlas** |
 | Ascents | **Bitácora** | **Bitàcola** | **Logbook** | **Carnet** | **Logbuch** |
-| Social | Social | Social | Social | Social | Social |
+| New ascent | **+** | **+** | **+** | **+** | **+** |
 
-Note: "Atlas" is intentionally not translated — it's a brand name, intentionally kept across all locales.
+Note: "Atlas" and "Peakadex stats" is intentionally not translated — it's a brand name, intentionally kept across all locales.
 
 ---
 
