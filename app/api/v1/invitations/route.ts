@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (existingUser) return NextResponse.json({ status: "already_registered" });
 
   try {
-    await sendFriendInvitationEmail(email, me?.name ?? "Un amigo", "INVITE", me?.language ?? "es");
+    await sendFriendInvitationEmail(email, me?.name ?? "Un amigo", me?.language ?? "es");
   } catch (err) {
     console.error("[v1/invitations] email failed:", err);
     return NextResponse.json({ error: "email_send_failed" }, { status: 500 });
