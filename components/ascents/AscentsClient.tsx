@@ -10,6 +10,7 @@ import { GroupedAscentCard } from "@/components/cards/GroupedAscentCard";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
+import { RARITIES, type RarityId } from "@/lib/rarity";
 
 export type AscentData = {
   id: string;
@@ -30,35 +31,26 @@ export type AscentData = {
   peakStats?: { totalAscents: number; uniqueClimbers: number };
 };
 
-type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
+type Rarity = RarityId;
 type ViewChip = "mine" | "friends" | "person" | "with-me";
 type TimeRange = "all" | "month" | "year";
 type Sort = "date-desc" | "elev-desc";
 
 function getRarity(altitudeM: number): Rarity {
-  if (altitudeM >= 8000) return "snow_lotus";
-  if (altitudeM >= 7000) return "cinquefoil";
-  if (altitudeM >= 5000) return "saxifrage";
-  if (altitudeM >= 3000) return "edelweiss";
-  if (altitudeM >= 1500) return "gentian";
+  for (let i = RARITIES.length - 1; i >= 0; i--) {
+    if (altitudeM >= RARITIES[i].minAlt) return RARITIES[i].id;
+  }
   return "daisy";
 }
 
-const RARITY_ORDER: Record<Rarity, number> = { snow_lotus: 5, cinquefoil: 4, saxifrage: 3, edelweiss: 2, gentian: 1, daisy: 0 };
+// Derive chip display colors from lib/rarity.ts source of truth
+const RARITY_COLORS: Record<Rarity, { bg: string; border: string; text: string; dot: string }> =
+  Object.fromEntries(
+    RARITIES.map((r) => [r.id, { dot: r.color, text: r.colorDark, bg: r.color + "14", border: r.color + "4D" }])
+  ) as Record<Rarity, { bg: string; border: string; text: string; dot: string }>;
 
-const RARITY_COLORS: Record<Rarity, { bg: string; border: string; text: string; dot: string }> = {
-  daisy:      { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d",  dot: "#16a34a" },
-  gentian:    { bg: "#f5f3ff", border: "#ddd6fe", text: "#6d28d9",  dot: "#7c3aed" },
-  edelweiss:  { bg: "#fff7ed", border: "#fed7aa", text: "#c2410c",  dot: "#ea580c" },
-  saxifrage:  { bg: "#fefce8", border: "#fde68a", text: "#92400e",  dot: "#b45309" },
-  cinquefoil: { bg: "#fef2f2", border: "#fecaca", text: "#b91c1c",  dot: "#dc2626" },
-  snow_lotus: { bg: "#f9fafb", border: "#e5e7eb", text: "#6b7280",  dot: "#9ca3af" },
-};
-
-const RARITY_LABELS: Record<Rarity, string> = {
-  daisy: "Daisy", gentian: "Gentian", edelweiss: "Edelweiss", saxifrage: "Saxifrage",
-  cinquefoil: "Cinquefoil", snow_lotus: "Snow Lotus",
-};
+const RARITY_LABELS: Record<Rarity, string> =
+  Object.fromEntries(RARITIES.map((r) => [r.id, r.label])) as Record<Rarity, string>;
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -742,7 +734,7 @@ export function AscentsClient({
               >
                 {t.filter_allRarities}
               </div>
-              {(["daisy", "gentian", "edelweiss", "saxifrage", "cinquefoil", "snow_lotus"] as Rarity[]).map((r) => (
+              {RARITIES.map(({ id: r }) => (
                 <div
                   key={r}
                   className="asc-fchip"
