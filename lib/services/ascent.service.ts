@@ -8,14 +8,17 @@ export type CreateAscentInput = {
   createdBy: string;
 };
 
-export async function listAscents(tenantId: string) {
+export async function listAscents(tenantId: string, userId: string, friendUserIds: string[]) {
   const db = await getTenantConnection(tenantId);
-  return db.ascent.findMany({
-    where: { tenantId },
+  const ascents = await db.ascent.findMany({
+    where: {
+      tenantId,
+      createdBy: { in: [userId, ...friendUserIds] },
+    },
     orderBy: { date: "desc" },
     include: {
       peak: {
-        select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true },
+        select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true, isMythic: true },
       },
       photos: {
         orderBy: { createdAt: "asc" },
@@ -34,7 +37,38 @@ export async function listAscents(tenantId: string) {
           },
         },
       },
+      user: {
+        select: { name: true, avatarUrl: true },
+      },
     },
+  });
+
+  return ascents.map((a) => {
+    const personMap = new Map<string, { id: string; name: string }>();
+    for (const photo of a.photos) {
+      for (const fd of photo.faceDetections) {
+        for (const tag of fd.faceTags) {
+          if (tag.userId && tag.user) {
+            personMap.set(tag.userId, { id: tag.userId, name: tag.user.username ?? tag.user.name });
+          }
+        }
+      }
+    }
+    return {
+      id: a.id,
+      peakId: a.peakId,
+      peak: a.peak,
+      createdBy: a.createdBy,
+      user: a.user ? { id: a.createdBy, name: a.user.name ?? "?", username: null as string | null, avatarUrl: a.user.avatarUrl ?? null } : null,
+      isOwn: a.createdBy === userId,
+      date: a.date.toISOString(),
+      route: a.route,
+      description: a.description,
+      wikiloc: a.wikiloc,
+      photos: a.photos.map((p) => ({ id: p.id, url: p.url })),
+      persons: Array.from(personMap.values()),
+      createdAt: a.createdAt.toISOString(),
+    };
   });
 }
 

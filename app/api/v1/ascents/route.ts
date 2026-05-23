@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getV1Session } from "@/lib/api-v1/auth";
+import { prisma } from "@/lib/db/client";
 import { listAscents, createAscent } from "@/lib/services/ascent.service";
 
 const CreateSchema = z.object({
@@ -14,7 +15,18 @@ export async function GET(req: NextRequest) {
   const session = await getV1Session(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const ascents = await listAscents(session.tenantId);
+  const friendships = await prisma.friendship.findMany({
+    where: {
+      status: "ACCEPTED",
+      OR: [{ requesterId: session.userId }, { addresseeId: session.userId }],
+    },
+    select: { requesterId: true, addresseeId: true },
+  });
+  const friendUserIds = friendships.map((f) =>
+    f.requesterId === session.userId ? f.addresseeId : f.requesterId
+  );
+
+  const ascents = await listAscents(session.tenantId, session.userId, friendUserIds);
   return NextResponse.json({ ascents });
 }
 
