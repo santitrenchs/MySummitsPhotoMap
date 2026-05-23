@@ -146,7 +146,7 @@ const es: LandingT = {
   numberLocale: "es-ES",
 
   meta_title: "App para registrar cimas de montaña | Peakadex — Gratis",
-  meta_desc: "Registra cada cima que subes, consigue cartas coleccionables según la altitud y compite con tu cordada. App de montañismo gratuita para senderistas y alpinistas.",
+  meta_desc: "Registra cada foto de cima y gana cartas coleccionables de cumbre. App de colección de picos con rareza de montaña, logros de escalada y gamificación para senderistas.",
 
   nav_rarities: "Rarezas",
   nav_cards: "Cartas",
@@ -301,7 +301,7 @@ const en: LandingT = {
   numberLocale: "en-US",
 
   meta_title: "Mountain Summit Tracker & Logbook App | Peakadex — Free",
-  meta_desc: "Log every summit you climb, collect cards by altitude and compete with your crew. Free mountain app for hikers and mountaineers.",
+  meta_desc: "Log every summit photo, earn collectible summit cards by mountain rarity and track climbing achievements. Free peak collection app with hiking gamification.",
 
   nav_rarities: "Rarities",
   nav_cards: "Cards",
@@ -456,7 +456,7 @@ const fr: LandingT = {
   numberLocale: "fr-FR",
 
   meta_title: "App pour enregistrer vos sommets de montagne | Peakadex — Gratuit",
-  meta_desc: "Enregistre chaque sommet que tu gravis, collectionne des cartes selon l'altitude et rivalise avec ta cordée. Application montagne gratuite pour randonneurs et alpinistes.",
+  meta_desc: "Transforme tes photos de sommet en cartes à collectionner. App de collection de sommets avec système de rareté de montagne, succès d'escalade et gamification.",
 
   nav_rarities: "Raretés",
   nav_cards: "Cartes",
@@ -611,7 +611,7 @@ const de: LandingT = {
   numberLocale: "de-DE",
 
   meta_title: "App zum Erfassen von Berggipfeln & Gipfeltagebuch | Peakadex — Kostenlos",
-  meta_desc: "Erfasse jeden Gipfel, den du besteigst, sammle Karten nach Höhe und tritt gegen deine Seilschaft an. Kostenlose Berg-App für Wanderer und Bergsteiger.",
+  meta_desc: "Verwandle Gipfelfotos in Sammelkarten. Gipfelsammlungs-App mit Bergseltenheit, Kletterleistungen und Gamification für Wanderer und Bergsteiger.",
 
   nav_rarities: "Raritäten",
   nav_cards: "Karten",
@@ -766,7 +766,7 @@ const ca: LandingT = {
   numberLocale: "ca-ES",
 
   meta_title: "App per registrar cims de muntanya | Peakadex — Gratis",
-  meta_desc: "Registra cada cim que puges, aconsegueix cartes col·leccionables per altitud i competeix amb la teva cordada. App de muntanyisme gratuïta per a senderistes i alpinistes.",
+  meta_desc: "Converteix fotos de cim en cartes col·leccionables de cima. App de col·lecció de pics amb rareses de muntanya, fites d'escalada i gamificació per a senderistes.",
 
   nav_rarities: "Rarezas",
   nav_cards: "Cartes",

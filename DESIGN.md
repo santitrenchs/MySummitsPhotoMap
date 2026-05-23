@@ -376,6 +376,254 @@ container: textAlign center · padding 80px 0
 
 ---
 
+## Home Screen — Mi Progreso
+
+> **Authoritative spec for Android and iOS.** When building this screen on any mobile platform, follow this section exactly — do not improvise from CLAUDE.md's generic description or from old screenshots.
+
+### Section order (top → bottom)
+
+| # | Section | Show condition |
+|---|---------|----------------|
+| 1 | HeroHeader | Always |
+| 2 | OnboardingBanner | `totalAscents == 0` |
+| 3 | ProgressionSection | Always |
+| 4 | MonthlyChartSection | `totalAscents >= 1` AND `monthlyStats` not empty |
+| 5 | RarityChartSection | `totalAscents >= 1` |
+| 6 | LeaderboardCard | `leaderboard.size > 1` — title **"Tu cordada"** |
+| 7 | NoFriendsCta | `totalFriends == 0` |
+| 8 | RecentAscentsRow | `recentAscents` not empty — title **"Tus últimas cimas"** |
+
+**Motivation banner (🏆 / ⚠️ / 🎯): web only. Never render it on Android or iOS.**
+
+---
+
+### 1 — HeroHeader
+
+Full-width card with `12dp` margin on all sides, `16dp` rounded corners.
+
+**Background**: `public/brand/hero.png` (1774×887 px) — `ContentScale.Crop`, aligned slightly above center (`backgroundPosition: center 60%` / `BiasAlignment(0f, -0.2f)` in Compose). Fallback fill color `#1C2D3F`. Dark gradient overlay on top:
+
+```
+vertical gradient:
+  0%   → rgba(10, 20, 35, 0.15)
+  55%  → rgba(10, 20, 35, 0.45)
+  100% → rgba(10, 20, 35, 0.85)
+```
+
+**Content column** (centered, padding `28dp` top / `24dp` sides+bottom, gap `10dp`):
+
+**Avatar** — 68dp circle, `2.5dp` white border at 55% opacity, blue gradient fallback `#3A7BD5 → #1A4A8A`. If `avatarUrl` available: crop-fill. Else: 2-letter initials in white 24sp bold. **Resolution order**: `user.avatarUrl ?? leaderboardEntry.avatarUrl`.
+
+**Name** — 20sp bold white, letterSpacing −0.03em. **Resolution order**: `user.name ?? leaderboardEntry.name ?? ""`.
+
+**Level pill** — rounded full, bg `#EFF6FF`, text `#0369A1` 12sp bold. Text = `currentLevel.name` (from API) fallback `"Scout"`.
+
+**Metrics row** — three cells separated by 1dp white-15%-opacity dividers:
+
+| Cell | Value | Label |
+|------|-------|-------|
+| 1 | `stats.totalAscents` | "ascensiones" |
+| 2 | `stats.uniquePeaks` | "cimas" |
+| 3 | `stats.maxAltitude` (or "—" if 0) + small superscript "m" | "alt. máx" |
+
+Value: 18sp bold white, letterSpacing −0.04em. Label: 10.5sp white 65% opacity.
+
+**Cairns + EP pill** — shown only when leaderboard contains the current user. Rounded full, bg `rgba(255,255,255,0.15)`, padding `5dp × 14dp`:
+- `△` icon, amber `#FBBF24`, 12sp bold
+- `{cairns} Cairns` — amber `#FBBF24`, 12.5sp semibold
+- `·` separator — white 35% opacity, 16sp
+- `+{ep} EP` — white, 12.5sp bold
+
+---
+
+### 2 — OnboardingBanner
+
+Shown when `totalAscents == 0`. Green gradient card.
+
+```
+background: linear-gradient(135deg, #F0FDF4 → #DCFCE7)
+border:     1.5dp solid #86EFAC
+radius:     16dp
+padding:    20dp
+alignment:  center
+```
+
+- Title: `"Cada cima guarda una historia."` — 18sp extrabold `#14532D`, letterSpacing −0.02em
+- Subtitle: `"Captura tu primera ascensión y empieza a escribir la tuya."` — 14sp `#166534`, lineHeight 1.5
+- CTA button: `"Capturar primera ascensión"` — bg `#16A34A`, white text 14sp bold, radius 8dp, shadow `rgba(22,163,74,0.35) 0 4px 12px`. Tap → open new ascent modal/flow.
+
+---
+
+### 3 — ProgressionSection
+
+Container: `16dp` horizontal padding, `20dp` top padding, `animateContentSize`.
+
+**Collapsed state**: shows only the single in-progress level (= `currentLevelIdx + 1`, or last level if already maxed).
+
+**Expanded state**: shows all 6 levels.
+
+**Toggle button**: `TextButton`, full width. Text:
+- Collapsed: `"Ver todos los niveles →"` — primary color, 13sp semibold
+- Expanded: `"Ver menos"` — `onSurfaceVariant`, 13sp semibold
+
+#### LevelCard
+
+Row with `IntrinsicSize.Min` height. `12dp` rounded corners.
+
+| State | bg | border |
+|-------|----|--------|
+| In-progress | `#EFF6FF` | `#BFDBFE` 1.5dp |
+| Done | `#F9FAFB` | `#E5E7EB` 1.5dp |
+| Locked | `#F9FAFB` | `#E5E7EB` 1.5dp, **50% alpha** |
+
+**Left accent bar**: `4dp` wide, full height. Color `#0369A1` for in-progress only; transparent otherwise.
+
+**Status badge** — 28dp circle:
+- Done: green `#16A34A`, white `"✓"` 11sp extrabold
+- In-progress: blue `#0369A1`, white level index number 11sp extrabold
+- Locked: gray `#D1D5DB`, white `"🔒"` 9sp
+
+**Name** — level name text only, no emoji. 15sp extrabold. In-progress: `#0369A1`. Others: `#111827`. Single line, ellipsis overflow.
+
+**Pills** (right side, `Row`, gap 4dp):
+- `"{N} cimas"` — gray pill `#F3F4F6` bg, `#374151` text, 11sp semibold, 6dp radius
+- `"Superar los {threshold}m"` — same style for each altReq
+
+**Progress bar** (in-progress level only): 6dp tall, `#DBEAFE` track, blue gradient fill `#0369A1 → #0EA5E9`, `3dp` radius. Below: `"{uniquePeaks} / {target} cimas"` left + `"{pct}%"` right in `#0369A1` 13sp bold. Below that: `"→ {N} cima(s) más"` in `#6B7280` 12sp.
+
+---
+
+### 4 — MonthlyChartSection
+
+Shared `ChartCard` wrapper (white surface, 1dp `outlineVariant` border, 16dp radius, 16dp padding). Title: `"Últimos 6 meses"`. Subtitle row: total summits in blue + total meters ascended in dark gray.
+
+Bar chart: one column per month, `verticalAlignment = Bottom`, gap `6dp`. For each bar:
+- Count label above bar: 10sp bold blue (hidden if 0 summits)
+- Stacked bar (`Column`, segments **reversed** so last segment is drawn at bottom, total max height `64dp`, min height `3dp` for zero-month). Each segment colored by rarity (`RARITIES[i].color`). Top corners `3dp` radius.
+- Month label below: 3-letter abbreviated month, 10sp `#94A3B8`
+
+Empty month bar: solid `#E5E7EB` fill.
+
+---
+
+### 5 — RarityChartSection
+
+Same `ChartCard` wrapper. Title: `"Cimas por rareza"`.
+
+9 columns (one per rarity), `verticalAlignment = Bottom`, gap `4dp`. For each rarity:
+- Count label: 10sp bold, rarity color (hidden if 0)
+- Bar: max height `96dp`, min height `3dp`. Color = `RARITIES[i].color` if count > 0, else `#E5E7EB`. Top corners `3dp` radius.
+- `"✿"` icon below: 14sp, rarity color if active, `#E5E7EB` if inactive.
+
+---
+
+### 6 — LeaderboardCard
+
+Container: `16dp` horizontal padding, `16dp` rounded corners, 1dp `outlineVariant` border, white surface.
+
+**Column header row** (inside the card, above the divider):
+- Padding start `19dp` (16 outer + 3 for the left border slot of the current user row), end `16dp`, vertical `10dp/4dp`
+- `22dp` spacer (rank column) + `weight(1f)` spacer (name) + `"Cimas"` w:52dp + `"Cairns"` w:52dp + `"EP"` w:44dp
+- Header text: 10sp semibold `#94A3B8`, centered
+
+`HorizontalDivider` between headers and rows.
+
+#### Current user row
+
+`IntrinsicSize.Min` row. Background: horizontal gradient `#EFF6FF → #F0F9FF`.
+
+Left blue border strip: `3dp` wide, full height, `#0369A1`.
+
+Inner padding: start 16dp, end 16dp, top 16dp, bottom 14dp.
+
+- **Rank**: 22dp wide, 13sp bold `#0369A1`
+- **Name column** (`weight(1f)`):
+  - Row: name text (14sp bold `#0F172A`, ellipsis) + `" (tú)"` (12sp `#64748B`)
+  - Below: level pill (see below)
+- **Cimas**: `#0369A1`
+- **Cairns**: `#D97706` (amber — always amber, regardless of user)
+- **EP**: `#0369A1`
+
+#### Other user rows
+
+Padding: `horizontal 16dp, vertical 12dp`.
+
+- **Rank**: 22dp wide, 13sp bold `#D1D5DB` (light gray — no medals)
+- **Name column** (`weight(1f)`):
+  - Name: 13sp semibold `#111827`
+  - Below: level pill
+- **Cimas**: `#374151`
+- **Cairns**: `#D97706`
+- **EP**: `#374151`
+
+#### Level pill (inside leaderboard rows)
+
+```
+bg: #F3F4F6, text: #374151, 10sp bold, 4dp radius, padding 6dp×2dp
+text = levelNameForIdx(entry.levelIdx)  ← maps 1→"Scout" … 6→"Zenith"
+```
+
+#### Metric column
+
+`14sp extrabold`, centered, column width as above. No label below the number (labels are in the header row).
+
+---
+
+### 7 — NoFriendsCta
+
+```
+background: linear-gradient(135deg, #EFF6FF → #F0F9FF)
+border:     1.5dp DASHED #BFDBFE
+radius:     12dp
+padding:    22dp
+alignment:  center
+```
+
+- Emoji `"👥"` 36sp
+- Title: `"El camino se disfruta más acompañado."` — 15sp bold `#111827`
+- Subtitle: `"Encuentra tu cordada, revive cada ascensión y creced juntos en la montaña."` — 13sp `#6B7280`
+- CTA: `"Invitar amigos"` — bg `#0369A1`, white text, `8dp` radius. Tap → navigate to friends/invite screen.
+
+---
+
+### 8 — RecentAscentsRow
+
+Horizontal scroll row, `16dp` horizontal content padding, `12dp` gap between cards.
+
+**RecentAscentCard** — 150dp wide, 12dp radius, 1dp `outlineVariant` border:
+- Photo area: 120dp tall, `ContentScale.Crop`. Placeholder: `🏔️` emoji 40sp on `surfaceVariant` bg.
+- Bottom gradient overlay (transparent → `rgba(0,0,0,0.65)`): peak name 12sp bold white + altitude 10sp white 80% opacity.
+
+---
+
+### Shared components
+
+**ChartCard**: Column with 16dp margin, 8dp vertical, 16dp radius, 1dp `outlineVariant` border, white bg, 16dp inner padding. Title: `titleMedium` bold. Optional subtitle row. 16dp space before content.
+
+**SectionTitle**: `titleMedium` bold, `onBackground` color, `16dp` horizontal + `20dp` vertical padding.
+
+**Pill**: `#F3F4F6` bg, `#374151` text, 11sp semibold, 6dp radius, `10dp×4dp` padding.
+
+---
+
+### Rarity color palette (for charts)
+
+Order matches `RarityBreakdown.toList()` (index 0–8):
+
+| # | Name | Color |
+|---|------|-------|
+| 0 | Daisy | `#00995C` |
+| 1 | Heather | `#06B6D4` |
+| 2 | Gentian | `#1E40AF` |
+| 3 | Tundra | `#0E7490` |
+| 4 | Edelweiss | `#A855F7` |
+| 5 | Draba | `#EC4899` |
+| 6 | Saxifrage | `#F97316` |
+| 7 | Cinquefoil | `#EAB308` |
+| 8 | Snow Lotus | `#94A3B8` |
+
+---
+
 ## Back-to-top — two complementary patterns
 
 Long feeds (Bitácora and any future scrollable list) provide two ways to return to top.

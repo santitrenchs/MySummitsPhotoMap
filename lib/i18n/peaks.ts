@@ -2,6 +2,162 @@ import type { PeakCardData } from "@/lib/data/landing-peaks";
 
 export type PeakLocale = "es" | "en" | "fr" | "de" | "ca";
 
+// ─── Index page translations ──────────────────────────────────────────────────
+
+export type PeakIndexT = {
+  locale: PeakLocale;
+  urlPrefix: string;
+  nav_login: string;
+  nav_register: string;
+  meta_title: string;
+  meta_desc: string;
+  schema_name: string;
+  schema_desc: string;
+  // Hero
+  hero_title: string;
+  hero_subtitle: string;
+  // Rarity scale
+  rarity_heading: string;
+  rarity_ranges: string[];   // 9 labels, one per rarity tier (low → high)
+  // Mythic section
+  mythic_badge: string;
+  mythic_heading: string;
+  mythic_body: string;
+  // Catalog
+  catalog_heading: string;
+  catalog_count: (n: number) => string;
+  // CTA
+  cta_heading: string;
+  cta_body: string;
+  cta_button: string;
+  cta_micro: string;
+};
+
+const RARITY_RANGES_ES = ["< 1.000 m", "1.000 – 1.999 m", "2.000 – 2.999 m", "3.000 – 3.999 m", "4.000 – 4.999 m", "5.000 – 5.999 m", "6.000 – 6.999 m", "7.000 – 7.999 m", "≥ 8.000 m"];
+const RARITY_RANGES_EN = ["< 1,000 m", "1,000 – 1,999 m", "2,000 – 2,999 m", "3,000 – 3,999 m", "4,000 – 4,999 m", "5,000 – 5,999 m", "6,000 – 6,999 m", "7,000 – 7,999 m", "≥ 8,000 m"];
+
+const INDEX_TRANSLATIONS: Record<PeakLocale, PeakIndexT> = {
+  es: {
+    locale: "es",
+    urlPrefix: "",
+    nav_login: "Iniciar sesión",
+    nav_register: "Registrarse",
+    meta_title: "Cartas de cima — Colecciona cimas míticas | Peakadex",
+    meta_desc: "Convierte fotos de cima en cartas coleccionables de cumbre. Rareza de montaña, logros de escalada y app de colección de picos para montañeros.",
+    schema_name: "Cartas de cima Peakadex — Colecciona cimas míticas",
+    schema_desc: "En Peakadex cada ascensión se convierte en una carta coleccionable con rareza según la altitud. Las cimas MYTHIC otorgan crains especiales.",
+    hero_title: "Cada cima que conquistas\npasa a formar parte de tu leyenda.",
+    hero_subtitle: "Haz una foto real en la cima, crea tu carta de montaña y colecciona cimas raras de todo el mundo.",
+    rarity_heading: "Cuanto más alta la cima,\nmás rara la carta.",
+    rarity_ranges: RARITY_RANGES_ES,
+    mythic_badge: "MYTHIC",
+    mythic_heading: "Algunas cimas son tan importantes que todo montañero las debería tener.",
+    mythic_body: "Por eso son MYTHIC. Estas son las cartas que te otorgan puntos especiales, los crains.",
+    catalog_heading: "Todas las cartas del catálogo",
+    catalog_count: (n) => `${n} cimas · Ordenadas por altitud`,
+    cta_heading: "Registra tu ascensión y consigue la tuya.",
+    cta_body: "Crea tu cuenta gratis y empieza a coleccionar cartas de cumbre por cada ascensión que registres.",
+    cta_button: "Empieza tu colección",
+    cta_micro: "Gratis · Sin tarjeta de crédito · En 1 minuto",
+  },
+  en: {
+    locale: "en",
+    urlPrefix: "/en",
+    nav_login: "Sign in",
+    nav_register: "Sign up",
+    meta_title: "Summit Cards — Collect Mythic Peaks | Peakadex",
+    meta_desc: "Turn every summit photo into a collectible summit card. Explore the mountain rarity system, earn climbing achievements and build your peak collection.",
+    schema_name: "Peakadex Summit Cards — Collect Mythic Peaks",
+    schema_desc: "In Peakadex every ascent becomes a collectible card with rarity based on altitude. MYTHIC peaks award special crains.",
+    hero_title: "Every summit you climb\nbecomes part of your legend.",
+    hero_subtitle: "Take a real summit photo, create your Peakadex mountain card and collect peaks across the world.",
+    rarity_heading: "The higher the summit,\nthe rarer the card.",
+    rarity_ranges: RARITY_RANGES_EN,
+    mythic_badge: "MYTHIC",
+    mythic_heading: "Some peaks are so legendary every mountaineer should have them.",
+    mythic_body: "That's why they're MYTHIC. These are the cards that award special points — crains.",
+    catalog_heading: "All cards in the catalog",
+    catalog_count: (n) => `${n} summits · Sorted by altitude`,
+    cta_heading: "Log your ascent and get yours.",
+    cta_body: "Create your free account and start collecting summit cards for every ascent you log.",
+    cta_button: "Start your collection",
+    cta_micro: "Free · No credit card · 1 minute setup",
+  },
+  fr: {
+    locale: "fr",
+    urlPrefix: "/fr",
+    nav_login: "Connexion",
+    nav_register: "S'inscrire",
+    meta_title: "Cartes de sommet — Collecte des sommets mythiques | Peakadex",
+    meta_desc: "Transforme tes photos de sommet en cartes à collectionner. Système de rareté de montagne, succès d'escalade et collection de sommets.",
+    schema_name: "Cartes de sommet Peakadex — Collecte des sommets mythiques",
+    schema_desc: "Dans Peakadex chaque ascension devient une carte à collectionner avec une rareté basée sur l'altitude. Les sommets MYTHIC accordent des crains spéciaux.",
+    hero_title: "Chaque sommet que tu graviras\nfera partie de ta légende.",
+    hero_subtitle: "Prends une vraie photo au sommet, crée ta carte de montagne et collectionne des sommets rares dans le monde entier.",
+    rarity_heading: "Plus le sommet est haut,\nplus la carte est rare.",
+    rarity_ranges: RARITY_RANGES_ES,
+    mythic_badge: "MYTHIC",
+    mythic_heading: "Certains sommets sont si importants que tout alpiniste devrait les avoir.",
+    mythic_body: "C'est pourquoi ils sont MYTHIC. Ce sont les cartes qui accordent des points spéciaux — les crains.",
+    catalog_heading: "Toutes les cartes du catalogue",
+    catalog_count: (n) => `${n} sommets · Triés par altitude`,
+    cta_heading: "Enregistre ton ascension et obtiens la tienne.",
+    cta_body: "Crée ton compte gratuit et commence à collectionner des cartes de sommet pour chaque ascension enregistrée.",
+    cta_button: "Lance ta collection",
+    cta_micro: "Gratuit · Sans carte bancaire · En 1 minute",
+  },
+  de: {
+    locale: "de",
+    urlPrefix: "/de",
+    nav_login: "Anmelden",
+    nav_register: "Registrieren",
+    meta_title: "Gipfelkarten — Sammle mythische Gipfel | Peakadex",
+    meta_desc: "Verwandle Gipfelfotos in sammelbare Gipfelkarten. Bergseltenheitssystem, Kletterleistungen und Gipfelsammlung für Bergsteiger.",
+    schema_name: "Peakadex Gipfelkarten — Sammle mythische Gipfel",
+    schema_desc: "In Peakadex wird jede Besteigung zu einer Sammelkarte mit Seltenheit basierend auf der Höhe. MYTHIC-Gipfel verleihen besondere Crains.",
+    hero_title: "Jeder Gipfel, den du bestiegst,\nwird Teil deiner Legende.",
+    hero_subtitle: "Mach ein echtes Gipfelfoto, erstelle deine Bergkarte und sammle seltene Gipfel aus aller Welt.",
+    rarity_heading: "Je höher der Gipfel,\ndesto seltener die Karte.",
+    rarity_ranges: RARITY_RANGES_ES,
+    mythic_badge: "MYTHIC",
+    mythic_heading: "Einige Gipfel sind so legendär, dass jeder Bergsteiger sie haben sollte.",
+    mythic_body: "Deshalb sind sie MYTHIC. Das sind die Karten, die besondere Punkte verleihen — die Crains.",
+    catalog_heading: "Alle Karten im Katalog",
+    catalog_count: (n) => `${n} Gipfel · Nach Höhe sortiert`,
+    cta_heading: "Trag deine Besteigung ein und hol dir deine Karte.",
+    cta_body: "Erstelle dein kostenloses Konto und beginne, Gipfelkarten für jede Besteigung zu sammeln.",
+    cta_button: "Starte deine Sammlung",
+    cta_micro: "Kostenlos · Keine Kreditkarte · In 1 Minute",
+  },
+  ca: {
+    locale: "ca",
+    urlPrefix: "/ca",
+    nav_login: "Inicia sessió",
+    nav_register: "Registra't",
+    meta_title: "Cartes de cim — Col·lecciona cims mítiques | Peakadex",
+    meta_desc: "Converteix les teves fotos de cim en cartes col·leccionables de cima. Rareses de muntanya, fites d'escalada i col·lecció de pics per a muntanyencs.",
+    schema_name: "Cartes de cim Peakadex — Col·lecciona cims mítiques",
+    schema_desc: "A Peakadex cada ascensió es converteix en una carta col·leccionable amb raresa basada en l'altitud. Els cims MYTHIC atorguen crains especials.",
+    hero_title: "Cada cim que conquereixes\nforma part de la teva llegenda.",
+    hero_subtitle: "Fes una foto real al cim, crea la teva carta de muntanya i col·lecciona cims rars de tot el món.",
+    rarity_heading: "Com més alt el cim,\nmés rara la carta.",
+    rarity_ranges: RARITY_RANGES_ES,
+    mythic_badge: "MYTHIC",
+    mythic_heading: "Alguns cims són tan importants que tot muntanyenc els hauria de tenir.",
+    mythic_body: "Per això són MYTHIC. Aquestes són les cartes que t'atorguen punts especials, els crains.",
+    catalog_heading: "Totes les cartes del catàleg",
+    catalog_count: (n) => `${n} cims · Ordenats per altitud`,
+    cta_heading: "Registra la teva ascensió i aconsegueix la teva.",
+    cta_body: "Crea el teu compte gratuït i comença a col·leccionar cartes de cim per cada ascensió que registris.",
+    cta_button: "Comença la teva col·lecció",
+    cta_micro: "Gratuït · Sense targeta de crèdit · En 1 minut",
+  },
+};
+
+export function getPeakIndexT(locale: PeakLocale): PeakIndexT {
+  return INDEX_TRANSLATIONS[locale];
+}
+
 export type PeakPageT = {
   locale: PeakLocale;
   urlPrefix: string;
@@ -50,7 +206,7 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     meta_title: (p) =>
       `${p.peakName} (${p.altLabel}) — Ascensión y ruta en ${p.mountainRange} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `El ${p.peakName} es una cima de ${p.mountainRange} con ${p.altLabel} de altitud y rareza ${rarity}. ${p.ascents} ascensiones registradas en Peakadex. ¿Has subido el ${p.peakName}?`,
+      `${p.peakName} (${p.altLabel}) en ${p.mountainRange}. Gana tu carta coleccionable de cumbre ${rarity} y registra este logro de escalada en Peakadex — app de colección de picos.`,
     schema_atlas: "Atlas de cimas",
     schema_desc: (p, rarity) =>
       `${p.peakName} es una cima de ${p.mountainRange} (${p.country}) con ${p.altLabel} de altitud. Rareza ${rarity} en Peakadex.`,
@@ -75,7 +231,7 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     meta_title: (p) =>
       `${p.peakName} (${p.altLabel}) — Ascent guide in ${p.mountainRange} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} is a summit in ${p.mountainRange} at ${p.altLabel}. Rarity: ${rarity}. ${p.ascents} ascents logged in Peakadex. Have you climbed ${p.peakName}?`,
+      `${p.peakName} (${p.altLabel}) in ${p.mountainRange}. Earn your ${rarity} collectible summit card and log this climbing achievement on Peakadex — the peak collection app.`,
     schema_atlas: "Summit atlas",
     schema_desc: (p, rarity) =>
       `${p.peakName} is a summit in ${p.mountainRange} (${p.country}) at ${p.altLabel}. Rarity: ${rarity} on Peakadex.`,
@@ -100,7 +256,7 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     meta_title: (p) =>
       `${p.peakName} (${p.altLabel}) — Ascension et itinéraire dans ${p.mountainRange} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} est un sommet de ${p.mountainRange} à ${p.altLabel} d'altitude. Rareté : ${rarity}. ${p.ascents} ascensions enregistrées sur Peakadex. Tu as gravi ${p.peakName} ?`,
+      `${p.peakName} (${p.altLabel}) dans ${p.mountainRange}. Obtiens ta carte de sommet ${rarity} à collectionner et enregistre cet exploit d'escalade sur Peakadex.`,
     schema_atlas: "Atlas des sommets",
     schema_desc: (p, rarity) =>
       `${p.peakName} est un sommet de ${p.mountainRange} (${p.country}) à ${p.altLabel}. Rareté ${rarity} sur Peakadex.`,
@@ -125,7 +281,7 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     meta_title: (p) =>
       `${p.peakName} (${p.altLabel}) — Aufstieg und Route in ${p.mountainRange} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} ist ein Gipfel in ${p.mountainRange} auf ${p.altLabel}. Seltenheit: ${rarity}. ${p.ascents} Besteigungen in Peakadex erfasst. Hast du den ${p.peakName} bestiegen?`,
+      `${p.peakName} (${p.altLabel}) in ${p.mountainRange}. Erhalte deine ${rarity}-Sammelkarte und trage diese Kletterleistung in Peakadex ein — die Gipfelsammlungs-App.`,
     schema_atlas: "Gipfelatlas",
     schema_desc: (p, rarity) =>
       `${p.peakName} ist ein Gipfel in ${p.mountainRange} (${p.country}) auf ${p.altLabel}. Seltenheit: ${rarity} auf Peakadex.`,
@@ -150,7 +306,7 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     meta_title: (p) =>
       `${p.peakName} (${p.altLabel}) — Ascensió i ruta als ${p.mountainRange} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `El ${p.peakName} és un cim de ${p.mountainRange} amb ${p.altLabel} d'altitud i raresa ${rarity}. ${p.ascents} ascensions registrades a Peakadex. Has pujat al ${p.peakName}?`,
+      `${p.peakName} (${p.altLabel}) als ${p.mountainRange}. Aconsegueix la teva carta col·leccionable de cima ${rarity} i registra aquesta fita d'escalada a Peakadex.`,
     schema_atlas: "Atles de cims",
     schema_desc: (p, rarity) =>
       `${p.peakName} és un cim de ${p.mountainRange} (${p.country}) amb ${p.altLabel} d'altitud. Raresa ${rarity} a Peakadex.`,
