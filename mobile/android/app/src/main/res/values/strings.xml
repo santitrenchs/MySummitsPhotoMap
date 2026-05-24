@@ -1,0 +1,65 @@
+<resources>
+    <string name="app_name">Peakadex</string>
+
+    <!-- ── Navegación principal ──────────────────────────────────────────────── -->
+    <string name="nav_tab_home">Peakadex stats</string>
+    <string name="nav_tab_map">Atlas</string>
+    <string name="nav_tab_logbook">Bitácora</string>
+    <string name="nav_fab_new_ascent">Nueva ascensión</string>
+
+    <!-- ── Atlas — barra de búsqueda ─────────────────────────────────────────── -->
+    <string name="atlas_search_placeholder">Buscar pico…</string>
+    <string name="atlas_action_search">Buscar</string>
+    <string name="atlas_action_close">Cerrar</string>
+
+    <!-- ── Atlas — chips de filtro ───────────────────────────────────────────── -->
+    <string name="atlas_filter_all">Todas</string>
+    <string name="atlas_filter_climbed">Escaladas</string>
+    <string name="atlas_filter_not_yet">Por escalar</string>
+
+    <!-- ── Atlas — botones de control del mapa ───────────────────────────────── -->
+    <string name="atlas_action_layers">Capas</string>
+    <string name="atlas_action_my_location">Mi ubicación</string>
+    <string name="atlas_toggle_list">Lista</string>
+    <string name="atlas_toggle_map">Mapa</string>
+
+    <!-- ── Atlas — panel de capas ────────────────────────────────────────────── -->
+    <string name="atlas_layers_title">Capas del mapa</string>
+    <string name="atlas_layers_map_type">TIPO DE MAPA</string>
+    <string name="atlas_layers_normal">Normal</string>
+    <string name="atlas_layers_terrain">Relieve</string>
+    <string name="atlas_layers_satellite">Satélite</string>
+    <string name="atlas_layers_section">CAPAS</string>
+    <string name="atlas_layers_trails">Senderos</string>
+
+    <!-- ── Atlas — detalle de cima ───────────────────────────────────────────── -->
+    <string name="atlas_peak_unclimbed">Aún sin escalar</string>
+    <string name="atlas_meta_date">Fecha</string>
+    <string name="atlas_meta_times">Veces</string>
+    <string name="atlas_meta_route">Vía</string>
+    <string name="atlas_btn_view_ascents">Ver capturas</string>
+    <string name="atlas_btn_capture">Capturar</string>
+    <string name="atlas_btn_capture_new">+ Capturar</string>
+
+    <!-- ── Atlas — lista de cimas ────────────────────────────────────────────── -->
+    <string name="atlas_list_empty">No hay cimas en esta área</string>
+    <plurals name="atlas_peak_count">
+        <item quantity="one">1 cima</item>
+        <item quantity="other">%d cimas</item>
+    </plurals>
+
+    <!-- ── Atlas — panel de filtros ──────────────────────────────────────────── -->
+    <string name="atlas_btn_filters">Filtros</string>
+    <string name="atlas_section_rarity">RAREZA</string>
+    <string name="atlas_section_status">ESTADO</string>
+    <string name="atlas_section_sort">ORDENAR</string>
+    <string name="atlas_filter_captured">Capturadas (%d)</string>
+    <string name="atlas_filter_not_captured">Sin capturar</string>
+    <string name="atlas_sort_distance">Distancia</string>
+    <string name="atlas_sort_relevance">Relevancia</string>
+    <string name="atlas_sort_altitude">Altitud</string>
+    <plurals name="atlas_filters_see_peaks">
+        <item quantity="one">Ver 1 cima</item>
+        <item quantity="other">Ver %d cimas</item>
+    </plurals>
+</resources>

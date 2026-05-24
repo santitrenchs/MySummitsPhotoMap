@@ -168,6 +168,10 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
 
+// ── Map base type ─────────────────────────────────────────────────────────────
+
+enum class MapType { NORMAL, TERRAIN, SATELLITE }
+
 // ── Source / layer IDs ────────────────────────────────────────────────────────
 
 private const val SRC_CLIMBED             = "climbed-source"
@@ -186,6 +190,9 @@ private const val LYR_TRAILS              = "trails-layer"
 
 private const val SRC_SELECTED            = "selected-source"
 private const val LYR_SELECTED_GLOW       = "selected-glow-layer"
+
+private const val SRC_SATELLITE           = "satellite-source"
+private const val LYR_SATELLITE           = "satellite-layer"
 
 // ── Entry composable ──────────────────────────────────────────────────────────
 
@@ -211,7 +218,7 @@ fun AtlasScreen(
     // rememberSaveable: persiste en rotación de pantalla y cambios de configuración
     var showTopBar by rememberSaveable { mutableStateOf(true) }
     var terrain3d  by rememberSaveable { mutableStateOf(false) }
-    var hillshade  by rememberSaveable { mutableStateOf(false) }
+    var mapType    by rememberSaveable { mutableStateOf(MapType.NORMAL) }
     var trails     by rememberSaveable { mutableStateOf(false) }
     // remember: estado transitorio, resetear en rotación es correcto
     var layersOpen    by remember { mutableStateOf(false) }
@@ -369,11 +376,18 @@ fun AtlasScreen(
             loadPhotoMarkers(context, map, climbed, rarities, loadedMarkerIds)
         }
 
-        // ── Toggle hillshade layer ────────────────────────────────────────────
-        LaunchedEffect(styleReady.value, hillshade) {
+        // ── Toggle satellite / terrain basemap ───────────────────────────────
+        LaunchedEffect(styleReady.value, mapType) {
             if (!styleReady.value) return@LaunchedEffect
-            mapRef.value?.style?.getLayer(LYR_HILLSHADE)
-                ?.setProperties(visibility(if (hillshade) VISIBLE else NONE))
+            val style = mapRef.value?.style ?: return@LaunchedEffect
+            // Show carto OR satellite (mutually exclusive basemaps)
+            style.getLayer("carto-basemap-layer")
+                ?.setProperties(visibility(if (mapType == MapType.SATELLITE) NONE else VISIBLE))
+            style.getLayer(LYR_SATELLITE)
+                ?.setProperties(visibility(if (mapType == MapType.SATELLITE) VISIBLE else NONE))
+            // Hillshade: auto-on for TERRAIN and SATELLITE, off for NORMAL
+            style.getLayer(LYR_HILLSHADE)
+                ?.setProperties(visibility(if (mapType == MapType.NORMAL) NONE else VISIBLE))
         }
 
         // ── Toggle trails overlay ─────────────────────────────────────────────
@@ -512,7 +526,7 @@ fun AtlasScreen(
             MapControlsColumn(
                 showTopBar     = showTopBar,
                 onToggleTopBar = { showTopBar = !showTopBar },
-                hasActiveLayers= hillshade || trails,
+                hasActiveLayers= mapType != MapType.NORMAL || trails,
                 layersOpen     = layersOpen,
                 onToggleLayers = { layersOpen = !layersOpen },
                 terrain3d      = terrain3d,
@@ -562,11 +576,11 @@ fun AtlasScreen(
         // ── Layers panel (bottom sheet) ───────────────────────────────────────
         if (layersOpen) {
             LayersPanel(
-                hillshade      = hillshade,
-                onHillshade    = { hillshade = it },
-                trails         = trails,
-                onTrails       = { trails = it },
-                onDismiss      = { layersOpen = false },
+                mapType   = mapType,
+                onMapType = { mapType = it },
+                trails    = trails,
+                onTrails  = { trails = it },
+                onDismiss = { layersOpen = false },
             )
         }
 
@@ -607,6 +621,13 @@ fun AtlasScreen(
 // ── Map source / layer setup ──────────────────────────────────────────────────
 
 private fun setupSources(style: org.maplibre.android.maps.Style) {
+    // ESRI World Imagery satellite tiles — no API key required.
+    // Path order is {z}/{y}/{x} (row then col) which MapLibre substitutes correctly.
+    val satTileSet = TileSet("2.2.0",
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}")
+    satTileSet.setMaxZoom(19f)
+    style.addSource(RasterSource(SRC_SATELLITE, satTileSet, 256))
+
     // Terrain DEM — used for hillshade and 3D terrain extrusion
     val demTileSet = TileSet("2.2.0",
         "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png")
@@ -635,6 +656,16 @@ private fun setupSources(style: org.maplibre.android.maps.Style) {
 }
 
 private fun setupLayers(style: org.maplibre.android.maps.Style) {
+    // Satellite basemap — sits above the Carto raster, initially hidden.
+    // Visibility toggled by LaunchedEffect(mapType); hillshade renders on top.
+    style.addLayer(
+        RasterLayer(LYR_SATELLITE, SRC_SATELLITE)
+            .withProperties(
+                rasterOpacity(1.0f),
+                visibility(NONE),
+            ),
+    )
+
     // Hillshade — initially hidden, toggled by the Capas panel
     style.addLayer(
         HillshadeLayer(LYR_HILLSHADE, SRC_TERRAIN_DEM)
@@ -1524,8 +1555,8 @@ private fun PeaksListPanel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LayersPanel(
-    hillshade: Boolean,
-    onHillshade: (Boolean) -> Unit,
+    mapType: MapType,
+    onMapType: (MapType) -> Unit,
     trails: Boolean,
     onTrails: (Boolean) -> Unit,
     onDismiss: () -> Unit,
@@ -1548,7 +1579,7 @@ private fun LayersPanel(
                 fontSize = 17.sp, fontWeight = FontWeight.Bold,
                 color    = PeakTextHeadline)
 
-            // Map type section
+            // Map type section — mutually exclusive (Normal / Terrain / Satellite)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.atlas_layers_map_type),
                     fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
@@ -1556,16 +1587,23 @@ private fun LayersPanel(
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     LayerCard(
                         label    = stringResource(R.string.atlas_layers_normal),
-                        active   = !hillshade,
-                        onClick  = { onHillshade(false) },
+                        active   = mapType == MapType.NORMAL,
+                        onClick  = { onMapType(MapType.NORMAL) },
                         icon     = MapOutlineIcon,
                         modifier = Modifier.weight(1f),
                     )
                     LayerCard(
                         label    = stringResource(R.string.atlas_layers_terrain),
-                        active   = hillshade,
-                        onClick  = { onHillshade(true) },
+                        active   = mapType == MapType.TERRAIN,
+                        onClick  = { onMapType(MapType.TERRAIN) },
                         icon     = TerrainIcon,
+                        modifier = Modifier.weight(1f),
+                    )
+                    LayerCard(
+                        label    = stringResource(R.string.atlas_layers_satellite),
+                        active   = mapType == MapType.SATELLITE,
+                        onClick  = { onMapType(MapType.SATELLITE) },
+                        icon     = SatelliteIcon,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -2116,6 +2154,34 @@ private val TerrainIcon: ImageVector by lazy {
         ) {
             moveTo(1f, 20f); lineTo(7f, 8f); lineTo(12f, 14f)
             lineTo(16f, 6f); lineTo(23f, 20f); close()
+        }
+    }.build()
+}
+
+// Satellite / aerial imagery icon: rounded frame with 2×2 grid lines
+private val SatelliteIcon: ImageVector by lazy {
+    ImageVector.Builder("Satellite", 24.dp, 24.dp, 24f, 24f).apply {
+        val stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B))
+        // Rounded outer frame (r=3)
+        path(stroke = stroke, strokeLineWidth = 1.75f,
+            strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+            moveTo(4f, 9f)
+            cubicTo(4f, 6.24f, 6.24f, 4f, 9f, 4f)
+            lineTo(15f, 4f)
+            cubicTo(17.76f, 4f, 20f, 6.24f, 20f, 9f)
+            lineTo(20f, 15f)
+            cubicTo(20f, 17.76f, 17.76f, 20f, 15f, 20f)
+            lineTo(9f, 20f)
+            cubicTo(6.24f, 20f, 4f, 17.76f, 4f, 15f)
+            close()
+        }
+        // Horizontal grid line
+        path(stroke = stroke, strokeLineWidth = 1.1f, strokeLineCap = StrokeCap.Round) {
+            moveTo(4f, 12f); lineTo(20f, 12f)
+        }
+        // Vertical grid line
+        path(stroke = stroke, strokeLineWidth = 1.1f, strokeLineCap = StrokeCap.Round) {
+            moveTo(12f, 4f); lineTo(12f, 20f)
         }
     }.build()
 }
