@@ -2,35 +2,43 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import type { PeakIndexT } from "@/lib/i18n/peaks";
 
-const STEPS = [
-  {
-    num: "01",
-    img: "/images/how-it-works/step1-climb.png",
-    alt: "Hiker reaching a mountain summit",
-    title: "Reach the summit",
-    desc: "Get to the top. In real life.",
-    accent: "#0EA5E9",
-  },
-  {
-    num: "02",
-    img: "/images/how-it-works/step2-photo.png",
-    alt: "Climber taking a summit photo with smartphone",
-    title: "Take the photo yourself",
-    desc: "Your summit photo becomes the proof of your ascent.",
-    accent: "#F5A623",
-  },
-  {
-    num: "03",
-    img: "/images/how-it-works/step3-card.png",
-    alt: "Hand holding a Peakadex collectible summit card",
-    title: "Unlock your collectible card",
-    desc: "Peakadex turns your climb into a permanent summit card.",
-    accent: "#2F7A5F",
-  },
-] as const;
+type Props = {
+  t: Pick<PeakIndexT,
+    "hiw_step1_title" | "hiw_step1_desc" |
+    "hiw_step2_title" | "hiw_step2_desc" |
+    "hiw_step3_title" | "hiw_step3_desc"
+  >;
+};
 
-export function HowItWorksSteps() {
+export function HowItWorksSteps({ t }: Props) {
+  const STEPS = [
+    {
+      num: "01",
+      img: "/images/how-it-works/step1-climb.png",
+      alt: t.hiw_step1_title,
+      title: t.hiw_step1_title,
+      desc: t.hiw_step1_desc,
+      accent: "#0EA5E9",
+    },
+    {
+      num: "02",
+      img: "/images/how-it-works/step2-photo.png",
+      alt: t.hiw_step2_title,
+      title: t.hiw_step2_title,
+      desc: t.hiw_step2_desc,
+      accent: "#F5A623",
+    },
+    {
+      num: "03",
+      img: "/images/how-it-works/step3-card.png",
+      alt: t.hiw_step3_title,
+      title: t.hiw_step3_title,
+      desc: t.hiw_step3_desc,
+      accent: "#2F7A5F",
+    },
+  ];
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
