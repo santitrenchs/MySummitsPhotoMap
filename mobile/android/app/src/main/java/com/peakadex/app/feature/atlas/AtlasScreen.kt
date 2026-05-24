@@ -1055,6 +1055,10 @@ private fun PeakDetailSheet(
         onDismissRequest = onDismiss,
         sheetState       = sheetState,
         containerColor   = rarityColor ?: androidx.compose.ui.graphics.Color.White,
+        // 16 dp radius: at y=14dp (dragHandle bottom) the arc is <0.1dp from the
+        // edge, so the white Column fully covers the corner crescents and the
+        // visible accent band is exactly the 14dp dragHandle height.
+        shape            = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         dragHandle = {
             // Pill centered on the rarity-colored surface.
             // Top padding is minimal so the accent band stays thin (~12 dp total).
