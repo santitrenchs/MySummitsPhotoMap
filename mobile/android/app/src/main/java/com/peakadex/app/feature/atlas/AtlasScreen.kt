@@ -2166,13 +2166,13 @@ private val SatelliteIcon: ImageVector by lazy {
         path(stroke = stroke, strokeLineWidth = 1.75f,
             strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
             moveTo(4f, 9f)
-            cubicTo(4f, 6.24f, 6.24f, 4f, 9f, 4f)
+            curveTo(4f, 6.24f, 6.24f, 4f, 9f, 4f)
             lineTo(15f, 4f)
-            cubicTo(17.76f, 4f, 20f, 6.24f, 20f, 9f)
+            curveTo(17.76f, 4f, 20f, 6.24f, 20f, 9f)
             lineTo(20f, 15f)
-            cubicTo(20f, 17.76f, 17.76f, 20f, 15f, 20f)
+            curveTo(20f, 17.76f, 17.76f, 20f, 15f, 20f)
             lineTo(9f, 20f)
-            cubicTo(6.24f, 20f, 4f, 17.76f, 4f, 15f)
+            curveTo(6.24f, 20f, 4f, 17.76f, 4f, 15f)
             close()
         }
         // Horizontal grid line
