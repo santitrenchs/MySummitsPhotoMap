@@ -283,7 +283,7 @@ fun AtlasScreen(
                               },
                               "terrain": {
                                 "source": "terrain-dem",
-                                "exaggeration": 1.5
+                                "exaggeration": 1.0
                               },
                               "layers": []
                             }
@@ -424,7 +424,7 @@ fun AtlasScreen(
         LaunchedEffect(terrain3d) {
             val map = mapRef.value ?: return@LaunchedEffect
             map.animateCamera(
-                CameraUpdateFactory.tiltTo(if (terrain3d) 45.0 else 0.0), 600,
+                CameraUpdateFactory.tiltTo(if (terrain3d) 70.0 else 0.0), 600,
             )
         }
 
