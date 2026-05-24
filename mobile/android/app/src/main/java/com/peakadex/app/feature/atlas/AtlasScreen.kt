@@ -156,7 +156,6 @@ import org.maplibre.android.style.layers.PropertyFactory.visibility
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonOptions
 import org.maplibre.android.style.sources.GeoJsonSource
-import org.maplibre.android.style.sources.RasterDemSource
 import org.maplibre.android.style.sources.RasterSource
 import org.maplibre.android.style.sources.TileSet
 import kotlin.math.atan2
@@ -267,6 +266,29 @@ fun AtlasScreen(
                     mv.getMapAsync { map ->
                         mapRef.value = map
 
+                        // Base style JSON: defines the terrain DEM source and enables
+                        // 3D terrain extrusion (exaggeration 1.5). Other sources and
+                        // layers are added via withSource/withLayer or post-load.
+                        // encoding=terrarium matches the AWS elevation-tiles-prod tiles.
+                        val baseStyleJson = """
+                            {
+                              "version": 8,
+                              "sources": {
+                                "terrain-dem": {
+                                  "type": "raster-dem",
+                                  "tiles": ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+                                  "encoding": "terrarium",
+                                  "maxzoom": 15
+                                }
+                              },
+                              "terrain": {
+                                "source": "terrain-dem",
+                                "exaggeration": 1.5
+                              },
+                              "layers": []
+                            }
+                        """.trimIndent()
+
                         val tileSet = TileSet("2.2.0",
                             "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png")
                         tileSet.setMaxZoom(19f)
@@ -276,6 +298,7 @@ fun AtlasScreen(
 
                         map.setStyle(
                             Style.Builder()
+                                .fromJson(baseStyleJson)
                                 .withSource(basemapSource)
                                 .withLayer(basemapLayer),
                         ) { style ->
@@ -628,11 +651,8 @@ private fun setupSources(style: org.maplibre.android.maps.Style) {
     satTileSet.setMaxZoom(19f)
     style.addSource(RasterSource(SRC_SATELLITE, satTileSet, 256))
 
-    // Terrain DEM — used for hillshade and 3D terrain extrusion
-    val demTileSet = TileSet("2.2.0",
-        "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png")
-    demTileSet.setMaxZoom(15f)
-    style.addSource(RasterDemSource(SRC_TERRAIN_DEM, demTileSet))
+    // terrain-dem source is declared in baseStyleJson (needed there for the
+    // terrain property to resolve at style-load time). Do not re-add here.
 
     // Hiking trails overlay (WaymarkedTrails)
     val trailsTileSet = TileSet("2.2.0",
