@@ -351,10 +351,10 @@ fun AtlasScreen(
         val rarities          = uiState.rarities
         val selectedRarityIds = uiState.selectedRarityIds
 
-        LaunchedEffect(styleReady.value, climbed, viewport, filter, selectedRarityIds) {
+        LaunchedEffect(styleReady.value, climbed, viewport, filter, selectedRarityIds, rarities) {
             if (!styleReady.value) return@LaunchedEffect
             val style = mapRef.value?.style ?: return@LaunchedEffect
-            updateMapSources(style, climbed, viewport, filter, selectedRarityIds)
+            updateMapSources(style, climbed, viewport, filter, selectedRarityIds, rarities)
         }
 
         // ── Load photo markers async (incremental) ───────────────────────────
@@ -673,13 +673,13 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 circleStrokeColor("#FFFFFF"),
             ),
     )
-    // Individual unclimbed peaks
+    // Individual unclimbed peaks — colored by rarity via GeoJSON property
     style.addLayer(
         CircleLayer(LYR_UNCLIMBED_SINGLE, SRC_UNCLIMBED)
             .withFilter(not(has("point_count")))
             .withProperties(
                 circleRadius(7f),
-                circleColor(UNCLIMBED_COLOR),
+                circleColor(get("rarityColor")),
                 circleOpacity(0.85f),
                 circleStrokeWidth(1.5f),
                 circleStrokeColor("#FFFFFF"),
@@ -727,7 +727,10 @@ private fun updateMapSources(
     viewport: List<Peak>,
     filter: AtlasFilter,
     selectedRarityIds: Set<String>,
+    rarities: List<Rarity>,
 ) {
+    val rarityColorMap = rarities.associateBy { it.id }
+
     val climbedFeatures: List<Feature> = if (filter != AtlasFilter.NOT_YET) {
         climbed.values
             .filter { selectedRarityIds.isEmpty() || it.peak.rarityId in selectedRarityIds }
@@ -751,12 +754,14 @@ private fun updateMapSources(
             .filter { it.id !in climbed }
             .filter { selectedRarityIds.isEmpty() || it.rarityId in selectedRarityIds }
             .map { peak ->
+                val rarityColor = peak.rarityId?.let { rarityColorMap[it]?.color } ?: UNCLIMBED_COLOR
                 Feature.fromGeometry(
                     Point.fromLngLat(peak.longitude, peak.latitude),
                 ).apply {
-                    addStringProperty("id",        peak.id)
-                    addStringProperty("name",      peak.name)
-                    addNumberProperty("altitudeM", peak.altitudeM)
+                    addStringProperty("id",          peak.id)
+                    addStringProperty("name",        peak.name)
+                    addNumberProperty("altitudeM",   peak.altitudeM)
+                    addStringProperty("rarityColor", rarityColor)
                 }
             }
     } else emptyList()
@@ -1053,19 +1058,27 @@ private fun PeakDetailSheet(
         dragHandle = {
             // Pill centered on the rarity-colored surface.
             // Top padding is minimal so the accent band stays thin (~12 dp total).
+            // Fixed-height wrapper so M3's implicit touch-target expansion (48dp)
+            // doesn't inflate the visible rarity band.
             Box(
                 modifier = Modifier
-                    .padding(top = 4.dp, bottom = 6.dp)
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(
-                        if (rarityColor != null)
-                            androidx.compose.ui.graphics.Color.White.copy(alpha = 0.6f)
-                        else
-                            PeakBorderLight,
-                    ),
-            )
+                    .fillMaxWidth()
+                    .height(14.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(
+                            if (rarityColor != null)
+                                androidx.compose.ui.graphics.Color.White.copy(alpha = 0.6f)
+                            else
+                                PeakBorderLight,
+                        ),
+                )
+            }
         },
     ) {
         Column(

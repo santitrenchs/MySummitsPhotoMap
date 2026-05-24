@@ -220,16 +220,7 @@ data class LevelInfo(
 
 @Serializable
 data class AppConfig(
-    @SerialName("levels") val levelDefs: List<LevelDef> = emptyList(),
     val rarities: List<Rarity>,
-)
-
-@Serializable
-data class LevelDef(
-    val id: Int,
-    val name: String,
-    val emoji: String,
-    val minAscents: Int,
 )
 
 @Serializable
