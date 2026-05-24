@@ -26,6 +26,13 @@ export type PeakIndexT = {
   // Catalog
   catalog_heading: string;
   catalog_count: (n: number) => string;
+  // How it works
+  hiw_step1_title: string;
+  hiw_step1_desc: string;
+  hiw_step2_title: string;
+  hiw_step2_desc: string;
+  hiw_step3_title: string;
+  hiw_step3_desc: string;
   // CTA
   cta_heading: string;
   cta_body: string;
@@ -55,6 +62,12 @@ const INDEX_TRANSLATIONS: Record<PeakLocale, PeakIndexT> = {
     mythic_body: "Por eso son MYTHIC. Estas son las cartas que te otorgan puntos especiales, los crains.",
     catalog_heading: "Todas las cartas del catálogo",
     catalog_count: (n) => `${n} cimas · Ordenadas por altitud`,
+    hiw_step1_title: "Llega a la cima",
+    hiw_step1_desc: "Hasta arriba. En la vida real.",
+    hiw_step2_title: "Haz la foto tú mismo",
+    hiw_step2_desc: "Tu foto de cumbre es la prueba de tu ascensión.",
+    hiw_step3_title: "Desbloquea tu carta coleccionable",
+    hiw_step3_desc: "Peakadex convierte tu ascensión en una carta de cumbre permanente.",
     cta_heading: "Registra tu ascensión y consigue la tuya.",
     cta_body: "Crea tu cuenta gratis y empieza a coleccionar cartas de cumbre por cada ascensión que registres.",
     cta_button: "Empieza tu colección",
@@ -78,6 +91,12 @@ const INDEX_TRANSLATIONS: Record<PeakLocale, PeakIndexT> = {
     mythic_body: "That's why they're MYTHIC. These are the cards that award special points — crains.",
     catalog_heading: "All cards in the catalog",
     catalog_count: (n) => `${n} summits · Sorted by altitude`,
+    hiw_step1_title: "Reach the summit",
+    hiw_step1_desc: "Get to the top. In real life.",
+    hiw_step2_title: "Take the photo yourself",
+    hiw_step2_desc: "Your summit photo becomes the proof of your ascent.",
+    hiw_step3_title: "Unlock your collectible card",
+    hiw_step3_desc: "Peakadex turns your climb into a permanent summit card.",
     cta_heading: "Log your ascent and get yours.",
     cta_body: "Create your free account and start collecting summit cards for every ascent you log.",
     cta_button: "Start your collection",
@@ -101,6 +120,12 @@ const INDEX_TRANSLATIONS: Record<PeakLocale, PeakIndexT> = {
     mythic_body: "C'est pourquoi ils sont MYTHIC. Ce sont les cartes qui accordent des points spéciaux — les crains.",
     catalog_heading: "Toutes les cartes du catalogue",
     catalog_count: (n) => `${n} sommets · Triés par altitude`,
+    hiw_step1_title: "Atteins le sommet",
+    hiw_step1_desc: "Jusqu'en haut. Dans la vraie vie.",
+    hiw_step2_title: "Prends la photo toi-même",
+    hiw_step2_desc: "Ta photo au sommet devient la preuve de ton ascension.",
+    hiw_step3_title: "Débloque ta carte à collectionner",
+    hiw_step3_desc: "Peakadex transforme ton ascension en une carte de sommet permanente.",
     cta_heading: "Enregistre ton ascension et obtiens la tienne.",
     cta_body: "Crée ton compte gratuit et commence à collectionner des cartes de sommet pour chaque ascension enregistrée.",
     cta_button: "Lance ta collection",
@@ -124,6 +149,12 @@ const INDEX_TRANSLATIONS: Record<PeakLocale, PeakIndexT> = {
     mythic_body: "Deshalb sind sie MYTHIC. Das sind die Karten, die besondere Punkte verleihen — die Crains.",
     catalog_heading: "Alle Karten im Katalog",
     catalog_count: (n) => `${n} Gipfel · Nach Höhe sortiert`,
+    hiw_step1_title: "Erreiche den Gipfel",
+    hiw_step1_desc: "Ganz nach oben. Im echten Leben.",
+    hiw_step2_title: "Mach das Foto selbst",
+    hiw_step2_desc: "Dein Gipfelfoto wird der Beweis deiner Besteigung.",
+    hiw_step3_title: "Schalte deine Sammelkarte frei",
+    hiw_step3_desc: "Peakadex verwandelt deine Besteigung in eine dauerhafte Gipfelkarte.",
     cta_heading: "Trag deine Besteigung ein und hol dir deine Karte.",
     cta_body: "Erstelle dein kostenloses Konto und beginne, Gipfelkarten für jede Besteigung zu sammeln.",
     cta_button: "Starte deine Sammlung",
@@ -147,6 +178,12 @@ const INDEX_TRANSLATIONS: Record<PeakLocale, PeakIndexT> = {
     mythic_body: "Per això són MYTHIC. Aquestes són les cartes que t'atorguen punts especials, els crains.",
     catalog_heading: "Totes les cartes del catàleg",
     catalog_count: (n) => `${n} cims · Ordenats per altitud`,
+    hiw_step1_title: "Arriba al cim",
+    hiw_step1_desc: "Fins a dalt de tot. A la vida real.",
+    hiw_step2_title: "Fes la foto tu mateix",
+    hiw_step2_desc: "La teva foto de cim és la prova de la teva ascensió.",
+    hiw_step3_title: "Desbloqueja la teva carta col·leccionable",
+    hiw_step3_desc: "Peakadex converteix la teva ascensió en una carta de cim permanent.",
     cta_heading: "Registra la teva ascensió i aconsegueix la teva.",
     cta_body: "Crea el teu compte gratuït i comença a col·leccionar cartes de cim per cada ascensió que registris.",
     cta_button: "Comença la teva col·lecció",

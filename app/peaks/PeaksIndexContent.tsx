@@ -171,7 +171,7 @@ export function PeaksIndexContent({ t }: { t: PeakIndexT }) {
         </section>
 
         {/* ── How it works ─────────────────────────────────────────────────── */}
-        <HowItWorksSteps />
+        <HowItWorksSteps t={t} />
 
         {/* ── Peaks carousel ───────────────────────────────────────────────── */}
         <section style={{ padding: "32px 0 48px", background: "#F4F7FA" }}>
