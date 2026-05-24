@@ -171,7 +171,14 @@ export function PeaksIndexContent({ t }: { t: PeakIndexT }) {
         </section>
 
         {/* ── How it works ─────────────────────────────────────────────────── */}
-        <HowItWorksSteps t={t} />
+        <HowItWorksSteps t={{
+          hiw_step1_title: t.hiw_step1_title,
+          hiw_step1_desc:  t.hiw_step1_desc,
+          hiw_step2_title: t.hiw_step2_title,
+          hiw_step2_desc:  t.hiw_step2_desc,
+          hiw_step3_title: t.hiw_step3_title,
+          hiw_step3_desc:  t.hiw_step3_desc,
+        }} />
 
         {/* ── Peaks carousel ───────────────────────────────────────────────── */}
         <section style={{ padding: "32px 0 48px", background: "#F4F7FA" }}>
