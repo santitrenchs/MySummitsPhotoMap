@@ -1105,20 +1105,17 @@ private fun PeakDetailSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState       = sheetState,
-        containerColor   = rarityColor ?: androidx.compose.ui.graphics.Color.White,
-        // 16 dp radius: at y=14dp (dragHandle bottom) the arc is <0.1dp from the
-        // edge, so the white Column fully covers the corner crescents and the
-        // visible accent band is exactly the 14dp dragHandle height.
-        shape            = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+        // containerColor is always white so the bottom nav-bar area never shows
+        // the rarity colour. The dragHandle box draws the rarity band explicitly;
+        // it is clipped by the sheet's shape, giving it the correct rounded corners.
+        containerColor   = androidx.compose.ui.graphics.Color.White,
+        shape            = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
         dragHandle = {
-            // Pill centered on the rarity-colored surface.
-            // Top padding is minimal so the accent band stays thin (~12 dp total).
-            // Fixed-height wrapper so M3's implicit touch-target expansion (48dp)
-            // doesn't inflate the visible rarity band.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(7.dp),
+                    .height(7.dp)
+                    .background(rarityColor ?: androidx.compose.ui.graphics.Color.Transparent),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
