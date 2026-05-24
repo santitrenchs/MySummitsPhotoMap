@@ -385,9 +385,9 @@ fun AtlasScreen(
                 ?.setProperties(visibility(if (mapType == MapType.SATELLITE) NONE else VISIBLE))
             style.getLayer(LYR_SATELLITE)
                 ?.setProperties(visibility(if (mapType == MapType.SATELLITE) VISIBLE else NONE))
-            // Hillshade: auto-on for TERRAIN and SATELLITE, off for NORMAL
+            // Hillshade: only for TERRAIN. SATELLITE = pure imagery (hillshade darkens it).
             style.getLayer(LYR_HILLSHADE)
-                ?.setProperties(visibility(if (mapType == MapType.NORMAL) NONE else VISIBLE))
+                ?.setProperties(visibility(if (mapType == MapType.TERRAIN) VISIBLE else NONE))
         }
 
         // ── Toggle trails overlay ─────────────────────────────────────────────
