@@ -1109,7 +1109,7 @@ private fun PeakDetailSheet(
         // 16 dp radius: at y=14dp (dragHandle bottom) the arc is <0.1dp from the
         // edge, so the white Column fully covers the corner crescents and the
         // visible accent band is exactly the 14dp dragHandle height.
-        shape            = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        shape            = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
         dragHandle = {
             // Pill centered on the rarity-colored surface.
             // Top padding is minimal so the accent band stays thin (~12 dp total).
@@ -1118,13 +1118,13 @@ private fun PeakDetailSheet(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(14.dp),
+                    .height(7.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
                     modifier = Modifier
-                        .width(36.dp)
-                        .height(4.dp)
+                        .width(32.dp)
+                        .height(3.dp)
                         .clip(RoundedCornerShape(2.dp))
                         .background(
                             if (rarityColor != null)
