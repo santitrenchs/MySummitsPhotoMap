@@ -1141,8 +1141,9 @@ private fun PeakDetailSheet(
                 .padding(bottom = 20.dp),
         ) {
 
-            // ── Header: name + altitude + range + rarity badge ────────────────
+            // ── Header: name + altitude / comarca / rarity badge ─────────────
             Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                // Name + altitude
                 Row(
                     modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1165,18 +1166,21 @@ private fun PeakDetailSheet(
                         color      = PeakMuted,
                     )
                 }
-                Row(
-                    modifier              = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment     = Alignment.CenterVertically,
-                ) {
+                // Comarca / mountain range — own line below name
+                if (!peak.mountainRange.isNullOrBlank()) {
                     Text(
-                        text     = peak.mountainRange ?: "",
+                        text     = peak.mountainRange,
                         fontSize = 12.sp,
                         color    = PeakSubtle,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.padding(top = 2.dp),
                     )
-                    if (rarity != null && rarityColor != null && rarityColorDark != null) {
+                }
+                // Rarity badge — right-aligned
+                if (rarity != null && rarityColor != null && rarityColorDark != null) {
+                    Row(
+                        modifier              = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(99.dp))
@@ -1206,16 +1210,6 @@ private fun PeakDetailSheet(
                     modifier           = Modifier
                         .fillMaxWidth()
                         .aspectRatio(3f / 2f),
-                )
-            }
-
-            // "Aún sin escalar" — only shown for unclimbed peaks (no meta for climbed)
-            if (ascent == null) {
-                Text(
-                    text     = stringResource(R.string.atlas_peak_unclimbed),
-                    fontSize = 14.sp,
-                    color    = PeakMuted,
-                    modifier = Modifier.padding(horizontal = 14.dp).padding(bottom = 4.dp),
                 )
             }
 
@@ -1255,7 +1249,7 @@ private fun PeakDetailSheet(
                         shape    = RoundedCornerShape(10.dp),
                         colors   = ButtonDefaults.buttonColors(containerColor = PeakSlate),
                     ) {
-                        Text(stringResource(R.string.atlas_btn_capture_new), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.atlas_btn_capture), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
