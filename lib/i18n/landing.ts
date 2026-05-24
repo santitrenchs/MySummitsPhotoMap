@@ -279,6 +279,7 @@ const es: LandingT = {
   footer_links_product: [
     { label: "Rarezas", href: "/#rarezas" },
     { label: "Cartas", href: "/#cartas" },
+    { label: "Cómo funciona", href: "/peaks" },
     { label: "Registrarse", href: "/register" },
     { label: "Iniciar sesión", href: "/login" },
   ],
@@ -434,6 +435,7 @@ const en: LandingT = {
   footer_links_product: [
     { label: "Rarities", href: "/en#rarezas" },
     { label: "Cards", href: "/en#cartas" },
+    { label: "How it works", href: "/en/peaks" },
     { label: "Sign up", href: "/register" },
     { label: "Sign in", href: "/login" },
   ],
@@ -589,6 +591,7 @@ const fr: LandingT = {
   footer_links_product: [
     { label: "Raretés", href: "/fr#rarezas" },
     { label: "Cartes", href: "/fr#cartas" },
+    { label: "Comment ça marche", href: "/fr/peaks" },
     { label: "S'inscrire", href: "/register" },
     { label: "Connexion", href: "/login" },
   ],
@@ -744,6 +747,7 @@ const de: LandingT = {
   footer_links_product: [
     { label: "Raritäten", href: "/de#rarezas" },
     { label: "Karten", href: "/de#cartas" },
+    { label: "So funktioniert es", href: "/de/peaks" },
     { label: "Registrieren", href: "/register" },
     { label: "Anmelden", href: "/login" },
   ],
@@ -899,6 +903,7 @@ const ca: LandingT = {
   footer_links_product: [
     { label: "Rarezas", href: "/ca#rarezas" },
     { label: "Cartes", href: "/ca#cartas" },
+    { label: "Com funciona", href: "/ca/peaks" },
     { label: "Registra't", href: "/register" },
     { label: "Inicia sessió", href: "/login" },
   ],
