@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cards (Cartas) tab icon: two overlapping cards with a mountain silhouette -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Back card: slate-300 fill, peeking right+bottom -->
+    <path
+        android:pathData="M6,6 L19,6 L19,18 L6,18 Z"
+        android:fillColor="#CBD5E1"
+        android:strokeColor="#00000000" />
+
+    <!-- Front card: white fill covers the overlap area -->
+    <path
+        android:pathData="M4,4 L17,4 L17,16 L4,16 Z"
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#00000000" />
+
+    <!-- Front card outline: navy stroke -->
+    <path
+        android:pathData="M4,4 L17,4 L17,16 L4,16 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#0F2233"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round" />
+
+    <!-- Front card header divider -->
+    <path
+        android:pathData="M5,8 L16,8"
+        android:fillColor="#00000000"
+        android:strokeColor="#0F2233"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round" />
+
+    <!-- Mountain silhouette inside the card body -->
+    <path
+        android:pathData="M5.5,14.5 L8,10.5 L10.5,12.5 L12,11 L14.5,14.5 Z"
+        android:fillColor="#64748B"
+        android:strokeColor="#00000000" />
+
+</vector>

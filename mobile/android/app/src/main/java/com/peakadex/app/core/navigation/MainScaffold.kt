@@ -51,6 +51,7 @@ private fun tabItems() = listOf(
     TabItem(Screen.Home,    stringResource(R.string.nav_tab_home),    R.drawable.ic_tab_home),
     TabItem(Screen.Map,     stringResource(R.string.nav_tab_map),     R.drawable.ic_tab_map),
     TabItem(Screen.Logbook, stringResource(R.string.nav_tab_logbook), R.drawable.ic_tab_logbook),
+    TabItem(Screen.Cards,   stringResource(R.string.nav_tab_cards),   R.drawable.ic_tab_cards),
 )
 
 // ── Main scaffold ──────────────────────────────────────────────────────────────
@@ -178,6 +179,9 @@ fun MainScaffold(navController: NavController) {
                     highlightId         = logbookHighlightId,
                     onHighlightConsumed = { logbookHighlightId = null },
                 )
+            }
+            composable(Screen.Cards.route) {
+                PlaceholderScreen(title = "Cartas", phase = 6)
             }
         }
     }

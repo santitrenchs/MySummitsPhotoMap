@@ -5,7 +5,66 @@
     <string name="nav_tab_home">Peakadex stats</string>
     <string name="nav_tab_map">Atlas</string>
     <string name="nav_tab_logbook">Bitácora</string>
+    <string name="nav_tab_cards">Cartas</string>
     <string name="nav_fab_new_ascent">Nueva ascensión</string>
+
+    <!-- ── Acciones globales ─────────────────────────────────────────────────── -->
+    <string name="action_back">Atrás</string>
+    <string name="action_cancel">Cancelar</string>
+
+    <!-- ── Ajustes ───────────────────────────────────────────────────────────── -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_logout">Cerrar sesión</string>
+    <string name="settings_logout_confirm_message">¿Seguro que quieres cerrar sesión?</string>
+
+    <string name="settings_section_language">Idioma</string>
+    <string name="settings_language_label">Idioma de la app</string>
+    <string name="settings_language_sheet_title">Selecciona un idioma</string>
+    <string name="settings_lang_es">Español</string>
+    <string name="settings_lang_ca">Català</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_lang_fr">Français</string>
+    <string name="settings_lang_de">Deutsch</string>
+
+    <string name="settings_section_account">Cuenta</string>
+    <string name="settings_field_name">Nombre</string>
+    <string name="settings_field_username">Usuario</string>
+    <string name="settings_field_username_placeholder">tu_usuario</string>
+    <string name="settings_field_email">Email</string>
+    <string name="settings_save_changes">Guardar cambios</string>
+
+    <string name="settings_section_connected_accounts">Cuentas conectadas</string>
+    <string name="settings_google_connected">Google (conectado)</string>
+    <string name="settings_google_unlink">Desvincular</string>
+    <string name="settings_google_unlink_confirm_title">Desvincular Google</string>
+    <string name="settings_google_unlink_confirm_message">¿Seguro que quieres desvincular tu cuenta de Google?</string>
+    <string name="settings_google_unlink_no_password">Sin contraseña no puedes desvincular Google. Establece una contraseña primero.</string>
+    <string name="settings_google_active_hint">Usas Google para iniciar sesión</string>
+
+    <string name="settings_section_security">Seguridad</string>
+    <string name="settings_change_password">Cambiar contraseña</string>
+    <string name="settings_change_password_desc">Establece o actualiza tu contraseña</string>
+    <string name="settings_current_password">Contraseña actual</string>
+    <string name="settings_new_password">Nueva contraseña</string>
+    <string name="settings_confirm_password">Confirmar contraseña</string>
+    <string name="settings_save_password">Guardar contraseña</string>
+
+    <string name="settings_section_privacy">Privacidad</string>
+    <string name="settings_allow_tagging">Permitir etiquetado</string>
+    <string name="settings_allow_tagging_desc">Otros pueden etiquetarte en fotos</string>
+    <string name="settings_appear_in_search">Aparecer en búsquedas</string>
+    <string name="settings_appear_in_search_desc">Tu perfil es visible en búsquedas de amigos</string>
+
+    <string name="settings_section_notifications">Notificaciones</string>
+    <string name="settings_email_notifications">Notificaciones por email</string>
+    <string name="settings_activity_notifications">Notificaciones de actividad</string>
+
+    <string name="settings_section_danger">Zona de peligro</string>
+
+    <string name="settings_snack_saved">Cambios guardados</string>
+    <string name="settings_snack_password_saved">Contraseña actualizada</string>
+    <string name="settings_snack_language_saved">Idioma guardado</string>
+    <string name="settings_snack_google_unlinked">Cuenta de Google desvinculada</string>
 
     <!-- ── Atlas — barra de búsqueda ─────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Buscar pico…</string>

@@ -3,7 +3,66 @@
     <string name="nav_tab_home">Peakadex stats</string>
     <string name="nav_tab_map">Atlas</string>
     <string name="nav_tab_logbook">Logbook</string>
+    <string name="nav_tab_cards">Cards</string>
     <string name="nav_fab_new_ascent">New ascent</string>
+
+    <!-- ── Global actions ───────────────────────────────────────────────────── -->
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+
+    <!-- ── Settings ─────────────────────────────────────────────────────────── -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_logout">Log out</string>
+    <string name="settings_logout_confirm_message">Are you sure you want to log out?</string>
+
+    <string name="settings_section_language">Language</string>
+    <string name="settings_language_label">App language</string>
+    <string name="settings_language_sheet_title">Select a language</string>
+    <string name="settings_lang_es">Spanish</string>
+    <string name="settings_lang_ca">Catalan</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_lang_fr">French</string>
+    <string name="settings_lang_de">German</string>
+
+    <string name="settings_section_account">Account</string>
+    <string name="settings_field_name">Name</string>
+    <string name="settings_field_username">Username</string>
+    <string name="settings_field_username_placeholder">your_username</string>
+    <string name="settings_field_email">Email</string>
+    <string name="settings_save_changes">Save changes</string>
+
+    <string name="settings_section_connected_accounts">Connected accounts</string>
+    <string name="settings_google_connected">Google (connected)</string>
+    <string name="settings_google_unlink">Unlink</string>
+    <string name="settings_google_unlink_confirm_title">Unlink Google</string>
+    <string name="settings_google_unlink_confirm_message">Are you sure you want to unlink your Google account?</string>
+    <string name="settings_google_unlink_no_password">You can\'t unlink Google without a password. Set a password first.</string>
+    <string name="settings_google_active_hint">You use Google to sign in</string>
+
+    <string name="settings_section_security">Security</string>
+    <string name="settings_change_password">Change password</string>
+    <string name="settings_change_password_desc">Set or update your password</string>
+    <string name="settings_current_password">Current password</string>
+    <string name="settings_new_password">New password</string>
+    <string name="settings_confirm_password">Confirm password</string>
+    <string name="settings_save_password">Save password</string>
+
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_allow_tagging">Allow tagging</string>
+    <string name="settings_allow_tagging_desc">Others can tag you in photos</string>
+    <string name="settings_appear_in_search">Appear in search</string>
+    <string name="settings_appear_in_search_desc">Your profile is visible in friend searches</string>
+
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_email_notifications">Email notifications</string>
+    <string name="settings_activity_notifications">Activity notifications</string>
+
+    <string name="settings_section_danger">Danger zone</string>
+
+    <string name="settings_snack_saved">Changes saved</string>
+    <string name="settings_snack_password_saved">Password updated</string>
+    <string name="settings_snack_language_saved">Language saved</string>
+    <string name="settings_snack_google_unlinked">Google account unlinked</string>
 
     <!-- ── Atlas — search bar ────────────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Search peak…</string>

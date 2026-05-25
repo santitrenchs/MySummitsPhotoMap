@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Germany: black/red/gold horizontal stripes -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp"
+    android:height="20dp"
+    android:viewportWidth="90"
+    android:viewportHeight="60">
+    <path android:fillColor="#FFCE00" android:pathData="M0,0h90v60H0z"/>
+    <path android:fillColor="#DD0000" android:pathData="M0,0h90v40H0z"/>
+    <path android:fillColor="#000000" android:pathData="M0,0h90v20H0z"/>
+</vector>

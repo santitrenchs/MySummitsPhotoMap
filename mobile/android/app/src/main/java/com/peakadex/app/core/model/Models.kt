@@ -15,6 +15,30 @@ data class User(
     val language: String? = null,
     val appearInSearch: Boolean? = null,
     val allowOthersToTag: Boolean? = null,
+    val emailNotifications: Boolean? = null,
+    val activityNotifications: Boolean? = null,
+    val hasPassword: Boolean? = null,
+    val googleLinked: Boolean? = null,
+)
+
+@Serializable
+data class SettingsResponse(val user: User)
+
+@Serializable
+data class UpdateSettingsRequest(
+    val name: String? = null,
+    val username: String? = null,
+    val language: String? = null,
+    val appearInSearch: Boolean? = null,
+    val allowOthersToTag: Boolean? = null,
+    val emailNotifications: Boolean? = null,
+    val activityNotifications: Boolean? = null,
+)
+
+@Serializable
+data class UpdatePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String,
 )
 
 @Serializable

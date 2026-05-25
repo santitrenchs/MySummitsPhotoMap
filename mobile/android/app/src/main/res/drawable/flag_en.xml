@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- United Kingdom: Union Jack -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp"
+    android:height="20dp"
+    android:viewportWidth="90"
+    android:viewportHeight="60">
+    <!-- Blue background -->
+    <path android:fillColor="#012169"
+          android:pathData="M0,0h90v60H0z"/>
+    <!-- St Andrew: white diagonals -->
+    <path android:fillColor="#00000000"
+          android:strokeColor="#ffffff"
+          android:strokeWidth="12"
+          android:pathData="M0,0 L90,60"/>
+    <path android:fillColor="#00000000"
+          android:strokeColor="#ffffff"
+          android:strokeWidth="12"
+          android:pathData="M90,0 L0,60"/>
+    <!-- St Patrick: red diagonals (narrower, on top) -->
+    <path android:fillColor="#00000000"
+          android:strokeColor="#C8102E"
+          android:strokeWidth="6"
+          android:pathData="M0,0 L90,60"/>
+    <path android:fillColor="#00000000"
+          android:strokeColor="#C8102E"
+          android:strokeWidth="6"
+          android:pathData="M90,0 L0,60"/>
+    <!-- St George: white cross -->
+    <path android:fillColor="#ffffff"
+          android:pathData="M33,0h24v60H33z"/>
+    <path android:fillColor="#ffffff"
+          android:pathData="M0,21h90v18H0z"/>
+    <!-- St George: red cross -->
+    <path android:fillColor="#C8102E"
+          android:pathData="M38,0h14v60H38z"/>
+    <path android:fillColor="#C8102E"
+          android:pathData="M0,25h90v10H0z"/>
+</vector>

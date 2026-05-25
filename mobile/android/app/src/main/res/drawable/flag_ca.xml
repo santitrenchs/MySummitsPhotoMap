@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Catalonia (Senyera): yellow with 4 red horizontal stripes -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp"
+    android:height="20dp"
+    android:viewportWidth="90"
+    android:viewportHeight="60">
+    <path android:fillColor="#FCDD09" android:pathData="M0,0h90v60H0z"/>
+    <path android:fillColor="#DA121A" android:pathData="M0,6.67h90v8.89H0z"/>
+    <path android:fillColor="#DA121A" android:pathData="M0,22.22h90v8.89H0z"/>
+    <path android:fillColor="#DA121A" android:pathData="M0,37.78h90v8.89H0z"/>
+    <path android:fillColor="#DA121A" android:pathData="M0,53.33h90v8.89H0z"/>
+</vector>
