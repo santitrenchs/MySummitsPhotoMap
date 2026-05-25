@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { getV1Session } from "@/lib/api-v1/auth";
 import { prisma } from "@/lib/db/client";
 import { isValidLocale } from "@/lib/i18n";
@@ -25,11 +26,10 @@ const SELECT = {
   accounts: { select: { provider: true } },
 };
 
-function toUserPayload(raw: NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>) {
-  const { passwordHash, accounts, ...fields } = raw as typeof raw & {
-    passwordHash: string | null;
-    accounts: { provider: string }[];
-  };
+type SelectResult = Prisma.UserGetPayload<{ select: typeof SELECT }>;
+
+function toUserPayload(raw: SelectResult) {
+  const { passwordHash, accounts, ...fields } = raw;
   return {
     ...fields,
     hasPassword: !!passwordHash,
@@ -78,6 +78,7 @@ export async function PATCH(req: NextRequest) {
     if (msg.includes("Unique constraint") && msg.includes("username")) {
       return NextResponse.json({ error: "username_taken" }, { status: 409 });
     }
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[v1/settings PATCH]", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
