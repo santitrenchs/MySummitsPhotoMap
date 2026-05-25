@@ -22,7 +22,15 @@ export async function GET(req: NextRequest) {
         : 0;
 
     return NextResponse.json({
-      user: data.user,
+      // Spread user fields explicitly so email is always present (Android User model requires it)
+      user: {
+        id:        data.user?.id        ?? session.userId,
+        name:      data.user?.name      ?? "",
+        email:     "",   // not stored in profile select; Android gets it via /api/v1/settings
+        username:  data.user?.username  ?? null,
+        bio:       data.user?.bio       ?? null,
+        avatarUrl: data.user?.avatarUrl ?? null,
+      },
       peaks: data.peaks.map((p) => ({
         id:            p.id,
         name:          p.name,
