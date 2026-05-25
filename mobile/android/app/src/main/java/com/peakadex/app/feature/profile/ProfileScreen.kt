@@ -45,6 +45,36 @@ import com.peakadex.app.core.ui.theme.*
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
+// ── Lightweight profile: avatar + name + bio only (avatar-dropdown entry point) ──
+
+@Composable
+fun ProfileSummaryScreen(
+    onNavigateToSettings: () -> Unit,
+    vm: ProfileViewModel = viewModel(),
+) {
+    val state by vm.state.collectAsStateWithLifecycle()
+
+    Column(Modifier.fillMaxSize().background(PeakBackground)) {
+        when (val s = state) {
+            is ProfileUiState.Loading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = PeakBlueActive)
+                }
+            }
+            is ProfileUiState.Error -> {
+                Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text(s.message, color = PeakMuted, fontSize = 14.sp)
+                }
+            }
+            is ProfileUiState.Success -> {
+                ProfileHeader(user = s.data.user, onEditProfile = onNavigateToSettings)
+            }
+        }
+    }
+}
+
+// ── Full profile: header + 3 tabs (Cimas / Fotos / Etiquetado) — Bitácora tab ─
+
 @Composable
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
