@@ -2,6 +2,7 @@ package com.peakadex.app.feature.profile
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,7 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.LocalTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -106,17 +107,11 @@ private fun ProfileContent(
         // ── Header ──
         ProfileHeader(user = state.data.user, onEditProfile = onNavigateToSettings)
 
-        // ── Tabs ──
-        TabRow(
+        // ── Tabs (SecondaryTabRow = underline indicator, same as web) ──
+        SecondaryTabRow(
             selectedTabIndex = activeTab,
             containerColor   = Color.White,
             contentColor     = PeakBlueActive,
-            indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[activeTab]),
-                    color    = PeakBlueActive,
-                )
-            },
         ) {
             tabs.forEachIndexed { i, label ->
                 Tab(
@@ -325,7 +320,7 @@ private fun CimasTab(
                     focusedContainerColor   = Color.White,
                     unfocusedContainerColor = Color.White,
                 ),
-                textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, color = PeakNavyDark),
+                textStyle = TextStyle(fontSize = 14.sp, color = PeakNavyDark),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -401,7 +396,7 @@ private fun CimasStatsHeader(
                         letterSpacing = 1.5.sp,
                     )
                     Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.Baseline, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             text       = "${allPeaks.size}",
                             fontSize   = 28.sp,
