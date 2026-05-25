@@ -79,7 +79,7 @@ fun NavGraph(isAuthenticated: Boolean) {
 
         composable(Screen.Settings.route) {
             SettingsScreen(
-                onBack   = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
                 onLogout = {
                     AppContainer.authSession.logout()
                     navController.navigate(Screen.Login.route) {
