@@ -111,7 +111,6 @@ export default auth((req) => {
   }
 
   // ── Main app ───────────────────────────────────────────────
-  // Redirect authenticated users away from auth pages
   if (isLoggedIn && isAuthPage) {
     return NextResponse.redirect(new URL("/map", req.nextUrl));
   }

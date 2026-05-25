@@ -511,6 +511,99 @@ ${renderBrandHeader()}
   console.log("[email] photo tag sent OK, id:", data?.id);
 }
 
+const FRIEND_INVITATION_COPY: Record<string, { subject: (n: string) => string; h1: string; body: (n: string) => string; cta: string; note: string }> = {
+  es: {
+    subject: (n) => `${n} te invita a Peakadex 🏔️`,
+    h1: "Te han invitado a Peakadex",
+    body: (n) => `<strong>${n}</strong> te ha invitado a unirte a Peakadex, la app para registrar tus ascensiones y competir con amigos.`,
+    cta: "Unirme a Peakadex →",
+    note: "Después de registrarte, busca a tu amigo en la sección Amigos para conectar.",
+  },
+  ca: {
+    subject: (n) => `${n} t'invita a Peakadex 🏔️`,
+    h1: "T'han convidat a Peakadex",
+    body: (n) => `<strong>${n}</strong> t'ha convidat a unir-te a Peakadex, l'app per registrar les teves ascensions i competir amb amics.`,
+    cta: "Unir-me a Peakadex →",
+    note: "Després de registrar-te, busca el teu amic a la secció Amics per connectar.",
+  },
+  en: {
+    subject: (n) => `${n} invited you to Peakadex 🏔️`,
+    h1: "You've been invited to Peakadex",
+    body: (n) => `<strong>${n}</strong> has invited you to join Peakadex, the app for logging your ascents and competing with friends.`,
+    cta: "Join Peakadex →",
+    note: "After signing up, search for your friend in the Friends section to connect.",
+  },
+  fr: {
+    subject: (n) => `${n} t'invite sur Peakadex 🏔️`,
+    h1: "Tu as été invité(e) sur Peakadex",
+    body: (n) => `<strong>${n}</strong> t'a invité(e) à rejoindre Peakadex, l'app pour enregistrer tes ascensions et te mesurer à tes amis.`,
+    cta: "Rejoindre Peakadex →",
+    note: "Après ton inscription, recherche ton ami dans la section Amis pour te connecter.",
+  },
+  de: {
+    subject: (n) => `${n} lädt dich zu Peakadex ein 🏔️`,
+    h1: "Du wurdest zu Peakadex eingeladen",
+    body: (n) => `<strong>${n}</strong> hat dich eingeladen, Peakadex beizutreten — die App zum Dokumentieren deiner Gipfelbesteigungen und zum Wetteifern mit Freunden.`,
+    cta: "Peakadex beitreten →",
+    note: "Such nach deiner Anmeldung deinen Freund im Bereich Freunde, um euch zu verbinden.",
+  },
+};
+
+export async function sendFriendInvitationEmail(to: string, inviterName: string, locale = "es") {
+  const copy = FRIEND_INVITATION_COPY[locale] ?? FRIEND_INVITATION_COPY.es;
+  const registerUrl = `${APP_URL}/register`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject: copy.subject(inviterName),
+    html: `
+<!DOCTYPE html>
+<html lang="${locale}">
+${renderEmailHead()}
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+${renderBrandHeader()}
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1}</h1>
+            <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">${copy.body(inviterName)}</p>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center">
+                  <a href="${registerUrl}"
+                     style="display:inline-block;background:#2F7A5F;color:#ffffff;font-size:15px;font-weight:700;
+                            text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
+                    ${copy.cta}
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:24px 0 0;font-size:13px;color:#94a3b8;line-height:1.6;">${copy.note}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+
+  if (error) {
+    console.error("[email] invitation Resend error:", error);
+    throw new Error(`Resend failed: ${JSON.stringify(error)}`);
+  }
+
+  console.log("[email] invitation sent OK, id:", data?.id);
+}
+
 export async function sendNewUserNotification(userName: string, userEmail: string) {
   const now = new Date().toLocaleString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "full", timeStyle: "short" });
 

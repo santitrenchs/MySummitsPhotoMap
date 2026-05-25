@@ -14,7 +14,7 @@ export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const ascents = await listAscents(session.user.tenantId);
+  const ascents = await listAscents(session.user.tenantId, session.user.id, []);
   return NextResponse.json(ascents);
 }
 

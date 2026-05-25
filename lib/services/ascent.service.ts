@@ -1,4 +1,5 @@
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
+import { prisma } from "@/lib/db/client";
 
 export type CreateAscentInput = {
   peakId: string;
@@ -8,33 +9,105 @@ export type CreateAscentInput = {
   createdBy: string;
 };
 
-export async function listAscents(tenantId: string) {
-  const db = await getTenantConnection(tenantId);
-  return db.ascent.findMany({
-    where: { tenantId },
-    orderBy: { date: "desc" },
-    include: {
-      peak: {
-        select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true },
-      },
-      photos: {
-        orderBy: { createdAt: "asc" },
-        select: {
-          id: true,
-          url: true,
-          faceDetections: {
-            select: {
-              faceTags: {
-                select: {
-                  userId: true,
-                  user: { select: { id: true, name: true, username: true } },
-                },
-              },
-            },
+const PEAK_SELECT = {
+  select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true, isMythic: true },
+} as const;
+
+const PHOTOS_SELECT = {
+  orderBy: { createdAt: "asc" as const },
+  select: {
+    id: true,
+    url: true,
+    faceDetections: {
+      select: {
+        faceTags: {
+          select: {
+            userId: true,
+            user: { select: { id: true, name: true, username: true } },
           },
         },
       },
     },
+  },
+} as const;
+
+const USER_SELECT = {
+  select: { name: true, avatarUrl: true },
+} as const;
+
+function buildPersons(photos: { faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[] }[]): { id: string; name: string }[] {
+  const personMap = new Map<string, { id: string; name: string }>();
+  for (const photo of photos) {
+    for (const fd of photo.faceDetections) {
+      for (const tag of fd.faceTags) {
+        if (tag.userId && tag.user) {
+          personMap.set(tag.userId, { id: tag.userId, name: tag.user.username ?? tag.user.name });
+        }
+      }
+    }
+  }
+  return Array.from(personMap.values());
+}
+
+export async function listAscents(tenantId: string, userId: string, friendUserIds: string[]) {
+  const db = await getTenantConnection(tenantId);
+
+  // Run two separate queries:
+  // 1. Own ascents from the tenant DB (isUnseen is always false for own ascents)
+  // 2. Friends' ascents from the shared prisma, including feedSeens for isUnseen tracking
+  const [ownRaw, friendsRaw] = await Promise.all([
+    db.ascent.findMany({
+      where: { tenantId, createdBy: userId },
+      orderBy: { date: "desc" },
+      include: { peak: PEAK_SELECT, photos: PHOTOS_SELECT, user: USER_SELECT },
+    }),
+    friendUserIds.length > 0
+      ? prisma.ascent.findMany({
+          where: { createdBy: { in: friendUserIds } },
+          orderBy: { date: "desc" },
+          include: {
+            peak: PEAK_SELECT,
+            photos: PHOTOS_SELECT,
+            user: USER_SELECT,
+            feedSeens: { where: { userId }, select: { seenAt: true } },
+          },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  type OwnRow = typeof ownRaw[number];
+  type FriendRow = typeof friendsRaw[number];
+
+  const toItem = (a: OwnRow | FriendRow, isOwn: boolean) => ({
+    id: a.id,
+    peakId: a.peakId,
+    peak: a.peak,
+    createdBy: a.createdBy,
+    user: a.user ? { id: a.createdBy, name: a.user.name ?? "?", username: null as string | null, avatarUrl: a.user.avatarUrl ?? null } : null,
+    isOwn,
+    isUnseen: !isOwn && ((a as FriendRow).feedSeens?.length ?? 0) === 0,
+    date: a.date.toISOString(),
+    route: a.route,
+    description: a.description,
+    wikiloc: a.wikiloc,
+    photos: a.photos.map((p) => ({ id: p.id, url: p.url })),
+    persons: buildPersons(a.photos as Parameters<typeof buildPersons>[0]),
+    createdAt: a.createdAt.toISOString(),
+  });
+
+  const all = [
+    ...ownRaw.map((a) => toItem(a, true)),
+    ...friendsRaw.map((a) => toItem(a, false)),
+  ];
+
+  // Canonical sort — same algorithm as web AscentsClient:
+  // 1. Unseen friends first, sorted by altitude desc (highest peak = most motivating)
+  // 2. Everything else (own + seen friends) sorted by date desc
+  // This sort is done server-side so all clients (web, Android, iOS) get the same order.
+  return all.sort((a, b) => {
+    if (a.isUnseen !== b.isUnseen) return a.isUnseen ? -1 : 1;
+    if (a.isUnseen && b.isUnseen) return b.peak.altitudeM - a.peak.altitudeM;
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
 }
 
