@@ -27,7 +27,7 @@ sealed interface ProfileUiState {
 
 class ProfileViewModel : ViewModel() {
 
-    private val api = AppContainer.api
+    private val api = AppContainer.apiService
 
     private val _state = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val state: StateFlow<ProfileUiState> = _state.asStateFlow()
