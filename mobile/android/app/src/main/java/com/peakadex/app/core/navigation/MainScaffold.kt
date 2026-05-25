@@ -132,7 +132,7 @@ fun MainScaffold(navController: NavController) {
                 showNewAscent      = false
                 logbookHighlightId = ascentId
                 logbookRefreshTrigger++
-                tabNavController.navigate(Screen.Logbook.route) {
+                tabNavController.navigate(Screen.Cards.route) {
                     popUpTo(Screen.Home.route) { saveState = true }
                     launchSingleTop = true
                     restoreState    = false   // force fresh so LaunchedEffect fires
@@ -154,7 +154,7 @@ fun MainScaffold(navController: NavController) {
                     onNavigateToLogbook = { peakId, peakName ->
                         pendingPeakId   = peakId
                         pendingPeakName = peakName
-                        tabNavController.navigate(Screen.Logbook.route) {
+                        tabNavController.navigate(Screen.Cards.route) {
                             popUpTo(Screen.Home.route) { saveState = true }
                             launchSingleTop = true
                             restoreState    = false  // force fresh — we need LaunchedEffect to fire
@@ -168,6 +168,9 @@ fun MainScaffold(navController: NavController) {
                 )
             }
             composable(Screen.Logbook.route) {
+                PlaceholderScreen(title = "Bitácora", phase = 6)
+            }
+            composable(Screen.Cards.route) {
                 LogbookScreen(
                     onAscentClick       = { ascentId ->
                         navController.navigate(Screen.AscentDetail.createRoute(ascentId))
@@ -179,9 +182,6 @@ fun MainScaffold(navController: NavController) {
                     highlightId         = logbookHighlightId,
                     onHighlightConsumed = { logbookHighlightId = null },
                 )
-            }
-            composable(Screen.Cards.route) {
-                PlaceholderScreen(title = "Cartas", phase = 6)
             }
         }
     }
