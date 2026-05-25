@@ -8,6 +8,7 @@ import com.peakadex.app.AppContainer
 import com.peakadex.app.feature.auth.LoginScreen
 import com.peakadex.app.feature.auth.RegisterScreen
 import com.peakadex.app.feature.logbook.AscentDetailScreen
+import com.peakadex.app.feature.profile.ProfileScreen
 import com.peakadex.app.feature.settings.SettingsScreen
 import com.peakadex.app.feature.splash.SplashScreen
 
@@ -74,6 +75,12 @@ fun NavGraph(isAuthenticated: Boolean) {
             AscentDetailScreen(
                 ascentId = ascentId,
                 onBack   = { navController.popBackStack() },
+            )
+        }
+
+        composable(Screen.Profile.route) {
+            ProfileScreen(
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
             )
         }
 
