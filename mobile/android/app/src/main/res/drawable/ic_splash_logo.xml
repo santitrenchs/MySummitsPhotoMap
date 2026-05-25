@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Splash screen logo mark: circle stroke + mountain icon.
+  The system places this in a 240×240dp container; actual content
+  should stay within the ~160dp safe zone.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Brand green circle stroke — matches the logo mark -->
+    <item>
+        <shape android:shape="oval">
+            <stroke
+                android:width="7dp"
+                android:color="#4A8C5C" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+
+    <!-- Mountain icon, inset to sit comfortably inside the circle -->
+    <item
+        android:top="48dp"
+        android:bottom="48dp"
+        android:left="48dp"
+        android:right="48dp">
+        <bitmap
+            android:src="@drawable/ic_peakadex"
+            android:gravity="center" />
+    </item>
+
+</layer-list>

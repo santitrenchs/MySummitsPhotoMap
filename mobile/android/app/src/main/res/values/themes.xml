@@ -1,0 +1,13 @@
+<resources>
+    <!-- Base app theme — actual theming is done in Compose via PeakadexTheme -->
+    <style name="Theme.Peakadex" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Splash screen theme (androidx.core:core-splashscreen)
+         Shows only the brand background colour — no icon.
+         The ✿ animated loading screen is handled in Compose (SplashScreen.kt),
+         which renders on the same #0D2538 background for a seamless transition. -->
+    <style name="Theme.Peakadex.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0D2538</item>
+        <item name="postSplashScreenTheme">@style/Theme.Peakadex</item>
+    </style>
+</resources>

@@ -40,6 +40,7 @@ import com.peakadex.app.core.ui.theme.PeakBlueLight
 import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
 import com.peakadex.app.feature.logbook.LogbookScreen
+import com.peakadex.app.feature.newascent.NewAscentSheet
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 
@@ -64,9 +65,16 @@ fun MainScaffold(navController: NavController) {
     val user    by AppContainer.authSession.currentUser.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // Pending peak filter to apply when navigating from Atlas → Logbook
+    // Pending peak filter — Atlas → Logbook
     var pendingPeakId   by remember { mutableStateOf<String?>(null) }
     var pendingPeakName by remember { mutableStateOf<String?>(null) }
+
+    // New ascent sheet — peak pre-fill from Atlas "Capturar" button
+    var showNewAscent         by remember { mutableStateOf(false) }
+    var newAscentPeakId       by remember { mutableStateOf<String?>(null) }
+    var newAscentPeakName     by remember { mutableStateOf<String?>(null) }
+    var logbookRefreshTrigger  by remember { mutableIntStateOf(0) }
+    var logbookHighlightId     by remember { mutableStateOf<String?>(null) }
 
     // B — Back gesture on root tab minimises the app instead of popping the back stack
     BackHandler(enabled = currentRoute == Screen.Home.route) {
@@ -84,7 +92,7 @@ fun MainScaffold(navController: NavController) {
         // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar)
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* Phase 4 — new ascent modal */ },
+                onClick = { newAscentPeakId = null; newAscentPeakName = null; showNewAscent = true },
                 containerColor = PeakBlueActive,
                 contentColor = Color.White,
                 shape = CircleShape,
@@ -114,6 +122,25 @@ fun MainScaffold(navController: NavController) {
         },
         containerColor = PeakBackground,
     ) { innerPadding ->
+
+    // New ascent bottom sheet (rendered outside Scaffold so it overlays the FAB/nav bar)
+    if (showNewAscent) {
+        NewAscentSheet(
+            onDismiss       = { showNewAscent = false },
+            onSuccess       = { ascentId ->
+                showNewAscent      = false
+                logbookHighlightId = ascentId
+                logbookRefreshTrigger++
+                tabNavController.navigate(Screen.Logbook.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState    = false   // force fresh so LaunchedEffect fires
+                }
+            },
+            initialPeakId   = newAscentPeakId,
+            initialPeakName = newAscentPeakName,
+        )
+    }
         NavHost(
             navController = tabNavController,
             startDestination = Screen.Home.route,
@@ -132,19 +159,24 @@ fun MainScaffold(navController: NavController) {
                             restoreState    = false  // force fresh — we need LaunchedEffect to fire
                         }
                     },
-                    onNavigateToNewAscent = { _, _ ->
-                        // TODO Phase 4 — open new ascent modal with peakId
+                    onNavigateToNewAscent = { peakId, peakName ->
+                        newAscentPeakId   = peakId
+                        newAscentPeakName = peakName
+                        showNewAscent     = true
                     },
                 )
             }
             composable(Screen.Logbook.route) {
                 LogbookScreen(
-                    onAscentClick    = { ascentId ->
+                    onAscentClick       = { ascentId ->
                         navController.navigate(Screen.AscentDetail.createRoute(ascentId))
                     },
-                    initialPeakId    = pendingPeakId,
-                    initialPeakName  = pendingPeakName,
-                    onPeakIdConsumed = { pendingPeakId = null; pendingPeakName = null },
+                    initialPeakId       = pendingPeakId,
+                    initialPeakName     = pendingPeakName,
+                    onPeakIdConsumed    = { pendingPeakId = null; pendingPeakName = null },
+                    refreshTrigger      = logbookRefreshTrigger,
+                    highlightId         = logbookHighlightId,
+                    onHighlightConsumed = { logbookHighlightId = null },
                 )
             }
         }

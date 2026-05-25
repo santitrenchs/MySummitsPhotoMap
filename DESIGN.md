@@ -624,6 +624,187 @@ Order matches `RarityBreakdown.toList()` (index 0–8):
 
 ---
 
+## Logbook Screen — Bitácora
+
+> **Authoritative spec for Android and iOS.** When building the Logbook/Bitácora screen on any mobile platform, follow this section exactly. The Android implementation in `mobile/android/.../feature/logbook/` is the reference.
+
+---
+
+### Behaviour & data contract
+
+- **API endpoint**: `GET /api/v1/ascents` — returns own + friends ascents combined.
+- **Default view**: **Friends only** (`viewFilter = Friends`). Never "All". Never "Mine".
+- **Friends is the baseline**: it does NOT count as an active filter — no chip shown for it, `isDirty = false` while Friends is selected.
+- **Server-side canonical sort**: the API already sorted correctly — unseen friends first by altitude desc, then own + seen friends by date desc. `SortOrder.DateDesc` on the client means **preserve API order, do not re-sort**.
+- **mark-as-seen**: after successful load, collect IDs where `!isOwn && isUnseen`, wait **3 seconds**, then `POST /api/v1/feed/seen` with `{ ascentIds: [string] }`. Fire-and-forget — failures are non-critical.
+
+### Filter state (exact spec)
+
+```
+ViewFilter  : All | Mine | Friends   — default: Friends
+TimeRange   : All | Month | Year     — default: All
+SortOrder   : DateDesc | ElevDesc    — default: DateDesc
+
+isDirty = viewFilter ≠ Friends
+       || rarityId ≠ null
+       || mythic = true
+       || timeRange ≠ All
+       || sort ≠ DateDesc
+
+clearFilters() → resets everything EXCEPT search text
+```
+
+---
+
+### Unseen indicator
+
+`ascent.isUnseen = true` means a friend logged this ascent and the current user has never seen it (no `FeedSeen` row for this user + ascent pair).
+
+Visual: **green dot `#22C55E`, 9dp diameter**, overlaid on the **top-right corner** of the card avatar. Do not show a dot on own ascents.
+
+---
+
+### Flip card — anatomy
+
+The card flips on tap (Y-axis rotation, 700 ms). Front shows the photo; back shows stats.
+
+**Front side:**
+
+| Layer | Spec |
+|-------|------|
+| Header row | Avatar 32dp circle (+ unseen dot top-right if isUnseen) · user name 13sp bold · date 11sp muted |
+| Photo | `4:5` aspect ratio · 18dp radius · ContentScale.Crop · placeholder 🏔️ 52sp |
+| Gradient overlay | bottom 55% of photo: transparent → `rgba(7,18,31,0.42)` → `rgba(7,18,31,0.82)` |
+| Peak name | 24sp extrabold white, letterSpacing −0.035em, 1 line ellipsis |
+| Route | 13sp white 80% opacity, 1 line ellipsis (hidden if null) |
+| Range · altitude | 10sp white 60% opacity, 1 line ellipsis |
+| Stats band (3 equal cells) | **RAREZA** `✿ {label}` (rarity color) · **ALTITUD** `{n} m` (dark) · **EP** `+{n}` (rarity color) |
+
+**Back side:**
+
+| Layer | Spec |
+|-------|------|
+| Card background | vertical gradient `#0A1929 → #1A3A55 → #0F2233` + radial `rgba(255,255,255,0.08)` overlay |
+| Bottom gradient overlay | transparent → `rgba(0,7,18,0.63)` → `rgba(0,7,18,0.94)` (bottom 70%) |
+| Coordinates | top-right · 10sp white 70% |
+| Mountain range | 11sp white 70% |
+| Peak name | 22sp black white, letterSpacing −0.04em, 1 line |
+| Altitude | 28sp black white, letterSpacing −0.04em |
+| Rarity progress bar | 4dp tall · `rgba(255,255,255,0.25)` track · rarity.color fill · width = `altitudeM / 8849` |
+| Stats row (2 cells) | **ASCENSIONES** `—` · **ALPINISTAS** `—` (placeholder until future endpoint) |
+| Persons byline | `{name} con {persons…}` · 13sp · 2-line clamp |
+| Description | 13sp muted · 2-line clamp |
+
+---
+
+### Filter bottom sheet — sections
+
+Four sections, always in this order:
+
+#### 1 — EXPLORAR
+
+Three chips: **Todos** · **Mis cimas** · **Amigos**. Default selected: **Amigos**.
+
+Uses the generic fchip style (blue active: `#0369A1` bg `#EFF6FF` border `#0369A1`).
+
+#### 2 — RAREZA
+
+Nine rarity chips (✿ emoji only — no label) + one Mythic chip (⭐ Mythic, amber theme).
+
+**Critical coloring rule — never use gray for unselected rarity chips:**
+
+| State | ✿ text color | chip bg | chip border |
+|-------|--------------|---------|-------------|
+| Unselected | `rarity.color` @ **50% alpha** | `rarity.color` @ **7% alpha** | `rarity.color` @ **30% alpha** |
+| Selected | `rarity.color` @ **100%** | `rarity.color` @ **15% alpha** | `rarity.color` solid |
+
+This makes every rarity visually distinct before the user taps it. Daisy = green, Heather = cyan, Gentian = dark blue, Tundra = teal, Edelweiss = purple, Draba = pink, Saxifrage = orange, Cinquefoil = yellow, Snow Lotus = slate.
+
+**Mythic chip:**
+
+| State | bg | border |
+|-------|----|--------|
+| Unselected | `#F9FAFB` | `#E5E7EB` |
+| Selected | `#FFFBEB` | `#F59E0B` (amber) |
+
+#### 3 — CUÁNDO
+
+Three chips: **Último mes** · **Este año** · **Siempre**. Default: **Siempre**.
+
+`Month` = last 30 days. `Year` = current calendar year (not last 365 days).
+
+#### 4 — ORDENAR POR
+
+Two chips: **Más reciente** (default) · **Mayor altitud**.
+
+`Más reciente` → preserve API order (do not sort client-side).  
+`Mayor altitud` → sort client-side by `peak.altitudeM` descending.
+
+---
+
+### Filter sheet — footer CTA
+
+Full-width green button: `"Ver {n} resultado{s}"`.
+
+```
+bg: #2F7A5F · color: white · 15sp extrabold · 14dp radius · shadow rgba(47,122,95,0.32) 0 4dp 14dp
+```
+
+Tap → close sheet. Result count comes from the already-filtered list (reactive).
+
+---
+
+### Active chips row
+
+Shown below the search bar when `isDirty = true`. Horizontal scroll. Each chip has an ✕ to remove just that filter.
+
+| Active filter | Chip label | Colors |
+|---------------|-----------|--------|
+| ViewFilter.All | `👁 Todos` | blue (`#EFF6FF` bg, `#BFDBFE` border, `#1D4ED8` text) |
+| ViewFilter.Mine | `👤 Mis cimas` | blue (same) |
+| mythic | `⭐ Mythic` | amber (`#FFFBEB` bg, `#F59E0B` border, `#92400E` text) |
+| rarityId | `✿ {rarity.label}` | rarity color (bg @ 12%, border @ 35%) |
+| Month | `📅 Último mes` | neutral (`#F3F4F6` bg, `#E5E7EB` border, `#374151` text) |
+| Year | `📅 {currentYear}` | neutral |
+| ElevDesc | `⛰ Mayor altitud` | green (`#F0FDF4` bg, `#BBF7D0` border, `#15803D` text) |
+
+**Friends chip is NEVER shown** — it's the default state, not a filter deviation.
+
+`clearFilters()` removes all active filters but keeps the search text intact.
+
+---
+
+### Empty states
+
+| Condition | Emoji | Title | Subtitle |
+|-----------|-------|-------|---------|
+| Friends view + no data (default on first load) | 👥 52sp | "Sin actividad de amigos" | "Cuando tus amigos registren cimas aparecerán aquí.\nUsa el filtro para ver tus propias ascensiones." |
+| Mine view + no ascents at all | 🏔️ 52sp | "Tu bitácora está vacía" | "Registra tu primera ascensión para empezar." |
+| Any filter combination → 0 results | ✿ 48sp (`#0369A1`) | "Sin resultados" | "Prueba a ajustar la búsqueda o los filtros." |
+
+---
+
+### Rarity definitions (canonical — 9 rarities)
+
+Use these exact values. `minAlt` is the lower bound (inclusive). `ep` is the experience points awarded.
+
+| id | label | color | minAlt | ep |
+|----|-------|-------|--------|----|
+| daisy | Daisy | `#00995C` | 0 | 10 |
+| heather | Heather | `#06B6D4` | 1000 | 20 |
+| gentian | Gentian | `#1E40AF` | 2000 | 30 |
+| tundra | Tundra | `#0E7490` | 3000 | 60 |
+| edelweiss | Edelweiss | `#A855F7` | 4000 | 120 |
+| draba | Draba | `#EC4899` | 5000 | 250 |
+| saxifrage | Saxifrage | `#F97316` | 6000 | 500 |
+| cinquefoil | Cinquefoil | `#EAB308` | 7000 | 1000 |
+| snow_lotus | Snow Lotus | `#94A3B8` | 8000 | 2000 |
+
+`getRarityForAltitude(m)` → last rarity in the list where `m >= minAlt`.  
+Example: 2500 m → gentian. 3999 m → tundra. 4000 m → edelweiss.
+
+---
+
 ## Back-to-top — two complementary patterns
 
 Long feeds (Bitácora and any future scrollable list) provide two ways to return to top.

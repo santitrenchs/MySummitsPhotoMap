@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.Ascent
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -98,6 +99,8 @@ class LogbookViewModel : ViewModel() {
             // (simulates the user having "seen" them — same behaviour as web).
             // This updates the FeedSeen table so next refresh they appear in date order.
             markUnseenAsSeen(response.ascents)
+        } catch (e: CancellationException) {
+            throw e   // never swallow cancellation — structured concurrency requires it
         } catch (e: HttpException) {
             Log.e(TAG, "getAscents HTTP ${e.code()}: ${e.response()?.errorBody()?.string()}")
             _uiState.value = LogbookUiState.Error("Error del servidor (${e.code()})")

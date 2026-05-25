@@ -1,0 +1,41 @@
+{
+  "colors": {
+    "navyDark": "#0D2538",
+    "navyMid": "#5A6E84",
+    "navyLight": "#94A3B8",
+    "borderLight": "#E5E7EB",
+    "borderSofter": "#F1F5F9",
+    "surfaceDefault": "#F9FAFB",
+    "surfaceSubtle": "#F8FAFC",
+    "pageBackground": "#F4F7FA",
+    "blueActive": "#0369A1",
+    "blueBg": "#EFF6FF",
+    "blueBorder": "#BFDBFE",
+    "greenCTA": "#2F7A5F",
+    "brandGreen": "#4A8C5C"
+  },
+  "typography": {
+    "fontHeading": "Space Grotesk",
+    "fontBody": "Inter",
+    "weights": {
+      "regular": 400,
+      "semibold": 600,
+      "bold": 700,
+      "extrabold": 800
+    }
+  },
+  "spacing": {
+    "xs": 4,
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "xxl": 48
+  },
+  "radii": {
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "full": 9999
+  }
+}

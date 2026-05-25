@@ -1,0 +1,59 @@
+<resources>
+    <!-- ── Navigation principale ─────────────────────────────────────────────── -->
+    <string name="nav_tab_home">Peakadex stats</string>
+    <string name="nav_tab_map">Atlas</string>
+    <string name="nav_tab_logbook">Carnet</string>
+    <string name="nav_fab_new_ascent">Nouvelle ascension</string>
+
+    <!-- ── Atlas — barre de recherche ────────────────────────────────────────── -->
+    <string name="atlas_search_placeholder">Rechercher un sommet…</string>
+    <string name="atlas_action_search">Rechercher</string>
+    <string name="atlas_action_close">Fermer</string>
+
+    <!-- ── Atlas — puces de filtre ───────────────────────────────────────────── -->
+    <string name="atlas_filter_all">Toutes</string>
+    <string name="atlas_filter_climbed">Escaladées</string>
+    <string name="atlas_filter_not_yet">Pas encore</string>
+
+    <!-- ── Atlas — contrôles de carte ────────────────────────────────────────── -->
+    <string name="atlas_action_layers">Calques</string>
+    <string name="atlas_action_my_location">Ma position</string>
+    <string name="atlas_toggle_list">Liste</string>
+    <string name="atlas_toggle_map">Carte</string>
+
+    <!-- ── Atlas — panneau de calques ────────────────────────────────────────── -->
+    <string name="atlas_layers_title">Calques de la carte</string>
+    <string name="atlas_layers_map_type">TYPE DE CARTE</string>
+    <string name="atlas_layers_normal">Normal</string>
+    <string name="atlas_layers_terrain">Relief</string>
+    <string name="atlas_layers_section">CALQUES</string>
+    <string name="atlas_layers_trails">Sentiers</string>
+
+    <!-- ── Atlas — détail du sommet ──────────────────────────────────────────── -->
+    <string name="atlas_peak_unclimbed">Pas encore gravi</string>
+    <string name="atlas_meta_date">Date</string>
+    <string name="atlas_meta_times">Fois</string>
+    <string name="atlas_meta_route">Voie</string>
+
+    <!-- ── Atlas — liste des sommets ─────────────────────────────────────────── -->
+    <string name="atlas_list_empty">Aucun sommet dans cette zone</string>
+    <plurals name="atlas_peak_count">
+        <item quantity="one">1 sommet</item>
+        <item quantity="other">%d sommets</item>
+    </plurals>
+
+    <!-- ── Atlas — panneau de filtres ────────────────────────────────────────── -->
+    <string name="atlas_btn_filters">Filtres</string>
+    <string name="atlas_section_rarity">RARETÉ</string>
+    <string name="atlas_section_status">STATUT</string>
+    <string name="atlas_section_sort">TRIER</string>
+    <string name="atlas_filter_captured">Gravies (%d)</string>
+    <string name="atlas_filter_not_captured">Pas encore</string>
+    <string name="atlas_sort_distance">Distance</string>
+    <string name="atlas_sort_relevance">Pertinence</string>
+    <string name="atlas_sort_altitude">Altitude</string>
+    <plurals name="atlas_filters_see_peaks">
+        <item quantity="one">Voir 1 sommet</item>
+        <item quantity="other">Voir %d sommets</item>
+    </plurals>
+</resources>

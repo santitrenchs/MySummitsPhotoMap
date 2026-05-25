@@ -1,0 +1,59 @@
+<resources>
+    <!-- ── Main navigation ───────────────────────────────────────────────────── -->
+    <string name="nav_tab_home">Peakadex stats</string>
+    <string name="nav_tab_map">Atlas</string>
+    <string name="nav_tab_logbook">Logbook</string>
+    <string name="nav_fab_new_ascent">New ascent</string>
+
+    <!-- ── Atlas — search bar ────────────────────────────────────────────────── -->
+    <string name="atlas_search_placeholder">Search peak…</string>
+    <string name="atlas_action_search">Search</string>
+    <string name="atlas_action_close">Close</string>
+
+    <!-- ── Atlas — filter chips ──────────────────────────────────────────────── -->
+    <string name="atlas_filter_all">All</string>
+    <string name="atlas_filter_climbed">Climbed</string>
+    <string name="atlas_filter_not_yet">Not yet</string>
+
+    <!-- ── Atlas — map controls ──────────────────────────────────────────────── -->
+    <string name="atlas_action_layers">Layers</string>
+    <string name="atlas_action_my_location">My location</string>
+    <string name="atlas_toggle_list">List</string>
+    <string name="atlas_toggle_map">Map</string>
+
+    <!-- ── Atlas — layers panel ──────────────────────────────────────────────── -->
+    <string name="atlas_layers_title">Map layers</string>
+    <string name="atlas_layers_map_type">MAP TYPE</string>
+    <string name="atlas_layers_normal">Normal</string>
+    <string name="atlas_layers_terrain">Terrain</string>
+    <string name="atlas_layers_section">LAYERS</string>
+    <string name="atlas_layers_trails">Trails</string>
+
+    <!-- ── Atlas — peak detail ───────────────────────────────────────────────── -->
+    <string name="atlas_peak_unclimbed">Not yet climbed</string>
+    <string name="atlas_meta_date">Date</string>
+    <string name="atlas_meta_times">Times</string>
+    <string name="atlas_meta_route">Route</string>
+
+    <!-- ── Atlas — peaks list ────────────────────────────────────────────────── -->
+    <string name="atlas_list_empty">No peaks in this area</string>
+    <plurals name="atlas_peak_count">
+        <item quantity="one">1 peak</item>
+        <item quantity="other">%d peaks</item>
+    </plurals>
+
+    <!-- ── Atlas — filters panel ─────────────────────────────────────────────── -->
+    <string name="atlas_btn_filters">Filters</string>
+    <string name="atlas_section_rarity">RARITY</string>
+    <string name="atlas_section_status">STATUS</string>
+    <string name="atlas_section_sort">SORT</string>
+    <string name="atlas_filter_captured">Climbed (%d)</string>
+    <string name="atlas_filter_not_captured">Not yet</string>
+    <string name="atlas_sort_distance">Distance</string>
+    <string name="atlas_sort_relevance">Relevance</string>
+    <string name="atlas_sort_altitude">Altitude</string>
+    <plurals name="atlas_filters_see_peaks">
+        <item quantity="one">See 1 peak</item>
+        <item quantity="other">See %d peaks</item>
+    </plurals>
+</resources>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Replicates web SpriteIcon index=2 from NavBar.tsx exactly -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Mountain outline: M3.5 13.5L8.6 7.2L12 11.3L14.3 8.5L20.5 16.5H3.5V13.5Z -->
+    <path
+        android:pathData="M3.5,13.5 L8.6,7.2 L12,11.3 L14.3,8.5 L20.5,16.5 L3.5,16.5 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#0F2233"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round" />
+
+    <!-- Snow fill (slate): M4.5 16.5H20.5L17.7 13.1L15.8 15.2L12 11.3L9.2 14.7L7.6 12.8L4.5 16.5Z -->
+    <path
+        android:pathData="M4.5,16.5 L20.5,16.5 L17.7,13.1 L15.8,15.2 L12,11.3 L9.2,14.7 L7.6,12.8 Z"
+        android:fillColor="#64748B"
+        android:strokeColor="#00000000" />
+
+    <!-- Bullet dot 1: cx=5 cy=20 r=1 -->
+    <path
+        android:pathData="M 4,20 A 1,1,0,1,0,6,20 A 1,1,0,1,0,4,20"
+        android:fillColor="#0F2233" />
+
+    <!-- Line 1: M9 20H20 -->
+    <path
+        android:pathData="M9,20 L20,20"
+        android:fillColor="#00000000"
+        android:strokeColor="#0F2233"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+
+    <!-- Bullet dot 2: cx=5 cy=23 r=1 -->
+    <path
+        android:pathData="M 4,23 A 1,1,0,1,0,6,23 A 1,1,0,1,0,4,23"
+        android:fillColor="#0F2233" />
+
+    <!-- Line 2: M9 23H17 -->
+    <path
+        android:pathData="M9,23 L17,23"
+        android:fillColor="#00000000"
+        android:strokeColor="#0F2233"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+
+</vector>

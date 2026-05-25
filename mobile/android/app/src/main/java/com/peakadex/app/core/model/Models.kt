@@ -31,8 +31,8 @@ data class UserSummary(
 data class Peak(
     val id: String,
     val name: String,
-    val latitude: Double,
-    val longitude: Double,
+    val latitude: Double = 0.0,   // may be absent in some API responses (e.g. createAscent)
+    val longitude: Double = 0.0,  // always present when fetched via map/atlas endpoints
     val altitudeM: Int,
     val mountainRange: String? = null,
     val country: String? = null,
@@ -234,6 +234,16 @@ data class Rarity(
     val scoreWeight: Double = 0.5,
 )
 
+// MARK: - Request bodies
+
+@Serializable
+data class CreateAscentRequest(
+    val peakId: String,
+    val date: String,
+    val route: String? = null,
+    val description: String? = null,
+)
+
 // MARK: - Auth responses
 
 @Serializable
@@ -263,6 +273,13 @@ data class AscentsResponse(
 @Serializable
 data class AscentResponse(
     val ascent: Ascent,
+)
+
+// MARK: - Single photo response ({ "photo": {...} })
+
+@Serializable
+data class PhotoResponse(
+    val photo: Photo,
 )
 
 // MARK: - Atlas / map models

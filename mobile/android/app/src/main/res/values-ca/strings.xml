@@ -1,0 +1,59 @@
+<resources>
+    <!-- ── Navegació principal ───────────────────────────────────────────────── -->
+    <string name="nav_tab_home">Peakadex stats</string>
+    <string name="nav_tab_map">Atlas</string>
+    <string name="nav_tab_logbook">Bitàcola</string>
+    <string name="nav_fab_new_ascent">Nova ascensió</string>
+
+    <!-- ── Atlas — barra de cerca ────────────────────────────────────────────── -->
+    <string name="atlas_search_placeholder">Cerca cim…</string>
+    <string name="atlas_action_search">Cerca</string>
+    <string name="atlas_action_close">Tanca</string>
+
+    <!-- ── Atlas — xips de filtre ────────────────────────────────────────────── -->
+    <string name="atlas_filter_all">Totes</string>
+    <string name="atlas_filter_climbed">Escalades</string>
+    <string name="atlas_filter_not_yet">Per escalar</string>
+
+    <!-- ── Atlas — controls del mapa ─────────────────────────────────────────── -->
+    <string name="atlas_action_layers">Capes</string>
+    <string name="atlas_action_my_location">La meva ubicació</string>
+    <string name="atlas_toggle_list">Llista</string>
+    <string name="atlas_toggle_map">Mapa</string>
+
+    <!-- ── Atlas — panell de capes ───────────────────────────────────────────── -->
+    <string name="atlas_layers_title">Capes del mapa</string>
+    <string name="atlas_layers_map_type">TIPUS DE MAPA</string>
+    <string name="atlas_layers_normal">Normal</string>
+    <string name="atlas_layers_terrain">Relleu</string>
+    <string name="atlas_layers_section">CAPES</string>
+    <string name="atlas_layers_trails">Senders</string>
+
+    <!-- ── Atlas — detall de cim ─────────────────────────────────────────────── -->
+    <string name="atlas_peak_unclimbed">Encara sense escalar</string>
+    <string name="atlas_meta_date">Data</string>
+    <string name="atlas_meta_times">Vegades</string>
+    <string name="atlas_meta_route">Via</string>
+
+    <!-- ── Atlas — llista de cims ────────────────────────────────────────────── -->
+    <string name="atlas_list_empty">No hi ha cims en aquesta àrea</string>
+    <plurals name="atlas_peak_count">
+        <item quantity="one">1 cim</item>
+        <item quantity="other">%d cims</item>
+    </plurals>
+
+    <!-- ── Atlas — panell de filtres ─────────────────────────────────────────── -->
+    <string name="atlas_btn_filters">Filtres</string>
+    <string name="atlas_section_rarity">RARESA</string>
+    <string name="atlas_section_status">ESTAT</string>
+    <string name="atlas_section_sort">ORDENAR</string>
+    <string name="atlas_filter_captured">Capturades (%d)</string>
+    <string name="atlas_filter_not_captured">Per escalar</string>
+    <string name="atlas_sort_distance">Distància</string>
+    <string name="atlas_sort_relevance">Rellevància</string>
+    <string name="atlas_sort_altitude">Altitud</string>
+    <plurals name="atlas_filters_see_peaks">
+        <item quantity="one">Veure 1 cim</item>
+        <item quantity="other">Veure %d cims</item>
+    </plurals>
+</resources>

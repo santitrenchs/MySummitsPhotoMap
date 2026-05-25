@@ -12,6 +12,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,6 +51,11 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
+import androidx.compose.runtime.snapshotFlow
 import coil3.compose.AsyncImage
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.theme.PeakBlueActive
@@ -209,6 +215,9 @@ fun LogbookScreen(
     initialPeakId:   String? = null,
     initialPeakName: String? = null,
     onPeakIdConsumed: () -> Unit = {},
+    refreshTrigger: Int = 0,
+    highlightId: String? = null,
+    onHighlightConsumed: () -> Unit = {},
     vm: LogbookViewModel = viewModel(),
 ) {
     // Apply peak filter from Atlas navigation once, then signal consumed so the
@@ -224,6 +233,29 @@ fun LogbookScreen(
     val isRefreshing    by vm.isRefreshing.collectAsStateWithLifecycle()
     val filters         by vm.filters.collectAsStateWithLifecycle()
     val filteredAscents by vm.filteredAscents.collectAsStateWithLifecycle()
+
+    // Hoist list state here so we can scroll-to-top from the refresh LaunchedEffect
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger > 0) {
+            vm.setViewFilter(ViewFilter.Mine)
+            vm.refresh()
+            // Wait until the LazyColumn is laid out — animateScrollToItem is a no-op
+            // if called before the list has performed its first layout pass.
+            withTimeoutOrNull(10_000L) {
+                snapshotFlow { listState.layoutInfo.totalItemsCount }
+                    .filter { it > 0 }
+                    .first()
+            } ?: return@LaunchedEffect  // network error — give up silently
+
+            // Scroll to the exact position of the new ascent (not necessarily index 0,
+            // since the server's canonical sort may place it after unseen friends etc.)
+            val targetIdx = filteredAscents.indexOfFirst { it.id == highlightId }
+                .takeIf { it >= 0 } ?: 0
+            listState.animateScrollToItem(targetIdx)
+        }
+    }
 
     var filtersOpen by remember { mutableStateOf(false) }
 
@@ -286,7 +318,14 @@ fun LogbookScreen(
                     filteredAscents.isEmpty() ->
                         LogbookNoResultsState()
                     else ->
-                        LogbookList(ascents = filteredAscents, onAscentClick = onAscentClick, onShareClick = onShareClick)
+                        LogbookList(
+                            ascents             = filteredAscents,
+                            onAscentClick       = onAscentClick,
+                            onShareClick        = onShareClick,
+                            listState           = listState,
+                            highlightId         = highlightId,
+                            onHighlightConsumed = onHighlightConsumed,
+                        )
                 }
             }
         }
@@ -642,8 +681,20 @@ private fun LogbookList(
     ascents: List<Ascent>,
     onAscentClick: (String) -> Unit,
     onShareClick: (String) -> Unit,
+    listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
+    highlightId: String? = null,
+    onHighlightConsumed: () -> Unit = {},
 ) {
+    // Mirror web: show sky-blue ring for 2500ms then fade it out over 400ms
+    LaunchedEffect(highlightId) {
+        if (highlightId != null) {
+            delay(2_500L)
+            onHighlightConsumed()
+        }
+    }
+
     LazyColumn(
+        state               = listState,
         contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
@@ -652,6 +703,7 @@ private fun LogbookList(
                 ascent        = ascent,
                 onDetailClick = { onAscentClick(ascent.id) },
                 onShareClick  = { onShareClick(ascent.id) },
+                isHighlighted = ascent.id == highlightId,
             )
         }
     }
@@ -664,12 +716,20 @@ private fun AscentFlipCard(
     ascent:       Ascent,
     onDetailClick: () -> Unit,
     onShareClick:  () -> Unit,
+    isHighlighted: Boolean = false,
 ) {
     var isFlipped by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
         targetValue   = if (isFlipped) 180f else 0f,
         animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
         label         = "card_flip",
+    )
+    // Sky-blue ring: appears instantly when highlighted, fades out over 400ms when cleared.
+    // Matches web: boxShadow "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)"
+    val ringAlpha by animateFloatAsState(
+        targetValue   = if (isHighlighted) 1f else 0f,
+        animationSpec = tween(durationMillis = if (isHighlighted) 0 else 400),
+        label         = "highlight_ring",
     )
     val density = LocalDensity.current.density
     val rarity  = getRarityDef(ascent.peak.altitudeM)
@@ -678,7 +738,14 @@ private fun AscentFlipCard(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp), clip = false,
-                ambientColor = Color(0x1A0D2538), spotColor = Color(0x1A0D2538)),
+                ambientColor = Color(0x1A0D2538), spotColor = Color(0x1A0D2538))
+            .then(
+                if (ringAlpha > 0f) Modifier.border(
+                    width = 3.dp,
+                    color = Color(0xFF0EA5E9).copy(alpha = ringAlpha),
+                    shape = RoundedCornerShape(28.dp),
+                ) else Modifier
+            ),
     ) {
         Box(
             modifier = Modifier
