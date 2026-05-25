@@ -36,11 +36,11 @@ import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakBlueContainer
 import com.peakadex.app.core.ui.theme.PeakBlueLight
-import com.peakadex.app.core.ui.PlaceholderScreen
 import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
 import com.peakadex.app.feature.logbook.LogbookScreen
 import com.peakadex.app.feature.newascent.NewAscentSheet
+import com.peakadex.app.feature.profile.ProfileScreen
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 
@@ -169,7 +169,9 @@ fun MainScaffold(navController: NavController) {
                 )
             }
             composable(Screen.Logbook.route) {
-                PlaceholderScreen(title = "Bitácora", phase = 6)
+                ProfileScreen(
+                    onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                )
             }
             composable(Screen.Cards.route) {
                 LogbookScreen(
