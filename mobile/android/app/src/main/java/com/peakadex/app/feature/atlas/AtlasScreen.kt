@@ -516,19 +516,28 @@ fun AtlasScreen(
 
         // ── Search results list ───────────────────────────────────────────────
         AnimatedVisibility(
-            visible  = uiState.isSearchActive && uiState.searchResults.isNotEmpty(),
+            visible  = uiState.isSearchActive && (uiState.searchResults.isNotEmpty() || uiState.placeResults.isNotEmpty()),
             enter    = slideInVertically(),
             exit     = slideOutVertically(),
             modifier = Modifier.align(Alignment.TopCenter),
         ) {
             SearchResultsList(
                 results        = uiState.searchResults,
+                placeResults   = uiState.placeResults,
                 climbedPeakIds = climbed.keys,
                 onResultClick  = { peak ->
                     vm.onSearchResultSelected(peak)
                     mapRef.value?.animateCamera(
                         CameraUpdateFactory.newLatLngZoom(
                             LatLng(peak.latitude, peak.longitude), 13.0,
+                        ), 600,
+                    )
+                },
+                onPlaceClick   = { place ->
+                    vm.onPlaceSelected()
+                    mapRef.value?.animateCamera(
+                        CameraUpdateFactory.newLatLngZoom(
+                            LatLng(place.lat, place.lon), 12.0,
                         ), 600,
                     )
                 },
@@ -1030,8 +1039,10 @@ private fun SearchBarOverlay(
 @Composable
 private fun SearchResultsList(
     results: List<Peak>,
+    placeResults: List<com.peakadex.app.core.model.GeocodedPlace>,
     climbedPeakIds: Set<String>,
     onResultClick: (Peak) -> Unit,
+    onPlaceClick: (com.peakadex.app.core.model.GeocodedPlace) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -1042,6 +1053,7 @@ private fun SearchResultsList(
             .background(androidx.compose.ui.graphics.Color.White, RoundedCornerShape(16.dp))
             .padding(vertical = 4.dp),
     ) {
+        // ── Picos ──────────────────────────────────────────────────────────
         items(results) { peak ->
             Row(
                 modifier = Modifier
@@ -1068,6 +1080,45 @@ private fun SearchResultsList(
                 }
             }
             HorizontalDivider(thickness = 0.5.dp, color = PeakBorderLight)
+        }
+
+        // ── Lugares (Nominatim) ────────────────────────────────────────────
+        if (placeResults.isNotEmpty()) {
+            if (results.isNotEmpty()) {
+                item {
+                    Text(
+                        text     = "LUGARES",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color    = PeakMuted,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                    HorizontalDivider(thickness = 0.5.dp, color = PeakBorderLight)
+                }
+            }
+            items(placeResults) { place ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onPlaceClick(place) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("📍", fontSize = 14.sp)
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text     = place.name,
+                        fontSize = 14.sp,
+                        color    = PeakTextHeadline,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                HorizontalDivider(thickness = 0.5.dp, color = PeakBorderLight)
+            }
         }
     }
 }

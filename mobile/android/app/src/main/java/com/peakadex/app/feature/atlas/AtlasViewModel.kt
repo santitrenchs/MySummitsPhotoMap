@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.core.model.GeocodedPlace
 import com.peakadex.app.core.model.MapAscent
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Rarity
@@ -37,6 +38,7 @@ data class AtlasUiState(
     val selected: SelectedPeakUi? = null,
     val searchQuery: String = "",
     val searchResults: List<Peak> = emptyList(),
+    val placeResults: List<GeocodedPlace> = emptyList(),
     val isSearchActive: Boolean = false,
     val showList: Boolean = false,
     val error: String? = null,
@@ -131,14 +133,19 @@ class AtlasViewModel : ViewModel() {
     fun onSearchQueryChanged(query: String) {
         _uiState.update { it.copy(searchQuery = query, isSearchActive = query.isNotEmpty()) }
         if (query.isBlank()) {
-            _uiState.update { it.copy(searchResults = emptyList()) }
+            _uiState.update { it.copy(searchResults = emptyList(), placeResults = emptyList()) }
             return
         }
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(300)
             runCatching { api.searchPeaks(query) }.onSuccess { response ->
-                _uiState.update { it.copy(searchResults = response.peaks.take(20)) }
+                _uiState.update {
+                    it.copy(
+                        searchResults = response.peaks.take(20),
+                        placeResults  = response.places,
+                    )
+                }
             }
         }
     }
@@ -147,16 +154,37 @@ class AtlasViewModel : ViewModel() {
         val ascent = _uiState.value.climbedByPeakId[peak.id]
         _uiState.update {
             it.copy(
-                searchQuery = "",
+                searchQuery   = "",
                 isSearchActive = false,
                 searchResults = emptyList(),
-                selected = SelectedPeakUi(peak, ascent),
+                placeResults  = emptyList(),
+                selected      = SelectedPeakUi(peak, ascent),
+            )
+        }
+    }
+
+    fun onPlaceSelected() {
+        // Place selection only moves the camera — no peak detail sheet.
+        // State cleanup only; camera animation is done in the UI layer.
+        _uiState.update {
+            it.copy(
+                searchQuery   = "",
+                isSearchActive = false,
+                searchResults = emptyList(),
+                placeResults  = emptyList(),
             )
         }
     }
 
     fun onSearchDismissed() {
-        _uiState.update { it.copy(searchQuery = "", isSearchActive = false, searchResults = emptyList()) }
+        _uiState.update {
+            it.copy(
+                searchQuery   = "",
+                isSearchActive = false,
+                searchResults = emptyList(),
+                placeResults  = emptyList(),
+            )
+        }
     }
 
     fun onToggleList() {

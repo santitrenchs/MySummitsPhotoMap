@@ -303,8 +303,16 @@ data class MapAscentResponse(
     val ascents: List<MapAscent>,
 )
 
+@Serializable
+data class GeocodedPlace(
+    val name: String,
+    val lat: Double,
+    val lon: Double,
+)
+
 // Response from GET /api/v1/peaks (viewport or search)
 @Serializable
 data class PeaksResponse(
     val peaks: List<Peak>,
+    val places: List<GeocodedPlace> = emptyList(),
 )

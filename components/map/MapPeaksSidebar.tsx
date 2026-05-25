@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import type { MapPeak, AscentMapEntry, MapBounds, RarityDef } from "./MapView";
+import type { MapPeak, AscentMapEntry, MapBounds, RarityDef, GeocodedPlace } from "./MapView";
 import { RARITY_SCORE_WEIGHTS } from "./MapView";
 import { RARITY_COLORS, RARITIES } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
@@ -31,6 +31,8 @@ interface Props {
   searchQuery: string;
   onSearchChange: (q: string) => void;
   searchResults: MapPeak[];
+  placeResults?: GeocodedPlace[];
+  onSelectPlace?: (place: GeocodedPlace) => void;
   hideSearchInput?: boolean;
   hideFilters?: boolean;
   asMobileList?: boolean;
@@ -60,6 +62,7 @@ export default function MapPeaksSidebar({
   filter, onFilterChange, rarityFilter, onRarityChange, mythicOnly, onMythicToggle, rarities, climbedCount,
   selectedPeakId, onSelectPeak,
   searchQuery, onSearchChange, searchResults,
+  placeResults = [], onSelectPlace,
   hideSearchInput = false, hideFilters = false, asMobileList = false,
   sort: sortProp, onSortChange,
   asSheet = false, onClose,
@@ -391,66 +394,96 @@ export default function MapPeaksSidebar({
       {/* List */}
       <div ref={listRef} style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
         {searchQuery.trim().length >= 2 ? (
-          searchResults.length === 0 ? (
+          searchResults.length === 0 && placeResults.length === 0 ? (
             <div style={{ padding: "32px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
               Sin resultados
             </div>
           ) : (
-            searchResults.map((peak) => {
-              const isClimbed = ascentByPeakId.has(peak.id);
-              const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
-              const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
-              return (
-                <button
-                  key={peak.id}
-                  onMouseDown={() => { onSelectPeak(peak); onSearchChange(""); }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    width: "100%", padding: "10px 14px",
-                    background: "none", border: "none",
-                    borderBottom: "1px solid #f3f4f6",
-                    borderLeft: `3px solid ${rc}`,
-                    cursor: "pointer", textAlign: "left",
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827",
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {peak.name}
-                      </p>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
-                        {peak.altitudeM} m
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
-                      <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                        {peak.mountainRange ?? ""}
-                      </p>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                        {isClimbed && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "var(--radius-sm)", padding: "1px 5px" }}>
-                            ✓ Capturada
-                          </span>
-                        )}
-                        {peak.rarity && rarityEntry && (
-                          <div style={{
-                            display: "inline-flex", alignItems: "center", gap: 3,
-                            padding: "2px 7px", borderRadius: "var(--radius-full)",
-                            background: rc + "22",
-                          }}>
-                            <RarityFlower id={rarityEntry.id} size={10} />
-                            <span style={{ fontSize: 10, fontWeight: 700, color: rarityEntry.colorDark, whiteSpace: "nowrap" }}>
-                              {peak.rarity.name}
+            <>
+              {searchResults.map((peak) => {
+                const isClimbed = ascentByPeakId.has(peak.id);
+                const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
+                const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
+                return (
+                  <button
+                    key={peak.id}
+                    onMouseDown={() => { onSelectPeak(peak); onSearchChange(""); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      width: "100%", padding: "10px 14px",
+                      background: "none", border: "none",
+                      borderBottom: "1px solid #f3f4f6",
+                      borderLeft: `3px solid ${rc}`,
+                      cursor: "pointer", textAlign: "left",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827",
+                          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {peak.name}
+                        </p>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
+                          {peak.altitudeM} m
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
+                        <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                          {peak.mountainRange ?? ""}
+                        </p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                          {isClimbed && (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "var(--radius-sm)", padding: "1px 5px" }}>
+                              ✓ Capturada
                             </span>
-                          </div>
-                        )}
+                          )}
+                          {peak.rarity && rarityEntry && (
+                            <div style={{
+                              display: "inline-flex", alignItems: "center", gap: 3,
+                              padding: "2px 7px", borderRadius: "var(--radius-full)",
+                              background: rc + "22",
+                            }}>
+                              <RarityFlower id={rarityEntry.id} size={10} />
+                              <span style={{ fontSize: 10, fontWeight: 700, color: rarityEntry.colorDark, whiteSpace: "nowrap" }}>
+                                {peak.rarity.name}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
-              );
-            })
+                  </button>
+                );
+              })}
+              {placeResults.length > 0 && (
+                <>
+                  {searchResults.length > 0 && (
+                    <div style={{ padding: "6px 14px 4px", fontSize: 10, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase", borderTop: "1px solid #f3f4f6" }}>
+                      Lugares
+                    </div>
+                  )}
+                  {placeResults.map((place, i) => (
+                    <button
+                      key={i}
+                      onMouseDown={() => { onSelectPlace?.(place); onSearchChange(""); }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10,
+                        width: "100%", padding: "10px 14px",
+                        background: "none", border: "none",
+                        borderBottom: "1px solid #f3f4f6",
+                        borderLeft: "3px solid #9ca3af",
+                        cursor: "pointer", textAlign: "left",
+                      }}
+                    >
+                      <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>📍</span>
+                      <p style={{ margin: 0, fontSize: 13, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {place.name}
+                      </p>
+                    </button>
+                  ))}
+                </>
+              )}
+            </>
           )
         ) : visiblePeaks.length === 0 ? (
           <div style={{ padding: "32px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
