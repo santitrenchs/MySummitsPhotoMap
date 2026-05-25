@@ -1,29 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Cards tab icon: two portrait cards with rounded corners, back card tilted -18° -->
+<!-- Cards tab icon: two portrait cards with rounded corners r=3.5, back card tilted -18° -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
 
-    <!-- Back card: rotated -18° around its centre (9,10), slate-400 fill -->
-    <!-- Rounded rect M4,3→14,17 r=2: top-left arc, top edge, top-right arc,
-         right edge, bottom-right arc, bottom edge, bottom-left arc, left edge -->
+    <!-- Back card: rotated -18° around (9,10), rounded rect M4,3→14,17 r=3.5 -->
     <group
         android:rotation="-18"
         android:pivotX="9"
         android:pivotY="10">
         <path
-            android:pathData="M6,3 L12,3 Q14,3 14,5 L14,15 Q14,17 12,17 L6,17 Q4,17 4,15 L4,5 Q4,3 6,3 Z"
+            android:pathData="M7.5,3 L10.5,3 Q14,3 14,6.5 L14,13.5 Q14,17 10.5,17 L7.5,17 Q4,17 4,13.5 L4,6.5 Q4,3 7.5,3 Z"
             android:fillColor="#94A3B8"
             android:strokeColor="#64748B"
             android:strokeWidth="1.2"
             android:strokeLineJoin="round" />
     </group>
 
-    <!-- Front card: upright, rounded rect M9,5→20,21 r=2 -->
+    <!-- Front card: upright, rounded rect M9,5→20,21 r=3.5 -->
     <path
-        android:pathData="M11,5 L18,5 Q20,5 20,7 L20,19 Q20,21 18,21 L11,21 Q9,21 9,19 L9,7 Q9,5 11,5 Z"
+        android:pathData="M12.5,5 L16.5,5 Q20,5 20,8.5 L20,17.5 Q20,21 16.5,21 L12.5,21 Q9,21 9,17.5 L9,8.5 Q9,5 12.5,5 Z"
         android:fillColor="#FFFFFF"
         android:strokeColor="#1E293B"
         android:strokeWidth="1.7"
