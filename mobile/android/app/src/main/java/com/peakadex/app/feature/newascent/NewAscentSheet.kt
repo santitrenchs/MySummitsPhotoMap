@@ -112,7 +112,7 @@ import java.time.format.FormatStyle
 @Composable
 fun NewAscentSheet(
     onDismiss: () -> Unit,
-    onSuccess: (ascentId: String) -> Unit = {},
+    onSuccess: (ascentId: String, taggingWarning: String?) -> Unit = { _, _ -> },
     initialPeakId: String? = null,
     initialPeakName: String? = null,
     vm: NewAscentViewModel = viewModel(),
@@ -172,7 +172,7 @@ fun NewAscentSheet(
                 state    = state,
                 vm       = vm,
                 onBack   = vm::onFormBack,
-                onSubmit = { vm.submit { ascentId -> onSuccess(ascentId); onDismiss() } },
+                onSubmit = { vm.submit { ascentId, warning -> onSuccess(ascentId, warning); onDismiss() } },
                 onClose  = { scope.launch { sheetState.hide(); onDismiss() } },
             )
         }

@@ -2,6 +2,7 @@ package com.peakadex.app.core.navigation
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -41,6 +42,7 @@ import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
 import com.peakadex.app.feature.logbook.LogbookScreen
 import com.peakadex.app.feature.newascent.NewAscentSheet
+import com.peakadex.app.feature.settings.ProfileMenuSheet
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 
@@ -64,6 +66,8 @@ fun MainScaffold(navController: NavController) {
 
     val user    by AppContainer.authSession.currentUser.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope             = rememberCoroutineScope()
 
     // Pending peak filter — Atlas → Logbook
     var pendingPeakId   by remember { mutableStateOf<String?>(null) }
@@ -76,17 +80,39 @@ fun MainScaffold(navController: NavController) {
     var logbookRefreshTrigger  by remember { mutableIntStateOf(0) }
     var logbookHighlightId     by remember { mutableStateOf<String?>(null) }
 
+    // Profile / settings menu sheet
+    var showProfileMenu by remember { mutableStateOf(false) }
+
     // B — Back gesture on root tab minimises the app instead of popping the back stack
     BackHandler(enabled = currentRoute == Screen.Home.route) {
         (context as? Activity)?.moveTaskToBack(true)
     }
 
+    if (showProfileMenu) {
+        ProfileMenuSheet(
+            user                 = user,
+            onDismiss            = { showProfileMenu = false },
+            onNavigateToSettings = {
+                showProfileMenu = false
+                navController.navigate(Screen.Settings.route)
+            },
+            onLogout = {
+                showProfileMenu = false
+                AppContainer.authSession.logout()
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            },
+        )
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         // ① CenterAlignedTopAppBar — M3 standard, replaces custom Surface/Box header
         topBar = {
             MainTopBar(
                 user = user,
-                onAvatarClick = { /* Phase 5 — profile/settings */ },
+                onAvatarClick = { showProfileMenu = true },
             )
         },
         // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar)
@@ -127,7 +153,7 @@ fun MainScaffold(navController: NavController) {
     if (showNewAscent) {
         NewAscentSheet(
             onDismiss       = { showNewAscent = false },
-            onSuccess       = { ascentId ->
+            onSuccess       = { ascentId, taggingWarning ->
                 showNewAscent      = false
                 logbookHighlightId = ascentId
                 logbookRefreshTrigger++
@@ -135,6 +161,9 @@ fun MainScaffold(navController: NavController) {
                     popUpTo(Screen.Home.route) { saveState = true }
                     launchSingleTop = true
                     restoreState    = false   // force fresh so LaunchedEffect fires
+                }
+                if (taggingWarning != null) {
+                    scope.launch { snackbarHostState.showSnackbar(taggingWarning) }
                 }
             },
             initialPeakId   = newAscentPeakId,

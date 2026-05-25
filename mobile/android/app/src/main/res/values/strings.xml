@@ -41,6 +41,58 @@
     <string name="atlas_btn_capture">Capturar</string>
     <string name="atlas_btn_capture_new">+ Capturar</string>
 
+    <!-- ── Configuración ────────────────────────────────────────────────────── -->
+    <string name="settings_title">Configuración</string>
+    <string name="action_back">Volver</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="settings_logout">Cerrar sesión</string>
+    <string name="settings_logout_confirm_message">¿Seguro que quieres cerrar sesión?</string>
+    <string name="settings_section_account">CUENTA</string>
+    <string name="settings_field_name">Nombre</string>
+    <string name="settings_field_username">Usuario</string>
+    <string name="settings_field_username_placeholder">sin nombre de usuario</string>
+    <string name="settings_field_email">Email</string>
+    <string name="settings_save_changes">Guardar cambios</string>
+    <string name="settings_section_privacy">PRIVACIDAD</string>
+    <string name="settings_appear_in_search">Aparecer en búsquedas</string>
+    <string name="settings_appear_in_search_desc">Otros usuarios pueden encontrarte por nombre o email</string>
+    <string name="settings_allow_tagging">Permitir que me etiqueten</string>
+    <string name="settings_allow_tagging_desc">Otros pueden añadirte en sus fotos de ascensión</string>
+    <string name="settings_section_notifications">NOTIFICACIONES</string>
+    <string name="settings_email_notifications">Notificaciones por email</string>
+    <string name="settings_activity_notifications">Notificaciones de actividad</string>
+    <string name="settings_section_security">SEGURIDAD</string>
+    <string name="settings_change_password">Cambiar contraseña</string>
+    <string name="settings_current_password">Contraseña actual</string>
+    <string name="settings_new_password">Nueva contraseña</string>
+    <string name="settings_confirm_password">Confirmar nueva contraseña</string>
+    <string name="settings_save_password">Guardar contraseña</string>
+    <string name="settings_section_danger">ZONA DE PELIGRO</string>
+    <string name="settings_snack_saved">Cambios guardados</string>
+    <string name="settings_snack_password_saved">Contraseña actualizada</string>
+
+    <!-- ── Configuración — idioma ─────────────────────────────────────────────── -->
+    <string name="settings_section_language">IDIOMA</string>
+    <string name="settings_language_label">Idioma de la app</string>
+    <string name="settings_language_sheet_title">Seleccionar idioma</string>
+    <string name="settings_lang_es">Español</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_lang_ca">Català</string>
+    <string name="settings_lang_de">Deutsch</string>
+    <string name="settings_lang_fr">Français</string>
+    <string name="settings_snack_language_saved">Idioma guardado</string>
+
+    <!-- ── Configuración — cuentas conectadas ─────────────────────────────────── -->
+    <string name="settings_section_connected_accounts">CUENTAS CONECTADAS</string>
+    <string name="settings_google_connected">Google conectado</string>
+    <string name="settings_google_unlink">Desvincular</string>
+    <string name="settings_google_unlink_confirm_title">Desvincular Google</string>
+    <string name="settings_google_unlink_confirm_message">¿Estás seguro de que quieres desvincular tu cuenta de Google?</string>
+    <string name="settings_google_unlink_no_password">Añade una contraseña antes de desvincular Google para no perder el acceso a tu cuenta.</string>
+    <string name="settings_snack_google_unlinked">Cuenta de Google desvinculada</string>
+    <string name="settings_change_password_desc">Actualiza tu contraseña de acceso</string>
+    <string name="settings_google_active_hint">Google activo · también puedes entrar sin contraseña</string>
+
     <!-- ── Atlas — lista de cimas ────────────────────────────────────────────── -->
     <string name="atlas_list_empty">No hay cimas en esta área</string>
     <plurals name="atlas_peak_count">

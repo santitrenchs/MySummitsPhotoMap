@@ -35,6 +35,58 @@
     <string name="atlas_meta_times">Fois</string>
     <string name="atlas_meta_route">Voie</string>
 
+    <!-- ── Paramètres ────────────────────────────────────────────────────────── -->
+    <string name="settings_title">Paramètres</string>
+    <string name="action_back">Retour</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="settings_logout">Se déconnecter</string>
+    <string name="settings_logout_confirm_message">Es-tu sûr de vouloir te déconnecter ?</string>
+    <string name="settings_section_account">COMPTE</string>
+    <string name="settings_field_name">Nom</string>
+    <string name="settings_field_username">Identifiant</string>
+    <string name="settings_field_username_placeholder">sans identifiant</string>
+    <string name="settings_field_email">E-mail</string>
+    <string name="settings_save_changes">Enregistrer</string>
+    <string name="settings_section_privacy">CONFIDENTIALITÉ</string>
+    <string name="settings_appear_in_search">Apparaître dans la recherche</string>
+    <string name="settings_appear_in_search_desc">Les autres peuvent te trouver par nom ou e-mail</string>
+    <string name="settings_allow_tagging">Autoriser à me taguer</string>
+    <string name="settings_allow_tagging_desc">Les autres peuvent t\'ajouter à leurs photos d\'ascension</string>
+    <string name="settings_section_notifications">NOTIFICATIONS</string>
+    <string name="settings_email_notifications">Notifications par e-mail</string>
+    <string name="settings_activity_notifications">Notifications d\'activité</string>
+    <string name="settings_section_security">SÉCURITÉ</string>
+    <string name="settings_change_password">Changer le mot de passe</string>
+    <string name="settings_current_password">Mot de passe actuel</string>
+    <string name="settings_new_password">Nouveau mot de passe</string>
+    <string name="settings_confirm_password">Confirmer le nouveau mot de passe</string>
+    <string name="settings_save_password">Enregistrer le mot de passe</string>
+    <string name="settings_section_danger">ZONE DE DANGER</string>
+    <string name="settings_snack_saved">Modifications enregistrées</string>
+    <string name="settings_snack_password_saved">Mot de passe mis à jour</string>
+
+    <!-- ── Paramètres — langue ───────────────────────────────────────────────── -->
+    <string name="settings_section_language">LANGUE</string>
+    <string name="settings_language_label">Langue de l\'app</string>
+    <string name="settings_language_sheet_title">Choisir la langue</string>
+    <string name="settings_lang_es">Espagnol</string>
+    <string name="settings_lang_en">Anglais</string>
+    <string name="settings_lang_ca">Catalan</string>
+    <string name="settings_lang_de">Allemand</string>
+    <string name="settings_lang_fr">Français</string>
+    <string name="settings_snack_language_saved">Langue enregistrée</string>
+
+    <!-- ── Paramètres — comptes connectés ────────────────────────────────────── -->
+    <string name="settings_section_connected_accounts">COMPTES CONNECTÉS</string>
+    <string name="settings_google_connected">Google connecté</string>
+    <string name="settings_google_unlink">Déconnecter</string>
+    <string name="settings_google_unlink_confirm_title">Déconnecter Google</string>
+    <string name="settings_google_unlink_confirm_message">Es-tu sûr de vouloir déconnecter ton compte Google ?</string>
+    <string name="settings_google_unlink_no_password">Ajoute un mot de passe avant de déconnecter Google pour ne pas perdre l\'accès à ton compte.</string>
+    <string name="settings_snack_google_unlinked">Compte Google déconnecté</string>
+    <string name="settings_change_password_desc">Mets à jour ton mot de passe d\'accès</string>
+    <string name="settings_google_active_hint">Google actif · tu peux aussi te connecter sans mot de passe</string>
+
     <!-- ── Atlas — liste des sommets ─────────────────────────────────────────── -->
     <string name="atlas_list_empty">Aucun sommet dans cette zone</string>
     <plurals name="atlas_peak_count">

@@ -35,6 +35,58 @@
     <string name="atlas_meta_times">Vegades</string>
     <string name="atlas_meta_route">Via</string>
 
+    <!-- ── Configuració ─────────────────────────────────────────────────────── -->
+    <string name="settings_title">Configuració</string>
+    <string name="action_back">Tornar</string>
+    <string name="action_cancel">Cancel·lar</string>
+    <string name="settings_logout">Tancar sessió</string>
+    <string name="settings_logout_confirm_message">Estàs segur que vols tancar sessió?</string>
+    <string name="settings_section_account">COMPTE</string>
+    <string name="settings_field_name">Nom</string>
+    <string name="settings_field_username">Usuari</string>
+    <string name="settings_field_username_placeholder">sense nom d\'usuari</string>
+    <string name="settings_field_email">Email</string>
+    <string name="settings_save_changes">Desar canvis</string>
+    <string name="settings_section_privacy">PRIVADESA</string>
+    <string name="settings_appear_in_search">Aparèixer a les cerques</string>
+    <string name="settings_appear_in_search_desc">Altres usuaris et poden trobar per nom o email</string>
+    <string name="settings_allow_tagging">Permetre que m\'etiquetin</string>
+    <string name="settings_allow_tagging_desc">Altres et poden afegir a les seves fotos d\'ascensió</string>
+    <string name="settings_section_notifications">NOTIFICACIONS</string>
+    <string name="settings_email_notifications">Notificacions per email</string>
+    <string name="settings_activity_notifications">Notificacions d\'activitat</string>
+    <string name="settings_section_security">SEGURETAT</string>
+    <string name="settings_change_password">Canviar contrasenya</string>
+    <string name="settings_current_password">Contrasenya actual</string>
+    <string name="settings_new_password">Nova contrasenya</string>
+    <string name="settings_confirm_password">Confirmar nova contrasenya</string>
+    <string name="settings_save_password">Desar contrasenya</string>
+    <string name="settings_section_danger">ZONA DE PERILL</string>
+    <string name="settings_snack_saved">Canvis desats</string>
+    <string name="settings_snack_password_saved">Contrasenya actualitzada</string>
+
+    <!-- ── Configuració — idioma ──────────────────────────────────────────────── -->
+    <string name="settings_section_language">IDIOMA</string>
+    <string name="settings_language_label">Idioma de l\'app</string>
+    <string name="settings_language_sheet_title">Seleccionar idioma</string>
+    <string name="settings_lang_es">Espanyol</string>
+    <string name="settings_lang_en">Anglès</string>
+    <string name="settings_lang_ca">Català</string>
+    <string name="settings_lang_de">Alemany</string>
+    <string name="settings_lang_fr">Francès</string>
+    <string name="settings_snack_language_saved">Idioma desat</string>
+
+    <!-- ── Configuració — comptes connectats ─────────────────────────────────── -->
+    <string name="settings_section_connected_accounts">COMPTES CONNECTATS</string>
+    <string name="settings_google_connected">Google connectat</string>
+    <string name="settings_google_unlink">Desconnectar</string>
+    <string name="settings_google_unlink_confirm_title">Desconnectar Google</string>
+    <string name="settings_google_unlink_confirm_message">Estàs segur que vols desconnectar el teu compte de Google?</string>
+    <string name="settings_google_unlink_no_password">Afegeix una contrasenya abans de desconnectar Google per no perdre l\'accés al teu compte.</string>
+    <string name="settings_snack_google_unlinked">Compte de Google desconnectat</string>
+    <string name="settings_change_password_desc">Actualitza la teva contrasenya d\'accés</string>
+    <string name="settings_google_active_hint">Google actiu · també pots entrar sense contrasenya</string>
+
     <!-- ── Atlas — llista de cims ────────────────────────────────────────────── -->
     <string name="atlas_list_empty">No hi ha cims en aquesta àrea</string>
     <plurals name="atlas_peak_count">

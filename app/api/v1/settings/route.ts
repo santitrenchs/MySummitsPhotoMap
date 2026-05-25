@@ -21,14 +21,23 @@ const SELECT = {
   id: true, name: true, email: true, username: true, language: true,
   appearInSearch: true, allowOthersToTag: true,
   emailNotifications: true, activityNotifications: true,
+  passwordHash: true,
+  accounts: { select: { provider: true } },
 };
 
 export async function GET(req: NextRequest) {
   const session = await getV1Session(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: SELECT });
-  if (!user) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  const row = await prisma.user.findUnique({ where: { id: session.userId }, select: SELECT });
+  if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+  const { passwordHash, accounts, ...userFields } = row;
+  const user = {
+    ...userFields,
+    hasPassword: !!passwordHash,
+    googleLinked: accounts.some((a) => a.provider === "google"),
+  };
   return NextResponse.json({ user });
 }
 
@@ -64,6 +73,7 @@ export async function PATCH(req: NextRequest) {
     if (msg.includes("Unique constraint") && msg.includes("username")) {
       return NextResponse.json({ error: "username_taken" }, { status: 409 });
     }
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[v1/settings PATCH]", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

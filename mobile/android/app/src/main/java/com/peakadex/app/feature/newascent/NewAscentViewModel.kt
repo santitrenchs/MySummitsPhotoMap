@@ -12,6 +12,7 @@ import com.peakadex.app.core.model.CreateAscentRequest
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Person
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import retrofit2.HttpException
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
@@ -195,7 +197,7 @@ class NewAscentViewModel : ViewModel() {
 
     // ── Submit ─────────────────────────────────────────────────────────────────
 
-    fun submit(onSuccess: (ascentId: String) -> Unit) {
+    fun submit(onSuccess: (ascentId: String, taggingWarning: String?) -> Unit) {
         val s = _state.value
         if (s.selectedPeak == null) { _state.update { it.copy(error = "Selecciona una cima") }; return }
         val bitmap = s.croppedBitmap ?: run { _state.update { it.copy(error = "La foto es obligatoria") }; return }
@@ -220,18 +222,27 @@ class NewAscentViewModel : ViewModel() {
                 val ascentIdBody = ascent.id.toRequestBody("text/plain".toMediaType())
                 val photo = api.uploadPhoto(filePart, ascentIdBody).photo
 
-                // 3 — Tag persons (best-effort, fire-and-forget failures)
+                // 3 — Tag persons (best-effort; collect names blocked by allowOthersToTag)
+                val blockedNames = mutableListOf<String>()
                 for (person in s.selectedPersons) {
+                    val uid = person.userId ?: continue  // skip unlinked persons silently
                     runCatching {
-                        api.addPhotoPerson(photo.id, mapOf(
-                            "personId" to person.id,
-                            "userId"   to person.userId,
-                        ))
+                        api.addPhotoPerson(photo.id, mapOf("userId" to uid))
+                    }.onFailure { e ->
+                        if (e is HttpException && e.code() == 403) {
+                            blockedNames.add(person.name)
+                        }
                     }
                 }
 
+                val warning = if (blockedNames.isNotEmpty())
+                    blockedNames.joinToString(", ") + " no permite que le etiqueten"
+                else null
+
                 _state.update { it.copy(isLoading = false) }
-                onSuccess(ascent.id)
+                onSuccess(ascent.id, warning)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = "Error al guardar: ${e.localizedMessage}") }
             }

@@ -32,19 +32,22 @@ interface ApiService {
     suspend fun getMe(): User
 
     @GET("settings")
-    suspend fun getSettings(): User
+    suspend fun getSettings(): SettingsResponse
 
     @PATCH("settings")
-    suspend fun updateSettings(@Body body: Map<String, String?>): User
+    suspend fun updateSettings(@Body body: UpdateSettingsRequest): SettingsResponse
 
     @POST("settings/password")
-    suspend fun updatePassword(@Body body: Map<String, String>)
+    suspend fun updatePassword(@Body body: UpdatePasswordRequest)
 
     @Multipart
     @POST("settings/avatar")
     suspend fun uploadAvatar(
         @Part file: MultipartBody.Part,
     ): User
+
+    @DELETE("settings/accounts/google")
+    suspend fun unlinkGoogle()
 
     // MARK: - Ascents
     @GET("ascents")

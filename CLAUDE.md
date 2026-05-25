@@ -1207,8 +1207,10 @@ data class Peak(
 
 #### 5. `submit()` sequence — always in this order
 
+**Signature (updated 2026-05-25):** `onSuccess` now carries a `taggingWarning: String?` for blocked tags.
+
 ```kotlin
-fun submit(onSuccess: (ascentId: String) -> Unit) {
+fun submit(onSuccess: (ascentId: String, taggingWarning: String?) -> Unit) {
     val s = _state.value
     if (s.selectedPeak == null) { error("Selecciona una cima"); return }
     val bitmap = s.croppedBitmap ?: run { error("La foto es obligatoria"); return }
@@ -1231,15 +1233,25 @@ fun submit(onSuccess: (ascentId: String) -> Unit) {
             )
             val photo = api.uploadPhoto(filePart, ascent.id.toRequestBody("text/plain".toMediaType())).photo
 
-            // 3 — Tag persons (best-effort, fire-and-forget)
+            // 3 — Tag persons: skip unlinked (no userId), surface 403 allowOthersToTag blocks
+            val blockedNames = mutableListOf<String>()
             for (person in s.selectedPersons) {
+                val uid = person.userId ?: continue   // unlinked person — skip silently
                 runCatching {
-                    api.addPhotoPerson(photo.id, mapOf("personId" to person.id, "userId" to person.userId))
+                    api.addPhotoPerson(photo.id, mapOf("userId" to uid))
+                }.onFailure { e ->
+                    if (e is HttpException && e.code() == 403) blockedNames.add(person.name)
                 }
             }
 
+            val warning = if (blockedNames.isNotEmpty())
+                blockedNames.joinToString(", ") + " no permite que le etiqueten"
+            else null
+
             _state.update { it.copy(isLoading = false) }
-            onSuccess(ascent.id)
+            onSuccess(ascent.id, warning)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             _state.update { it.copy(isLoading = false, error = "Error al guardar: ${e.localizedMessage}") }
         }
@@ -1281,8 +1293,12 @@ After `onSuccess(ascentId)` fires from `NewAscentSheet`, `MainScaffold` must:
 var logbookRefreshTrigger by remember { mutableIntStateOf(0) }
 var logbookHighlightId    by remember { mutableStateOf<String?>(null) }
 
-// NewAscentSheet onSuccess:
-onSuccess = { ascentId ->
+// MainScaffold.kt also has: val snackbarHostState = remember { SnackbarHostState() }
+//                            val scope = rememberCoroutineScope()
+// and Scaffold has: snackbarHost = { SnackbarHost(snackbarHostState) }
+
+// NewAscentSheet onSuccess (signature updated 2026-05-25 to carry taggingWarning):
+onSuccess = { ascentId, taggingWarning ->
     showNewAscent      = false
     logbookHighlightId = ascentId
     logbookRefreshTrigger++
@@ -1290,6 +1306,9 @@ onSuccess = { ascentId ->
         popUpTo(Screen.Home.route) { saveState = true }
         launchSingleTop = true
         restoreState    = false   // CRITICAL: force fresh ViewModel so LaunchedEffect fires
+    }
+    if (taggingWarning != null) {
+        scope.launch { snackbarHostState.showSnackbar(taggingWarning) }
     }
 },
 
@@ -1508,3 +1527,128 @@ data class GeocodedPlace(val name: String, val lat: Double, val lon: Double)
 - **Web viewport query response unchanged**: `GET /api/peaks?north=...` still returns a plain `MapPeak[]`. Only the `?q=` path returns `{ peaks, places }`. The consumer at `MapView.tsx:336` (`data: MapPeak[] = await res.json()`) is untouched.
 - **Nominatim `display_name` is verbose**: returns the full OSM name like "Berga, Berguedà, Catalunya, España". The UI truncates with CSS `text-overflow: ellipsis`. No server-side truncation.
 - **Rate limiting**: Nominatim asks for max 1 req/sec. The 300ms debounce on the client means this is respected under normal usage. Do not remove the debounce.
+
+---
+
+## Android App — Settings Screen (Fase 7 parcial)
+
+**Files:**
+- `feature/settings/SettingsScreen.kt` — full UI
+- `feature/settings/SettingsViewModel.kt` — state + API calls
+- `res/values/strings.xml` + `res/values-{en,ca,de,fr}/strings.xml` — all i18n strings
+- `res/drawable/flag_{es,en,ca,de,fr}.xml` — flag VectorDrawables (converted from `/public/flags/` SVGs)
+
+---
+
+### Section order (LazyColumn, top to bottom)
+
+1. Profile header (avatar + name + email)
+2. **IDIOMA** — clickable row → `LanguagePickerSheet` (ModalBottomSheet)
+3. **CUENTA** — name, username, email (read-only)
+4. **CUENTAS CONECTADAS** — Google row with real multicolor logo
+5. **SEGURIDAD** — expandable password change + Google active chip
+6. **PRIVACIDAD** — `appearInSearch` + `allowOthersToTag` toggles
+7. **NOTIFICACIONES** — `emailNotifications` + `activityNotifications` toggles
+8. **ZONA DE PELIGRO** — logout button
+
+`LanguagePickerSheet` and `AlertDialog` (unlink confirm) are rendered **before** the `Scaffold` block — never inside `LazyColumn`.
+
+---
+
+### ViewModel: `AndroidViewModel(app: Application)`
+
+Must extend `AndroidViewModel`, not `ViewModel`, to access `LocaleManager` via `getApplication<Application>().getSystemService(LocaleManager::class.java)`.
+
+**Language change logic:**
+- API ≥ 33 (`TIRAMISU`): `LocaleManager.setApplicationLocales(LocaleList.forLanguageTags(locale))` → Activity recreates automatically. No snackbar shown.
+- API < 33: saves to server only + shows "Idioma guardado" snackbar. App language does not change at runtime.
+- `languageSaved = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU`
+
+**Each privacy/notification toggle** fires an immediate `PATCH /api/v1/settings` — no "Save" button.
+
+---
+
+### Flag VectorDrawables
+
+Converted 1:1 from `/public/flags/{es,en,ca,fr,de}.svg`. All use `android:width="30dp" android:height="20dp" viewportWidth="90" viewportHeight="60"`.
+
+For Union Jack diagonal strokes: `android:fillColor="#00000000"` + `android:strokeColor` + `android:strokeWidth` (stroke-only paths).
+
+```kotlin
+private data class LangOption(val code: String, val nameRes: Int, val flagRes: Int)
+
+private val LANGUAGE_OPTIONS = listOf(
+    LangOption("es", R.string.settings_lang_es, R.drawable.flag_es),
+    LangOption("en", R.string.settings_lang_en, R.drawable.flag_en),
+    LangOption("ca", R.string.settings_lang_ca, R.drawable.flag_ca),
+    LangOption("de", R.string.settings_lang_de, R.drawable.flag_de),
+    LangOption("fr", R.string.settings_lang_fr, R.drawable.flag_fr),
+)
+```
+
+**Rendering flags: use `Image`, never `Icon`.**
+```kotlin
+Image(
+    painter     = painterResource(lang.flagRes),
+    contentDescription = null,
+    contentScale = ContentScale.Crop,
+    modifier     = Modifier.width(40.dp).height(27.dp).clip(RoundedCornerShape(4.dp)),
+)
+```
+`Icon` applies the Material3 theme tint and destroys flag colors. `Image` renders them as-is.
+
+---
+
+### Google connected account section
+
+**`GoogleIcon`** — inline `ImageVector` with 4 colored paths (blue/green/yellow/red). **Always `tint = Color.Unspecified`** — Material3 would override the individual path colors otherwise.
+
+**Show/hide logic:**
+- `OutlinedButton("Desvincular")`: only when `googleLinked && hasPassword`
+- Amber warning text: only when `googleLinked && !hasPassword` (can't unlink without a password)
+- Green chip in SEGURIDAD: only when `googleLinked`
+
+```kotlin
+// Green chip (inside SEGURIDAD card):
+Row(modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFFDCFCE7))
+    .padding(horizontal = 12.dp, vertical = 5.dp)) {
+    Icon(GoogleIcon, tint = Color.Unspecified, modifier = Modifier.size(14.dp))
+    Text(stringResource(R.string.settings_google_active_hint), color = Color(0xFF15803D))
+}
+```
+
+---
+
+### Privacy & notification flags — enforcement
+
+All 4 flags live on `User` in Prisma (`@default(true)` each).
+
+| Flag | Where enforced server-side |
+|---|---|
+| `appearInSearch` | `lib/services/user-search.service.ts` — `WHERE appearInSearch: true` on every user search |
+| `allowOthersToTag` | `lib/services/face-detection.service.ts` → `setFaceTag()` returns `null` + HTTP 403 |
+| `emailNotifications` | Master kill-switch for ALL emails — friend requests AND photo tags (fix 2026-05-25) |
+| `activityNotifications` | Photo-tag emails: `activityNotifications && emailNotifications` (fix 2026-05-25) |
+
+**Fix 2026-05-25** — `emailNotifications` as master kill-switch (was only applied to friend-request emails, photo-tag emails ignored it):
+```typescript
+// In all 3 tag email routes:
+select: { email: true, activityNotifications: true, emailNotifications: true, language: true }
+if (u?.activityNotifications && u.emailNotifications) { sendPhotoTagEmail(...) }
+```
+Files fixed: `app/api/v1/photos/[id]/persons/route.ts`, `app/api/face-detections/[id]/tag/route.ts`, `app/api/photos/[id]/faces/route.ts`.
+
+**Fix 2026-05-25** — `allowOthersToTag` UX feedback in Android (previously silent 403):
+- See `submit()` section in "New Ascent Flow" — `onSuccess` now passes `taggingWarning: String?`
+- `MainScaffold` shows a `SnackbarHost` snackbar with blocked person names
+
+---
+
+### Settings screen gotchas
+
+- **`LanguagePickerSheet` and `AlertDialog` outside `Scaffold`**: render before `Scaffold { }`, not inside the `LazyColumn`.
+- **`tint = Color.Unspecified` on `GoogleIcon`**: mandatory. Applies to both the 24dp icon in CUENTAS CONECTADAS and the 14dp icon in the green SEGURIDAD chip.
+- **`Image` not `Icon` for flags**: `Icon` applies Material3 tint, destroying flag colors.
+- **`BorderStroke` import**: `import androidx.compose.foundation.BorderStroke` — needed for the `OutlinedButton` border.
+- **`languageSaved` flag only true on API < 33**: on API ≥ 33 `LocaleManager` recreates the Activity; showing a snackbar is unnecessary and would never appear.
+- **`person.userId == null` in tag loop**: skip silently — only registered+linked users can be tagged via API. A 400 from the server is expected for unlinked persons and should not surface as an error to the user.

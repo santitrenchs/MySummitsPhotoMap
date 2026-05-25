@@ -35,6 +35,58 @@
     <string name="atlas_meta_times">Mal</string>
     <string name="atlas_meta_route">Route</string>
 
+    <!-- ── Einstellungen ─────────────────────────────────────────────────────── -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="action_back">Zurück</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="settings_logout">Abmelden</string>
+    <string name="settings_logout_confirm_message">Möchtest du dich wirklich abmelden?</string>
+    <string name="settings_section_account">KONTO</string>
+    <string name="settings_field_name">Name</string>
+    <string name="settings_field_username">Nutzername</string>
+    <string name="settings_field_username_placeholder">kein Nutzername</string>
+    <string name="settings_field_email">E-Mail</string>
+    <string name="settings_save_changes">Änderungen speichern</string>
+    <string name="settings_section_privacy">DATENSCHUTZ</string>
+    <string name="settings_appear_in_search">In Suche erscheinen</string>
+    <string name="settings_appear_in_search_desc">Andere können dich per Name oder E-Mail finden</string>
+    <string name="settings_allow_tagging">Andere dürfen mich markieren</string>
+    <string name="settings_allow_tagging_desc">Andere können dich in ihren Gipfelfotos markieren</string>
+    <string name="settings_section_notifications">BENACHRICHTIGUNGEN</string>
+    <string name="settings_email_notifications">E-Mail-Benachrichtigungen</string>
+    <string name="settings_activity_notifications">Aktivitätsbenachrichtigungen</string>
+    <string name="settings_section_security">SICHERHEIT</string>
+    <string name="settings_change_password">Passwort ändern</string>
+    <string name="settings_current_password">Aktuelles Passwort</string>
+    <string name="settings_new_password">Neues Passwort</string>
+    <string name="settings_confirm_password">Neues Passwort bestätigen</string>
+    <string name="settings_save_password">Passwort speichern</string>
+    <string name="settings_section_danger">GEFAHRENZONE</string>
+    <string name="settings_snack_saved">Änderungen gespeichert</string>
+    <string name="settings_snack_password_saved">Passwort aktualisiert</string>
+
+    <!-- ── Einstellungen — Sprache ────────────────────────────────────────────── -->
+    <string name="settings_section_language">SPRACHE</string>
+    <string name="settings_language_label">App-Sprache</string>
+    <string name="settings_language_sheet_title">Sprache wählen</string>
+    <string name="settings_lang_es">Spanisch</string>
+    <string name="settings_lang_en">Englisch</string>
+    <string name="settings_lang_ca">Katalanisch</string>
+    <string name="settings_lang_de">Deutsch</string>
+    <string name="settings_lang_fr">Französisch</string>
+    <string name="settings_snack_language_saved">Sprache gespeichert</string>
+
+    <!-- ── Einstellungen — Verknüpfte Konten ─────────────────────────────────── -->
+    <string name="settings_section_connected_accounts">VERKNÜPFTE KONTEN</string>
+    <string name="settings_google_connected">Google verbunden</string>
+    <string name="settings_google_unlink">Trennen</string>
+    <string name="settings_google_unlink_confirm_title">Google trennen</string>
+    <string name="settings_google_unlink_confirm_message">Möchtest du dein Google-Konto wirklich trennen?</string>
+    <string name="settings_google_unlink_no_password">Lege ein Passwort fest, bevor du Google trennst, um den Zugriff auf dein Konto nicht zu verlieren.</string>
+    <string name="settings_snack_google_unlinked">Google-Konto getrennt</string>
+    <string name="settings_change_password_desc">Dein Anmeldepasswort aktualisieren</string>
+    <string name="settings_google_active_hint">Google aktiv · du kannst dich auch ohne Passwort anmelden</string>
+
     <!-- ── Atlas — Gipfelliste ────────────────────────────────────────────────── -->
     <string name="atlas_list_empty">Keine Gipfel in diesem Bereich</string>
     <plurals name="atlas_peak_count">

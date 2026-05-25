@@ -35,6 +35,58 @@
     <string name="atlas_meta_times">Times</string>
     <string name="atlas_meta_route">Route</string>
 
+    <!-- ── Settings ─────────────────────────────────────────────────────────── -->
+    <string name="settings_title">Settings</string>
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="settings_logout">Sign out</string>
+    <string name="settings_logout_confirm_message">Are you sure you want to sign out?</string>
+    <string name="settings_section_account">ACCOUNT</string>
+    <string name="settings_field_name">Name</string>
+    <string name="settings_field_username">Username</string>
+    <string name="settings_field_username_placeholder">no username</string>
+    <string name="settings_field_email">Email</string>
+    <string name="settings_save_changes">Save changes</string>
+    <string name="settings_section_privacy">PRIVACY</string>
+    <string name="settings_appear_in_search">Appear in search</string>
+    <string name="settings_appear_in_search_desc">Others can find you by name or email</string>
+    <string name="settings_allow_tagging">Allow others to tag me</string>
+    <string name="settings_allow_tagging_desc">Others can add you to their ascent photos</string>
+    <string name="settings_section_notifications">NOTIFICATIONS</string>
+    <string name="settings_email_notifications">Email notifications</string>
+    <string name="settings_activity_notifications">Activity notifications</string>
+    <string name="settings_section_security">SECURITY</string>
+    <string name="settings_change_password">Change password</string>
+    <string name="settings_current_password">Current password</string>
+    <string name="settings_new_password">New password</string>
+    <string name="settings_confirm_password">Confirm new password</string>
+    <string name="settings_save_password">Save password</string>
+    <string name="settings_section_danger">DANGER ZONE</string>
+    <string name="settings_snack_saved">Changes saved</string>
+    <string name="settings_snack_password_saved">Password updated</string>
+
+    <!-- ── Settings — language ───────────────────────────────────────────────── -->
+    <string name="settings_section_language">LANGUAGE</string>
+    <string name="settings_language_label">App language</string>
+    <string name="settings_language_sheet_title">Select language</string>
+    <string name="settings_lang_es">Spanish</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_lang_ca">Catalan</string>
+    <string name="settings_lang_de">German</string>
+    <string name="settings_lang_fr">French</string>
+    <string name="settings_snack_language_saved">Language saved</string>
+
+    <!-- ── Settings — connected accounts ────────────────────────────────────── -->
+    <string name="settings_section_connected_accounts">CONNECTED ACCOUNTS</string>
+    <string name="settings_google_connected">Google connected</string>
+    <string name="settings_google_unlink">Disconnect</string>
+    <string name="settings_google_unlink_confirm_title">Disconnect Google</string>
+    <string name="settings_google_unlink_confirm_message">Are you sure you want to disconnect your Google account?</string>
+    <string name="settings_google_unlink_no_password">Set a password before disconnecting Google so you don\'t lose access to your account.</string>
+    <string name="settings_snack_google_unlinked">Google account disconnected</string>
+    <string name="settings_change_password_desc">Update your login password</string>
+    <string name="settings_google_active_hint">Google active · you can also sign in without a password</string>
+
     <!-- ── Atlas — peaks list ────────────────────────────────────────────────── -->
     <string name="atlas_list_empty">No peaks in this area</string>
     <plurals name="atlas_peak_count">

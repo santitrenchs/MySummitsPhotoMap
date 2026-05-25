@@ -79,9 +79,9 @@ export async function POST(
     });
     prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, activityNotifications: true, language: true },
+      select: { email: true, activityNotifications: true, emailNotifications: true, language: true },
     }).then((u) => {
-      if (u?.activityNotifications && tagger) {
+      if (u?.activityNotifications && u.emailNotifications && tagger) {
         sendPhotoTagEmail(u.email, tagger.name ?? "", photo.ascent!.peak.name, photo.ascent!.id, u.language, photo.url)
           .catch((e) => console.error("[v1/persons POST] tag email failed:", e));
       }

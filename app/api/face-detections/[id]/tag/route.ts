@@ -23,14 +23,14 @@ export async function POST(
     const [taggedUser, detection] = await Promise.all([
       prisma.user.findUnique({
         where: { id: taggedUserId },
-        select: { email: true, activityNotifications: true, language: true },
+        select: { email: true, activityNotifications: true, emailNotifications: true, language: true },
       }),
       prisma.faceDetection.findUnique({
         where: { id },
         include: { photo: { include: { ascent: { include: { peak: true } } } } },
       }),
     ]);
-    if (taggedUser?.activityNotifications && detection?.photo?.ascent) {
+    if (taggedUser?.activityNotifications && taggedUser.emailNotifications && detection?.photo?.ascent) {
       sendPhotoTagEmail(
         taggedUser.email,
         session.user.name ?? session.user.email ?? "",
