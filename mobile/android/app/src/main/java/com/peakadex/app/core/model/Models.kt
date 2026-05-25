@@ -11,6 +11,7 @@ data class User(
     val name: String,
     val email: String,
     val username: String? = null,
+    val bio: String? = null,
     val avatarUrl: String? = null,
     val language: String? = null,
     val appearInSearch: Boolean? = null,
@@ -339,4 +340,50 @@ data class GeocodedPlace(
 data class PeaksResponse(
     val peaks: List<Peak>,
     val places: List<GeocodedPlace> = emptyList(),
+)
+
+// MARK: - Profile
+
+@Serializable
+data class ProfilePeak(
+    val id: String,
+    val name: String,
+    val altitudeM: Int,
+    val mountainRange: String? = null,
+    val country: String? = null,
+    val rarityId: String? = null,
+    val count: Int,
+    val lastDate: String,        // "YYYY-MM-DD"
+    val firstDate: String? = null,
+    val firstPhotoUrl: String? = null,
+)
+
+@Serializable
+data class ProfilePhoto(
+    val id: String,
+    val url: String,
+    val ascentId: String,
+    val peakName: String,
+    val altitudeM: Int,
+    val rarityId: String? = null,
+    val date: String,            // "YYYY-MM-DD"
+    val creatorName: String? = null,
+)
+
+@Serializable
+data class ProfileStats(
+    val totalAscents: Int,
+    val uniquePeaks: Int,
+    val maxAltitude: Int,
+    val totalPhotos: Int,
+)
+
+@Serializable
+data class ProfileData(
+    val user: User,
+    val peaks: List<ProfilePeak>,
+    val photos: List<ProfilePhoto>,
+    val taggedPhotos: List<ProfilePhoto>,
+    val stats: ProfileStats,
+    val rarities: List<Rarity>,
 )
