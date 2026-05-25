@@ -1456,3 +1456,55 @@ Keep these in mind but do not over-engineer for them in the MVP:
 - **Explore evolution**: Filter peaks by range, altitude, country; suggested peaks based on history
 - **Profile page**: Public-facing summary of a user's ascents and stats
 - **Per-tenant DBs**: `Tenant.dbUrl` is already wired; migration path exists when needed
+
+---
+
+## Map Search — Geocoding (Nominatim)
+
+Implemented 2026-05-25. The map search now resolves both peak names **and** city/town/place names.
+
+### Architecture
+
+- **Server-side geocoding**: both `GET /api/peaks?q=` (web) and `GET /api/v1/peaks?q=` (mobile) call [Nominatim (OpenStreetMap)](https://nominatim.openstreetmap.org) in parallel with the DB query using `Promise.all`.
+- **Response shape** (search only): `{ peaks: Peak[], places: GeocodedPlace[] }`. Viewport queries (no `?q=`) are unchanged — they still return `Peak[]` (web) / `{ peaks }` (v1).
+- **No API key required**. Nominatim is free and open. The `User-Agent: Peakadex/1.0 (noreply@peakadex.com)` header is required by OSM's usage policy.
+- **Timeout**: 3 seconds (`AbortSignal.timeout(3000)`). If Nominatim is slow or down, `places` returns `[]` silently — peak search still works.
+- **Filter**: only `class: "place"` or `class: "boundary"` results are kept (cities, towns, villages, municipalities, regions). Streets, buildings, POIs are excluded.
+- **Language**: `accept-language: ca,es,en` — prefers Catalan/Spanish names.
+
+### `GeocodedPlace` type
+
+```typescript
+// TypeScript (MapView.tsx)
+export type GeocodedPlace = { name: string; lat: number; lon: number };
+
+// Kotlin (Models.kt)
+@Serializable
+data class GeocodedPlace(val name: String, val lat: Double, val lon: Double)
+```
+
+### UX behaviour
+
+- Place results appear below peak results, separated by a "LUGARES" / "Lugares" label.
+- Tapping a place flies the map camera to `[lon, lat]` at zoom 12. **No peak detail sheet opens** — only camera movement.
+- Tapping a peak works exactly as before (opens PeakDetailSheet on Android, selects peak on web).
+- If both peaks and places are empty → "Sin resultados".
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `app/api/peaks/route.ts` | Nominatim call + `{ peaks, places }` response for `?q=` |
+| `app/api/v1/peaks/route.ts` | Same for mobile API |
+| `components/map/MapView.tsx` | `GeocodedPlace` type, `placeResults` state, dropdown section |
+| `components/map/MapPeaksSidebar.tsx` | `placeResults` + `onSelectPlace` props, sidebar section |
+| `mobile/android/.../Models.kt` | `GeocodedPlace` data class, `PeaksResponse.places` field |
+| `mobile/android/.../AtlasViewModel.kt` | `placeResults` in state, `onPlaceSelected()` |
+| `mobile/android/.../AtlasScreen.kt` | `SearchResultsList` shows places section |
+
+### Known gotchas
+
+- **`PeaksResponse.places` has default `emptyList()`**: backward compatible — viewport responses don't include `places` in the JSON, Kotlinx uses the default.
+- **Web viewport query response unchanged**: `GET /api/peaks?north=...` still returns a plain `MapPeak[]`. Only the `?q=` path returns `{ peaks, places }`. The consumer at `MapView.tsx:336` (`data: MapPeak[] = await res.json()`) is untouched.
+- **Nominatim `display_name` is verbose**: returns the full OSM name like "Berga, Berguedà, Catalunya, España". The UI truncates with CSS `text-overflow: ellipsis`. No server-side truncation.
+- **Rate limiting**: Nominatim asks for max 1 req/sec. The 300ms debounce on the client means this is respected under normal usage. Do not remove the debounce.
