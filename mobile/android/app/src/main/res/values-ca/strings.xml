@@ -3,7 +3,66 @@
     <string name="nav_tab_home">Peakadex stats</string>
     <string name="nav_tab_map">Atlas</string>
     <string name="nav_tab_logbook">Bitàcola</string>
+    <string name="nav_tab_cards">Cartes</string>
     <string name="nav_fab_new_ascent">Nova ascensió</string>
+
+    <!-- ── Accions globals ──────────────────────────────────────────────────── -->
+    <string name="action_back">Enrere</string>
+    <string name="action_cancel">Cancel·lar</string>
+
+    <!-- ── Ajustos ───────────────────────────────────────────────────────────── -->
+    <string name="settings_title">Ajustos</string>
+    <string name="settings_logout">Tancar sessió</string>
+    <string name="settings_logout_confirm_message">Segur que vols tancar la sessió?</string>
+
+    <string name="settings_section_language">Idioma</string>
+    <string name="settings_language_label">Idioma de l\'app</string>
+    <string name="settings_language_sheet_title">Selecciona un idioma</string>
+    <string name="settings_lang_es">Espanyol</string>
+    <string name="settings_lang_ca">Català</string>
+    <string name="settings_lang_en">Anglès</string>
+    <string name="settings_lang_fr">Francès</string>
+    <string name="settings_lang_de">Alemany</string>
+
+    <string name="settings_section_account">Compte</string>
+    <string name="settings_field_name">Nom</string>
+    <string name="settings_field_username">Usuari</string>
+    <string name="settings_field_username_placeholder">el_teu_usuari</string>
+    <string name="settings_field_email">Correu</string>
+    <string name="settings_save_changes">Desar canvis</string>
+
+    <string name="settings_section_connected_accounts">Comptes connectats</string>
+    <string name="settings_google_connected">Google (connectat)</string>
+    <string name="settings_google_unlink">Desvincula</string>
+    <string name="settings_google_unlink_confirm_title">Desvincular Google</string>
+    <string name="settings_google_unlink_confirm_message">Segur que vols desvincular el compte de Google?</string>
+    <string name="settings_google_unlink_no_password">Sense contrasenya no pots desvincular Google. Estableix una contrasenya primer.</string>
+    <string name="settings_google_active_hint">Fas servir Google per iniciar sessió</string>
+
+    <string name="settings_section_security">Seguretat</string>
+    <string name="settings_change_password">Canviar contrasenya</string>
+    <string name="settings_change_password_desc">Estableix o actualitza la teva contrasenya</string>
+    <string name="settings_current_password">Contrasenya actual</string>
+    <string name="settings_new_password">Nova contrasenya</string>
+    <string name="settings_confirm_password">Confirma la contrasenya</string>
+    <string name="settings_save_password">Desar contrasenya</string>
+
+    <string name="settings_section_privacy">Privacitat</string>
+    <string name="settings_allow_tagging">Permetre etiquetatge</string>
+    <string name="settings_allow_tagging_desc">Altres et poden etiquetar a fotos</string>
+    <string name="settings_appear_in_search">Aparèixer a cerques</string>
+    <string name="settings_appear_in_search_desc">El teu perfil és visible a cerques d\'amics</string>
+
+    <string name="settings_section_notifications">Notificacions</string>
+    <string name="settings_email_notifications">Notificacions per correu</string>
+    <string name="settings_activity_notifications">Notificacions d\'activitat</string>
+
+    <string name="settings_section_danger">Zona de perill</string>
+
+    <string name="settings_snack_saved">Canvis desats</string>
+    <string name="settings_snack_password_saved">Contrasenya actualitzada</string>
+    <string name="settings_snack_language_saved">Idioma desat</string>
+    <string name="settings_snack_google_unlinked">Compte de Google desvinculat</string>
 
     <!-- ── Atlas — barra de cerca ────────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Cerca cim…</string>

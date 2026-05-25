@@ -3,7 +3,66 @@
     <string name="nav_tab_home">Peakadex stats</string>
     <string name="nav_tab_map">Atlas</string>
     <string name="nav_tab_logbook">Logbuch</string>
+    <string name="nav_tab_cards">Karten</string>
     <string name="nav_fab_new_ascent">Neue Besteigung</string>
+
+    <!-- ── Globale Aktionen ──────────────────────────────────────────────────── -->
+    <string name="action_back">Zurück</string>
+    <string name="action_cancel">Abbrechen</string>
+
+    <!-- ── Einstellungen ────────────────────────────────────────────────────── -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_logout">Abmelden</string>
+    <string name="settings_logout_confirm_message">Möchten Sie sich wirklich abmelden?</string>
+
+    <string name="settings_section_language">Sprache</string>
+    <string name="settings_language_label">App-Sprache</string>
+    <string name="settings_language_sheet_title">Sprache auswählen</string>
+    <string name="settings_lang_es">Spanisch</string>
+    <string name="settings_lang_ca">Katalanisch</string>
+    <string name="settings_lang_en">Englisch</string>
+    <string name="settings_lang_fr">Französisch</string>
+    <string name="settings_lang_de">Deutsch</string>
+
+    <string name="settings_section_account">Konto</string>
+    <string name="settings_field_name">Name</string>
+    <string name="settings_field_username">Benutzername</string>
+    <string name="settings_field_username_placeholder">dein_name</string>
+    <string name="settings_field_email">E-Mail</string>
+    <string name="settings_save_changes">Änderungen speichern</string>
+
+    <string name="settings_section_connected_accounts">Verbundene Konten</string>
+    <string name="settings_google_connected">Google (verbunden)</string>
+    <string name="settings_google_unlink">Trennen</string>
+    <string name="settings_google_unlink_confirm_title">Google trennen</string>
+    <string name="settings_google_unlink_confirm_message">Möchten Sie Ihr Google-Konto wirklich trennen?</string>
+    <string name="settings_google_unlink_no_password">Ohne Passwort können Sie Google nicht trennen. Legen Sie zuerst ein Passwort fest.</string>
+    <string name="settings_google_active_hint">Sie melden sich mit Google an</string>
+
+    <string name="settings_section_security">Sicherheit</string>
+    <string name="settings_change_password">Passwort ändern</string>
+    <string name="settings_change_password_desc">Passwort festlegen oder aktualisieren</string>
+    <string name="settings_current_password">Aktuelles Passwort</string>
+    <string name="settings_new_password">Neues Passwort</string>
+    <string name="settings_confirm_password">Passwort bestätigen</string>
+    <string name="settings_save_password">Passwort speichern</string>
+
+    <string name="settings_section_privacy">Datenschutz</string>
+    <string name="settings_allow_tagging">Markierungen erlauben</string>
+    <string name="settings_allow_tagging_desc">Andere können Sie in Fotos markieren</string>
+    <string name="settings_appear_in_search">In Suchen erscheinen</string>
+    <string name="settings_appear_in_search_desc">Ihr Profil ist in Freundschaftssuchen sichtbar</string>
+
+    <string name="settings_section_notifications">Benachrichtigungen</string>
+    <string name="settings_email_notifications">E-Mail-Benachrichtigungen</string>
+    <string name="settings_activity_notifications">Aktivitätsbenachrichtigungen</string>
+
+    <string name="settings_section_danger">Gefahrenzone</string>
+
+    <string name="settings_snack_saved">Änderungen gespeichert</string>
+    <string name="settings_snack_password_saved">Passwort aktualisiert</string>
+    <string name="settings_snack_language_saved">Sprache gespeichert</string>
+    <string name="settings_snack_google_unlinked">Google-Konto getrennt</string>
 
     <!-- ── Atlas — Suchleiste ────────────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Gipfel suchen…</string>

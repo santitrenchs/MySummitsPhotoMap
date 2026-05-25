@@ -25,20 +25,25 @@ const SELECT = {
   accounts: { select: { provider: true } },
 };
 
+function toUserPayload(raw: NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>) {
+  const { passwordHash, accounts, ...fields } = raw as typeof raw & {
+    passwordHash: string | null;
+    accounts: { provider: string }[];
+  };
+  return {
+    ...fields,
+    hasPassword: !!passwordHash,
+    googleLinked: accounts.some((a) => a.provider === "google"),
+  };
+}
+
 export async function GET(req: NextRequest) {
   const session = await getV1Session(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const row = await prisma.user.findUnique({ where: { id: session.userId }, select: SELECT });
-  if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  const { passwordHash, accounts, ...userFields } = row;
-  const user = {
-    ...userFields,
-    hasPassword: !!passwordHash,
-    googleLinked: accounts.some((a) => a.provider === "google"),
-  };
-  return NextResponse.json({ user });
+  const raw = await prisma.user.findUnique({ where: { id: session.userId }, select: SELECT });
+  if (!raw) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  return NextResponse.json({ user: toUserPayload(raw) });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -66,14 +71,13 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const user = await prisma.user.update({ where: { id: session.userId }, data, select: SELECT });
-    return NextResponse.json({ user });
+    const raw = await prisma.user.update({ where: { id: session.userId }, data, select: SELECT });
+    return NextResponse.json({ user: toUserPayload(raw) });
   } catch (err: unknown) {
     const msg = String(err);
     if (msg.includes("Unique constraint") && msg.includes("username")) {
       return NextResponse.json({ error: "username_taken" }, { status: 409 });
     }
-    console.error("[v1/settings PATCH]", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

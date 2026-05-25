@@ -40,14 +40,14 @@ interface ApiService {
     @POST("settings/password")
     suspend fun updatePassword(@Body body: UpdatePasswordRequest)
 
+    @DELETE("settings/accounts/google")
+    suspend fun unlinkGoogle()
+
     @Multipart
     @POST("settings/avatar")
     suspend fun uploadAvatar(
         @Part file: MultipartBody.Part,
     ): User
-
-    @DELETE("settings/accounts/google")
-    suspend fun unlinkGoogle()
 
     // MARK: - Ascents
     @GET("ascents")

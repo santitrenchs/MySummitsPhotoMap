@@ -3,7 +3,66 @@
     <string name="nav_tab_home">Peakadex stats</string>
     <string name="nav_tab_map">Atlas</string>
     <string name="nav_tab_logbook">Carnet</string>
+    <string name="nav_tab_cards">Cartes</string>
     <string name="nav_fab_new_ascent">Nouvelle ascension</string>
+
+    <!-- ── Actions globales ─────────────────────────────────────────────────── -->
+    <string name="action_back">Retour</string>
+    <string name="action_cancel">Annuler</string>
+
+    <!-- ── Paramètres ───────────────────────────────────────────────────────── -->
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_logout">Se déconnecter</string>
+    <string name="settings_logout_confirm_message">Voulez-vous vraiment vous déconnecter ?</string>
+
+    <string name="settings_section_language">Langue</string>
+    <string name="settings_language_label">Langue de l\'app</string>
+    <string name="settings_language_sheet_title">Choisir une langue</string>
+    <string name="settings_lang_es">Espagnol</string>
+    <string name="settings_lang_ca">Catalan</string>
+    <string name="settings_lang_en">Anglais</string>
+    <string name="settings_lang_fr">Français</string>
+    <string name="settings_lang_de">Allemand</string>
+
+    <string name="settings_section_account">Compte</string>
+    <string name="settings_field_name">Nom</string>
+    <string name="settings_field_username">Pseudo</string>
+    <string name="settings_field_username_placeholder">ton_pseudo</string>
+    <string name="settings_field_email">Email</string>
+    <string name="settings_save_changes">Enregistrer</string>
+
+    <string name="settings_section_connected_accounts">Comptes connectés</string>
+    <string name="settings_google_connected">Google (connecté)</string>
+    <string name="settings_google_unlink">Dissocier</string>
+    <string name="settings_google_unlink_confirm_title">Dissocier Google</string>
+    <string name="settings_google_unlink_confirm_message">Voulez-vous vraiment dissocier votre compte Google ?</string>
+    <string name="settings_google_unlink_no_password">Sans mot de passe vous ne pouvez pas dissocier Google. Créez d\'abord un mot de passe.</string>
+    <string name="settings_google_active_hint">Vous utilisez Google pour vous connecter</string>
+
+    <string name="settings_section_security">Sécurité</string>
+    <string name="settings_change_password">Changer le mot de passe</string>
+    <string name="settings_change_password_desc">Définir ou mettre à jour votre mot de passe</string>
+    <string name="settings_current_password">Mot de passe actuel</string>
+    <string name="settings_new_password">Nouveau mot de passe</string>
+    <string name="settings_confirm_password">Confirmer le mot de passe</string>
+    <string name="settings_save_password">Enregistrer le mot de passe</string>
+
+    <string name="settings_section_privacy">Confidentialité</string>
+    <string name="settings_allow_tagging">Autoriser les tags</string>
+    <string name="settings_allow_tagging_desc">D\'autres peuvent vous taguer dans des photos</string>
+    <string name="settings_appear_in_search">Apparaître dans les recherches</string>
+    <string name="settings_appear_in_search_desc">Votre profil est visible dans les recherches d\'amis</string>
+
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_email_notifications">Notifications par email</string>
+    <string name="settings_activity_notifications">Notifications d\'activité</string>
+
+    <string name="settings_section_danger">Zone de danger</string>
+
+    <string name="settings_snack_saved">Modifications enregistrées</string>
+    <string name="settings_snack_password_saved">Mot de passe mis à jour</string>
+    <string name="settings_snack_language_saved">Langue enregistrée</string>
+    <string name="settings_snack_google_unlinked">Compte Google dissocié</string>
 
     <!-- ── Atlas — barre de recherche ────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Rechercher un sommet…</string>

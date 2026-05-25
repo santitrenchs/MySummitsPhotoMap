@@ -12,10 +12,11 @@ sealed class Screen(val route: String) {
         fun createRoute(token: String) = "reset_password/$token"
     }
 
-    // Main graph — tabs (3 tabs: Peakadex stats · Atlas · Bitácora)
+    // Main graph — tabs (4 tabs: Peakadex stats · Atlas · Bitácora · Cartas)
     data object Home : Screen("home")
     data object Map : Screen("map")
     data object Logbook : Screen("logbook")
+    data object Cards : Screen("cards")
 
     // Detail screens (within tabs)
     data object AscentDetail : Screen("ascent/{id}") {
