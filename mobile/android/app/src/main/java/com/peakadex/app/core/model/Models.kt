@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 data class User(
     val id: String,
     val name: String,
-    val email: String,
+    val email: String = "",   // may be absent in profile response; present in settings/auth
     val username: String? = null,
     val bio: String? = null,
     val avatarUrl: String? = null,
