@@ -1,0 +1,870 @@
+package com.peakadex.app.feature.profile
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.LocalTextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
+import com.peakadex.app.core.model.ProfilePeak
+import com.peakadex.app.core.model.ProfilePhoto
+import com.peakadex.app.core.model.ProfileStats
+import com.peakadex.app.core.model.Rarity
+import com.peakadex.app.core.model.User
+import com.peakadex.app.core.ui.theme.*
+
+// ── Entry point ───────────────────────────────────────────────────────────────
+
+@Composable
+fun ProfileScreen(
+    onNavigateToSettings: () -> Unit,
+    vm: ProfileViewModel = viewModel(),
+) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            vm.refresh()
+            isRefreshing = false
+        },
+        modifier = Modifier.fillMaxSize().background(PeakBackground),
+    ) {
+        when (val s = state) {
+            is ProfileUiState.Loading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = PeakBlueActive)
+                }
+            }
+            is ProfileUiState.Error -> {
+                Column(
+                    Modifier.fillMaxSize().padding(32.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(s.message, color = PeakMuted, fontSize = 14.sp)
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = { vm.load() }) { Text("Reintentar") }
+                }
+            }
+            is ProfileUiState.Success -> {
+                ProfileContent(
+                    state              = s,
+                    onNavigateToSettings = onNavigateToSettings,
+                    onPeakQuery        = vm::setPeakQuery,
+                    onPeakRarityFilter = vm::setPeakRarityFilter,
+                )
+            }
+        }
+    }
+}
+
+// ── Main content (tabs) ───────────────────────────────────────────────────────
+
+@Composable
+private fun ProfileContent(
+    state: ProfileUiState.Success,
+    onNavigateToSettings: () -> Unit,
+    onPeakQuery: (String) -> Unit,
+    onPeakRarityFilter: (String?) -> Unit,
+) {
+    var activeTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Cimas", "Fotos", "Etiquetado")
+
+    Column(Modifier.fillMaxSize()) {
+        // ── Header ──
+        ProfileHeader(user = state.data.user, onEditProfile = onNavigateToSettings)
+
+        // ── Tabs ──
+        TabRow(
+            selectedTabIndex = activeTab,
+            containerColor   = Color.White,
+            contentColor     = PeakBlueActive,
+            indicator = { tabPositions ->
+                TabRowDefaults.SecondaryIndicator(
+                    modifier = Modifier.tabIndicatorOffset(tabPositions[activeTab]),
+                    color    = PeakBlueActive,
+                )
+            },
+        ) {
+            tabs.forEachIndexed { i, label ->
+                Tab(
+                    selected = activeTab == i,
+                    onClick  = { activeTab = i },
+                    text = {
+                        Text(
+                            text       = label,
+                            fontSize   = 13.sp,
+                            fontWeight = if (activeTab == i) FontWeight.SemiBold else FontWeight.Normal,
+                        )
+                    },
+                    selectedContentColor   = PeakBlueActive,
+                    unselectedContentColor = PeakMuted,
+                )
+            }
+        }
+
+        // ── Tab content ──
+        when (activeTab) {
+            0 -> CimasTab(
+                peaks         = state.filteredPeaks,
+                allPeaks      = state.data.peaks,
+                stats         = state.data.stats,
+                rarities      = state.data.rarities,
+                query         = state.peakQuery,
+                rarityFilter  = state.peakRarityFilter,
+                onQuery       = onPeakQuery,
+                onRarityFilter= onPeakRarityFilter,
+            )
+            1 -> PhotosTab(photos = state.data.photos, rarities = state.data.rarities)
+            2 -> PhotosTab(photos = state.data.taggedPhotos, rarities = state.data.rarities, showCreator = true)
+        }
+    }
+}
+
+// ── Profile header ────────────────────────────────────────────────────────────
+
+@Composable
+private fun ProfileHeader(
+    user: User,
+    onEditProfile: () -> Unit,
+) {
+    val initials = remember(user.name) {
+        val parts = user.name.trim().split(" ")
+        if (parts.size >= 2) "${parts.first().first()}${parts.last().first()}".uppercase()
+        else user.name.first().uppercaseChar().toString()
+    }
+
+    Surface(color = Color.White, shadowElevation = 0.dp) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp)) {
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.linearGradient(listOf(PeakBlueActive, PeakBlueLight))
+                        )
+                        .border(width = 3.dp, color = Color.White, shape = CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (user.avatarUrl != null) {
+                        AsyncImage(
+                            model             = user.avatarUrl,
+                            contentDescription = "Avatar",
+                            contentScale      = ContentScale.Crop,
+                            modifier          = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Text(
+                            text       = initials,
+                            color      = Color.White,
+                            fontSize   = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+
+                // Name / username / bio
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text       = user.name,
+                        fontSize   = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = PeakNavyDark,
+                        maxLines   = 1,
+                        overflow   = TextOverflow.Ellipsis,
+                    )
+                    if (user.username != null) {
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text     = "@${user.username}",
+                            fontSize = 13.sp,
+                            color    = PeakNavyLight,
+                        )
+                    }
+                    if (!user.bio.isNullOrBlank()) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text     = user.bio,
+                            fontSize = 12.sp,
+                            color    = PeakMuted,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            lineHeight = 17.sp,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            // Edit profile button
+            OutlinedButton(
+                onClick        = onEditProfile,
+                modifier       = Modifier.fillMaxWidth().height(36.dp),
+                shape          = RoundedCornerShape(8.dp),
+                border         = BorderStroke(1.dp, PeakBorderLight),
+                contentPadding = PaddingValues(0.dp),
+                colors         = ButtonDefaults.outlinedButtonColors(contentColor = PeakNavyDark),
+            ) {
+                Icon(
+                    imageVector        = EditIcon,
+                    contentDescription = null,
+                    modifier           = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text       = "Editar perfil",
+                    fontSize   = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        }
+    }
+    HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+}
+
+// ── Cimas tab ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun CimasTab(
+    peaks: List<ProfilePeak>,
+    allPeaks: List<ProfilePeak>,
+    stats: ProfileStats,
+    rarities: List<Rarity>,
+    query: String,
+    rarityFilter: String?,
+    onQuery: (String) -> Unit,
+    onRarityFilter: (String?) -> Unit,
+) {
+    val focusManager = LocalFocusManager.current
+    val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
+
+    LazyColumn(
+        contentPadding = PaddingValues(bottom = 24.dp),
+        modifier       = Modifier.fillMaxSize().background(PeakBackground),
+    ) {
+        // Stats header
+        item(key = "stats_header") {
+            CimasStatsHeader(
+                allPeaks     = allPeaks,
+                stats        = stats,
+                rarities     = rarities,
+                rarityFilter = rarityFilter,
+                onRarityFilter = onRarityFilter,
+            )
+        }
+
+        // Search field
+        item(key = "search") {
+            OutlinedTextField(
+                value         = query,
+                onValueChange = onQuery,
+                placeholder   = { Text("Buscar cimas…", fontSize = 14.sp, color = PeakSubtle) },
+                singleLine    = true,
+                leadingIcon   = {
+                    Icon(
+                        imageVector        = SearchIcon,
+                        contentDescription = null,
+                        tint               = PeakSubtle,
+                        modifier           = Modifier.size(18.dp),
+                    )
+                },
+                trailingIcon = if (query.isNotEmpty()) ({
+                    IconButton(onClick = { onQuery("") }) {
+                        Icon(
+                            imageVector        = CloseIcon,
+                            contentDescription = "Limpiar",
+                            tint               = PeakSubtle,
+                            modifier           = Modifier.size(16.dp),
+                        )
+                    }
+                }) else null,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                shape  = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor   = PeakBlueActive,
+                    unfocusedBorderColor = PeakBorderLight,
+                    focusedContainerColor   = Color.White,
+                    unfocusedContainerColor = Color.White,
+                ),
+                textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, color = PeakNavyDark),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+
+        if (peaks.isEmpty()) {
+            item(key = "empty") {
+                Box(
+                    Modifier.fillMaxWidth().padding(48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text     = if (query.isNotBlank() || rarityFilter != null)
+                            "Sin resultados para este filtro"
+                        else
+                            "Sin cimas registradas",
+                        fontSize = 14.sp,
+                        color    = PeakSubtle,
+                    )
+                }
+            }
+        } else {
+            items(peaks, key = { it.id }) { peak ->
+                PeakRowCard(
+                    peak      = peak,
+                    rarityMap = rarityMap,
+                    modifier  = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 5.dp),
+                )
+            }
+        }
+    }
+}
+
+// ── Cimas stats header ────────────────────────────────────────────────────────
+
+@Composable
+private fun CimasStatsHeader(
+    allPeaks: List<ProfilePeak>,
+    stats: ProfileStats,
+    rarities: List<Rarity>,
+    rarityFilter: String?,
+    onRarityFilter: (String?) -> Unit,
+) {
+    val totalAscents = allPeaks.sumOf { it.count }
+
+    // Rarity bar segments
+    val rarityCounts = remember(allPeaks) {
+        allPeaks.groupingBy { it.rarityId ?: "daisy" }.eachCount()
+    }
+    val presentRarities = rarities.filter { (rarityCounts[it.id] ?: 0) > 0 }
+
+    Surface(
+        color  = Color.White,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+            // Stats row
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.Top,
+            ) {
+                // Left: peaks count + ascents
+                Column {
+                    Text(
+                        text       = "CIMAS",
+                        fontSize   = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = PeakNavyLight,
+                        letterSpacing = 1.5.sp,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.Baseline, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text       = "${allPeaks.size}",
+                            fontSize   = 28.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color      = PeakNavyDark,
+                            lineHeight = 28.sp,
+                        )
+                        Text(
+                            text     = "cimas · ",
+                            fontSize = 14.sp,
+                            color    = PeakNavyMid,
+                        )
+                        Text(
+                            text       = "$totalAscents",
+                            fontSize   = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = PeakNavyDark,
+                        )
+                        Text(
+                            text     = "asc.",
+                            fontSize = 14.sp,
+                            color    = PeakNavyMid,
+                        )
+                    }
+                }
+
+                // Right: max altitude
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text       = "MÁXIMA",
+                        fontSize   = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = PeakNavyLight,
+                        letterSpacing = 1.5.sp,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text       = "${stats.maxAltitude} m",
+                        fontSize   = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color      = PeakNavyDark,
+                        lineHeight = 20.sp,
+                    )
+                }
+            }
+
+            // Rarity distribution bar
+            if (presentRarities.isNotEmpty() && allPeaks.isNotEmpty()) {
+                Spacer(Modifier.height(14.dp))
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    presentRarities.forEach { r ->
+                        val count = rarityCounts[r.id] ?: 0
+                        val color = runCatching {
+                            Color(android.graphics.Color.parseColor(r.color))
+                        }.getOrElse { PeakClimbedGreen }
+                        val isActive = rarityFilter == null || rarityFilter == r.id
+                        Box(
+                            Modifier
+                                .weight(count.toFloat())
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(color.copy(alpha = if (isActive) 1f else 0.35f))
+                                .clickable {
+                                    onRarityFilter(if (rarityFilter == r.id) null else r.id)
+                                },
+                        )
+                    }
+                }
+            }
+        }
+    }
+    HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.05f))
+}
+
+// ── PeakRowCard ───────────────────────────────────────────────────────────────
+
+@Composable
+private fun PeakRowCard(
+    peak: ProfilePeak,
+    rarityMap: Map<String, Rarity>,
+    modifier: Modifier = Modifier,
+) {
+    val rarity = rarityMap[peak.rarityId]
+    val rarityColor = rarity?.let {
+        runCatching { Color(android.graphics.Color.parseColor(it.color)) }.getOrNull()
+    } ?: PeakClimbedGreen
+    val rarityColorDark = rarity?.let {
+        runCatching { Color(android.graphics.Color.parseColor(it.colorDark)) }.getOrNull()
+    } ?: PeakBlueDark
+
+    Surface(
+        modifier      = modifier,
+        shape         = RoundedCornerShape(12.dp),
+        color         = Color.White,
+        shadowElevation = 2.dp,
+        border        = androidx.compose.foundation.BorderStroke(
+            1.dp, Color.Black.copy(alpha = 0.05f)
+        ),
+    ) {
+        Row(Modifier.height(IntrinsicSize.Min)) {
+            // Rarity colour strip
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(rarityColor),
+            )
+
+            // Photo thumbnail
+            Box(
+                modifier           = Modifier.width(90.dp).fillMaxHeight(),
+                contentAlignment   = Alignment.Center,
+            ) {
+                if (peak.firstPhotoUrl != null) {
+                    AsyncImage(
+                        model             = peak.firstPhotoUrl,
+                        contentDescription = peak.name,
+                        contentScale      = ContentScale.Crop,
+                        modifier          = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF0D2538)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("🏔", fontSize = 26.sp)
+                    }
+                }
+                // Altitude overlay at bottom
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, Color(0x8C0D2538)),
+                            )
+                        )
+                        .padding(bottom = 5.dp, top = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text       = "${peak.altitudeM} m",
+                        fontSize   = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = Color.White,
+                    )
+                }
+            }
+
+            // Content
+            Column(
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                // Name row + count
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment     = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text       = peak.name,
+                        fontSize   = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = PeakNavyDark,
+                        maxLines   = 1,
+                        overflow   = TextOverflow.Ellipsis,
+                        modifier   = Modifier.weight(1f).padding(end = 4.dp),
+                    )
+                    if (peak.count > 1) {
+                        Text(
+                            text       = "×${peak.count}",
+                            fontSize   = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = PeakNavyLight,
+                        )
+                    }
+                }
+
+                // Rarity pill
+                if (rarity != null) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(rarityColor.copy(alpha = 0.13f))
+                            .padding(horizontal = 7.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text       = "✿ ${rarity.label}",
+                            fontSize   = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = rarityColorDark,
+                        )
+                    }
+                }
+
+                // Bottom row: dates + range
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment     = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // Last date
+                    Column {
+                        Text(
+                            text          = "ÚLTIMA",
+                            fontSize      = 8.sp,
+                            fontWeight    = FontWeight.Bold,
+                            color         = PeakNavyLight,
+                            letterSpacing = 1.2.sp,
+                        )
+                        Text(
+                            text       = formatDate(peak.lastDate),
+                            fontSize   = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = PeakNavyDark,
+                        )
+                    }
+                    // First date (only if climbed more than once)
+                    if (peak.count > 1 && !peak.firstDate.isNullOrBlank() && peak.firstDate != peak.lastDate) {
+                        Column {
+                            Text(
+                                text          = "PRIMERA",
+                                fontSize      = 8.sp,
+                                fontWeight    = FontWeight.Bold,
+                                color         = PeakNavyLight,
+                                letterSpacing = 1.2.sp,
+                            )
+                            Text(
+                                text       = formatDate(peak.firstDate),
+                                fontSize   = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color      = PeakNavyDark,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    if (peak.mountainRange != null) {
+                        Text(
+                            text     = peak.mountainRange,
+                            fontSize = 10.sp,
+                            color    = Color(0xFFCBD5E1),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 80.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Photos tab ────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PhotosTab(
+    photos: List<ProfilePhoto>,
+    rarities: List<Rarity>,
+    showCreator: Boolean = false,
+) {
+    val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
+
+    if (photos.isEmpty()) {
+        Box(
+            Modifier.fillMaxSize().padding(48.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text     = if (showCreator) "Aún no estás etiquetado/a en ninguna foto"
+                           else "Sin fotos",
+                fontSize = 14.sp,
+                color    = PeakSubtle,
+            )
+        }
+        return
+    }
+
+    LazyVerticalGrid(
+        columns            = GridCells.Fixed(3),
+        contentPadding     = PaddingValues(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalArrangement   = Arrangement.spacedBy(3.dp),
+        modifier           = Modifier.fillMaxSize().background(PeakBackground),
+    ) {
+        items(photos, key = { it.id }) { photo ->
+            PhotoTile(
+                photo       = photo,
+                rarityMap   = rarityMap,
+                showCreator = showCreator,
+            )
+        }
+    }
+}
+
+// ── PhotoTile ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PhotoTile(
+    photo: ProfilePhoto,
+    rarityMap: Map<String, Rarity>,
+    showCreator: Boolean,
+) {
+    val rarity = rarityMap[photo.rarityId]
+    val rarityColor = rarity?.let {
+        runCatching { Color(android.graphics.Color.parseColor(it.color)) }.getOrNull()
+    } ?: PeakClimbedGreen
+
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color(0xFF1E293B)),
+    ) {
+        AsyncImage(
+            model             = photo.url,
+            contentDescription = photo.peakName,
+            contentScale      = ContentScale.Crop,
+            modifier          = Modifier.fillMaxSize(),
+        )
+
+        // Bottom overlay: creator badge (tagged tab) or nothing
+        if (showCreator && !photo.creatorName.isNullOrBlank()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC0D2538)))
+                    )
+                    .padding(horizontal = 5.dp, vertical = 4.dp),
+            ) {
+                Text(
+                    text     = "@${photo.creatorName}",
+                    fontSize = 9.sp,
+                    color    = Color.White.copy(alpha = 0.85f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+
+        // Rarity dot — bottom-right corner
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .align(Alignment.BottomEnd)
+                .offset(x = (-4).dp, y = (-4).dp)
+                .clip(CircleShape)
+                .background(rarityColor),
+        )
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** "YYYY-MM-DD" → "15 ene '24" */
+private fun formatDate(iso: String): String {
+    return try {
+        val parts = iso.split("-")
+        val year  = parts[0].takeLast(2)
+        val month = when (parts[1]) {
+            "01" -> "ene"; "02" -> "feb"; "03" -> "mar"
+            "04" -> "abr"; "05" -> "may"; "06" -> "jun"
+            "07" -> "jul"; "08" -> "ago"; "09" -> "sep"
+            "10" -> "oct"; "11" -> "nov"; "12" -> "dic"
+            else -> parts[1]
+        }
+        "${parts[2].trimStart('0')} $month '$year"
+    } catch (_: Exception) {
+        iso
+    }
+}
+
+// ── Icons (inline ImageVector) ────────────────────────────────────────────────
+
+private val EditIcon: ImageVector by lazy {
+    ImageVector.Builder("Edit", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke         = SolidColor(Color.Black),
+            strokeLineWidth = 2f,
+            strokeLineCap  = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            moveTo(11f, 4f)
+            horizontalLineTo(4f)
+            curveTo(3.448f, 4f, 3f, 4.448f, 3f, 5f)
+            verticalLineTo(20f)
+            curveTo(3f, 20.552f, 3.448f, 21f, 4f, 21f)
+            horizontalLineTo(19f)
+            curveTo(19.552f, 21f, 20f, 20.552f, 20f, 20f)
+            verticalLineTo(13f)
+        }
+        path(
+            stroke         = SolidColor(Color.Black),
+            strokeLineWidth = 2f,
+            strokeLineCap  = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            moveTo(18.5f, 2.5f)
+            curveTo(18.898f, 2.102f, 19.449f, 1.878f, 20f, 1.878f)
+            curveTo(20.551f, 1.878f, 21.102f, 2.102f, 21.5f, 2.5f)
+            curveTo(21.898f, 2.898f, 22.122f, 3.449f, 22.122f, 4f)
+            curveTo(22.122f, 4.551f, 21.898f, 5.102f, 21.5f, 5.5f)
+            lineTo(12f, 15f)
+            lineTo(8f, 16f)
+            lineTo(9f, 12f)
+            close()
+        }
+    }.build()
+}
+
+private val SearchIcon: ImageVector by lazy {
+    ImageVector.Builder("Search", 24.dp, 24.dp, 24f, 24f).apply {
+        // Handle line: magnifier glass handle (top-right to bottom-right)
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 2f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+        ) {
+            moveTo(21f, 21f); lineTo(16.65f, 16.65f)
+        }
+        // Circle: centred at (11, 11), radius 6
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 2f,
+        ) {
+            moveTo(17f, 11f)
+            curveTo(17f, 14.314f, 14.314f, 17f, 11f, 17f)
+            curveTo(7.686f, 17f, 5f, 14.314f, 5f, 11f)
+            curveTo(5f, 7.686f, 7.686f, 5f, 11f, 5f)
+            curveTo(14.314f, 5f, 17f, 7.686f, 17f, 11f)
+            close()
+        }
+    }.build()
+}
+
+private val CloseIcon: ImageVector by lazy {
+    ImageVector.Builder("Close", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke         = SolidColor(Color.Black),
+            strokeLineWidth = 2f,
+            strokeLineCap  = androidx.compose.ui.graphics.StrokeCap.Round,
+        ) {
+            moveTo(18f, 6f); lineTo(6f, 18f)
+        }
+        path(
+            stroke         = SolidColor(Color.Black),
+            strokeLineWidth = 2f,
+            strokeLineCap  = androidx.compose.ui.graphics.StrokeCap.Round,
+        ) {
+            moveTo(6f, 6f); lineTo(18f, 18f)
+        }
+    }.build()
+}

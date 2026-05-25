@@ -152,6 +152,10 @@ interface ApiService {
     @GET("persons")
     suspend fun getPersons(): List<Person>
 
+    // MARK: - Profile
+    @GET("profile")
+    suspend fun getProfile(): ProfileData
+
     // MARK: - Invitations
     @GET("invitations")
     suspend fun getInvitations(): List<Map<String, String?>>
