@@ -4,9 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.peakadex.app.AppContainer
 import com.peakadex.app.feature.auth.LoginScreen
 import com.peakadex.app.feature.auth.RegisterScreen
 import com.peakadex.app.feature.logbook.AscentDetailScreen
+import com.peakadex.app.feature.settings.SettingsScreen
 import com.peakadex.app.feature.splash.SplashScreen
 
 @Composable
@@ -72,6 +74,18 @@ fun NavGraph(isAuthenticated: Boolean) {
             AscentDetailScreen(
                 ascentId = ascentId,
                 onBack   = { navController.popBackStack() },
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onBack = { navController.popBackStack() },
+                onLogout = {
+                    AppContainer.authSession.logout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
             )
         }
     }

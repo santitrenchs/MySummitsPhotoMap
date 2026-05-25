@@ -87,7 +87,7 @@ fun MainScaffold(navController: NavController) {
         topBar = {
             MainTopBar(
                 user = user,
-                onAvatarClick = { /* Phase 5 — profile/settings */ },
+                onAvatarClick = { navController.navigate(Screen.Settings.route) },
             )
         },
         // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar)
