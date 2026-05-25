@@ -36,11 +36,11 @@ import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakBlueContainer
 import com.peakadex.app.core.ui.theme.PeakBlueLight
+import com.peakadex.app.core.ui.PlaceholderScreen
 import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
 import com.peakadex.app.feature.logbook.LogbookScreen
 import com.peakadex.app.feature.newascent.NewAscentSheet
-import com.peakadex.app.feature.profile.ProfileScreen
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 
@@ -86,8 +86,9 @@ fun MainScaffold(navController: NavController) {
         // ① CenterAlignedTopAppBar — M3 standard, replaces custom Surface/Box header
         topBar = {
             MainTopBar(
-                user = user,
-                onAvatarClick = { navController.navigate(Screen.Settings.route) },
+                user                  = user,
+                onNavigateToProfile   = { navController.navigate(Screen.Profile.route) },
+                onNavigateToSettings  = { navController.navigate(Screen.Settings.route) },
             )
         },
         // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar)
@@ -168,9 +169,7 @@ fun MainScaffold(navController: NavController) {
                 )
             }
             composable(Screen.Logbook.route) {
-                ProfileScreen(
-                    onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                )
+                PlaceholderScreen(title = "Bitácora", phase = 6)
             }
             composable(Screen.Cards.route) {
                 LogbookScreen(
@@ -195,7 +194,8 @@ fun MainScaffold(navController: NavController) {
 @Composable
 private fun MainTopBar(
     user: User?,
-    onAvatarClick: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    onNavigateToSettings: () -> Unit,
 ) {
     val initials = user?.name?.let { name ->
         val parts = name.trim().split(" ")
@@ -203,39 +203,66 @@ private fun MainTopBar(
         else name.first().uppercaseChar().toString()
     } ?: "U"
 
+    // Dropdown menu state — managed here, anchored to the avatar Box
+    var menuExpanded by remember { mutableStateOf(false) }
+
     CenterAlignedTopAppBar(
-        // Logo stays perfectly centered regardless of action width — same guarantee
-        // the web achieves with position:absolute + left:50% on the logo
-        title = {
-            PeakadexLogo(height = 32.dp)
-        },
+        title = { PeakadexLogo(height = 32.dp) },
         actions = {
-            Box(
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(PeakBlueActive, PeakBlueLight)
-                        )
+            // Anchor Box: avatar button + DropdownMenu hang off the same Box
+            Box(contentAlignment = Alignment.TopEnd) {
+                // Avatar circle
+                Box(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(Brush.linearGradient(listOf(PeakBlueActive, PeakBlueLight)))
+                        .clickable { menuExpanded = true },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text       = initials,
+                        color      = Color.White,
+                        fontSize   = 13.sp,
+                        fontWeight = FontWeight.Bold,
                     )
-                    .clickable(onClick = onAvatarClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = initials,
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                )
+                }
+
+                // M3 DropdownMenu — anchored to the parent Box, appears below the avatar
+                DropdownMenu(
+                    expanded         = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text              = { Text("Perfil", fontSize = 14.sp) },
+                        leadingIcon       = {
+                            Icon(
+                                PersonIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        },
+                        onClick           = { menuExpanded = false; onNavigateToProfile() },
+                    )
+                    DropdownMenuItem(
+                        text              = { Text("Ajustes", fontSize = 14.sp) },
+                        leadingIcon       = {
+                            Icon(
+                                SettingsIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        },
+                        onClick           = { menuExpanded = false; onNavigateToSettings() },
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = Color.White,
+            containerColor    = Color.White,
             titleContentColor = Color.Unspecified,
         ),
-        // Subtle bottom border matching the web divider
         windowInsets = TopAppBarDefaults.windowInsets,
     )
     HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
@@ -297,6 +324,68 @@ private fun MainTabBar(
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
+
+// Person / Profile icon (outline head + shoulders)
+private val PersonIcon: ImageVector by lazy {
+    ImageVector.Builder("Person", 24.dp, 24.dp, 24f, 24f).apply {
+        // Head circle
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 1.8f,
+        ) {
+            moveTo(12f, 12f)
+            curveTo(12f, 14.209f, 10.209f, 16f, 8f, 16f)
+            curveTo(5.791f, 16f, 4f, 14.209f, 4f, 12f)
+            curveTo(4f, 9.791f, 5.791f, 8f, 8f, 8f)
+            curveTo(10.209f, 8f, 12f, 9.791f, 12f, 12f)
+            close()
+        }
+        // Shoulders arc
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+        ) {
+            moveTo(1f, 20f)
+            curveTo(1f, 17.239f, 3.239f, 15f, 6f, 15f)
+            horizontalLineTo(10f)
+            curveTo(12.761f, 15f, 15f, 17.239f, 15f, 20f)
+        }
+    }.build()
+}
+
+// Gear / Settings icon
+private val SettingsIcon: ImageVector by lazy {
+    ImageVector.Builder("Settings", 24.dp, 24.dp, 24f, 24f).apply {
+        // Outer gear ring
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 1.8f,
+        ) {
+            moveTo(12f, 15f)
+            curveTo(12f, 13.343f, 13.343f, 12f, 15f, 12f)
+            curveTo(16.657f, 12f, 18f, 13.343f, 18f, 15f)
+            curveTo(18f, 16.657f, 16.657f, 18f, 15f, 18f)
+            curveTo(13.343f, 18f, 12f, 16.657f, 12f, 15f)
+            close()
+        }
+        // Knob line stubs (simplified cog)
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+        ) {
+            moveTo(15f, 9f); lineTo(15f, 10.5f)
+            moveTo(15f, 19.5f); lineTo(15f, 21f)
+            moveTo(9f, 15f); lineTo(10.5f, 15f)
+            moveTo(19.5f, 15f); lineTo(21f, 15f)
+            moveTo(10.393f, 10.393f); lineTo(11.454f, 11.454f)
+            moveTo(18.546f, 18.546f); lineTo(19.607f, 19.607f)
+            moveTo(19.607f, 10.393f); lineTo(18.546f, 11.454f)
+            moveTo(11.454f, 18.546f); lineTo(10.393f, 19.607f)
+        }
+    }.build()
+}
 
 private val PlusIcon: ImageVector by lazy {
     ImageVector.Builder("Plus", 24.dp, 24.dp, 24f, 24f).apply {
