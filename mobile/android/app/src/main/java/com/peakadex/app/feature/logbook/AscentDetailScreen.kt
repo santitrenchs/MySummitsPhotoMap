@@ -63,13 +63,11 @@ private fun DetailContent(ascent: Ascent, onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        text          = ascent.peak.name,
-                        maxLines      = 1,
-                        overflow      = TextOverflow.Ellipsis,
-                        fontSize      = 17.sp,
-                        fontWeight    = FontWeight.Bold,
-                        letterSpacing = (-0.02).em,
-                        color         = Color(0xFF0D2538),
+                        text     = ascent.peak.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style    = MaterialTheme.typography.titleLarge,
+                        color    = MaterialTheme.colorScheme.onSurface,
                     )
                 },
                 navigationIcon = {
@@ -77,17 +75,17 @@ private fun DetailContent(ascent: Ascent, onBack: () -> Unit) {
                         Icon(
                             imageVector        = BackArrowIcon,
                             contentDescription = "Volver",
-                            tint               = Color(0xFF0369A1),
+                            tint               = MaterialTheme.colorScheme.primary,
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
-            HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
         },
-        containerColor = Color(0xFFF4F7FA),
+        containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         LazyColumn(
             contentPadding = PaddingValues(
@@ -184,8 +182,8 @@ private fun PeakInfoCard(ascent: Ascent) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color.White)
-            .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
             .padding(18.dp),
     ) {
         // Peak name + range/country
@@ -193,7 +191,7 @@ private fun PeakInfoCard(ascent: Ascent) {
             text          = ascent.peak.name,
             fontSize      = 22.sp,
             fontWeight    = FontWeight.ExtraBold,
-            color         = Color(0xFF0D2538),
+            color         = MaterialTheme.colorScheme.onSurface,
             letterSpacing = (-0.03).em,
             lineHeight    = 26.sp,
         )
@@ -205,14 +203,14 @@ private fun PeakInfoCard(ascent: Ascent) {
             Text(
                 text     = subtitle,
                 fontSize = 14.sp,
-                color    = Color(0xFF5A6E84),
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
 
         Spacer(Modifier.height(16.dp))
-        HorizontalDivider(color = Color(0xFFF1F5F9))
+        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
         Spacer(Modifier.height(14.dp))
 
         // Date
@@ -244,7 +242,7 @@ private fun InfoRow(icon: String, text: String) {
         Text(
             text       = text,
             fontSize   = 14.sp,
-            color      = Color(0xFF374151),
+            color      = MaterialTheme.colorScheme.onSurface,
             lineHeight = 20.sp,
         )
     }
@@ -260,15 +258,15 @@ private fun PersonsRow(persons: List<PersonSummary>) {
             .padding(horizontal = 16.dp)
             .padding(bottom = 8.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color.White)
-            .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
             .padding(horizontal = 18.dp, vertical = 14.dp),
     ) {
         Text(
             text       = "Con",
             fontSize   = 12.sp,
             fontWeight = FontWeight.SemiBold,
-            color      = Color(0xFF94A3B8),
+            color      = MaterialTheme.colorScheme.onSurfaceVariant,
             letterSpacing = 0.05.em,
         )
         Spacer(Modifier.height(10.dp))
@@ -285,8 +283,8 @@ private fun PersonChip(person: PersonSummary) {
     Row(
         modifier = Modifier
             .clip(CircleShape)
-            .background(Color(0xFFEFF6FF))
-            .border(1.dp, Color(0xFFBFDBFE), CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .border(1.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -305,7 +303,7 @@ private fun PersonChip(person: PersonSummary) {
             text       = person.name,
             fontSize   = 13.sp,
             fontWeight = FontWeight.SemiBold,
-            color      = Color(0xFF0369A1),
+            color      = MaterialTheme.colorScheme.primary,
         )
     }
 }
@@ -320,15 +318,15 @@ private fun ExtraPhotosSection(photos: List<Photo>) {
             .padding(horizontal = 16.dp)
             .padding(bottom = 8.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color.White)
-            .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
             .padding(18.dp),
     ) {
         Text(
             text       = "Más fotos",
             fontSize   = 12.sp,
             fontWeight = FontWeight.SemiBold,
-            color      = Color(0xFF94A3B8),
+            color      = MaterialTheme.colorScheme.onSurfaceVariant,
             letterSpacing = 0.05.em,
         )
         Spacer(Modifier.height(10.dp))
@@ -341,7 +339,7 @@ private fun ExtraPhotosSection(photos: List<Photo>) {
                     modifier           = Modifier
                         .size(100.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFF1F5F9)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                 )
             }
         }
@@ -361,21 +359,21 @@ private fun DetailLoadingState(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(
                             BackArrowIcon, "Volver",
-                            tint = Color(0xFF0369A1),
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
-            HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
         },
-        containerColor = Color(0xFFF4F7FA),
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Box(
             Modifier.fillMaxSize().padding(padding),
             contentAlignment = Alignment.Center,
         ) {
-            CircularProgressIndicator(color = Color(0xFF0369A1))
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -389,14 +387,14 @@ private fun DetailErrorState(message: String, onBack: () -> Unit, onRetry: () ->
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(BackArrowIcon, "Volver", tint = Color(0xFF0369A1))
+                        Icon(BackArrowIcon, "Volver", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
-            HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
         },
-        containerColor = Color(0xFFF4F7FA),
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).padding(32.dp),
@@ -405,11 +403,11 @@ private fun DetailErrorState(message: String, onBack: () -> Unit, onRetry: () ->
         ) {
             Text("⚠️", fontSize = 40.sp)
             Spacer(Modifier.height(12.dp))
-            Text(message, color = Color(0xFF6B7280), fontSize = 14.sp)
+            Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = onRetry,
-                colors  = ButtonDefaults.buttonColors(containerColor = Color(0xFF0369A1)),
+                colors  = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) { Text("Reintentar") }
         }
     }

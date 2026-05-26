@@ -39,7 +39,7 @@ import com.peakadex.app.core.ui.theme.*
 
 // ── Design tokens (matching web login/page.tsx) ───────────────────────────────
 private val CardShape     = RoundedCornerShape(20.dp)   // --radius-xl
-private val InputShape    = RoundedCornerShape(12.dp)   // --radius-md
+// InputShape removed — use MaterialTheme.shapes.medium (12dp) at each call site
 private val ButtonShape   = RoundedCornerShape(16.dp)   // --radius-lg
 private val ColorBorder   = Color(0xFFE5E7EB)
 private val ColorRed      = Color(0xFFDC2626)
@@ -87,12 +87,10 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             // ── Card ──────────────────────────────────────────────────────────
-            Card(
+            OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = CardShape,
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, ColorBorder),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape    = CardShape,
+                colors   = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
             ) {
                 Column(
                     modifier = Modifier
@@ -189,7 +187,7 @@ fun LoginScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = InputShape,
+                            shape = MaterialTheme.shapes.medium,
                             color = ColorRedBg,
                             border = BorderStroke(1.dp, ColorRedBorder),
                         ) {
@@ -257,7 +255,7 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        shape = InputShape,
+                        shape = MaterialTheme.shapes.medium,
                         border = BorderStroke(1.dp, ColorBorder),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color.White,
@@ -306,7 +304,7 @@ fun PeakTextField(
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         trailingIcon = trailingIcon,
-        shape = InputShape,
+        shape = MaterialTheme.shapes.medium,
         modifier = modifier.fillMaxWidth(),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor   = PeakGreenCTA,

@@ -52,7 +52,9 @@ import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakBorderLight
 import com.peakadex.app.core.ui.theme.PeakMuted
-import com.peakadex.app.core.ui.theme.PeakNavyLight
+import com.peakadex.app.core.ui.RarityInfo
+import com.peakadex.app.core.ui.RARITY_PALETTE
+import com.peakadex.app.core.ui.rarityForAltitude
 import com.peakadex.app.core.ui.theme.PeakOnSurface
 import com.peakadex.app.core.ui.theme.PeakSubtle
 import com.peakadex.app.core.ui.theme.PeakTextHeadline
@@ -64,30 +66,7 @@ import kotlin.math.cos
 import kotlin.math.ln
 import kotlin.math.tan
 
-// ── Rarity display definitions (UI only — filter logic lives in LogbookFilter) ─
-
-private data class RarityDef(
-    val id:     String,
-    val label:  String,
-    val color:  Color,
-    val minAlt: Int,
-    val ep:     Int,
-)
-
-private val RARITIES = listOf(
-    RarityDef("daisy",      "Daisy",      Color(0xFF00995C), 0,    10),
-    RarityDef("heather",    "Heather",    Color(0xFF06B6D4), 1000, 20),
-    RarityDef("gentian",    "Gentian",    Color(0xFF1E40AF), 2000, 30),
-    RarityDef("tundra",     "Tundra",     Color(0xFF0E7490), 3000, 60),
-    RarityDef("edelweiss",  "Edelweiss",  Color(0xFFA855F7), 4000, 120),
-    RarityDef("draba",      "Draba",      Color(0xFFEC4899), 5000, 250),
-    RarityDef("saxifrage",  "Saxifrage",  Color(0xFFF97316), 6000, 500),
-    RarityDef("cinquefoil", "Cinquefoil", Color(0xFFEAB308), 7000, 1000),
-    RarityDef("snow_lotus", "Snow Lotus", PeakNavyLight, 8000, 2000),
-)
-
-private fun getRarityDef(altitudeM: Int): RarityDef =
-    RARITIES.lastOrNull { altitudeM >= it.minAlt } ?: RARITIES.first()
+// Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
 
 // Calculates a Carto Dark Matter tile URL for the given coordinates at zoom 10.
 // dark_matter style = dark background + light labels, matches the card's dark aesthetic.
@@ -104,8 +83,8 @@ private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 10): String {
 
 private val CloseSmallIcon: ImageVector by lazy {
     ImageVector.Builder("CloseSmall", 16.dp, 16.dp, 16f, 16f).apply {
-        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round) { moveTo(12f, 4f); lineTo(4f, 12f) }
-        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round) { moveTo(4f, 4f); lineTo(12f, 12f) }
+        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round) { moveTo(12f, 4f); lineTo(4f, 12f) }
+        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round) { moveTo(4f, 4f); lineTo(12f, 12f) }
     }.build()
 }
 
@@ -113,22 +92,22 @@ private val CloseSmallIcon: ImageVector by lazy {
 private val ShareNetworkIcon: ImageVector by lazy {
     ImageVector.Builder("ShareNetwork", 20.dp, 20.dp, 20f, 20f).apply {
         // Top-right circle (cx=16, cy=4, r=2) → fill
-        path(fill = SolidColor(Color.Black), stroke = SolidColor(Color.Black), strokeLineWidth = 1.4f) {
+        path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
             moveTo(18f, 4f); arcTo(2f, 2f, 0f, false, true, 14f, 4f); arcTo(2f, 2f, 0f, false, true, 18f, 4f); close()
         }
         // Left circle (cx=4, cy=10, r=2)
-        path(fill = SolidColor(Color.Black), stroke = SolidColor(Color.Black), strokeLineWidth = 1.4f) {
+        path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
             moveTo(6f, 10f); arcTo(2f, 2f, 0f, false, true, 2f, 10f); arcTo(2f, 2f, 0f, false, true, 6f, 10f); close()
         }
         // Bottom-right circle (cx=16, cy=16, r=2)
-        path(fill = SolidColor(Color.Black), stroke = SolidColor(Color.Black), strokeLineWidth = 1.4f) {
+        path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
             moveTo(18f, 16f); arcTo(2f, 2f, 0f, false, true, 14f, 16f); arcTo(2f, 2f, 0f, false, true, 18f, 16f); close()
         }
         // Connecting lines
-        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
+        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
             moveTo(6f, 9f); lineTo(14f, 5f)
         }
-        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
+        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
             moveTo(6f, 11f); lineTo(14f, 15f)
         }
     }.build()
@@ -137,7 +116,7 @@ private val ShareNetworkIcon: ImageVector by lazy {
 // Pencil / edit icon (matches web AscentCard)
 private val PencilIcon: ImageVector by lazy {
     ImageVector.Builder("Pencil", 20.dp, 20.dp, 20f, 20f).apply {
-        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f,
+        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f,
             strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round, fill = null) {
             moveTo(14.5f, 2.5f)
             arcToRelative(2.121f, 2.121f, 0f, false, true, 3f, 3f)
@@ -396,7 +375,7 @@ private fun AscentFlipCard(
         label         = "highlight_ring",
     )
     val density = LocalDensity.current.density
-    val rarity  = getRarityDef(ascent.peak.altitudeM)
+    val rarity  = rarityForAltitude(ascent.peak.altitudeM)
 
     Box(
         modifier = Modifier
@@ -439,7 +418,7 @@ private fun AscentFlipCard(
 @Composable
 private fun CardFront(
     ascent:       Ascent,
-    rarity:       RarityDef,
+    rarity:       RarityInfo,
     onDetailClick: () -> Unit,
     onShareClick:  () -> Unit,
 ) {
@@ -567,7 +546,7 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
 // ── Card back ──────────────────────────────────────────────────────────────────
 
 @Composable
-private fun CardBack(ascent: Ascent, rarity: RarityDef) {
+private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
     val barFraction = (ascent.peak.altitudeM.toFloat() / 8849).coerceIn(0f, 1f)
     val bylineName  = ascent.user?.name ?: "Tú"
 
@@ -620,7 +599,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityDef) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(rarity.color))
                 Spacer(Modifier.width(6.dp))
-                Text("ESTADÍSTICAS PEAKADEX", fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = PeakNavyLight)
+                Text("ESTADÍSTICAS PEAKADEX", fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

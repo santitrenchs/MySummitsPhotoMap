@@ -77,13 +77,13 @@ fun ProfileSummaryScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor    = Color.White,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor    = MaterialTheme.colorScheme.surface,
                     titleContentColor = Color.Unspecified,
                 ),
                 windowInsets = TopAppBarDefaults.windowInsets,
             )
-            HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
         },
         containerColor = PeakBackground,
     ) { innerPadding ->
@@ -332,7 +332,7 @@ private fun ProfileHeader(
             }
         }
     }
-    HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 // ── Cimas tab ─────────────────────────────────────────────────────────────────
@@ -556,7 +556,7 @@ private fun CimasStatsHeader(
             }
         }
     }
-    HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.05f))
+    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 // ── PeakRowCard ───────────────────────────────────────────────────────────────
@@ -583,7 +583,7 @@ private fun PeakRowCard(
         color           = Color.White,
         shadowElevation = 2.dp,
         border          = androidx.compose.foundation.BorderStroke(
-            1.dp, Color.Black.copy(alpha = 0.05f)
+            1.dp, MaterialTheme.colorScheme.outlineVariant
         ),
     ) {
         Row(Modifier.height(IntrinsicSize.Min)) {

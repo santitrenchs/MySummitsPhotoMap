@@ -100,7 +100,7 @@ fun ProfileMenuSheet(
             }
         }
 
-        HorizontalDivider(color = Color.Black.copy(alpha = 0.07f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         SheetMenuItem(
             icon    = SettingsMenuIcon,
@@ -108,7 +108,7 @@ fun ProfileMenuSheet(
             onClick = { onDismiss(); onNavigateToSettings() },
         )
 
-        HorizontalDivider(color = Color.Black.copy(alpha = 0.07f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         SheetMenuItem(
             icon       = LogoutIcon,
@@ -195,11 +195,11 @@ fun SettingsScreen(
                             Icon(BackIcon, contentDescription = stringResource(R.string.action_back))
                         }
                     },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color.White,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
                     ),
                 )
-                HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+                HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
             }
         },
     ) { innerPadding ->
@@ -290,7 +290,7 @@ fun SettingsScreen(
                         onValueChange = vm::onNameChange,
                         imeAction     = ImeAction.Next,
                     )
-                    HorizontalDivider(color = Color.Black.copy(alpha = 0.06f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     SettingsTextField(
                         label          = stringResource(R.string.settings_field_username),
                         value          = state.usernameInput,
@@ -301,7 +301,7 @@ fun SettingsScreen(
                         supportingText = state.usernameError,
                         imeAction      = ImeAction.Done,
                     )
-                    HorizontalDivider(color = Color.Black.copy(alpha = 0.06f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     SettingsReadOnlyRow(
                         label = stringResource(R.string.settings_field_email),
                         value = state.user?.email ?: "",
@@ -411,11 +411,11 @@ fun SettingsScreen(
                     }
                     AnimatedVisibility(state.passwordExpanded, enter = expandVertically(), exit = shrinkVertically()) {
                         Column {
-                            HorizontalDivider(color = Color.Black.copy(alpha = 0.06f))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             PasswordField(stringResource(R.string.settings_current_password), state.currentPassword, vm::onCurrentPasswordChange, ImeAction.Next)
-                            HorizontalDivider(color = Color.Black.copy(alpha = 0.06f))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             PasswordField(stringResource(R.string.settings_new_password), state.newPassword, vm::onNewPasswordChange, ImeAction.Next)
-                            HorizontalDivider(color = Color.Black.copy(alpha = 0.06f))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             PasswordField(stringResource(R.string.settings_confirm_password), state.confirmPassword, vm::onConfirmPasswordChange, ImeAction.Done)
                             if (state.passwordError != null) {
                                 Text(
@@ -485,7 +485,7 @@ fun SettingsScreen(
                         checked     = state.appearInSearch,
                         onChecked   = vm::onAppearInSearchChange,
                     )
-                    HorizontalDivider(color = Color.Black.copy(alpha = 0.06f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     SettingsToggleRow(
                         label       = stringResource(R.string.settings_allow_tagging),
                         description = stringResource(R.string.settings_allow_tagging_desc),
@@ -504,7 +504,7 @@ fun SettingsScreen(
                         checked   = state.emailNotifications,
                         onChecked = vm::onEmailNotificationsChange,
                     )
-                    HorizontalDivider(color = Color.Black.copy(alpha = 0.06f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     SettingsToggleRow(
                         label     = stringResource(R.string.settings_activity_notifications),
                         checked   = state.activityNotifications,
@@ -566,7 +566,7 @@ private fun LanguagePickerSheet(
             color      = Color(0xFF111827),
             modifier   = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
         )
-        HorizontalDivider(color = Color.Black.copy(alpha = 0.07f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         LANGUAGE_OPTIONS.forEach { lang ->
             val name = stringResource(lang.nameRes)

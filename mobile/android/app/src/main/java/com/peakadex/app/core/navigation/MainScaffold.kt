@@ -3,7 +3,6 @@ package com.peakadex.app.core.navigation
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -34,7 +33,6 @@ import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
-import com.peakadex.app.core.ui.theme.PeakBlueContainer
 import com.peakadex.app.core.ui.theme.PeakBlueLight
 import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
@@ -95,7 +93,7 @@ fun MainScaffold(navController: NavController) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { newAscentPeakId = null; newAscentPeakName = null; showNewAscent = true },
-                containerColor = PeakBlueActive,
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(
@@ -235,22 +233,25 @@ private fun MainTopBar(
         actions = {
             // Anchor Box: avatar button + DropdownMenu hang off the same Box
             Box(contentAlignment = Alignment.TopEnd) {
-                // Avatar circle
-                Box(
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(Brush.linearGradient(listOf(PeakBlueActive, PeakBlueLight)))
-                        .clickable { menuExpanded = true },
-                    contentAlignment = Alignment.Center,
+                // Avatar circle — IconButton provides the 48dp M3 touch target
+                IconButton(
+                    onClick  = { menuExpanded = true },
+                    modifier = Modifier.padding(end = 4.dp),
                 ) {
-                    Text(
-                        text       = initials,
-                        color      = Color.White,
-                        fontSize   = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(Brush.linearGradient(listOf(PeakBlueActive, PeakBlueLight))),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text       = initials,
+                            color      = Color.White,
+                            fontSize   = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
 
                 // M3 DropdownMenu — anchored to the parent Box, appears below the avatar
@@ -263,7 +264,7 @@ private fun MainTopBar(
                         leadingIcon       = {
                             Icon(
                                 PersonIcon,
-                                contentDescription = null,
+                                contentDescription = "Perfil",
                                 modifier = Modifier.size(18.dp),
                             )
                         },
@@ -274,7 +275,7 @@ private fun MainTopBar(
                         leadingIcon       = {
                             Icon(
                                 SettingsIcon,
-                                contentDescription = null,
+                                contentDescription = "Ajustes",
                                 modifier = Modifier.size(18.dp),
                             )
                         },
@@ -283,13 +284,13 @@ private fun MainTopBar(
                 }
             }
         },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor    = Color.White,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor    = MaterialTheme.colorScheme.surface,
             titleContentColor = Color.Unspecified,
         ),
         windowInsets = TopAppBarDefaults.windowInsets,
     )
-    HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 // ── Bottom tab bar (M3 NavigationBar) ─────────────────────────────────────────
@@ -301,11 +302,11 @@ private fun MainTabBar(
 ) {
     val tabs = tabItems()
     Column {
-        HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
         NavigationBar(
             // ③ M3 indicator restored — use the brand's light blue instead of the
             // theme's primaryContainer (which is green) to stay coherent with our palette
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
         ) {
             tabs.forEach { tab ->
@@ -328,16 +329,15 @@ private fun MainTabBar(
                     label = {
                         Text(
                             text = tab.label,
-                            fontSize = 9.5.sp,
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                            letterSpacing = 0.02.sp,
                         )
                     },
                     // ③ Brand-blue pill indicator; label colours delegated to M3 tokens
                     colors = NavigationBarItemDefaults.colors(
-                        indicatorColor        = PeakBlueContainer, // sky-100 — matches PeakBlueActive
+                        indicatorColor        = MaterialTheme.colorScheme.primaryContainer,
                         selectedTextColor     = PeakBlueActive,
-                        unselectedTextColor   = Color(0xFFB0B8C4),
+                        unselectedTextColor   = MaterialTheme.colorScheme.onSurfaceVariant,
                         selectedIconColor     = Color.Unspecified,
                         unselectedIconColor   = Color.Unspecified,
                     ),
