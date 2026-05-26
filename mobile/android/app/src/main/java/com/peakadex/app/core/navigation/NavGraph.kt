@@ -80,6 +80,7 @@ fun NavGraph(isAuthenticated: Boolean) {
 
         composable(Screen.Profile.route) {
             ProfileSummaryScreen(
+                onBack               = { navController.popBackStack() },
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
             )
         }

@@ -40,6 +40,7 @@ import com.peakadex.app.core.model.RarityBreakdown
 import com.peakadex.app.core.model.RecentAscentSummary
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.model.UserStats
+import com.peakadex.app.core.ui.RARITY_PALETTE
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
@@ -80,18 +81,6 @@ private fun levelAccent(idx: Int) = LEVEL_ACCENT[(idx - 1).coerceIn(0, LEVEL_ACC
 
 // ── Rarity palette — mirrors lib/rarity.ts (same IDs + colors) ───────────────
 
-private data class RarityMeta(val label: String, val color: Color)
-private val RARITIES = listOf(
-    RarityMeta("Daisy",      Color(0xFF00995C)),
-    RarityMeta("Heather",    Color(0xFF06B6D4)),
-    RarityMeta("Gentian",    Color(0xFF1E40AF)),
-    RarityMeta("Tundra",     Color(0xFF0E7490)),
-    RarityMeta("Edelweiss",  Color(0xFFA855F7)),
-    RarityMeta("Draba",      Color(0xFFEC4899)),
-    RarityMeta("Saxifrage",  Color(0xFFF97316)),
-    RarityMeta("Cinquefoil", Color(0xFFEAB308)),
-    RarityMeta("Snow Lotus", Color(0xFF94A3B8)),
-)
 
 // Returns unique-peaks count for a given altitude threshold (mirrors getAltCount)
 private fun getAltCount(stats: UserStats, threshold: Int): Int = when {
@@ -335,14 +324,14 @@ private fun HeroHeader(data: HomeData, user: User?) {
             Box(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(Color(0xFFEFF6FF))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
                     .padding(horizontal = 11.dp, vertical = 3.dp),
             ) {
                 Text(
                     text          = levelName,
                     fontSize      = 12.sp,
                     fontWeight    = FontWeight.Bold,
-                    color         = Color(0xFF0369A1),
+                    color         = MaterialTheme.colorScheme.primary,
                     letterSpacing = 0.01.em,
                 )
             }
@@ -388,7 +377,7 @@ private fun HeroHeader(data: HomeData, user: User?) {
                         Text("△", fontSize = 12.sp, color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold)
                         Text(
                             text       = "$myCairns Cairns",
-                            fontSize   = 12.5.sp,
+                            fontSize   = 13.sp,
                             color      = Color(0xFFFBBF24),
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = (-0.01).em,
@@ -401,7 +390,7 @@ private fun HeroHeader(data: HomeData, user: User?) {
                         )
                         Text(
                             text       = "+$myEp EP",
-                            fontSize   = 12.5.sp,
+                            fontSize   = 13.sp,
                             color      = Color.White,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.01).em,
@@ -441,7 +430,7 @@ private fun MetricCell(value: String, label: String, unit: String? = null) {
         }
         Text(
             text     = label,
-            fontSize = 10.5.sp,
+            fontSize = 11.sp,
             color    = Color(0xA6FFFFFF),  // rgba(255,255,255,0.65)
         )
     }
@@ -479,7 +468,6 @@ private fun OnboardingBanner() {
         Button(
             onClick = { /* Phase 4 — tap FAB */ },
             colors  = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
-            shape   = RoundedCornerShape(8.dp),
         ) {
             Text("+ Registrar ascensión", fontWeight = FontWeight.Bold)
         }
@@ -554,8 +542,8 @@ private fun LevelCard(
     uniquePeaks: Int,
     stats: UserStats,
 ) {
-    val bgColor     = if (isCurrent) Color(0xFFEFF6FF) else Color(0xFFF9FAFB)
-    val borderColor = if (isCurrent) Color(0xFFBFDBFE) else Color(0xFFE5E7EB)
+    val bgColor     = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+    val borderColor = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.outline
 
     Row(
         modifier = Modifier
@@ -571,7 +559,7 @@ private fun LevelCard(
             modifier = Modifier
                 .width(4.dp)
                 .fillMaxHeight()
-                .background(if (isCurrent) Color(0xFF0369A1) else Color.Transparent)
+                .background(if (isCurrent) MaterialTheme.colorScheme.primary else Color.Transparent)
         )
 
         Column(
@@ -590,8 +578,8 @@ private fun LevelCard(
                         .background(
                             when {
                                 isDone    -> Color(0xFF16A34A)
-                                isCurrent -> Color(0xFF0369A1)
-                                else      -> Color(0xFFD1D5DB)
+                                isCurrent -> MaterialTheme.colorScheme.primary
+                                else      -> MaterialTheme.colorScheme.outlineVariant
                             }
                         ),
                     contentAlignment = Alignment.Center,
@@ -608,14 +596,12 @@ private fun LevelCard(
 
                 // Name
                 Text(
-                    text          = def.name,
-                    fontSize      = 15.sp,
-                    fontWeight    = FontWeight.ExtraBold,
-                    letterSpacing = (-0.02).em,
-                    color         = if (isCurrent) Color(0xFF0369A1) else Color(0xFF111827),
-                    modifier      = Modifier.weight(1f),
-                    maxLines      = 1,
-                    overflow      = TextOverflow.Ellipsis,
+                    text     = def.name,
+                    style    = MaterialTheme.typography.titleMedium,
+                    color    = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
 
                 Spacer(Modifier.width(8.dp))
@@ -641,7 +627,7 @@ private fun LevelCard(
                         .fillMaxWidth()
                         .height(6.dp)
                         .clip(RoundedCornerShape(3.dp))
-                        .background(Color(0xFFDBEAFE)),
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                 ) {
                     Box(
                         modifier = Modifier
@@ -650,7 +636,7 @@ private fun LevelCard(
                             .clip(RoundedCornerShape(3.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    listOf(Color(0xFF0369A1), Color(0xFF0EA5E9))
+                                    listOf(MaterialTheme.colorScheme.primary, Color(0xFF0EA5E9))
                                 )
                             ),
                     )
@@ -666,13 +652,13 @@ private fun LevelCard(
                         text       = "$uniquePeaks / ${def.targetAscents} cimas",
                         fontSize   = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color      = Color(0xFF0369A1),
+                        color      = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         text       = "$pct%",
                         fontSize   = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color      = Color(0xFF0369A1),
+                        color      = MaterialTheme.colorScheme.primary,
                     )
                 }
 
@@ -680,7 +666,7 @@ private fun LevelCard(
                     Text(
                         text     = "→ $remaining cima${if (remaining == 1) "" else "s"} más",
                         fontSize = 12.sp,
-                        color    = Color(0xFF6B7280),
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -689,7 +675,7 @@ private fun LevelCard(
                     Text(
                         text     = "→ Superar los ${r.threshold} m",
                         fontSize = 12.sp,
-                        color    = Color(0xFF6B7280),
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -710,13 +696,13 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
         subtitle = {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row {
-                    Text("$periodSummits", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
-                    Text(" cimas", fontSize = 13.sp, color = Color(0xFF6B7280))
+                    Text("$periodSummits", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(" cimas", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (periodMeters > 0) {
                     Row {
-                        Text("${"%,d".format(periodMeters).replace(',', '.')}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
-                        Text(" m ascendidos", fontSize = 13.sp, color = Color(0xFF6B7280))
+                        Text("${"%,d".format(periodMeters).replace(',', '.')}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(" m ascendidos", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -735,7 +721,7 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
                 val monthLabel = remember(bar.isoMonth) {
                     try {
                         val ym = YearMonth.parse(bar.isoMonth)
-                        ym.month.getDisplayName(TextStyle.SHORT, Locale("es"))
+                        ym.month.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("es"))
                             .replaceFirstChar { it.uppercaseChar() }
                     } catch (e: Exception) { bar.isoMonth.takeLast(2) }
                 }
@@ -753,7 +739,7 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
                                 val h = if (isLast) totalH - usedH
                                         else (count.toFloat() / bar.summits * totalH).coerceAtLeast(1f).toInt()
                                 usedH += h
-                                Pair(RARITIES[i].color, h)
+                                Pair(RARITY_PALETTE[i].color, h)
                             }
                         }
                     }
@@ -769,7 +755,7 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
                         text     = if (bar.summits > 0) "${bar.summits}" else "",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color    = if (bar.summits > 0) Color(0xFF0369A1) else Color.Transparent,
+                        color    = if (bar.summits > 0) MaterialTheme.colorScheme.primary else Color.Transparent,
                         lineHeight = 12.sp,
                     )
                     Spacer(Modifier.height(3.dp))
@@ -781,7 +767,7 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
                             .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)),
                     ) {
                         if (segments.isEmpty()) {
-                            Box(Modifier.fillMaxSize().background(Color(0xFFE5E7EB)))
+                            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant))
                         } else {
                             segments.reversed().forEach { (color, h) ->
                                 Box(Modifier.fillMaxWidth().height(h.dp).background(color))
@@ -793,7 +779,7 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
                     Text(
                         text     = monthLabel,
                         fontSize = 10.sp,
-                        color    = Color(0xFF94A3B8),
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -815,7 +801,7 @@ private fun RarityChartSection(breakdown: RarityBreakdown) {
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             values.forEachIndexed { i, count ->
-                val rarity = RARITIES[i]
+                val rarity = RARITY_PALETTE[i]
                 val barH = if (count > 0)
                     (count.toFloat() / maxValue * 96f).coerceAtLeast(8f).toInt()
                 else 3
@@ -840,7 +826,7 @@ private fun RarityChartSection(breakdown: RarityBreakdown) {
                             .fillMaxWidth()
                             .height(barH.dp)
                             .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
-                            .background(if (isActive) rarity.color else Color(0xFFE5E7EB)),
+                            .background(if (isActive) rarity.color else MaterialTheme.colorScheme.surfaceVariant),
                     )
                     Spacer(Modifier.height(3.dp))
                     // ✿ icon
@@ -863,27 +849,26 @@ private fun ChartCard(
     subtitle: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    Column(
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
-        Text(
-            text       = title,
-            style      = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.onBackground,
-        )
-        if (subtitle != null) {
-            Spacer(Modifier.height(4.dp))
-            subtitle()
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                text       = title,
+                style      = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color      = MaterialTheme.colorScheme.onBackground,
+            )
+            if (subtitle != null) {
+                Spacer(Modifier.height(4.dp))
+                subtitle()
+            }
+            Spacer(Modifier.height(16.dp))
+            content()
         }
-        Spacer(Modifier.height(16.dp))
-        content()
     }
 }
 
@@ -907,13 +892,11 @@ private fun levelNameForIdx(idx: Int): String =
 
 @Composable
 private fun LeaderboardCard(entries: List<LeaderboardEntry>) {
-    Column(
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp)),
+            .padding(horizontal = 16.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
         // Column headers
         Row(
@@ -941,7 +924,7 @@ private fun LeaderboardCard(entries: List<LeaderboardEntry>) {
             }
             if (index < minOf(entries.size, 5) - 1) {
                 HorizontalDivider(
-                    color    = if (entry.isCurrentUser) Color(0xFFDBEAFE)
+                    color    = if (entry.isCurrentUser) MaterialTheme.colorScheme.primaryContainer
                                else MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.padding(
                         horizontal = if (entry.isCurrentUser) 0.dp else 16.dp
@@ -957,7 +940,7 @@ private fun LeaderboardColHeader(label: String, modifier: Modifier = Modifier) {
     Text(
         text      = label,
         fontSize  = 10.sp,
-        color     = Color(0xFF94A3B8),
+        color     = MaterialTheme.colorScheme.onSurfaceVariant,
         fontWeight = FontWeight.SemiBold,
         modifier  = modifier,
         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -971,11 +954,11 @@ private fun LeaderboardCurrentRow(entry: LeaderboardEntry, rank: Int) {
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
             .background(
-                Brush.horizontalGradient(listOf(Color(0xFFEFF6FF), Color(0xFFF0F9FF)))
+                Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primaryContainer))
             ),
     ) {
         // Left blue border strip
-        Box(Modifier.width(3.dp).fillMaxHeight().background(Color(0xFF0369A1)))
+        Box(Modifier.width(3.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
 
         Row(
             modifier          = Modifier
@@ -989,7 +972,7 @@ private fun LeaderboardCurrentRow(entry: LeaderboardEntry, rank: Int) {
                 modifier   = Modifier.width(22.dp),
                 fontSize   = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color      = Color(0xFF0369A1),
+                color      = MaterialTheme.colorScheme.primary,
             )
 
             // Name + (tú) + level pill
@@ -999,7 +982,7 @@ private fun LeaderboardCurrentRow(entry: LeaderboardEntry, rank: Int) {
                         text       = entry.name,
                         fontSize   = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color      = Color(0xFF0F172A),
+                        color      = MaterialTheme.colorScheme.onSurface,
                         maxLines   = 1,
                         overflow   = TextOverflow.Ellipsis,
                         modifier   = Modifier.weight(1f, fill = false),
@@ -1007,7 +990,7 @@ private fun LeaderboardCurrentRow(entry: LeaderboardEntry, rank: Int) {
                     Text(
                         text     = " (tú)",
                         fontSize = 12.sp,
-                        color    = Color(0xFF64748B),
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Spacer(Modifier.height(3.dp))
@@ -1017,7 +1000,7 @@ private fun LeaderboardCurrentRow(entry: LeaderboardEntry, rank: Int) {
             // Metric columns
             LeaderboardMetricCol(
                 value     = "${entry.totalAscents}",
-                color     = Color(0xFF0369A1),
+                color     = MaterialTheme.colorScheme.primary,
                 modifier  = Modifier.width(52.dp),
             )
             LeaderboardMetricCol(
@@ -1027,7 +1010,7 @@ private fun LeaderboardCurrentRow(entry: LeaderboardEntry, rank: Int) {
             )
             LeaderboardMetricCol(
                 value     = "${entry.ep}",
-                color     = Color(0xFF0369A1),
+                color     = MaterialTheme.colorScheme.primary,
                 modifier  = Modifier.width(44.dp),
             )
         }
@@ -1048,7 +1031,7 @@ private fun LeaderboardOtherRow(entry: LeaderboardEntry, rank: Int) {
             modifier   = Modifier.width(22.dp),
             fontSize   = 13.sp,
             fontWeight = FontWeight.Bold,
-            color      = Color(0xFFD1D5DB),
+            color      = MaterialTheme.colorScheme.outlineVariant,
         )
 
         // Name + level pill
@@ -1057,7 +1040,7 @@ private fun LeaderboardOtherRow(entry: LeaderboardEntry, rank: Int) {
                 text       = entry.name,
                 fontSize   = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color      = Color(0xFF111827),
+                color      = MaterialTheme.colorScheme.onSurface,
                 maxLines   = 1,
                 overflow   = TextOverflow.Ellipsis,
             )
@@ -1068,7 +1051,7 @@ private fun LeaderboardOtherRow(entry: LeaderboardEntry, rank: Int) {
         // Metric columns
         LeaderboardMetricCol(
             value    = "${entry.totalAscents}",
-            color    = Color(0xFF374151),
+            color    = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.width(52.dp),
         )
         LeaderboardMetricCol(
@@ -1078,7 +1061,7 @@ private fun LeaderboardOtherRow(entry: LeaderboardEntry, rank: Int) {
         )
         LeaderboardMetricCol(
             value    = "${entry.ep}",
-            color    = Color(0xFF374151),
+            color    = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.width(44.dp),
         )
     }
@@ -1089,14 +1072,14 @@ private fun LeaderboardLevelPill(levelIdx: Int) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(4.dp))
-            .background(Color(0xFFF3F4F6))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
         Text(
             text       = levelNameForIdx(levelIdx),
             fontSize   = 10.sp,
             fontWeight = FontWeight.Bold,
-            color      = Color(0xFF374151),
+            color      = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -1127,31 +1110,29 @@ private fun NoFriendsCta() {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 20.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFFEFF6FF), Color(0xFFF0F9FF))))
-            .border(BorderStroke(1.5.dp, Color(0xFFBFDBFE)), RoundedCornerShape(12.dp))
+            .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primaryContainer)))
+            .border(BorderStroke(1.5.dp, MaterialTheme.colorScheme.primaryContainer), RoundedCornerShape(12.dp))
             .padding(22.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("👥", fontSize = 36.sp)
         Spacer(Modifier.height(8.dp))
         Text(
-            text       = "¡Compite con tus amigos!",
-            fontSize   = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color      = Color(0xFF111827),
+            text  = "¡Compite con tus amigos!",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(Modifier.height(4.dp))
         Text(
             text       = "Invita a amigos para ver tu posición en la cordada.",
             fontSize   = 13.sp,
-            color      = Color(0xFF6B7280),
+            color      = MaterialTheme.colorScheme.onSurfaceVariant,
             lineHeight = 18.sp,
         )
         Spacer(Modifier.height(14.dp))
         Button(
             onClick = { /* Phase 5 */ },
-            colors  = ButtonDefaults.buttonColors(containerColor = Color(0xFF0369A1)),
-            shape   = RoundedCornerShape(8.dp),
+            colors  = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
         ) {
             Text("Invitar amigos", fontWeight = FontWeight.SemiBold)
         }
@@ -1172,13 +1153,7 @@ private fun RecentAscentsRow(ascents: List<RecentAscentSummary>) {
 
 @Composable
 private fun RecentAscentCard(ascent: RecentAscentSummary) {
-    Column(
-        modifier = Modifier
-            .width(150.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
-    ) {
+    OutlinedCard(modifier = Modifier.width(150.dp)) {
         // Photo area
         Box(
             modifier = Modifier
@@ -1238,10 +1213,10 @@ private fun Pill(text: String) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFFF3F4F6))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
-        Text(text = text, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF374151))
+        Text(text = text, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
