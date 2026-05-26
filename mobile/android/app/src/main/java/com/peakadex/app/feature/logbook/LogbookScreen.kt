@@ -59,6 +59,10 @@ import com.peakadex.app.core.ui.theme.PeakTextHeadline
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.ln
+import kotlin.math.tan
 
 // ── Rarity display definitions (UI only — filter logic lives in LogbookFilter) ─
 
@@ -84,6 +88,17 @@ private val RARITIES = listOf(
 
 private fun getRarityDef(altitudeM: Int): RarityDef =
     RARITIES.lastOrNull { altitudeM >= it.minAlt } ?: RARITIES.first()
+
+// Calculates a Carto Dark Matter tile URL for the given coordinates at zoom 10.
+// dark_matter style = dark background + light labels, matches the card's dark aesthetic.
+// Zoom 10 ≈ 35 km × 35 km per tile — shows the surrounding region, not just the summit.
+private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 10): String {
+    val n     = 1 shl zoom   // 2^zoom
+    val xTile = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
+    val latRad = Math.toRadians(lat)
+    val yTile = ((1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
+    return "https://a.basemaps.cartocdn.com/dark_matter/$zoom/$xTile/$yTile.png"
+}
 
 // ── Custom icons ───────────────────────────────────────────────────────────────
 
@@ -557,15 +572,27 @@ private fun CardBack(ascent: Ascent, rarity: RarityDef) {
     val bylineName  = ascent.user?.name ?: "Tú"
 
     Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
+        val tileUrl = remember(ascent.peak.latitude, ascent.peak.longitude) {
+            peakTileUrl(ascent.peak.latitude, ascent.peak.longitude)
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth().padding(horizontal = 3.dp).aspectRatio(4f / 5f)
                 .clip(RoundedCornerShape(18.dp))
-                .background(Brush.verticalGradient(colors = listOf(Color(0xFF0A1929), Color(0xFF1A3A55), Color(0xFF0F2233)))),
+                .background(Color(0xFF0A1929)),
         ) {
-            Box(modifier = Modifier.fillMaxSize().background(Brush.radialGradient(colors = listOf(Color(0x14FFFFFF), Color.Transparent))))
-            Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f).align(Alignment.BottomStart)
-                .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.35f to Color(0xA007121F), 1f to Color(0xF007121F)))))
+            AsyncImage(
+                model              = tileUrl,
+                contentDescription = null,
+                contentScale       = ContentScale.Crop,
+                modifier           = Modifier.fillMaxSize(),
+                onLoading  = { android.util.Log.d("CardBack", "LOADING tile: $tileUrl") },
+                onSuccess  = { android.util.Log.d("CardBack", "SUCCESS tile: $tileUrl") },
+                onError    = { android.util.Log.e("CardBack", "ERROR tile: $tileUrl — ${it.result.throwable?.message}") },
+            )
+            // Bottom gradient for peak name / altitude readability (tile is already dark so overlay is subtle)
+            Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f).align(Alignment.BottomStart)
+                .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.4f to Color(0x8007121F), 1f to Color(0xE007121F)))))
 
             Text("${"%.4f".format(ascent.peak.latitude)}, ${"%.4f".format(ascent.peak.longitude)}",
                 fontSize = 10.sp, color = Color(0xB3FFFFFF),
