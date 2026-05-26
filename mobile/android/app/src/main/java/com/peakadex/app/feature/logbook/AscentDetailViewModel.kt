@@ -37,7 +37,7 @@ class AscentDetailViewModel(private val ascentId: String) : ViewModel() {
                 val ascent = api.getAscent(ascentId).ascent
                 _uiState.value = AscentDetailUiState.Success(ascent)
             } catch (e: HttpException) {
-                Log.e(TAG, "getAscent HTTP ${e.code()}: ${e.response()?.errorBody()?.string()}")
+                Log.e(TAG, "getAscent HTTP ${e.code()}")
                 _uiState.value = AscentDetailUiState.Error("Error del servidor (${e.code()})")
             } catch (e: IOException) {
                 Log.e(TAG, "getAscent network error", e)
