@@ -53,7 +53,7 @@ class HomeViewModel : ViewModel() {
             val data = AppContainer.apiService.getHome()
             _uiState.value = HomeUiState.Success(data)
         } catch (e: HttpException) {
-            Log.e(TAG, "getHome HTTP ${e.code()}: ${e.response()?.errorBody()?.string()}")
+            Log.e(TAG, "getHome HTTP ${e.code()}")
             _uiState.value = HomeUiState.Error("Error del servidor (${e.code()})")
         } catch (e: IOException) {
             Log.e(TAG, "getHome network error", e)

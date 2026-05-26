@@ -2,7 +2,7 @@ package com.peakadex.app.core.auth
 
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import androidx.security.crypto.MasterKeys
 
 class TokenStorage(private val context: Context) {
     companion object {
@@ -11,14 +11,15 @@ class TokenStorage(private val context: Context) {
     }
 
     private val prefs by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
+        // MasterKeys API is the stable 1.0.0 interface (MasterKey.Builder requires 1.1.0-alpha).
+        // AES256_GCM_SPEC generates/retrieves a hardware-backed AES-256-GCM key in the Keystore.
+        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
 
+        @Suppress("DEPRECATION") // create(name, alias, ctx, ...) is the 1.0.0 stable overload
         EncryptedSharedPreferences.create(
-            context,
             PREFS_NAME,
-            masterKey,
+            masterKeyAlias,
+            context,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )

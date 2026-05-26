@@ -42,7 +42,7 @@ class AuthViewModel : ViewModel() {
                 AppContainer.authSession.login(response.token, response.user)
                 _uiState.value = AuthUiState.Success
             } catch (e: HttpException) {
-                Log.e(TAG, "login HTTP ${e.code()}: ${e.response()?.errorBody()?.string()}")
+                Log.e(TAG, "login HTTP ${e.code()}")
                 _uiState.value = AuthUiState.Error(
                     when (e.code()) {
                         401  -> "Email o contraseña incorrectos"

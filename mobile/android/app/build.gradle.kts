@@ -22,6 +22,10 @@ android {
         }
         release {
             isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             buildConfigField("String", "BASE_URL", "\"https://www.peakadex.com/api/v1/\"")
         }
     }

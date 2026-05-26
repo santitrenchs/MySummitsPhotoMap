@@ -102,7 +102,7 @@ class LogbookViewModel : ViewModel() {
         } catch (e: CancellationException) {
             throw e   // never swallow cancellation — structured concurrency requires it
         } catch (e: HttpException) {
-            Log.e(TAG, "getAscents HTTP ${e.code()}: ${e.response()?.errorBody()?.string()}")
+            Log.e(TAG, "getAscents HTTP ${e.code()}")
             _uiState.value = LogbookUiState.Error("Error del servidor (${e.code()})")
         } catch (e: IOException) {
             Log.e(TAG, "getAscents network error", e)
