@@ -1508,3 +1508,185 @@ data class GeocodedPlace(val name: String, val lat: Double, val lon: Double)
 - **Web viewport query response unchanged**: `GET /api/peaks?north=...` still returns a plain `MapPeak[]`. Only the `?q=` path returns `{ peaks, places }`. The consumer at `MapView.tsx:336` (`data: MapPeak[] = await res.json()`) is untouched.
 - **Nominatim `display_name` is verbose**: returns the full OSM name like "Berga, Berguedà, Catalunya, España". The UI truncates with CSS `text-overflow: ellipsis`. No server-side truncation.
 - **Rate limiting**: Nominatim asks for max 1 req/sec. The 300ms debounce on the client means this is respected under normal usage. Do not remove the debounce.
+
+---
+
+## Android App — Fase 6: UI/UX Polish (2026-05-26)
+
+### Bottom tab order
+
+**Final order (left → right):** Home · Bitácora · Atlas · Cards
+
+```kotlin
+// MainScaffold.kt — tabItems()
+TabItem(Screen.Home,    R.string.nav_tab_home,    R.drawable.ic_tab_home),
+TabItem(Screen.Logbook, R.string.nav_tab_logbook, R.drawable.ic_tab_logbook),
+TabItem(Screen.Map,     R.string.nav_tab_map,     R.drawable.ic_tab_map),
+TabItem(Screen.Cards,   R.string.nav_tab_cards,   R.drawable.ic_tab_cards),
+```
+
+---
+
+### ProfileSummaryScreen — secondary screen top bar
+
+`ProfileSummaryScreen` (opened from avatar dropdown in Home) is a **secondary screen**, not a root tab destination.
+
+- Uses `CenterAlignedTopAppBar` with `navigationIcon` back arrow (chevron-left `BackIcon`) + `Text("Perfil")` title.
+- **No `PeakadexLogo`** — logo is only for root tab screens (Home, Bitácora, Atlas, Cards). Secondary screens (Profile, Settings, AscentDetail) always use text titles + back arrow. This matches `SettingsScreen` pattern exactly.
+- `containerColor = Color.White`, `titleContentColor = Color.Unspecified`, followed by a `HorizontalDivider`.
+- `BackIcon`: chevron-left path — `moveTo(15f,18f); lineTo(9f,12f); lineTo(15f,6f)`, stroke only, round cap.
+
+```kotlin
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileSummaryScreen(onBack: () -> Unit, onNavigateToSettings: () -> Unit, ...) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title          = { Text("Perfil", fontSize = 17.sp, fontWeight = FontWeight.SemiBold) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(BackIcon, "Volver") } },
+                colors         = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
+            )
+            HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+        },
+        containerColor = PeakBackground,
+    ) { ... }
+}
+```
+
+---
+
+### ProfileScreen (Bitácora tab) — no ProfileHeader
+
+`ProfileScreen` (the Bitácora root tab) starts **directly** with `SecondaryTabRow` (Cimas / Fotos / Etiquetado). There is no `ProfileHeader` rendered above the tabs on this screen — the header only appears in `ProfileSummaryScreen`.
+
+```kotlin
+@Composable
+fun ProfileScreen(
+    onNavigateToSettings: () -> Unit,
+    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
+    vm: ProfileViewModel = viewModel(),
+)
+```
+
+**Tab content callbacks:**
+- Tab 0 (Cimas): `PeaksTab` → `onNavigateToLogbook(peak.id, peak.name)` on row tap
+- Tab 1 (Fotos): `PhotosTab` → `onAscentClick(ascentId, true)` (own photos)
+- Tab 2 (Etiquetado): `PhotosTab(showCreator = true)` → `onAscentClick(ascentId, false)` (others' photos)
+
+The `isOwn` boolean is added **at the `ProfileContent` level** where the tab type is known, not inside `PhotosTab`/`PhotoTile`.
+
+---
+
+### Navigation from Bitácora tabs → Cards
+
+All three Bitácora tabs navigate to the Cards screen (never to `AscentDetailScreen`).
+
+**Why not AscentDetailScreen for Tags?** The v1 ascent detail endpoint only returns data for ascents owned by the requesting user — calling it with another user's `ascentId` returns 404.
+
+**Cimas tap** → Cards filtered by that peak. Reuses the existing Atlas→Logbook `pendingPeakId`/`pendingPeakName` infrastructure:
+
+```kotlin
+// MainScaffold.kt — Screen.Logbook.route composable
+onNavigateToLogbook = { peakId, peakName ->
+    pendingPeakId   = peakId
+    pendingPeakName = peakName
+    tabNavController.navigate(Screen.Cards.route) {
+        popUpTo(Screen.Home.route) { saveState = true }
+        launchSingleTop = true
+        restoreState    = false   // force fresh ViewModel
+    }
+},
+```
+
+**Fotos tap (own ascent)** → Cards with Mine filter + highlight + scroll:
+
+```kotlin
+onAscentClick = { ascentId, isOwn ->
+    logbookHighlightId = ascentId
+    if (isOwn) logbookRefreshTrigger++   // triggers setViewFilter(Mine) + refresh + scroll
+    tabNavController.navigate(Screen.Cards.route) {
+        popUpTo(Screen.Home.route) { saveState = true }
+        launchSingleTop = true
+        restoreState    = false
+    }
+},
+```
+
+**Tags tap (others' ascent)** → Cards (Friends filter, best-effort highlight ring — no guaranteed scroll since friends' ascents aren't at top):
+- Same navigation call as above but `isOwn = false` → `logbookRefreshTrigger` is NOT incremented → no Mine filter switch, no refresh.
+- `logbookHighlightId` is still set → ring will show if the ascent happens to be visible.
+
+---
+
+### Cards screen — simplified filter (SegmentedButton)
+
+Removed: search bar, filter button, active chips row, full filter bottom sheet.
+
+Added: `SingleChoiceSegmentedButtonRow` with two `SegmentedButton` items.
+
+| Button | Label | Filter | Sort |
+|---|---|---|---|
+| Index 0 | "Mis Cards" | `ViewFilter.Mine` | date desc |
+| Index 1 | "Mi Cordada" | `ViewFilter.Friends` | canonical unseen-first algorithm |
+
+**"Mi Cordada" never shows own cards** — `ViewFilter.Friends` filters `isOwn == false`.
+
+```kotlin
+@Composable
+private fun QuickFilterBar(viewFilter: ViewFilter, onViewFilterChange: (ViewFilter) -> Unit) {
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+        SegmentedButton(
+            shape    = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+            selected = viewFilter == ViewFilter.Mine,
+            onClick  = { onViewFilterChange(ViewFilter.Mine) },
+            colors   = SegmentedButtonDefaults.colors(
+                activeContainerColor   = PeakBlueActive.copy(alpha = 0.10f),
+                activeContentColor     = PeakBlueActive,
+                activeBorderColor      = PeakBlueActive,
+                inactiveContainerColor = Color.White,
+                inactiveContentColor   = PeakMuted,
+                inactiveBorderColor    = PeakBorderLight,
+            ),
+            label = { Text("Mis Cards", fontSize = 13.sp, fontWeight = if (viewFilter == ViewFilter.Mine) FontWeight.SemiBold else FontWeight.Normal) },
+        )
+        SegmentedButton(
+            shape    = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+            selected = viewFilter == ViewFilter.Friends,
+            onClick  = { onViewFilterChange(ViewFilter.Friends) },
+            // same colors as above
+            label = { Text("Mi Cordada", fontSize = 13.sp, fontWeight = if (viewFilter == ViewFilter.Friends) FontWeight.SemiBold else FontWeight.Normal) },
+        )
+    }
+}
+```
+
+**Peak filter chip** — shown only when navigating from Atlas (or Cimas tab):
+
+```kotlin
+@Composable
+private fun PeakFilterChip(peakName: String, onDismiss: () -> Unit) {
+    Row(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp)) {
+        InputChip(
+            selected     = true,
+            onClick      = onDismiss,
+            label        = { Text("🏔 $peakName", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) },
+            trailingIcon = { Icon(CloseSmallIcon, "Quitar filtro", Modifier.size(14.dp), tint = Color(0xFF0369A1)) },
+            colors       = InputChipDefaults.inputChipColors(selectedContainerColor = Color(0xFFF0F9FF), selectedLabelColor = Color(0xFF0369A1)),
+            border       = InputChipDefaults.inputChipBorder(enabled = true, selected = true, selectedBorderColor = Color(0xFF7DD3FC), selectedBorderWidth = 1.dp),
+        )
+    }
+}
+```
+
+Rendered conditionally: `if (filters.peakId != null) PeakFilterChip(peakName = filters.peakName ?: filters.peakId ?: "", ...)`.
+
+---
+
+### Known gotchas (Fase 6)
+
+- **`filters.peakName ?: filters.peakId` is `String?`**: both fields are nullable. The `PeakFilterChip` composable takes a non-nullable `String`. Always add `?: ""` as a final fallback: `filters.peakName ?: filters.peakId ?: ""`. The `if (filters.peakId != null)` guard above guarantees the chip only renders when there is a value, so the empty string fallback is never actually displayed.
+- **`@OptIn(ExperimentalMaterial3Api::class)` required**: add to any composable that uses `CenterAlignedTopAppBar`, `SingleChoiceSegmentedButtonRow`, `SegmentedButton`, `InputChip`, or `PullToRefreshBox`.
+- **Root vs secondary top bars**: Root tabs (Home, Bitácora, Atlas, Cards) → `CenterAlignedTopAppBar` with logo + avatar. Secondary screens (Profile, Settings, AscentDetail) → `CenterAlignedTopAppBar` with text title + back arrow. Never use the logo on secondary screens.
+- **`restoreState = false` when navigating to Cards from Bitácora**: required so the ViewModel is recreated and `LaunchedEffect(refreshTrigger)` fires. With `restoreState = true` the existing ViewModel is reused and the trigger value hasn't changed — scroll/highlight won't fire.

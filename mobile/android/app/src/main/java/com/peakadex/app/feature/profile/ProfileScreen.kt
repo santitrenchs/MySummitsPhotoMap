@@ -47,27 +47,66 @@ import com.peakadex.app.core.ui.theme.*
 
 // ── Lightweight profile: avatar + name + bio only (avatar-dropdown entry point) ──
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileSummaryScreen(
+    onBack: () -> Unit,
     onNavigateToSettings: () -> Unit,
     vm: ProfileViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
 
-    Column(Modifier.fillMaxSize().background(PeakBackground)) {
-        when (val s = state) {
-            is ProfileUiState.Loading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = PeakBlueActive)
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text       = "Perfil",
+                        fontSize   = 17.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color      = PeakNavyDark,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector        = BackIcon,
+                            contentDescription = "Volver",
+                            tint               = PeakNavyDark,
+                            modifier           = Modifier.size(22.dp),
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor    = Color.White,
+                    titleContentColor = Color.Unspecified,
+                ),
+                windowInsets = TopAppBarDefaults.windowInsets,
+            )
+            HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+        },
+        containerColor = PeakBackground,
+    ) { innerPadding ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(PeakBackground),
+        ) {
+            when (val s = state) {
+                is ProfileUiState.Loading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = PeakBlueActive)
+                    }
                 }
-            }
-            is ProfileUiState.Error -> {
-                Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-                    Text(s.message, color = PeakMuted, fontSize = 14.sp)
+                is ProfileUiState.Error -> {
+                    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text(s.message, color = PeakMuted, fontSize = 14.sp)
+                    }
                 }
-            }
-            is ProfileUiState.Success -> {
-                ProfileHeader(user = s.data.user, onEditProfile = onNavigateToSettings)
+                is ProfileUiState.Success -> {
+                    ProfileHeader(user = s.data.user, onEditProfile = onNavigateToSettings)
+                }
             }
         }
     }
@@ -78,6 +117,8 @@ fun ProfileSummaryScreen(
 @Composable
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
+    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     vm: ProfileViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -111,10 +152,11 @@ fun ProfileScreen(
             }
             is ProfileUiState.Success -> {
                 ProfileContent(
-                    state              = s,
-                    onNavigateToSettings = onNavigateToSettings,
-                    onPeakQuery        = vm::setPeakQuery,
-                    onPeakRarityFilter = vm::setPeakRarityFilter,
+                    state               = s,
+                    onPeakQuery         = vm::setPeakQuery,
+                    onPeakRarityFilter  = vm::setPeakRarityFilter,
+                    onNavigateToLogbook = onNavigateToLogbook,
+                    onAscentClick       = onAscentClick,
                 )
             }
         }
@@ -126,17 +168,15 @@ fun ProfileScreen(
 @Composable
 private fun ProfileContent(
     state: ProfileUiState.Success,
-    onNavigateToSettings: () -> Unit,
     onPeakQuery: (String) -> Unit,
     onPeakRarityFilter: (String?) -> Unit,
+    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
 ) {
     var activeTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Cimas", "Fotos", "Etiquetado")
 
     Column(Modifier.fillMaxSize()) {
-        // ── Header ──
-        ProfileHeader(user = state.data.user, onEditProfile = onNavigateToSettings)
-
         // ── Tabs (SecondaryTabRow = underline indicator, same as web) ──
         SecondaryTabRow(
             selectedTabIndex = activeTab,
@@ -163,17 +203,27 @@ private fun ProfileContent(
         // ── Tab content ──
         when (activeTab) {
             0 -> CimasTab(
-                peaks         = state.filteredPeaks,
-                allPeaks      = state.data.peaks,
-                stats         = state.data.stats,
-                rarities      = state.data.rarities,
-                query         = state.peakQuery,
-                rarityFilter  = state.peakRarityFilter,
-                onQuery       = onPeakQuery,
-                onRarityFilter= onPeakRarityFilter,
+                peaks               = state.filteredPeaks,
+                allPeaks            = state.data.peaks,
+                stats               = state.data.stats,
+                rarities            = state.data.rarities,
+                query               = state.peakQuery,
+                rarityFilter        = state.peakRarityFilter,
+                onQuery             = onPeakQuery,
+                onRarityFilter      = onPeakRarityFilter,
+                onNavigateToLogbook = onNavigateToLogbook,
             )
-            1 -> PhotosTab(photos = state.data.photos, rarities = state.data.rarities)
-            2 -> PhotosTab(photos = state.data.taggedPhotos, rarities = state.data.rarities, showCreator = true)
+            1 -> PhotosTab(
+                photos        = state.data.photos,
+                rarities      = state.data.rarities,
+                onAscentClick = { ascentId -> onAscentClick(ascentId, true) },
+            )
+            2 -> PhotosTab(
+                photos        = state.data.taggedPhotos,
+                rarities      = state.data.rarities,
+                showCreator   = true,
+                onAscentClick = { ascentId -> onAscentClick(ascentId, false) },
+            )
         }
     }
 }
@@ -297,6 +347,7 @@ private fun CimasTab(
     rarityFilter: String?,
     onQuery: (String) -> Unit,
     onRarityFilter: (String?) -> Unit,
+    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
@@ -378,6 +429,7 @@ private fun CimasTab(
                 PeakRowCard(
                     peak      = peak,
                     rarityMap = rarityMap,
+                    onClick   = { onNavigateToLogbook(peak.id, peak.name) },
                     modifier  = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 5.dp),
@@ -513,6 +565,7 @@ private fun CimasStatsHeader(
 private fun PeakRowCard(
     peak: ProfilePeak,
     rarityMap: Map<String, Rarity>,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val rarity = rarityMap[peak.rarityId]
@@ -524,11 +577,12 @@ private fun PeakRowCard(
     } ?: PeakBlueDark
 
     Surface(
-        modifier      = modifier,
-        shape         = RoundedCornerShape(12.dp),
-        color         = Color.White,
+        onClick         = onClick,
+        modifier        = modifier,
+        shape           = RoundedCornerShape(12.dp),
+        color           = Color.White,
         shadowElevation = 2.dp,
-        border        = androidx.compose.foundation.BorderStroke(
+        border          = androidx.compose.foundation.BorderStroke(
             1.dp, Color.Black.copy(alpha = 0.05f)
         ),
     ) {
@@ -698,6 +752,7 @@ private fun PhotosTab(
     photos: List<ProfilePhoto>,
     rarities: List<Rarity>,
     showCreator: Boolean = false,
+    onAscentClick: (ascentId: String) -> Unit,
 ) {
     val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
 
@@ -725,9 +780,10 @@ private fun PhotosTab(
     ) {
         items(photos, key = { it.id }) { photo ->
             PhotoTile(
-                photo       = photo,
-                rarityMap   = rarityMap,
-                showCreator = showCreator,
+                photo         = photo,
+                rarityMap     = rarityMap,
+                showCreator   = showCreator,
+                onClick       = { onAscentClick(photo.ascentId) },
             )
         }
     }
@@ -740,6 +796,7 @@ private fun PhotoTile(
     photo: ProfilePhoto,
     rarityMap: Map<String, Rarity>,
     showCreator: Boolean,
+    onClick: () -> Unit,
 ) {
     val rarity = rarityMap[photo.rarityId]
     val rarityColor = rarity?.let {
@@ -750,7 +807,8 @@ private fun PhotoTile(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(4.dp))
-            .background(Color(0xFF1E293B)),
+            .background(Color(0xFF1E293B))
+            .clickable { onClick() },
     ) {
         AsyncImage(
             model             = photo.url,
@@ -890,6 +948,20 @@ private val CloseIcon: ImageVector by lazy {
             strokeLineCap  = androidx.compose.ui.graphics.StrokeCap.Round,
         ) {
             moveTo(6f, 6f); lineTo(18f, 18f)
+        }
+    }.build()
+}
+
+// Back / chevron-left icon — used as Up navigation in secondary screens
+private val BackIcon: ImageVector by lazy {
+    ImageVector.Builder("Back", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = SolidColor(Color(0xFF1E293B)),
+            strokeLineWidth = 2f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            moveTo(15f, 18f); lineTo(9f, 12f); lineTo(15f, 6f)
         }
     }.build()
 }

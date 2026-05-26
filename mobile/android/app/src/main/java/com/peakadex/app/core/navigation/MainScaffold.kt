@@ -49,8 +49,8 @@ data class TabItem(val screen: Screen, val label: String, val iconRes: Int)
 @Composable
 private fun tabItems() = listOf(
     TabItem(Screen.Home,    stringResource(R.string.nav_tab_home),    R.drawable.ic_tab_home),
-    TabItem(Screen.Map,     stringResource(R.string.nav_tab_map),     R.drawable.ic_tab_map),
     TabItem(Screen.Logbook, stringResource(R.string.nav_tab_logbook), R.drawable.ic_tab_logbook),
+    TabItem(Screen.Map,     stringResource(R.string.nav_tab_map),     R.drawable.ic_tab_map),
     TabItem(Screen.Cards,   stringResource(R.string.nav_tab_cards),   R.drawable.ic_tab_cards),
 )
 
@@ -171,6 +171,28 @@ fun MainScaffold(navController: NavController) {
             composable(Screen.Logbook.route) {
                 ProfileScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                    onNavigateToLogbook  = { peakId, peakName ->
+                        pendingPeakId   = peakId
+                        pendingPeakName = peakName
+                        tabNavController.navigate(Screen.Cards.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = false
+                        }
+                    },
+                    onAscentClick = { ascentId, isOwn ->
+                        logbookHighlightId = ascentId
+                        // Own photos: switch to Mine filter + refresh so LogbookScreen
+                        // scrolls to and highlights the card automatically.
+                        // Tagged photos: keep existing Friends filter; the ring will
+                        // appear if the card is already visible in the list.
+                        if (isOwn) logbookRefreshTrigger++
+                        tabNavController.navigate(Screen.Cards.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = false
+                        }
+                    },
                 )
             }
             composable(Screen.Cards.route) {
