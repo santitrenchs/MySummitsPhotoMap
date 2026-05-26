@@ -9,15 +9,125 @@
     <!-- ── Actions globales ─────────────────────────────────────────────────── -->
     <string name="action_back">Retour</string>
     <string name="action_cancel">Annuler</string>
+    <string name="action_retry">Réessayer</string>
+    <string name="action_ok">OK</string>
+    <string name="action_save">Enregistrer</string>
+    <string name="action_close">Fermer</string>
+    <string name="action_next">Suivant</string>
+    <string name="action_edit">Modifier</string>
+    <string name="action_share">Partager</string>
+    <string name="action_delete">Supprimer</string>
+    <string name="action_clear">Effacer</string>
+
+    <!-- ── Auth / Login ─────────────────────────────────────────────────────── -->
+    <string name="auth_email_placeholder">E-mail</string>
+    <string name="auth_password_placeholder">Mot de passe</string>
+    <string name="auth_sign_in_btn">Se connecter</string>
+    <string name="auth_no_account">Pas encore de compte ?  </string>
+    <string name="auth_create_account">Créer un compte</string>
+    <string name="auth_forgot_password">Mot de passe oublié ?</string>
+    <string name="auth_or_divider">  ou  </string>
+    <string name="auth_continue_google">Continuer avec Google</string>
+    <string name="auth_password_hide">Masquer</string>
+    <string name="auth_password_show">Afficher</string>
+
+    <!-- ── Profil ────────────────────────────────────────────────────────────── -->
+    <string name="profile_title">Profil</string>
+    <string name="profile_tab_peaks">Sommets</string>
+    <string name="profile_tab_photos">Photos</string>
+    <string name="profile_tab_tagged">Tagué</string>
+    <string name="profile_edit_btn">Modifier le profil</string>
+    <string name="profile_stat_peaks">SOMMETS</string>
+    <string name="profile_stat_max_alt">MAX</string>
+    <string name="profile_stat_last">DERNIER</string>
+    <string name="profile_stat_first">PREMIER</string>
+    <string name="profile_search_placeholder">Rechercher un sommet…</string>
+    <string name="profile_empty_peaks">Aucun sommet enregistré</string>
+    <string name="profile_empty_filtered">Aucun résultat pour ce filtre</string>
+    <string name="profile_peaks_suffix">sommets · </string>
+    <string name="profile_ascents_suffix">asc.</string>
+    <string name="profile_empty_photos">Aucune photo</string>
+    <string name="profile_empty_tagged">Tu n\'as pas encore été tagué(e) dans une photo</string>
+
+    <!-- ── Carnet / Cartes ───────────────────────────────────────────────────── -->
+    <string name="logbook_filter_mine">Mes Cartes</string>
+    <string name="logbook_filter_friends">Ma Cordée</string>
+    <string name="logbook_stat_rarity">RARETÉ</string>
+    <string name="logbook_stat_altitude">ALTITUDE</string>
+    <string name="logbook_stat_ep">EP</string>
+    <string name="logbook_stats_title">STATS PEAKADEX</string>
+    <string name="logbook_stat_ascents">ASCENSIONS</string>
+    <string name="logbook_stat_climbers">ALPINISTES</string>
+    <string name="logbook_empty_friends_title">Aucune activité d\'amis</string>
+    <string name="logbook_empty_friends_desc">Quand tes amis enregistreront des sommets, ils apparaîtront ici.\nUtilise le filtre pour voir tes propres ascensions.</string>
+    <string name="logbook_empty_mine_title">Ton carnet est vide</string>
+    <string name="logbook_empty_mine_desc">Enregistre ta première ascension pour commencer.</string>
+    <string name="logbook_empty_search_title">Aucun résultat</string>
+    <string name="logbook_empty_search_desc">Essaie d\'ajuster la recherche ou les filtres.</string>
+
+    <!-- ── Accueil ───────────────────────────────────────────────────────────── -->
+    <string name="home_stat_ascents_label">ascensions</string>
+    <string name="home_stat_peaks_label">sommets</string>
+    <string name="home_stat_max_alt_label">alt. max</string>
+    <string name="home_section_leaderboard">Ta cordée</string>
+    <string name="home_section_last_peaks">Tes derniers sommets</string>
+    <string name="home_see_all_btn">Voir tout →</string>
+    <string name="home_no_friends_title">Rivalise avec tes amis !</string>
+    <string name="home_no_friends_desc">Invite des amis pour voir ta position dans la cordée.</string>
+    <string name="home_invite_friends_btn">Inviter des amis</string>
+    <string name="home_empty_ascents_desc">Commence à construire ton historique de sommets.</string>
+    <string name="home_register_ascent_btn">+ Enregistrer l\'ascension</string>
+    <string name="home_levels_see_all">Voir tous les niveaux →</string>
+    <string name="home_levels_see_less">Voir moins</string>
+    <string name="home_chart_6months_title">6 derniers mois</string>
+    <string name="home_chart_rarity_title">Sommets par rareté</string>
+    <string name="home_leaderboard_col_peaks">Sommets</string>
+    <string name="home_leaderboard_col_cairns">Cairns</string>
+    <string name="home_leaderboard_col_ep">EP</string>
+    <string name="home_leaderboard_you"> (toi)</string>
+    <string name="home_period_peaks_suffix"> sommets</string>
+    <string name="home_period_meters_suffix"> m gravis</string>
+    <string name="home_level_req_altitude">Dépasser %dm</string>
+    <string name="home_level_progress_peaks">%1$d / %2$d sommets</string>
+    <string name="home_level_req_altitude_progress">→ Dépasser %d m</string>
+    <plurals name="home_level_remaining_peaks">
+        <item quantity="one">→ encore %d sommet</item>
+        <item quantity="other">→ encore %d sommets</item>
+    </plurals>
+    <plurals name="home_level_req_ascents_pill">
+        <item quantity="one">%d sommet</item>
+        <item quantity="other">%d sommets</item>
+    </plurals>
+
+    <!-- ── Nouvelle ascension ────────────────────────────────────────────────── -->
+    <string name="new_ascent_title">Enregistrer une ascension</string>
+    <string name="new_ascent_add_photo">Ajoute une photo</string>
+    <string name="new_ascent_photo_formats">JPEG · PNG · WebP · max. 10 Mo</string>
+    <string name="new_ascent_select_photo_btn">Choisir une photo</string>
+    <string name="new_ascent_rotate_btn">  Pivoter 90°</string>
+    <string name="new_ascent_next_btn">Suivant</string>
+    <string name="new_ascent_save_btn">Enregistrer</string>
+    <string name="new_ascent_discard_title">Abandonner l\'ascension ?</string>
+    <string name="new_ascent_discard_message">Tu perdras la photo et les données saisies.</string>
+    <string name="new_ascent_discard_btn">Abandonner</string>
+    <string name="new_ascent_field_peak">Sommet *</string>
+    <string name="new_ascent_field_date">Date *</string>
+    <string name="new_ascent_field_route">Voie / itinéraire (optionnel)</string>
+    <string name="new_ascent_field_notes">Notes (optionnel)</string>
+    <string name="new_ascent_field_tag_persons">Taguer des personnes (optionnel)</string>
+    <string name="new_ascent_search_peak_placeholder">Chercher un sommet...</string>
+    <string name="new_ascent_route_placeholder">Nom de la voie...</string>
+    <string name="new_ascent_notes_placeholder">Décris les conditions, l\'itinéraire...</string>
+    <string name="new_ascent_tag_placeholder">Chercher une personne...</string>
 
     <!-- ── Paramètres ───────────────────────────────────────────────────────── -->
     <string name="settings_title">Paramètres</string>
     <string name="settings_logout">Se déconnecter</string>
-    <string name="settings_logout_confirm_message">Voulez-vous vraiment vous déconnecter ?</string>
+    <string name="settings_logout_confirm_message">Es-tu sûr de vouloir te déconnecter ?</string>
 
     <string name="settings_section_language">Langue</string>
     <string name="settings_language_label">Langue de l\'app</string>
-    <string name="settings_language_sheet_title">Choisir une langue</string>
+    <string name="settings_language_sheet_title">Choisir la langue</string>
     <string name="settings_lang_es">Espagnol</string>
     <string name="settings_lang_ca">Catalan</string>
     <string name="settings_lang_en">Anglais</string>
@@ -26,35 +136,35 @@
 
     <string name="settings_section_account">Compte</string>
     <string name="settings_field_name">Nom</string>
-    <string name="settings_field_username">Pseudo</string>
-    <string name="settings_field_username_placeholder">ton_pseudo</string>
-    <string name="settings_field_email">Email</string>
+    <string name="settings_field_username">Identifiant</string>
+    <string name="settings_field_username_placeholder">sans identifiant</string>
+    <string name="settings_field_email">E-mail</string>
     <string name="settings_save_changes">Enregistrer</string>
 
     <string name="settings_section_connected_accounts">Comptes connectés</string>
-    <string name="settings_google_connected">Google (connecté)</string>
-    <string name="settings_google_unlink">Dissocier</string>
-    <string name="settings_google_unlink_confirm_title">Dissocier Google</string>
-    <string name="settings_google_unlink_confirm_message">Voulez-vous vraiment dissocier votre compte Google ?</string>
-    <string name="settings_google_unlink_no_password">Sans mot de passe vous ne pouvez pas dissocier Google. Créez d\'abord un mot de passe.</string>
-    <string name="settings_google_active_hint">Vous utilisez Google pour vous connecter</string>
+    <string name="settings_google_connected">Google connecté</string>
+    <string name="settings_google_unlink">Déconnecter</string>
+    <string name="settings_google_unlink_confirm_title">Déconnecter Google</string>
+    <string name="settings_google_unlink_confirm_message">Es-tu sûr de vouloir déconnecter ton compte Google ?</string>
+    <string name="settings_google_unlink_no_password">Ajoute un mot de passe avant de déconnecter Google pour ne pas perdre l\'accès à ton compte.</string>
+    <string name="settings_google_active_hint">Google actif · tu peux aussi te connecter sans mot de passe</string>
 
     <string name="settings_section_security">Sécurité</string>
     <string name="settings_change_password">Changer le mot de passe</string>
-    <string name="settings_change_password_desc">Définir ou mettre à jour votre mot de passe</string>
+    <string name="settings_change_password_desc">Mets à jour ton mot de passe d\'accès</string>
     <string name="settings_current_password">Mot de passe actuel</string>
     <string name="settings_new_password">Nouveau mot de passe</string>
-    <string name="settings_confirm_password">Confirmer le mot de passe</string>
+    <string name="settings_confirm_password">Confirmer le nouveau mot de passe</string>
     <string name="settings_save_password">Enregistrer le mot de passe</string>
 
     <string name="settings_section_privacy">Confidentialité</string>
     <string name="settings_allow_tagging">Autoriser les tags</string>
-    <string name="settings_allow_tagging_desc">D\'autres peuvent vous taguer dans des photos</string>
+    <string name="settings_allow_tagging_desc">D\'autres peuvent te taguer dans des photos</string>
     <string name="settings_appear_in_search">Apparaître dans les recherches</string>
-    <string name="settings_appear_in_search_desc">Votre profil est visible dans les recherches d\'amis</string>
+    <string name="settings_appear_in_search_desc">Les autres peuvent te trouver par nom ou e-mail</string>
 
     <string name="settings_section_notifications">Notifications</string>
-    <string name="settings_email_notifications">Notifications par email</string>
+    <string name="settings_email_notifications">Notifications par e-mail</string>
     <string name="settings_activity_notifications">Notifications d\'activité</string>
 
     <string name="settings_section_danger">Zone de danger</string>
@@ -62,7 +172,7 @@
     <string name="settings_snack_saved">Modifications enregistrées</string>
     <string name="settings_snack_password_saved">Mot de passe mis à jour</string>
     <string name="settings_snack_language_saved">Langue enregistrée</string>
-    <string name="settings_snack_google_unlinked">Compte Google dissocié</string>
+    <string name="settings_snack_google_unlinked">Compte Google déconnecté</string>
 
     <!-- ── Atlas — barre de recherche ────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Rechercher un sommet…</string>
@@ -85,6 +195,7 @@
     <string name="atlas_layers_map_type">TYPE DE CARTE</string>
     <string name="atlas_layers_normal">Normal</string>
     <string name="atlas_layers_terrain">Relief</string>
+    <string name="atlas_layers_satellite">Satellite</string>
     <string name="atlas_layers_section">CALQUES</string>
     <string name="atlas_layers_trails">Sentiers</string>
 
@@ -93,58 +204,9 @@
     <string name="atlas_meta_date">Date</string>
     <string name="atlas_meta_times">Fois</string>
     <string name="atlas_meta_route">Voie</string>
-
-    <!-- ── Paramètres ────────────────────────────────────────────────────────── -->
-    <string name="settings_title">Paramètres</string>
-    <string name="action_back">Retour</string>
-    <string name="action_cancel">Annuler</string>
-    <string name="settings_logout">Se déconnecter</string>
-    <string name="settings_logout_confirm_message">Es-tu sûr de vouloir te déconnecter ?</string>
-    <string name="settings_section_account">COMPTE</string>
-    <string name="settings_field_name">Nom</string>
-    <string name="settings_field_username">Identifiant</string>
-    <string name="settings_field_username_placeholder">sans identifiant</string>
-    <string name="settings_field_email">E-mail</string>
-    <string name="settings_save_changes">Enregistrer</string>
-    <string name="settings_section_privacy">CONFIDENTIALITÉ</string>
-    <string name="settings_appear_in_search">Apparaître dans la recherche</string>
-    <string name="settings_appear_in_search_desc">Les autres peuvent te trouver par nom ou e-mail</string>
-    <string name="settings_allow_tagging">Autoriser à me taguer</string>
-    <string name="settings_allow_tagging_desc">Les autres peuvent t\'ajouter à leurs photos d\'ascension</string>
-    <string name="settings_section_notifications">NOTIFICATIONS</string>
-    <string name="settings_email_notifications">Notifications par e-mail</string>
-    <string name="settings_activity_notifications">Notifications d\'activité</string>
-    <string name="settings_section_security">SÉCURITÉ</string>
-    <string name="settings_change_password">Changer le mot de passe</string>
-    <string name="settings_current_password">Mot de passe actuel</string>
-    <string name="settings_new_password">Nouveau mot de passe</string>
-    <string name="settings_confirm_password">Confirmer le nouveau mot de passe</string>
-    <string name="settings_save_password">Enregistrer le mot de passe</string>
-    <string name="settings_section_danger">ZONE DE DANGER</string>
-    <string name="settings_snack_saved">Modifications enregistrées</string>
-    <string name="settings_snack_password_saved">Mot de passe mis à jour</string>
-
-    <!-- ── Paramètres — langue ───────────────────────────────────────────────── -->
-    <string name="settings_section_language">LANGUE</string>
-    <string name="settings_language_label">Langue de l\'app</string>
-    <string name="settings_language_sheet_title">Choisir la langue</string>
-    <string name="settings_lang_es">Espagnol</string>
-    <string name="settings_lang_en">Anglais</string>
-    <string name="settings_lang_ca">Catalan</string>
-    <string name="settings_lang_de">Allemand</string>
-    <string name="settings_lang_fr">Français</string>
-    <string name="settings_snack_language_saved">Langue enregistrée</string>
-
-    <!-- ── Paramètres — comptes connectés ────────────────────────────────────── -->
-    <string name="settings_section_connected_accounts">COMPTES CONNECTÉS</string>
-    <string name="settings_google_connected">Google connecté</string>
-    <string name="settings_google_unlink">Déconnecter</string>
-    <string name="settings_google_unlink_confirm_title">Déconnecter Google</string>
-    <string name="settings_google_unlink_confirm_message">Es-tu sûr de vouloir déconnecter ton compte Google ?</string>
-    <string name="settings_google_unlink_no_password">Ajoute un mot de passe avant de déconnecter Google pour ne pas perdre l\'accès à ton compte.</string>
-    <string name="settings_snack_google_unlinked">Compte Google déconnecté</string>
-    <string name="settings_change_password_desc">Mets à jour ton mot de passe d\'accès</string>
-    <string name="settings_google_active_hint">Google actif · tu peux aussi te connecter sans mot de passe</string>
+    <string name="atlas_btn_view_ascents">Voir les captures</string>
+    <string name="atlas_btn_capture">Capturer</string>
+    <string name="atlas_btn_capture_new">+ Capturer</string>
 
     <!-- ── Atlas — liste des sommets ─────────────────────────────────────────── -->
     <string name="atlas_list_empty">Aucun sommet dans cette zone</string>
@@ -155,6 +217,8 @@
 
     <!-- ── Atlas — panneau de filtres ────────────────────────────────────────── -->
     <string name="atlas_btn_filters">Filtres</string>
+    <string name="atlas_clear_filters">Tout effacer</string>
+    <string name="atlas_section_places">LIEUX</string>
     <string name="atlas_section_rarity">RARETÉ</string>
     <string name="atlas_section_status">STATUT</string>
     <string name="atlas_section_sort">TRIER</string>

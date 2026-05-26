@@ -1087,7 +1087,7 @@ private fun SearchResultsList(
             if (results.isNotEmpty()) {
                 item {
                     Text(
-                        text     = "LUGARES",
+                        text     = stringResource(R.string.atlas_section_places),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color    = PeakMuted,
@@ -1818,7 +1818,7 @@ private fun FiltersPanel(
                 if (isDirty) {
                     TextButton(onClick = onClearFilters) {
                         Text(
-                            "Limpiar todo",
+                            stringResource(R.string.atlas_clear_filters),
                             fontSize   = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color      = PeakBlueActive,

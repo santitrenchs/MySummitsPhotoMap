@@ -48,6 +48,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.runtime.snapshotFlow
 import coil3.compose.AsyncImage
+import com.peakadex.app.R
+import androidx.compose.ui.res.stringResource
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakBorderLight
@@ -67,17 +69,6 @@ import kotlin.math.ln
 import kotlin.math.tan
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
-
-// Calculates a Carto Dark Matter tile URL for the given coordinates at zoom 10.
-// dark_matter style = dark background + light labels, matches the card's dark aesthetic.
-// Zoom 10 ≈ 35 km × 35 km per tile — shows the surrounding region, not just the summit.
-private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 10): String {
-    val n     = 1 shl zoom   // 2^zoom
-    val xTile = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
-    val latRad = Math.toRadians(lat)
-    val yTile = ((1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
-    return "https://a.basemaps.cartocdn.com/dark_matter/$zoom/$xTile/$yTile.png"
-}
 
 // Calculates a Carto Dark Matter tile URL for the given coordinates at zoom 10.
 // dark_matter style = dark background + light labels, matches the card's dark aesthetic.
@@ -271,7 +262,7 @@ private fun QuickFilterBar(
             ),
             label = {
                 Text(
-                    "Mis Cards",
+                    stringResource(R.string.logbook_filter_mine),
                     fontSize   = 13.sp,
                     fontWeight = if (viewFilter == ViewFilter.Mine) FontWeight.SemiBold else FontWeight.Normal,
                 )
@@ -291,7 +282,7 @@ private fun QuickFilterBar(
             ),
             label = {
                 Text(
-                    "Mi Cordada",
+                    stringResource(R.string.logbook_filter_friends),
                     fontSize   = 13.sp,
                     fontWeight = if (viewFilter == ViewFilter.Friends) FontWeight.SemiBold else FontWeight.Normal,
                 )
@@ -312,7 +303,7 @@ private fun PeakFilterChip(peakName: String, onDismiss: () -> Unit) {
             onClick      = onDismiss,
             label        = { Text("🏔 $peakName", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) },
             trailingIcon = {
-                Icon(CloseSmallIcon, "Quitar filtro de cima", Modifier.size(14.dp), tint = Color(0xFF0369A1))
+                Icon(CloseSmallIcon, stringResource(R.string.action_close), Modifier.size(14.dp), tint = Color(0xFF0369A1))
             },
             colors = InputChipDefaults.inputChipColors(
                 selectedContainerColor = Color(0xFFF0F9FF),
@@ -475,7 +466,7 @@ private fun CardFront(
                     ) {
                         Icon(
                             imageVector        = ShareNetworkIcon,
-                            contentDescription = "Compartir",
+                            contentDescription = stringResource(R.string.action_share),
                             modifier           = Modifier.size(16.dp),
                             tint               = PeakSubtle,
                         )
@@ -486,7 +477,7 @@ private fun CardFront(
                     ) {
                         Icon(
                             imageVector        = PencilIcon,
-                            contentDescription = "Editar",
+                            contentDescription = stringResource(R.string.action_edit),
                             modifier           = Modifier.size(15.dp),
                             tint               = PeakSubtle,
                         )
@@ -534,9 +525,9 @@ private fun CardFront(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StatBandItem("RAREZA",  "✿ ${rarity.label}", rarity.color,       Modifier.weight(1f))
-            StatBandItem("ALTITUD", "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
-            StatBandItem("EP",      "+${rarity.ep}",     rarity.color,       Modifier.weight(1f))
+            StatBandItem(stringResource(R.string.logbook_stat_rarity),   "✿ ${rarity.label}", rarity.color,       Modifier.weight(1f))
+            StatBandItem(stringResource(R.string.logbook_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
+            StatBandItem(stringResource(R.string.logbook_stat_ep),        "+${rarity.ep}",     rarity.color,       Modifier.weight(1f))
         }
         Spacer(Modifier.height(3.dp))
     }
@@ -610,12 +601,12 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(rarity.color))
                 Spacer(Modifier.width(6.dp))
-                Text("ESTADÍSTICAS PEAKADEX", fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.logbook_stats_title), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatBandItem("ASCENSIONES", "—", PeakOnSurface, Modifier.weight(1f))
-                StatBandItem("ALPINISTAS",  "—", PeakOnSurface, Modifier.weight(1f))
+                StatBandItem(stringResource(R.string.logbook_stat_ascents),  "—", PeakOnSurface, Modifier.weight(1f))
+                StatBandItem(stringResource(R.string.logbook_stat_climbers), "—", PeakOnSurface, Modifier.weight(1f))
             }
         }
 
@@ -659,9 +650,9 @@ private fun LogbookFriendsEmptyState() {
     ) {
         Text("👥", fontSize = 52.sp)
         Spacer(Modifier.height(16.dp))
-        Text("Sin actividad de amigos", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)
+        Text(stringResource(R.string.logbook_empty_friends_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)
         Spacer(Modifier.height(6.dp))
-        Text("Cuando tus amigos registren cimas aparecerán aquí.\nUsa el filtro para ver tus propias ascensiones.", fontSize = 14.sp, color = PeakMuted, lineHeight = 20.sp,
+        Text(stringResource(R.string.logbook_empty_friends_desc), fontSize = 14.sp, color = PeakMuted, lineHeight = 20.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
@@ -674,9 +665,9 @@ private fun LogbookEmptyState() {
     ) {
         Text("🏔️", fontSize = 52.sp)
         Spacer(Modifier.height(16.dp))
-        Text("Tu bitácora está vacía", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)
+        Text(stringResource(R.string.logbook_empty_mine_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)
         Spacer(Modifier.height(6.dp))
-        Text("Registra tu primera ascensión para empezar.", fontSize = 14.sp, color = PeakMuted, lineHeight = 20.sp,
+        Text(stringResource(R.string.logbook_empty_mine_desc), fontSize = 14.sp, color = PeakMuted, lineHeight = 20.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
@@ -689,9 +680,9 @@ private fun LogbookNoResultsState() {
     ) {
         Text("✿", fontSize = 48.sp, color = PeakBlueActive)
         Spacer(Modifier.height(14.dp))
-        Text("Sin resultados", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PeakOnSurface)
+        Text(stringResource(R.string.logbook_empty_search_title), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PeakOnSurface)
         Spacer(Modifier.height(4.dp))
-        Text("Prueba a ajustar la búsqueda o los filtros.", fontSize = 13.sp, color = PeakSubtle,
+        Text(stringResource(R.string.logbook_empty_search_desc), fontSize = 13.sp, color = PeakSubtle,
             lineHeight = 19.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
@@ -708,7 +699,7 @@ private fun LogbookErrorState(message: String, onRetry: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = PeakBlueActive)) { Text("Reintentar") }
+        Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = PeakBlueActive)) { Text(stringResource(R.string.action_retry)) }
     }
 }
 
@@ -718,7 +709,7 @@ internal fun formatDate(isoDate: String): String {
     return try {
         val local = if (isoDate.length > 10) LocalDate.parse(isoDate.substring(0, 10)) else LocalDate.parse(isoDate)
         val day   = local.dayOfMonth
-        val month = local.month.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("es")).lowercase().trimEnd('.')
+        val month = local.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()).lowercase().trimEnd('.')
         "$day $month. ${local.year}"
     } catch (e: Exception) {
         isoDate.take(10)

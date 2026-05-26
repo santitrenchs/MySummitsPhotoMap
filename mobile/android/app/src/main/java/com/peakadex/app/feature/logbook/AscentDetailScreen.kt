@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.peakadex.app.R
+import androidx.compose.ui.res.stringResource
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.PersonSummary
 import com.peakadex.app.core.model.Photo
@@ -74,7 +76,7 @@ private fun DetailContent(ascent: Ascent, onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector        = BackArrowIcon,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.action_back),
                             tint               = MaterialTheme.colorScheme.primary,
                         )
                     }
@@ -358,7 +360,7 @@ private fun DetailLoadingState(onBack: () -> Unit) {
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            BackArrowIcon, "Volver",
+                            BackArrowIcon, stringResource(R.string.action_back),
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
@@ -387,7 +389,7 @@ private fun DetailErrorState(message: String, onBack: () -> Unit, onRetry: () ->
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(BackArrowIcon, "Volver", tint = MaterialTheme.colorScheme.primary)
+                        Icon(BackArrowIcon, stringResource(R.string.action_back), tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -408,7 +410,7 @@ private fun DetailErrorState(message: String, onBack: () -> Unit, onRetry: () ->
             Button(
                 onClick = onRetry,
                 colors  = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            ) { Text("Reintentar") }
+            ) { Text(stringResource(R.string.action_retry)) }
         }
     }
 }

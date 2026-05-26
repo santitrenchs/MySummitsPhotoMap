@@ -32,8 +32,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.peakadex.app.R
 import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.theme.*
 
@@ -107,7 +109,7 @@ fun LoginScreen(
                     // ── "No tienes cuenta?" prompt ────────────────────────────
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "¿No tienes cuenta?  ",
+                            text = stringResource(R.string.auth_no_account),
                             fontSize = 13.sp,
                             color = PeakNavyMid,
                         )
@@ -116,7 +118,7 @@ fun LoginScreen(
                             contentPadding = PaddingValues(0.dp),
                         ) {
                             Text(
-                                text = "Créala",
+                                text = stringResource(R.string.auth_create_account),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = PeakGreenCTA,
@@ -130,7 +132,7 @@ fun LoginScreen(
                     PeakTextField(
                         value = email,
                         onValueChange = { email = it; if (uiState is AuthUiState.Error) viewModel.resetState() },
-                        placeholder = "Email",
+                        placeholder = stringResource(R.string.auth_email_placeholder),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next,
@@ -146,7 +148,7 @@ fun LoginScreen(
                     PeakTextField(
                         value = password,
                         onValueChange = { password = it; if (uiState is AuthUiState.Error) viewModel.resetState() },
-                        placeholder = "Contraseña",
+                        placeholder = stringResource(R.string.auth_password_placeholder),
                         visualTransformation = if (passwordVisible) VisualTransformation.None
                                                else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(
@@ -160,7 +162,7 @@ fun LoginScreen(
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
                                     imageVector = if (passwordVisible) EyeOffIcon else EyeIcon,
-                                    contentDescription = if (passwordVisible) "Ocultar" else "Mostrar",
+                                    contentDescription = stringResource(if (passwordVisible) R.string.auth_password_hide else R.string.auth_password_show),
                                     tint = PeakNavyLight,
                                     modifier = Modifier.size(20.dp),
                                 )
@@ -175,7 +177,7 @@ fun LoginScreen(
                             contentPadding = PaddingValues(vertical = 4.dp),
                         ) {
                             Text(
-                                text = "¿Olvidaste tu contraseña?",
+                                text = stringResource(R.string.auth_forgot_password),
                                 fontSize = 13.sp,
                                 color = PeakNavyMid,
                             )
@@ -225,7 +227,7 @@ fun LoginScreen(
                             )
                         } else {
                             Text(
-                                text = "Iniciar sesión",
+                                text = stringResource(R.string.auth_sign_in_btn),
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
@@ -242,7 +244,7 @@ fun LoginScreen(
                     ) {
                         HorizontalDivider(modifier = Modifier.weight(1f), color = ColorBorder)
                         Text(
-                            text = "  o  ",
+                            text = stringResource(R.string.auth_or_divider),
                             fontSize = 12.sp,
                             color = PeakNavyLight,
                         )
@@ -270,7 +272,7 @@ fun LoginScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Continuar con Google",
+                            text = stringResource(R.string.auth_continue_google),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = PeakNavyDark,

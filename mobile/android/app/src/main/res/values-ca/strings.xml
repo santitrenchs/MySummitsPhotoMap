@@ -9,6 +9,116 @@
     <!-- ── Accions globals ──────────────────────────────────────────────────── -->
     <string name="action_back">Enrere</string>
     <string name="action_cancel">Cancel·lar</string>
+    <string name="action_retry">Torna-ho a intentar</string>
+    <string name="action_ok">D\'acord</string>
+    <string name="action_save">Desar</string>
+    <string name="action_close">Tancar</string>
+    <string name="action_next">Següent</string>
+    <string name="action_edit">Editar</string>
+    <string name="action_share">Compartir</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_clear">Netejar</string>
+
+    <!-- ── Autenticació / Login ─────────────────────────────────────────────── -->
+    <string name="auth_email_placeholder">Correu electrònic</string>
+    <string name="auth_password_placeholder">Contrasenya</string>
+    <string name="auth_sign_in_btn">Inicia sessió</string>
+    <string name="auth_no_account">No tens compte?  </string>
+    <string name="auth_create_account">Crea\'l</string>
+    <string name="auth_forgot_password">Has oblidat la contrasenya?</string>
+    <string name="auth_or_divider">  o  </string>
+    <string name="auth_continue_google">Continua amb Google</string>
+    <string name="auth_password_hide">Amaga</string>
+    <string name="auth_password_show">Mostra</string>
+
+    <!-- ── Perfil ────────────────────────────────────────────────────────────── -->
+    <string name="profile_title">Perfil</string>
+    <string name="profile_tab_peaks">Cims</string>
+    <string name="profile_tab_photos">Fotos</string>
+    <string name="profile_tab_tagged">Etiquetat</string>
+    <string name="profile_edit_btn">Editar perfil</string>
+    <string name="profile_stat_peaks">CIMS</string>
+    <string name="profile_stat_max_alt">MÀXIMA</string>
+    <string name="profile_stat_last">ÚLTIMA</string>
+    <string name="profile_stat_first">PRIMERA</string>
+    <string name="profile_search_placeholder">Cercar cims…</string>
+    <string name="profile_empty_peaks">Sense cims registrats</string>
+    <string name="profile_empty_filtered">Sense resultats per a aquest filtre</string>
+    <string name="profile_peaks_suffix">cims · </string>
+    <string name="profile_ascents_suffix">asc.</string>
+    <string name="profile_empty_photos">Sense fotos</string>
+    <string name="profile_empty_tagged">Encara no t\'han etiquetat en cap foto</string>
+
+    <!-- ── Bitàcola / Cartes ─────────────────────────────────────────────────── -->
+    <string name="logbook_filter_mine">Les meves Cartes</string>
+    <string name="logbook_filter_friends">La meva Cordada</string>
+    <string name="logbook_stat_rarity">RARESA</string>
+    <string name="logbook_stat_altitude">ALTITUD</string>
+    <string name="logbook_stat_ep">EP</string>
+    <string name="logbook_stats_title">ESTADÍSTIQUES PEAKADEX</string>
+    <string name="logbook_stat_ascents">ASCENSIONS</string>
+    <string name="logbook_stat_climbers">ALPINISTES</string>
+    <string name="logbook_empty_friends_title">Sense activitat d\'amics</string>
+    <string name="logbook_empty_friends_desc">Quan els teus amics registrin cims apareixeran aquí.\nUsa el filtre per veure les teves pròpies ascensions.</string>
+    <string name="logbook_empty_mine_title">La teva bitàcola és buida</string>
+    <string name="logbook_empty_mine_desc">Registra la teva primera ascensió per començar.</string>
+    <string name="logbook_empty_search_title">Sense resultats</string>
+    <string name="logbook_empty_search_desc">Prova a ajustar la cerca o els filtres.</string>
+
+    <!-- ── Home ─────────────────────────────────────────────────────────────── -->
+    <string name="home_stat_ascents_label">ascensions</string>
+    <string name="home_stat_peaks_label">cims</string>
+    <string name="home_stat_max_alt_label">alt. màx</string>
+    <string name="home_section_leaderboard">La teva cordada</string>
+    <string name="home_section_last_peaks">Els teus últims cims</string>
+    <string name="home_see_all_btn">Veure tot →</string>
+    <string name="home_no_friends_title">Competeix amb els teus amics!</string>
+    <string name="home_no_friends_desc">Convida amics per veure la teva posició a la cordada.</string>
+    <string name="home_invite_friends_btn">Convidar amics</string>
+    <string name="home_empty_ascents_desc">Comença a construir el teu historial de cims.</string>
+    <string name="home_register_ascent_btn">+ Registrar ascensió</string>
+    <string name="home_levels_see_all">Veure tots els nivells →</string>
+    <string name="home_levels_see_less">Veure menys</string>
+    <string name="home_chart_6months_title">Últims 6 mesos</string>
+    <string name="home_chart_rarity_title">Cims per raresa</string>
+    <string name="home_leaderboard_col_peaks">Cims</string>
+    <string name="home_leaderboard_col_cairns">Cairns</string>
+    <string name="home_leaderboard_col_ep">EP</string>
+    <string name="home_leaderboard_you"> (tu)</string>
+    <string name="home_period_peaks_suffix"> cims</string>
+    <string name="home_period_meters_suffix"> m ascendits</string>
+    <string name="home_level_req_altitude">Superar els %dm</string>
+    <string name="home_level_progress_peaks">%1$d / %2$d cims</string>
+    <string name="home_level_req_altitude_progress">→ Superar els %d m</string>
+    <plurals name="home_level_remaining_peaks">
+        <item quantity="one">→ %d cim més</item>
+        <item quantity="other">→ %d cims més</item>
+    </plurals>
+    <plurals name="home_level_req_ascents_pill">
+        <item quantity="one">%d cim</item>
+        <item quantity="other">%d cims</item>
+    </plurals>
+
+    <!-- ── Nova ascensió ─────────────────────────────────────────────────────── -->
+    <string name="new_ascent_title">Registrar ascensió</string>
+    <string name="new_ascent_add_photo">Afegeix una foto</string>
+    <string name="new_ascent_photo_formats">JPEG · PNG · WebP · màx. 10 MB</string>
+    <string name="new_ascent_select_photo_btn">Seleccionar foto</string>
+    <string name="new_ascent_rotate_btn">  Girar 90°</string>
+    <string name="new_ascent_next_btn">Següent</string>
+    <string name="new_ascent_save_btn">Desar</string>
+    <string name="new_ascent_discard_title">Descartar ascensió?</string>
+    <string name="new_ascent_discard_message">Perdràs la foto i les dades introduïdes.</string>
+    <string name="new_ascent_discard_btn">Descartar</string>
+    <string name="new_ascent_field_peak">Cim *</string>
+    <string name="new_ascent_field_date">Data *</string>
+    <string name="new_ascent_field_route">Via / ruta (opcional)</string>
+    <string name="new_ascent_field_notes">Notes (opcional)</string>
+    <string name="new_ascent_field_tag_persons">Etiquetar persones (opcional)</string>
+    <string name="new_ascent_search_peak_placeholder">Cercar cim...</string>
+    <string name="new_ascent_route_placeholder">Nom de la ruta...</string>
+    <string name="new_ascent_notes_placeholder">Afegeix una descripció, condicions...</string>
+    <string name="new_ascent_tag_placeholder">Cercar persona...</string>
 
     <!-- ── Ajustos ───────────────────────────────────────────────────────────── -->
     <string name="settings_title">Ajustos</string>
@@ -17,7 +127,7 @@
 
     <string name="settings_section_language">Idioma</string>
     <string name="settings_language_label">Idioma de l\'app</string>
-    <string name="settings_language_sheet_title">Selecciona un idioma</string>
+    <string name="settings_language_sheet_title">Seleccionar idioma</string>
     <string name="settings_lang_es">Espanyol</string>
     <string name="settings_lang_ca">Català</string>
     <string name="settings_lang_en">Anglès</string>
@@ -27,31 +137,31 @@
     <string name="settings_section_account">Compte</string>
     <string name="settings_field_name">Nom</string>
     <string name="settings_field_username">Usuari</string>
-    <string name="settings_field_username_placeholder">el_teu_usuari</string>
+    <string name="settings_field_username_placeholder">sense nom d\'usuari</string>
     <string name="settings_field_email">Correu</string>
     <string name="settings_save_changes">Desar canvis</string>
 
     <string name="settings_section_connected_accounts">Comptes connectats</string>
-    <string name="settings_google_connected">Google (connectat)</string>
-    <string name="settings_google_unlink">Desvincula</string>
-    <string name="settings_google_unlink_confirm_title">Desvincular Google</string>
-    <string name="settings_google_unlink_confirm_message">Segur que vols desvincular el compte de Google?</string>
-    <string name="settings_google_unlink_no_password">Sense contrasenya no pots desvincular Google. Estableix una contrasenya primer.</string>
-    <string name="settings_google_active_hint">Fas servir Google per iniciar sessió</string>
+    <string name="settings_google_connected">Google connectat</string>
+    <string name="settings_google_unlink">Desconnectar</string>
+    <string name="settings_google_unlink_confirm_title">Desconnectar Google</string>
+    <string name="settings_google_unlink_confirm_message">Estàs segur que vols desconnectar el teu compte de Google?</string>
+    <string name="settings_google_unlink_no_password">Afegeix una contrasenya abans de desconnectar Google per no perdre l\'accés al teu compte.</string>
+    <string name="settings_google_active_hint">Google actiu · també pots entrar sense contrasenya</string>
 
     <string name="settings_section_security">Seguretat</string>
     <string name="settings_change_password">Canviar contrasenya</string>
-    <string name="settings_change_password_desc">Estableix o actualitza la teva contrasenya</string>
+    <string name="settings_change_password_desc">Actualitza la teva contrasenya d\'accés</string>
     <string name="settings_current_password">Contrasenya actual</string>
     <string name="settings_new_password">Nova contrasenya</string>
-    <string name="settings_confirm_password">Confirma la contrasenya</string>
+    <string name="settings_confirm_password">Confirmar nova contrasenya</string>
     <string name="settings_save_password">Desar contrasenya</string>
 
     <string name="settings_section_privacy">Privacitat</string>
     <string name="settings_allow_tagging">Permetre etiquetatge</string>
     <string name="settings_allow_tagging_desc">Altres et poden etiquetar a fotos</string>
     <string name="settings_appear_in_search">Aparèixer a cerques</string>
-    <string name="settings_appear_in_search_desc">El teu perfil és visible a cerques d\'amics</string>
+    <string name="settings_appear_in_search_desc">Altres usuaris et poden trobar per nom o correu</string>
 
     <string name="settings_section_notifications">Notificacions</string>
     <string name="settings_email_notifications">Notificacions per correu</string>
@@ -62,7 +172,7 @@
     <string name="settings_snack_saved">Canvis desats</string>
     <string name="settings_snack_password_saved">Contrasenya actualitzada</string>
     <string name="settings_snack_language_saved">Idioma desat</string>
-    <string name="settings_snack_google_unlinked">Compte de Google desvinculat</string>
+    <string name="settings_snack_google_unlinked">Compte de Google desconnectat</string>
 
     <!-- ── Atlas — barra de cerca ────────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Cerca cim…</string>
@@ -85,6 +195,7 @@
     <string name="atlas_layers_map_type">TIPUS DE MAPA</string>
     <string name="atlas_layers_normal">Normal</string>
     <string name="atlas_layers_terrain">Relleu</string>
+    <string name="atlas_layers_satellite">Satèl·lit</string>
     <string name="atlas_layers_section">CAPES</string>
     <string name="atlas_layers_trails">Senders</string>
 
@@ -93,58 +204,9 @@
     <string name="atlas_meta_date">Data</string>
     <string name="atlas_meta_times">Vegades</string>
     <string name="atlas_meta_route">Via</string>
-
-    <!-- ── Configuració ─────────────────────────────────────────────────────── -->
-    <string name="settings_title">Configuració</string>
-    <string name="action_back">Tornar</string>
-    <string name="action_cancel">Cancel·lar</string>
-    <string name="settings_logout">Tancar sessió</string>
-    <string name="settings_logout_confirm_message">Estàs segur que vols tancar sessió?</string>
-    <string name="settings_section_account">COMPTE</string>
-    <string name="settings_field_name">Nom</string>
-    <string name="settings_field_username">Usuari</string>
-    <string name="settings_field_username_placeholder">sense nom d\'usuari</string>
-    <string name="settings_field_email">Email</string>
-    <string name="settings_save_changes">Desar canvis</string>
-    <string name="settings_section_privacy">PRIVADESA</string>
-    <string name="settings_appear_in_search">Aparèixer a les cerques</string>
-    <string name="settings_appear_in_search_desc">Altres usuaris et poden trobar per nom o email</string>
-    <string name="settings_allow_tagging">Permetre que m\'etiquetin</string>
-    <string name="settings_allow_tagging_desc">Altres et poden afegir a les seves fotos d\'ascensió</string>
-    <string name="settings_section_notifications">NOTIFICACIONS</string>
-    <string name="settings_email_notifications">Notificacions per email</string>
-    <string name="settings_activity_notifications">Notificacions d\'activitat</string>
-    <string name="settings_section_security">SEGURETAT</string>
-    <string name="settings_change_password">Canviar contrasenya</string>
-    <string name="settings_current_password">Contrasenya actual</string>
-    <string name="settings_new_password">Nova contrasenya</string>
-    <string name="settings_confirm_password">Confirmar nova contrasenya</string>
-    <string name="settings_save_password">Desar contrasenya</string>
-    <string name="settings_section_danger">ZONA DE PERILL</string>
-    <string name="settings_snack_saved">Canvis desats</string>
-    <string name="settings_snack_password_saved">Contrasenya actualitzada</string>
-
-    <!-- ── Configuració — idioma ──────────────────────────────────────────────── -->
-    <string name="settings_section_language">IDIOMA</string>
-    <string name="settings_language_label">Idioma de l\'app</string>
-    <string name="settings_language_sheet_title">Seleccionar idioma</string>
-    <string name="settings_lang_es">Espanyol</string>
-    <string name="settings_lang_en">Anglès</string>
-    <string name="settings_lang_ca">Català</string>
-    <string name="settings_lang_de">Alemany</string>
-    <string name="settings_lang_fr">Francès</string>
-    <string name="settings_snack_language_saved">Idioma desat</string>
-
-    <!-- ── Configuració — comptes connectats ─────────────────────────────────── -->
-    <string name="settings_section_connected_accounts">COMPTES CONNECTATS</string>
-    <string name="settings_google_connected">Google connectat</string>
-    <string name="settings_google_unlink">Desconnectar</string>
-    <string name="settings_google_unlink_confirm_title">Desconnectar Google</string>
-    <string name="settings_google_unlink_confirm_message">Estàs segur que vols desconnectar el teu compte de Google?</string>
-    <string name="settings_google_unlink_no_password">Afegeix una contrasenya abans de desconnectar Google per no perdre l\'accés al teu compte.</string>
-    <string name="settings_snack_google_unlinked">Compte de Google desconnectat</string>
-    <string name="settings_change_password_desc">Actualitza la teva contrasenya d\'accés</string>
-    <string name="settings_google_active_hint">Google actiu · també pots entrar sense contrasenya</string>
+    <string name="atlas_btn_view_ascents">Veure captures</string>
+    <string name="atlas_btn_capture">Capturar</string>
+    <string name="atlas_btn_capture_new">+ Capturar</string>
 
     <!-- ── Atlas — llista de cims ────────────────────────────────────────────── -->
     <string name="atlas_list_empty">No hi ha cims en aquesta àrea</string>
@@ -155,6 +217,8 @@
 
     <!-- ── Atlas — panell de filtres ─────────────────────────────────────────── -->
     <string name="atlas_btn_filters">Filtres</string>
+    <string name="atlas_clear_filters">Esborra tot</string>
+    <string name="atlas_section_places">LLOCS</string>
     <string name="atlas_section_rarity">RARESA</string>
     <string name="atlas_section_status">ESTAT</string>
     <string name="atlas_section_sort">ORDENAR</string>

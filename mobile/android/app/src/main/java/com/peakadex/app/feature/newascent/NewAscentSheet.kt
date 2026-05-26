@@ -90,6 +90,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.peakadex.app.R
+import androidx.compose.ui.res.stringResource
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Person
 import com.peakadex.app.core.ui.theme.PeakBlueActive
@@ -202,10 +204,10 @@ private fun PhotoPickStep(
             contentAlignment = Alignment.Center,
         ) {
             IconButton(onClick = onClose, modifier = Modifier.align(Alignment.CenterStart)) {
-                Icon(CloseIcon, contentDescription = "Cerrar", tint = PeakNavyDark)
+                Icon(CloseIcon, contentDescription = stringResource(R.string.action_close), tint = PeakNavyDark)
             }
             Text(
-                "Registrar ascensión",
+                stringResource(R.string.new_ascent_title),
                 fontWeight = FontWeight.SemiBold,
                 fontSize   = 16.sp,
                 color      = PeakNavyDark,
@@ -230,8 +232,8 @@ private fun PhotoPickStep(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Text("Añade una foto", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = PeakNavyDark)
-                    Text("JPEG · PNG · WebP · máx. 10 MB", fontSize = 13.sp, color = PeakSubtle)
+                    Text(stringResource(R.string.new_ascent_add_photo), fontSize = 20.sp, fontWeight = FontWeight.Medium, color = PeakNavyDark)
+                    Text(stringResource(R.string.new_ascent_photo_formats), fontSize = 13.sp, color = PeakSubtle)
                 }
 
                 if (error != null) {
@@ -244,7 +246,7 @@ private fun PhotoPickStep(
                     shape            = RoundedCornerShape(10.dp),
                     contentPadding   = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
                 ) {
-                    Text("Seleccionar foto", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    Text(stringResource(R.string.new_ascent_select_photo_btn), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 }
             }
         }
@@ -412,7 +414,7 @@ private fun PhotoCropStep(
                 ) {
                     // Back
                     IconButton(onClick = onBack) {
-                        Icon(BackArrowIcon, contentDescription = "Atrás", tint = Color.White)
+                        Icon(BackArrowIcon, contentDescription = stringResource(R.string.action_back), tint = Color.White)
                     }
 
                     // Rotate 90°
@@ -425,7 +427,7 @@ private fun PhotoCropStep(
                         )
                     }) {
                         Icon(RotateIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        Text("  Girar 90°", color = Color.White, fontSize = 13.sp)
+                        Text(stringResource(R.string.new_ascent_rotate_btn), color = Color.White, fontSize = 13.sp)
                     }
 
                     // Next
@@ -450,7 +452,7 @@ private fun PhotoCropStep(
                         shape  = RoundedCornerShape(10.dp),
                         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
                     ) {
-                        Text("Siguiente", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                        Text(stringResource(R.string.new_ascent_next_btn), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     }
                 }
             }
@@ -508,9 +510,9 @@ private fun AscentFormStep(
                         vm.onDateChange(d)
                     }
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
-            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") } },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) } },
         ) { DatePicker(state = dpState) }
     }
 
@@ -518,14 +520,14 @@ private fun AscentFormStep(
     if (showDiscard) {
         AlertDialog(
             onDismissRequest = { showDiscard = false },
-            title            = { Text("¿Descartar ascensión?") },
-            text             = { Text("Perderás la foto y los datos introducidos.") },
+            title            = { Text(stringResource(R.string.new_ascent_discard_title)) },
+            text             = { Text(stringResource(R.string.new_ascent_discard_message)) },
             confirmButton    = {
                 TextButton(onClick = { showDiscard = false; onClose() }) {
-                    Text("Descartar", color = Color(0xFFEF4444))
+                    Text(stringResource(R.string.new_ascent_discard_btn), color = Color(0xFFEF4444))
                 }
             },
-            dismissButton = { TextButton(onClick = { showDiscard = false }) { Text("Cancelar") } },
+            dismissButton = { TextButton(onClick = { showDiscard = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 
@@ -547,10 +549,10 @@ private fun AscentFormStep(
                 onClick  = { showDiscard = true },
                 modifier = Modifier.align(Alignment.CenterStart),
             ) {
-                Icon(BackArrowIcon, contentDescription = "Atrás", tint = PeakNavyDark)
+                Icon(BackArrowIcon, contentDescription = stringResource(R.string.action_back), tint = PeakNavyDark)
             }
             Text(
-                "Registrar ascensión",
+                stringResource(R.string.new_ascent_title),
                 fontWeight = FontWeight.SemiBold,
                 fontSize   = 16.sp,
                 color      = PeakNavyDark,
@@ -571,7 +573,7 @@ private fun AscentFormStep(
                     enabled  = state.selectedPeak != null && !state.isLoading,
                 ) {
                     Text(
-                        "Guardar",
+                        stringResource(R.string.new_ascent_save_btn),
                         fontWeight = FontWeight.Bold,
                         fontSize   = 15.sp,
                         color      = if (state.selectedPeak != null) PeakBlueActive else PeakSubtle,
@@ -611,12 +613,12 @@ private fun AscentFormStep(
             // Peak picker
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    FormLabel("Cima *")
+                    FormLabel(stringResource(R.string.new_ascent_field_peak))
                     OutlinedTextField(
                         value           = state.peakQuery,
                         onValueChange   = vm::onPeakQueryChange,
                         modifier        = Modifier.fillMaxWidth(),
-                        placeholder     = { Text("Buscar cima...", color = PeakSubtle) },
+                        placeholder     = { Text(stringResource(R.string.new_ascent_search_peak_placeholder), color = PeakSubtle) },
                         trailingIcon    = if (state.selectedPeak != null) ({
                             Icon(CheckCircleIcon, null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
                         }) else null,
@@ -652,7 +654,7 @@ private fun AscentFormStep(
             // Date
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    FormLabel("Fecha *")
+                    FormLabel(stringResource(R.string.new_ascent_field_date))
                     OutlinedTextField(
                         value         = formattedDate,
                         onValueChange = {},
@@ -676,12 +678,12 @@ private fun AscentFormStep(
             // Route (optional)
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    FormLabel("Vía / ruta (opcional)")
+                    FormLabel(stringResource(R.string.new_ascent_field_route))
                     OutlinedTextField(
                         value           = state.route,
                         onValueChange   = { if (it.length <= 500) vm.onRouteChange(it) },
                         modifier        = Modifier.fillMaxWidth(),
-                        placeholder     = { Text("Nombre de la ruta...", color = PeakSubtle) },
+                        placeholder     = { Text(stringResource(R.string.new_ascent_route_placeholder), color = PeakSubtle) },
                         singleLine      = true,
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Sentences,
@@ -696,12 +698,12 @@ private fun AscentFormStep(
             // Notes (optional)
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    FormLabel("Notas (opcional)")
+                    FormLabel(stringResource(R.string.new_ascent_field_notes))
                     OutlinedTextField(
                         value           = state.notes,
                         onValueChange   = { if (it.length <= 2000) vm.onNotesChange(it) },
                         modifier        = Modifier.fillMaxWidth(),
-                        placeholder     = { Text("Añade una descripción, condiciones...", color = PeakSubtle) },
+                        placeholder     = { Text(stringResource(R.string.new_ascent_notes_placeholder), color = PeakSubtle) },
                         minLines        = 3,
                         maxLines        = 6,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
@@ -714,7 +716,7 @@ private fun AscentFormStep(
             // Person tagging (optional)
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FormLabel("Etiquetar personas (opcional)")
+                    FormLabel(stringResource(R.string.new_ascent_field_tag_persons))
 
                     // Selected chips
                     if (state.selectedPersons.isNotEmpty()) {
@@ -733,7 +735,7 @@ private fun AscentFormStep(
                         value           = state.personQuery,
                         onValueChange   = vm::onPersonQueryChange,
                         modifier        = Modifier.fillMaxWidth(),
-                        placeholder     = { Text("Buscar persona...", color = PeakSubtle) },
+                        placeholder     = { Text(stringResource(R.string.new_ascent_tag_placeholder), color = PeakSubtle) },
                         singleLine      = true,
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Words,
@@ -858,7 +860,7 @@ private fun PersonChip(person: Person, onRemove: () -> Unit) {
     ) {
         Text(person.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0369A1))
         IconButton(onClick = onRemove, modifier = Modifier.size(20.dp)) {
-            Icon(SmallCloseIcon, contentDescription = "Quitar", tint = Color(0xFF93C5FD), modifier = Modifier.size(12.dp))
+            Icon(SmallCloseIcon, contentDescription = stringResource(R.string.action_clear), tint = Color(0xFF93C5FD), modifier = Modifier.size(12.dp))
         }
     }
 }

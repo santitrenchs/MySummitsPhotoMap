@@ -9,15 +9,125 @@
     <!-- ── Global actions ───────────────────────────────────────────────────── -->
     <string name="action_back">Back</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_ok">OK</string>
+    <string name="action_save">Save</string>
+    <string name="action_close">Close</string>
+    <string name="action_next">Next</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_share">Share</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_clear">Clear</string>
+
+    <!-- ── Auth / Login ─────────────────────────────────────────────────────── -->
+    <string name="auth_email_placeholder">Email</string>
+    <string name="auth_password_placeholder">Password</string>
+    <string name="auth_sign_in_btn">Sign in</string>
+    <string name="auth_no_account">Don\'t have an account?  </string>
+    <string name="auth_create_account">Create one</string>
+    <string name="auth_forgot_password">Forgot your password?</string>
+    <string name="auth_or_divider">  or  </string>
+    <string name="auth_continue_google">Continue with Google</string>
+    <string name="auth_password_hide">Hide</string>
+    <string name="auth_password_show">Show</string>
+
+    <!-- ── Profile ──────────────────────────────────────────────────────────── -->
+    <string name="profile_title">Profile</string>
+    <string name="profile_tab_peaks">Peaks</string>
+    <string name="profile_tab_photos">Photos</string>
+    <string name="profile_tab_tagged">Tagged</string>
+    <string name="profile_edit_btn">Edit profile</string>
+    <string name="profile_stat_peaks">PEAKS</string>
+    <string name="profile_stat_max_alt">HIGHEST</string>
+    <string name="profile_stat_last">LAST</string>
+    <string name="profile_stat_first">FIRST</string>
+    <string name="profile_search_placeholder">Search peaks…</string>
+    <string name="profile_empty_peaks">No peaks logged yet</string>
+    <string name="profile_empty_filtered">No results for this filter</string>
+    <string name="profile_peaks_suffix">peaks · </string>
+    <string name="profile_ascents_suffix">asc.</string>
+    <string name="profile_empty_photos">No photos yet</string>
+    <string name="profile_empty_tagged">You haven\'t been tagged in any photo yet</string>
+
+    <!-- ── Logbook / Cards ──────────────────────────────────────────────────── -->
+    <string name="logbook_filter_mine">My Cards</string>
+    <string name="logbook_filter_friends">My Crew</string>
+    <string name="logbook_stat_rarity">RARITY</string>
+    <string name="logbook_stat_altitude">ALTITUDE</string>
+    <string name="logbook_stat_ep">EP</string>
+    <string name="logbook_stats_title">PEAKADEX STATS</string>
+    <string name="logbook_stat_ascents">ASCENTS</string>
+    <string name="logbook_stat_climbers">CLIMBERS</string>
+    <string name="logbook_empty_friends_title">No friends activity</string>
+    <string name="logbook_empty_friends_desc">When your friends log peaks they\'ll appear here.\nUse the filter to see your own ascents.</string>
+    <string name="logbook_empty_mine_title">Your logbook is empty</string>
+    <string name="logbook_empty_mine_desc">Log your first ascent to get started.</string>
+    <string name="logbook_empty_search_title">No results</string>
+    <string name="logbook_empty_search_desc">Try adjusting the search or filters.</string>
+
+    <!-- ── Home ─────────────────────────────────────────────────────────────── -->
+    <string name="home_stat_ascents_label">ascents</string>
+    <string name="home_stat_peaks_label">peaks</string>
+    <string name="home_stat_max_alt_label">max. alt.</string>
+    <string name="home_section_leaderboard">Your crew</string>
+    <string name="home_section_last_peaks">Your latest peaks</string>
+    <string name="home_see_all_btn">See all →</string>
+    <string name="home_no_friends_title">Compete with your friends!</string>
+    <string name="home_no_friends_desc">Invite friends to see your rank in the crew.</string>
+    <string name="home_invite_friends_btn">Invite friends</string>
+    <string name="home_empty_ascents_desc">Start building your peak history.</string>
+    <string name="home_register_ascent_btn">+ Log ascent</string>
+    <string name="home_levels_see_all">See all levels →</string>
+    <string name="home_levels_see_less">See less</string>
+    <string name="home_chart_6months_title">Last 6 months</string>
+    <string name="home_chart_rarity_title">Peaks by rarity</string>
+    <string name="home_leaderboard_col_peaks">Peaks</string>
+    <string name="home_leaderboard_col_cairns">Cairns</string>
+    <string name="home_leaderboard_col_ep">EP</string>
+    <string name="home_leaderboard_you"> (you)</string>
+    <string name="home_period_peaks_suffix"> peaks</string>
+    <string name="home_period_meters_suffix"> m gained</string>
+    <string name="home_level_req_altitude">Reach %dm</string>
+    <string name="home_level_progress_peaks">%1$d / %2$d peaks</string>
+    <string name="home_level_req_altitude_progress">→ Reach %d m</string>
+    <plurals name="home_level_remaining_peaks">
+        <item quantity="one">→ %d more peak</item>
+        <item quantity="other">→ %d more peaks</item>
+    </plurals>
+    <plurals name="home_level_req_ascents_pill">
+        <item quantity="one">%d peak</item>
+        <item quantity="other">%d peaks</item>
+    </plurals>
+
+    <!-- ── New ascent ────────────────────────────────────────────────────────── -->
+    <string name="new_ascent_title">Log ascent</string>
+    <string name="new_ascent_add_photo">Add a photo</string>
+    <string name="new_ascent_photo_formats">JPEG · PNG · WebP · max. 10 MB</string>
+    <string name="new_ascent_select_photo_btn">Select photo</string>
+    <string name="new_ascent_rotate_btn">  Rotate 90°</string>
+    <string name="new_ascent_next_btn">Next</string>
+    <string name="new_ascent_save_btn">Save</string>
+    <string name="new_ascent_discard_title">Discard ascent?</string>
+    <string name="new_ascent_discard_message">You\'ll lose the photo and all entered data.</string>
+    <string name="new_ascent_discard_btn">Discard</string>
+    <string name="new_ascent_field_peak">Peak *</string>
+    <string name="new_ascent_field_date">Date *</string>
+    <string name="new_ascent_field_route">Route (optional)</string>
+    <string name="new_ascent_field_notes">Notes (optional)</string>
+    <string name="new_ascent_field_tag_persons">Tag people (optional)</string>
+    <string name="new_ascent_search_peak_placeholder">Search peak...</string>
+    <string name="new_ascent_route_placeholder">Route name...</string>
+    <string name="new_ascent_notes_placeholder">Add a description, conditions...</string>
+    <string name="new_ascent_tag_placeholder">Search person...</string>
 
     <!-- ── Settings ─────────────────────────────────────────────────────────── -->
     <string name="settings_title">Settings</string>
-    <string name="settings_logout">Log out</string>
-    <string name="settings_logout_confirm_message">Are you sure you want to log out?</string>
+    <string name="settings_logout">Sign out</string>
+    <string name="settings_logout_confirm_message">Are you sure you want to sign out?</string>
 
     <string name="settings_section_language">Language</string>
     <string name="settings_language_label">App language</string>
-    <string name="settings_language_sheet_title">Select a language</string>
+    <string name="settings_language_sheet_title">Select language</string>
     <string name="settings_lang_es">Spanish</string>
     <string name="settings_lang_ca">Catalan</string>
     <string name="settings_lang_en">English</string>
@@ -27,31 +137,31 @@
     <string name="settings_section_account">Account</string>
     <string name="settings_field_name">Name</string>
     <string name="settings_field_username">Username</string>
-    <string name="settings_field_username_placeholder">your_username</string>
+    <string name="settings_field_username_placeholder">no username</string>
     <string name="settings_field_email">Email</string>
     <string name="settings_save_changes">Save changes</string>
 
     <string name="settings_section_connected_accounts">Connected accounts</string>
-    <string name="settings_google_connected">Google (connected)</string>
-    <string name="settings_google_unlink">Unlink</string>
-    <string name="settings_google_unlink_confirm_title">Unlink Google</string>
-    <string name="settings_google_unlink_confirm_message">Are you sure you want to unlink your Google account?</string>
-    <string name="settings_google_unlink_no_password">You can\'t unlink Google without a password. Set a password first.</string>
-    <string name="settings_google_active_hint">You use Google to sign in</string>
+    <string name="settings_google_connected">Google connected</string>
+    <string name="settings_google_unlink">Disconnect</string>
+    <string name="settings_google_unlink_confirm_title">Disconnect Google</string>
+    <string name="settings_google_unlink_confirm_message">Are you sure you want to disconnect your Google account?</string>
+    <string name="settings_google_unlink_no_password">Set a password before disconnecting Google so you don\'t lose access to your account.</string>
+    <string name="settings_google_active_hint">Google active · you can also sign in without a password</string>
 
     <string name="settings_section_security">Security</string>
     <string name="settings_change_password">Change password</string>
-    <string name="settings_change_password_desc">Set or update your password</string>
+    <string name="settings_change_password_desc">Update your login password</string>
     <string name="settings_current_password">Current password</string>
     <string name="settings_new_password">New password</string>
-    <string name="settings_confirm_password">Confirm password</string>
+    <string name="settings_confirm_password">Confirm new password</string>
     <string name="settings_save_password">Save password</string>
 
     <string name="settings_section_privacy">Privacy</string>
     <string name="settings_allow_tagging">Allow tagging</string>
     <string name="settings_allow_tagging_desc">Others can tag you in photos</string>
     <string name="settings_appear_in_search">Appear in search</string>
-    <string name="settings_appear_in_search_desc">Your profile is visible in friend searches</string>
+    <string name="settings_appear_in_search_desc">Others can find you by name or email</string>
 
     <string name="settings_section_notifications">Notifications</string>
     <string name="settings_email_notifications">Email notifications</string>
@@ -62,7 +172,7 @@
     <string name="settings_snack_saved">Changes saved</string>
     <string name="settings_snack_password_saved">Password updated</string>
     <string name="settings_snack_language_saved">Language saved</string>
-    <string name="settings_snack_google_unlinked">Google account unlinked</string>
+    <string name="settings_snack_google_unlinked">Google account disconnected</string>
 
     <!-- ── Atlas — search bar ────────────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Search peak…</string>
@@ -85,6 +195,7 @@
     <string name="atlas_layers_map_type">MAP TYPE</string>
     <string name="atlas_layers_normal">Normal</string>
     <string name="atlas_layers_terrain">Terrain</string>
+    <string name="atlas_layers_satellite">Satellite</string>
     <string name="atlas_layers_section">LAYERS</string>
     <string name="atlas_layers_trails">Trails</string>
 
@@ -93,58 +204,9 @@
     <string name="atlas_meta_date">Date</string>
     <string name="atlas_meta_times">Times</string>
     <string name="atlas_meta_route">Route</string>
-
-    <!-- ── Settings ─────────────────────────────────────────────────────────── -->
-    <string name="settings_title">Settings</string>
-    <string name="action_back">Back</string>
-    <string name="action_cancel">Cancel</string>
-    <string name="settings_logout">Sign out</string>
-    <string name="settings_logout_confirm_message">Are you sure you want to sign out?</string>
-    <string name="settings_section_account">ACCOUNT</string>
-    <string name="settings_field_name">Name</string>
-    <string name="settings_field_username">Username</string>
-    <string name="settings_field_username_placeholder">no username</string>
-    <string name="settings_field_email">Email</string>
-    <string name="settings_save_changes">Save changes</string>
-    <string name="settings_section_privacy">PRIVACY</string>
-    <string name="settings_appear_in_search">Appear in search</string>
-    <string name="settings_appear_in_search_desc">Others can find you by name or email</string>
-    <string name="settings_allow_tagging">Allow others to tag me</string>
-    <string name="settings_allow_tagging_desc">Others can add you to their ascent photos</string>
-    <string name="settings_section_notifications">NOTIFICATIONS</string>
-    <string name="settings_email_notifications">Email notifications</string>
-    <string name="settings_activity_notifications">Activity notifications</string>
-    <string name="settings_section_security">SECURITY</string>
-    <string name="settings_change_password">Change password</string>
-    <string name="settings_current_password">Current password</string>
-    <string name="settings_new_password">New password</string>
-    <string name="settings_confirm_password">Confirm new password</string>
-    <string name="settings_save_password">Save password</string>
-    <string name="settings_section_danger">DANGER ZONE</string>
-    <string name="settings_snack_saved">Changes saved</string>
-    <string name="settings_snack_password_saved">Password updated</string>
-
-    <!-- ── Settings — language ───────────────────────────────────────────────── -->
-    <string name="settings_section_language">LANGUAGE</string>
-    <string name="settings_language_label">App language</string>
-    <string name="settings_language_sheet_title">Select language</string>
-    <string name="settings_lang_es">Spanish</string>
-    <string name="settings_lang_en">English</string>
-    <string name="settings_lang_ca">Catalan</string>
-    <string name="settings_lang_de">German</string>
-    <string name="settings_lang_fr">French</string>
-    <string name="settings_snack_language_saved">Language saved</string>
-
-    <!-- ── Settings — connected accounts ────────────────────────────────────── -->
-    <string name="settings_section_connected_accounts">CONNECTED ACCOUNTS</string>
-    <string name="settings_google_connected">Google connected</string>
-    <string name="settings_google_unlink">Disconnect</string>
-    <string name="settings_google_unlink_confirm_title">Disconnect Google</string>
-    <string name="settings_google_unlink_confirm_message">Are you sure you want to disconnect your Google account?</string>
-    <string name="settings_google_unlink_no_password">Set a password before disconnecting Google so you don\'t lose access to your account.</string>
-    <string name="settings_snack_google_unlinked">Google account disconnected</string>
-    <string name="settings_change_password_desc">Update your login password</string>
-    <string name="settings_google_active_hint">Google active · you can also sign in without a password</string>
+    <string name="atlas_btn_view_ascents">View captures</string>
+    <string name="atlas_btn_capture">Capture</string>
+    <string name="atlas_btn_capture_new">+ Capture</string>
 
     <!-- ── Atlas — peaks list ────────────────────────────────────────────────── -->
     <string name="atlas_list_empty">No peaks in this area</string>
@@ -155,6 +217,8 @@
 
     <!-- ── Atlas — filters panel ─────────────────────────────────────────────── -->
     <string name="atlas_btn_filters">Filters</string>
+    <string name="atlas_clear_filters">Clear all</string>
+    <string name="atlas_section_places">PLACES</string>
     <string name="atlas_section_rarity">RARITY</string>
     <string name="atlas_section_status">STATUS</string>
     <string name="atlas_section_sort">SORT</string>

@@ -9,15 +9,125 @@
     <!-- ── Globale Aktionen ──────────────────────────────────────────────────── -->
     <string name="action_back">Zurück</string>
     <string name="action_cancel">Abbrechen</string>
+    <string name="action_retry">Wiederholen</string>
+    <string name="action_ok">OK</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_close">Schließen</string>
+    <string name="action_next">Weiter</string>
+    <string name="action_edit">Bearbeiten</string>
+    <string name="action_share">Teilen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_clear">Leeren</string>
 
-    <!-- ── Einstellungen ────────────────────────────────────────────────────── -->
+    <!-- ── Anmeldung ─────────────────────────────────────────────────────────── -->
+    <string name="auth_email_placeholder">E-Mail</string>
+    <string name="auth_password_placeholder">Passwort</string>
+    <string name="auth_sign_in_btn">Anmelden</string>
+    <string name="auth_no_account">Noch kein Konto?  </string>
+    <string name="auth_create_account">Erstellen</string>
+    <string name="auth_forgot_password">Passwort vergessen?</string>
+    <string name="auth_or_divider">  oder  </string>
+    <string name="auth_continue_google">Mit Google fortfahren</string>
+    <string name="auth_password_hide">Verbergen</string>
+    <string name="auth_password_show">Anzeigen</string>
+
+    <!-- ── Profil ────────────────────────────────────────────────────────────── -->
+    <string name="profile_title">Profil</string>
+    <string name="profile_tab_peaks">Gipfel</string>
+    <string name="profile_tab_photos">Fotos</string>
+    <string name="profile_tab_tagged">Getaggt</string>
+    <string name="profile_edit_btn">Profil bearbeiten</string>
+    <string name="profile_stat_peaks">GIPFEL</string>
+    <string name="profile_stat_max_alt">HÖCHSTE</string>
+    <string name="profile_stat_last">LETZTER</string>
+    <string name="profile_stat_first">ERSTER</string>
+    <string name="profile_search_placeholder">Gipfel suchen…</string>
+    <string name="profile_empty_peaks">Noch keine Gipfel eingetragen</string>
+    <string name="profile_empty_filtered">Keine Ergebnisse für diesen Filter</string>
+    <string name="profile_peaks_suffix">Gipfel · </string>
+    <string name="profile_ascents_suffix">Best.</string>
+    <string name="profile_empty_photos">Keine Fotos</string>
+    <string name="profile_empty_tagged">Du wurdest noch in keinem Foto markiert</string>
+
+    <!-- ── Logbuch / Karten ──────────────────────────────────────────────────── -->
+    <string name="logbook_filter_mine">Meine Karten</string>
+    <string name="logbook_filter_friends">Meine Seilschaft</string>
+    <string name="logbook_stat_rarity">SELTENHEIT</string>
+    <string name="logbook_stat_altitude">HÖHE</string>
+    <string name="logbook_stat_ep">EP</string>
+    <string name="logbook_stats_title">PEAKADEX STATISTIKEN</string>
+    <string name="logbook_stat_ascents">BESTEIGUNGEN</string>
+    <string name="logbook_stat_climbers">BERGSTEIGER</string>
+    <string name="logbook_empty_friends_title">Keine Aktivität von Freunden</string>
+    <string name="logbook_empty_friends_desc">Wenn deine Freunde Gipfel eintragen, erscheinen sie hier.\nNutze den Filter, um deine eigenen Besteigungen zu sehen.</string>
+    <string name="logbook_empty_mine_title">Dein Logbuch ist leer</string>
+    <string name="logbook_empty_mine_desc">Trag deine erste Besteigung ein, um loszulegen.</string>
+    <string name="logbook_empty_search_title">Keine Ergebnisse</string>
+    <string name="logbook_empty_search_desc">Passe Suche oder Filter an.</string>
+
+    <!-- ── Startseite ────────────────────────────────────────────────────────── -->
+    <string name="home_stat_ascents_label">Besteigungen</string>
+    <string name="home_stat_peaks_label">Gipfel</string>
+    <string name="home_stat_max_alt_label">max. Höhe</string>
+    <string name="home_section_leaderboard">Deine Seilschaft</string>
+    <string name="home_section_last_peaks">Deine letzten Gipfel</string>
+    <string name="home_see_all_btn">Alle sehen →</string>
+    <string name="home_no_friends_title">Rivalisiere mit Freunden!</string>
+    <string name="home_no_friends_desc">Lade Freunde ein, um deinen Rang in der Seilschaft zu sehen.</string>
+    <string name="home_invite_friends_btn">Freunde einladen</string>
+    <string name="home_empty_ascents_desc">Beginne, deine Gipfelgeschichte aufzubauen.</string>
+    <string name="home_register_ascent_btn">+ Besteigung erfassen</string>
+    <string name="home_levels_see_all">Alle Level sehen →</string>
+    <string name="home_levels_see_less">Weniger</string>
+    <string name="home_chart_6months_title">Letzte 6 Monate</string>
+    <string name="home_chart_rarity_title">Gipfel nach Seltenheit</string>
+    <string name="home_leaderboard_col_peaks">Gipfel</string>
+    <string name="home_leaderboard_col_cairns">Cairns</string>
+    <string name="home_leaderboard_col_ep">EP</string>
+    <string name="home_leaderboard_you"> (du)</string>
+    <string name="home_period_peaks_suffix"> Gipfel</string>
+    <string name="home_period_meters_suffix"> m erklommen</string>
+    <string name="home_level_req_altitude">Über %dm</string>
+    <string name="home_level_progress_peaks">%1$d / %2$d Gipfel</string>
+    <string name="home_level_req_altitude_progress">→ Über %d m</string>
+    <plurals name="home_level_remaining_peaks">
+        <item quantity="one">→ noch %d Gipfel</item>
+        <item quantity="other">→ noch %d Gipfel</item>
+    </plurals>
+    <plurals name="home_level_req_ascents_pill">
+        <item quantity="one">%d Gipfel</item>
+        <item quantity="other">%d Gipfel</item>
+    </plurals>
+
+    <!-- ── Neue Besteigung ───────────────────────────────────────────────────── -->
+    <string name="new_ascent_title">Besteigung erfassen</string>
+    <string name="new_ascent_add_photo">Füge ein Foto hinzu</string>
+    <string name="new_ascent_photo_formats">JPEG · PNG · WebP · max. 10 MB</string>
+    <string name="new_ascent_select_photo_btn">Foto auswählen</string>
+    <string name="new_ascent_rotate_btn">  90° drehen</string>
+    <string name="new_ascent_next_btn">Weiter</string>
+    <string name="new_ascent_save_btn">Speichern</string>
+    <string name="new_ascent_discard_title">Besteigung verwerfen?</string>
+    <string name="new_ascent_discard_message">Foto und eingegebene Daten gehen verloren.</string>
+    <string name="new_ascent_discard_btn">Verwerfen</string>
+    <string name="new_ascent_field_peak">Gipfel *</string>
+    <string name="new_ascent_field_date">Datum *</string>
+    <string name="new_ascent_field_route">Route (optional)</string>
+    <string name="new_ascent_field_notes">Notizen (optional)</string>
+    <string name="new_ascent_field_tag_persons">Personen taggen (optional)</string>
+    <string name="new_ascent_search_peak_placeholder">Gipfel suchen...</string>
+    <string name="new_ascent_route_placeholder">Name der Route...</string>
+    <string name="new_ascent_notes_placeholder">Beschreibung, Bedingungen hinzufügen...</string>
+    <string name="new_ascent_tag_placeholder">Person suchen...</string>
+
+    <!-- ── Einstellungen ─────────────────────────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
     <string name="settings_logout">Abmelden</string>
-    <string name="settings_logout_confirm_message">Möchten Sie sich wirklich abmelden?</string>
+    <string name="settings_logout_confirm_message">Möchtest du dich wirklich abmelden?</string>
 
     <string name="settings_section_language">Sprache</string>
     <string name="settings_language_label">App-Sprache</string>
-    <string name="settings_language_sheet_title">Sprache auswählen</string>
+    <string name="settings_language_sheet_title">Sprache wählen</string>
     <string name="settings_lang_es">Spanisch</string>
     <string name="settings_lang_ca">Katalanisch</string>
     <string name="settings_lang_en">Englisch</string>
@@ -26,32 +136,32 @@
 
     <string name="settings_section_account">Konto</string>
     <string name="settings_field_name">Name</string>
-    <string name="settings_field_username">Benutzername</string>
-    <string name="settings_field_username_placeholder">dein_name</string>
+    <string name="settings_field_username">Nutzername</string>
+    <string name="settings_field_username_placeholder">kein Nutzername</string>
     <string name="settings_field_email">E-Mail</string>
     <string name="settings_save_changes">Änderungen speichern</string>
 
-    <string name="settings_section_connected_accounts">Verbundene Konten</string>
-    <string name="settings_google_connected">Google (verbunden)</string>
+    <string name="settings_section_connected_accounts">Verknüpfte Konten</string>
+    <string name="settings_google_connected">Google verbunden</string>
     <string name="settings_google_unlink">Trennen</string>
     <string name="settings_google_unlink_confirm_title">Google trennen</string>
-    <string name="settings_google_unlink_confirm_message">Möchten Sie Ihr Google-Konto wirklich trennen?</string>
-    <string name="settings_google_unlink_no_password">Ohne Passwort können Sie Google nicht trennen. Legen Sie zuerst ein Passwort fest.</string>
-    <string name="settings_google_active_hint">Sie melden sich mit Google an</string>
+    <string name="settings_google_unlink_confirm_message">Möchtest du dein Google-Konto wirklich trennen?</string>
+    <string name="settings_google_unlink_no_password">Lege ein Passwort fest, bevor du Google trennst, um den Zugriff auf dein Konto nicht zu verlieren.</string>
+    <string name="settings_google_active_hint">Google aktiv · du kannst dich auch ohne Passwort anmelden</string>
 
     <string name="settings_section_security">Sicherheit</string>
     <string name="settings_change_password">Passwort ändern</string>
-    <string name="settings_change_password_desc">Passwort festlegen oder aktualisieren</string>
+    <string name="settings_change_password_desc">Dein Anmeldepasswort aktualisieren</string>
     <string name="settings_current_password">Aktuelles Passwort</string>
     <string name="settings_new_password">Neues Passwort</string>
-    <string name="settings_confirm_password">Passwort bestätigen</string>
+    <string name="settings_confirm_password">Neues Passwort bestätigen</string>
     <string name="settings_save_password">Passwort speichern</string>
 
     <string name="settings_section_privacy">Datenschutz</string>
     <string name="settings_allow_tagging">Markierungen erlauben</string>
-    <string name="settings_allow_tagging_desc">Andere können Sie in Fotos markieren</string>
-    <string name="settings_appear_in_search">In Suchen erscheinen</string>
-    <string name="settings_appear_in_search_desc">Ihr Profil ist in Freundschaftssuchen sichtbar</string>
+    <string name="settings_allow_tagging_desc">Andere können dich in Fotos markieren</string>
+    <string name="settings_appear_in_search">In Suche erscheinen</string>
+    <string name="settings_appear_in_search_desc">Andere können dich per Name oder E-Mail finden</string>
 
     <string name="settings_section_notifications">Benachrichtigungen</string>
     <string name="settings_email_notifications">E-Mail-Benachrichtigungen</string>
@@ -85,6 +195,7 @@
     <string name="atlas_layers_map_type">KARTENTYP</string>
     <string name="atlas_layers_normal">Normal</string>
     <string name="atlas_layers_terrain">Gelände</string>
+    <string name="atlas_layers_satellite">Satellit</string>
     <string name="atlas_layers_section">EBENEN</string>
     <string name="atlas_layers_trails">Wege</string>
 
@@ -93,58 +204,9 @@
     <string name="atlas_meta_date">Datum</string>
     <string name="atlas_meta_times">Mal</string>
     <string name="atlas_meta_route">Route</string>
-
-    <!-- ── Einstellungen ─────────────────────────────────────────────────────── -->
-    <string name="settings_title">Einstellungen</string>
-    <string name="action_back">Zurück</string>
-    <string name="action_cancel">Abbrechen</string>
-    <string name="settings_logout">Abmelden</string>
-    <string name="settings_logout_confirm_message">Möchtest du dich wirklich abmelden?</string>
-    <string name="settings_section_account">KONTO</string>
-    <string name="settings_field_name">Name</string>
-    <string name="settings_field_username">Nutzername</string>
-    <string name="settings_field_username_placeholder">kein Nutzername</string>
-    <string name="settings_field_email">E-Mail</string>
-    <string name="settings_save_changes">Änderungen speichern</string>
-    <string name="settings_section_privacy">DATENSCHUTZ</string>
-    <string name="settings_appear_in_search">In Suche erscheinen</string>
-    <string name="settings_appear_in_search_desc">Andere können dich per Name oder E-Mail finden</string>
-    <string name="settings_allow_tagging">Andere dürfen mich markieren</string>
-    <string name="settings_allow_tagging_desc">Andere können dich in ihren Gipfelfotos markieren</string>
-    <string name="settings_section_notifications">BENACHRICHTIGUNGEN</string>
-    <string name="settings_email_notifications">E-Mail-Benachrichtigungen</string>
-    <string name="settings_activity_notifications">Aktivitätsbenachrichtigungen</string>
-    <string name="settings_section_security">SICHERHEIT</string>
-    <string name="settings_change_password">Passwort ändern</string>
-    <string name="settings_current_password">Aktuelles Passwort</string>
-    <string name="settings_new_password">Neues Passwort</string>
-    <string name="settings_confirm_password">Neues Passwort bestätigen</string>
-    <string name="settings_save_password">Passwort speichern</string>
-    <string name="settings_section_danger">GEFAHRENZONE</string>
-    <string name="settings_snack_saved">Änderungen gespeichert</string>
-    <string name="settings_snack_password_saved">Passwort aktualisiert</string>
-
-    <!-- ── Einstellungen — Sprache ────────────────────────────────────────────── -->
-    <string name="settings_section_language">SPRACHE</string>
-    <string name="settings_language_label">App-Sprache</string>
-    <string name="settings_language_sheet_title">Sprache wählen</string>
-    <string name="settings_lang_es">Spanisch</string>
-    <string name="settings_lang_en">Englisch</string>
-    <string name="settings_lang_ca">Katalanisch</string>
-    <string name="settings_lang_de">Deutsch</string>
-    <string name="settings_lang_fr">Französisch</string>
-    <string name="settings_snack_language_saved">Sprache gespeichert</string>
-
-    <!-- ── Einstellungen — Verknüpfte Konten ─────────────────────────────────── -->
-    <string name="settings_section_connected_accounts">VERKNÜPFTE KONTEN</string>
-    <string name="settings_google_connected">Google verbunden</string>
-    <string name="settings_google_unlink">Trennen</string>
-    <string name="settings_google_unlink_confirm_title">Google trennen</string>
-    <string name="settings_google_unlink_confirm_message">Möchtest du dein Google-Konto wirklich trennen?</string>
-    <string name="settings_google_unlink_no_password">Lege ein Passwort fest, bevor du Google trennst, um den Zugriff auf dein Konto nicht zu verlieren.</string>
-    <string name="settings_snack_google_unlinked">Google-Konto getrennt</string>
-    <string name="settings_change_password_desc">Dein Anmeldepasswort aktualisieren</string>
-    <string name="settings_google_active_hint">Google aktiv · du kannst dich auch ohne Passwort anmelden</string>
+    <string name="atlas_btn_view_ascents">Aufnahmen ansehen</string>
+    <string name="atlas_btn_capture">Erfassen</string>
+    <string name="atlas_btn_capture_new">+ Erfassen</string>
 
     <!-- ── Atlas — Gipfelliste ────────────────────────────────────────────────── -->
     <string name="atlas_list_empty">Keine Gipfel in diesem Bereich</string>
@@ -155,6 +217,8 @@
 
     <!-- ── Atlas — Filter-Panel ───────────────────────────────────────────────── -->
     <string name="atlas_btn_filters">Filter</string>
+    <string name="atlas_clear_filters">Alles löschen</string>
+    <string name="atlas_section_places">ORTE</string>
     <string name="atlas_section_rarity">SELTENHEIT</string>
     <string name="atlas_section_status">STATUS</string>
     <string name="atlas_section_sort">SORTIEREN</string>

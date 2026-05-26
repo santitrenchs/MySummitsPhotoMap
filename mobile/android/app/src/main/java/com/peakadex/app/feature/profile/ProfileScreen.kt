@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -40,8 +41,12 @@ import com.peakadex.app.core.model.ProfilePeak
 import com.peakadex.app.core.model.ProfilePhoto
 import com.peakadex.app.core.model.ProfileStats
 import com.peakadex.app.core.model.Rarity
+import com.peakadex.app.R
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.theme.*
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
@@ -61,7 +66,7 @@ fun ProfileSummaryScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text       = "Perfil",
+                        text       = stringResource(R.string.profile_title),
                         fontSize   = 17.sp,
                         fontWeight = FontWeight.SemiBold,
                         color      = PeakNavyDark,
@@ -71,7 +76,7 @@ fun ProfileSummaryScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector        = BackIcon,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.action_back),
                             tint               = PeakNavyDark,
                             modifier           = Modifier.size(22.dp),
                         )
@@ -147,7 +152,7 @@ fun ProfileScreen(
                 ) {
                     Text(s.message, color = PeakMuted, fontSize = 14.sp)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { vm.load() }) { Text("Reintentar") }
+                    Button(onClick = { vm.load() }) { Text(stringResource(R.string.action_retry)) }
                 }
             }
             is ProfileUiState.Success -> {
@@ -174,7 +179,11 @@ private fun ProfileContent(
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
 ) {
     var activeTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Cimas", "Fotos", "Etiquetado")
+    val tabs = listOf(
+        stringResource(R.string.profile_tab_peaks),
+        stringResource(R.string.profile_tab_photos),
+        stringResource(R.string.profile_tab_tagged),
+    )
 
     Column(Modifier.fillMaxSize()) {
         // ── Tabs (SecondaryTabRow = underline indicator, same as web) ──
@@ -325,7 +334,7 @@ private fun ProfileHeader(
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text       = "Editar perfil",
+                    text       = stringResource(R.string.profile_edit_btn),
                     fontSize   = 13.sp,
                     fontWeight = FontWeight.Medium,
                 )
@@ -372,7 +381,7 @@ private fun CimasTab(
             OutlinedTextField(
                 value         = query,
                 onValueChange = onQuery,
-                placeholder   = { Text("Buscar cimas…", fontSize = 14.sp, color = PeakSubtle) },
+                placeholder   = { Text(stringResource(R.string.profile_search_placeholder), fontSize = 14.sp, color = PeakSubtle) },
                 singleLine    = true,
                 leadingIcon   = {
                     Icon(
@@ -386,7 +395,7 @@ private fun CimasTab(
                     IconButton(onClick = { onQuery("") }) {
                         Icon(
                             imageVector        = CloseIcon,
-                            contentDescription = "Limpiar",
+                            contentDescription = stringResource(R.string.action_clear),
                             tint               = PeakSubtle,
                             modifier           = Modifier.size(16.dp),
                         )
@@ -416,9 +425,9 @@ private fun CimasTab(
                 ) {
                     Text(
                         text     = if (query.isNotBlank() || rarityFilter != null)
-                            "Sin resultados para este filtro"
+                            stringResource(R.string.profile_empty_filtered)
                         else
-                            "Sin cimas registradas",
+                            stringResource(R.string.profile_empty_peaks),
                         fontSize = 14.sp,
                         color    = PeakSubtle,
                     )
@@ -471,7 +480,7 @@ private fun CimasStatsHeader(
                 // Left: peaks count + ascents
                 Column {
                     Text(
-                        text       = "CIMAS",
+                        text       = stringResource(R.string.profile_stat_peaks),
                         fontSize   = 9.sp,
                         fontWeight = FontWeight.Bold,
                         color      = PeakNavyLight,
@@ -487,7 +496,7 @@ private fun CimasStatsHeader(
                             lineHeight = 28.sp,
                         )
                         Text(
-                            text     = "cimas · ",
+                            text     = stringResource(R.string.profile_peaks_suffix),
                             fontSize = 14.sp,
                             color    = PeakNavyMid,
                         )
@@ -498,7 +507,7 @@ private fun CimasStatsHeader(
                             color      = PeakNavyDark,
                         )
                         Text(
-                            text     = "asc.",
+                            text     = stringResource(R.string.profile_ascents_suffix),
                             fontSize = 14.sp,
                             color    = PeakNavyMid,
                         )
@@ -508,7 +517,7 @@ private fun CimasStatsHeader(
                 // Right: max altitude
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text       = "MÁXIMA",
+                        text       = stringResource(R.string.profile_stat_max_alt),
                         fontSize   = 9.sp,
                         fontWeight = FontWeight.Bold,
                         color      = PeakNavyLight,
@@ -697,7 +706,7 @@ private fun PeakRowCard(
                     // Last date
                     Column {
                         Text(
-                            text          = "ÚLTIMA",
+                            text          = stringResource(R.string.profile_stat_last),
                             fontSize      = 8.sp,
                             fontWeight    = FontWeight.Bold,
                             color         = PeakNavyLight,
@@ -714,7 +723,7 @@ private fun PeakRowCard(
                     if (peak.count > 1 && !peak.firstDate.isNullOrBlank() && peak.firstDate != peak.lastDate) {
                         Column {
                             Text(
-                                text          = "PRIMERA",
+                                text          = stringResource(R.string.profile_stat_first),
                                 fontSize      = 8.sp,
                                 fontWeight    = FontWeight.Bold,
                                 color         = PeakNavyLight,
@@ -762,8 +771,8 @@ private fun PhotosTab(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text     = if (showCreator) "Aún no estás etiquetado/a en ninguna foto"
-                           else "Sin fotos",
+                text     = if (showCreator) stringResource(R.string.profile_empty_tagged)
+                           else stringResource(R.string.profile_empty_photos),
                 fontSize = 14.sp,
                 color    = PeakSubtle,
             )
@@ -852,19 +861,14 @@ private fun PhotoTile(
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** "YYYY-MM-DD" → "15 ene '24" */
+/** "YYYY-MM-DD" → locale-aware short date, e.g. "15 ene '24" in es, "15 jan '24" in en */
 private fun formatDate(iso: String): String {
     return try {
-        val parts = iso.split("-")
-        val year  = parts[0].takeLast(2)
-        val month = when (parts[1]) {
-            "01" -> "ene"; "02" -> "feb"; "03" -> "mar"
-            "04" -> "abr"; "05" -> "may"; "06" -> "jun"
-            "07" -> "jul"; "08" -> "ago"; "09" -> "sep"
-            "10" -> "oct"; "11" -> "nov"; "12" -> "dic"
-            else -> parts[1]
-        }
-        "${parts[2].trimStart('0')} $month '$year"
+        val date  = LocalDate.parse(iso.take(10))
+        val day   = date.dayOfMonth
+        val month = date.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()).lowercase().trimEnd('.')
+        val year  = date.year.toString().takeLast(2)
+        "$day $month '$year"
     } catch (_: Exception) {
         iso
     }

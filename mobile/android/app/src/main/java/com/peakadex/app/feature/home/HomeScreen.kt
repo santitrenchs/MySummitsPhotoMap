@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -147,7 +149,7 @@ private fun HomeErrorState(message: String, onRetry: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry) { Text("Reintentar") }
+        Button(onClick = onRetry) { Text(stringResource(R.string.action_retry)) }
     }
 }
 
@@ -188,7 +190,7 @@ private fun HomeContent(data: HomeData, user: User?) {
 
         // 7 — Leaderboard
         if (data.leaderboard.size > 1) {
-            item { SectionTitle("Tu cordada") }
+            item { SectionTitle(stringResource(R.string.home_section_leaderboard)) }
             item { LeaderboardCard(data.leaderboard) }
         }
 
@@ -209,13 +211,13 @@ private fun HomeContent(data: HomeData, user: User?) {
                     verticalAlignment     = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text  = "Tus últimas cimas",
+                        text  = stringResource(R.string.home_section_last_peaks),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
-                        text  = "Ver todo →",
+                        text  = stringResource(R.string.home_see_all_btn),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
@@ -346,17 +348,17 @@ private fun HeroHeader(data: HomeData, user: User?) {
             ) {
                 MetricCell(
                     value = "${data.stats.totalAscents}",
-                    label = "ascensiones",
+                    label = stringResource(R.string.home_stat_ascents_label),
                 )
                 Box(Modifier.width(1.dp).height(32.dp).background(Color(0x26FFFFFF)))
                 MetricCell(
                     value = "${data.stats.uniquePeaks}",
-                    label = "cimas",
+                    label = stringResource(R.string.home_stat_peaks_label),
                 )
                 Box(Modifier.width(1.dp).height(32.dp).background(Color(0x26FFFFFF)))
                 MetricCell(
                     value = if (data.stats.maxAltitude > 0) "${data.stats.maxAltitude}" else "—",
-                    label = "alt. máx",
+                    label = stringResource(R.string.home_stat_max_alt_label),
                     unit  = if (data.stats.maxAltitude > 0) "m" else null,
                 )
             }
@@ -459,7 +461,7 @@ private fun OnboardingBanner() {
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            text       = "Empieza a construir tu historial de cimas.",
+            text       = stringResource(R.string.home_empty_ascents_desc),
             fontSize   = 14.sp,
             color      = Color(0xFF166534),
             lineHeight = 20.sp,
@@ -469,7 +471,7 @@ private fun OnboardingBanner() {
             onClick = { /* Phase 4 — tap FAB */ },
             colors  = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
         ) {
-            Text("+ Registrar ascensión", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.home_register_ascent_btn), fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -523,7 +525,7 @@ private fun ProgressionSection(data: HomeData, expanded: Boolean, onToggle: () -
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                text       = if (expanded) "Ver menos" else "Ver todos los niveles →",
+                text       = if (expanded) stringResource(R.string.home_levels_see_less) else stringResource(R.string.home_levels_see_all),
                 fontSize   = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color      = if (expanded) MaterialTheme.colorScheme.onSurfaceVariant
@@ -608,8 +610,8 @@ private fun LevelCard(
 
                 // Pills: target ascents + altReq
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Pill("${def.targetAscents} cimas")
-                    def.altReqs.forEach { r -> Pill("Superar los ${r.threshold}m") }
+                    Pill(pluralStringResource(R.plurals.home_level_req_ascents_pill, def.targetAscents, def.targetAscents))
+                    def.altReqs.forEach { r -> Pill(stringResource(R.string.home_level_req_altitude, r.threshold)) }
                 }
             }
 
@@ -649,7 +651,7 @@ private fun LevelCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text       = "$uniquePeaks / ${def.targetAscents} cimas",
+                        text       = stringResource(R.string.home_level_progress_peaks, uniquePeaks, def.targetAscents),
                         fontSize   = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color      = MaterialTheme.colorScheme.primary,
@@ -664,7 +666,7 @@ private fun LevelCard(
 
                 if (remaining > 0) {
                     Text(
-                        text     = "→ $remaining cima${if (remaining == 1) "" else "s"} más",
+                        text     = pluralStringResource(R.plurals.home_level_remaining_peaks, remaining, remaining),
                         fontSize = 12.sp,
                         color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -673,7 +675,7 @@ private fun LevelCard(
                 // AltReq hints — show pending requirements
                 def.altReqs.filter { r -> getAltCount(stats, r.threshold) < r.count }.forEach { r ->
                     Text(
-                        text     = "→ Superar los ${r.threshold} m",
+                        text     = stringResource(R.string.home_level_req_altitude_progress, r.threshold),
                         fontSize = 12.sp,
                         color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -692,17 +694,17 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
     val maxSummits    = remember(bars) { bars.maxOfOrNull { it.summits }?.coerceAtLeast(1) ?: 1 }
 
     ChartCard(
-        title = "Últimos 6 meses",
+        title = stringResource(R.string.home_chart_6months_title),
         subtitle = {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row {
                     Text("$periodSummits", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Text(" cimas", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.home_period_peaks_suffix), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (periodMeters > 0) {
                     Row {
                         Text("${"%,d".format(periodMeters).replace(',', '.')}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Text(" m ascendidos", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.home_period_meters_suffix), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -721,7 +723,7 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
                 val monthLabel = remember(bar.isoMonth) {
                     try {
                         val ym = YearMonth.parse(bar.isoMonth)
-                        ym.month.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("es"))
+                        ym.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
                             .replaceFirstChar { it.uppercaseChar() }
                     } catch (e: Exception) { bar.isoMonth.takeLast(2) }
                 }
@@ -794,7 +796,7 @@ private fun RarityChartSection(breakdown: RarityBreakdown) {
     val values   = remember(breakdown) { breakdown.toList() }
     val maxValue = remember(values) { values.maxOrNull()?.coerceAtLeast(1) ?: 1 }
 
-    ChartCard(title = "Cimas por rareza") {
+    ChartCard(title = stringResource(R.string.home_chart_rarity_title)) {
         Row(
             modifier              = Modifier.fillMaxWidth(),
             verticalAlignment     = Alignment.Bottom,
@@ -908,9 +910,9 @@ private fun LeaderboardCard(entries: List<LeaderboardEntry>) {
         ) {
             Spacer(Modifier.width(22.dp))  // rank column width
             Spacer(Modifier.weight(1f))    // name takes remaining
-            LeaderboardColHeader("Cimas",  Modifier.width(52.dp))
-            LeaderboardColHeader("Cairns", Modifier.width(52.dp))
-            LeaderboardColHeader("EP",     Modifier.width(44.dp))
+            LeaderboardColHeader(stringResource(R.string.home_leaderboard_col_peaks),  Modifier.width(52.dp))
+            LeaderboardColHeader(stringResource(R.string.home_leaderboard_col_cairns), Modifier.width(52.dp))
+            LeaderboardColHeader(stringResource(R.string.home_leaderboard_col_ep),     Modifier.width(44.dp))
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
@@ -988,7 +990,7 @@ private fun LeaderboardCurrentRow(entry: LeaderboardEntry, rank: Int) {
                         modifier   = Modifier.weight(1f, fill = false),
                     )
                     Text(
-                        text     = " (tú)",
+                        text     = stringResource(R.string.home_leaderboard_you),
                         fontSize = 12.sp,
                         color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1118,13 +1120,13 @@ private fun NoFriendsCta() {
         Text("👥", fontSize = 36.sp)
         Spacer(Modifier.height(8.dp))
         Text(
-            text  = "¡Compite con tus amigos!",
+            text  = stringResource(R.string.home_no_friends_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text       = "Invita a amigos para ver tu posición en la cordada.",
+            text       = stringResource(R.string.home_no_friends_desc),
             fontSize   = 13.sp,
             color      = MaterialTheme.colorScheme.onSurfaceVariant,
             lineHeight = 18.sp,
@@ -1134,7 +1136,7 @@ private fun NoFriendsCta() {
             onClick = { /* Phase 5 */ },
             colors  = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
         ) {
-            Text("Invitar amigos", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.home_invite_friends_btn), fontWeight = FontWeight.SemiBold)
         }
     }
 }
