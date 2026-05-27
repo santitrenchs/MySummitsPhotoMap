@@ -498,11 +498,17 @@ Row with `IntrinsicSize.Min` height. `12dp` rounded corners.
 Shared `ChartCard` wrapper (white surface, 1dp `outlineVariant` border, 16dp radius, 16dp padding). Title: `"Últimos 6 meses"`. Subtitle row: total summits in blue + total meters ascended in dark gray.
 
 Bar chart: one column per month, `verticalAlignment = Bottom`, gap `6dp`. For each bar:
-- Count label above bar: 10sp bold blue (hidden if 0 summits)
-- Stacked bar (`Column`, segments **reversed** so last segment is drawn at bottom, total max height `64dp`, min height `3dp` for zero-month). Each segment colored by rarity (`RARITIES[i].color`). Top corners `3dp` radius.
-- Month label below: 3-letter abbreviated month, 10sp `#94A3B8`
+- Count label above bar: 10sp bold blue (hidden if 0 summits). **Tappable/clickable** → filters by that month (`?month=YYYY-MM&view=mine`).
+- Stacked bar (`Column`, segments **reversed** so last segment is drawn at bottom, total max height `64dp`, min height `3dp` for zero-month). Each segment colored by rarity (`RARITIES[i].color`). Top corners `3dp` radius. **Each segment is individually tappable** → filters by that rarity + mine view (`?rarity=<rarityId>&view=mine`).
+- Month label below: 3-letter abbreviated month, 10sp `#94A3B8`. **Tappable** → filters by that month.
 
-Empty month bar: solid `#E5E7EB` fill.
+Empty month bar: solid `#E5E7EB` fill. **Not tappable** (no summits to filter).
+
+**Counts**: `rarityBreakdown` in `MonthlyBar` counts **all ascents** (including repeat climbs of the same peak) — no deduplication.
+
+**Implementation:**
+- **Web** (`MonthlyChart` in `HomeClient.tsx`): outer container is a `<div>`, count label and month label are `<Link href="?month=...">`, each stacked segment is a `<Link href="?rarity=...&view=mine" display="block">`.
+- **Android** (`MonthlyChartSection` in `HomeScreen.kt`): each segment `Box` has `Modifier.clickable(indication=null, interactionSource=remember{MutableInteractionSource()})` → calls `onNavigateToCardsWithRarity(seg.rarityId)`. `BarSegment(rarityId, color, heightDp)` data class carries the rarity ID through.
 
 ---
 
@@ -514,6 +520,14 @@ Same `ChartCard` wrapper. Title: `"Cimas por rareza"`.
 - Count label: 10sp bold, rarity color (hidden if 0)
 - Bar: max height `96dp`, min height `3dp`. Color = `RARITIES[i].color` if count > 0, else `#E5E7EB`. Top corners `3dp` radius.
 - `"✿"` icon below: 14sp, rarity color if active, `#E5E7EB` if inactive.
+
+**Active bars (count > 0) are tappable** → filters Cards/Ascensiones by that rarity + mine view (`?rarity=<rarityId>&view=mine`). Inactive bars (count = 0) are not tappable.
+
+**Counts**: shows **unique peaks** per rarity (peaks deduped by `peakId` in `home.service.ts`). This intentionally differs from the monthly chart — clicking a bar may reveal more cards in the filtered view, since the filter shows all ascents (including repeat climbs).
+
+**Implementation:**
+- **Web** (`RarityChart` in `HomeClient.tsx`): active column wrapped in `<Link href="?rarity=<rarityId>&view=mine">`, inactive column stays as a plain `<div>`.
+- **Android** (`RarityChartSection` in `HomeScreen.kt`): `Modifier.clickable(indication=null)` applied only when `isActive`, via `.then(if (isActive) Modifier.clickable(...) else Modifier)` on the `Column`.
 
 ---
 

@@ -47,6 +47,11 @@ The gamification dashboard. Entry point of the app (root `/` redirects here when
 - **Secondary KPIs**: photos, regions, friends as a 3-column row
 - **Leaderboard** ("Tu posición en la cordada"): friend ranking with +/- diff badges showing gap vs current user
 - **Dynamic motivation banner**: gold 🏆 if #1 with margin, orange ⚠️ if lead threatened (gap ≤ 3), green 🎯 if chasing someone — includes a direct CTA button to log an ascent
+- **Monthly chart** ("Últimos 6 meses"): stacked bar chart, one column per month. Each individual color segment is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. The month count label and month label below each bar link to the month filter (`?month=YYYY-MM&view=mine`). Empty months are not clickable.
+- **Rarity chart** ("Cimas por rareza"): 9-column bar chart, one per rarity tier. Each **active** bar (count > 0) is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. Inactive bars (count = 0) are not clickable.
+  - **Web** (`components/home/HomeClient.tsx`): active bars wrapped in `<Link href="/ascents?rarity=<rarityId>&view=mine">`. Monthly segments wrapped in individual `<Link>` within the bar container.
+  - **Android** (`HomeScreen.kt`): `Modifier.clickable(indication=null)` on each active `Column` / bar segment. Navigates via `onNavigateToCardsWithRarity(rarityId)` callback → `MainScaffold` sets `pendingRarityId` → `LogbookScreen` applies `clearFilters() + setRarityId() + setViewFilter(Mine)`.
+  - **Rarity counts**: the rarity chart shows **unique peaks** per rarity (deduped by `peakId` in `home.service.ts`). The monthly chart shows **all ascents** (no dedup). These intentionally differ — clicking a rarity bar in the chart may show more cards in the filtered view (because the filter shows all ascents of that rarity, including repeats).
 - **Recent ascents** ("Tus últimas cimas"): horizontal scroll cards with image overlay
 - **Friends activity** ("Actividad de tu cordada"): minimal feed with dual CTAs when empty
 - **Achievements**: 7 computed badges with SVG progress rings — gold ring + checkmark when earned, blue ring with `current/target` counter when in progress, gray when locked
