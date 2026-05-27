@@ -2,6 +2,7 @@ package com.peakadex.app.feature.auth
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,11 +16,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,6 +56,7 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var voucherCode     by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var termsAccepted   by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.Success) {
@@ -187,7 +195,49 @@ fun RegisterScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // ── Legal consent ─────────────────────────────────────────
+                    val linkStyle = TextLinkStyles(
+                        style = SpanStyle(
+                            color          = PeakBlueActive,
+                            fontSize       = 13.sp,
+                            textDecoration = TextDecoration.Underline,
+                        )
+                    )
+                    val legalText = buildAnnotatedString {
+                        withStyle(SpanStyle(color = Color(0xFF6B7280), fontSize = 13.sp)) {
+                            append("He leído y acepto los ")
+                        }
+                        pushLink(LinkAnnotation.Url("https://www.peakadex.com/terms", linkStyle))
+                        append("Términos y condiciones")
+                        pop()
+                        withStyle(SpanStyle(color = Color(0xFF6B7280), fontSize = 13.sp)) {
+                            append(" y la ")
+                        }
+                        pushLink(LinkAnnotation.Url("https://www.peakadex.com/privacy", linkStyle))
+                        append("Política de privacidad")
+                        pop()
+                    }
+                    Row(
+                        modifier          = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(
+                            checked         = termsAccepted,
+                            onCheckedChange = { termsAccepted = it },
+                            colors          = CheckboxDefaults.colors(
+                                checkedColor   = PeakGreenCTA,
+                                uncheckedColor = Color(0xFF9CA3AF),
+                            ),
+                        )
+                        Text(
+                            text     = legalText,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // ── Register button ───────────────────────────────────────
                     Button(
@@ -195,7 +245,7 @@ fun RegisterScreen(
                             focusManager.clearFocus()
                             viewModel.register(name, email, password, confirmPassword, voucherCode)
                         },
-                        enabled = !isLoading,
+                        enabled = !isLoading && termsAccepted,
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = ButtonShapeReg,
                         colors = ButtonDefaults.buttonColors(
@@ -214,11 +264,16 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     // ── Login link ────────────────────────────────────────────
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("¿Ya tienes cuenta?  ", color = PeakNavyMid, fontSize = 13.sp)
-                        TextButton(onClick = onNavigateToLogin, contentPadding = PaddingValues(0.dp)) {
-                            Text("Inicia sesión", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PeakGreenCTA)
-                        }
+                    Row(
+                        modifier          = Modifier
+                            .heightIn(min = 48.dp)
+                            .clickable(onClick = onNavigateToLogin)
+                            .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("¿Ya tienes cuenta?", color = PeakNavyMid, fontSize = 14.sp)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Inicia sesión", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = PeakGreenCTA)
                     }
                 }
             }

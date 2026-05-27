@@ -17,8 +17,10 @@ android {
     }
 
     buildTypes {
+        val googleWebClientId = "\"459929432551-ha3k64nssd83o0qt9biro3l52de06am9.apps.googleusercontent.com\""
         debug {
             buildConfigField("String", "BASE_URL", "\"https://mysummitsphotomap-staging.up.railway.app/api/v1/\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", googleWebClientId)
         }
         release {
             isMinifyEnabled = true
@@ -27,6 +29,7 @@ android {
                 "proguard-rules.pro",
             )
             buildConfigField("String", "BASE_URL", "\"https://www.peakadex.com/api/v1/\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", googleWebClientId)
         }
     }
 
@@ -68,6 +71,9 @@ dependencies {
     implementation(libs.core.splashscreen)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.maplibre.android.sdk)
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services.auth)
+    implementation(libs.googleid)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

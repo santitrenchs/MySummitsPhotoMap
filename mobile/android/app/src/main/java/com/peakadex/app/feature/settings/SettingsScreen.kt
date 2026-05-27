@@ -6,6 +6,9 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +27,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.peakadex.app.BuildConfig
 import com.peakadex.app.R
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.theme.PeakBackground
@@ -131,6 +136,7 @@ fun SettingsScreen(
     vm: SettingsViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val context             = LocalContext.current
     val snackbarHostState   = remember { SnackbarHostState() }
     val savedMsg            = stringResource(R.string.settings_snack_saved)
     val passwordSavedMsg    = stringResource(R.string.settings_snack_password_saved)
@@ -513,8 +519,28 @@ fun SettingsScreen(
                 }
             }
 
-            // ── Zona de peligro ───────────────────────────────────────────────
-            item { SectionHeader(stringResource(R.string.settings_section_danger)) }
+            // ── Información ──────────────────────────────────────────────────
+            item { SectionHeader(stringResource(R.string.settings_section_info)) }
+            item {
+                SettingsCard {
+                    SettingsLinkRow(
+                        label   = stringResource(R.string.settings_privacy_policy),
+                        onClick = { openUrl(context, "https://www.peakadex.com/privacy") },
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    SettingsLinkRow(
+                        label   = stringResource(R.string.settings_terms),
+                        onClick = { openUrl(context, "https://www.peakadex.com/terms") },
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    SettingsReadOnlyRow(
+                        label = stringResource(R.string.settings_version),
+                        value = BuildConfig.VERSION_NAME,
+                    )
+                }
+            }
+
+            // ── Cerrar sesión ─────────────────────────────────────────────────
             item {
                 SettingsCard {
                     TextButton(
@@ -699,6 +725,25 @@ private fun SettingsTextField(
                 Text(supportingText, color = Color(0xFFEF4444), fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun SettingsLinkRow(label: String, onClick: () -> Unit) {
+    Row(
+        modifier          = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, fontSize = 15.sp, color = Color(0xFF111827), modifier = Modifier.weight(1f))
+        Icon(
+            imageVector        = ChevronRightIcon,
+            contentDescription = null,
+            tint               = Color(0xFF9CA3AF),
+            modifier           = Modifier.size(18.dp),
+        )
     }
 }
 
@@ -913,6 +958,10 @@ private val ChevronUpIcon: ImageVector by lazy {
             moveTo(6f, 15f); lineTo(12f, 9f); lineTo(18f, 15f)
         }
     }.build()
+}
+
+private fun openUrl(context: Context, url: String) {
+    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
 }
 
 private val ChevronRightIcon: ImageVector by lazy {

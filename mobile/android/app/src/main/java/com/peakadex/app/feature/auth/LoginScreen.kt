@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,6 +59,7 @@ fun LoginScreen(
     viewModel: AuthViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context      = LocalContext.current
     val focusManager = LocalFocusManager.current
 
     var email           by remember { mutableStateOf("") }
@@ -272,7 +274,7 @@ fun LoginScreen(
 
                     // ── Google button ─────────────────────────────────────────
                     OutlinedButton(
-                        onClick  = { /* TODO: Google Sign-In */ },
+                        onClick  = { viewModel.signInWithGoogle(context) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),

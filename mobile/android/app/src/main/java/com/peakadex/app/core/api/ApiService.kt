@@ -11,6 +11,9 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body body: Map<String, String>): AuthResponse
 
+    @POST("auth/google")
+    suspend fun loginWithGoogle(@Body body: Map<String, String>): AuthResponse
+
     @POST("auth/register")
     suspend fun register(@Body body: Map<String, String?>): AuthResponse
 

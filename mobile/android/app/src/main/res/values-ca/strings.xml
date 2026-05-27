@@ -169,6 +169,11 @@
     <string name="settings_email_notifications">Notificacions per correu</string>
     <string name="settings_activity_notifications">Notificacions d\'activitat</string>
 
+    <string name="settings_section_info">Informació</string>
+    <string name="settings_privacy_policy">Política de privacitat</string>
+    <string name="settings_terms">Termes i condicions</string>
+    <string name="settings_version">Versió</string>
+
     <string name="settings_section_danger">Zona de perill</string>
 
     <string name="settings_snack_saved">Canvis desats</string>

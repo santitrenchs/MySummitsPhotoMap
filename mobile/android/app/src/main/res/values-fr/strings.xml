@@ -169,6 +169,11 @@
     <string name="settings_email_notifications">Notifications par e-mail</string>
     <string name="settings_activity_notifications">Notifications d\'activité</string>
 
+    <string name="settings_section_info">Informations</string>
+    <string name="settings_privacy_policy">Politique de confidentialité</string>
+    <string name="settings_terms">Conditions d\'utilisation</string>
+    <string name="settings_version">Version</string>
+
     <string name="settings_section_danger">Zone de danger</string>
 
     <string name="settings_snack_saved">Modifications enregistrées</string>
