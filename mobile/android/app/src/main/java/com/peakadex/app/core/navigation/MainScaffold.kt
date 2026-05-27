@@ -68,9 +68,12 @@ fun MainScaffold(navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope             = rememberCoroutineScope()
 
-    // Pending peak filter — Atlas → Logbook
+    // Pending peak filter — Atlas → Cards
     var pendingPeakId   by remember { mutableStateOf<String?>(null) }
     var pendingPeakName by remember { mutableStateOf<String?>(null) }
+
+    // Pending rarity filter — Home charts → Cards
+    var pendingRarityId by remember { mutableStateOf<String?>(null) }
 
     // New ascent sheet — peak pre-fill from Atlas "Capturar" button
     var showNewAscent         by remember { mutableStateOf(false) }
@@ -155,7 +158,18 @@ fun MainScaffold(navController: NavController) {
             // Use padding(innerPadding) so content respects TopAppBar + NavigationBar insets
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable(Screen.Home.route)    { HomeScreen() }
+            composable(Screen.Home.route) {
+                HomeScreen(
+                    onNavigateToCardsWithRarity = { rarityId ->
+                        pendingRarityId = rarityId
+                        tabNavController.navigate(Screen.Cards.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = false  // force fresh so LaunchedEffect fires
+                        }
+                    },
+                )
+            }
             composable(Screen.Map.route) {
                 AtlasScreen(
                     onNavigateToLogbook = { peakId, peakName ->
@@ -209,6 +223,8 @@ fun MainScaffold(navController: NavController) {
                     initialPeakId       = pendingPeakId,
                     initialPeakName     = pendingPeakName,
                     onPeakIdConsumed    = { pendingPeakId = null; pendingPeakName = null },
+                    initialRarityId     = pendingRarityId,
+                    onRarityIdConsumed  = { pendingRarityId = null },
                     refreshTrigger      = logbookRefreshTrigger,
                     highlightId         = logbookHighlightId,
                     onHighlightConsumed = { logbookHighlightId = null },

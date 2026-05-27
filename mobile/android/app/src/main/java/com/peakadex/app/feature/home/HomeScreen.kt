@@ -5,6 +5,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -105,7 +107,10 @@ private fun meetsLevel(def: LocalLevelDef, uniquePeaks: Int, stats: UserStats): 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(vm: HomeViewModel = viewModel()) {
+fun HomeScreen(
+    onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
+    vm: HomeViewModel = viewModel(),
+) {
     val state        by vm.uiState.collectAsStateWithLifecycle()
     val isRefreshing by vm.isRefreshing.collectAsStateWithLifecycle()
     val user         by AppContainer.authSession.currentUser.collectAsStateWithLifecycle()
@@ -119,7 +124,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 onRefresh    = { vm.refresh() },
                 modifier     = Modifier.fillMaxSize(),
             ) {
-                HomeContent(data = s.data, user = user)
+                HomeContent(data = s.data, user = user, onNavigateToCardsWithRarity = onNavigateToCardsWithRarity)
             }
         }
     }
@@ -156,7 +161,11 @@ private fun HomeErrorState(message: String, onRetry: () -> Unit) {
 // ── Main content ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun HomeContent(data: HomeData, user: User?) {
+private fun HomeContent(
+    data: HomeData,
+    user: User?,
+    onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
+) {
     var progressionExpanded by remember { mutableStateOf(false) }
 
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
@@ -180,12 +189,12 @@ private fun HomeContent(data: HomeData, user: User?) {
 
         // 4 — Monthly chart (≥1 ascent)
         if (data.stats.totalAscents >= 1 && data.monthlyStats.isNotEmpty()) {
-            item { MonthlyChartSection(data.monthlyStats) }
+            item { MonthlyChartSection(data.monthlyStats, onNavigateToCardsWithRarity) }
         }
 
         // 5 — Rarity chart (≥1 ascent)
         if (data.stats.totalAscents >= 1) {
-            item { RarityChartSection(data.stats.rarityBreakdown) }
+            item { RarityChartSection(data.stats.rarityBreakdown, onNavigateToCardsWithRarity) }
         }
 
         // 7 — Leaderboard
@@ -687,8 +696,13 @@ private fun LevelCard(
 
 // ── Monthly chart ─────────────────────────────────────────────────────────────
 
+private data class BarSegment(val rarityId: String, val color: Color, val heightDp: Int)
+
 @Composable
-private fun MonthlyChartSection(bars: List<MonthlyBar>) {
+private fun MonthlyChartSection(
+    bars: List<MonthlyBar>,
+    onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
+) {
     val periodSummits = remember(bars) { bars.sumOf { it.summits } }
     val periodMeters  = remember(bars) { bars.sumOf { it.metersAscended } }
     val maxSummits    = remember(bars) { bars.maxOfOrNull { it.summits }?.coerceAtLeast(1) ?: 1 }
@@ -728,7 +742,7 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
                     } catch (e: Exception) { bar.isoMonth.takeLast(2) }
                 }
 
-                // Build stacked segments per rarity
+                // Build stacked segments per rarity — include rarityId for tappable navigation
                 val segments = remember(bar) {
                     if (bar.summits == 0) emptyList()
                     else {
@@ -741,7 +755,7 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
                                 val h = if (isLast) totalH - usedH
                                         else (count.toFloat() / bar.summits * totalH).coerceAtLeast(1f).toInt()
                                 usedH += h
-                                Pair(RARITY_PALETTE[i].color, h)
+                                BarSegment(RARITY_PALETTE[i].id, RARITY_PALETTE[i].color, h)
                             }
                         }
                     }
@@ -771,8 +785,17 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
                         if (segments.isEmpty()) {
                             Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant))
                         } else {
-                            segments.reversed().forEach { (color, h) ->
-                                Box(Modifier.fillMaxWidth().height(h.dp).background(color))
+                            segments.reversed().forEach { seg ->
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(seg.heightDp.dp)
+                                        .background(seg.color)
+                                        .clickable(
+                                            indication      = null,
+                                            interactionSource = remember { MutableInteractionSource() },
+                                        ) { onNavigateToCardsWithRarity(seg.rarityId) },
+                                )
                             }
                         }
                     }
@@ -792,7 +815,10 @@ private fun MonthlyChartSection(bars: List<MonthlyBar>) {
 // ── Rarity chart ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun RarityChartSection(breakdown: RarityBreakdown) {
+private fun RarityChartSection(
+    breakdown: RarityBreakdown,
+    onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
+) {
     val values   = remember(breakdown) { breakdown.toList() }
     val maxValue = remember(values) { values.maxOrNull()?.coerceAtLeast(1) ?: 1 }
 
@@ -803,14 +829,22 @@ private fun RarityChartSection(breakdown: RarityBreakdown) {
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             values.forEachIndexed { i, count ->
-                val rarity = RARITY_PALETTE[i]
-                val barH = if (count > 0)
+                val rarity   = RARITY_PALETTE[i]
+                val barH     = if (count > 0)
                     (count.toFloat() / maxValue * 96f).coerceAtLeast(8f).toInt()
                 else 3
                 val isActive = count > 0
 
                 Column(
-                    modifier            = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(
+                            if (isActive) Modifier.clickable(
+                                indication        = null,
+                                interactionSource = remember { MutableInteractionSource() },
+                            ) { onNavigateToCardsWithRarity(rarity.id) }
+                            else Modifier
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     // Count label
@@ -833,9 +867,9 @@ private fun RarityChartSection(breakdown: RarityBreakdown) {
                     Spacer(Modifier.height(3.dp))
                     // ✿ icon
                     Text(
-                        text  = "✿",
+                        text     = "✿",
                         fontSize = 14.sp,
-                        color = if (isActive) rarity.color else Color(0xFFE5E7EB),
+                        color    = if (isActive) rarity.color else Color(0xFFE5E7EB),
                     )
                 }
             }

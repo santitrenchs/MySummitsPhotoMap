@@ -252,7 +252,7 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
         );
 
         // Build stacked segments (daisy → snow_lotus, bottom to top)
-        type Seg = { color: string; h: number };
+        type Seg = { rarityId: string; color: string; h: number };
         const segments: Seg[] = [];
         if (d.summits > 0) {
           let usedH = 0;
@@ -262,22 +262,21 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
             const isLast = idx === raritiesWithCount.length - 1;
             const h = isLast ? totalH - usedH : Math.max(1, Math.round((count / d.summits) * totalH));
             usedH += h;
-            segments.push({ color: r.color, h });
+            segments.push({ rarityId: r.id, color: r.color, h });
           });
         }
 
         return (
-          <Link
+          <div
             key={d.isoMonth}
-            href={`/ascents?month=${d.isoMonth}&view=mine`}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}
           >
-            <span style={{
-              fontSize: 10, fontWeight: 700, lineHeight: 1,
-              color: d.summits > 0 ? "#0369a1" : "transparent",
-            }}>
+            <Link
+              href={`/ascents?month=${d.isoMonth}&view=mine`}
+              style={{ fontSize: 10, fontWeight: 700, lineHeight: 1, color: d.summits > 0 ? "#0369a1" : "transparent", textDecoration: "none" }}
+            >
               {d.summits || "0"}
-            </span>
+            </Link>
             <div style={{
               width: "100%", height: totalH,
               borderRadius: "var(--radius-sm) var(--radius-sm) 0 0",
@@ -287,11 +286,21 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
               background: d.summits === 0 ? "#e5e7eb" : undefined,
             }}>
               {segments.map((seg, i) => (
-                <div key={i} style={{ width: "100%", height: seg.h, background: seg.color, flexShrink: 0 }} />
+                <Link
+                  key={i}
+                  href={`/ascents?rarity=${seg.rarityId}&view=mine`}
+                  style={{ width: "100%", height: seg.h, background: seg.color, flexShrink: 0, display: "block" }}
+                  title={seg.rarityId}
+                />
               ))}
             </div>
-            <span style={{ fontSize: 10, color: "#94a3b8", textTransform: "capitalize" }}>{label}</span>
-          </Link>
+            <Link
+              href={`/ascents?month=${d.isoMonth}&view=mine`}
+              style={{ fontSize: 10, color: "#94a3b8", textTransform: "capitalize", textDecoration: "none" }}
+            >
+              {label}
+            </Link>
+          </div>
         );
       })}
     </div>
@@ -311,13 +320,27 @@ function RarityChart({ breakdown }: { breakdown: HomeData["stats"]["rarityBreakd
       {RARITY_BARS.map((b, i) => {
         const val = values[i];
         const barH = val > 0 && max > 0 ? Math.max(Math.round((val / max) * 96), 8) : 3;
-        return (
-          <div key={b.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, lineHeight: 1, color: val > 0 ? b.color : "transparent" }}>
+        const active = val > 0;
+        const inner = (
+          <>
+            <span style={{ fontSize: 10, fontWeight: 700, lineHeight: 1, color: active ? b.color : "transparent" }}>
               {val || "0"}
             </span>
-            <div style={{ width: "100%", height: barH, background: val > 0 ? b.color : "#e5e7eb", borderRadius: "3px 3px 0 0" }} />
-            <span title={b.label} style={{ fontSize: 14, lineHeight: 1, color: val > 0 ? b.color : "#e5e7eb", height: 22, display: "flex", alignItems: "flex-start", justifyContent: "center" }}>✿</span>
+            <div style={{ width: "100%", height: barH, background: active ? b.color : "#e5e7eb", borderRadius: "3px 3px 0 0" }} />
+            <span title={b.label} style={{ fontSize: 14, lineHeight: 1, color: active ? b.color : "#e5e7eb", height: 22, display: "flex", alignItems: "flex-start", justifyContent: "center" }}>✿</span>
+          </>
+        );
+        return active ? (
+          <Link
+            key={b.key}
+            href={`/ascents?rarity=${b.key}&view=mine`}
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}
+          >
+            {inner}
+          </Link>
+        ) : (
+          <div key={b.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+            {inner}
           </div>
         );
       })}

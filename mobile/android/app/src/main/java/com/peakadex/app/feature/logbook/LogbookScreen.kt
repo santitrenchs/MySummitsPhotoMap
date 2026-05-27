@@ -134,9 +134,11 @@ private val PencilIcon: ImageVector by lazy {
 @Composable
 fun LogbookScreen(
     onAscentClick: (String) -> Unit,
-    initialPeakId:   String? = null,
-    initialPeakName: String? = null,
-    onPeakIdConsumed: () -> Unit = {},
+    initialPeakId:       String? = null,
+    initialPeakName:     String? = null,
+    onPeakIdConsumed:    () -> Unit = {},
+    initialRarityId:     String? = null,
+    onRarityIdConsumed:  () -> Unit = {},
     refreshTrigger: Int = 0,
     highlightId: String? = null,
     onHighlightConsumed: () -> Unit = {},
@@ -144,10 +146,25 @@ fun LogbookScreen(
 ) {
     // Apply peak filter from Atlas navigation once, then signal consumed so the
     // caller can clear the pending state (prevents re-applying on recomposition).
+    // clearFilters() first so any residual rarityId/viewFilter from a previous
+    // navigation session doesn't bleed through when the ViewModel is reused.
     LaunchedEffect(initialPeakId) {
         if (initialPeakId != null) {
+            vm.clearFilters()
             vm.setPeakFilter(initialPeakId, initialPeakName)
             onPeakIdConsumed()
+        }
+    }
+
+    // Apply rarity filter from Home chart navigation once, then signal consumed.
+    // clearFilters() first for the same reason — clears any leftover peakId or
+    // other filters before applying the rarity + switching to Mine view.
+    LaunchedEffect(initialRarityId) {
+        if (initialRarityId != null) {
+            vm.clearFilters()
+            vm.setRarityId(initialRarityId)
+            vm.setViewFilter(ViewFilter.Mine)
+            onRarityIdConsumed()
         }
     }
 
@@ -206,6 +223,17 @@ fun LogbookScreen(
             )
         }
 
+        // ── Rarity filter chip — only when navigating from Home charts ─────
+        if (filters.rarityId != null) {
+            val rarityInfo = RARITY_PALETTE.find { it.id == filters.rarityId }
+            if (rarityInfo != null) {
+                RarityFilterChip(
+                    rarityInfo = rarityInfo,
+                    onDismiss  = { vm.setRarityId(null) },
+                )
+            }
+        }
+
         when (uiState) {
             is LogbookUiState.Loading -> LogbookLoadingState()
             is LogbookUiState.Error   -> LogbookErrorState((uiState as LogbookUiState.Error).message) { vm.load() }
@@ -215,7 +243,7 @@ fun LogbookScreen(
                 modifier     = Modifier.fillMaxSize(),
             ) {
                 when {
-                    filteredAscents.isEmpty() && filters.peakId != null ->
+                    filteredAscents.isEmpty() && (filters.peakId != null || filters.rarityId != null) ->
                         LogbookNoResultsState()
                     filteredAscents.isEmpty() && filters.viewFilter == ViewFilter.Friends ->
                         LogbookFriendsEmptyState()
@@ -313,6 +341,45 @@ private fun PeakFilterChip(peakName: String, onDismiss: () -> Unit) {
                 enabled             = true,
                 selected            = true,
                 selectedBorderColor = Color(0xFF7DD3FC),
+                selectedBorderWidth = 1.dp,
+            ),
+        )
+    }
+}
+
+// ── Rarity filter chip — shown when navigating from Home charts ───────────────
+
+@Composable
+private fun RarityFilterChip(rarityInfo: RarityInfo, onDismiss: () -> Unit) {
+    Row(
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
+    ) {
+        InputChip(
+            selected     = true,
+            onClick      = onDismiss,
+            label        = {
+                Text(
+                    "✿ ${rarityInfo.label}",
+                    fontSize   = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            },
+            trailingIcon = {
+                Icon(
+                    CloseSmallIcon,
+                    contentDescription = stringResource(R.string.action_close),
+                    modifier           = Modifier.size(14.dp),
+                    tint               = rarityInfo.color,
+                )
+            },
+            colors = InputChipDefaults.inputChipColors(
+                selectedContainerColor = rarityInfo.color.copy(alpha = 0.08f),
+                selectedLabelColor     = rarityInfo.color,
+            ),
+            border = InputChipDefaults.inputChipBorder(
+                enabled             = true,
+                selected            = true,
+                selectedBorderColor = rarityInfo.color.copy(alpha = 0.4f),
                 selectedBorderWidth = 1.dp,
             ),
         )
