@@ -841,4 +841,116 @@ transition:  opacity 0.18s, transform 0.18s
 behavior:    onClick → window.scrollTo({ top: 0, behavior: "smooth" })
 ```
 
+---
+
+## Login Screen — Android (rediseño 2026-05-27)
+
+> **Authoritative spec for Android (and future iOS).** Follow this section exactly — do not revert to a generic form layout.
+
+### Concept
+
+Premium / emotional / collectible. The login screen is the first impression of the app — it should feel like opening a collectible cards product, not a utility form. Three visual zones:
+
+1. **Logo** — centered wordmark at 46dp, generous breathing room above the card
+2. **Login card** — white elevated card, no visible border, rounded 24dp corners
+3. **Brand closer** — fan of collectible cards (70% screen width) + two-color tagline below
+
+---
+
+### Background
+
+```
+Color: #F2F5F8   (LoginBg — warm neutral, slightly cooler than white)
+```
+
+---
+
+### Logo
+
+```
+Component:  PeakadexLogo(height = 46.dp)
+Position:   centered, 24dp below status bar, 20dp above card
+```
+
+---
+
+### Login card
+
+```
+Shape:       RoundedCornerShape(24.dp)
+Background:  Color.White
+Elevation:   10dp (default + pressed + focused), 12dp hovered
+Border:      none — elevation creates depth without a hard edge
+Padding:     horizontal 24dp, vertical 28dp
+```
+
+#### Card contents (top → bottom)
+
+| Element | Spec |
+|---|---|
+| "¿No tienes cuenta?" row | `Row + heightIn(48dp) + clickable`, full line = tap target, 14sp |
+| Space between label and "Créala" | `Spacer(width = 4.dp)` — NOT a trailing space in XML |
+| Email field | `OutlinedTextField`, green focus border (`PeakGreenCTA`), 15sp |
+| Password field | Same + show/hide `IconButton` (EyeIcon / EyeOffIcon inline SVGs) |
+| Forgot password | Right-aligned `TextButton`, default Material padding, 13sp `PeakNavyMid` |
+| Error pill | Red `Surface` + `BorderStroke(1dp, #FECACA)`, bg `#FEF2F2`, text `#DC2626` |
+| Sign-in button | 50dp height, `PeakGreenCTA` bg, ExtraBold 15sp white, `CircularProgressIndicator` when loading |
+| Divider | Two `HorizontalDivider` + center "o" label, 12sp `PeakNavyLight` |
+| Google button | `OutlinedButton`, multicolor G icon (`tint = Color.Unspecified`), "Continuar con Google" 14sp Medium |
+
+---
+
+### Collectible cards image
+
+```
+Asset:       R.drawable.login_cards_preview  (fan of 3 cards, 1038×918 px PNG)
+Width:       fillMaxWidth(0.70f)   ← 70% of screen width
+Scale:       ContentScale.FillWidth
+Position:    20dp below the login card, centered
+```
+
+The image must never be cropped or resized — `FillWidth` preserves the natural fan/shadow perspective.
+
+---
+
+### Tagline (brand closer)
+
+```
+Position:   16dp below the cards image, centered
+Font:       20sp SemiBold
+Alignment:  TextAlign.Center
+Colors:     navy (#0D2538) for p1 · gold (#F5C842, --ld-gold) for p2
+```
+
+Pattern: **setup in navy + payoff in gold** — matches the landing page visual grammar.
+
+```
+"Convierte tus cimas"         ← PeakNavyDark
+"en cartas coleccionables."   ← #F5C842 (TaglineGold)
+```
+
+The space between p1 and p2 is appended in Kotlin (`"$p1 "`) — never in the string resource (Android strips trailing whitespace from XML).
+
+---
+
+### Safe areas
+
+```
+Top:    statusBarsPadding()
+Bottom: Spacer(navigationBarsPadding()) + Spacer(16dp)
+IME:    imePadding() on the outer Column — keyboard pushes content up correctly
+```
+
+---
+
+### Touch targets (Material Design compliance)
+
+- **"¿No tienes cuenta? Créala"**: `Row.heightIn(min=48.dp)` — full row is tappable, not just "Créala"
+- **Forgot password**: `TextButton` with default Material padding (no override) → ~48dp tap height
+- **Sign-in**: 50dp explicit height ✓
+- **Google**: 48dp explicit height ✓
+- **Password toggle**: `IconButton` default 48×48dp ✓
+
+**Never use `contentPadding = PaddingValues(0.dp)` on a TextButton** — this strips the touch target below 48dp and violates Android accessibility guidelines.
+
 **Why both patterns**: tap-active-tab is iOS convention but invisible to users who don't know it; FAB is discoverable but adds visual weight. Coexist without conflict.

@@ -1828,3 +1828,116 @@ Rendered conditionally: `if (filters.peakId != null) PeakFilterChip(peakName = f
 - **`@OptIn(ExperimentalMaterial3Api::class)` required**: add to any composable that uses `CenterAlignedTopAppBar`, `SingleChoiceSegmentedButtonRow`, `SegmentedButton`, `InputChip`, or `PullToRefreshBox`.
 - **Root vs secondary top bars**: Root tabs (Home, Bitácora, Atlas, Cards) → `CenterAlignedTopAppBar` with logo + avatar. Secondary screens (Profile, Settings, AscentDetail) → `CenterAlignedTopAppBar` with text title + back arrow. Never use the logo on secondary screens.
 - **`restoreState = false` when navigating to Cards from Bitácora**: required so the ViewModel is recreated and `LaunchedEffect(refreshTrigger)` fires. With `restoreState = true` the existing ViewModel is reused and the trigger value hasn't changed — scroll/highlight won't fire.
+
+---
+
+## Android App — Login Screen (rediseño 2026-05-27)
+
+**File:** `mobile/android/app/src/main/java/com/peakadex/app/feature/auth/LoginScreen.kt`
+**Asset:** `mobile/android/app/src/main/res/drawable/login_cards_preview.png` (fan de 3 cartas coleccionables, 1038×918 px)
+
+This is a **complete, shipped screen**. Follow this spec exactly — do not revert to a plain form layout.
+
+---
+
+### Visual goal
+
+Premium / emotional / collectible — matches the landing page tone. The screen should feel like opening a collectible cards app, not a generic login form.
+
+---
+
+### Design tokens (private to LoginScreen.kt)
+
+```kotlin
+private val LoginBg        = Color(0xFFF2F5F8)   // warm neutral bg
+private val CardShape      = RoundedCornerShape(24.dp)
+private val ButtonShape    = RoundedCornerShape(16.dp)
+private val ColorBorder    = Color(0xFFE5E7EB)
+private val ColorRed       = Color(0xFFDC2626)
+private val ColorRedBg     = Color(0xFFFEF2F2)
+private val ColorRedBorder = Color(0xFFFECACA)
+private val TaglineGold    = Color(0xFFF5C842)   // --ld-gold from landing page CSS
+```
+
+Shared theme tokens also used: `PeakNavyDark`, `PeakNavyMid`, `PeakNavyLight`, `PeakGreenCTA`.
+
+---
+
+### Layout — single scrollable Column (canonical Compose pattern)
+
+```
+statusBarsPadding → Spacer(24dp) → PeakadexLogo(46dp) → Spacer(20dp)
+→ Card(elevation=10dp, shape=24dp, white) { form }
+→ Spacer(20dp)
+→ Image(login_cards_preview, fillMaxWidth(0.70f), FillWidth)
+→ Spacer(16dp)
+→ Text(tagline, navy+gold, 20sp SemiBold, centered)
+→ Spacer(navigationBarsPadding) → Spacer(16dp)
+```
+
+**Do NOT use a Box with fixed-position image at the bottom** — single Column is correct.
+
+---
+
+### Card form internals (top → bottom)
+
+1. **"¿No tienes cuenta? Créala"** — `Row + Modifier.heightIn(min=48.dp) + .clickable(onNavigateToRegister)` with `Spacer(4.dp)` between the two Text composables; 14sp
+2. `Spacer(16dp)`
+3. Email `PeakTextField` (KeyboardType.Email, ImeAction.Next)
+4. `Spacer(10dp)`
+5. Password `PeakTextField` with show/hide `IconButton` (EyeIcon / EyeOffIcon)
+6. Forgot password `TextButton` (default Material padding, right-aligned in `Box(fillMaxWidth)`)
+7. Error pill — red `Surface` with `BorderStroke`, only when `errorMessage != null`
+8. `Spacer(4dp)`
+9. Sign-in `Button` — 50dp height, `PeakGreenCTA`, ExtraBold 15sp, `CircularProgressIndicator` when loading
+10. Divider row — "o" label between two `HorizontalDivider`s, 12sp
+11. Google `OutlinedButton` — multicolor G icon (`tint = Color.Unspecified`) + "Continuar con Google"
+
+---
+
+### Composable signature
+
+```kotlin
+@Composable
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit = {},
+    viewModel: AuthViewModel = viewModel(),
+)
+```
+
+---
+
+### Tagline — two-color (navy + gold)
+
+```kotlin
+val p1 = stringResource(R.string.auth_tagline_p1)
+val p2 = stringResource(R.string.auth_tagline_p2)
+Text(
+    text = buildAnnotatedString {
+        withStyle(SpanStyle(color = PeakNavyDark)) { append("$p1 ") }  // ← space in CODE
+        withStyle(SpanStyle(color = TaglineGold))  { append(p2) }
+    },
+    fontSize = 20.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
+)
+```
+
+| Locale | auth_tagline_p1 | auth_tagline_p2 |
+|---|---|---|
+| es | Convierte tus cimas | en cartas coleccionables. |
+| en | Turn your summits | into collectible cards. |
+| ca | Converteix els teus cims | en cartes col·leccionables. |
+| fr | Transforme tes sommets | en cartes à collectionner. |
+| de | Verwandle deine Gipfel | in Sammelkarten. |
+
+---
+
+### Critical gotchas
+
+- **Android strips trailing whitespace from string resources**: `auth_no_account` ends in `?  ` in XML but arrives stripped at runtime. The space between p1 and p2 in the tagline is handled in code as `append("$p1 ")`. The space between "¿No tienes cuenta?" and "Créala" uses `Spacer(Modifier.width(4.dp))` between the two Text composables.
+- **Touch target — NEVER use `contentPadding = PaddingValues(0.dp)` on TextButton**: this removes the 48dp minimum touch target required by Material Design. The "¿No tienes cuenta?" row uses `Row + Modifier.heightIn(min=48.dp) + .clickable(...)` — the full line is the tap target, not just the word "Créala".
+- **Interactive text minimum: 14sp** (Body Medium). `auth_create_account` ("Créala") is 14sp. Non-interactive secondary text (divider "o", error messages) can be 12–13sp.
+- **ProfileScreen `TextStyle` import conflict**: `java.time.format.TextStyle` conflicts with `androidx.compose.ui.text.TextStyle`. Fix: remove the java import and use `java.time.format.TextStyle.SHORT` fully qualified at the call site (line ~869 in ProfileScreen.kt).
+- **`EyeIcon` / `EyeOffIcon`** are inline `ImageVector.Builder` SVGs at the bottom of `LoginScreen.kt`. Do NOT add Material Icons dependency for these.
+- **`GoogleIcon`** — multicolor 4-path inline SVG in `LoginScreen.kt`. Always `tint = Color.Unspecified`.
