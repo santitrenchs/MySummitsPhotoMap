@@ -854,16 +854,28 @@ Bitmaps are registered on the main thread via `withContext(Dispatchers.Main) { m
 
 ### Viewport culling (`applyViewportScore`)
 
-Mirrors web `MapView.tsx computeViewportScores`:
+Smooth linear ramp — no abrupt step changes:
 ```
-zoom ≥ 10  → all peaks shown (no culling)
-zoom 8–10  → top 50%
-zoom 6–8   → top 25%
-zoom < 6   → top 10%
+zoom ≤ 5  →  5% of peaks shown
+zoom 13   → 100% (no culling at street/valley level)
 ```
-Score per peak: `normAlt * 0.5 + rarityWeight * 0.3`  
-`normAlt = peak.altitudeM / maxAlt`; `rarityWeight` from `rarities.associate { it.id to it.scoreWeight }` (fallback `0.1`).  
-Result: at least 1 peak always shown.
+Score per peak (3-component composite):
+- `normAlt * 0.5` — higher peaks are more significant landmarks
+- `rarityWeight * 0.3` — rarer peaks deserve more visibility
+- `normDist * 0.2` — peaks near viewport center are more relevant
+
+`normAlt = peak.altitudeM / maxAlt`; `rarityWeight` from `rarities.associate { it.id to it.scoreWeight }` (fallback `0.1`); `normDist = 1.0 - (distKm / maxDist).coerceIn(0, 1)`.
+
+Result: at least 1 peak always shown. `zoom >= 13.0` short-circuits and returns the full list.
+
+**Server `take` limits by zoom** (`app/api/v1/peaks/route.ts`):
+| zoom | server limit |
+|------|-------------|
+| < 6  | 50 peaks |
+| 6–7  | 150 peaks |
+| 8–10 | 300 peaks |
+| ≥ 11 | 500 peaks |
+| (not sent) | 300 peaks (fallback) |
 
 ---
 
@@ -877,7 +889,9 @@ data class SelectedPeakUi(val peak: Peak, val ascent: MapAscent?)  // ascent=nul
 data class AtlasUiState(
     val isLoadingAscents:   Boolean                  = true,
     val climbedByPeakId:    Map<String, MapAscent>   = emptyMap(),
-    val viewportPeaks:      List<Peak>               = emptyList(),
+    val viewportPeaks:      List<Peak>               = emptyList(),   // unclimbed peaks for map dots
+    val listPeaks:          List<Peak>               = emptyList(),   // fixed-radius peaks for list view
+    val isLoadingList:      Boolean                  = false,
     val filter:             AtlasFilter              = AtlasFilter.ALL,
     val selectedRarityIds:  Set<String>              = emptySet(),
     val sortMode:           SortMode                 = SortMode.DISTANCE,
@@ -885,6 +899,7 @@ data class AtlasUiState(
     val selected:           SelectedPeakUi?          = null,
     val searchQuery:        String                   = "",
     val searchResults:      List<Peak>               = emptyList(),
+    val placeResults:       List<GeocodedPlace>      = emptyList(),
     val isSearchActive:     Boolean                  = false,
     val showList:           Boolean                  = false,
     val error:              String?                  = null,
@@ -894,10 +909,17 @@ data class AtlasUiState(
 **API calls:**
 - `api.getConfig()` → loads `config.rarities` into state
 - `api.getMapAscents()` → populates `climbedByPeakId` (associatedBy `a.peakId`)
-- `api.getViewportPeaks(north, south, east, west)` → fetched in `onMapIdle()` (debounced 300ms); skipped entirely if `filter == CLIMBED`
+- `api.getViewportPeaks(north, south, east, west, zoom)` → fetched in `onMapIdle()` (debounced 500ms); skipped entirely if `filter == CLIMBED`
 - `api.searchPeaks(query)` → debounced 300ms, `take(20)` results
+- `loadListPeaks(lat, lon)` → fixed ~50km bbox around map center (zoom=12, up to 500 peaks); called when opening the list
 
-`onMapIdle()` receives `zoom: Double` and passes it to `applyViewportScore()` to cull the viewport response before storing in state. Unclimbed only (already-climbed peaks are filtered out of `viewportPeaks`).
+**Debounce constants:**
+- `VIEWPORT_DEBOUNCE_MS = 500L` — viewport queries (longer to avoid mid-animation firing)
+- `SEARCH_DEBOUNCE_MS = 300L` — text search
+
+`onMapIdle()` receives `zoom: Double`, saves bounds in `lastBounds`, computes center, passes to `applyViewportScore()`. Unclimbed only — already-climbed peaks are filtered out of `viewportPeaks`.
+
+**`lastBounds` re-fetch:** when switching from CLIMBED filter back to ALL/NOT_YET, `viewportPeaks` is empty (queries were skipped). `onFilterChanged` re-calls `onMapIdle(lastBounds)` to repopulate immediately.
 
 **Initial viewport fetch:** `addOnCameraIdleListener` does NOT fire for the initial resting position. Trigger `vm.onMapIdle(...)` once manually after style loads (inside `map.setStyle { style -> ... }`).
 
@@ -1032,6 +1054,19 @@ Flow:
 
 ---
 
+### List data source (`PeaksListPanel`)
+
+The list is **decoupled from the map viewport**. When the user opens the list:
+1. `onToggleList(centerLat, centerLon)` is called with the current map center coordinates.
+2. `loadListPeaks(lat, lon)` fires a fresh API query with a fixed ~50 km radius bbox (±0.45° lat, ±0.60° lon) and `zoom=12` (500-peak server limit).
+3. The list shows peaks from `listPeaks` (fixed radius) not from `viewportPeaks` (zoom-culled).
+
+This means: even if the user is at zoom 6 (showing a whole mountain range), the list shows all peaks within ~50 km of the map center — not the tiny zoom-culled subset visible on the map.
+
+Climbed peaks always come from `climbedByPeakId` (the full user ascent set, no radius restriction).
+
+A `CircularProgressIndicator` shows while `isLoadingList = true`. When the list closes, `listPeaks` is cleared to free memory.
+
 ### List sort modes (`PeaksListPanel`)
 
 | Mode | Logic |
@@ -1054,7 +1089,7 @@ Flow:
 | `MapControlsColumn` | Bottom-right `Column` with 48dp circular buttons (shadow 4dp); Search / Layers / 3D / Geolocate; active state = `PeakSlate` background |
 | `MapControlBtn` | 48dp circle, shadow 4dp, `PeakSlate` when active |
 | `ListaMapaButton` | Bottom-center pill; green `PeakClimbedGreen` when showing map, navy `PeakSlate` when showing list; list icon / map outline icon |
-| `PeaksListPanel` | Full-screen white overlay with `statusBarsPadding()`; `LazyColumn`; each row has status dot + name + range/country + altitude + distance from center |
+| `PeaksListPanel` | Full-screen white overlay with `statusBarsPadding()`; spinner while `isLoadingList`; `LazyColumn`; each row has 44dp photo thumbnail (climbed, rarity border) or 9dp blue dot (unclimbed) + name + range/country + altitude + distance from center |
 | `LayersPanel` | `ModalBottomSheet` white; **3-column** `LayerCard` grid (Normal / Terrain / Satélite) + Trails toggle row; active card has blue border + checkmark badge |
 | `LayerCard` | 44dp icon box, checkmark badge on active, `PeakBlueActive` border/text when active |
 | `FiltersPanel` | `ModalBottomSheet` white; header with "Limpiar todo" when dirty; `FlowRow` of `RarityPill`s; `FilterChip` for status (ALL/CLIMBED/NOT_YET) and sort (DISTANCE/RELEVANCE/ALTITUDE); footer "Ver N cimas" green CTA button |
@@ -1297,6 +1332,7 @@ After `onSuccess(ascentId)` fires from `NewAscentSheet`, `MainScaffold` must:
 // MainScaffold.kt — state vars:
 var logbookRefreshTrigger by remember { mutableIntStateOf(0) }
 var logbookHighlightId    by remember { mutableStateOf<String?>(null) }
+var atlasRefreshTrigger   by remember { mutableIntStateOf(0) }   // reloads climbedByPeakId after new ascent
 
 // MainScaffold.kt also has: val snackbarHostState = remember { SnackbarHostState() }
 //                            val scope = rememberCoroutineScope()
@@ -1307,6 +1343,7 @@ onSuccess = { ascentId, taggingWarning ->
     showNewAscent      = false
     logbookHighlightId = ascentId
     logbookRefreshTrigger++
+    atlasRefreshTrigger++   // reload Atlas climbedByPeakId so new ascent appears on map
     tabNavController.navigate(Screen.Logbook.route) {
         popUpTo(Screen.Home.route) { saveState = true }
         launchSingleTop = true

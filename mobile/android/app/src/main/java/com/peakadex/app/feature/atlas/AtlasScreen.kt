@@ -95,6 +95,7 @@ import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakClimbedGreen
 import com.peakadex.app.core.ui.theme.PeakLayerActiveBg
 import com.peakadex.app.core.ui.theme.PeakMuted
+import com.peakadex.app.core.ui.theme.PeakNavyDark
 import com.peakadex.app.core.ui.theme.PeakOnSurface
 import com.peakadex.app.core.ui.theme.PeakSlate
 import com.peakadex.app.core.ui.theme.PeakSubtle
@@ -115,6 +116,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -197,6 +202,7 @@ private const val LYR_SATELLITE           = "satellite-layer"
 
 @Composable
 fun AtlasScreen(
+    atlasRefreshTrigger: Int = 0,
     onNavigateToLogbook: (peakId: String, peakName: String) -> Unit = { _, _ -> },
     onNavigateToNewAscent: (peakId: String, peakName: String) -> Unit = { _, _ -> },
     vm: AtlasViewModel = viewModel(),
@@ -204,6 +210,11 @@ fun AtlasScreen(
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Reload climbed peaks when a new ascent is created elsewhere in the app.
+    LaunchedEffect(atlasRefreshTrigger) {
+        if (atlasRefreshTrigger > 0) vm.loadClimbedAscents()
+    }
 
     val mapViewRef    = remember { mutableStateOf<MapView?>(null) }
     val mapRef        = remember { mutableStateOf<MapLibreMap?>(null) }
@@ -396,7 +407,7 @@ fun AtlasScreen(
                 loadedMarkerIds.clear()
                 loadedWithRarities.value = true
             }
-            loadPhotoMarkers(context, map, climbed, rarities, loadedMarkerIds)
+            loadPhotoMarkers(context, map, climbed, rarities, loadedMarkerIds, cameraCenter.value)
         }
 
         // ── Toggle satellite / terrain basemap ───────────────────────────────
@@ -576,7 +587,8 @@ fun AtlasScreen(
         if (uiState.showList) {
             PeaksListPanel(
                 climbed           = climbed,
-                viewport          = viewport,
+                listPeaks         = uiState.listPeaks,
+                isLoadingList     = uiState.isLoadingList,
                 filter            = filter,
                 center            = cameraCenter.value,
                 selectedRarityIds = selectedRarityIds,
@@ -598,7 +610,10 @@ fun AtlasScreen(
         // Must be AFTER PeaksListPanel in the Box so it renders on top of the list
         ListaMapaButton(
             showList = uiState.showList,
-            onToggle = vm::onToggleList,
+            onToggle = {
+                val c = cameraCenter.value
+                vm.onToggleList(c?.latitude, c?.longitude)
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
@@ -846,41 +861,65 @@ private suspend fun loadPhotoMarkers(
     climbed: Map<String, MapAscent>,
     rarities: List<Rarity>,
     loadedMarkerIds: MutableSet<String>,
+    center: LatLng?,
 ) {
     val rarityColorMap = rarities.associateBy { it.id }
     val imageLoader    = context.imageLoader
 
-    for ((peakId, ascent) in climbed) {
-        if (peakId in loadedMarkerIds) continue  // already in the map style
-        val ringColor = ascent.peak.rarityId
-            ?.let { rarityColorMap[it]?.color }
-            ?: DEFAULT_RARITY_COLOR
+    // Pre-filter synchronously before launching any coroutines — eliminates
+    // the concurrent-check race entirely since no coroutine is running yet.
+    // Sort by distance from the current viewport center so visible peaks
+    // get their markers first and appear on screen as quickly as possible.
+    val toLoad = climbed.entries
+        .filter { (peakId, _) -> peakId !in loadedMarkerIds }
+        .sortedBy { (_, ascent) ->
+            if (center != null)
+                haversineKm(center.latitude, center.longitude, ascent.peak.latitude, ascent.peak.longitude)
+            else
+                0.0
+        }
 
-        val markerBitmap: Bitmap = if (ascent.photoUrl != null) {
-            try {
-                val result = imageLoader.execute(
-                    ImageRequest.Builder(context)
-                        .data(ascent.photoUrl)
-                        .size(Size(176, 176))
-                        .allowHardware(false)
-                        .build(),
-                )
-                val src = (result.image as? BitmapImage)?.bitmap
-                if (src != null) createCircularMarkerBitmap(src, ringColor, sizePx = 88)
-                else             createFallbackMarkerBitmap(ringColor, sizePx = 88)
-            } catch (_: Exception) {
-                createFallbackMarkerBitmap(ringColor, sizePx = 88)
+    if (toLoad.isEmpty()) return
+
+    // 5 concurrent downloads: fast enough to saturate a mobile connection,
+    // low enough to avoid hammering the CDN or blocking the network queue.
+    val semaphore = Semaphore(5)
+    coroutineScope {
+        for ((peakId, ascent) in toLoad) {
+            launch {
+                semaphore.withPermit {
+                    val ringColor = ascent.peak.rarityId
+                        ?.let { rarityColorMap[it]?.color }
+                        ?: DEFAULT_RARITY_COLOR
+
+                    val markerBitmap: Bitmap = if (ascent.photoUrl != null) {
+                        try {
+                            val result = imageLoader.execute(
+                                ImageRequest.Builder(context)
+                                    .data(ascent.photoUrl)
+                                    .size(Size(176, 176))
+                                    .allowHardware(false)
+                                    .build(),
+                            )
+                            val src = (result.image as? BitmapImage)?.bitmap
+                            if (src != null) createCircularMarkerBitmap(src, ringColor, sizePx = 88)
+                            else             createFallbackMarkerBitmap(ringColor, sizePx = 88)
+                        } catch (_: Exception) {
+                            createFallbackMarkerBitmap(ringColor, sizePx = 88)
+                        }
+                    } else {
+                        createFallbackMarkerBitmap(ringColor, sizePx = 48)
+                    }
+
+                    // Both addImage and loadedMarkerIds.add run on the Main thread
+                    // — serialised, no concurrent mutation of either resource.
+                    withContext(Dispatchers.Main) {
+                        map.style?.addImage("peak-photo-$peakId", markerBitmap, false)
+                        loadedMarkerIds.add(peakId)
+                    }
+                }
             }
-        } else {
-            // No photo — render a plain coloured ring dot so the SymbolLayer
-            // always has an image to display for this peak.
-            createFallbackMarkerBitmap(ringColor, sizePx = 48)
         }
-
-        withContext(Dispatchers.Main) {
-            map.style?.addImage("peak-photo-$peakId", markerBitmap, false)
-        }
-        loadedMarkerIds.add(peakId)
     }
 }
 
@@ -1501,7 +1540,8 @@ private fun ListaMapaButton(
 @Composable
 private fun PeaksListPanel(
     climbed: Map<String, com.peakadex.app.core.model.MapAscent>,
-    viewport: List<Peak>,
+    listPeaks: List<Peak>,
+    isLoadingList: Boolean,
     filter: AtlasFilter,
     center: LatLng?,
     selectedRarityIds: Set<String>,
@@ -1509,11 +1549,11 @@ private fun PeaksListPanel(
     rarities: List<Rarity>,
     onPeakClick: (Peak) -> Unit,
 ) {
-    val items = remember(climbed, viewport, filter, center, selectedRarityIds, sortMode, rarities) {
+    val items = remember(climbed, listPeaks, filter, center, selectedRarityIds, sortMode, rarities) {
         val climbedPeaks = if (filter != AtlasFilter.NOT_YET)
             climbed.values.map { it.peak } else emptyList()
         val unclimbedPeaks = if (filter != AtlasFilter.CLIMBED)
-            viewport.filter { it.id !in climbed } else emptyList()
+            listPeaks.filter { it.id !in climbed } else emptyList()
         val all = (climbedPeaks + unclimbedPeaks)
             .distinctBy { it.id }
             .filter { p -> selectedRarityIds.isEmpty() || p.rarityId in selectedRarityIds }
@@ -1544,7 +1584,12 @@ private fun PeaksListPanel(
             .background(androidx.compose.ui.graphics.Color.White)
             .statusBarsPadding(),
     ) {
-        if (items.isEmpty()) {
+        if (isLoadingList) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color    = PeakBlueActive,
+            )
+        } else if (items.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(stringResource(R.string.atlas_list_empty),
                     fontSize = 14.sp, color = PeakSubtle)
@@ -1561,43 +1606,81 @@ private fun PeaksListPanel(
                     )
                 }
                 items(items) { peak ->
-                    val isClimbed = peak.id in climbed
-                    val distKm   = center?.let {
+                    val mapAscent = climbed[peak.id]
+                    val isClimbed = mapAscent != null
+                    val distKm    = center?.let {
                         haversineKm(it.latitude, it.longitude, peak.latitude, peak.longitude)
                     }
+                    val rarityColor = peak.rarityId
+                        ?.let { id -> rarities.find { it.id == id } }
+                        ?.let { r ->
+                            runCatching {
+                                androidx.compose.ui.graphics.Color(
+                                    android.graphics.Color.parseColor(r.color)
+                                )
+                            }.getOrNull()
+                        }
+                        ?: PeakClimbedGreen
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onPeakClick(peak) }
-                            .padding(horizontal = 16.dp, vertical = 11.dp),
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        // Status dot
+                        // Left: photo thumbnail for climbed peaks, small dot for unclimbed
                         Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .background(
-                                    if (isClimbed) PeakClimbedGreen else PeakUnclimbedBlue,
-                                    CircleShape,
-                                ),
-                        )
+                            modifier           = Modifier.size(44.dp),
+                            contentAlignment   = Alignment.Center,
+                        ) {
+                            if (isClimbed && mapAscent?.photoUrl != null) {
+                                coil3.compose.AsyncImage(
+                                    model              = mapAscent.photoUrl,
+                                    contentDescription = null,
+                                    contentScale       = ContentScale.Crop,
+                                    modifier           = Modifier
+                                        .fillMaxSize()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .border(1.5.dp, rarityColor, RoundedCornerShape(8.dp)),
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(9.dp)
+                                        .background(PeakUnclimbedBlue, CircleShape),
+                                )
+                            }
+                        }
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(peak.name,
-                                fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                peak.name,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize   = 15.sp,
+                                maxLines   = 1,
+                                overflow   = TextOverflow.Ellipsis,
+                            )
                             val sub = listOfNotNull(peak.mountainRange, peak.country)
                                 .joinToString(" · ")
                             if (sub.isNotEmpty()) {
-                                Text(sub, fontSize = 12.sp, color = PeakSubtle,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    sub,
+                                    fontSize = 12.sp,
+                                    color    = PeakSubtle,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("${peak.altitudeM} m",
-                                fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                                color    = PeakOnSurface)
+                            Text(
+                                "${peak.altitudeM} m",
+                                fontSize   = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color      = PeakNavyDark,
+                            )
                             if (distKm != null) {
                                 val distStr = if (distKm < 1.0) "${(distKm * 1000).toInt()} m"
                                               else "${"%.1f".format(distKm)} km"
@@ -1605,7 +1688,7 @@ private fun PeaksListPanel(
                             }
                         }
                     }
-                    HorizontalDivider(thickness = 0.5.dp, color = PeakSurfaceVariant)
+                    HorizontalDivider(thickness = 1.dp, color = PeakBorderLight)
                 }
             }
         }
