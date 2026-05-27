@@ -750,11 +750,12 @@ private fun SettingsLinkRow(label: String, onClick: () -> Unit) {
 @Composable
 private fun SettingsReadOnlyRow(label: String, value: String) {
     Row(
-        modifier          = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier             = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment    = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(label, fontSize = 14.sp, color = Color(0xFF6B7280), modifier = Modifier.width(100.dp))
-        Text(value, fontSize = 14.sp, color = Color(0xFFAAAAAA))
+        Text(label, fontSize = 14.sp, color = Color(0xFF374151))
+        Text(value, fontSize = 14.sp, color = Color(0xFF6B7280))
     }
 }
 
