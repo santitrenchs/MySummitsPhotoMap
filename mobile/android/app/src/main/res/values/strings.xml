@@ -32,6 +32,8 @@
     <string name="auth_continue_google">Continuar con Google</string>
     <string name="auth_password_hide">Ocultar</string>
     <string name="auth_password_show">Mostrar</string>
+    <string name="auth_tagline_p1">Convierte tus cimas</string>
+    <string name="auth_tagline_p2">en cartas coleccionables.</string>
 
     <!-- ── Perfil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Perfil</string>

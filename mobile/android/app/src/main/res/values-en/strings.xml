@@ -30,6 +30,8 @@
     <string name="auth_continue_google">Continue with Google</string>
     <string name="auth_password_hide">Hide</string>
     <string name="auth_password_show">Show</string>
+    <string name="auth_tagline_p1">Turn your summits</string>
+    <string name="auth_tagline_p2">into collectible cards.</string>
 
     <!-- ── Profile ──────────────────────────────────────────────────────────── -->
     <string name="profile_title">Profile</string>

@@ -45,7 +45,6 @@ import com.peakadex.app.R
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.theme.*
 import java.time.LocalDate
-import java.time.format.TextStyle
 import java.util.Locale
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -866,7 +865,7 @@ private fun formatDate(iso: String): String {
     return try {
         val date  = LocalDate.parse(iso.take(10))
         val day   = date.dayOfMonth
-        val month = date.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()).lowercase().trimEnd('.')
+        val month = date.month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()).lowercase().trimEnd('.')
         val year  = date.year.toString().takeLast(2)
         "$day $month '$year"
     } catch (_: Exception) {

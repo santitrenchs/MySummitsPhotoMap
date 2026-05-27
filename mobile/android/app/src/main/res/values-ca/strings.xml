@@ -30,6 +30,8 @@
     <string name="auth_continue_google">Continua amb Google</string>
     <string name="auth_password_hide">Amaga</string>
     <string name="auth_password_show">Mostra</string>
+    <string name="auth_tagline_p1">Converteix els teus cims</string>
+    <string name="auth_tagline_p2">en cartes col·leccionables.</string>
 
     <!-- ── Perfil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Perfil</string>

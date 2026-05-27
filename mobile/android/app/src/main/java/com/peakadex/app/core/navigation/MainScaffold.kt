@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +64,9 @@ fun MainScaffold(navController: NavController) {
 
     val user    by AppContainer.authSession.currentUser.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope             = rememberCoroutineScope()
 
     // Pending peak filter — Atlas → Logbook
     var pendingPeakId   by remember { mutableStateOf<String?>(null) }
@@ -121,13 +125,14 @@ fun MainScaffold(navController: NavController) {
             )
         },
         containerColor = PeakBackground,
+        snackbarHost   = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
 
     // New ascent bottom sheet (rendered outside Scaffold so it overlays the FAB/nav bar)
     if (showNewAscent) {
         NewAscentSheet(
             onDismiss       = { showNewAscent = false },
-            onSuccess       = { ascentId ->
+            onSuccess       = { ascentId, taggingWarning ->
                 showNewAscent      = false
                 logbookHighlightId = ascentId
                 logbookRefreshTrigger++
@@ -135,6 +140,9 @@ fun MainScaffold(navController: NavController) {
                     popUpTo(Screen.Home.route) { saveState = true }
                     launchSingleTop = true
                     restoreState    = false   // force fresh so LaunchedEffect fires
+                }
+                if (taggingWarning != null) {
+                    scope.launch { snackbarHostState.showSnackbar(taggingWarning) }
                 }
             },
             initialPeakId   = newAscentPeakId,

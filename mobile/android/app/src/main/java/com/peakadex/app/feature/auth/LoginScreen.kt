@@ -1,7 +1,9 @@
 package com.peakadex.app.feature.auth
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,46 +16,45 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.peakadex.app.R
 import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.theme.*
 
-// ── Design tokens (matching web login/page.tsx) ───────────────────────────────
-private val CardShape     = RoundedCornerShape(20.dp)   // --radius-xl
-// InputShape removed — use MaterialTheme.shapes.medium (12dp) at each call site
-private val ButtonShape   = RoundedCornerShape(16.dp)   // --radius-lg
-private val ColorBorder   = Color(0xFFE5E7EB)
-private val ColorRed      = Color(0xFFDC2626)
-private val ColorRedBg    = Color(0xFFFEF2F2)
-private val ColorRedBorder= Color(0xFFFECACA)
-private val ColorGreenBg  = Color(0xFFF0FDF4)
-private val GreenHover    = Color(0xFF256650)
+// ── Design tokens ─────────────────────────────────────────────────────────────
+private val LoginBg         = Color(0xFFF2F5F8)   // warm neutral, slightly cooler than white
+private val CardShape        = RoundedCornerShape(24.dp)
+private val ButtonShape      = RoundedCornerShape(16.dp)
+private val ColorBorder      = Color(0xFFE5E7EB)
+private val ColorRed         = Color(0xFFDC2626)
+private val ColorRedBg       = Color(0xFFFEF2F2)
+private val ColorRedBorder   = Color(0xFFFECACA)
+private val TaglineGold      = Color(0xFFF5C842)   // --ld-gold, landing page signature
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit = {},
     viewModel: AuthViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -73,69 +74,78 @@ fun LoginScreen(
     val isLoading    = uiState is AuthUiState.Loading
     val errorMessage = (uiState as? AuthUiState.Error)?.message
 
-    // ── Page background ───────────────────────────────────────────────────────
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(PeakBackground),
-        contentAlignment = Alignment.Center,
+            .background(LoginBg)
+            .verticalScroll(rememberScrollState())
+            .statusBarsPadding()
+            .imePadding()
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            // ── Card ──────────────────────────────────────────────────────────
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape    = CardShape,
-                colors   = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // ── Logo (20% bigger: 38dp → 46dp) ───────────────────────────────────
+        PeakadexLogo(height = 46.dp)
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+            // ── Login card ────────────────────────────────────────────────────
+            Card(
+                modifier  = Modifier.fillMaxWidth(),
+                shape     = CardShape,
+                colors    = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation  = 10.dp,
+                    pressedElevation  = 10.dp,
+                    focusedElevation  = 10.dp,
+                    hoveredElevation  = 12.dp,
+                ),
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 28.dp, vertical = 32.dp),
+                        .padding(horizontal = 24.dp, vertical = 28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
 
-                    // ── Logo ──────────────────────────────────────────────────
-                    PeakadexLogo(height = 38.dp)
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // ── "No tienes cuenta?" prompt ────────────────────────────
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // ── "¿No tienes cuenta?" ──────────────────────────────────
+                    // Whole row is the tap target (≥48dp height) — no stripped TextButton
+                    Row(
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .clickable(onClick = onNavigateToRegister)
+                            .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(
-                            text = stringResource(R.string.auth_no_account),
-                            fontSize = 13.sp,
-                            color = PeakNavyMid,
+                            text     = stringResource(R.string.auth_no_account),
+                            fontSize = 14.sp,
+                            color    = PeakNavyMid,
                         )
-                        TextButton(
-                            onClick = onNavigateToRegister,
-                            contentPadding = PaddingValues(0.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.auth_create_account),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = PeakGreenCTA,
-                            )
-                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text       = stringResource(R.string.auth_create_account),
+                            fontSize   = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = PeakGreenCTA,
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // ── Email field ───────────────────────────────────────────
                     PeakTextField(
-                        value = email,
-                        onValueChange = { email = it; if (uiState is AuthUiState.Error) viewModel.resetState() },
-                        placeholder = stringResource(R.string.auth_email_placeholder),
+                        value         = email,
+                        onValueChange = {
+                            email = it
+                            if (uiState is AuthUiState.Error) viewModel.resetState()
+                        },
+                        placeholder     = stringResource(R.string.auth_email_placeholder),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next,
+                            imeAction    = ImeAction.Next,
                         ),
                         keyboardActions = KeyboardActions(
                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
@@ -146,24 +156,33 @@ fun LoginScreen(
 
                     // ── Password field ────────────────────────────────────────
                     PeakTextField(
-                        value = password,
-                        onValueChange = { password = it; if (uiState is AuthUiState.Error) viewModel.resetState() },
-                        placeholder = stringResource(R.string.auth_password_placeholder),
+                        value         = password,
+                        onValueChange = {
+                            password = it
+                            if (uiState is AuthUiState.Error) viewModel.resetState()
+                        },
+                        placeholder          = stringResource(R.string.auth_password_placeholder),
                         visualTransformation = if (passwordVisible) VisualTransformation.None
                                                else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done,
+                            imeAction    = ImeAction.Done,
                         ),
                         keyboardActions = KeyboardActions(
-                            onDone = { focusManager.clearFocus(); viewModel.login(email, password) }
+                            onDone = {
+                                focusManager.clearFocus()
+                                viewModel.login(email, password)
+                            }
                         ),
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
-                                    imageVector = if (passwordVisible) EyeOffIcon else EyeIcon,
-                                    contentDescription = stringResource(if (passwordVisible) R.string.auth_password_hide else R.string.auth_password_show),
-                                    tint = PeakNavyLight,
+                                    imageVector     = if (passwordVisible) EyeOffIcon else EyeIcon,
+                                    contentDescription = stringResource(
+                                        if (passwordVisible) R.string.auth_password_hide
+                                        else R.string.auth_password_show
+                                    ),
+                                    tint     = PeakNavyLight,
                                     modifier = Modifier.size(20.dp),
                                 )
                             }
@@ -171,15 +190,15 @@ fun LoginScreen(
                     )
 
                     // ── Forgot password ───────────────────────────────────────
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                        TextButton(
-                            onClick = { /* TODO: navigate to forgot password */ },
-                            contentPadding = PaddingValues(vertical = 4.dp),
-                        ) {
+                    Box(
+                        modifier         = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterEnd,
+                    ) {
+                        TextButton(onClick = onNavigateToForgotPassword) {
                             Text(
-                                text = stringResource(R.string.auth_forgot_password),
+                                text     = stringResource(R.string.auth_forgot_password),
                                 fontSize = 13.sp,
-                                color = PeakNavyMid,
+                                color    = PeakNavyMid,
                             )
                         }
                     }
@@ -189,13 +208,13 @@ fun LoginScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.medium,
-                            color = ColorRedBg,
-                            border = BorderStroke(1.dp, ColorRedBorder),
+                            shape    = MaterialTheme.shapes.medium,
+                            color    = ColorRedBg,
+                            border   = BorderStroke(1.dp, ColorRedBorder),
                         ) {
                             Text(
-                                text = errorMessage,
-                                color = ColorRed,
+                                text     = errorMessage,
+                                color    = ColorRed,
                                 fontSize = 13.sp,
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                             )
@@ -207,81 +226,108 @@ fun LoginScreen(
 
                     // ── Sign in button ────────────────────────────────────────
                     Button(
-                        onClick = { focusManager.clearFocus(); viewModel.login(email, password) },
-                        enabled = !isLoading,
+                        onClick  = { focusManager.clearFocus(); viewModel.login(email, password) },
+                        enabled  = !isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
-                        shape = ButtonShape,
+                        shape  = ButtonShape,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = PeakGreenCTA,
+                            containerColor         = PeakGreenCTA,
                             disabledContainerColor = PeakNavyLight,
                         ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White,
+                                modifier    = Modifier.size(20.dp),
+                                color       = Color.White,
                                 strokeWidth = 2.dp,
                             )
                         } else {
                             Text(
-                                text = stringResource(R.string.auth_sign_in_btn),
-                                fontSize = 15.sp,
+                                text       = stringResource(R.string.auth_sign_in_btn),
+                                fontSize   = 15.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = Color.White,
+                                color      = Color.White,
                             )
                         }
                     }
 
                     // ── Divider "o" ───────────────────────────────────────────
                     Row(
-                        modifier = Modifier
+                        modifier            = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                            .padding(vertical = 18.dp),
+                        verticalAlignment   = Alignment.CenterVertically,
                     ) {
                         HorizontalDivider(modifier = Modifier.weight(1f), color = ColorBorder)
                         Text(
-                            text = stringResource(R.string.auth_or_divider),
+                            text     = stringResource(R.string.auth_or_divider),
                             fontSize = 12.sp,
-                            color = PeakNavyLight,
+                            color    = PeakNavyLight,
                         )
                         HorizontalDivider(modifier = Modifier.weight(1f), color = ColorBorder)
                     }
 
                     // ── Google button ─────────────────────────────────────────
                     OutlinedButton(
-                        onClick = { /* TODO: Google Sign-In — requires OAuth client ID setup */ },
+                        onClick  = { /* TODO: Google Sign-In */ },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
+                        shape  = MaterialTheme.shapes.medium,
                         border = BorderStroke(1.dp, ColorBorder),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color.White,
-                            contentColor = PeakNavyDark,
+                            contentColor   = PeakNavyDark,
                         ),
                     ) {
                         Icon(
-                            imageVector = GoogleIcon,
+                            imageVector        = GoogleIcon,
                             contentDescription = null,
-                            tint = Color.Unspecified,
-                            modifier = Modifier.size(18.dp),
+                            tint               = Color.Unspecified,
+                            modifier           = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = stringResource(R.string.auth_continue_google),
-                            fontSize = 14.sp,
+                            text       = stringResource(R.string.auth_continue_google),
+                            fontSize   = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = PeakNavyDark,
+                            color      = PeakNavyDark,
                         )
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // ── Collectible cards ─────────────────────────────────────────────
+            Image(
+                painter            = painterResource(R.drawable.login_cards_preview),
+                contentDescription = null,
+                contentScale       = ContentScale.FillWidth,
+                modifier           = Modifier.fillMaxWidth(0.70f),
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ── Tagline — brand closer (navy + gold, landing signature) ──────
+            val p1 = stringResource(R.string.auth_tagline_p1)
+            val p2 = stringResource(R.string.auth_tagline_p2)
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(SpanStyle(color = PeakNavyDark)) { append("$p1 ") }
+                    withStyle(SpanStyle(color = TaglineGold))  { append(p2) }
+                },
+                fontSize   = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign  = TextAlign.Center,
+            )
+
+            Spacer(modifier = Modifier.navigationBarsPadding())
+            Spacer(modifier = Modifier.height(16.dp))
         }
-    }
 }
 
 // ── Shared text field ─────────────────────────────────────────────────────────
@@ -298,24 +344,24 @@ fun PeakTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
 ) {
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        placeholder = { Text(placeholder, color = PeakNavyLight, fontSize = 15.sp) },
-        singleLine = true,
+        value                = value,
+        onValueChange        = onValueChange,
+        placeholder          = { Text(placeholder, color = PeakNavyLight, fontSize = 15.sp) },
+        singleLine           = true,
         visualTransformation = visualTransformation,
-        keyboardOptions = keyboardOptions,
-        keyboardActions = keyboardActions,
-        trailingIcon = trailingIcon,
-        shape = MaterialTheme.shapes.medium,
-        modifier = modifier.fillMaxWidth(),
+        keyboardOptions      = keyboardOptions,
+        keyboardActions      = keyboardActions,
+        trailingIcon         = trailingIcon,
+        shape                = MaterialTheme.shapes.medium,
+        modifier             = modifier.fillMaxWidth(),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor   = PeakGreenCTA,
-            unfocusedBorderColor = ColorBorder,
+            focusedBorderColor      = PeakGreenCTA,
+            unfocusedBorderColor    = ColorBorder,
             focusedContainerColor   = Color.White,
             unfocusedContainerColor = Color.White,
-            cursorColor = PeakGreenCTA,
-            focusedTextColor   = PeakNavyDark,
-            unfocusedTextColor = PeakNavyDark,
+            cursorColor             = PeakGreenCTA,
+            focusedTextColor        = PeakNavyDark,
+            unfocusedTextColor      = PeakNavyDark,
         ),
         textStyle = LocalTextStyle.current.copy(fontSize = 15.sp),
     )
@@ -332,10 +378,10 @@ internal val EyeIcon: ImageVector get() = androidx.compose.ui.graphics.vector.Im
             moveTo(1f, 12f); curveTo(1f, 12f, 5f, 4f, 12f, 4f); curveTo(19f, 4f, 23f, 12f, 23f, 12f)
             curveTo(23f, 12f, 19f, 20f, 12f, 20f); curveTo(5f, 20f, 1f, 12f, 1f, 12f); close()
         }.nodes,
-        stroke = androidx.compose.ui.graphics.SolidColor(Color(0xFF94A3B8)),
+        stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF94A3B8)),
         strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round,
+        strokeLineCap   = StrokeCap.Round,
+        strokeLineJoin  = StrokeJoin.Round,
     )
     addPath(
         pathData = androidx.compose.ui.graphics.vector.PathBuilder().apply {
@@ -343,9 +389,9 @@ internal val EyeIcon: ImageVector get() = androidx.compose.ui.graphics.vector.Im
             arcTo(3f, 3f, 0f, false, true, 9f, 12f); arcTo(3f, 3f, 0f, false, true, 12f, 9f)
             arcTo(3f, 3f, 0f, false, true, 15f, 12f); close()
         }.nodes,
-        stroke = androidx.compose.ui.graphics.SolidColor(Color(0xFF94A3B8)),
+        stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF94A3B8)),
         strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
+        strokeLineCap   = StrokeCap.Round,
     )
 }.build()
 
@@ -365,10 +411,10 @@ internal val EyeOffIcon: ImageVector get() = androidx.compose.ui.graphics.vector
             arcTo(18.5f, 18.5f, 0f, false, true, 20.84f, 15.19f)
             moveTo(1f, 1f); lineTo(23f, 23f)
         }.nodes,
-        stroke = androidx.compose.ui.graphics.SolidColor(Color(0xFF94A3B8)),
+        stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF94A3B8)),
         strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round,
+        strokeLineCap   = StrokeCap.Round,
+        strokeLineJoin  = StrokeJoin.Round,
     )
 }.build()
 
