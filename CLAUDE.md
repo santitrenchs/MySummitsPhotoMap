@@ -1941,3 +1941,153 @@ Text(
 - **ProfileScreen `TextStyle` import conflict**: `java.time.format.TextStyle` conflicts with `androidx.compose.ui.text.TextStyle`. Fix: remove the java import and use `java.time.format.TextStyle.SHORT` fully qualified at the call site (line ~869 in ProfileScreen.kt).
 - **`EyeIcon` / `EyeOffIcon`** are inline `ImageVector.Builder` SVGs at the bottom of `LoginScreen.kt`. Do NOT add Material Icons dependency for these.
 - **`GoogleIcon`** — multicolor 4-path inline SVG in `LoginScreen.kt`. Always `tint = Color.Unspecified`.
+
+---
+
+## Android App — Google Sign-In (2026-05-27)
+
+**Status: shipped and working.**
+
+### Files involved
+
+| File | Change |
+|---|---|
+| `app/api/v1/auth/google/route.ts` | New backend endpoint |
+| `mobile/android/app/build.gradle.kts` | Added credentials + googleid deps + BuildConfig field |
+| `mobile/android/gradle/libs.versions.toml` | Added versions + library entries |
+| `mobile/android/.../ApiService.kt` | Added `loginWithGoogle` endpoint |
+| `mobile/android/.../AuthViewModel.kt` | Added `signInWithGoogle(context)` |
+| `mobile/android/.../LoginScreen.kt` | Google button wired to `viewModel.signInWithGoogle(context)` |
+
+---
+
+### Backend: `POST /api/v1/auth/google`
+
+**File:** `app/api/v1/auth/google/route.ts`
+
+Flow:
+1. Receives `{ idToken: string }` in request body
+2. Verifies the token via Google's tokeninfo endpoint: `https://oauth2.googleapis.com/tokeninfo?id_token=...`
+3. Checks `tokenInfo.aud === process.env.GOOGLE_CLIENT_ID` (audience mismatch → 401)
+4. Finds or creates user:
+   - `findUserByGoogleOrEmail`: looks up `Account` by `provider=google + providerAccountId=googleId` first, then falls back to `User.email`
+   - If user exists + registered with email/password: calls `ensureGoogleAccount` (upsert) to link the Google account
+   - If new user: `createGoogleUser` — transaction creates `User` + `Tenant` + `Membership` + `Account` + sends welcome email
+5. Issues JWT (30-day TTL, same format as `/api/v1/auth/login`) via `jose` `SignJWT`
+6. Returns `{ token, user }` — identical shape to login response
+
+**Required env var:** `GOOGLE_CLIENT_ID` — the Web Client ID from Google Cloud Console. Must be set on Railway staging and production.
+
+---
+
+### Android: Credential Manager
+
+**Dependencies** (in `libs.versions.toml` + `build.gradle.kts`):
+```toml
+credentials = "1.3.0"
+googleid    = "1.1.1"
+```
+
+```kotlin
+credentials                = { group = "androidx.credentials", name = "credentials", ... }
+credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", ... }
+googleid                   = { group = "com.google.android.libraries.identity.googleid", name = "googleid", ... }
+```
+
+**BuildConfig field** (same value for debug + release in `build.gradle.kts`):
+```kotlin
+buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"459929432551-ha3k64nssd83o0qt9biro3l52de06am9.apps.googleusercontent.com\"")
+```
+This is the Web Client ID (NOT the Android Client ID). The Android OAuth client in Google Cloud Console is only needed so Play Services can validate the token; the `setServerClientId` call must always use the **Web Client ID**.
+
+**`AuthViewModel.signInWithGoogle(context)`** exception handling — order matters:
+
+```kotlin
+catch (e: GetCredentialCancellationException) → _uiState.value = AuthUiState.Idle   // silent — user cancelled
+catch (e: NoCredentialException)              → AuthUiState.Error("No se encontró ninguna cuenta de Google...")
+catch (e: GetCredentialException)             → AuthUiState.Error("Error con Google Sign-In: ${e.message}")
+catch (e: HttpException)                      → AuthUiState.Error("Error al iniciar sesión con Google (${e.code()})")
+catch (e: IOException)                        → AuthUiState.Error("Sin conexión a internet")
+catch (e: Exception)                          → AuthUiState.Error("Error inesperado con Google Sign-In")
+```
+
+`GetCredentialCancellationException` must be caught **before** `GetCredentialException` (it's a subclass). If caught only by the generic handler, the user sees a spurious error after cancelling the picker.
+
+---
+
+### Google Cloud Console setup
+
+Two OAuth clients are needed:
+1. **Web application** — Client ID used as `GOOGLE_CLIENT_ID` env var on the server and as `GOOGLE_WEB_CLIENT_ID` in Android BuildConfig. Has Authorized redirect URIs for the web app.
+2. **Android** — Package name `com.peakadex.app` + SHA-1 of the debug keystore. Required so Play Services accepts the Credential Manager request. For production release, also add the release keystore SHA-1.
+
+Get debug SHA-1:
+```bash
+keytool -keystore ~/.android/debug.keystore -list -v -storepass android
+```
+
+---
+
+### Android RegisterScreen — GDPR legal consent (2026-05-27)
+
+**File:** `mobile/android/.../RegisterScreen.kt`
+
+Added a mandatory checkbox above the register button:
+- `var termsAccepted by remember { mutableStateOf(false) }` — unchecked by default (GDPR Art. 7 requirement)
+- Register button: `enabled = !isLoading && termsAccepted`
+- Legal text uses `LinkAnnotation.Url` + `TextLinkStyles` (NOT deprecated `ClickableText`)
+- Links open automatically via the system browser — no manual `Intent` or `openUrl()` needed with the new API
+
+```kotlin
+val legalText = buildAnnotatedString {
+    withStyle(SpanStyle(color = Color(0xFF6B7280), fontSize = 13.sp)) { append("He leído y acepto los ") }
+    pushLink(LinkAnnotation.Url("https://www.peakadex.com/terms", linkStyle))
+    append("Términos y condiciones")
+    pop()
+    withStyle(SpanStyle(color = Color(0xFF6B7280), fontSize = 13.sp)) { append(" y la ") }
+    pushLink(LinkAnnotation.Url("https://www.peakadex.com/privacy", linkStyle))
+    append("Política de privacidad")
+    pop()
+}
+```
+
+**`ClickableText` is deprecated** — always use `Text(text = annotatedString)` + `LinkAnnotation.Url` for clickable links inside text. The system handles the URL open automatically.
+
+---
+
+### Android SettingsScreen — INFORMACIÓN section (2026-05-27)
+
+Added a new section **before** the logout button (ZONA DE PELIGRO header removed):
+
+```kotlin
+item { SectionHeader(stringResource(R.string.settings_section_info)) }
+item {
+    SettingsCard {
+        SettingsLinkRow("Política de privacidad") { openUrl(context, "https://www.peakadex.com/privacy") }
+        HorizontalDivider(...)
+        SettingsLinkRow("Términos y condiciones") { openUrl(context, "https://www.peakadex.com/terms") }
+        HorizontalDivider(...)
+        SettingsReadOnlyRow("Versión", BuildConfig.VERSION_NAME)
+    }
+}
+```
+
+`SettingsLinkRow` is a `Row + .clickable` with a chevron-right icon (`ChevronRightIcon`, 18dp, gray). Opens URLs via `Intent(Intent.ACTION_VIEW, Uri.parse(url))`.
+
+**i18n strings added** (all 5 locales — `values`, `values-en`, `values-ca`, `values-fr`, `values-de`):
+- `settings_section_info` — Información / Information / Informació / Informations / Informationen
+- `settings_privacy_policy` — Política de privacidad / Privacy Policy / Política de privacitat / Politique de confidentialité / Datenschutzrichtlinie
+- `settings_terms` — Términos y condiciones / Terms & Conditions / Termes i condicions / Conditions d'utilisation / Nutzungsbedingungen
+- `settings_version` — Versión / Version / Versió / Version / Version
+
+**"Zona de peligro" header removed** — the logout button now has no section title above it. This follows the pattern of major apps (Strava, Spotify, etc.) that don't label the logout button with a warning heading.
+
+---
+
+### Gotchas
+
+- **`NoCredentialException` on emulator**: emulators require a **Cold Boot** after adding a Google account before Credential Manager can use it. `Cold Boot Now` is in Device Manager → ⋮ menu next to the emulator (only available when the emulator is stopped — stop it first with the red ◼ button).
+- **Emulator vs physical device**: Credential Manager can be unreliable on API 35 emulators. If cold boot doesn't help, test on a physical device.
+- **`GetCredentialCancellationException` is a subclass of `GetCredentialException`**: catch the specific subclass first or the generic handler will intercept cancellations and show a spurious error.
+- **Web Client ID vs Android Client ID**: `setServerClientId()` in `GetGoogleIdOption.Builder` must receive the **Web Client ID**, not the Android Client ID. Using the Android Client ID causes a token validation failure on the server.
+- **`GOOGLE_CLIENT_ID` env var on Railway**: must be set on both staging and production. Without it, the server skips audience validation (logs a warning) but still works — however it's a security hole. Always set it.
