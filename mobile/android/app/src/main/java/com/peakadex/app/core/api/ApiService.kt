@@ -112,6 +112,7 @@ interface ApiService {
         @Query("south") south: Double,
         @Query("east") east: Double,
         @Query("west") west: Double,
+        @Query("zoom") zoom: Int,
     ): PeaksResponse
 
     @GET("peaks/{id}")

@@ -77,6 +77,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ peaks, places });
   }
 
+  const zoom  = parseInt(searchParams.get("zoom") ?? "");
+
   let where: Record<string, unknown> | undefined;
   let take: number | undefined;
 
@@ -85,7 +87,14 @@ export async function GET(req: NextRequest) {
       latitude:  { gte: south, lte: north },
       longitude: { gte: west,  lte: east  },
     };
-    take = 300;
+    // Return fewer peaks at low zoom (large viewport) and more at high zoom
+    // (small viewport where every local peak matters).
+    take = !isNaN(zoom)
+      ? zoom < 6  ? 50
+      : zoom < 8  ? 150
+      : zoom < 11 ? 300
+      :             500
+      : 300; // fallback for clients that don't send zoom
   }
 
   const peaks = await prisma.peak.findMany({

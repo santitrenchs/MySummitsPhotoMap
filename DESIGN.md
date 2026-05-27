@@ -1023,3 +1023,52 @@ When a peak has been climbed more than once (`peak.count > 1`), a compact pill a
 **Web** (`CaptureStack.tsx`): stacked-squares visual for count > 1 (up to 4 squares in rarity color, overflow badge `+N`). Returns `null` for `count ≤ 1` — the `×1` plain-text case was removed to avoid noise.
 
 **Why both patterns**: tap-active-tab is iOS convention but invisible to users who don't know it; FAB is discoverable but adds visual weight. Coexist without conflict.
+
+---
+
+## Atlas Screen — Map & List (Android)
+
+> **Authoritative spec for Android (and future iOS).** Implementation lives in `AtlasScreen.kt` + `AtlasViewModel.kt`.
+
+### Map view — peak dots
+
+Unclimbed peaks are rendered as colored circle dots (rarity color, radius 7dp). Climbed peaks are circular photo markers (88dp bitmap, rarity-colored ring). The map dots are **viewport-culled** using a composite score to avoid saturating the screen at low zoom levels.
+
+**Zoom ramp** (linear, no abrupt jumps):
+
+| Zoom | What the user sees | % of viewport peaks shown |
+|---|---|---|
+| ≤ 5 | Continent / country | 5% — only the most significant landmarks |
+| 8 | Mountain range | ~38% |
+| 11 | Region / valley | ~86% |
+| ≥ 13 | Valley / town | 100% — no culling |
+
+Score formula per peak: `normAlt × 0.5 + rarityWeight × 0.3 + normDist × 0.2`  
+(`normDist` = proximity to viewport center, closer = higher score)
+
+### List view — data source
+
+The list panel is **decoupled from the map zoom**. When the user taps "Lista":
+- A fresh API query fires with a **fixed ~50 km radius bbox** around the map center (zoom=12 → up to 500 peaks).
+- The list always shows the same density regardless of how zoomed in or out the map is.
+- A `CircularProgressIndicator` shows while loading (typically < 200ms on a good connection).
+- On close, `listPeaks` is cleared to free memory.
+
+### List row anatomy (Android)
+
+```
+┌────────────────────────────────────────┐
+│ [44dp photo/dot]  Peak Name      300 m │
+│                   Massís · ES    1.2km │
+└────────────────────────────────────────┘
+```
+
+| Element | Climbed peak | Unclimbed peak |
+|---|---|---|
+| Left visual | 44dp thumbnail, `RoundedCornerShape(8dp)`, rarity-colored 1.5dp border | 9dp blue dot (centered in 44dp box) |
+| Peak name | 15sp SemiBold | 15sp SemiBold |
+| Subtitle | mountainRange · country | mountainRange · country |
+| Right: altitude | 13sp SemiBold, `PeakNavyDark` | 13sp SemiBold, `PeakNavyDark` |
+| Right: distance | 11sp, `PeakSubtle` (km or m) | 11sp, `PeakSubtle` |
+| Row divider | `HorizontalDivider` 1dp `PeakBorderLight` | same |
+| Row padding | `horizontal=16dp, vertical=10dp` | same |

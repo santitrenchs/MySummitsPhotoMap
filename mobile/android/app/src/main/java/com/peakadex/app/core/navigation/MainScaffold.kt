@@ -81,6 +81,7 @@ fun MainScaffold(navController: NavController) {
     var newAscentPeakName     by remember { mutableStateOf<String?>(null) }
     var logbookRefreshTrigger  by remember { mutableIntStateOf(0) }
     var logbookHighlightId     by remember { mutableStateOf<String?>(null) }
+    var atlasRefreshTrigger    by remember { mutableIntStateOf(0) }
 
     // B — Back gesture on root tab minimises the app instead of popping the back stack
     BackHandler(enabled = currentRoute == Screen.Home.route) {
@@ -139,6 +140,7 @@ fun MainScaffold(navController: NavController) {
                 showNewAscent      = false
                 logbookHighlightId = ascentId
                 logbookRefreshTrigger++
+                atlasRefreshTrigger++
                 tabNavController.navigate(Screen.Cards.route) {
                     popUpTo(Screen.Home.route) { saveState = true }
                     launchSingleTop = true
@@ -172,6 +174,7 @@ fun MainScaffold(navController: NavController) {
             }
             composable(Screen.Map.route) {
                 AtlasScreen(
+                    atlasRefreshTrigger = atlasRefreshTrigger,
                     onNavigateToLogbook = { peakId, peakName ->
                         pendingPeakId   = peakId
                         pendingPeakName = peakName
