@@ -967,4 +967,59 @@ IME:    imePadding() on the outer Column — keyboard pushes content up correctl
 
 **Never use `contentPadding = PaddingValues(0.dp)` on a TextButton** — this strips the touch target below 48dp and violates Android accessibility guidelines.
 
+---
+
+## Profile Screen — Bitácora tabs (Cimas / Fotos / Etiquetado)
+
+### PhotoTile — rarity flower badge
+
+Each photo tile in the Fotos and Etiquetado 3-column grid has a rarity flower badge pinned to the **top-left corner**:
+
+```
+┌──────────────────────┐
+│ ●✿                   │  ← white circle 22dp, top-left offset 5dp
+│                      │
+│   [photo]            │
+│                      │
+│ @creator (tagged tab)│  ← bottom gradient overlay
+└──────────────────────┘
+```
+
+| Property | Value |
+|---|---|
+| Position | `Alignment.TopStart`, offset `x=5.dp, y=5.dp` |
+| Circle size | 22dp |
+| Circle bg | `Color.White.copy(alpha = 0.95f)` |
+| Icon | `"✿"`, 13sp, `lineHeight = 13.sp` |
+| Icon color | `rarityColor` (from `rarity.color` hex) |
+| Fallback color | `PeakClimbedGreen` |
+
+**Web** (`PhotosTabV2.tsx`): identical layout — 20px white circle at `top:5; left:5` wrapping `<RarityFlower size={14} />`.
+
+---
+
+### PeakRowCard — repeat count pill (Cimas tab)
+
+When a peak has been climbed more than once (`peak.count > 1`), a compact pill appears to the right of the peak name:
+
+```
+┌────────────────────────────────────────┐
+│  [photo]  │ Pica d'Estats    ┌────┐    │
+│           │                  │ ×3 │    │  ← rarity-tinted pill
+│           │ ✿ Snow Lotus     └────┘    │
+│           │ Última: 12 ene '24         │
+└────────────────────────────────────────┘
+```
+
+| Property | Value |
+|---|---|
+| Shape | `RoundedCornerShape(6.dp)` |
+| Background | `rarityColor.copy(alpha = 0.13f)` |
+| Border | 1dp, `rarityColor.copy(alpha = 0.30f)` |
+| Text | `"×{count}"`, 10sp, `FontWeight.Bold` |
+| Text color | `rarityColorDark` |
+| Shown when | `peak.count > 1` only — single ascents show nothing |
+
+**Web** (`CaptureStack.tsx`): stacked-squares visual for count > 1 (up to 4 squares in rarity color, overflow badge `+N`). Returns `null` for `count ≤ 1` — the `×1` plain-text case was removed to avoid noise.
+
 **Why both patterns**: tap-active-tab is iOS convention but invisible to users who don't know it; FAB is discoverable but adds visual weight. Coexist without conflict.

@@ -670,12 +670,20 @@ private fun PeakRowCard(
                         modifier   = Modifier.weight(1f).padding(end = 4.dp),
                     )
                     if (peak.count > 1) {
-                        Text(
-                            text       = "×${peak.count}",
-                            fontSize   = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color      = PeakNavyLight,
-                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(rarityColor.copy(alpha = 0.13f))
+                                .border(1.dp, rarityColor.copy(alpha = 0.30f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text       = "×${peak.count}",
+                                fontSize   = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color      = rarityColorDark,
+                            )
+                        }
                     }
                 }
 
@@ -846,15 +854,23 @@ private fun PhotoTile(
             }
         }
 
-        // Rarity dot — bottom-right corner
+        // Rarity badge — top-left corner (matches web PhotoTile)
         Box(
             modifier = Modifier
-                .size(8.dp)
-                .align(Alignment.BottomEnd)
-                .offset(x = (-4).dp, y = (-4).dp)
+                .size(22.dp)
+                .align(Alignment.TopStart)
+                .offset(x = 5.dp, y = 5.dp)
                 .clip(CircleShape)
-                .background(rarityColor),
-        )
+                .background(Color.White.copy(alpha = 0.95f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text       = "✿",
+                color      = rarityColor,
+                fontSize   = 13.sp,
+                lineHeight = 13.sp,
+            )
+        }
     }
 }
 

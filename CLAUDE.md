@@ -1720,6 +1720,29 @@ fun ProfileScreen(
 
 The `isOwn` boolean is added **at the `ProfileContent` level** where the tab type is known, not inside `PhotosTab`/`PhotoTile`.
 
+#### PhotoTile — rarity badge (Fotos + Etiquetado tabs)
+
+Each photo tile in the 3-column grid shows a **rarity flower badge** at the top-left corner, matching the web `PhotosTabV2` implementation:
+
+- **Position**: `Alignment.TopStart`, offset `x=5.dp, y=5.dp`
+- **Container**: 22dp circle, `Color.White.copy(alpha = 0.95f)` background
+- **Content**: `"✿"` text, `fontSize = 13.sp`, `lineHeight = 13.sp`, color = `rarityColor` (parsed from `rarity.color` hex)
+- **Fallback**: `PeakClimbedGreen` when `rarityId` is null or parse fails
+
+The old bottom-right 8dp dot was replaced by this badge. Both Fotos and Etiquetado tabs share the same `PhotoTile` composable — the badge renders in all cases.
+
+**Web equivalent** (`components/profile/PhotosTabV2.tsx`): `position: absolute; top: 5; left: 5; width: 20; height: 20; borderRadius: 50%; background: rgba(255,255,255,0.95)` wrapping a `<RarityFlower id={photo.rarityId} size={14} />`.
+
+#### PeakRowCard — repeat count pill (Cimas tab)
+
+When `peak.count > 1`, a styled pill appears to the right of the peak name in the header row:
+
+- **Container**: `RoundedCornerShape(6.dp)`, `rarityColor.copy(alpha = 0.13f)` background, `rarityColor.copy(alpha = 0.30f)` border (1dp)
+- **Content**: `"×${peak.count}"` text, `fontSize = 10.sp`, `FontWeight.Bold`, color = `rarityColorDark`
+- Single ascents (count = 1) show nothing — same as web.
+
+**Web equivalent** (`components/profile/CaptureStack.tsx`): stacked-squares badge for count > 1, `null` for count ≤ 1. The `×1` plain-text case was removed from web to match (returns `null` when `count <= 1`).
+
 ---
 
 ### Navigation from Bitácora tabs → Cards

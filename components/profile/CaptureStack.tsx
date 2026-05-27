@@ -6,13 +6,7 @@ import type { RarityId } from "@/lib/rarity";
 export function CaptureStack({ count, rarityId }: { count: number; rarityId: RarityId }) {
   const accent = RARITY_COLORS[rarityId] ?? "#94A3B8";
 
-  if (count === 1) {
-    return (
-      <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 12, fontWeight: 600, color: "#94A3B8" }}>
-        ×1
-      </span>
-    );
-  }
+  if (count <= 1) return null;
 
   const visible = Math.min(count, 4);
   const overflow = count > 4 ? count - 4 : 0;
