@@ -342,16 +342,31 @@ private fun MainTabBar(
                     selected = selected,
                     onClick = { onTabSelected(tab.screen) },
                     icon = {
-                        // Multi-colour SVG icons: tint = Unspecified preserves their colours.
-                        // Alpha still signals active/inactive over the M3 indicator pill.
-                        Icon(
-                            painter = painterResource(tab.iconRes),
-                            contentDescription = tab.label,
-                            tint = Color.Unspecified,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .alpha(if (selected) 1f else 0.45f),
-                        )
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(40.dp)) {
+                            if (selected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    PeakBlueActive.copy(alpha = 0.13f),
+                                                    Color.Transparent,
+                                                ),
+                                            ),
+                                            shape = CircleShape,
+                                        ),
+                                )
+                            }
+                            Icon(
+                                painter = painterResource(tab.iconRes),
+                                contentDescription = tab.label,
+                                tint = Color.Unspecified,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .alpha(if (selected) 1f else 0.40f),
+                            )
+                        }
                     },
                     label = {
                         Text(
@@ -360,9 +375,8 @@ private fun MainTabBar(
                             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                         )
                     },
-                    // ③ Brand-blue pill indicator; label colours delegated to M3 tokens
                     colors = NavigationBarItemDefaults.colors(
-                        indicatorColor        = MaterialTheme.colorScheme.primaryContainer,
+                        indicatorColor        = Color.Transparent,
                         selectedTextColor     = PeakBlueActive,
                         unselectedTextColor   = MaterialTheme.colorScheme.onSurfaceVariant,
                         selectedIconColor     = Color.Unspecified,

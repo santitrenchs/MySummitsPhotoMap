@@ -221,7 +221,7 @@ fun AtlasScreen(
     val styleReady    = remember { mutableStateOf(false) }
     val cameraCenter  = remember { mutableStateOf<LatLng?>(null) }
     // Incremental marker loading: track which peak IDs are already in the map style
-    val loadedMarkerIds   = remember { mutableSetOf<String>() }
+    val loadedMarkerIds    = remember { mutableSetOf<String>() }
     val loadedWithRarities = remember { mutableStateOf(false) }
 
     // ── Local UI state ────────────────────────────────────────────────────────
@@ -381,7 +381,15 @@ fun AtlasScreen(
             lifecycleOwner.lifecycle.addObserver(observer)
             onDispose {
                 lifecycleOwner.lifecycle.removeObserver(observer)
-                mapViewRef.value?.onDestroy()
+                // Proper teardown: onPause → onStop → onDestroy.
+                // onDispose fires while the Activity is still RESUMED (tab navigation),
+                // so the lifecycle observer never receives ON_PAUSE/ON_STOP — call
+                // them explicitly here to flush the GL queue cleanly.
+                mapViewRef.value?.let { mv ->
+                    runCatching { mv.onPause() }
+                    runCatching { mv.onStop() }
+                    runCatching { mv.onDestroy() }
+                }
             }
         }
 
