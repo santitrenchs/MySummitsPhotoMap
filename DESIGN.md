@@ -1053,6 +1053,7 @@ The list panel is **decoupled from the map zoom**. When the user taps "Lista":
 - The list always shows the same density regardless of how zoomed in or out the map is.
 - A `CircularProgressIndicator` shows while loading (typically < 200ms on a good connection).
 - On close, `listPeaks` is cleared to free memory.
+- If the map center is not yet available (camera still settling), the list falls back to `lastBounds` center so it always loads data.
 
 ### List row anatomy (Android)
 

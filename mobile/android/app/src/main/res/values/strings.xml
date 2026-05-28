@@ -2,7 +2,7 @@
     <string name="app_name">Peakadex</string>
 
     <!-- ── Navegación principal ──────────────────────────────────────────────── -->
-    <string name="nav_tab_home">Peakadex stats</string>
+    <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_map">Atlas</string>
     <string name="nav_tab_logbook">Bitácora</string>
     <string name="nav_tab_cards">Cartas</string>

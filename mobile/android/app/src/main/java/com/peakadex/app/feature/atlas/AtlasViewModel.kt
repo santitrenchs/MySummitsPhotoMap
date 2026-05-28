@@ -75,6 +75,7 @@ class AtlasViewModel : ViewModel() {
 
     private var viewportJob: Job? = null
     private var searchJob: Job? = null
+    private var loadListJob: Job? = null
 
     // Last known bounds — used to re-fetch when the filter changes while stationary.
     private var lastBounds: ViewportBounds? = null
@@ -218,29 +219,34 @@ class AtlasViewModel : ViewModel() {
     fun onToggleList(centerLat: Double? = null, centerLon: Double? = null) {
         val wasShowing = _uiState.value.showList
         _uiState.update { it.copy(showList = !wasShowing, selected = null) }
-        if (!wasShowing && centerLat != null && centerLon != null) {
-            loadListPeaks(centerLat, centerLon)
-        } else if (wasShowing) {
+        if (!wasShowing) {
+            // Fall back to lastBounds centre if the camera hasn't settled yet (cameraCenter == null)
+            val lat = centerLat ?: lastBounds?.let { (it.north + it.south) / 2 }
+            val lon = centerLon ?: lastBounds?.let { (it.east + it.west) / 2 }
+            if (lat != null && lon != null) {
+                loadListJob?.cancel()
+                loadListJob = viewModelScope.launch { loadListPeaks(lat, lon) }
+            }
+        } else {
+            loadListJob?.cancel()
             _uiState.update { it.copy(listPeaks = emptyList()) }
         }
     }
 
-    private fun loadListPeaks(centerLat: Double, centerLon: Double) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingList = true) }
-            // Fixed ~50 km radius bbox (0.45° lat ≈ 50 km; 0.60° lon ≈ 50 km at 41°N)
-            val north = centerLat + 0.45
-            val south = centerLat - 0.45
-            val east  = centerLon + 0.60
-            val west  = centerLon - 0.60
-            runCatching { api.getViewportPeaks(north, south, east, west, zoom = 12) }
-                .onSuccess { response ->
-                    _uiState.update { it.copy(listPeaks = response.peaks, isLoadingList = false) }
-                }
-                .onFailure {
-                    _uiState.update { it.copy(isLoadingList = false) }
-                }
-        }
+    private suspend fun loadListPeaks(centerLat: Double, centerLon: Double) {
+        _uiState.update { it.copy(isLoadingList = true) }
+        // Fixed ~50 km radius bbox (0.45° lat ≈ 50 km; 0.60° lon ≈ 50 km at 41°N)
+        val north = centerLat + 0.45
+        val south = centerLat - 0.45
+        val east  = centerLon + 0.60
+        val west  = centerLon - 0.60
+        runCatching { api.getViewportPeaks(north, south, east, west, zoom = 12) }
+            .onSuccess { response ->
+                _uiState.update { it.copy(listPeaks = response.peaks, isLoadingList = false) }
+            }
+            .onFailure {
+                _uiState.update { it.copy(isLoadingList = false) }
+            }
     }
 
     fun clearFilters() {

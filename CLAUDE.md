@@ -475,12 +475,12 @@ cropAspect String?           // "4:5" | "1:1"
 
 | Tab | es | ca | en | fr | de |
 |-----|----|----|----|----|-----|
-| Home | Peakadex stats| Peakadex stats | Peakadex stats | Peakadex stats | Peakadex stats |
+| Home | **Stats** | **Stats** | **Stats** | **Stats** | **Stats** |
 | Map | **Atlas** | **Atlas** | **Atlas** | **Atlas** | **Atlas** |
 | Ascents | **Bitácora** | **Bitàcola** | **Logbook** | **Carnet** | **Logbuch** |
 | New ascent | **+** | **+** | **+** | **+** | **+** |
 
-Note: "Atlas" and "Peakadex stats" is intentionally not translated — it's a brand name, intentionally kept across all locales.
+Note: "Atlas" is intentionally not translated — it's a brand name kept across all locales. The Home tab was renamed from "Peakadex stats" to "Stats" (2026-05-28) for brevity.
 
 ---
 
@@ -677,7 +677,22 @@ This is a **complete, shipped feature**. The notes below are the authoritative s
 
 ### MapView lifecycle inside a Compose tab
 
-Because the Activity is already STARTED/RESUMED when the user navigates to the Atlas tab, the standard `LifecycleEventObserver` pattern misses the initial `ON_START`/`ON_RESUME` events. Fix: call `mv.onCreate(null)`, `mv.onStart()`, `mv.onResume()` **immediately inside the `factory` lambda** of `AndroidView`. The `LifecycleEventObserver` then only handles app-to-background and the mandatory `onPause`/`onStop`/`onDestroy` cleanup (including `DisposableEffect → onDispose → mapViewRef.value?.onDestroy()`).
+Because the Activity is already STARTED/RESUMED when the user navigates to the Atlas tab, the standard `LifecycleEventObserver` pattern misses the initial `ON_START`/`ON_RESUME` events. Fix: call `mv.onCreate(null)`, `mv.onStart()`, `mv.onResume()` **immediately inside the `factory` lambda** of `AndroidView`. The `LifecycleEventObserver` then only handles app-to-background events.
+
+**Critical `onDispose` fix (2026-05-28):** `onDispose` fires while the Activity is still RESUMED (tab navigation), so the lifecycle observer never delivers `ON_PAUSE`/`ON_STOP` — the GL queue is not flushed and the context becomes corrupted. Always call them explicitly in `onDispose`:
+
+```kotlin
+onDispose {
+    lifecycleOwner.lifecycle.removeObserver(observer)
+    mapViewRef.value?.let { mv ->
+        runCatching { mv.onPause() }
+        runCatching { mv.onStop() }
+        runCatching { mv.onDestroy() }
+    }
+}
+```
+
+`runCatching` on each call prevents a crash in one step from blocking the others.
 
 ---
 
@@ -911,7 +926,14 @@ data class AtlasUiState(
 - `api.getMapAscents()` → populates `climbedByPeakId` (associatedBy `a.peakId`)
 - `api.getViewportPeaks(north, south, east, west, zoom)` → fetched in `onMapIdle()` (debounced 500ms); skipped entirely if `filter == CLIMBED`
 - `api.searchPeaks(query)` → debounced 300ms, `take(20)` results
-- `loadListPeaks(lat, lon)` → fixed ~50km bbox around map center (zoom=12, up to 500 peaks); called when opening the list
+- `loadListPeaks(lat, lon)` → fixed ~50km bbox around map center (zoom=12, up to 500 peaks); called when opening the list. Managed by a dedicated `loadListJob: Job?` — cancelled before starting a new one.
+
+**`onToggleList` fallback (fix 2026-05-28):** `cameraCenter` can be null when the list is opened before the camera has settled. `onToggleList` falls back to `lastBounds` center so the list always loads:
+```kotlin
+val lat = centerLat ?: lastBounds?.let { (it.north + it.south) / 2 }
+val lon = centerLon ?: lastBounds?.let { (it.east + it.west) / 2 }
+```
+`loadListPeaks` is a `private suspend fun` — `onToggleList` owns the Job via `loadListJob`.
 
 **Debounce constants:**
 - `VIEWPORT_DEBOUNCE_MS = 500L` — viewport queries (longer to avoid mid-animation firing)
@@ -1703,6 +1725,37 @@ TabItem(Screen.Home,    R.string.nav_tab_home,    R.drawable.ic_tab_home),
 TabItem(Screen.Logbook, R.string.nav_tab_logbook, R.drawable.ic_tab_logbook),
 TabItem(Screen.Map,     R.string.nav_tab_map,     R.drawable.ic_tab_map),
 TabItem(Screen.Cards,   R.string.nav_tab_cards,   R.drawable.ic_tab_cards),
+```
+
+### Active tab indicator (redesign 2026-05-28)
+
+The M3 solid pill (`primaryContainer`) was replaced with a **subtle radial glow** — lighter, more premium, less Material-ish.
+
+**Implementation in `MainScaffold.kt` → `MainTabBar`:**
+- `indicatorColor = Color.Transparent` — eliminates the M3 pill entirely
+- The icon is wrapped in a `Box(size=40dp)`. When selected, a 38dp `Box` with `Brush.radialGradient([PeakBlueActive.copy(alpha=0.13f), Transparent])` + `CircleShape` background is drawn behind the icon
+- Inactive icon alpha: `0.40f` (was 0.45f)
+- Label color unchanged: active = `PeakBlueActive`, inactive = `onSurfaceVariant`
+
+```kotlin
+icon = {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(40.dp)) {
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(PeakBlueActive.copy(alpha = 0.13f), Color.Transparent),
+                        ),
+                        shape = CircleShape,
+                    ),
+            )
+        }
+        Icon(painter = painterResource(tab.iconRes), tint = Color.Unspecified,
+             modifier = Modifier.size(24.dp).alpha(if (selected) 1f else 0.40f))
+    }
+}
 ```
 
 ---
