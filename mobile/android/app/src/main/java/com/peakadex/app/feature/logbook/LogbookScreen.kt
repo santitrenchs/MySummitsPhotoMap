@@ -73,14 +73,13 @@ import kotlin.math.tan
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
 
-// ESRI World Shaded Relief — terrain shading, no contour lines, no peak labels.
-// Note: ESRI uses {z}/{y}/{x} tile path order (row/col), not {z}/{x}/{y}.
+// Carto Positron — clean white minimalist style, no peak labels.
 private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 12): String {
     val n      = 1 shl zoom
     val xTile  = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
     val latRad = Math.toRadians(lat)
     val yTile  = ((1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
-    return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/$zoom/$yTile/$xTile"
+    return "https://a.basemaps.cartocdn.com/light_all/$zoom/$xTile/$yTile@2x.png"
 }
 
 // Returns the fractional position [0,1] of lat/lng within its tile at the given zoom.
