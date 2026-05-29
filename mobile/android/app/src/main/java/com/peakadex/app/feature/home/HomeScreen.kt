@@ -267,7 +267,7 @@ private fun HeroHeader(data: HomeData, user: User?) {
             painter            = painterResource(R.drawable.hero),
             contentDescription = null,
             contentScale       = ContentScale.Crop,
-            alignment          = BiasAlignment(0f, 0.1f),   // slightly lower → mountains visible
+            alignment          = BiasAlignment(0f, 0.7f),   // show mountains, less sky
             modifier           = Modifier
                 .fillMaxWidth()
                 .height(104.dp)
@@ -296,14 +296,14 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 .fillMaxWidth()
                 .padding(top = 104.dp)
                 .background(Color(0xFF0A1423))
-                .height(88.dp),
+                .height(72.dp),
         )
 
         // ── All content ───────────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp),
         ) {
             // Top row: avatar + name/level + cairns/EP — all vertically centered
             Row(
