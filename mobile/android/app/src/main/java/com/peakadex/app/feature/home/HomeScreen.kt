@@ -33,8 +33,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -357,14 +360,15 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 // Name + level (left, grows)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text          = buildString {
-                            append(displayName)
-                            append(" · ")
-                            append(heroCurrent.name)
+                        text          = buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color.White)) {
+                                append(displayName)
+                            }
+                            withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = Color.White.copy(alpha = 0.55f))) {
+                                append("  ·  ${heroCurrent.name}")
+                            }
                         },
                         fontSize      = 18.sp,
-                        fontWeight    = FontWeight.Bold,
-                        color         = Color.White,
                         letterSpacing = (-0.03).em,
                         lineHeight    = (18 * 1.15).sp,
                         maxLines      = 1,
