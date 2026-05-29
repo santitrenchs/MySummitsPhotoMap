@@ -55,7 +55,6 @@ export async function GET(req: NextRequest) {
         where: {
           OR: [
             { name:          { contains: q, mode: "insensitive" } },
-            { nameEn:        { contains: q, mode: "insensitive" } },
             { mountainRange: { contains: q, mode: "insensitive" } },
           ],
         },
@@ -64,7 +63,6 @@ export async function GET(req: NextRequest) {
         select: {
           id: true,
           name: true,
-          nameEn: true,
           latitude: true,
           longitude: true,
           altitudeM: true,
@@ -72,7 +70,6 @@ export async function GET(req: NextRequest) {
           country: true,
           rarityId: true,
           isMythic: true,
-          elevationProfile: true,
         },
       }),
       geocodePlaces(q),
@@ -107,7 +104,6 @@ export async function GET(req: NextRequest) {
     select: {
       id: true,
       name: true,
-      nameEn: true,
       latitude: true,
       longitude: true,
       altitudeM: true,
@@ -115,7 +111,6 @@ export async function GET(req: NextRequest) {
       country: true,
       rarityId: true,
       isMythic: true,
-      elevationProfile: true,
     },
   });
 
