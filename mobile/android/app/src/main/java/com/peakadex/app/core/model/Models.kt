@@ -53,6 +53,20 @@ data class UserSummary(
 // MARK: - Peak
 
 @Serializable
+data class ElevationPoint(
+    val distance: Double,
+    val elevation: Double,
+)
+
+@Serializable
+data class ElevationProfileData(
+    val points: List<ElevationPoint>,
+    val minElevation: Double,
+    val maxElevation: Double,
+    val summitIndex: Int,
+)
+
+@Serializable
 data class Peak(
     val id: String,
     val name: String,
@@ -63,6 +77,7 @@ data class Peak(
     val country: String? = null,
     val rarityId: String? = null,
     val isMythic: Boolean? = null,
+    val elevationProfile: ElevationProfileData? = null,
 )
 
 // MARK: - Ascent

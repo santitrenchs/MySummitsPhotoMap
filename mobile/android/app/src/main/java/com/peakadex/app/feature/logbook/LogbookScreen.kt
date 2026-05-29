@@ -23,6 +23,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import android.content.Intent
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -70,15 +73,13 @@ import kotlin.math.tan
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
 
-// Calculates a Carto Dark Matter tile URL for the given coordinates at zoom 10.
-// dark_matter style = dark background + light labels, matches the card's dark aesthetic.
-// Zoom 10 ≈ 35 km × 35 km per tile — shows the surrounding region, not just the summit.
-private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 10): String {
-    val n     = 1 shl zoom   // 2^zoom
+// OpenTopoMap tile URL — zoom 12 shows contour lines clearly.
+private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 12): String {
+    val n     = 1 shl zoom
     val xTile = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
     val latRad = Math.toRadians(lat)
     val yTile = ((1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
-    return "https://a.basemaps.cartocdn.com/dark_matter/$zoom/$xTile/$yTile.png"
+    return "https://tile.opentopomap.org/$zoom/$xTile/$yTile.png"
 }
 
 // ── Custom icons ───────────────────────────────────────────────────────────────
@@ -599,11 +600,59 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
     }
 }
 
+// ── Elevation profile ──────────────────────────────────────────────────────────
+
+@Composable
+private fun ElevationProfileCanvas(
+    profile: com.peakadex.app.core.model.ElevationProfileData?,
+    altitudeM: Int,
+    modifier: Modifier = Modifier,
+) {
+    if (profile == null || profile.points.size < 2) {
+        // Fallback: simple altitude bar
+        val fraction = (altitudeM.toFloat() / 8849).coerceIn(0f, 1f)
+        Box(modifier = modifier, contentAlignment = Alignment.BottomStart) {
+            Box(modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(999.dp)).background(Color(0x40FFFFFF)))
+            Box(modifier = Modifier.fillMaxHeight(fraction).fillMaxWidth(fraction).height(3.dp).clip(RoundedCornerShape(999.dp)).background(Color.White))
+        }
+        return
+    }
+
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val padX = 4.dp.toPx()
+        val padY = 6.dp.toPx()
+        val pts = profile.points
+        val range = (profile.maxElevation - profile.minElevation).coerceAtLeast(1.0)
+
+        fun toX(i: Int) = padX + (i.toFloat() / (pts.size - 1)) * (w - padX * 2)
+        fun toY(elev: Double) = padY + ((1.0 - (elev - profile.minElevation) / range) * (h - padY * 2)).toFloat()
+
+        // Area fill path
+        val areaPath = Path().apply {
+            moveTo(toX(0), h)
+            pts.forEachIndexed { i, p -> lineTo(toX(i), toY(p.elevation)) }
+            lineTo(toX(pts.size - 1), h)
+            close()
+        }
+        drawPath(areaPath, color = Color.White.copy(alpha = 0.2f))
+
+        // Line path
+        val linePath = Path().apply {
+            pts.forEachIndexed { i, p ->
+                if (i == 0) moveTo(toX(i), toY(p.elevation))
+                else lineTo(toX(i), toY(p.elevation))
+            }
+        }
+        drawPath(linePath, color = Color.White, style = Stroke(width = 1.5.dp.toPx(), join = androidx.compose.ui.graphics.StrokeJoin.Round))
+    }
+}
+
 // ── Card back ──────────────────────────────────────────────────────────────────
 
 @Composable
 private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
-    val barFraction = (ascent.peak.altitudeM.toFloat() / 8849).coerceIn(0f, 1f)
     val bylineName  = ascent.user?.name ?: "Tú"
 
     Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
@@ -642,10 +691,12 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                     letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black,
                     color = Color.White, letterSpacing = (-0.04).em)
-                Spacer(Modifier.height(10.dp))
-                Box(modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(999.dp)).background(Color(0x40FFFFFF))) {
-                    Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(barFraction).clip(RoundedCornerShape(999.dp)).background(rarity.color))
-                }
+                Spacer(Modifier.height(8.dp))
+                ElevationProfileCanvas(
+                    profile   = ascent.peak.elevationProfile,
+                    altitudeM = ascent.peak.altitudeM,
+                    modifier  = Modifier.fillMaxWidth().height(40.dp),
+                )
             }
         }
 
