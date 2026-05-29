@@ -85,8 +85,8 @@ function ElevationSVG({
       >
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={rarityColor} stopOpacity="0.55" />
-            <stop offset="100%" stopColor={rarityColor} stopOpacity="0.05" />
+            <stop offset="0%" stopColor="white" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="white" stopOpacity="0.04" />
           </linearGradient>
         </defs>
 
@@ -94,28 +94,15 @@ function ElevationSVG({
         <path d={areaPath} fill={`url(#${gradId})`} />
 
         {/* Line */}
-        <path d={linePath} fill="none" stroke={rarityColor} strokeWidth="1.5" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
 
-        {/* Summit marker */}
+        {/* Summit marker — stem starts exactly at the line, dot sits above */}
         <line
-          x1={summitX} y1={summitY - 2}
-          x2={summitX} y2={summitY + 6}
+          x1={summitX} y1={summitY}
+          x2={summitX} y2={summitY + 8}
           stroke={rarityColor} strokeWidth="1.5"
         />
-        <circle cx={summitX} cy={summitY - 3} r="2.5" fill={rarityColor} />
-
-        {/* Summit label */}
-        <text
-          x={summitX}
-          y={summitY - 8}
-          textAnchor="middle"
-          fontSize="8"
-          fontWeight="600"
-          fill={rarityColor}
-          style={{ fontFamily: "system-ui, sans-serif" }}
-        >
-          {altitudeM.toLocaleString()} m
-        </text>
+        <circle cx={summitX} cy={summitY - 3} r="3" fill={rarityColor} stroke="white" strokeWidth="1" />
 
         {/* Distance labels */}
         <text x={PAD_X} y={H - 1} fontSize="7" fill="rgba(255,255,255,0.45)" style={{ fontFamily: "system-ui, sans-serif" }}>
