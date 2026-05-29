@@ -704,55 +704,87 @@ private fun ElevationProfileCanvas(
     altitudeM: Int,
     modifier: Modifier = Modifier,
 ) {
-    var resolvedProfile by remember(peakId) {
-        mutableStateOf(profile)
-    }
+    // Start with whatever the API response gave us (may be null if not included).
+    var resolvedProfile by remember(peakId) { mutableStateOf(profile) }
+    var fetchFailed     by remember(peakId) { mutableStateOf(false) }
 
-    // If profile not cached in API response, fetch it lazily (first flip)
+    // Fetch lazily on first flip if not already available.
     LaunchedEffect(peakId) {
         if (resolvedProfile == null || resolvedProfile!!.points.size < 2) {
             runCatching {
                 resolvedProfile = com.peakadex.app.AppContainer.apiService.getPeakElevation(peakId).profile
+            }.onFailure { e ->
+                android.util.Log.w("ElevProfile", "fetch failed for $peakId: ${e.message}")
+                fetchFailed = true
             }
         }
     }
 
-    if (resolvedProfile == null || resolvedProfile!!.points.size < 2) {
-        // Show nothing while loading — avoids fallback bar flash
-        Box(modifier = modifier)
+    val pts = resolvedProfile?.points?.takeIf { it.size >= 2 }
+
+    if (pts == null) {
+        // Show an altitude bar as fallback while loading (or if fetch failed).
+        ElevationFallbackBar(altitudeM = altitudeM, modifier = modifier)
         return
     }
 
-    val profile = resolvedProfile!!
+    val minElev = resolvedProfile!!.minElevation
+    val maxElev = resolvedProfile!!.maxElevation
 
     Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val padX = 4.dp.toPx()
-        val padY = 6.dp.toPx()
-        val pts = profile.points
-        val range = (profile.maxElevation - profile.minElevation).coerceAtLeast(1.0)
+        val w     = size.width
+        val h     = size.height
+        val padX  = 4.dp.toPx()
+        val padY  = 6.dp.toPx()
+        val range = (maxElev - minElev).coerceAtLeast(1.0)
 
-        fun toX(i: Int) = padX + (i.toFloat() / (pts.size - 1)) * (w - padX * 2)
-        fun toY(elev: Double) = padY + ((1.0 - (elev - profile.minElevation) / range) * (h - padY * 2)).toFloat()
+        fun toX(i: Int)        = padX + (i.toFloat() / (pts.size - 1)) * (w - padX * 2)
+        fun toY(elev: Double)  = padY + ((1.0 - (elev - minElev) / range) * (h - padY * 2)).toFloat()
 
-        // Area fill path
+        // Area fill
         val areaPath = Path().apply {
             moveTo(toX(0), h)
             pts.forEachIndexed { i, p -> lineTo(toX(i), toY(p.elevation)) }
             lineTo(toX(pts.size - 1), h)
             close()
         }
-        drawPath(areaPath, color = Color.White.copy(alpha = 0.2f))
+        drawPath(areaPath, color = Color.White.copy(alpha = 0.20f))
 
-        // Line path
+        // Line
         val linePath = Path().apply {
             pts.forEachIndexed { i, p ->
                 if (i == 0) moveTo(toX(i), toY(p.elevation))
-                else lineTo(toX(i), toY(p.elevation))
+                else        lineTo(toX(i), toY(p.elevation))
             }
         }
-        drawPath(linePath, color = Color.White, style = Stroke(width = 1.5.dp.toPx(), join = androidx.compose.ui.graphics.StrokeJoin.Round))
+        drawPath(linePath, color = Color.White,
+            style = Stroke(width = 1.5.dp.toPx(), join = StrokeJoin.Round))
+    }
+}
+
+// Simple altitude bar shown while the profile is loading or when fetch fails.
+@Composable
+private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) {
+    val pct = (altitudeM / 8849f).coerceIn(0f, 1f)
+    Canvas(modifier = modifier) {
+        val barH  = 4.dp.toPx()
+        val y     = (size.height - barH) / 2
+        // Track
+        drawRoundRect(
+            color        = Color.White.copy(alpha = 0.20f),
+            topLeft      = androidx.compose.ui.geometry.Offset(0f, y),
+            size         = androidx.compose.ui.geometry.Size(size.width, barH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),
+        )
+        // Fill
+        if (pct > 0f) {
+            drawRoundRect(
+                color        = Color.White.copy(alpha = 0.65f),
+                topLeft      = androidx.compose.ui.geometry.Offset(0f, y),
+                size         = androidx.compose.ui.geometry.Size(size.width * pct, barH),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),
+            )
+        }
     }
 }
 
