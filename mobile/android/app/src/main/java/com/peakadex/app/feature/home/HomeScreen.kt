@@ -309,7 +309,7 @@ private fun HeroHeader(data: HomeData, user: User?) {
         else 1f
         val heroAltReqLabel = heroNext?.let { next ->
             val alt = next.altReqs.firstOrNull()
-            if (alt != null) "Superar los ${alt.threshold} m para ${next.name}"
+            if (alt != null) "Superar ${alt.threshold} m para ${next.name}"
             else "para ${next.name}"
         }
 
@@ -477,7 +477,7 @@ private fun HeroHeader(data: HomeData, user: User?) {
                             .clip(RoundedCornerShape(5.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF60A5FA), Color(0xFF3B82F6)),
+                                    colors = listOf(Color(0xFF5FA876), Color(0xFF4A8C5C)),
                                 )
                             ),
                     )
