@@ -86,7 +86,7 @@
     <string name="home_chart_6months_title">Últimos 6 meses</string>
     <string name="home_chart_rarity_title">Cimas por rareza</string>
     <string name="home_leaderboard_col_peaks">Cimas</string>
-    <string name="home_leaderboard_col_cairns">Cairns</string>
+    <string name="home_leaderboard_col_cairns">CS</string>
     <string name="home_leaderboard_col_ep">EP</string>
     <string name="home_leaderboard_you"> (tú)</string>
     <string name="home_period_peaks_suffix"> cimas</string>
