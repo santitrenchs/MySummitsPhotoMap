@@ -519,6 +519,75 @@ private fun ProgressionSection(data: HomeData, expanded: Boolean, onToggle: () -
         val inProgressIdx = if (currentLevelIdx < LEVEL_DEFS.lastIndex) currentLevelIdx + 1 else currentLevelIdx
         val defsToShow = if (expanded) LEVEL_DEFS else listOf(LEVEL_DEFS[inProgressIdx])
 
+        // ── Level progress bar ────────────────────────────────────────────
+        val currentDef  = LEVEL_DEFS[currentLevelIdx]
+        val nextDef     = if (currentLevelIdx < LEVEL_DEFS.lastIndex) LEVEL_DEFS[currentLevelIdx + 1] else null
+        val prevTarget  = if (currentLevelIdx > 0) LEVEL_DEFS[currentLevelIdx - 1].targetAscents else 0
+        val target      = nextDef?.targetAscents ?: currentDef.targetAscents
+        val progress    = if (target > prevTarget) ((uniquePeaks - prevTarget).coerceAtLeast(0).toFloat() / (target - prevTarget)).coerceIn(0f, 1f) else 1f
+        val altReqText  = nextDef?.altReqs?.firstOrNull()?.let { "Superar los ${it.threshold}m" }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF1E293B))
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Header: "Nivel N · LevelName"
+                Text(
+                    text       = "Nivel ${currentDef.idx} · ${currentDef.name}",
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = Color.White,
+                    modifier   = Modifier.fillMaxWidth(),
+                    textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                // Progress bar
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(22.dp)
+                        .clip(RoundedCornerShape(11.dp))
+                        .background(Color(0xFF334155)),
+                ) {
+                    // Filled portion
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(progress)
+                            .clip(RoundedCornerShape(11.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFF4ADE80), Color(0xFF22C55E)),
+                                )
+                            ),
+                    )
+                    // Label inside bar: "41 / 50 cimas"
+                    Text(
+                        text      = "$uniquePeaks / $target cimas",
+                        fontSize  = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color     = Color.White,
+                        modifier  = Modifier.align(Alignment.Center),
+                    )
+                }
+                // Subtitle: altitude requirement
+                if (altReqText != null) {
+                    Text(
+                        text      = altReqText,
+                        fontSize  = 12.sp,
+                        color     = Color(0xFF86EFAC),
+                        modifier  = Modifier.fillMaxWidth(),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
         defsToShow.forEach { def ->
             val isDone    = meetsLevel(def, uniquePeaks, stats)
             val isLocked  = def.idx > inProgressIdx + 1 && !isDone
