@@ -655,10 +655,11 @@ private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.
     ) {
         val w = maxWidth
         val h = maxHeight
-        // Render the square 2×2 grid to fill the container height.
-        // (Grid is 2:2 = square; container is portrait → grid extends past left/right edges,
-        //  which is fine because clipToBounds clips it.)
-        val gridSize  = h
+        // Grid size must be at least 2×max(w,h) to guarantee the 2×2 tile grid
+        // covers the entire container after any peak-centering offset.
+        // Proof: peakGridFrac ∈ [0.25, 0.75] → max offset in any direction =
+        // max(w,h)/2 / 0.25 requires gridSize ≥ 2×max(w,h).
+        val gridSize  = maxOf(w, h) * 2
         val tileSize  = gridSize / 2
 
         // Offset the grid so the peak (at gridFrac) lands at container centre.
