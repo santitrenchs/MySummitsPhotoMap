@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -19,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -73,23 +75,49 @@ import kotlin.math.tan
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
 
-// Carto Voyager — colorful, readable, matches the web card back map style.
-private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 10): String {
-    val n      = 1 shl zoom
-    val xTile  = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
-    val latRad = Math.toRadians(lat)
-    val yTile  = ((1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
-    return "https://a.basemaps.cartocdn.com/rastertiles/voyager/$zoom/$xTile/$yTile@2x.png"
-}
+// Returns a 2×2 grid of tile coordinates surrounding the peak, chosen so the peak
+// lands as close to the centre of the composed grid as possible.
+private data class PeakTileGrid(
+    val cols: IntArray,       // [leftCol, rightCol]
+    val rows: IntArray,       // [topRow,  bottomRow]
+    val peakGridFracX: Float, // peak x as fraction of the 2-tile-wide grid [0..1]
+    val peakGridFracY: Float, // peak y as fraction of the 2-tile-tall grid [0..1]
+    val zoom: Int,
+)
 
-// Returns the fractional position [0,1] of lat/lng within its tile at the given zoom.
-// Used to overlay the rarity dot on the static tile image.
-private fun peakFractionInTile(lat: Double, lon: Double, zoom: Int = 10): Pair<Float, Float> {
-    val n          = (1 shl zoom).toDouble()
-    val xContinuous = (lon + 180.0) / 360.0 * n
-    val latRad      = Math.toRadians(lat)
-    val yContinuous = (1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n
-    return Pair((xContinuous - xContinuous.toLong()).toFloat(), (yContinuous - yContinuous.toLong()).toFloat())
+private fun peakTileGrid(lat: Double, lon: Double, zoom: Int = 10): PeakTileGrid {
+    val n      = 1 shl zoom
+    val xCont  = (lon + 180.0) / 360.0 * n
+    val latRad = Math.toRadians(lat)
+    val yCont  = (1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n
+    val xTile  = xCont.toInt().coerceIn(0, n - 1)
+    val yTile  = yCont.toInt().coerceIn(0, n - 1)
+    val fracX  = (xCont - xTile).toFloat()
+    val fracY  = (yCont - yTile).toFloat()
+
+    // Pick two horizontal tiles so the peak sits near the centre of the 2-wide grid.
+    val leftCol: Int; val peakGridFracX: Float
+    if (fracX >= 0.5f) {
+        leftCol = xTile;                 peakGridFracX = fracX / 2f
+    } else {
+        leftCol = (xTile - 1).coerceAtLeast(0); peakGridFracX = (1f + fracX) / 2f
+    }
+
+    // Same vertically.
+    val topRow: Int; val peakGridFracY: Float
+    if (fracY >= 0.5f) {
+        topRow = yTile;                  peakGridFracY = fracY / 2f
+    } else {
+        topRow = (yTile - 1).coerceAtLeast(0);  peakGridFracY = (1f + fracY) / 2f
+    }
+
+    return PeakTileGrid(
+        cols          = intArrayOf(leftCol, leftCol + 1),
+        rows          = intArrayOf(topRow,  topRow  + 1),
+        peakGridFracX = peakGridFracX,
+        peakGridFracY = peakGridFracY,
+        zoom          = zoom,
+    )
 }
 
 // ── Custom icons ───────────────────────────────────────────────────────────────
@@ -610,35 +638,59 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
     }
 }
 
-// ── Card minimap (static tile + Canvas dot) ────────────────────────────────────
+// ── Card minimap (2×2 tile grid centred on peak + Canvas dot) ─────────────────
+//
+// Loads a 2×2 grid of tiles chosen so the peak is near the centre of the grid,
+// then offsets the grid so the peak falls exactly at the container's centre.
+// The dot is always drawn at the container centre, matching the map below it.
 
 @Composable
 private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.ui.graphics.Color) {
-    val tileUrl = remember(lat, lng) { peakTileUrl(lat, lng) }
-    val (fracX, fracY) = remember(lat, lng) { peakFractionInTile(lat, lng) }
+    val grid = remember(lat, lng) { peakTileGrid(lat, lng) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        AsyncImage(
-            model            = tileUrl,
-            contentDescription = null,
-            contentScale     = ContentScale.Crop,
-            modifier         = Modifier.fillMaxSize(),
-        )
-        // Dot overlay — position calculated from sub-tile fraction.
-        // Tile is 1:1 square, container is 4:5 → ContentScale.Crop scales by height,
-        // cropping (1 - 4/5)/2 = 10% from each side horizontally.
-        // tilePx: fracX * 256, fracY * 256
-        // screenX = (tilePx - 256*0.1) / (256*0.8) * width
-        // screenY = fracY * height
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val tileVisible = 256f * 0.8f   // visible tile pixels horizontally
-            val tileOffsetX = 256f * 0.1f   // tile pixels cropped from left
-            val screenX = (fracX * 256f - tileOffsetX) / tileVisible * size.width
-            val screenY = fracY * size.height
-            if (screenX in 0f..size.width) {
-                drawCircle(color = Color.White, radius = 11.dp.toPx(), center = androidx.compose.ui.geometry.Offset(screenX, screenY))
-                drawCircle(color = rarityColor,  radius = 8.dp.toPx(),  center = androidx.compose.ui.geometry.Offset(screenX, screenY))
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .clipToBounds(),
+    ) {
+        val w = maxWidth
+        val h = maxHeight
+        // Render the square 2×2 grid to fill the container height.
+        // (Grid is 2:2 = square; container is portrait → grid extends past left/right edges,
+        //  which is fine because clipToBounds clips it.)
+        val gridSize  = h
+        val tileSize  = gridSize / 2
+
+        // Offset the grid so the peak (at gridFrac) lands at container centre.
+        // Note: Dp * Float is valid; Float * Dp is not. Int * Dp is not; Dp * Int is valid.
+        val offsetX = w / 2 - gridSize * grid.peakGridFracX
+        val offsetY = h / 2 - gridSize * grid.peakGridFracY
+
+        for (row in 0..1) {
+            for (col in 0..1) {
+                val tileX  = grid.cols[col]
+                val tileY  = grid.rows[row]
+                val url    = "https://a.basemaps.cartocdn.com/rastertiles/voyager/${grid.zoom}/$tileX/$tileY@2x.png"
+                AsyncImage(
+                    model              = url,
+                    contentDescription = null,
+                    contentScale       = ContentScale.FillBounds,
+                    modifier           = Modifier
+                        .size(tileSize)
+                        .offset(
+                            x = offsetX + tileSize * col,
+                            y = offsetY + tileSize * row,
+                        ),
+                )
             }
+        }
+
+        // Dot is always at the exact centre of the container.
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val cx = size.width  / 2f
+            val cy = size.height / 2f
+            drawCircle(color = Color.White, radius = 11.dp.toPx(), center = androidx.compose.ui.geometry.Offset(cx, cy))
+            drawCircle(color = rarityColor,  radius = 8.dp.toPx(),  center = androidx.compose.ui.geometry.Offset(cx, cy))
         }
     }
 }
