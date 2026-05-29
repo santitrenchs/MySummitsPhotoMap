@@ -653,7 +653,7 @@ private fun LevelCard(
                 .weight(1f)
                 .padding(start = 10.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
         ) {
-            // Top row: badge · emoji+name · ascent pill
+            // Top row: badge · name
             Row(verticalAlignment = Alignment.CenterVertically) {
 
                 // Status badge circle
@@ -680,23 +680,26 @@ private fun LevelCard(
 
                 Spacer(Modifier.width(12.dp))
 
-                // Name
+                // Name — full width, no ellipsis needed
                 Text(
-                    text     = def.name,
-                    style    = MaterialTheme.typography.titleMedium,
-                    color    = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    text       = def.name,
+                    style      = MaterialTheme.typography.titleMedium,
+                    color      = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier   = Modifier.weight(1f),
+                    softWrap   = true,
+                    maxLines   = 2,
+                    overflow   = TextOverflow.Ellipsis,
                 )
+            }
 
-                Spacer(Modifier.width(8.dp))
-
-                // Pills: target ascents + altReq
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Pill(pluralStringResource(R.plurals.home_level_req_ascents_pill, def.targetAscents, def.targetAscents))
-                    def.altReqs.forEach { r -> Pill(stringResource(R.string.home_level_req_altitude, r.threshold)) }
-                }
+            // Pills row: target ascents + altReq (below name, left-aligned)
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier             = Modifier.padding(start = 40.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Pill(pluralStringResource(R.plurals.home_level_req_ascents_pill, def.targetAscents, def.targetAscents))
+                def.altReqs.forEach { r -> Pill(stringResource(R.string.home_level_req_altitude, r.threshold)) }
             }
 
             // Progress row — in-progress level only
