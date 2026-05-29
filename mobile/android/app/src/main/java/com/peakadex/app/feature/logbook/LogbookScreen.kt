@@ -821,8 +821,8 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                     .background(Color(0xFF0A1929)),
             ) {
                 CardMiniMap(lat = ascent.peak.latitude, lng = ascent.peak.longitude, rarityColor = rarity.color)
-                // Bottom gradient
-                Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f).align(Alignment.BottomStart)
+                // Bottom gradient — just tall enough to sit above the peak name/profile overlay
+                Box(modifier = Modifier.fillMaxWidth().height(160.dp).align(Alignment.BottomStart)
                     .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.4f to Color(0x8007121F), 1f to Color(0xE007121F)))))
 
                 Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 14.dp, vertical = 14.dp)) {
