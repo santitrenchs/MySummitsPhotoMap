@@ -368,66 +368,67 @@ private fun HeroHeader(data: HomeData, user: User?) {
                     }
                 }
 
-                // Cairns + EP — vertically centered, same height as name+level block
+                // Cairns + EP — dark pills, stacked vertically
                 if (meEntry != null) {
-                    Spacer(Modifier.width(10.dp))
-                    Row(
-                        verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    Spacer(Modifier.width(8.dp))
+                    Column(
+                        verticalArrangement   = Arrangement.spacedBy(5.dp),
+                        horizontalAlignment   = Alignment.End,
                     ) {
-                        // Cairns — amber, triangle icon via Canvas
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                // Clean triangle via Canvas
-                                Canvas(modifier = Modifier.size(12.dp)) {
-                                    val w = size.width
-                                    val h = size.height
-                                    val path = Path().apply {
-                                        moveTo(w / 2f, 0f)
-                                        lineTo(w, h)
-                                        lineTo(0f, h)
-                                        close()
-                                    }
-                                    drawPath(
-                                        path  = path,
-                                        color = Color(0xFFFBBF24),
-                                        style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-                                    )
-                                }
-                                Spacer(Modifier.width(3.dp))
-                                Text(
-                                    text          = "$myCairns",
-                                    fontSize      = 16.sp,
-                                    fontWeight    = FontWeight.ExtraBold,
-                                    color         = Color(0xFFFBBF24),
-                                    letterSpacing = (-0.02).em,
-                                    lineHeight    = 16.sp,
-                                )
-                            }
+                        // EP pill — ⚡ + number
+                        Row(
+                            modifier              = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color(0xE6222222))
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text("⚡", fontSize = 12.sp, lineHeight = 12.sp)
                             Text(
-                                text       = "Cairns",
-                                fontSize   = 10.sp,
-                                color      = Color(0x99FFFFFF),
-                                fontWeight = FontWeight.Medium,
+                                text          = "$myEp EP",
+                                fontSize      = 13.sp,
+                                fontWeight    = FontWeight.Bold,
+                                color         = Color.White,
+                                letterSpacing = (-0.01).em,
                             )
                         }
-                        // Divider
-                        Box(Modifier.width(1.dp).height(28.dp).background(Color(0x33FFFFFF)))
-                        // EP
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        // Cairns pill — cairn icon (Canvas stacked stones) + number
+                        Row(
+                            modifier              = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color(0xE6222222))
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            // Cairn icon — 3 stacked filled trapezoids in amber
+                            Canvas(modifier = Modifier.size(width = 14.dp, height = 13.dp)) {
+                                val w = size.width
+                                val h = size.height
+                                val amber = Color(0xFFF59E0B)
+                                // Bottom stone (widest)
+                                drawPath(Path().apply {
+                                    moveTo(w * 0.05f, h);  lineTo(w * 0.95f, h)
+                                    lineTo(w * 0.82f, h * 0.72f); lineTo(w * 0.18f, h * 0.72f); close()
+                                }, color = amber)
+                                // Middle stone
+                                drawPath(Path().apply {
+                                    moveTo(w * 0.18f, h * 0.68f); lineTo(w * 0.82f, h * 0.68f)
+                                    lineTo(w * 0.70f, h * 0.40f); lineTo(w * 0.30f, h * 0.40f); close()
+                                }, color = amber)
+                                // Top stone (smallest)
+                                drawPath(Path().apply {
+                                    moveTo(w * 0.30f, h * 0.36f); lineTo(w * 0.70f, h * 0.36f)
+                                    lineTo(w * 0.58f, h * 0.04f); lineTo(w * 0.42f, h * 0.04f); close()
+                                }, color = amber)
+                            }
                             Text(
-                                text          = "+$myEp",
-                                fontSize      = 16.sp,
-                                fontWeight    = FontWeight.ExtraBold,
+                                text          = "$myCairns Cairns",
+                                fontSize      = 13.sp,
+                                fontWeight    = FontWeight.Bold,
                                 color         = Color.White,
-                                letterSpacing = (-0.02).em,
-                                lineHeight    = 16.sp,
-                            )
-                            Text(
-                                text       = "EP",
-                                fontSize   = 10.sp,
-                                color      = Color(0x99FFFFFF),
-                                fontWeight = FontWeight.Medium,
+                                letterSpacing = (-0.01).em,
                             )
                         }
                     }
