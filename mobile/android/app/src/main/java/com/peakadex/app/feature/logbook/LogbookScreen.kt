@@ -1001,12 +1001,12 @@ private val SoloPersonIcon: ImageVector by lazy {
             strokeLineJoin    = StrokeJoin.Round,
             fill              = SolidColor(Color.Transparent),
         ) {
-            // Circle cx=12 cy=7 r=3.5 approximated as cubic bezier
+            // Circle cx=12 cy=7 r=3.5 approximated as bezier
             moveTo(12f, 3.5f)
-            cubicTo(14.0f, 3.5f, 15.5f, 5.0f, 15.5f, 7.0f)
-            cubicTo(15.5f, 9.0f, 14.0f, 10.5f, 12f, 10.5f)
-            cubicTo(10.0f, 10.5f, 8.5f, 9.0f, 8.5f, 7.0f)
-            cubicTo(8.5f, 5.0f, 10.0f, 3.5f, 12f, 3.5f)
+            curveTo(14.0f, 3.5f, 15.5f, 5.0f, 15.5f, 7.0f)
+            curveTo(15.5f, 9.0f, 14.0f, 10.5f, 12f, 10.5f)
+            curveTo(10.0f, 10.5f, 8.5f, 9.0f, 8.5f, 7.0f)
+            curveTo(8.5f, 5.0f, 10.0f, 3.5f, 12f, 3.5f)
             close()
         }
         // Body arc: M5 20 c0-3.866 3.134-7 7-7 s7 3.134 7 7
@@ -1018,8 +1018,8 @@ private val SoloPersonIcon: ImageVector by lazy {
             fill            = SolidColor(Color.Transparent),
         ) {
             moveTo(5f, 20f)
-            cubicTo(5f, 16.134f, 8.134f, 13f, 12f, 13f)
-            cubicTo(15.866f, 13f, 19f, 16.134f, 19f, 20f)
+            curveTo(5f, 16.134f, 8.134f, 13f, 12f, 13f)
+            curveTo(15.866f, 13f, 19f, 16.134f, 19f, 20f)
         }
     }.build()
 }
@@ -1042,10 +1042,10 @@ private val CordadaIcon: ImageVector by lazy {
             fill            = SolidColor(Color.Transparent),
         ) {
             moveTo(7.5f, 3.2f)
-            cubicTo(9.05f, 3.2f, 10.3f, 4.45f, 10.3f, 6f)
-            cubicTo(10.3f, 7.55f, 9.05f, 8.8f, 7.5f, 8.8f)
-            cubicTo(5.95f, 8.8f, 4.7f, 7.55f, 4.7f, 6f)
-            cubicTo(4.7f, 4.45f, 5.95f, 3.2f, 7.5f, 3.2f)
+            curveTo(9.05f, 3.2f, 10.3f, 4.45f, 10.3f, 6f)
+            curveTo(10.3f, 7.55f, 9.05f, 8.8f, 7.5f, 8.8f)
+            curveTo(5.95f, 8.8f, 4.7f, 7.55f, 4.7f, 6f)
+            curveTo(4.7f, 4.45f, 5.95f, 3.2f, 7.5f, 3.2f)
             close()
         }
         // Left body arc
@@ -1056,7 +1056,7 @@ private val CordadaIcon: ImageVector by lazy {
             fill            = SolidColor(Color.Transparent),
         ) {
             moveTo(2f, 19f)
-            cubicTo(2f, 15.962f, 4.462f, 13.5f, 7.5f, 13.5f)
+            curveTo(2f, 15.962f, 4.462f, 13.5f, 7.5f, 13.5f)
         }
         // Right head (cx=16.5, cy=6, r=2.8)
         path(
@@ -1067,10 +1067,10 @@ private val CordadaIcon: ImageVector by lazy {
             fill            = SolidColor(Color.Transparent),
         ) {
             moveTo(16.5f, 3.2f)
-            cubicTo(18.05f, 3.2f, 19.3f, 4.45f, 19.3f, 6f)
-            cubicTo(19.3f, 7.55f, 18.05f, 8.8f, 16.5f, 8.8f)
-            cubicTo(14.95f, 8.8f, 13.7f, 7.55f, 13.7f, 6f)
-            cubicTo(13.7f, 4.45f, 14.95f, 3.2f, 16.5f, 3.2f)
+            curveTo(18.05f, 3.2f, 19.3f, 4.45f, 19.3f, 6f)
+            curveTo(19.3f, 7.55f, 18.05f, 8.8f, 16.5f, 8.8f)
+            curveTo(14.95f, 8.8f, 13.7f, 7.55f, 13.7f, 6f)
+            curveTo(13.7f, 4.45f, 14.95f, 3.2f, 16.5f, 3.2f)
             close()
         }
         // Right body arc
@@ -1081,7 +1081,7 @@ private val CordadaIcon: ImageVector by lazy {
             fill            = SolidColor(Color.Transparent),
         ) {
             moveTo(22f, 19f)
-            cubicTo(22f, 15.962f, 19.538f, 13.5f, 16.5f, 13.5f)
+            curveTo(22f, 15.962f, 19.538f, 13.5f, 16.5f, 13.5f)
         }
         // Rope — dash 1: 7.5→9.5
         path(
