@@ -357,7 +357,11 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 // Name + level (left, grows)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text          = displayName,
+                        text          = buildString {
+                            append(displayName)
+                            append(" · ")
+                            append(heroCurrent.name)
+                        },
                         fontSize      = 18.sp,
                         fontWeight    = FontWeight.Bold,
                         color         = Color.White,
