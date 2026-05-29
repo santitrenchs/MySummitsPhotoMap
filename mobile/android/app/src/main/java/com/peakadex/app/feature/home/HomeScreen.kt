@@ -450,39 +450,34 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                // Label row: "41 / 50" left · "Superar 3000m para Explorer" right
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment     = Alignment.CenterVertically,
-                ) {
+                // Label: count left-aligned
+                Text(
+                    text       = "$heroUniquePeaks / $heroTarget",
+                    fontSize   = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = Color.White,
+                )
+                // Alt req left-aligned below count
+                if (heroAltReqLabel != null) {
                     Text(
-                        text       = "$heroUniquePeaks / $heroTarget",
-                        fontSize   = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = Color.White,
+                        text     = heroAltReqLabel,
+                        fontSize = 12.sp,
+                        color    = Color(0xFF94A3B8),
                     )
-                    if (heroAltReqLabel != null) {
-                        Text(
-                            text     = heroAltReqLabel,
-                            fontSize = 12.sp,
-                            color    = Color(0xFF94A3B8),
-                        )
-                    }
                 }
-                // Progress bar — no text inside, 18dp height (20% thinner than 22dp)
+                // Progress bar — no text inside, 9dp height (50% thinner)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(18.dp)
-                        .clip(RoundedCornerShape(9.dp))
+                        .height(9.dp)
+                        .clip(RoundedCornerShape(5.dp))
                         .background(Color(0xFF334155)),
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxHeight()
                             .fillMaxWidth(heroProgress)
-                            .clip(RoundedCornerShape(9.dp))
+                            .clip(RoundedCornerShape(5.dp))
                             .background(
                                 Brush.horizontalGradient(
                                     colors = listOf(Color(0xFF60A5FA), Color(0xFF3B82F6)),
