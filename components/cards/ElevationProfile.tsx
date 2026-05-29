@@ -81,7 +81,6 @@ function ElevationSVG({
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
-        height={H}
         style={{ display: "block", overflow: "visible" }}
       >
         <defs>
@@ -140,7 +139,7 @@ function peakId(color: string) {
 function ElevationSkeleton({ rarityColor }: { rarityColor: string }) {
   return (
     <div style={{ width: "100%" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} style={{ display: "block" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
         <rect x={PAD_X} y={PAD_Y} width={W - PAD_X * 2} height={H - PAD_Y * 2}
           rx="3" fill={rarityColor} fillOpacity="0.1" />
         <rect x={PAD_X} y={H / 2} width={(W - PAD_X * 2) * 0.4} height="2"
