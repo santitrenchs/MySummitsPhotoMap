@@ -629,14 +629,11 @@ private fun CardFront(
 }
 
 @Composable
-private fun StatBandItem(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 8.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+private fun StatBandItem(label: String, value: String, modifier: Modifier = Modifier, align: Alignment.Horizontal = Alignment.Start) {
+    Column(modifier = modifier.padding(horizontal = 8.dp, vertical = 6.dp), horizontalAlignment = align) {
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
-        Spacer(Modifier.height(2.dp))
-        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(3.dp))
+        Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PeakTextHeadline, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -806,7 +803,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
     Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
         Box(
             modifier = Modifier
-                .fillMaxWidth().padding(horizontal = 3.dp).aspectRatio(4f / 5f)
+                .fillMaxWidth().padding(horizontal = 3.dp).aspectRatio(6f / 5f)
                 .clip(RoundedCornerShape(18.dp))
                 .background(Color(0xFF0A1929)),
         ) {
@@ -834,24 +831,44 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
             }
         }
 
+        // ── Stats band ──────────────────────────────────────────────────────────
         Spacer(Modifier.height(10.dp))
-
-        Column(modifier = Modifier.padding(horizontal = 3.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(rarity.color))
-                Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.logbook_stats_title), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatBandItem(stringResource(R.string.logbook_stat_ascents),  ascent.peakStats?.totalAscents?.toString()  ?: "—", PeakOnSurface, Modifier.weight(1f))
-                StatBandItem(stringResource(R.string.logbook_stat_climbers), ascent.peakStats?.uniqueClimbers?.toString() ?: "—", PeakOnSurface, Modifier.weight(1f))
-            }
+        Row(
+            modifier = Modifier.padding(horizontal = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(rarity.color))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.logbook_stats_title), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        Spacer(Modifier.height(6.dp))
+        HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Left stat — ASCENSIONES (left-aligned)
+            StatBandItem(
+                label   = stringResource(R.string.logbook_stat_ascents),
+                value   = ascent.peakStats?.totalAscents?.toString() ?: "—",
+                modifier = Modifier.weight(1f),
+                align   = Alignment.Start,
+            )
+            // Vertical divider
+            Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color.Black.copy(alpha = 0.07f)))
+            // Right stat — ALPINISTAS (right-aligned)
+            StatBandItem(
+                label   = stringResource(R.string.logbook_stat_climbers),
+                value   = ascent.peakStats?.uniqueClimbers?.toString() ?: "—",
+                modifier = Modifier.weight(1f),
+                align   = Alignment.End,
+            )
+        }
+        HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.07f))
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
 
-        Column(modifier = Modifier.padding(horizontal = 3.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 11.dp)) {
             val personsText = when {
                 ascent.persons.isEmpty() -> null
                 ascent.persons.size == 1 -> "con ${ascent.persons[0].name}"
