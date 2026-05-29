@@ -281,9 +281,9 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 .background(
                     Brush.verticalGradient(
                         colorStops = arrayOf(
-                            0.00f to Color(0x33000000),
-                            0.45f to Color(0x66000000),
-                            1.00f to Color(0xCC000000),
+                            0.00f to Color(0x22000000),
+                            0.50f to Color(0x88000000),
+                            1.00f to Color(0xFF000000),
                         )
                     )
                 )
@@ -309,7 +309,7 @@ private fun HeroHeader(data: HomeData, user: User?) {
         else 1f
         val heroAltReqLabel = heroNext?.let { next ->
             val alt = next.altReqs.firstOrNull()
-            if (alt != null) "Superar ${alt.threshold}m para ${next.name}"
+            if (alt != null) "Superar los ${alt.threshold} m para ${next.name}"
             else "para ${next.name}"
         }
 
@@ -450,21 +450,18 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                // Label: count left-aligned
-                Text(
-                    text       = "$heroUniquePeaks / $heroTarget",
-                    fontSize   = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = Color.White,
-                )
-                // Alt req left-aligned below count
-                if (heroAltReqLabel != null) {
-                    Text(
-                        text     = heroAltReqLabel,
-                        fontSize = 12.sp,
-                        color    = Color(0xFF94A3B8),
-                    )
+                // Single line: "41 / 50 cimas · Superar los 3000m para Guide"
+                val progressLabel = buildString {
+                    append("$heroUniquePeaks / $heroTarget cimas")
+                    if (heroAltReqLabel != null) append("  ·  $heroAltReqLabel")
                 }
+                Text(
+                    text     = progressLabel,
+                    fontSize = 12.sp,
+                    color    = Color(0xFFCBD5E1),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 // Progress bar — no text inside, 9dp height (50% thinner)
                 Box(
                     modifier = Modifier
