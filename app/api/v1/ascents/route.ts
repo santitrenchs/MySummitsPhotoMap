@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getV1Session } from "@/lib/api-v1/auth";
 import { prisma } from "@/lib/db/client";
 import { listAscents, createAscent } from "@/lib/services/ascent.service";
+import { getPeakStats } from "@/lib/services/peak.service";
 
 const CreateSchema = z.object({
   peakId:      z.string().uuid(),
@@ -27,7 +28,16 @@ export async function GET(req: NextRequest) {
   );
 
   const ascents = await listAscents(session.tenantId, session.userId, friendUserIds);
-  return NextResponse.json({ ascents });
+
+  // Attach global peak stats (total ascents + unique climbers across all tenants)
+  const uniquePeakIds = [...new Set(ascents.map((a) => a.peakId))];
+  const peakStatsMap = await getPeakStats(uniquePeakIds);
+  const ascentsWithStats = ascents.map((a) => ({
+    ...a,
+    peakStats: peakStatsMap.get(a.peakId) ?? null,
+  }));
+
+  return NextResponse.json({ ascents: ascentsWithStats });
 }
 
 export async function POST(req: NextRequest) {
