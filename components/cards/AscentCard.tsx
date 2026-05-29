@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
-import { ElevationProfile } from "@/components/cards/ElevationProfile";
+import { CardBack } from "@/components/cards/CardBack";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 import { imgUrl } from "@/lib/storage/image-url";
 
@@ -148,77 +148,38 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   const dateStr = new Date(ascent.date).toLocaleDateString(locale, {
     day: "numeric", month: "short", year: "numeric",
   });
-  const latStr = `${Math.abs(ascent.peak.latitude).toFixed(4)}°${ascent.peak.latitude >= 0 ? "N" : "S"}`;
-  const lngStr = `${Math.abs(ascent.peak.longitude).toFixed(4)}°${ascent.peak.longitude >= 0 ? "E" : "W"}`;
-
-  const buildBack = () => {
-    return (
-      <>
-        <section className="capture-frame">
-          <div className="image-frame">
-            {isFlipped && (
-              <PeakMiniMap
-                lat={ascent.peak.latitude}
-                lng={ascent.peak.longitude}
-                peakId={ascent.peak.id}
-                peakName={ascent.peak.name}
-                altitudeM={ascent.peak.altitudeM}
-              />
+  const buildBack = () => (
+    <CardBack
+      peak={ascent.peak}
+      peakName={ascent.peak.nameEn ?? ascent.peak.name}
+      rarity={rarity}
+      isFlipped={isFlipped}
+      locale={locale}
+      peakStats={ascent.peakStats}
+      mythicLabel={t.card_mythic}
+      footer={
+        <footer className="capture-note">
+          <p className="note-byline">
+            <strong>{ascent.user.name}</strong>
+            {ascent.persons.length > 0 && (
+              <>
+                {" "}{t.detail_with.toLowerCase()}{" "}
+                {ascent.persons.map((p, i) => (
+                  <span key={p.id}>
+                    {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
+                    <strong>{p.name}</strong>
+                  </span>
+                ))}
+              </>
             )}
-            <div className="back-map-gradient" />
-            {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
-            <div className="back-map-data">
-              <div className="back-map-geo">📍 {latStr} · {lngStr}</div>
-              <div className="back-map-name">{ascent.peak.nameEn ?? ascent.peak.name}</div>
-              <div className="back-map-alt">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
-              {ascent.peak.mountainRange && (
-                <div className="back-map-zone">{ascent.peak.mountainRange}</div>
-              )}
-            </div>
-            {isFlipped && (
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
-                <ElevationProfile
-                  peakId={ascent.peak.id}
-                  altitudeM={ascent.peak.altitudeM}
-                  rarityColor={RARITY_COLOR[rarity]}
-                />
-              </div>
-            )}
-          </div>
-          <div className="back-stats-eyebrow">Estadísticas Peakadex</div>
-          <div className="stat-band">
-            <div className="stat-item">
-              <span className="stat-label">Ascensiones</span>
-              <div className="stat-value">{ascent.peakStats?.totalAscents ?? "—"}</div>
-            </div>
-            <div className="stat-item" style={{ textAlign: "right" }}>
-              <span className="stat-label">Alpinistas</span>
-              <div className="stat-value">{ascent.peakStats?.uniqueClimbers ?? "—"}</div>
-            </div>
-          </div>
-          <footer className="capture-note">
-            <p className="note-byline">
-              <strong>{ascent.user.name}</strong>
-              {ascent.persons.length > 0 && (
-                <>
-                  {" "}{t.detail_with.toLowerCase()}{" "}
-                  {ascent.persons.map((p, i) => (
-                    <span key={p.id}>
-                      {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
-                      <strong>{p.name}</strong>
-                    </span>
-                  ))}
-                </>
-              )}
-            </p>
-            {ascent.description && (
-              <p className="note-text">{ascent.description}</p>
-            )}
-          </footer>
-        </section>
-      </>
-    );
-  };
+          </p>
+          {ascent.description && (
+            <p className="note-text">{ascent.description}</p>
+          )}
+        </footer>
+      }
+    />
+  );
 
   const buildFace = (showMap: boolean) => (
     <>
