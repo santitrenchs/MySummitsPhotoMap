@@ -341,84 +341,45 @@ private fun HeroHeader(data: HomeData, user: User?) {
                         maxLines      = 1,
                         overflow      = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
-                    Spacer(Modifier.height(4.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .padding(horizontal = 9.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text          = levelName,
-                            fontSize      = 11.sp,
-                            fontWeight    = FontWeight.Bold,
-                            color         = MaterialTheme.colorScheme.primary,
-                            letterSpacing = 0.01.em,
-                        )
-                    }
-                }
-
-                // Cairns + EP — dark pills, stacked vertically
-                if (meEntry != null) {
-                    Spacer(Modifier.width(8.dp))
-                    Column(
-                        verticalArrangement   = Arrangement.spacedBy(5.dp),
-                        horizontalAlignment   = Alignment.End,
-                    ) {
-                        // EP pill — ⚡ + number
+                    Spacer(Modifier.height(5.dp))
+                    // CS pill + EP pill side by side (replace level pill)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        // CS pill — amber
                         Row(
                             modifier              = Modifier
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(Color(0xE6222222))
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                                .padding(horizontal = 9.dp, vertical = 4.dp),
                             verticalAlignment     = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            Text("⚡", fontSize = 12.sp, lineHeight = 12.sp)
-                            Text(
-                                text          = "$myEp EP",
-                                fontSize      = 13.sp,
-                                fontWeight    = FontWeight.Bold,
-                                color         = Color.White,
-                                letterSpacing = (-0.01).em,
-                            )
-                        }
-                        // Cairns pill — cairn icon (Canvas stacked stones) + number
-                        Row(
-                            modifier              = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(Color(0xE6222222))
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                            verticalAlignment     = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            // Cairn icon — 3 stacked filled trapezoids in amber
-                            Canvas(modifier = Modifier.size(width = 14.dp, height = 13.dp)) {
-                                val w = size.width
-                                val h = size.height
+                            Canvas(modifier = Modifier.size(width = 11.dp, height = 10.dp)) {
+                                val w = size.width; val h = size.height
                                 val amber = Color(0xFFF59E0B)
-                                // Bottom stone (widest)
-                                drawPath(Path().apply {
-                                    moveTo(w * 0.05f, h);  lineTo(w * 0.95f, h)
-                                    lineTo(w * 0.82f, h * 0.72f); lineTo(w * 0.18f, h * 0.72f); close()
-                                }, color = amber)
-                                // Middle stone
-                                drawPath(Path().apply {
-                                    moveTo(w * 0.18f, h * 0.68f); lineTo(w * 0.82f, h * 0.68f)
-                                    lineTo(w * 0.70f, h * 0.40f); lineTo(w * 0.30f, h * 0.40f); close()
-                                }, color = amber)
-                                // Top stone (smallest)
-                                drawPath(Path().apply {
-                                    moveTo(w * 0.30f, h * 0.36f); lineTo(w * 0.70f, h * 0.36f)
-                                    lineTo(w * 0.58f, h * 0.04f); lineTo(w * 0.42f, h * 0.04f); close()
-                                }, color = amber)
+                                drawPath(Path().apply { moveTo(w*0.05f,h); lineTo(w*0.95f,h); lineTo(w*0.82f,h*0.72f); lineTo(w*0.18f,h*0.72f); close() }, color = amber)
+                                drawPath(Path().apply { moveTo(w*0.18f,h*0.68f); lineTo(w*0.82f,h*0.68f); lineTo(w*0.70f,h*0.40f); lineTo(w*0.30f,h*0.40f); close() }, color = amber)
+                                drawPath(Path().apply { moveTo(w*0.30f,h*0.36f); lineTo(w*0.70f,h*0.36f); lineTo(w*0.58f,h*0.04f); lineTo(w*0.42f,h*0.04f); close() }, color = amber)
                             }
                             Text(
-                                text          = "$myCairns CS",
-                                fontSize      = 13.sp,
-                                fontWeight    = FontWeight.Bold,
-                                color         = Color.White,
-                                letterSpacing = (-0.01).em,
+                                text       = if (meEntry != null) "$myCairns CS" else "0 CS",
+                                fontSize   = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color      = Color(0xFFFBBF24),
+                            )
+                        }
+                        // EP pill — white
+                        Row(
+                            modifier              = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color(0xE6222222))
+                                .padding(horizontal = 9.dp, vertical = 4.dp),
+                            verticalAlignment     = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text       = if (meEntry != null) "$myEp EP" else "0 EP",
+                                fontSize   = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color      = Color.White,
                             )
                         }
                     }
