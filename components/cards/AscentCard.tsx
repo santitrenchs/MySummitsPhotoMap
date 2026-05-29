@@ -174,14 +174,16 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
               {ascent.peak.mountainRange && (
                 <div className="back-map-zone">{ascent.peak.mountainRange}</div>
               )}
-              {isFlipped && (
+            </div>
+            {isFlipped && (
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
                 <ElevationProfile
                   peakId={ascent.peak.id}
                   altitudeM={ascent.peak.altitudeM}
                   rarityColor={RARITY_COLOR[rarity]}
                 />
-              )}
-            </div>
+              </div>
+            )}
           </div>
           <div className="back-stats-eyebrow">Estadísticas Peakadex</div>
           <div className="stat-band">

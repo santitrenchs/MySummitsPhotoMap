@@ -77,7 +77,7 @@ function ElevationSVG({
   const gradId = `ep-${peakId(rarityColor)}`;
 
   return (
-    <div style={{ width: "100%", padding: "6px 0 2px" }}>
+    <div style={{ width: "100%" }}>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -139,7 +139,7 @@ function peakId(color: string) {
 
 function ElevationSkeleton({ rarityColor }: { rarityColor: string }) {
   return (
-    <div style={{ width: "100%", padding: "6px 0 2px" }}>
+    <div style={{ width: "100%" }}>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} style={{ display: "block" }}>
         <rect x={PAD_X} y={PAD_Y} width={W - PAD_X * 2} height={H - PAD_Y * 2}
           rx="3" fill={rarityColor} fillOpacity="0.1" />
