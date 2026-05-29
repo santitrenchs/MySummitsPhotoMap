@@ -620,20 +620,27 @@ private fun CardFront(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StatBandItem(stringResource(R.string.logbook_stat_rarity),   "✿ ${rarity.label}", rarity.color,       Modifier.weight(1f))
-            StatBandItem(stringResource(R.string.logbook_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
-            StatBandItem(stringResource(R.string.logbook_stat_ep),        "+${rarity.ep}",     rarity.color,       Modifier.weight(1f))
+            StatBandItem(stringResource(R.string.logbook_stat_rarity),   "✿ ${rarity.label}", rarity.color, Modifier.weight(1f), valueSize = 12.sp)
+            StatBandItem(stringResource(R.string.logbook_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f), valueSize = 12.sp)
+            StatBandItem(stringResource(R.string.logbook_stat_ep),        "+${rarity.ep}",     rarity.color, Modifier.weight(1f), valueSize = 12.sp)
         }
         Spacer(Modifier.height(3.dp))
     }
 }
 
 @Composable
-private fun StatBandItem(label: String, value: String, modifier: Modifier = Modifier, align: Alignment.Horizontal = Alignment.Start) {
+private fun StatBandItem(
+    label:    String,
+    value:    String,
+    color:    Color              = PeakTextHeadline,
+    modifier: Modifier           = Modifier,
+    align:    Alignment.Horizontal = Alignment.Start,
+    valueSize: androidx.compose.ui.unit.TextUnit = 24.sp,
+) {
     Column(modifier = modifier.padding(horizontal = 8.dp, vertical = 6.dp), horizontalAlignment = align) {
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
         Spacer(Modifier.height(3.dp))
-        Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PeakTextHeadline, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, fontSize = valueSize, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
