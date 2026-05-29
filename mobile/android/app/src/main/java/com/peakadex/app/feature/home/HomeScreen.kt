@@ -256,28 +256,28 @@ private fun HeroHeader(data: HomeData, user: User?) {
             .padding(horizontal = 12.dp, vertical = 12.dp)
             .clip(RoundedCornerShape(16.dp)),
     ) {
-        // ── Illustration strip — fixed 88dp, cropped top ──────────────────
+        // ── Illustration strip — 104dp, show mountains not just sky ─────────
         Image(
             painter            = painterResource(R.drawable.hero),
             contentDescription = null,
             contentScale       = ContentScale.Crop,
-            alignment          = BiasAlignment(0f, -0.6f),
+            alignment          = BiasAlignment(0f, 0.1f),   // slightly lower → mountains visible
             modifier           = Modifier
                 .fillMaxWidth()
-                .height(88.dp)
+                .height(104.dp)
                 .background(Color(0xFF1C2D3F)),
         )
 
-        // ── Gradient: illustration fades into dark at ~50%, solid below ───
+        // ── Gradient: lighter at top, solid dark at bottom of strip ──────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(88.dp)
+                .height(104.dp)
                 .background(
                     Brush.verticalGradient(
                         colorStops = arrayOf(
-                            0.00f to Color(0x1A0A1423),
-                            0.55f to Color(0xCC0A1423),
+                            0.00f to Color(0x0D0A1423),
+                            0.50f to Color(0xB30A1423),
                             1.00f to Color(0xFF0A1423),
                         )
                     )
@@ -288,28 +288,29 @@ private fun HeroHeader(data: HomeData, user: User?) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 88.dp)
+                .padding(top = 104.dp)
                 .background(Color(0xFF0A1423))
-                .height(112.dp),   // stats row + cairns pill
+                .height(108.dp),
         )
 
         // ── All content ───────────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
         ) {
-            // Top row: avatar left + name/level/cairns right
+            // Top row: avatar + name/level + cairns/EP — all vertically centered
             Row(
                 modifier          = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Avatar
+                // Avatar with drop shadow via outer Box
                 Box(
-                    modifier         = Modifier
+                    modifier = Modifier
+                        .shadow(elevation = 8.dp, shape = CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
                         .size(56.dp)
                         .clip(CircleShape)
-                        .border(2.dp, Color(0x8CFFFFFF), CircleShape)
+                        .border(2.dp, Color(0xBFFFFFFF), CircleShape)
                         .background(Brush.linearGradient(listOf(Color(0xFF3A7BD5), Color(0xFF1A4A8A)))),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -345,7 +346,6 @@ private fun HeroHeader(data: HomeData, user: User?) {
                         overflow      = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                     Spacer(Modifier.height(4.dp))
-                    // Level pill
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
@@ -362,27 +362,46 @@ private fun HeroHeader(data: HomeData, user: User?) {
                     }
                 }
 
-                // Cairns + EP — same size, side by side, Cairns first
+                // Cairns + EP — vertically centered, same height as name+level block
                 if (meEntry != null) {
                     Spacer(Modifier.width(10.dp))
                     Row(
                         verticalAlignment     = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        // Cairns
+                        // Cairns — amber, triangle icon via Canvas
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Clean triangle via Canvas
+                                Canvas(modifier = Modifier.size(12.dp)) {
+                                    val w = size.width
+                                    val h = size.height
+                                    val path = Path().apply {
+                                        moveTo(w / 2f, 0f)
+                                        lineTo(w, h)
+                                        lineTo(0f, h)
+                                        close()
+                                    }
+                                    drawPath(
+                                        path  = path,
+                                        color = Color(0xFFFBBF24),
+                                        style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+                                    )
+                                }
+                                Spacer(Modifier.width(3.dp))
+                                Text(
+                                    text          = "$myCairns",
+                                    fontSize      = 16.sp,
+                                    fontWeight    = FontWeight.ExtraBold,
+                                    color         = Color(0xFFFBBF24),
+                                    letterSpacing = (-0.02).em,
+                                    lineHeight    = 16.sp,
+                                )
+                            }
                             Text(
-                                text          = "△ $myCairns",
-                                fontSize      = 16.sp,
-                                fontWeight    = FontWeight.ExtraBold,
-                                color         = Color(0xFFFBBF24),
-                                letterSpacing = (-0.02).em,
-                                lineHeight    = 16.sp,
-                            )
-                            Text(
-                                text      = "Cairns",
-                                fontSize  = 10.sp,
-                                color     = Color(0x99FFFFFF),
+                                text       = "Cairns",
+                                fontSize   = 10.sp,
+                                color      = Color(0x99FFFFFF),
                                 fontWeight = FontWeight.Medium,
                             )
                         }
@@ -409,12 +428,12 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
 
             // Divider
             Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
 
             // Metrics row: Ascensiones | Cimas | Alt. máx
             Row(
