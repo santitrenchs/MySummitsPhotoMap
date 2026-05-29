@@ -5,6 +5,7 @@ import type { AscentData } from "@/components/ascents/AscentsClient";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
+import { ElevationProfile } from "@/components/cards/ElevationProfile";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 import { imgUrl } from "@/lib/storage/image-url";
 
@@ -167,7 +168,6 @@ export function GroupedAscentCard({
   const slidePersons = slide.persons.filter((p) => p.id !== slide.createdByUserId);
 
   const buildBack = () => {
-    const barPct = Math.min(100, (peak.altitudeM / 8849) * 100).toFixed(1);
     const latStr = `${Math.abs(peak.latitude).toFixed(4)}°${peak.latitude >= 0 ? "N" : "S"}`;
     const lngStr = `${Math.abs(peak.longitude).toFixed(4)}°${peak.longitude >= 0 ? "E" : "W"}`;
     return (
@@ -191,13 +191,16 @@ export function GroupedAscentCard({
             {peak.mountainRange && (
               <div className="back-map-zone">{peak.mountainRange}</div>
             )}
-            <div className="back-bar-wrap">
-              <div className="back-bar-track">
-                <div className="back-bar-fill" style={{ width: `${barPct}%` }} />
-              </div>
-              <div className="back-bar-labels"><span>0 m</span><span>8.849 m</span></div>
-            </div>
           </div>
+          {isFlipped && (
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+              <ElevationProfile
+                peakId={peak.id}
+                altitudeM={peak.altitudeM}
+                rarityColor={RARITY_COLOR[rarity]}
+              />
+            </div>
+          )}
         </div>
         <div className="back-stats-eyebrow">Estadísticas Peakadex</div>
         <div className="stat-band">
