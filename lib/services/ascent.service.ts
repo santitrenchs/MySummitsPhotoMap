@@ -10,7 +10,7 @@ export type CreateAscentInput = {
 };
 
 const PEAK_SELECT = {
-  select: { id: true, name: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true, isMythic: true },
+  select: { id: true, name: true, nameEn: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true, isMythic: true, elevationProfile: true },
 } as const;
 
 const PHOTOS_SELECT = {
