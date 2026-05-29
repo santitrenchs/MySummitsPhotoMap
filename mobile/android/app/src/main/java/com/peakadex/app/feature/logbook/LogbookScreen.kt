@@ -264,55 +264,42 @@ fun LogbookScreen(
     }
 }
 
-// ── Quick filter bar — SegmentedButton (M3) ───────────────────────────────────
+// ── Quick filter bar — SecondaryTabRow (M3) ───────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QuickFilterBar(
     viewFilter: ViewFilter,
     onViewFilterChange: (ViewFilter) -> Unit,
 ) {
-    SingleChoiceSegmentedButtonRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+    val selectedIndex = if (viewFilter == ViewFilter.Mine) 0 else 1
+    SecondaryTabRow(
+        selectedTabIndex = selectedIndex,
+        containerColor   = Color.White,
+        contentColor     = PeakBlueActive,
+        modifier         = Modifier.fillMaxWidth(),
     ) {
-        SegmentedButton(
-            shape    = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-            selected = viewFilter == ViewFilter.Mine,
+        Tab(
+            selected = selectedIndex == 0,
             onClick  = { onViewFilterChange(ViewFilter.Mine) },
-            colors   = SegmentedButtonDefaults.colors(
-                activeContainerColor  = PeakBlueActive.copy(alpha = 0.10f),
-                activeContentColor    = PeakBlueActive,
-                activeBorderColor     = PeakBlueActive,
-                inactiveContainerColor = Color.White,
-                inactiveContentColor  = PeakMuted,
-                inactiveBorderColor   = PeakBorderLight,
-            ),
-            label = {
+            text     = {
                 Text(
                     stringResource(R.string.logbook_filter_mine),
                     fontSize   = 13.sp,
-                    fontWeight = if (viewFilter == ViewFilter.Mine) FontWeight.SemiBold else FontWeight.Normal,
+                    fontWeight = if (selectedIndex == 0) FontWeight.SemiBold else FontWeight.Normal,
+                    color      = if (selectedIndex == 0) PeakBlueActive else PeakMuted,
                 )
             },
         )
-        SegmentedButton(
-            shape    = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-            selected = viewFilter == ViewFilter.Friends,
+        Tab(
+            selected = selectedIndex == 1,
             onClick  = { onViewFilterChange(ViewFilter.Friends) },
-            colors   = SegmentedButtonDefaults.colors(
-                activeContainerColor  = PeakBlueActive.copy(alpha = 0.10f),
-                activeContentColor    = PeakBlueActive,
-                activeBorderColor     = PeakBlueActive,
-                inactiveContainerColor = Color.White,
-                inactiveContentColor  = PeakMuted,
-                inactiveBorderColor   = PeakBorderLight,
-            ),
-            label = {
+            text     = {
                 Text(
                     stringResource(R.string.logbook_filter_friends),
                     fontSize   = 13.sp,
-                    fontWeight = if (viewFilter == ViewFilter.Friends) FontWeight.SemiBold else FontWeight.Normal,
+                    fontWeight = if (selectedIndex == 1) FontWeight.SemiBold else FontWeight.Normal,
+                    color      = if (selectedIndex == 1) PeakBlueActive else PeakMuted,
                 )
             },
         )

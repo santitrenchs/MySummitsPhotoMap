@@ -2,6 +2,10 @@ package com.peakadex.app.core.navigation
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -13,10 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -88,7 +96,32 @@ fun MainScaffold(navController: NavController) {
         (context as? Activity)?.moveTaskToBack(true)
     }
 
+    // ── Bottom bar hide-on-scroll ──────────────────────────────────────────────
+    // available.y < 0 → scrolling down (reading more) → hide bar
+    // available.y > 0 → scrolling up (back to top)    → show bar
+    // Atlas (MapLibre AndroidView) does not dispatch Compose nestedScroll events,
+    // so the bar never hides on that screen even though the connection is attached.
+    var isBottomBarVisible by remember { mutableStateOf(true) }
+
+    val hideOnScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                when {
+                    available.y < -3f -> isBottomBarVisible = false
+                    available.y >  3f -> isBottomBarVisible = true
+                }
+                return Offset.Zero   // observe only — don't consume
+            }
+        }
+    }
+
+    // Always show the bar when switching tabs
+    LaunchedEffect(currentRoute) {
+        isBottomBarVisible = true
+    }
+
     Scaffold(
+        modifier = Modifier.nestedScroll(hideOnScrollConnection),
         // ① CenterAlignedTopAppBar — M3 standard, replaces custom Surface/Box header
         topBar = {
             MainTopBar(
@@ -117,16 +150,22 @@ fun MainScaffold(navController: NavController) {
             }
         },
         bottomBar = {
-            MainTabBar(
-                currentRoute = currentRoute,
-                onTabSelected = { screen ->
-                    tabNavController.navigate(screen.route) {
-                        popUpTo(Screen.Home.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-            )
+            AnimatedVisibility(
+                visible = isBottomBarVisible,
+                enter   = slideInVertically(animationSpec = tween(220), initialOffsetY = { it }),
+                exit    = slideOutVertically(animationSpec = tween(220), targetOffsetY = { it }),
+            ) {
+                MainTabBar(
+                    currentRoute = currentRoute,
+                    onTabSelected = { screen ->
+                        tabNavController.navigate(screen.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
+            }
         },
         containerColor = PeakBackground,
         snackbarHost   = { SnackbarHost(snackbarHostState) },

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive icon foreground layer.
+  The adaptive icon canvas is 108dp × 108dp.
+  The guaranteed-visible safe zone is the center 72dp × 72dp (18dp inset each side).
+  14% inset keeps the full green circle safely within the safe zone on any launcher shape.
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_peakadex"
+    android:inset="14%" />

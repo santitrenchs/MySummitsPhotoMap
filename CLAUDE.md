@@ -1876,43 +1876,53 @@ onAscentClick = { ascentId, isOwn ->
 
 ---
 
-### Cards screen — simplified filter (SegmentedButton)
+### Cards screen — simplified filter (SecondaryTabRow)
 
 Removed: search bar, filter button, active chips row, full filter bottom sheet.
 
-Added: `SingleChoiceSegmentedButtonRow` with two `SegmentedButton` items.
+Filter: `SecondaryTabRow` (M3) with two `Tab` items — replaces the previous `SingleChoiceSegmentedButtonRow` (was ~60dp, new tabs are 48dp flat, no padding).
 
-| Button | Label | Filter | Sort |
+| Tab index | Label | Filter | Sort |
 |---|---|---|---|
-| Index 0 | "Mis Cards" | `ViewFilter.Mine` | date desc |
-| Index 1 | "Mi Cordada" | `ViewFilter.Friends` | canonical unseen-first algorithm |
+| 0 | "Mis Cards" | `ViewFilter.Mine` | date desc |
+| 1 | "Mi Cordada" | `ViewFilter.Friends` | canonical unseen-first algorithm |
 
 **"Mi Cordada" never shows own cards** — `ViewFilter.Friends` filters `isOwn == false`.
 
 ```kotlin
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QuickFilterBar(viewFilter: ViewFilter, onViewFilterChange: (ViewFilter) -> Unit) {
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
-        SegmentedButton(
-            shape    = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-            selected = viewFilter == ViewFilter.Mine,
+    val selectedIndex = if (viewFilter == ViewFilter.Mine) 0 else 1
+    SecondaryTabRow(
+        selectedTabIndex = selectedIndex,
+        containerColor   = Color.White,
+        contentColor     = PeakBlueActive,
+        modifier         = Modifier.fillMaxWidth(),
+    ) {
+        Tab(
+            selected = selectedIndex == 0,
             onClick  = { onViewFilterChange(ViewFilter.Mine) },
-            colors   = SegmentedButtonDefaults.colors(
-                activeContainerColor   = PeakBlueActive.copy(alpha = 0.10f),
-                activeContentColor     = PeakBlueActive,
-                activeBorderColor      = PeakBlueActive,
-                inactiveContainerColor = Color.White,
-                inactiveContentColor   = PeakMuted,
-                inactiveBorderColor    = PeakBorderLight,
-            ),
-            label = { Text("Mis Cards", fontSize = 13.sp, fontWeight = if (viewFilter == ViewFilter.Mine) FontWeight.SemiBold else FontWeight.Normal) },
+            text     = {
+                Text(
+                    stringResource(R.string.logbook_filter_mine),
+                    fontSize   = 13.sp,
+                    fontWeight = if (selectedIndex == 0) FontWeight.SemiBold else FontWeight.Normal,
+                    color      = if (selectedIndex == 0) PeakBlueActive else PeakMuted,
+                )
+            },
         )
-        SegmentedButton(
-            shape    = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-            selected = viewFilter == ViewFilter.Friends,
+        Tab(
+            selected = selectedIndex == 1,
             onClick  = { onViewFilterChange(ViewFilter.Friends) },
-            // same colors as above
-            label = { Text("Mi Cordada", fontSize = 13.sp, fontWeight = if (viewFilter == ViewFilter.Friends) FontWeight.SemiBold else FontWeight.Normal) },
+            text     = {
+                Text(
+                    stringResource(R.string.logbook_filter_friends),
+                    fontSize   = 13.sp,
+                    fontWeight = if (selectedIndex == 1) FontWeight.SemiBold else FontWeight.Normal,
+                    color      = if (selectedIndex == 1) PeakBlueActive else PeakMuted,
+                )
+            },
         )
     }
 }
@@ -1943,9 +1953,112 @@ Rendered conditionally: `if (filters.peakId != null) PeakFilterChip(peakName = f
 ### Known gotchas (Fase 6)
 
 - **`filters.peakName ?: filters.peakId` is `String?`**: both fields are nullable. The `PeakFilterChip` composable takes a non-nullable `String`. Always add `?: ""` as a final fallback: `filters.peakName ?: filters.peakId ?: ""`. The `if (filters.peakId != null)` guard above guarantees the chip only renders when there is a value, so the empty string fallback is never actually displayed.
-- **`@OptIn(ExperimentalMaterial3Api::class)` required**: add to any composable that uses `CenterAlignedTopAppBar`, `SingleChoiceSegmentedButtonRow`, `SegmentedButton`, `InputChip`, or `PullToRefreshBox`.
+- **`@OptIn(ExperimentalMaterial3Api::class)` required**: add to any composable that uses `CenterAlignedTopAppBar`, `SecondaryTabRow`, `Tab`, `InputChip`, or `PullToRefreshBox`.
 - **Root vs secondary top bars**: Root tabs (Home, Bitácora, Atlas, Cards) → `CenterAlignedTopAppBar` with logo + avatar. Secondary screens (Profile, Settings, AscentDetail) → `CenterAlignedTopAppBar` with text title + back arrow. Never use the logo on secondary screens.
 - **`restoreState = false` when navigating to Cards from Bitácora**: required so the ViewModel is recreated and `LaunchedEffect(refreshTrigger)` fires. With `restoreState = true` the existing ViewModel is reused and the trigger value hasn't changed — scroll/highlight won't fire.
+
+---
+
+## Android App — Polish 2026-05-29
+
+### Bottom navigation bar — hide on scroll
+
+The bottom nav bar hides when scrolling down and reappears when scrolling up on all tabs **except Atlas** (MapLibre `AndroidView` does not dispatch Compose nestedScroll events, so the bar never hides on the map).
+
+**Implementation in `MainScaffold.kt`:**
+
+```kotlin
+var isBottomBarVisible by remember { mutableStateOf(true) }
+
+val hideOnScrollConnection = remember {
+    object : NestedScrollConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            when {
+                available.y < -3f -> isBottomBarVisible = false  // scrolling down → hide
+                available.y >  3f -> isBottomBarVisible = true   // scrolling up → show
+            }
+            return Offset.Zero  // observe only — don't consume
+        }
+    }
+}
+
+// Always show bar when switching tabs
+LaunchedEffect(currentRoute) { isBottomBarVisible = true }
+
+Scaffold(
+    modifier  = Modifier.nestedScroll(hideOnScrollConnection),
+    bottomBar = {
+        AnimatedVisibility(
+            visible = isBottomBarVisible,
+            enter   = slideInVertically(animationSpec = tween(220), initialOffsetY = { it }),
+            exit    = slideOutVertically(animationSpec = tween(220), targetOffsetY = { it }),
+        ) {
+            MainTabBar(...)
+        }
+    },
+)
+```
+
+**Key rules:**
+- `available.y < 0` = user scrolling DOWN (reading more content) → hide
+- `available.y > 0` = user scrolling UP (back to top) → show
+- Threshold of ±3f avoids toggling on micro-jitter
+- `LaunchedEffect(currentRoute)` resets to visible on every tab change — bar is always visible when the user navigates
+- `AnimatedVisibility` with `slideInVertically`/`slideOutVertically` is the correct pattern — it affects layout so `innerPadding` adjusts and the content actually gains space when the bar hides
+- **Do NOT use `NavigationBarDefaults.exitAlwaysScrollBehavior()`** — it is experimental and `NavigationBar` does not have a `scrollBehavior` parameter in the current M3 version used by this project. The `AnimatedVisibility` approach is stable and correct.
+
+---
+
+### Android launcher icon (2026-05-29)
+
+**Source:** `res/drawable/ic_peakadex.png` (295×299px, green mountain inside green circle, transparent bg)
+
+**File structure:**
+
+```
+mipmap-anydpi-v26/
+  ic_launcher.xml        ← adaptive icon: white bg + ic_launcher_foreground
+  ic_launcher_round.xml  ← same (round launchers)
+mipmap-mdpi/    ic_launcher.png + ic_launcher_round.png   (48×48)
+mipmap-hdpi/    ic_launcher.png + ic_launcher_round.png   (72×72)
+mipmap-xhdpi/   ic_launcher.png + ic_launcher_round.png   (96×96)
+mipmap-xxhdpi/  ic_launcher.png + ic_launcher_round.png   (144×144)
+mipmap-xxxhdpi/ ic_launcher.png + ic_launcher_round.png   (192×192)
+drawable/ic_launcher_foreground.xml   ← <inset android:inset="14%"/>
+values/colors.xml                     ← ic_launcher_background = #FFFFFF
+```
+
+**Adaptive icon design:** white `#FFFFFF` background + the PNG centered with 14% inset on all sides. The 14% inset keeps the green circle safely within the 72dp safe zone of the 108dp adaptive canvas. Manifest sets `android:icon="@mipmap/ic_launcher"` and `android:roundIcon="@mipmap/ic_launcher_round"`.
+
+**Android 12+ (Material You):** the system may tint the icon with the user's wallpaper color. Android 8–11: white square clipped to launcher shape. Android < 8: raw PNG with transparent background.
+
+---
+
+### Auth gate loading screen — SplashScreen.kt (2026-05-29)
+
+**File:** `mobile/android/app/src/main/java/com/peakadex/app/feature/splash/SplashScreen.kt`
+
+The animated flower/rarity cycle was replaced with a clean white screen + centered wordmark. This is the screen shown while the app checks for an active auth session (not the OS-level splash screen).
+
+```kotlin
+@Composable
+fun SplashScreen(isAuthenticated: Boolean, onReady: (authenticated: Boolean) -> Unit) {
+    LaunchedEffect(Unit) {
+        delay(1_000L)
+        onReady(isAuthenticated)
+    }
+    Box(
+        modifier         = Modifier.fillMaxSize().background(Color.White),
+        contentAlignment = Alignment.Center,
+    ) {
+        PeakadexLogo(height = 44.dp)
+    }
+}
+```
+
+- `MIN_SHOW_MS` reduced from 1500ms to 1000ms — no animation to watch, so shorter wait is fine
+- White background creates a seamless transition: OS splash (white + icon) → this screen (white + wordmark) → app
+- Logo at 44dp — slightly larger than the top bar (32dp) to breathe in full-screen context
 
 ---
 

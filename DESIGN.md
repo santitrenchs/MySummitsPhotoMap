@@ -1073,3 +1073,60 @@ The list panel is **decoupled from the map zoom**. When the user taps "Lista":
 | Right: distance | 11sp, `PeakSubtle` (km or m) | 11sp, `PeakSubtle` |
 | Row divider | `HorizontalDivider` 1dp `PeakBorderLight` | same |
 | Row padding | `horizontal=16dp, vertical=10dp` | same |
+
+---
+
+## Cards Screen — View filter (Android, 2026-05-29)
+
+The view filter uses `SecondaryTabRow` (M3), replacing the previous `SingleChoiceSegmentedButtonRow`. Tabs are 48dp tall with no extra vertical padding — saves ~12dp vs the segmented button.
+
+```
+┌──────────────────────────────────────┐
+│  Mis Cards  │  Mi Cordada            │  ← SecondaryTabRow, 48dp
+│─────────────│                        │     underline indicator, PeakBlueActive
+└──────────────────────────────────────┘
+```
+
+| Tab | Filter | Behavior |
+|-----|--------|----------|
+| Mis Cards (index 0) | `ViewFilter.Mine` | Own ascents, date desc |
+| Mi Cordada (index 1) | `ViewFilter.Friends` | Friends only (`isOwn == false`), server canonical sort |
+
+Active tab: `PeakBlueActive` text + `FontWeight.SemiBold` + underline indicator.  
+Inactive tab: `PeakMuted` text + `FontWeight.Normal`.  
+`containerColor = Color.White`, `contentColor = PeakBlueActive`.
+
+---
+
+## Bottom Navigation Bar — Hide on scroll (Android, 2026-05-29)
+
+The bottom nav bar hides on downward scroll and reappears on upward scroll. Applies to **Home, Bitácora, and Cards** screens. **Atlas is excluded** — MapLibre's `AndroidView` does not dispatch Compose nestedScroll events so the bar never hides on the map.
+
+**Behavior:**
+- Scroll **down** (content moving up, `available.y < -3f`) → bar slides out downward in 220ms
+- Scroll **up** (content moving down, `available.y > 3f`) → bar slides back up in 220ms
+- **Tab switch** → bar immediately resets to visible (no animation needed, instant state reset)
+
+**Animation:** `slideInVertically` / `slideOutVertically` with `tween(220)`. The `AnimatedVisibility` wrapper affects layout — when the bar is hidden, `innerPadding` bottom padding drops to the system inset value only, and the content gains the extra space.
+
+**The FAB moves with the bar** — when the bar hides, the FAB repositions to near the screen bottom. This is standard Android behavior (YouTube, Gmail).
+
+---
+
+## Auth Gate Loading Screen — SplashScreen (Android, 2026-05-29)
+
+**File:** `feature/splash/SplashScreen.kt`
+
+> Not to be confused with the OS Splash Screen (the one with the app icon, ~200ms, handled by `Theme.Peakadex.Splash`). This screen is shown while the app resolves auth state (typically 500–1000ms).
+
+**Design:** full white screen, `PeakadexLogo(height = 44.dp)` centered.
+
+```
+background: #FFFFFF
+logo:       PeakadexLogo at 44dp height, centered horizontally and vertically
+duration:   1000ms minimum, then navigates to Login or Home
+```
+
+**Rationale:** the OS splash screen already shows the app icon on a white background, so this creates a seamless white → white → app transition. The wordmark at 44dp is slightly larger than the top bar (32dp) to read well on a full screen. No animation — clean and fast.
+
+**Previous design (removed):** animated `✿` emoji cycling through rarity colors (`RARITIES` list) with scale pulse, on a `#0D2538` navy background. Replaced because the navy background created a jarring color transition to the white login screen.
