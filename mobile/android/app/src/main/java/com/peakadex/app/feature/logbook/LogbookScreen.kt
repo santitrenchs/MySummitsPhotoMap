@@ -803,79 +803,88 @@ private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) 
 private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
     val bylineName  = ascent.user?.name ?: "Tú"
 
-    Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth().padding(horizontal = 3.dp).aspectRatio(4f / 5f)
-                .clip(RoundedCornerShape(18.dp))
-                .background(Color(0xFF0A1929)),
-        ) {
-            CardMiniMap(lat = ascent.peak.latitude, lng = ascent.peak.longitude, rarityColor = rarity.color)
-            // Bottom gradient
-            Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f).align(Alignment.BottomStart)
-                .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.4f to Color(0x8007121F), 1f to Color(0xE007121F)))))
+    // BoxWithConstraints lets us compute heights in dp so the map is exactly 65% of the
+    // total card height while keeping the card the same size as before.
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
+        // Map box has 3dp horizontal padding on each side → its rendered width:
+        val mapWidthDp = maxWidth - 6.dp
+        // Current total inner height: map at 4:5 + fixed content below (~140dp)
+        val totalH  = mapWidthDp * (5f / 4f) + 140.dp
+        val mapH    = totalH * 0.65f
 
-            Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 14.dp, vertical = 14.dp)) {
-                if (!ascent.peak.mountainRange.isNullOrBlank()) {
-                    Text(ascent.peak.mountainRange, fontSize = 11.sp, color = Color(0xB3FFFFFF))
-                    Spacer(Modifier.height(2.dp))
+        Column(modifier = Modifier.fillMaxWidth().height(totalH)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth().padding(horizontal = 3.dp)
+                    .height(mapH)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color(0xFF0A1929)),
+            ) {
+                CardMiniMap(lat = ascent.peak.latitude, lng = ascent.peak.longitude, rarityColor = rarity.color)
+                // Bottom gradient
+                Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f).align(Alignment.BottomStart)
+                    .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.4f to Color(0x8007121F), 1f to Color(0xE007121F)))))
+
+                Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 14.dp, vertical = 14.dp)) {
+                    if (!ascent.peak.mountainRange.isNullOrBlank()) {
+                        Text(ascent.peak.mountainRange, fontSize = 11.sp, color = Color(0xB3FFFFFF))
+                        Spacer(Modifier.height(2.dp))
+                    }
+                    Text(ascent.peak.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
+                        letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black,
+                        color = Color.White, letterSpacing = (-0.04).em)
+                    Spacer(Modifier.height(8.dp))
+                    ElevationProfileCanvas(
+                        peakId    = ascent.peak.id,
+                        profile   = ascent.peak.elevationProfile,
+                        altitudeM = ascent.peak.altitudeM,
+                        modifier  = Modifier.fillMaxWidth().height(40.dp),
+                    )
                 }
-                Text(ascent.peak.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
-                    letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black,
-                    color = Color.White, letterSpacing = (-0.04).em)
+            }
+
+            // Stats band — fixed natural height, sits right below the map
+            Column(modifier = Modifier.padding(horizontal = 3.dp, vertical = 10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(rarity.color))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.logbook_stats_title), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Spacer(Modifier.height(8.dp))
-                ElevationProfileCanvas(
-                    peakId    = ascent.peak.id,
-                    profile   = ascent.peak.elevationProfile,
-                    altitudeM = ascent.peak.altitudeM,
-                    modifier  = Modifier.fillMaxWidth().height(40.dp),
-                )
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        Column(modifier = Modifier.padding(horizontal = 3.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(rarity.color))
-                Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.logbook_stats_title), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatBandItem(stringResource(R.string.logbook_stat_ascents),  ascent.peakStats?.totalAscents?.toString()  ?: "—", PeakOnSurface, Modifier.weight(1f))
-                StatBandItem(stringResource(R.string.logbook_stat_climbers), ascent.peakStats?.uniqueClimbers?.toString() ?: "—", PeakOnSurface, Modifier.weight(1f))
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        Column(modifier = Modifier.padding(horizontal = 3.dp)) {
-            val personsText = when {
-                ascent.persons.isEmpty() -> null
-                ascent.persons.size == 1 -> "con ${ascent.persons[0].name}"
-                else -> buildString {
-                    append("con ")
-                    ascent.persons.dropLast(1).forEachIndexed { i, p -> if (i > 0) append(", "); append(p.name) }
-                    append(" y ${ascent.persons.last().name}")
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    StatBandItem(stringResource(R.string.logbook_stat_ascents),  ascent.peakStats?.totalAscents?.toString()  ?: "—", PeakOnSurface, Modifier.weight(1f))
+                    StatBandItem(stringResource(R.string.logbook_stat_climbers), ascent.peakStats?.uniqueClimbers?.toString() ?: "—", PeakOnSurface, Modifier.weight(1f))
                 }
             }
-            if (personsText != null) {
-                Text(
-                    buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)) { append(bylineName) }
-                        append(" $personsText")
-                    },
-                    fontSize = 13.sp, color = PeakOnSurface, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(4.dp))
+
+            // Footer — persons + description. Remaining height is white space.
+            Column(modifier = Modifier.padding(horizontal = 3.dp)) {
+                val personsText = when {
+                    ascent.persons.isEmpty() -> null
+                    ascent.persons.size == 1 -> "con ${ascent.persons[0].name}"
+                    else -> buildString {
+                        append("con ")
+                        ascent.persons.dropLast(1).forEachIndexed { i, p -> if (i > 0) append(", "); append(p.name) }
+                        append(" y ${ascent.persons.last().name}")
+                    }
+                }
+                if (personsText != null) {
+                    Text(
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)) { append(bylineName) }
+                            append(" $personsText")
+                        },
+                        fontSize = 13.sp, color = PeakOnSurface, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
+                if (!ascent.description.isNullOrBlank()) {
+                    Text(ascent.description, fontSize = 13.sp, color = PeakMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 19.sp)
+                }
             }
-            if (!ascent.description.isNullOrBlank()) {
-                Text(ascent.description, fontSize = 13.sp, color = PeakMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 19.sp)
-            }
+            // Any remaining height → white space (no explicit Spacer needed; Column clips to totalH)
         }
-        Spacer(Modifier.height(3.dp))
     }
 }
 
