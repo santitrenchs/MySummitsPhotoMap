@@ -29,18 +29,18 @@ function initials(name: string): string {
 type Badge = {
   id: string; emoji: string;
   titleKey: keyof Dict; subKey: keyof Dict;
-  howTo: string; rarity: string; cairns: number;
+  howTo: string; rarity: string; CS: number;
   earned: boolean; current: number; target: number;
 };
 
 function computeBadges(stats: HomeData["stats"]): Badge[] {
   return [
-    { id: "first_capture",       emoji: "📍", titleKey: "home_badge1Title", subKey: "home_badge1Sub", howTo: "Capture your first summit",         rarity: "Any",          cairns: 3,  earned: stats.totalAscents  >= 1, current: stats.totalAscents,  target: 1 },
-    { id: "trail_starter",       emoji: "🌿", titleKey: "home_badge2Title", subKey: "home_badge2Sub", howTo: "Capture 3 summits",                 rarity: "🟢 Daisy",     cairns: 5,  earned: stats.totalAscents  >= 3, current: stats.totalAscents,  target: 3 },
-    { id: "ridge_seeker",        emoji: "⛰️", titleKey: "home_badge3Title", subKey: "home_badge3Sub", howTo: "Capture 3 summits above 1000 m",    rarity: "🔵 Lavender",  cairns: 8,  earned: stats.peaks1000plus >= 3, current: stats.peaks1000plus, target: 3 },
-    { id: "alpine_breakthrough", emoji: "🧊", titleKey: "home_badge4Title", subKey: "home_badge4Sub", howTo: "Capture your first 2000 m summit",  rarity: "🟣 Gentian",   cairns: 12, earned: stats.peaks2000plus >= 1, current: stats.peaks2000plus, target: 1 },
-    { id: "summit_hunter",       emoji: "🏔️", titleKey: "home_badge5Title", subKey: "home_badge5Sub", howTo: "Capture your first 3000 m summit",  rarity: "🟠 Edelweiss", cairns: 20, earned: stats.peaks3000plus >= 1, current: stats.peaks3000plus, target: 1 },
-    { id: "sky_chaser",          emoji: "🌌", titleKey: "home_badge6Title", subKey: "home_badge6Sub", howTo: "Capture a 4000+ m summit",          rarity: "🟡 Saxifrage", cairns: 35, earned: stats.peaks4000plus >= 1, current: stats.peaks4000plus, target: 1 },
+    { id: "first_capture",       emoji: "📍", titleKey: "home_badge1Title", subKey: "home_badge1Sub", howTo: "Capture your first summit",         rarity: "Any",          CS: 3,  earned: stats.totalAscents  >= 1, current: stats.totalAscents,  target: 1 },
+    { id: "trail_starter",       emoji: "🌿", titleKey: "home_badge2Title", subKey: "home_badge2Sub", howTo: "Capture 3 summits",                 rarity: "🟢 Daisy",     CS: 5,  earned: stats.totalAscents  >= 3, current: stats.totalAscents,  target: 3 },
+    { id: "ridge_seeker",        emoji: "⛰️", titleKey: "home_badge3Title", subKey: "home_badge3Sub", howTo: "Capture 3 summits above 1000 m",    rarity: "🔵 Lavender",  CS: 8,  earned: stats.peaks1000plus >= 3, current: stats.peaks1000plus, target: 3 },
+    { id: "alpine_breakthrough", emoji: "🧊", titleKey: "home_badge4Title", subKey: "home_badge4Sub", howTo: "Capture your first 2000 m summit",  rarity: "🟣 Gentian",   CS: 12, earned: stats.peaks2000plus >= 1, current: stats.peaks2000plus, target: 1 },
+    { id: "summit_hunter",       emoji: "🏔️", titleKey: "home_badge5Title", subKey: "home_badge5Sub", howTo: "Capture your first 3000 m summit",  rarity: "🟠 Edelweiss", CS: 20, earned: stats.peaks3000plus >= 1, current: stats.peaks3000plus, target: 1 },
+    { id: "sky_chaser",          emoji: "🌌", titleKey: "home_badge6Title", subKey: "home_badge6Sub", howTo: "Capture a 4000+ m summit",          rarity: "🟡 Saxifrage", CS: 35, earned: stats.peaks4000plus >= 1, current: stats.peaks4000plus, target: 1 },
   ];
 }
 
@@ -188,9 +188,9 @@ function LevelCard({ def, status, stats, t, locale }: {
 
 // ─── Badge card ───────────────────────────────────────────────────────────────
 
-function BadgeCard({ emoji, title, sub, howTo, rarity, cairns, earned, current, target, isLast }: {
+function BadgeCard({ emoji, title, sub, howTo, rarity, CS, earned, current, target, isLast }: {
   emoji: string; title: string; sub: string; howTo: string; rarity: string;
-  cairns: number; earned: boolean; current: number; target: number; isLast: boolean;
+  CS: number; earned: boolean; current: number; target: number; isLast: boolean;
 }) {
   const progress = Math.min(1, current / target);
   return (
@@ -219,7 +219,7 @@ function BadgeCard({ emoji, title, sub, howTo, rarity, cairns, earned, current, 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 4 }}>
           <span style={{ fontWeight: 700, fontSize: 13, color: earned ? "#92400e" : "#111827" }}>{title}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", flexShrink: 0 }}>+{cairns} 🪨</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", flexShrink: 0 }}>+{CS} 🪨</span>
         </div>
         <div style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 2px" }}>{sub}</div>
         <div style={{ fontSize: 10, color: "#9ca3af" }}>{howTo}</div>
@@ -426,7 +426,7 @@ export function HomeClient({ data, locale, t }: {
       {(() => {
         const meEntry = leaderboard.find((e) => e.isCurrentUser);
         const myEp = meEntry?.ep ?? 0;
-        const myCairns = meEntry?.cairns ?? 0;
+        const myCS = meEntry?.CS ?? 0;
         const lvlColor = LEVEL_COLORS[levelState.currentIdx];
         const lvlName = t[levelState.current.nameKey];
         return (
@@ -502,7 +502,7 @@ export function HomeClient({ data, locale, t }: {
                 </div>
               </div>
 
-              {/* EP · Cairns */}
+              {/* EP · CS */}
               <div style={{
                 display: "flex", alignItems: "center", gap: 6,
                 fontSize: 12.5, letterSpacing: "-0.01em", marginTop: 6,
@@ -515,8 +515,8 @@ export function HomeClient({ data, locale, t }: {
                   <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
                   <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
                 </svg>
-                <span style={{ fontWeight: 700, color: "#fbbf24" }}>{myCairns}</span>
-                <span style={{ fontWeight: 400, color: "#fbbf24" }}>Cairns</span>
+                <span style={{ fontWeight: 700, color: "#fbbf24" }}>{myCS}</span>
+                <span style={{ fontWeight: 400, color: "#fbbf24" }}>CS</span>
                 <span style={{ fontSize: 18, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>·</span>
                 <span style={{ fontWeight: 700, color: "#ffffff" }}>+{myEp} EP</span>
               </div>
@@ -710,15 +710,15 @@ export function HomeClient({ data, locale, t }: {
                           background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px",
                         }}>{levelName}</span>
                       </div>
-                      {/* Cimas + Cairns + EP */}
+                      {/* Cimas + CS + EP */}
                       <div style={{ display: "flex", gap: 0, flexShrink: 0 }}>
                         <div style={{ textAlign: "center", width: 52 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ascentCount}</div>
                           <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
                         </div>
                         <div style={{ textAlign: "center", width: 52 }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>CS</div>
                         </div>
                         <div style={{ textAlign: "center", width: 44 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
@@ -752,15 +752,15 @@ export function HomeClient({ data, locale, t }: {
                       background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px",
                     }}>{levelName}</span>
                   </div>
-                  {/* Cimas + Cairns + EP */}
+                  {/* Cimas + CS + EP */}
                   <div style={{ display: "flex", gap: 0, flexShrink: 0 }}>
                     <div style={{ textAlign: "center", width: 52 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ascentCount}</div>
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
                     </div>
                     <div style={{ textAlign: "center", width: 52 }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.cairns}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>Cairns</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>CS</div>
                     </div>
                     <div style={{ textAlign: "center", width: 44 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>

@@ -33,8 +33,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -70,12 +73,12 @@ private data class LocalLevelDef(
 )
 
 private val LEVEL_DEFS = listOf(
-    LocalLevelDef(1, "🌱", "Scout",    20,  listOf(AltReq(2000, 1))),
-    LocalLevelDef(2, "🥾", "Guide",    50,  listOf(AltReq(3000, 1))),
-    LocalLevelDef(3, "🧭", "Explorer", 100, listOf(AltReq(4000, 1))),
-    LocalLevelDef(4, "⛰️", "Alpinist", 150, listOf(AltReq(5000, 1))),
-    LocalLevelDef(5, "🏔️", "Master",   220, listOf(AltReq(6500, 1))),
-    LocalLevelDef(6, "👑", "Zenith",   300, listOf(AltReq(8000, 1))),
+    LocalLevelDef(2, "🌱", "Scout",    20,  listOf(AltReq(2000, 1))),
+    LocalLevelDef(3, "🥾", "Guide",    50,  listOf(AltReq(3000, 1))),
+    LocalLevelDef(4, "🧭", "Explorer", 100, listOf(AltReq(4000, 1))),
+    LocalLevelDef(5, "⛰️", "Alpinist", 150, listOf(AltReq(5000, 1))),
+    LocalLevelDef(6, "🏔️", "Master",   220, listOf(AltReq(6500, 1))),
+    LocalLevelDef(7, "👑", "Zenith",   300, listOf(AltReq(8000, 1))),
 )
 
 // Level accent colours — matches web LEVEL_COLORS (index = def.idx - 1)
@@ -172,8 +175,6 @@ private fun HomeContent(
     user: User?,
     onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
 ) {
-    var progressionExpanded by remember { mutableStateOf(false) }
-
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
 
         // 1 — Hero header
@@ -184,16 +185,7 @@ private fun HomeContent(
             item { OnboardingBanner() }
         }
 
-        // 3 — Progression
-        item {
-            ProgressionSection(
-                data     = data,
-                expanded = progressionExpanded,
-                onToggle = { progressionExpanded = !progressionExpanded },
-            )
-        }
-
-        // 4 — Monthly chart (≥1 ascent)
+        // 3 — Monthly chart (≥1 ascent)
         if (data.stats.totalAscents >= 1 && data.monthlyStats.isNotEmpty()) {
             item { MonthlyChartSection(data.monthlyStats, onNavigateToCardsWithRarity) }
         }
@@ -281,15 +273,40 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 .background(
                     Brush.verticalGradient(
                         colorStops = arrayOf(
-                            0.00f to Color(0x33000000),
-                            0.45f to Color(0x66000000),
-                            1.00f to Color(0xCC000000),
+                            0.00f to Color(0x22000000),
+                            0.50f to Color(0x88000000),
+                            1.00f to Color(0xFF000000),
                         )
                     )
                 )
         )
 
         // ── All content ───────────────────────────────────────────────────
+        // Compute level progress here so the hero can show the bar
+        val heroStats        = data.stats
+        val heroUniquePeaks  = heroStats.uniquePeaks
+        val heroLevelIdx     = run {
+            var idx = 0
+            for (i in LEVEL_DEFS.indices) {
+                if (meetsLevel(LEVEL_DEFS[i], heroUniquePeaks, heroStats)) idx = i else break
+            }
+            idx
+        }
+        val heroCurrent  = LEVEL_DEFS[heroLevelIdx]
+        val heroNext     = if (heroLevelIdx < LEVEL_DEFS.lastIndex) LEVEL_DEFS[heroLevelIdx + 1] else null
+        val heroPrevTgt  = if (heroLevelIdx > 0) LEVEL_DEFS[heroLevelIdx - 1].targetAscents else 0
+        val heroTarget   = heroNext?.targetAscents ?: heroCurrent.targetAscents
+        val heroProgress = if (heroTarget > heroPrevTgt)
+            ((heroUniquePeaks - heroPrevTgt).coerceAtLeast(0).toFloat() / (heroTarget - heroPrevTgt)).coerceIn(0f, 1f)
+        else 1f
+        val heroAltReqLabel = heroNext?.let { next ->
+            val alt = next.altReqs.firstOrNull()
+            if (alt != null) "Superar ${alt.threshold} m para ${next.name}"
+            else "para ${next.name}"
+        }
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+        // — Main padded content —
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -332,10 +349,15 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 // Name + level (left, grows)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text          = displayName,
+                        text          = buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color.White)) {
+                                append(displayName)
+                            }
+                            withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = Color.White.copy(alpha = 0.55f))) {
+                                append("  ·  ${heroCurrent.name}")
+                            }
+                        },
                         fontSize      = 18.sp,
-                        fontWeight    = FontWeight.Bold,
-                        color         = Color.White,
                         letterSpacing = (-0.03).em,
                         lineHeight    = (18 * 1.15).sp,
                         maxLines      = 1,
@@ -415,7 +437,51 @@ private fun HeroHeader(data: HomeData, user: User?) {
                     unit  = if (data.stats.maxAltitude > 0) "m" else null,
                 )
             }
+        } // end main padded Column
+
+        // ── Progress strip — solid black, full width ──────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF000000))
+                .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                // Single line: "41 / 50 cimas · Superar los 3000m para Guide"
+                val progressLabel = buildString {
+                    append("$heroUniquePeaks / $heroTarget cimas")
+                    if (heroAltReqLabel != null) append("  ·  $heroAltReqLabel")
+                }
+                Text(
+                    text     = progressLabel,
+                    fontSize = 12.sp,
+                    color    = Color(0xFFCBD5E1),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                // Progress bar — no text inside, 9dp height (50% thinner)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(9.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(Color(0xFF334155)),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(heroProgress)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFF5FA876), Color(0xFF4A8C5C)),
+                                )
+                            ),
+                    )
+                }
+            }
         }
+        } // end outer Column wrapping hero content
     }
 }
 
@@ -584,7 +650,7 @@ private fun LevelCard(
                 .weight(1f)
                 .padding(start = 10.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
         ) {
-            // Top row: badge · emoji+name · ascent pill
+            // Top row: badge · name
             Row(verticalAlignment = Alignment.CenterVertically) {
 
                 // Status badge circle
@@ -611,23 +677,26 @@ private fun LevelCard(
 
                 Spacer(Modifier.width(12.dp))
 
-                // Name
+                // Name — full width, no ellipsis needed
                 Text(
-                    text     = def.name,
-                    style    = MaterialTheme.typography.titleMedium,
-                    color    = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    text       = def.name,
+                    style      = MaterialTheme.typography.titleMedium,
+                    color      = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier   = Modifier.weight(1f),
+                    softWrap   = true,
+                    maxLines   = 2,
+                    overflow   = TextOverflow.Ellipsis,
                 )
+            }
 
-                Spacer(Modifier.width(8.dp))
-
-                // Pills: target ascents + altReq
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Pill(pluralStringResource(R.plurals.home_level_req_ascents_pill, def.targetAscents, def.targetAscents))
-                    def.altReqs.forEach { r -> Pill(stringResource(R.string.home_level_req_altitude, r.threshold)) }
-                }
+            // Pills row: target ascents + altReq (below name, left-aligned)
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier             = Modifier.padding(start = 40.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Pill(pluralStringResource(R.plurals.home_level_req_ascents_pill, def.targetAscents, def.targetAscents))
+                def.altReqs.forEach { r -> Pill(stringResource(R.string.home_level_req_altitude, r.threshold)) }
             }
 
             // Progress row — in-progress level only

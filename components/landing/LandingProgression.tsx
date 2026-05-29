@@ -6,10 +6,10 @@ import { useLandingT } from "./LandingLocaleContext";
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const CORDADA = [
-  { pos: 1, name: "Mathias Hornli",    initials: "MH", color: "#0EA5E9", level: "Explorer", cimas: 31, cairns: 3, ep: 112, isMe: true  },
-  { pos: 2, name: "Giulia Rinaldi",    initials: "GR", color: "#E879A0", level: "Guide",    cimas: 18, cairns: 1, ep: 64,  isMe: false },
-  { pos: 3, name: "Iker Etxebarria",  initials: "IE", color: "#F97316", level: "Guide",    cimas: 14, cairns: 2, ep: 51,  isMe: false },
-  { pos: 4, name: "Luc Moreau",        initials: "LM", color: "#7C9EA6", level: "Scout",    cimas: 6,  cairns: 0, ep: 22,  isMe: false },
+  { pos: 1, name: "Mathias Hornli",    initials: "MH", color: "#0EA5E9", level: "Explorer", cimas: 31, CS: 3, ep: 112, isMe: true  },
+  { pos: 2, name: "Giulia Rinaldi",    initials: "GR", color: "#E879A0", level: "Guide",    cimas: 18, CS: 1, ep: 64,  isMe: false },
+  { pos: 3, name: "Iker Etxebarria",  initials: "IE", color: "#F97316", level: "Guide",    cimas: 14, CS: 2, ep: 51,  isMe: false },
+  { pos: 4, name: "Luc Moreau",        initials: "LM", color: "#7C9EA6", level: "Scout",    cimas: 6,  CS: 0, ep: 22,  isMe: false },
 ] as const;
 
 const ZENITH_LEVELS = [
@@ -279,14 +279,14 @@ function CardCordada({ revealed }: { revealed: boolean }) {
               {r.cimas}
             </span>
 
-            {/* Cairns */}
+            {/* CS */}
             <span style={{
               width: 54, textAlign: "right" as const, flexShrink: 0,
-              fontSize: 13, fontWeight: r.cairns > 0 ? 600 : 400,
-              color: r.cairns > 0 ? "#F97316" : "rgba(255,255,255,0.2)",
+              fontSize: 13, fontWeight: r.CS > 0 ? 600 : 400,
+              color: r.CS > 0 ? "#F97316" : "rgba(255,255,255,0.2)",
               fontFamily: "var(--font-mono-landing, monospace)",
             }}>
-              {r.cairns}
+              {r.CS}
             </span>
 
             {/* EP */}
