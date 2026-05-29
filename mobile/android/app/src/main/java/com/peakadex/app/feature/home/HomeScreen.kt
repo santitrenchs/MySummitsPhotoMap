@@ -262,48 +262,38 @@ private fun HeroHeader(data: HomeData, user: User?) {
             .padding(horizontal = 12.dp, vertical = 12.dp)
             .clip(RoundedCornerShape(16.dp)),
     ) {
-        // ── Illustration strip — 104dp, show mountains not just sky ─────────
+        // ── Full-card illustration — fills entire hero ────────────────────
         Image(
             painter            = painterResource(R.drawable.hero),
             contentDescription = null,
             contentScale       = ContentScale.Crop,
-            alignment          = BiasAlignment(0f, 0.7f),   // show mountains, less sky
+            alignment          = BiasAlignment(0f, 0.5f),
             modifier           = Modifier
                 .fillMaxWidth()
-                .height(104.dp)
+                .matchParentSize()
                 .background(Color(0xFF1C2D3F)),
         )
 
-        // ── Gradient: lighter at top, solid dark at bottom of strip ──────
+        // ── Dark gradient overlay for text readability ────────────────────
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(104.dp)
+                .matchParentSize()
                 .background(
                     Brush.verticalGradient(
                         colorStops = arrayOf(
-                            0.00f to Color(0x0D0A1423),
-                            0.50f to Color(0xB30A1423),
-                            1.00f to Color(0xFF0A1423),
+                            0.00f to Color(0x33000000),
+                            0.45f to Color(0x66000000),
+                            1.00f to Color(0xCC000000),
                         )
                     )
                 )
-        )
-
-        // ── Solid dark background below the illustration strip ─────────────
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 104.dp)
-                .background(Color(0xFF0A1423))
-                .height(72.dp),
         )
 
         // ── All content ───────────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 12.dp),
         ) {
             // Top row: avatar + name/level + cairns/EP — all vertically centered
             Row(
