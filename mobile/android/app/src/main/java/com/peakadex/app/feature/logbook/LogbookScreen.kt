@@ -73,13 +73,13 @@ import kotlin.math.tan
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
 
-// Carto Positron — clean white minimalist style, no peak labels.
+// Carto Voyager — colorful, readable, matches the web card back map style.
 private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 12): String {
     val n      = 1 shl zoom
     val xTile  = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
     val latRad = Math.toRadians(lat)
     val yTile  = ((1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
-    return "https://a.basemaps.cartocdn.com/light_all/$zoom/$xTile/$yTile@2x.png"
+    return "https://a.basemaps.cartocdn.com/rastertiles/voyager/$zoom/$xTile/$yTile@2x.png"
 }
 
 // Returns the fractional position [0,1] of lat/lng within its tile at the given zoom.
