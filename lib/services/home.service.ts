@@ -11,7 +11,7 @@ export type LeaderboardEntry = {
   ascentCount: number;
   uniquePeakCount: number; // distinct peaks climbed
   ep: number;              // elevation points (rarity-based, fallback 1/ascent)
-  cairns: number;          // total cairns earned from badges
+  CS: number;          // total CS earned from badges
   levelIdx: number;        // 1–6, matches hero card logic (first unmet milestone)
   nextLevelTarget: number | null; // unique-peak target for current goal level (null = Zenith achieved)
   isCurrentUser: boolean;
@@ -151,7 +151,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   // 5. Leaderboard (me + friends)
   const allUserIds = [userId, ...friendUserIds];
 
-  // Fetch ascents with peak data for all users (EP + altitude stats for cairns)
+  // Fetch ascents with peak data for all users (EP + altitude stats for CS)
   const [lbAscents, friendUsers] = await Promise.all([
     prisma.ascent.findMany({
       where: { createdBy: { in: allUserIds } },
@@ -205,7 +205,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
     }
   }
 
-  function lbCairns(s: LbUserStats): number {
+  function lbCS(s: LbUserStats): number {
     return s.mythic; // +1 cairn per mythic peak ascent
   }
 
@@ -241,7 +241,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
         ascentCount: s.count,
         uniquePeakCount: s.seenPeaks.size,
         ep: s.ep,
-        cairns: lbCairns(s),
+        CS: lbCS(s),
         levelIdx: lvl,
         nextLevelTarget: LEVEL_TARGETS[lvl] ?? null,
         isCurrentUser: isMe,
@@ -249,7 +249,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
     })
     .sort((a, b) =>
       b.ascentCount - a.ascentCount ||
-      b.cairns - a.cairns ||
+      b.CS - a.CS ||
       b.ep - a.ep
     );
 

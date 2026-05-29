@@ -84,7 +84,7 @@
     <string name="home_chart_6months_title">Últims 6 mesos</string>
     <string name="home_chart_rarity_title">Cims per raresa</string>
     <string name="home_leaderboard_col_peaks">Cims</string>
-    <string name="home_leaderboard_col_cairns">Cairns</string>
+    <string name="home_leaderboard_col_cairns">CS</string>
     <string name="home_leaderboard_col_ep">EP</string>
     <string name="home_leaderboard_you"> (tu)</string>
     <string name="home_period_peaks_suffix"> cims</string>

@@ -424,7 +424,7 @@ private fun HeroHeader(data: HomeData, user: User?) {
                                 }, color = amber)
                             }
                             Text(
-                                text          = "$myCairns Cairns",
+                                text          = "$myCairns CS",
                                 fontSize      = 13.sp,
                                 fontWeight    = FontWeight.Bold,
                                 color         = Color.White,
