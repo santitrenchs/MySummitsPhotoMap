@@ -118,6 +118,9 @@ interface ApiService {
     @GET("peaks/{id}")
     suspend fun getPeak(@Path("id") id: String): Peak
 
+    @GET("peaks/{id}/elevation")
+    suspend fun getPeakElevation(@Path("id") id: String): ElevationResponse
+
     // MARK: - Atlas (map)
     @GET("map/ascents")
     suspend fun getMapAscents(): MapAscentResponse

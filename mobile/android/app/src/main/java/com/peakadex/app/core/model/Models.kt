@@ -67,6 +67,9 @@ data class ElevationProfileData(
 )
 
 @Serializable
+data class ElevationResponse(val profile: ElevationProfileData)
+
+@Serializable
 data class Peak(
     val id: String,
     val name: String,

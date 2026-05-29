@@ -647,19 +647,31 @@ private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.
 
 @Composable
 private fun ElevationProfileCanvas(
+    peakId: String,
     profile: com.peakadex.app.core.model.ElevationProfileData?,
     altitudeM: Int,
     modifier: Modifier = Modifier,
 ) {
-    if (profile == null || profile.points.size < 2) {
-        // Fallback: simple altitude bar
-        val fraction = (altitudeM.toFloat() / 8849).coerceIn(0f, 1f)
-        Box(modifier = modifier, contentAlignment = Alignment.BottomStart) {
-            Box(modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(999.dp)).background(Color(0x40FFFFFF)))
-            Box(modifier = Modifier.fillMaxHeight(fraction).fillMaxWidth(fraction).height(3.dp).clip(RoundedCornerShape(999.dp)).background(Color.White))
+    var resolvedProfile by remember(peakId) {
+        mutableStateOf(profile)
+    }
+
+    // If profile not cached in API response, fetch it lazily (first flip)
+    LaunchedEffect(peakId) {
+        if (resolvedProfile == null || resolvedProfile!!.points.size < 2) {
+            runCatching {
+                resolvedProfile = com.peakadex.app.AppContainer.apiService.getPeakElevation(peakId).profile
+            }
         }
+    }
+
+    if (resolvedProfile == null || resolvedProfile!!.points.size < 2) {
+        // Show nothing while loading — avoids fallback bar flash
+        Box(modifier = modifier)
         return
     }
+
+    val profile = resolvedProfile!!
 
     Canvas(modifier = modifier) {
         val w = size.width
@@ -721,6 +733,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                     color = Color.White, letterSpacing = (-0.04).em)
                 Spacer(Modifier.height(8.dp))
                 ElevationProfileCanvas(
+                    peakId    = ascent.peak.id,
                     profile   = ascent.peak.elevationProfile,
                     altitudeM = ascent.peak.altitudeM,
                     modifier  = Modifier.fillMaxWidth().height(40.dp),
