@@ -296,14 +296,14 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 .fillMaxWidth()
                 .padding(top = 104.dp)
                 .background(Color(0xFF0A1423))
-                .height(108.dp),
+                .height(88.dp),
         )
 
         // ── All content ───────────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
         ) {
             // Top row: avatar + name/level + cairns/EP — all vertically centered
             Row(
@@ -435,12 +435,12 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Divider
             Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Metrics row: Ascensiones | Cimas | Alt. máx
             Row(
