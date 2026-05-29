@@ -75,18 +75,9 @@ const getRarityColor = getRarityColorFromLib;
 
 // ─── Flower emoji marker ─────────────────────────────────────────────────────
 
-function createFlowerMarker(color: string): HTMLDivElement {
+function createDotMarker(color: string): HTMLDivElement {
   const el = document.createElement("div");
-  el.style.cssText = "position:absolute;pointer-events:none;width:80px;height:80px";
-  el.innerHTML = `
-    <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="40" cy="40" r="37" fill="none" stroke="${color}" stroke-width="1" opacity="0.12"/>
-      <circle cx="40" cy="40" r="30" fill="none" stroke="${color}" stroke-width="1.1" opacity="0.22"/>
-      <circle cx="40" cy="40" r="22" fill="none" stroke="${color}" stroke-width="1.2" opacity="0.38"/>
-      <circle cx="40" cy="40" r="14" fill="none" stroke="${color}" stroke-width="1.4" opacity="0.55"/>
-    </svg>
-    <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:${color};filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));line-height:1">✿</span>
-  `;
+  el.style.cssText = `position:absolute;pointer-events:none;width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.45)`;
   return el;
 }
 
@@ -168,7 +159,7 @@ export function PeakMiniMap({
     }
 
     map.on("load", () => {
-      new maplibregl.Marker({ element: createFlowerMarker(color), anchor: "center" })
+      new maplibregl.Marker({ element: createDotMarker(color), anchor: "center" })
         .setLngLat([lng, lat])
         .addTo(map);
 
