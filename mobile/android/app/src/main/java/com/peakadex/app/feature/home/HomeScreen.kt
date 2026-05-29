@@ -256,98 +256,144 @@ private fun HeroHeader(data: HomeData, user: User?) {
             .padding(horizontal = 12.dp, vertical = 12.dp)
             .clip(RoundedCornerShape(16.dp)),
     ) {
-        // Background hero image — aligned centre-60% like the web (slight downward bias)
+        // ── Illustration strip — fixed 88dp, cropped top ──────────────────
         Image(
             painter            = painterResource(R.drawable.hero),
             contentDescription = null,
             contentScale       = ContentScale.Crop,
-            alignment          = BiasAlignment(0f, -0.2f),
+            alignment          = BiasAlignment(0f, -0.6f),
             modifier           = Modifier
                 .fillMaxWidth()
-                .matchParentSize()
+                .height(88.dp)
                 .background(Color(0xFF1C2D3F)),
         )
 
-        // Dark gradient overlay — mirrors web linear-gradient(to bottom, 0.15→0.45→0.85)
+        // ── Gradient: illustration fades into dark at ~50%, solid below ───
         Box(
             modifier = Modifier
-                .matchParentSize()
+                .fillMaxWidth()
+                .height(88.dp)
                 .background(
                     Brush.verticalGradient(
                         colorStops = arrayOf(
-                            0.00f to Color(0x260A1423),
-                            0.55f to Color(0x730A1423),
-                            1.00f to Color(0xD90A1423),
+                            0.00f to Color(0x1A0A1423),
+                            0.55f to Color(0xCC0A1423),
+                            1.00f to Color(0xFF0A1423),
                         )
                     )
                 )
         )
 
-        // Content
-        Column(
-            modifier            = Modifier
+        // ── Solid dark background below the illustration strip ─────────────
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 24.dp, end = 24.dp, top = 28.dp, bottom = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(top = 88.dp)
+                .background(Color(0xFF0A1423))
+                .height(112.dp),   // stats row + cairns pill
+        )
+
+        // ── All content ───────────────────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
         ) {
-            // Avatar
-            Box(
-                modifier         = Modifier
-                    .size(68.dp)
-                    .clip(CircleShape)
-                    .border(2.5.dp, Color(0x8CFFFFFF), CircleShape)
-                    .background(Brush.linearGradient(listOf(Color(0xFF3A7BD5), Color(0xFF1A4A8A)))),
-                contentAlignment = Alignment.Center,
+            // Top row: avatar left + name/level/cairns right
+            Row(
+                modifier          = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (avatarUrl != null) {
-                    AsyncImage(
-                        model              = avatarUrl,
-                        contentDescription = displayName,
-                        contentScale       = ContentScale.Crop,
-                        modifier           = Modifier.fillMaxSize(),
-                    )
-                } else {
+                // Avatar
+                Box(
+                    modifier         = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color(0x8CFFFFFF), CircleShape)
+                        .background(Brush.linearGradient(listOf(Color(0xFF3A7BD5), Color(0xFF1A4A8A)))),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (avatarUrl != null) {
+                        AsyncImage(
+                            model              = avatarUrl,
+                            contentDescription = displayName,
+                            contentScale       = ContentScale.Crop,
+                            modifier           = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Text(
+                            text       = initials(displayName.ifEmpty { "?" }),
+                            color      = Color.White,
+                            fontSize   = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                // Name + level + cairns/EP
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text       = initials(displayName.ifEmpty { "?" }),
-                        color      = Color.White,
-                        fontSize   = 24.sp,
-                        fontWeight = FontWeight.Bold,
+                        text          = displayName,
+                        fontSize      = 18.sp,
+                        fontWeight    = FontWeight.Bold,
+                        color         = Color.White,
+                        letterSpacing = (-0.03).em,
+                        lineHeight    = (18 * 1.15).sp,
+                        maxLines      = 1,
+                        overflow      = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
+                    Spacer(Modifier.height(3.dp))
+                    // Level pill
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .padding(horizontal = 9.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text          = levelName,
+                            fontSize      = 11.sp,
+                            fontWeight    = FontWeight.Bold,
+                            color         = MaterialTheme.colorScheme.primary,
+                            letterSpacing = 0.01.em,
+                        )
+                    }
+                    // Cairns + EP inline below level
+                    if (meEntry != null) {
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text("△", fontSize = 11.sp, color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold)
+                            Text(
+                                text          = "$myCairns Cairns",
+                                fontSize      = 12.sp,
+                                color         = Color(0xFFFBBF24),
+                                fontWeight    = FontWeight.SemiBold,
+                                letterSpacing = (-0.01).em,
+                            )
+                            Text("·", fontSize = 14.sp, color = Color(0x59FFFFFF), lineHeight = 14.sp)
+                            Text(
+                                text          = "+$myEp EP",
+                                fontSize      = 12.sp,
+                                color         = Color.White,
+                                fontWeight    = FontWeight.Bold,
+                                letterSpacing = (-0.01).em,
+                            )
+                        }
+                    }
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(14.dp))
 
-            // Name
-            Text(
-                text          = displayName,
-                fontSize      = 20.sp,
-                fontWeight    = FontWeight.Bold,
-                color         = Color.White,
-                letterSpacing = (-0.03).em,
-                lineHeight    = (20 * 1.1).sp,
-                textAlign     = androidx.compose.ui.text.style.TextAlign.Center,
-            )
+            // Divider
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
 
-            Spacer(Modifier.height(6.dp))
-
-            // Level pill
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 11.dp, vertical = 3.dp),
-            ) {
-                Text(
-                    text          = levelName,
-                    fontSize      = 12.sp,
-                    fontWeight    = FontWeight.Bold,
-                    color         = MaterialTheme.colorScheme.primary,
-                    letterSpacing = 0.01.em,
-                )
-            }
-
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(12.dp))
 
             // Metrics row: Ascensiones | Cimas | Alt. máx
             Row(
@@ -370,44 +416,6 @@ private fun HeroHeader(data: HomeData, user: User?) {
                     label = stringResource(R.string.home_stat_max_alt_label),
                     unit  = if (data.stats.maxAltitude > 0) "m" else null,
                 )
-            }
-
-            // Cairns + EP pill (only if there's leaderboard data)
-            if (meEntry != null) {
-                Spacer(Modifier.height(10.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(Color(0x26FFFFFF))
-                        .padding(horizontal = 14.dp, vertical = 5.dp),
-                ) {
-                    Row(
-                        verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                    ) {
-                        Text("△", fontSize = 12.sp, color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold)
-                        Text(
-                            text       = "$myCairns Cairns",
-                            fontSize   = 13.sp,
-                            color      = Color(0xFFFBBF24),
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = (-0.01).em,
-                        )
-                        Text(
-                            text     = "·",
-                            fontSize = 16.sp,
-                            color    = Color(0x59FFFFFF),
-                            lineHeight = 16.sp,
-                        )
-                        Text(
-                            text       = "+$myEp EP",
-                            fontSize   = 13.sp,
-                            color      = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.01).em,
-                        )
-                    }
-                }
             }
         }
     }
