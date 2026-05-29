@@ -96,14 +96,6 @@ function ElevationSVG({
         {/* Line */}
         <path d={linePath} fill="none" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
 
-        {/* Summit marker — stem starts exactly at the line, dot sits above */}
-        <line
-          x1={summitX} y1={summitY}
-          x2={summitX} y2={summitY + 8}
-          stroke={rarityColor} strokeWidth="1.5"
-        />
-        <circle cx={summitX} cy={summitY - 3} r="3" fill={rarityColor} stroke="white" strokeWidth="1" />
-
         {/* Distance labels */}
         <text x={PAD_X} y={H - 1} fontSize="7" fill="rgba(255,255,255,0.45)" style={{ fontFamily: "system-ui, sans-serif" }}>
           −8 km
