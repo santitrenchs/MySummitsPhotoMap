@@ -73,13 +73,24 @@ import kotlin.math.tan
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
 
-// OpenTopoMap tile URL — zoom 12 shows contour lines clearly.
+// ESRI World Shaded Relief — terrain shading, no contour lines, no peak labels.
+// Note: ESRI uses {z}/{y}/{x} tile path order (row/col), not {z}/{x}/{y}.
 private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 12): String {
-    val n     = 1 shl zoom
-    val xTile = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
+    val n      = 1 shl zoom
+    val xTile  = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
     val latRad = Math.toRadians(lat)
-    val yTile = ((1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
-    return "https://tile.opentopomap.org/$zoom/$xTile/$yTile.png"
+    val yTile  = ((1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n).toInt().coerceIn(0, n - 1)
+    return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/$zoom/$yTile/$xTile"
+}
+
+// Returns the fractional position [0,1] of lat/lng within its tile at the given zoom.
+// Used to overlay the rarity dot on the static tile image.
+private fun peakFractionInTile(lat: Double, lon: Double, zoom: Int = 12): Pair<Float, Float> {
+    val n          = (1 shl zoom).toDouble()
+    val xContinuous = (lon + 180.0) / 360.0 * n
+    val latRad      = Math.toRadians(lat)
+    val yContinuous = (1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n
+    return Pair((xContinuous - xContinuous.toLong()).toFloat(), (yContinuous - yContinuous.toLong()).toFloat())
 }
 
 // ── Custom icons ───────────────────────────────────────────────────────────────
@@ -393,8 +404,6 @@ private fun LogbookList(
         }
     }
 
-    var flippedId by remember { mutableStateOf<String?>(null) }
-
     LazyColumn(
         state               = listState,
         contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
@@ -406,8 +415,6 @@ private fun LogbookList(
                 onDetailClick = { onAscentClick(ascent.id) },
                 onShareClick  = { onShareClick(ascent.id) },
                 isHighlighted = ascent.id == highlightId,
-                isFlipped     = flippedId == ascent.id,
-                onFlip        = { flippedId = if (flippedId == ascent.id) null else ascent.id },
             )
         }
     }
@@ -421,9 +428,8 @@ private fun AscentFlipCard(
     onDetailClick: () -> Unit,
     onShareClick:  () -> Unit,
     isHighlighted: Boolean = false,
-    isFlipped:     Boolean = false,
-    onFlip:        () -> Unit = {},
 ) {
+    var isFlipped by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
         targetValue   = if (isFlipped) 180f else 0f,
         animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
@@ -457,7 +463,7 @@ private fun AscentFlipCard(
                 .fillMaxWidth()
                 .graphicsLayer { rotationY = rotation; cameraDistance = 12f * density }
                 .clip(RoundedCornerShape(28.dp))
-                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onFlip() },
+                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { isFlipped = !isFlipped },
         ) {
             if (rotation <= 90f) {
                 CardFront(
@@ -605,70 +611,37 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
     }
 }
 
-// ── Card minimap (MapLibre — one instance at a time via accordion) ─────────────
+// ── Card minimap (static tile + Canvas dot) ────────────────────────────────────
 
 @Composable
 private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.ui.graphics.Color) {
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val tileUrl = remember(lat, lng) { peakTileUrl(lat, lng) }
+    val (fracX, fracY) = remember(lat, lng) { peakFractionInTile(lat, lng) }
 
-    val baseStyle = """{"version":8,"sources":{"opentopomap":{"type":"raster","tiles":["https://tile.opentopomap.org/{z}/{x}/{y}.png"],"tileSize":256,"maxzoom":17}},"layers":[{"id":"opentopomap","type":"raster","source":"opentopomap"}]}"""
-
-    val dotColorInt = android.graphics.Color.argb(
-        255,
-        (rarityColor.red * 255).toInt(),
-        (rarityColor.green * 255).toInt(),
-        (rarityColor.blue * 255).toInt(),
-    )
-
-    androidx.compose.ui.viewinterop.AndroidView(
-        factory = { ctx ->
-            val mv = org.maplibre.android.maps.MapView(ctx)
-            mv.onCreate(null)
-            mv.onStart()
-            mv.onResume()
-
-            mv.getMapAsync { map ->
-                map.setStyle(org.maplibre.android.maps.Style.Builder().fromJson(baseStyle)) { style ->
-                    map.uiSettings.setAllGesturesEnabled(false)
-                    map.uiSettings.isCompassEnabled = false
-                    map.uiSettings.isAttributionEnabled = false
-                    map.uiSettings.isLogoEnabled = false
-                    map.cameraPosition = org.maplibre.android.camera.CameraPosition.Builder()
-                        .target(org.maplibre.android.geometry.LatLng(lat, lng))
-                        .zoom(12.0)
-                        .build()
-                    style.addSource(org.maplibre.android.style.sources.GeoJsonSource("dot-src",
-                        org.maplibre.geojson.Feature.fromGeometry(org.maplibre.geojson.Point.fromLngLat(lng, lat))
-                    ))
-                    style.addLayer(org.maplibre.android.style.layers.CircleLayer("dot-layer", "dot-src").withProperties(
-                        org.maplibre.android.style.layers.PropertyFactory.circleRadius(7f),
-                        org.maplibre.android.style.layers.PropertyFactory.circleColor(dotColorInt),
-                        org.maplibre.android.style.layers.PropertyFactory.circleStrokeWidth(2f),
-                        org.maplibre.android.style.layers.PropertyFactory.circleStrokeColor(android.graphics.Color.WHITE),
-                    ))
-                }
+    Box(modifier = Modifier.fillMaxSize()) {
+        AsyncImage(
+            model            = tileUrl,
+            contentDescription = null,
+            contentScale     = ContentScale.Crop,
+            modifier         = Modifier.fillMaxSize(),
+        )
+        // Dot overlay — position calculated from sub-tile fraction.
+        // Tile is 1:1 square, container is 4:5 → ContentScale.Crop scales by height,
+        // cropping (1 - 4/5)/2 = 10% from each side horizontally.
+        // tilePx: fracX * 256, fracY * 256
+        // screenX = (tilePx - 256*0.1) / (256*0.8) * width
+        // screenY = fracY * height
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val tileVisible = 256f * 0.8f   // visible tile pixels horizontally
+            val tileOffsetX = 256f * 0.1f   // tile pixels cropped from left
+            val screenX = (fracX * 256f - tileOffsetX) / tileVisible * size.width
+            val screenY = fracY * size.height
+            if (screenX in 0f..size.width) {
+                drawCircle(color = Color.White, radius = 11.dp.toPx(), center = androidx.compose.ui.geometry.Offset(screenX, screenY))
+                drawCircle(color = rarityColor,  radius = 8.dp.toPx(),  center = androidx.compose.ui.geometry.Offset(screenX, screenY))
             }
-
-            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-                when (event) {
-                    androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> runCatching { mv.onPause() }
-                    androidx.lifecycle.Lifecycle.Event.ON_STOP  -> runCatching { mv.onStop() }
-                    else -> {}
-                }
-            }
-            lifecycleOwner.lifecycle.addObserver(observer)
-            mv.tag = observer
-            mv
-        },
-        onRelease = { mv ->
-            val observer = mv.tag as? androidx.lifecycle.LifecycleEventObserver
-            if (observer != null) lifecycleOwner.lifecycle.removeObserver(observer)
-            runCatching { mv.onPause() }
-            runCatching { mv.onStop() }
-            runCatching { mv.onDestroy() }
-        },
-        modifier = Modifier.fillMaxSize(),
-    )
+        }
+    }
 }
 
 // ── Elevation profile ──────────────────────────────────────────────────────────
