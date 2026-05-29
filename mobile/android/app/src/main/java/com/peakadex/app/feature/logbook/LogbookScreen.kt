@@ -352,24 +352,24 @@ private fun QuickFilterBar(
         Tab(
             selected = selectedIndex == 0,
             onClick  = { onViewFilterChange(ViewFilter.Mine) },
-            text     = {
-                Text(
-                    stringResource(R.string.logbook_filter_mine),
-                    fontSize   = 13.sp,
-                    fontWeight = if (selectedIndex == 0) FontWeight.SemiBold else FontWeight.Normal,
-                    color      = if (selectedIndex == 0) PeakBlueActive else PeakMuted,
+            icon = {
+                Icon(
+                    imageVector        = SoloPersonIcon,
+                    contentDescription = stringResource(R.string.logbook_filter_mine),
+                    tint               = if (selectedIndex == 0) PeakBlueActive else PeakMuted,
+                    modifier           = Modifier.size(24.dp),
                 )
             },
         )
         Tab(
             selected = selectedIndex == 1,
             onClick  = { onViewFilterChange(ViewFilter.Friends) },
-            text     = {
-                Text(
-                    stringResource(R.string.logbook_filter_friends),
-                    fontSize   = 13.sp,
-                    fontWeight = if (selectedIndex == 1) FontWeight.SemiBold else FontWeight.Normal,
-                    color      = if (selectedIndex == 1) PeakBlueActive else PeakMuted,
+            icon = {
+                Icon(
+                    imageVector        = CordadaIcon,
+                    contentDescription = stringResource(R.string.logbook_filter_friends),
+                    tint               = if (selectedIndex == 1) PeakBlueActive else PeakMuted,
+                    modifier           = Modifier.size(24.dp),
                 )
             },
         )
@@ -981,6 +981,131 @@ private fun LogbookErrorState(message: String, onRetry: () -> Unit) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+// ── Tab icons ─────────────────────────────────────────────────────────────────
+
+/** Single person — head circle + shoulder arc */
+private val SoloPersonIcon: ImageVector by lazy {
+    ImageVector.Builder(
+        name            = "SoloPerson",
+        defaultWidth    = 24.dp,
+        defaultHeight   = 24.dp,
+        viewportWidth   = 24f,
+        viewportHeight  = 24f,
+    ).apply {
+        // Head
+        path(
+            stroke            = SolidColor(Color.Black),
+            strokeLineWidth   = 1.8f,
+            strokeLineCap     = StrokeCap.Round,
+            strokeLineJoin    = StrokeJoin.Round,
+            fill              = SolidColor(Color.Transparent),
+        ) {
+            // Circle cx=12 cy=7 r=3.5 approximated as cubic bezier
+            moveTo(12f, 3.5f)
+            cubicTo(14.0f, 3.5f, 15.5f, 5.0f, 15.5f, 7.0f)
+            cubicTo(15.5f, 9.0f, 14.0f, 10.5f, 12f, 10.5f)
+            cubicTo(10.0f, 10.5f, 8.5f, 9.0f, 8.5f, 7.0f)
+            cubicTo(8.5f, 5.0f, 10.0f, 3.5f, 12f, 3.5f)
+            close()
+        }
+        // Body arc: M5 20 c0-3.866 3.134-7 7-7 s7 3.134 7 7
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
+            fill            = SolidColor(Color.Transparent),
+        ) {
+            moveTo(5f, 20f)
+            cubicTo(5f, 16.134f, 8.134f, 13f, 12f, 13f)
+            cubicTo(15.866f, 13f, 19f, 16.134f, 19f, 20f)
+        }
+    }.build()
+}
+
+/** Two people linked by a rope — cordada */
+private val CordadaIcon: ImageVector by lazy {
+    ImageVector.Builder(
+        name           = "Cordada",
+        defaultWidth   = 24.dp,
+        defaultHeight  = 24.dp,
+        viewportWidth  = 24f,
+        viewportHeight = 24f,
+    ).apply {
+        // Left head (cx=7.5, cy=6, r=2.8)
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
+            fill            = SolidColor(Color.Transparent),
+        ) {
+            moveTo(7.5f, 3.2f)
+            cubicTo(9.05f, 3.2f, 10.3f, 4.45f, 10.3f, 6f)
+            cubicTo(10.3f, 7.55f, 9.05f, 8.8f, 7.5f, 8.8f)
+            cubicTo(5.95f, 8.8f, 4.7f, 7.55f, 4.7f, 6f)
+            cubicTo(4.7f, 4.45f, 5.95f, 3.2f, 7.5f, 3.2f)
+            close()
+        }
+        // Left body arc
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = StrokeCap.Round,
+            fill            = SolidColor(Color.Transparent),
+        ) {
+            moveTo(2f, 19f)
+            cubicTo(2f, 15.962f, 4.462f, 13.5f, 7.5f, 13.5f)
+        }
+        // Right head (cx=16.5, cy=6, r=2.8)
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
+            fill            = SolidColor(Color.Transparent),
+        ) {
+            moveTo(16.5f, 3.2f)
+            cubicTo(18.05f, 3.2f, 19.3f, 4.45f, 19.3f, 6f)
+            cubicTo(19.3f, 7.55f, 18.05f, 8.8f, 16.5f, 8.8f)
+            cubicTo(14.95f, 8.8f, 13.7f, 7.55f, 13.7f, 6f)
+            cubicTo(13.7f, 4.45f, 14.95f, 3.2f, 16.5f, 3.2f)
+            close()
+        }
+        // Right body arc
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = StrokeCap.Round,
+            fill            = SolidColor(Color.Transparent),
+        ) {
+            moveTo(22f, 19f)
+            cubicTo(22f, 15.962f, 19.538f, 13.5f, 16.5f, 13.5f)
+        }
+        // Rope — dash 1: 7.5→9.5
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = StrokeCap.Round,
+            fill            = SolidColor(Color.Transparent),
+        ) { moveTo(7.5f, 13.5f); lineTo(9.5f, 13.5f) }
+        // Rope — dash 2: 11→13
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = StrokeCap.Round,
+            fill            = SolidColor(Color.Transparent),
+        ) { moveTo(11f, 13.5f); lineTo(13f, 13.5f) }
+        // Rope — dash 3: 14.5→16.5
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = StrokeCap.Round,
+            fill            = SolidColor(Color.Transparent),
+        ) { moveTo(14.5f, 13.5f); lineTo(16.5f, 13.5f) }
+    }.build()
+}
 
 internal fun formatDate(isoDate: String): String {
     return try {
