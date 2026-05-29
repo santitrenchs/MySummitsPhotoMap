@@ -114,7 +114,7 @@ export function PeakMiniMap({
       container: containerRef.current,
       style: MAP_STYLE,
       center: [lng, lat],
-      zoom: 10,
+      zoom: 12,
       interactive: false,
       attributionControl: false,
     });
