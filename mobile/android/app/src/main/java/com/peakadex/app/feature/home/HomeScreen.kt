@@ -362,50 +362,49 @@ private fun HeroHeader(data: HomeData, user: User?) {
                     }
                 }
 
-                // Cairns medallion + EP secondary (right side)
+                // Cairns + EP — same size, side by side, Cairns first
                 if (meEntry != null) {
                     Spacer(Modifier.width(10.dp))
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        // Amber circle — the cairns medallion
-                        Box(
-                            modifier         = Modifier
-                                .size(52.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.radialGradient(
-                                        colors = listOf(Color(0xFFFFD86B), Color(0xFFF59E0B)),
-                                    )
-                                )
-                                .border(1.5.dp, Color(0xFFFCD34D), CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text          = "△",
-                                    fontSize      = 11.sp,
-                                    color         = Color(0xFF78350F),
-                                    fontWeight    = FontWeight.ExtraBold,
-                                    lineHeight    = 11.sp,
-                                )
-                                Text(
-                                    text          = "$myCairns",
-                                    fontSize      = 20.sp,
-                                    color         = Color(0xFF1C0A00),
-                                    fontWeight    = FontWeight.ExtraBold,
-                                    letterSpacing = (-0.04).em,
-                                    lineHeight    = 20.sp,
-                                )
-                            }
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        // Cairns
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text          = "△ $myCairns",
+                                fontSize      = 16.sp,
+                                fontWeight    = FontWeight.ExtraBold,
+                                color         = Color(0xFFFBBF24),
+                                letterSpacing = (-0.02).em,
+                                lineHeight    = 16.sp,
+                            )
+                            Text(
+                                text      = "Cairns",
+                                fontSize  = 10.sp,
+                                color     = Color(0x99FFFFFF),
+                                fontWeight = FontWeight.Medium,
+                            )
                         }
-                        Spacer(Modifier.height(4.dp))
-                        // EP secondary label
-                        Text(
-                            text          = "+$myEp ep",
-                            fontSize      = 10.sp,
-                            color         = Color(0x99FFFFFF),
-                            fontWeight    = FontWeight.SemiBold,
-                            letterSpacing = (-0.01).em,
-                        )
+                        // Divider
+                        Box(Modifier.width(1.dp).height(28.dp).background(Color(0x33FFFFFF)))
+                        // EP
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text          = "+$myEp",
+                                fontSize      = 16.sp,
+                                fontWeight    = FontWeight.ExtraBold,
+                                color         = Color.White,
+                                letterSpacing = (-0.02).em,
+                                lineHeight    = 16.sp,
+                            )
+                            Text(
+                                text       = "EP",
+                                fontSize   = 10.sp,
+                                color      = Color(0x99FFFFFF),
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
                     }
                 }
             }
