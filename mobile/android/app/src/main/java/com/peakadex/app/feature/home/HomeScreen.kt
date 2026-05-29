@@ -290,6 +290,31 @@ private fun HeroHeader(data: HomeData, user: User?) {
         )
 
         // ── All content ───────────────────────────────────────────────────
+        // Compute level progress here so the hero can show the bar
+        val heroStats        = data.stats
+        val heroUniquePeaks  = heroStats.uniquePeaks
+        val heroLevelIdx     = run {
+            var idx = 0
+            for (i in LEVEL_DEFS.indices) {
+                if (meetsLevel(LEVEL_DEFS[i], heroUniquePeaks, heroStats)) idx = i else break
+            }
+            idx
+        }
+        val heroCurrent  = LEVEL_DEFS[heroLevelIdx]
+        val heroNext     = if (heroLevelIdx < LEVEL_DEFS.lastIndex) LEVEL_DEFS[heroLevelIdx + 1] else null
+        val heroPrevTgt  = if (heroLevelIdx > 0) LEVEL_DEFS[heroLevelIdx - 1].targetAscents else 0
+        val heroTarget   = heroNext?.targetAscents ?: heroCurrent.targetAscents
+        val heroProgress = if (heroTarget > heroPrevTgt)
+            ((heroUniquePeaks - heroPrevTgt).coerceAtLeast(0).toFloat() / (heroTarget - heroPrevTgt)).coerceIn(0f, 1f)
+        else 1f
+        val heroAltReqLabel = heroNext?.let { next ->
+            val alt = next.altReqs.firstOrNull()
+            if (alt != null) "Superar ${alt.threshold}m para ${next.name}"
+            else "para ${next.name}"
+        }
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+        // — Main padded content —
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -415,7 +440,59 @@ private fun HeroHeader(data: HomeData, user: User?) {
                     unit  = if (data.stats.maxAltitude > 0) "m" else null,
                 )
             }
+        } // end main padded Column
+
+        // ── Progress strip — solid black, full width ──────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF000000))
+                .padding(horizontal = 16.dp, top = 10.dp, bottom = 14.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                // Label row: "41 / 50" left · "Superar 3000m para Explorer" right
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment     = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text       = "$heroUniquePeaks / $heroTarget",
+                        fontSize   = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = Color.White,
+                    )
+                    if (heroAltReqLabel != null) {
+                        Text(
+                            text     = heroAltReqLabel,
+                            fontSize = 12.sp,
+                            color    = Color(0xFF94A3B8),
+                        )
+                    }
+                }
+                // Progress bar — no text inside, 18dp height (20% thinner than 22dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(18.dp)
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(Color(0xFF334155)),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(heroProgress)
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFF60A5FA), Color(0xFF3B82F6)),
+                                )
+                            ),
+                    )
+                }
+            }
         }
+        } // end outer Column wrapping hero content
     }
 }
 
@@ -518,75 +595,6 @@ private fun ProgressionSection(data: HomeData, expanded: Boolean, onToggle: () -
         // Collapsed: show only the in-progress level (currentIdx + 1 if exists, else current)
         val inProgressIdx = if (currentLevelIdx < LEVEL_DEFS.lastIndex) currentLevelIdx + 1 else currentLevelIdx
         val defsToShow = if (expanded) LEVEL_DEFS else listOf(LEVEL_DEFS[inProgressIdx])
-
-        // ── Level progress bar ────────────────────────────────────────────
-        val currentDef  = LEVEL_DEFS[currentLevelIdx]
-        val nextDef     = if (currentLevelIdx < LEVEL_DEFS.lastIndex) LEVEL_DEFS[currentLevelIdx + 1] else null
-        val prevTarget  = if (currentLevelIdx > 0) LEVEL_DEFS[currentLevelIdx - 1].targetAscents else 0
-        val target      = nextDef?.targetAscents ?: currentDef.targetAscents
-        val progress    = if (target > prevTarget) ((uniquePeaks - prevTarget).coerceAtLeast(0).toFloat() / (target - prevTarget)).coerceIn(0f, 1f) else 1f
-        val altReqText  = nextDef?.altReqs?.firstOrNull()?.let { "Superar los ${it.threshold}m" }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFF1E293B))
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Header: "Nivel N · LevelName"
-                Text(
-                    text       = "Nivel ${currentDef.idx} · ${currentDef.name}",
-                    fontSize   = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = Color.White,
-                    modifier   = Modifier.fillMaxWidth(),
-                    textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
-                )
-                // Progress bar
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(22.dp)
-                        .clip(RoundedCornerShape(11.dp))
-                        .background(Color(0xFF334155)),
-                ) {
-                    // Filled portion
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(progress)
-                            .clip(RoundedCornerShape(11.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF60A5FA), Color(0xFF3B82F6)),
-                                )
-                            ),
-                    )
-                    // Label inside bar: "41 / 50 cimas"
-                    Text(
-                        text      = "$uniquePeaks / $target cimas",
-                        fontSize  = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color     = Color.White,
-                        modifier  = Modifier.align(Alignment.Center),
-                    )
-                }
-                // Subtitle: altitude requirement
-                if (altReqText != null) {
-                    Text(
-                        text      = altReqText,
-                        fontSize  = 12.sp,
-                        color     = Color(0xFF94A3B8),
-                        modifier  = Modifier.fillMaxWidth(),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
 
         defsToShow.forEach { def ->
             val isDone    = meetsLevel(def, uniquePeaks, stats)
