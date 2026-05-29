@@ -70,12 +70,12 @@ private data class LocalLevelDef(
 )
 
 private val LEVEL_DEFS = listOf(
-    LocalLevelDef(1, "🌱", "Scout",    20,  listOf(AltReq(2000, 1))),
-    LocalLevelDef(2, "🥾", "Guide",    50,  listOf(AltReq(3000, 1))),
-    LocalLevelDef(3, "🧭", "Explorer", 100, listOf(AltReq(4000, 1))),
-    LocalLevelDef(4, "⛰️", "Alpinist", 150, listOf(AltReq(5000, 1))),
-    LocalLevelDef(5, "🏔️", "Master",   220, listOf(AltReq(6500, 1))),
-    LocalLevelDef(6, "👑", "Zenith",   300, listOf(AltReq(8000, 1))),
+    LocalLevelDef(2, "🌱", "Scout",    20,  listOf(AltReq(2000, 1))),
+    LocalLevelDef(3, "🥾", "Guide",    50,  listOf(AltReq(3000, 1))),
+    LocalLevelDef(4, "🧭", "Explorer", 100, listOf(AltReq(4000, 1))),
+    LocalLevelDef(5, "⛰️", "Alpinist", 150, listOf(AltReq(5000, 1))),
+    LocalLevelDef(6, "🏔️", "Master",   220, listOf(AltReq(6500, 1))),
+    LocalLevelDef(7, "👑", "Zenith",   300, listOf(AltReq(8000, 1))),
 )
 
 // Level accent colours — matches web LEVEL_COLORS (index = def.idx - 1)
@@ -560,7 +560,7 @@ private fun ProgressionSection(data: HomeData, expanded: Boolean, onToggle: () -
                             .clip(RoundedCornerShape(11.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF4ADE80), Color(0xFF22C55E)),
+                                    colors = listOf(Color(0xFF60A5FA), Color(0xFF3B82F6)),
                                 )
                             ),
                     )
@@ -578,7 +578,7 @@ private fun ProgressionSection(data: HomeData, expanded: Boolean, onToggle: () -
                     Text(
                         text      = altReqText,
                         fontSize  = 12.sp,
-                        color     = Color(0xFF86EFAC),
+                        color     = Color(0xFF94A3B8),
                         modifier  = Modifier.fillMaxWidth(),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
