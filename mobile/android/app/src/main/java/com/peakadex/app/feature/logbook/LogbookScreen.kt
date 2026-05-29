@@ -803,10 +803,10 @@ private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) 
 private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
     val bylineName  = ascent.user?.name ?: "Tú"
 
-    Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
+    Column(modifier = Modifier.fillMaxSize().background(Color.White).padding(7.dp)) {
         Box(
             modifier = Modifier
-                .fillMaxWidth().padding(horizontal = 3.dp).aspectRatio(4f / 5f)
+                .fillMaxWidth().padding(horizontal = 3.dp).weight(0.65f)
                 .clip(RoundedCornerShape(18.dp))
                 .background(Color(0xFF0A1929)),
         ) {
@@ -834,9 +834,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
             }
         }
 
-        Spacer(Modifier.height(10.dp))
-
-        Column(modifier = Modifier.padding(horizontal = 3.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 3.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(rarity.color))
                 Spacer(Modifier.width(6.dp))
@@ -849,9 +847,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
             }
         }
 
-        Spacer(Modifier.height(10.dp))
-
-        Column(modifier = Modifier.padding(horizontal = 3.dp)) {
+        Column(modifier = Modifier.weight(1f).padding(horizontal = 3.dp).padding(bottom = 4.dp)) {
             val personsText = when {
                 ascent.persons.isEmpty() -> null
                 ascent.persons.size == 1 -> "con ${ascent.persons[0].name}"
@@ -875,7 +871,6 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                 Text(ascent.description, fontSize = 13.sp, color = PeakMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 19.sp)
             }
         }
-        Spacer(Modifier.height(3.dp))
     }
 }
 
