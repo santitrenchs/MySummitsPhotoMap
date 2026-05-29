@@ -393,6 +393,8 @@ private fun LogbookList(
         }
     }
 
+    var flippedId by remember { mutableStateOf<String?>(null) }
+
     LazyColumn(
         state               = listState,
         contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
@@ -404,6 +406,8 @@ private fun LogbookList(
                 onDetailClick = { onAscentClick(ascent.id) },
                 onShareClick  = { onShareClick(ascent.id) },
                 isHighlighted = ascent.id == highlightId,
+                isFlipped     = flippedId == ascent.id,
+                onFlip        = { flippedId = if (flippedId == ascent.id) null else ascent.id },
             )
         }
     }
@@ -417,8 +421,9 @@ private fun AscentFlipCard(
     onDetailClick: () -> Unit,
     onShareClick:  () -> Unit,
     isHighlighted: Boolean = false,
+    isFlipped:     Boolean = false,
+    onFlip:        () -> Unit = {},
 ) {
-    var isFlipped by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
         targetValue   = if (isFlipped) 180f else 0f,
         animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
@@ -452,7 +457,7 @@ private fun AscentFlipCard(
                 .fillMaxWidth()
                 .graphicsLayer { rotationY = rotation; cameraDistance = 12f * density }
                 .clip(RoundedCornerShape(28.dp))
-                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { isFlipped = !isFlipped },
+                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onFlip() },
         ) {
             if (rotation <= 90f) {
                 CardFront(
@@ -600,6 +605,72 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
     }
 }
 
+// ── Card minimap (MapLibre — one instance at a time via accordion) ─────────────
+
+@Composable
+private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.ui.graphics.Color) {
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
+    val baseStyle = """{"version":8,"sources":{"opentopomap":{"type":"raster","tiles":["https://tile.opentopomap.org/{z}/{x}/{y}.png"],"tileSize":256,"maxzoom":17}},"layers":[{"id":"opentopomap","type":"raster","source":"opentopomap"}]}"""
+
+    val dotColorInt = android.graphics.Color.argb(
+        255,
+        (rarityColor.red * 255).toInt(),
+        (rarityColor.green * 255).toInt(),
+        (rarityColor.blue * 255).toInt(),
+    )
+
+    androidx.compose.ui.viewinterop.AndroidView(
+        factory = { ctx ->
+            val mv = org.maplibre.android.maps.MapView(ctx)
+            mv.onCreate(null)
+            mv.onStart()
+            mv.onResume()
+
+            mv.getMapAsync { map ->
+                map.setStyle(org.maplibre.android.maps.Style.Builder().fromJson(baseStyle)) { style ->
+                    map.uiSettings.setAllGesturesEnabled(false)
+                    map.uiSettings.isCompassEnabled = false
+                    map.uiSettings.isAttributionEnabled = false
+                    map.uiSettings.isLogoEnabled = false
+                    map.cameraPosition = org.maplibre.android.camera.CameraPosition.Builder()
+                        .target(org.maplibre.android.geometry.LatLng(lat, lng))
+                        .zoom(12.0)
+                        .build()
+                    style.addSource(org.maplibre.android.style.sources.GeoJsonSource("dot-src",
+                        org.maplibre.geojson.Feature.fromGeometry(org.maplibre.geojson.Point.fromLngLat(lng, lat))
+                    ))
+                    style.addLayer(org.maplibre.android.style.layers.CircleLayer("dot-layer", "dot-src").withProperties(
+                        org.maplibre.android.style.layers.PropertyFactory.circleRadius(7f),
+                        org.maplibre.android.style.layers.PropertyFactory.circleColor(dotColorInt),
+                        org.maplibre.android.style.layers.PropertyFactory.circleStrokeWidth(2f),
+                        org.maplibre.android.style.layers.PropertyFactory.circleStrokeColor(android.graphics.Color.WHITE),
+                    ))
+                }
+            }
+
+            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                when (event) {
+                    androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> runCatching { mv.onPause() }
+                    androidx.lifecycle.Lifecycle.Event.ON_STOP  -> runCatching { mv.onStop() }
+                    else -> {}
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            mv.tag = observer
+            mv
+        },
+        onRelease = { mv ->
+            val observer = mv.tag as? androidx.lifecycle.LifecycleEventObserver
+            if (observer != null) lifecycleOwner.lifecycle.removeObserver(observer)
+            runCatching { mv.onPause() }
+            runCatching { mv.onStop() }
+            runCatching { mv.onDestroy() }
+        },
+        modifier = Modifier.fillMaxSize(),
+    )
+}
+
 // ── Elevation profile ──────────────────────────────────────────────────────────
 
 @Composable
@@ -656,31 +727,16 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
     val bylineName  = ascent.user?.name ?: "Tú"
 
     Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
-        val tileUrl = remember(ascent.peak.latitude, ascent.peak.longitude) {
-            peakTileUrl(ascent.peak.latitude, ascent.peak.longitude)
-        }
         Box(
             modifier = Modifier
                 .fillMaxWidth().padding(horizontal = 3.dp).aspectRatio(4f / 5f)
                 .clip(RoundedCornerShape(18.dp))
                 .background(Color(0xFF0A1929)),
         ) {
-            AsyncImage(
-                model              = tileUrl,
-                contentDescription = null,
-                contentScale       = ContentScale.Crop,
-                modifier           = Modifier.fillMaxSize(),
-                onLoading  = { android.util.Log.d("CardBack", "LOADING tile: $tileUrl") },
-                onSuccess  = { android.util.Log.d("CardBack", "SUCCESS tile: $tileUrl") },
-                onError    = { android.util.Log.e("CardBack", "ERROR tile: $tileUrl — ${it.result.throwable?.message}") },
-            )
-            // Bottom gradient for peak name / altitude readability (tile is already dark so overlay is subtle)
+            CardMiniMap(lat = ascent.peak.latitude, lng = ascent.peak.longitude, rarityColor = rarity.color)
+            // Bottom gradient
             Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f).align(Alignment.BottomStart)
                 .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.4f to Color(0x8007121F), 1f to Color(0xE007121F)))))
-
-            Text("${"%.4f".format(ascent.peak.latitude)}, ${"%.4f".format(ascent.peak.longitude)}",
-                fontSize = 10.sp, color = Color(0xB3FFFFFF),
-                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp))
 
             Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 14.dp, vertical = 14.dp)) {
                 if (!ascent.peak.mountainRange.isNullOrBlank()) {
