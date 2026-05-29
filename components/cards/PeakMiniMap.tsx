@@ -56,37 +56,16 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
   sources: {
-    carto: {
+    opentopomap: {
       type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-      ],
+      tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
       tileSize: 256,
-      attribution: "© OpenStreetMap © CARTO",
-    },
-    "terrain-hillshade": {
-      type: "raster-dem",
-      tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      encoding: "terrarium",
-      maxzoom: 15,
+      attribution: "© OpenStreetMap contributors, © OpenTopoMap (CC-BY-SA)",
+      maxzoom: 17,
     },
   },
   layers: [
-    { id: "carto", type: "raster", source: "carto" },
-    {
-      id: "hillshading",
-      type: "hillshade",
-      source: "terrain-hillshade",
-      paint: {
-        "hillshade-exaggeration": 0.45,
-        "hillshade-illumination-direction": 315,
-        "hillshade-illumination-anchor": "map",
-        "hillshade-highlight-color": "rgba(255,255,255,0.3)",
-        "hillshade-shadow-color": "rgba(0,0,0,0.3)",
-      },
-    },
+    { id: "opentopomap", type: "raster", source: "opentopomap" },
   ],
 };
 
