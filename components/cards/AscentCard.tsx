@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
+import { ElevationProfile } from "@/components/cards/ElevationProfile";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 import { imgUrl } from "@/lib/storage/image-url";
 
@@ -39,6 +40,7 @@ export type AscentCardData = {
   peak: {
     id: string;
     name: string;
+    nameEn?: string | null;
     altitudeM: number;
     isMythic?: boolean;
     mountainRange?: string | null;
@@ -150,7 +152,6 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   const lngStr = `${Math.abs(ascent.peak.longitude).toFixed(4)}°${ascent.peak.longitude >= 0 ? "E" : "W"}`;
 
   const buildBack = () => {
-    const barPct = Math.min(100, (ascent.peak.altitudeM / 8849) * 100).toFixed(1);
     return (
       <>
         <section className="capture-frame">
@@ -168,18 +169,21 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
             <div className="back-map-data">
               <div className="back-map-geo">📍 {latStr} · {lngStr}</div>
-              <div className="back-map-name">{ascent.peak.name}</div>
+              <div className="back-map-name">{ascent.peak.nameEn ?? ascent.peak.name}</div>
               <div className="back-map-alt">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
               {ascent.peak.mountainRange && (
                 <div className="back-map-zone">{ascent.peak.mountainRange}</div>
               )}
-              <div className="back-bar-wrap">
-                <div className="back-bar-track">
-                  <div className="back-bar-fill" style={{ width: `${barPct}%` }} />
-                </div>
-                <div className="back-bar-labels"><span>0 m</span><span>8.849 m</span></div>
-              </div>
             </div>
+            {isFlipped && (
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+                <ElevationProfile
+                  peakId={ascent.peak.id}
+                  altitudeM={ascent.peak.altitudeM}
+                  rarityColor={RARITY_COLOR[rarity]}
+                />
+              </div>
+            )}
           </div>
           <div className="back-stats-eyebrow">Estadísticas Peakadex</div>
           <div className="stat-band">
@@ -313,13 +317,13 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={ascent.peak.name} altitudeM={ascent.peak.altitudeM} />
             : ascent.photoUrl
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.name} loading="lazy" />
+              ? <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.nameEn ?? ascent.peak.name} loading="lazy" />
               : <MountainPlaceholder />
           }
           <div className="image-overlay" />
           {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
           <div className="peak-info">
-            <div className="peak-name">{ascent.peak.name}</div>
+            <div className="peak-name">{ascent.peak.nameEn ?? ascent.peak.name}</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
             <div className="peak-meta">
               <span>

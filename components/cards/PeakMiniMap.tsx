@@ -56,37 +56,16 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
   sources: {
-    carto: {
+    opentopomap: {
       type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-      ],
+      tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
       tileSize: 256,
-      attribution: "© OpenStreetMap © CARTO",
-    },
-    "terrain-hillshade": {
-      type: "raster-dem",
-      tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      encoding: "terrarium",
-      maxzoom: 15,
+      attribution: "© OpenStreetMap contributors, © OpenTopoMap (CC-BY-SA)",
+      maxzoom: 17,
     },
   },
   layers: [
-    { id: "carto", type: "raster", source: "carto" },
-    {
-      id: "hillshading",
-      type: "hillshade",
-      source: "terrain-hillshade",
-      paint: {
-        "hillshade-exaggeration": 0.45,
-        "hillshade-illumination-direction": 315,
-        "hillshade-illumination-anchor": "map",
-        "hillshade-highlight-color": "rgba(255,255,255,0.3)",
-        "hillshade-shadow-color": "rgba(0,0,0,0.3)",
-      },
-    },
+    { id: "opentopomap", type: "raster", source: "opentopomap" },
   ],
 };
 
@@ -96,18 +75,9 @@ const getRarityColor = getRarityColorFromLib;
 
 // ─── Flower emoji marker ─────────────────────────────────────────────────────
 
-function createFlowerMarker(color: string): HTMLDivElement {
+function createDotMarker(color: string): HTMLDivElement {
   const el = document.createElement("div");
-  el.style.cssText = "position:absolute;pointer-events:none;width:80px;height:80px";
-  el.innerHTML = `
-    <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="40" cy="40" r="37" fill="none" stroke="${color}" stroke-width="1" opacity="0.12"/>
-      <circle cx="40" cy="40" r="30" fill="none" stroke="${color}" stroke-width="1.1" opacity="0.22"/>
-      <circle cx="40" cy="40" r="22" fill="none" stroke="${color}" stroke-width="1.2" opacity="0.38"/>
-      <circle cx="40" cy="40" r="14" fill="none" stroke="${color}" stroke-width="1.4" opacity="0.55"/>
-    </svg>
-    <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:${color};filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));line-height:1">✿</span>
-  `;
+  el.style.cssText = `position:absolute;pointer-events:none;width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.45)`;
   return el;
 }
 
@@ -135,7 +105,7 @@ export function PeakMiniMap({
       container: containerRef.current,
       style: MAP_STYLE,
       center: [lng, lat],
-      zoom: 10,
+      zoom: 12,
       interactive: false,
       attributionControl: false,
     });
@@ -189,7 +159,7 @@ export function PeakMiniMap({
     }
 
     map.on("load", () => {
-      new maplibregl.Marker({ element: createFlowerMarker(color), anchor: "center" })
+      new maplibregl.Marker({ element: createDotMarker(color), anchor: "center" })
         .setLngLat([lng, lat])
         .addTo(map);
 

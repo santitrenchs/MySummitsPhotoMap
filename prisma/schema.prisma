@@ -44,9 +44,10 @@ model Peak {
   tag3          String?
   country       String   @default("ES")
   gpsVerified   Boolean  @default(false)
-  isMythic      Boolean  @default(false)
-  rarityId      String?
-  createdAt     DateTime @default(now())
+  isMythic          Boolean  @default(false)
+  rarityId          String?
+  elevationProfile  Json?
+  createdAt         DateTime @default(now())
 
   osmId     String?        @unique
 
