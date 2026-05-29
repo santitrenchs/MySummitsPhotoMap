@@ -810,7 +810,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
     Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
         Box(
             modifier = Modifier
-                .fillMaxWidth().padding(horizontal = 3.dp).aspectRatio(6f / 5f)
+                .fillMaxWidth().padding(horizontal = 3.dp).aspectRatio(4f / 5f)
                 .clip(RoundedCornerShape(18.dp))
                 .background(Color(0xFF0A1929)),
         ) {
