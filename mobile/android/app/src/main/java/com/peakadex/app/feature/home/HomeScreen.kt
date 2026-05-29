@@ -175,8 +175,6 @@ private fun HomeContent(
     user: User?,
     onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
 ) {
-    var progressionExpanded by remember { mutableStateOf(false) }
-
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
 
         // 1 — Hero header
@@ -187,16 +185,7 @@ private fun HomeContent(
             item { OnboardingBanner() }
         }
 
-        // 3 — Progression
-        item {
-            ProgressionSection(
-                data     = data,
-                expanded = progressionExpanded,
-                onToggle = { progressionExpanded = !progressionExpanded },
-            )
-        }
-
-        // 4 — Monthly chart (≥1 ascent)
+        // 3 — Monthly chart (≥1 ascent)
         if (data.stats.totalAscents >= 1 && data.monthlyStats.isNotEmpty()) {
             item { MonthlyChartSection(data.monthlyStats, onNavigateToCardsWithRarity) }
         }
