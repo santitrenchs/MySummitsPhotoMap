@@ -1,8 +1,15 @@
 package com.peakadex.app.feature.logbook
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -248,13 +255,35 @@ fun LogbookScreen(
         context.startActivity(Intent.createChooser(intent, null))
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    // Hide filter bar on scroll-down, show on scroll-up — same pattern as bottom bar.
+    var isFilterBarVisible by remember { mutableStateOf(true) }
+    val filterScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                when {
+                    available.y < -3f -> isFilterBarVisible = false
+                    available.y >  3f -> isFilterBarVisible = true
+                }
+                return Offset.Zero
+            }
+        }
+    }
+    // Always show filter bar when the active filter changes
+    LaunchedEffect(filters.viewFilter) { isFilterBarVisible = true }
+
+    Column(modifier = Modifier.fillMaxSize().nestedScroll(filterScrollConnection)) {
 
         // ── Quick filter: Mis Cards | Mi Cordada ──────────────────────────────
-        QuickFilterBar(
-            viewFilter         = filters.viewFilter,
-            onViewFilterChange = vm::setViewFilter,
-        )
+        AnimatedVisibility(
+            visible = isFilterBarVisible,
+            enter   = slideInVertically(animationSpec = tween(200), initialOffsetY = { -it }),
+            exit    = slideOutVertically(animationSpec = tween(200), targetOffsetY = { -it }),
+        ) {
+            QuickFilterBar(
+                viewFilter         = filters.viewFilter,
+                onViewFilterChange = vm::setViewFilter,
+            )
+        }
 
         // ── Peak filter chip — only when navigating from Atlas ─────────────
         if (filters.peakId != null) {
