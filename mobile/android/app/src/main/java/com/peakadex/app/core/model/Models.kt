@@ -86,6 +86,12 @@ data class Peak(
 // MARK: - Ascent
 
 @Serializable
+data class PeakStats(
+    val totalAscents: Int,
+    val uniqueClimbers: Int,
+)
+
+@Serializable
 data class Ascent(
     val id: String,
     val peakId: String,
@@ -101,6 +107,7 @@ data class Ascent(
     val photos: List<Photo> = emptyList(),
     val persons: List<PersonSummary> = emptyList(),
     val createdAt: String,
+    val peakStats: PeakStats? = null,
 )
 
 // MARK: - Photo

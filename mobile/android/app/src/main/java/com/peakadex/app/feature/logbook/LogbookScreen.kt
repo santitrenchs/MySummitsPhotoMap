@@ -42,6 +42,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -71,6 +72,7 @@ import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.ln
+import kotlin.math.roundToInt
 import kotlin.math.tan
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
@@ -648,50 +650,56 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
 private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.ui.graphics.Color) {
     val grid = remember(lat, lng) { peakTileGrid(lat, lng) }
 
+    val density = LocalDensity.current
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .clipToBounds(),
     ) {
-        val w = maxWidth
-        val h = maxHeight
-        // Grid size must be at least 2×max(w,h) to guarantee the 2×2 tile grid
-        // covers the entire container after any peak-centering offset.
-        // Proof: peakGridFrac ∈ [0.25, 0.75] → max offset in any direction =
-        // max(w,h)/2 / 0.25 requires gridSize ≥ 2×max(w,h).
-        val gridSize  = maxOf(w, h) * 2
-        val tileSize  = gridSize / 2
+        // Work entirely in integer pixels so adjacent tile edges land on the
+        // EXACT same pixel — eliminates the sub-pixel seam gap that appears when
+        // each tile is offset independently in Dp.
+        val wPx = with(density) { maxWidth.roundToPx() }
+        val hPx = with(density) { maxHeight.roundToPx() }
 
-        // Offset the grid so the peak (at gridFrac) lands at container centre.
-        // Note: Dp * Float is valid; Float * Dp is not. Int * Dp is not; Dp * Int is valid.
-        val offsetX = w / 2 - gridSize * grid.peakGridFracX
-        val offsetY = h / 2 - gridSize * grid.peakGridFracY
+        // Grid must be ≥ 2×max(w,h) so the 2×2 tile grid covers the whole
+        // container after the peak-centering offset (peakGridFrac ∈ [0.25, 0.75]).
+        val gridPx = maxOf(wPx, hPx) * 2
+        val tilePx = gridPx / 2                 // integer → tiles tile seamlessly
+        val tileDp = with(density) { tilePx.toDp() }
 
+        // Integer-pixel offset that places the peak at the exact container centre.
+        val offX = wPx / 2 - (gridPx * grid.peakGridFracX).roundToInt()
+        val offY = hPx / 2 - (gridPx * grid.peakGridFracY).roundToInt()
+
+        // CRITICAL: use requiredSize, NOT size.  Each tile is ~2× the container
+        // width, and plain .size() coerces the requested size into the parent's
+        // incoming max constraints — clamping the tile narrower than tilePx and
+        // leaving a dark gap between columns.  requiredSize() ignores the parent
+        // constraints and forces the exact tilePx; clipToBounds trims the excess.
         for (row in 0..1) {
             for (col in 0..1) {
-                val tileX  = grid.cols[col]
-                val tileY  = grid.rows[row]
-                val url    = "https://a.basemaps.cartocdn.com/rastertiles/voyager/${grid.zoom}/$tileX/$tileY@2x.png"
+                val tileX = grid.cols[col]
+                val tileY = grid.rows[row]
+                val url   = "https://a.basemaps.cartocdn.com/rastertiles/voyager/${grid.zoom}/$tileX/$tileY@2x.png"
                 AsyncImage(
                     model              = url,
                     contentDescription = null,
                     contentScale       = ContentScale.FillBounds,
                     modifier           = Modifier
-                        .size(tileSize)
-                        .offset(
-                            x = offsetX + tileSize * col,
-                            y = offsetY + tileSize * row,
-                        ),
+                        .requiredSize(tileDp)
+                        .offset { IntOffset(offX + tilePx * col, offY + tilePx * row) },
                 )
             }
         }
 
-        // Dot is always at the exact centre of the container.
+        // Peak dot is always at the exact centre of the container.
         Canvas(modifier = Modifier.fillMaxSize()) {
             val cx = size.width  / 2f
             val cy = size.height / 2f
             drawCircle(color = Color.White, radius = 11.dp.toPx(), center = androidx.compose.ui.geometry.Offset(cx, cy))
-            drawCircle(color = rarityColor,  radius = 8.dp.toPx(),  center = androidx.compose.ui.geometry.Offset(cx, cy))
+            drawCircle(color = rarityColor,  radius =  8.dp.toPx(), center = androidx.compose.ui.geometry.Offset(cx, cy))
         }
     }
 }
@@ -836,8 +844,8 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
             }
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatBandItem(stringResource(R.string.logbook_stat_ascents),  "—", PeakOnSurface, Modifier.weight(1f))
-                StatBandItem(stringResource(R.string.logbook_stat_climbers), "—", PeakOnSurface, Modifier.weight(1f))
+                StatBandItem(stringResource(R.string.logbook_stat_ascents),  ascent.peakStats?.totalAscents?.toString()  ?: "—", PeakOnSurface, Modifier.weight(1f))
+                StatBandItem(stringResource(R.string.logbook_stat_climbers), ascent.peakStats?.uniqueClimbers?.toString() ?: "—", PeakOnSurface, Modifier.weight(1f))
             }
         }
 
