@@ -447,7 +447,7 @@ private fun HeroHeader(data: HomeData, user: User?) {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFF000000))
-                .padding(horizontal = 16.dp, top = 10.dp, bottom = 14.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // Label row: "41 / 50" left · "Superar 3000m para Explorer" right
