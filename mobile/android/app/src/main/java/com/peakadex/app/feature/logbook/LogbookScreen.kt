@@ -74,7 +74,7 @@ import kotlin.math.tan
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
 
 // Carto Voyager — colorful, readable, matches the web card back map style.
-private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 12): String {
+private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 13): String {
     val n      = 1 shl zoom
     val xTile  = ((lon + 180.0) / 360.0 * n).toInt().coerceIn(0, n - 1)
     val latRad = Math.toRadians(lat)
@@ -84,7 +84,7 @@ private fun peakTileUrl(lat: Double, lon: Double, zoom: Int = 12): String {
 
 // Returns the fractional position [0,1] of lat/lng within its tile at the given zoom.
 // Used to overlay the rarity dot on the static tile image.
-private fun peakFractionInTile(lat: Double, lon: Double, zoom: Int = 12): Pair<Float, Float> {
+private fun peakFractionInTile(lat: Double, lon: Double, zoom: Int = 13): Pair<Float, Float> {
     val n          = (1 shl zoom).toDouble()
     val xContinuous = (lon + 180.0) / 360.0 * n
     val latRad      = Math.toRadians(lat)
