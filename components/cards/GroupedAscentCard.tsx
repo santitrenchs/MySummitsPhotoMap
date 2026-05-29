@@ -5,7 +5,7 @@ import type { AscentData } from "@/components/ascents/AscentsClient";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
-import { ElevationProfile } from "@/components/cards/ElevationProfile";
+import { CardBack } from "@/components/cards/CardBack";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 import { imgUrl } from "@/lib/storage/image-url";
 
@@ -167,55 +167,17 @@ export function GroupedAscentCard({
   const slide = ascents[currentDisplay];
   const slidePersons = slide.persons.filter((p) => p.id !== slide.createdByUserId);
 
-  const buildBack = () => {
-    const latStr = `${Math.abs(peak.latitude).toFixed(4)}°${peak.latitude >= 0 ? "N" : "S"}`;
-    const lngStr = `${Math.abs(peak.longitude).toFixed(4)}°${peak.longitude >= 0 ? "E" : "W"}`;
-    return (
-      <section className="capture-frame">
-        <div className="image-frame">
-          {isFlipped && (
-            <PeakMiniMap
-              lat={peak.latitude}
-              lng={peak.longitude}
-              peakId={peak.id}
-              peakName={peak.name}
-              altitudeM={peak.altitudeM}
-            />
-          )}
-          <div className="back-map-gradient" />
-          {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
-          <div className="back-map-data">
-            <div className="back-map-geo">📍 {latStr} · {lngStr}</div>
-            <div className="back-map-name">{peak.name}</div>
-            <div className="back-map-alt">{peak.altitudeM.toLocaleString(t.dateLocale)} m</div>
-            {peak.mountainRange && (
-              <div className="back-map-zone">{peak.mountainRange}</div>
-            )}
-          </div>
-          {isFlipped && (
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
-              <ElevationProfile
-                peakId={peak.id}
-                altitudeM={peak.altitudeM}
-                rarityColor={RARITY_COLOR[rarity]}
-              />
-            </div>
-          )}
-        </div>
-        <div className="back-stats-eyebrow">Estadísticas Peakadex</div>
-        <div className="stat-band">
-          <div className="stat-item">
-            <span className="stat-label">Ascensiones</span>
-            <div className="stat-value">{peakStats?.totalAscents ?? "—"}</div>
-          </div>
-          <div className="stat-item" style={{ textAlign: "right" }}>
-            <span className="stat-label">Alpinistas</span>
-            <div className="stat-value">{peakStats?.uniqueClimbers ?? "—"}</div>
-          </div>
-        </div>
-      </section>
-    );
-  };
+  const buildBack = () => (
+    <CardBack
+      peak={peak}
+      peakName={peak.name}
+      rarity={rarity}
+      isFlipped={isFlipped}
+      locale={t.dateLocale}
+      peakStats={peakStats}
+      mythicLabel={t.card_mythic}
+    />
+  );
 
   const buildFace = (showMap: boolean) => (
     <>
