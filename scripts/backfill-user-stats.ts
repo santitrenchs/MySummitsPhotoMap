@@ -6,68 +6,16 @@
  *
  *   DATABASE_URL="..." npx tsx scripts/backfill-user-stats.ts
  *   DATABASE_URL="..." npx tsx scripts/backfill-user-stats.ts --dry-run
+ *
+ * Uses recomputeUserStats() from stats.service.ts as the single source of
+ * truth — no level thresholds are duplicated here.
  */
 
 import { PrismaClient } from "@prisma/client";
+import { recomputeUserStats } from "../lib/services/stats.service";
 
 const prisma = new PrismaClient();
 const dryRun = process.argv.includes("--dry-run");
-
-// Levels are ranges, not entry gates. Scout (idx=1) is the base — always met.
-// Each subsequent level requires BOTH unique peaks AND ≥1 peak above the altitude threshold.
-// Keep in sync with lib/level-utils.ts LEVEL_DEFS.
-function computeLevelIdx(uniquePeaks: number, uniqueAlts: number[]): number {
-  const u = (min: number) => uniqueAlts.filter((m) => m >= min).length;
-  if (uniquePeaks >= 220 && u(6500) >= 1) return 6; // Zenith
-  if (uniquePeaks >= 150 && u(5000) >= 1) return 5; // Master
-  if (uniquePeaks >= 100 && u(4000) >= 1) return 4; // Alpinist
-  if (uniquePeaks >= 50  && u(3000) >= 1) return 3; // Explorer
-  if (uniquePeaks >= 20  && u(2000) >= 1) return 2; // Guide
-  return 1; // Scout — base level, everyone starts here
-}
-
-async function backfillUser(userId: string): Promise<void> {
-  const ascents = await prisma.ascent.findMany({
-    where: { createdBy: userId },
-    select: {
-      peakId: true,
-      peak: {
-        select: {
-          altitudeM: true,
-          isMythic: true,
-          rarity: { select: { ep: true } },
-        },
-      },
-    },
-  });
-
-  const seenPeaks = new Map<string, number>();
-  let totalEp = 0;
-  let totalCairns = 0;
-
-  for (const a of ascents) {
-    if (!seenPeaks.has(a.peakId)) seenPeaks.set(a.peakId, a.peak.altitudeM);
-    totalEp += a.peak.rarity?.ep ?? 1;
-    if (a.peak.isMythic) totalCairns++;
-  }
-
-  const uniqueAlts   = [...seenPeaks.values()];
-  const totalAscents = ascents.length;
-  const uniquePeaks  = seenPeaks.size;
-  const maxAltitudeM = uniqueAlts.length > 0 ? Math.max(...uniqueAlts) : 0;
-  const levelIdx     = computeLevelIdx(uniquePeaks, uniqueAlts);
-
-  if (dryRun) {
-    console.log(`  userId=${userId} ascents=${totalAscents} uniquePeaks=${uniquePeaks} maxAlt=${maxAltitudeM} ep=${totalEp} cairns=${totalCairns} level=${levelIdx}`);
-    return;
-  }
-
-  await prisma.userStats.upsert({
-    where:  { userId },
-    create: { userId, totalAscents, uniquePeaks, maxAltitudeM, totalEp, totalCairns, levelIdx },
-    update: {         totalAscents, uniquePeaks, maxAltitudeM, totalEp, totalCairns, levelIdx },
-  });
-}
 
 async function main() {
   console.log(`backfill-user-stats — ${dryRun ? "DRY RUN" : "APPLYING"}`);
@@ -80,8 +28,8 @@ async function main() {
   for (const u of users) {
     try {
       process.stdout.write(`[${ok + err + 1}/${users.length}] ${u.name ?? u.id} ... `);
-      await backfillUser(u.id);
-      console.log(dryRun ? "" : "ok");
+      if (!dryRun) await recomputeUserStats(u.id);
+      console.log(dryRun ? "(dry-run)" : "ok");
       ok++;
     } catch (e) {
       console.log(`ERROR: ${(e as Error).message}`);
