@@ -139,9 +139,11 @@ export function HomeClient({ data, locale, t }: {
 
   // ── Level / progress for hero strip ──────────────────────────────────────
   const levelState = getLevelState(stats);
-  // The "in-progress" level is levelState.current (first not-yet-met level)
+  // levelState.current = first NOT-yet-met level (the one being worked toward)
+  // achievedLevel      = last MET level (shown next to user name, like Android's heroCurrent)
   const heroInProgress = levelState.current;
   const prevLevelIdx   = levelState.currentIdx - 1;
+  const achievedLevel  = prevLevelIdx >= 0 ? LEVEL_DEFS[prevLevelIdx] : null;
   const heroPrevTgt    = prevLevelIdx >= 0 ? (LEVEL_DEFS[prevLevelIdx].targetAscents ?? 0) : 0;
   const heroTarget     = heroInProgress.targetAscents ?? 0;
   const heroProgress   = heroTarget > heroPrevTgt
@@ -212,7 +214,9 @@ export function HomeClient({ data, locale, t }: {
                 {/* Name · level */}
                 <p style={{ margin: "0 0 5px", fontSize: 18, letterSpacing: "-0.03em", lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   <span style={{ fontWeight: 700, color: "#ffffff" }}>{user.name}</span>
-                  <span style={{ fontWeight: 400, color: "rgba(255,255,255,0.55)" }}>{"  ·  "}{t[levelState.current.nameKey] as string}</span>
+                  {achievedLevel && (
+                    <span style={{ fontWeight: 400, color: "rgba(255,255,255,0.55)" }}>{"  ·  "}{t[achievedLevel.nameKey] as string}</span>
+                  )}
                 </p>
                 {/* CS + EP pills */}
                 <div style={{ display: "flex", gap: 6 }}>
