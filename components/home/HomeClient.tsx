@@ -386,7 +386,9 @@ export function HomeClient({ data, locale, t }: {
             {leaderboard.slice(0, 5).map((entry, idx) => {
               const rank = idx + 1;
               const isMe = entry.isCurrentUser;
-              const levelName = t[LEVEL_DEFS[(entry.levelIdx - 1 + LEVEL_DEFS.length) % LEVEL_DEFS.length]?.nameKey ?? "home_level1"] as string;
+              const levelName = entry.levelIdx >= 1
+                ? (t[LEVEL_DEFS[entry.levelIdx - 1]?.nameKey] as string ?? "—")
+                : "—";
               const isLast = idx === Math.min(leaderboard.length, 5) - 1;
 
               if (isMe) {
