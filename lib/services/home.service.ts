@@ -48,6 +48,7 @@ export type HomeData = {
   stats: {
     totalAscents: number;
     uniquePeaks: number;
+    levelIdx: number;        // pre-computed from user_stats — single source of truth
     totalPhotos: number;
     totalRegions: number;
     friendsCount: number;
@@ -165,6 +166,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   const totalAscents = myStats?.totalAscents ?? myAscents.length;
   const uniquePeaks  = myStats?.uniquePeaks  ?? seenPeakIds.size;
   const maxAltitude  = myStats?.maxAltitudeM ?? (uniquePeakAltitudes.length > 0 ? Math.max(...uniquePeakAltitudes) : 0);
+  const levelIdx     = myStats?.levelIdx     ?? 1; // fallback to Scout (base level)
 
   const leaderboard: LeaderboardEntry[] = allUserIds
     .map((uid) => {
@@ -260,7 +262,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
 
   return {
     user: { name: user?.name ?? "", username: user?.username ?? null, avatarUrl: user?.avatarUrl ?? null },
-    stats: { totalAscents, uniquePeaks, totalPhotos, totalRegions, friendsCount, maxAltitude, peaks1000plus, peaks1500plus, peaks2000plus, peaks3000plus, peaks4000plus, peaks4500plus, peaks5000plus, peaks6000plus, peaks6500plus, peaks8000plus, rarityBreakdown },
+    stats: { totalAscents, uniquePeaks, levelIdx, totalPhotos, totalRegions, friendsCount, maxAltitude, peaks1000plus, peaks1500plus, peaks2000plus, peaks3000plus, peaks4000plus, peaks4500plus, peaks5000plus, peaks6000plus, peaks6500plus, peaks8000plus, rarityBreakdown },
     leaderboard,
     userRank,
     nextRankName,

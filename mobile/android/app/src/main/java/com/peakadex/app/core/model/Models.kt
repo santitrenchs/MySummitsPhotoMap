@@ -210,6 +210,7 @@ data class MonthlyBar(
 data class UserStats(
     val totalAscents: Int,
     val uniquePeaks: Int = 0,
+    val levelIdx: Int = 1,   // pre-computed server-side — single source of truth
     val totalPhotos: Int,
     val totalRegions: Int,
     @SerialName("friendsCount") val totalFriends: Int,

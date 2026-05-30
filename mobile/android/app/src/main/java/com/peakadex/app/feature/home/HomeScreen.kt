@@ -61,24 +61,26 @@ import java.util.Locale
 // ── Level definitions — mirrors lib/level-utils.ts exactly ───────────────────
 //
 // 6 levels. Progress measured in uniquePeaks (distinct summits), not totalAscents.
-// altReqs: altitude thresholds that must also be met.
+// Scout (idx=1) is the base level — no requirements, everyone starts here.
+// Each subsequent level requires BOTH unique peaks AND ≥1 peak above the altitude threshold.
+// Keep in sync with lib/level-utils.ts LEVEL_DEFS (server is the source of truth for levelIdx).
 
 private data class AltReq(val threshold: Int, val count: Int)
 private data class LocalLevelDef(
     val idx: Int,
     val emoji: String,
     val name: String,
-    val targetAscents: Int,          // unique peaks required
+    val targetAscents: Int = 0,      // 0 = no requirement (base level)
     val altReqs: List<AltReq> = emptyList(),
 )
 
 private val LEVEL_DEFS = listOf(
-    LocalLevelDef(2, "🌱", "Scout",    20,  listOf(AltReq(2000, 1))),
-    LocalLevelDef(3, "🥾", "Guide",    50,  listOf(AltReq(3000, 1))),
-    LocalLevelDef(4, "🧭", "Explorer", 100, listOf(AltReq(4000, 1))),
-    LocalLevelDef(5, "⛰️", "Alpinist", 150, listOf(AltReq(5000, 1))),
-    LocalLevelDef(6, "🏔️", "Master",   220, listOf(AltReq(6500, 1))),
-    LocalLevelDef(7, "👑", "Zenith",   300, listOf(AltReq(8000, 1))),
+    LocalLevelDef(1, "🌱", "Scout"),                                          // base — always met
+    LocalLevelDef(2, "🥾", "Guide",    20,  listOf(AltReq(2000, 1))),
+    LocalLevelDef(3, "🧭", "Explorer", 50,  listOf(AltReq(3000, 1))),
+    LocalLevelDef(4, "⛰️", "Alpinist", 100, listOf(AltReq(4000, 1))),
+    LocalLevelDef(5, "🏔️", "Master",   150, listOf(AltReq(5000, 1))),
+    LocalLevelDef(6, "👑", "Zenith",   220, listOf(AltReq(6500, 1))),
 )
 
 // Level accent colours — matches web LEVEL_COLORS (index = def.idx - 1)
@@ -282,16 +284,11 @@ private fun HeroHeader(data: HomeData, user: User?) {
         )
 
         // ── All content ───────────────────────────────────────────────────
-        // Compute level progress here so the hero can show the bar
+        // Use levelIdx from the server (user_stats) — single source of truth.
+        // LEVEL_DEFS local list is 0-indexed; server levelIdx is 1-based (1=Scout…6=Zenith).
         val heroStats        = data.stats
         val heroUniquePeaks  = heroStats.uniquePeaks
-        val heroLevelIdx     = run {
-            var idx = 0
-            for (i in LEVEL_DEFS.indices) {
-                if (meetsLevel(LEVEL_DEFS[i], heroUniquePeaks, heroStats)) idx = i else break
-            }
-            idx
-        }
+        val heroLevelIdx     = (heroStats.levelIdx - 1).coerceIn(0, LEVEL_DEFS.lastIndex)
         val heroCurrent  = LEVEL_DEFS[heroLevelIdx]
         val heroNext     = if (heroLevelIdx < LEVEL_DEFS.lastIndex) LEVEL_DEFS[heroLevelIdx + 1] else null
         val heroPrevTgt  = if (heroLevelIdx > 0) LEVEL_DEFS[heroLevelIdx - 1].targetAscents else 0
@@ -567,15 +564,8 @@ private fun ProgressionSection(data: HomeData, expanded: Boolean, onToggle: () -
     val stats       = data.stats
     val uniquePeaks = stats.uniquePeaks
 
-    // Current level = last level whose requirements are fully met
-    val currentLevelIdx = remember(uniquePeaks, stats) {
-        var idx = 0
-        for (i in LEVEL_DEFS.indices) {
-            if (meetsLevel(LEVEL_DEFS[i], uniquePeaks, stats)) idx = i
-            else break
-        }
-        idx
-    }
+    // Use server-computed levelIdx (1-based) converted to 0-based LEVEL_DEFS index
+    val currentLevelIdx = (stats.levelIdx - 1).coerceIn(0, LEVEL_DEFS.lastIndex)
 
     Column(
         modifier = Modifier
