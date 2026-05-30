@@ -299,11 +299,14 @@ private fun HeroHeader(data: HomeData, user: User?) {
         val heroProgress = if (heroTarget > heroPrevTgt)
             ((heroUniquePeaks - heroPrevTgt).coerceAtLeast(0).toFloat() / (heroTarget - heroPrevTgt)).coerceIn(0f, 1f)
         else 1f
-        val heroAltReqLabel = heroNext?.let { next ->
-            val alt = next.altReqs.firstOrNull()
-            if (alt != null) "Superar ${alt.threshold} m para ${next.name}"
-            else "para ${next.name}"
-        }
+        val heroAltForLevelFmt = stringResource(R.string.home_hero_alt_for_level)
+        val heroForLevelFmt    = stringResource(R.string.home_hero_for_level)
+        val heroProgressStr    = stringResource(R.string.home_level_progress_peaks, heroUniquePeaks, heroTarget)
+        val heroAltReqLabel = if (heroNext != null) {
+            val alt = heroNext.altReqs.firstOrNull()
+            if (alt != null) String.format(heroAltForLevelFmt, alt.threshold, heroNext.name)
+            else String.format(heroForLevelFmt, heroNext.name)
+        } else null
 
         Column(modifier = Modifier.fillMaxWidth()) {
         // — Main padded content —
@@ -449,7 +452,7 @@ private fun HeroHeader(data: HomeData, user: User?) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // Single line: "41 / 50 cimas · Superar los 3000m para Guide"
                 val progressLabel = buildString {
-                    append("$heroUniquePeaks / $heroTarget cimas")
+                    append(heroProgressStr)
                     if (heroAltReqLabel != null) append("  ·  $heroAltReqLabel")
                 }
                 Text(
@@ -534,7 +537,7 @@ private fun OnboardingBanner() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text       = "🏔️ Registra tu primera ascensión",
+            text       = stringResource(R.string.home_onboarding_title),
             fontSize   = 16.sp,
             fontWeight = FontWeight.ExtraBold,
             color      = Color(0xFF14532D),

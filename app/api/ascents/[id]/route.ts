@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { deleteAscent } from "@/lib/services/ascent.service";
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
+import { recomputeUserStats } from "@/lib/services/stats.service";
 
 const PatchSchema = z.object({
   peakId:      z.string().uuid().optional(),
@@ -49,6 +50,9 @@ export async function PATCH(
 
   const updated = await db.ascent.update({ where: { id }, data });
 
+  // Recompute only if peakId changed (the only field that affects cached stats)
+  if ("peakId" in input) await recomputeUserStats(session.user.id);
+
   return NextResponse.json(updated);
 }
 
@@ -63,5 +67,6 @@ export async function DELETE(
   const deleted = await deleteAscent(session.user.tenantId, id, session.user.id);
   if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  await recomputeUserStats(session.user.id);
   return NextResponse.json({ ok: true });
 }

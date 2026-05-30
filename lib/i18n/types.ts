@@ -277,6 +277,7 @@ export type Dict = {
   home_progression: string;
   home_altReq: string;
   home_altReqMulti: string;
+  home_heroForLevel: string;
   home_levelProgress: string;
   home_levelNeedSummits: string;
   home_seeAllLevels: string;

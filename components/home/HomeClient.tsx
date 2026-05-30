@@ -1,242 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { HomeData, MonthlyBar } from "@/lib/services/home.service";
 import type { Dict } from "@/lib/i18n/types";
 import { i } from "@/lib/i18n";
 import { LEVEL_DEFS, getAltCount, meetsLevel, getLevelState } from "@/lib/level-utils";
 import { RARITIES } from "@/lib/rarity";
-import type { LevelDef } from "@/lib/level-utils";
 import { imgUrl } from "@/lib/storage/image-url";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function rankMedal(rank: number): string {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return `${rank}`;
-}
 
 function initials(name: string): string {
   const parts = name.trim().split(" ");
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   return name[0]?.toUpperCase() ?? "?";
-}
-
-type Badge = {
-  id: string; emoji: string;
-  titleKey: keyof Dict; subKey: keyof Dict;
-  howTo: string; rarity: string; CS: number;
-  earned: boolean; current: number; target: number;
-};
-
-function computeBadges(stats: HomeData["stats"]): Badge[] {
-  return [
-    { id: "first_capture",       emoji: "📍", titleKey: "home_badge1Title", subKey: "home_badge1Sub", howTo: "Capture your first summit",         rarity: "Any",          CS: 3,  earned: stats.totalAscents  >= 1, current: stats.totalAscents,  target: 1 },
-    { id: "trail_starter",       emoji: "🌿", titleKey: "home_badge2Title", subKey: "home_badge2Sub", howTo: "Capture 3 summits",                 rarity: "🟢 Daisy",     CS: 5,  earned: stats.totalAscents  >= 3, current: stats.totalAscents,  target: 3 },
-    { id: "ridge_seeker",        emoji: "⛰️", titleKey: "home_badge3Title", subKey: "home_badge3Sub", howTo: "Capture 3 summits above 1000 m",    rarity: "🔵 Lavender",  CS: 8,  earned: stats.peaks1000plus >= 3, current: stats.peaks1000plus, target: 3 },
-    { id: "alpine_breakthrough", emoji: "🧊", titleKey: "home_badge4Title", subKey: "home_badge4Sub", howTo: "Capture your first 2000 m summit",  rarity: "🟣 Gentian",   CS: 12, earned: stats.peaks2000plus >= 1, current: stats.peaks2000plus, target: 1 },
-    { id: "summit_hunter",       emoji: "🏔️", titleKey: "home_badge5Title", subKey: "home_badge5Sub", howTo: "Capture your first 3000 m summit",  rarity: "🟠 Edelweiss", CS: 20, earned: stats.peaks3000plus >= 1, current: stats.peaks3000plus, target: 1 },
-    { id: "sky_chaser",          emoji: "🌌", titleKey: "home_badge6Title", subKey: "home_badge6Sub", howTo: "Capture a 4000+ m summit",          rarity: "🟡 Saxifrage", CS: 35, earned: stats.peaks4000plus >= 1, current: stats.peaks4000plus, target: 1 },
-  ];
-}
-
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-
-function Avatar({ name, url, size = 44 }: { name: string; url: string | null; size?: number }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)",
-      color: "white", fontSize: size * 0.36, fontWeight: 700,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      overflow: "hidden",
-      boxShadow: "0 0 0 2px rgba(255,255,255,0.3)",
-    }}>
-      {url
-        // eslint-disable-next-line @next/next/no-img-element
-        ? <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        : initials(name)}
-    </div>
-  );
-}
-
-// ─── Level color palette (one entry per level, index = def.idx - 1) ──────────
-
-const LEVEL_COLORS = [
-  { accent: "#16a34a", light: "#f0fdf4", mid: "#dcfce7", dark: "#166534" }, // 1 Scout    — green
-  { accent: "#d97706", light: "#fffbeb", mid: "#fef3c7", dark: "#92400e" }, // 2 Guide    — amber
-  { accent: "#ea580c", light: "#fff7ed", mid: "#ffedd5", dark: "#9a3412" }, // 3 Explorer — orange
-  { accent: "#1d4ed8", light: "#eff6ff", mid: "#dbeafe", dark: "#1e40af" }, // 4 Alpinist — blue
-  { accent: "#7c3aed", light: "#faf5ff", mid: "#ede9fe", dark: "#5b21b6" }, // 5 Master   — purple
-  { accent: "#b45309", light: "#fefce8", mid: "#fef9c3", dark: "#78350f" }, // 6 Zenith   — gold
-];
-
-
-// ─── Level card ───────────────────────────────────────────────────────────────
-
-function LevelCard({ def, status, stats, t, locale }: {
-  def: LevelDef;
-  status: "completed" | "current" | "locked";
-  stats: HomeData["stats"];
-  t: Dict;
-  locale: string;
-}) {
-  const isCompleted = status === "completed";
-  const isCurrent   = status === "current";
-  const color       = LEVEL_COLORS[def.idx - 1];
-  const ascentPct   = def.targetAscents
-    ? Math.min(stats.uniquePeaks / def.targetAscents * 100, 100)
-    : 100;
-
-  // badge + name + pills always on one centered row; progress below indented
-  const leftW = 28 + 12; // badge + gap = 40px indent for progress row
-
-  return (
-    <div style={{
-      display: "flex", flexDirection: "column",
-      padding: "10px 14px",
-      background: isCurrent ? "#eff6ff" : "#F9FAFB",
-      borderTop:    `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
-      borderRight:  `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
-      borderBottom: `1.5px solid ${isCurrent ? "#bfdbfe" : "#e5e7eb"}`,
-      borderLeft:   isCurrent ? `4px solid #0369a1` : `1.5px solid #e5e7eb`,
-      borderRadius: "var(--radius-lg)",
-      boxShadow: isCurrent ? "0 2px 12px rgba(3,105,161,0.10)" : "0 1px 3px rgba(0,0,0,0.04)",
-      opacity: status === "locked" ? 0.5 : 1,
-      marginBottom: 10,
-    }}>
-
-      {/* ── Top row: badge · emoji · name · pills (always centered) ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-
-        {/* Badge: ✓ / 🔒 / number */}
-        <div style={{
-          width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-          background: isCompleted ? "#16a34a" : isCurrent ? "#0369a1" : "#d1d5db",
-          color: "white",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: isCompleted ? 13 : status === "locked" ? 13 : 11, fontWeight: 800,
-        }}>
-          {isCompleted ? "✓" : status === "locked" ? "🔒" : def.idx}
-        </div>
-
-        {/* Name + pills */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, rowGap: 6 }}>
-          <span style={{
-            fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
-            color: isCurrent ? "#0369a1" : "#111827",
-            marginRight: "auto",
-          }}>
-            {t[def.nameKey] as string}
-          </span>
-          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, justifyContent: "flex-end" }}>
-            {def.targetAscents != null && (
-              <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: "var(--radius-sm)", background: "#f3f4f6", color: "#374151" }}>
-                {def.targetAscents} {t.home_statSummits.toLowerCase()}
-              </span>
-            )}
-            {def.altReqs?.map((r) => {
-              const label = r.count === 1
-                ? i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })
-                : i(t.home_altReqMulti, { n: r.count, m: r.threshold.toLocaleString(locale) });
-              return (
-                <span key={r.threshold} style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: "var(--radius-sm)", background: "#f3f4f6", color: "#374151" }}>
-                  {label}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Progress row (current only, indented to align with name) ── */}
-      {isCurrent && def.targetAscents != null && (
-        <div style={{ paddingLeft: leftW, marginTop: 12 }}>
-          <div style={{ height: 6, borderRadius: "var(--radius-full)", background: "#dbeafe", overflow: "hidden", marginBottom: 6 }}>
-            <div style={{ height: "100%", borderRadius: "var(--radius-full)", width: `${ascentPct}%`, background: "linear-gradient(90deg,#0369a1,#0ea5e9)" }} />
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
-              {i(t.home_levelProgress, { current: stats.uniquePeaks, total: def.targetAscents })}
-            </span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
-              {Math.round(ascentPct)}%
-            </span>
-          </div>
-          {stats.uniquePeaks < def.targetAscents && (
-            <div style={{ fontSize: 12, color: "#6b7280" }}>
-              → {i(t.home_levelNeedSummits, { n: def.targetAscents - stats.uniquePeaks })}
-            </div>
-          )}
-          {def.altReqs?.filter((r) => getAltCount(stats, r.threshold) < r.count).map((r) => (
-            <div key={r.threshold} style={{ fontSize: 12, color: "#6b7280" }}>
-              → {i(t.home_altReq, { m: r.threshold.toLocaleString(locale) })}
-            </div>
-          ))}
-        </div>
-      )}
-      {isCurrent && def.targetAscents == null && (
-        <div style={{ paddingLeft: leftW, marginTop: 6, fontSize: 12, fontWeight: 700, color: "#0369a1" }}>{t.home_maxLevel}</div>
-      )}
-    </div>
-  );
-}
-
-// ─── Badge card ───────────────────────────────────────────────────────────────
-
-function BadgeCard({ emoji, title, sub, howTo, rarity, CS, earned, current, target, isLast }: {
-  emoji: string; title: string; sub: string; howTo: string; rarity: string;
-  CS: number; earned: boolean; current: number; target: number; isLast: boolean;
-}) {
-  const progress = Math.min(1, current / target);
-  return (
-    <div style={{
-      display: "flex", gap: 12, padding: "14px 0",
-      borderBottom: isLast ? "none" : "1px solid #f3f4f6",
-    }}>
-      <div style={{
-        width: 44, height: 44, borderRadius: "var(--radius-md)", flexShrink: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 22, position: "relative",
-        background: earned ? "#fef3c7" : "#f3f4f6",
-        filter: earned ? "none" : "grayscale(0.8) opacity(0.5)",
-      }}>
-        {emoji}
-        {earned && (
-          <div style={{
-            position: "absolute", top: -3, right: -3,
-            width: 14, height: 14, borderRadius: "50%",
-            background: "#f59e0b", border: "2px solid white",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 7, color: "white", fontWeight: 900,
-          }}>✓</div>
-        )}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 4 }}>
-          <span style={{ fontWeight: 700, fontSize: 13, color: earned ? "#92400e" : "#111827" }}>{title}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", flexShrink: 0 }}>+{CS} 🪨</span>
-        </div>
-        <div style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 2px" }}>{sub}</div>
-        <div style={{ fontSize: 10, color: "#9ca3af" }}>{howTo}</div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-          <span style={{ fontSize: 10, color: "#c4b5a5" }}>{rarity}</span>
-          {!earned && target > 1 && (
-            <span style={{ fontSize: 10, color: "#d1d5db" }}>{current} / {target}</span>
-          )}
-        </div>
-        {!earned && target > 1 && (
-          <div style={{ height: 3, borderRadius: "var(--radius-full)", background: "#f3f4f6", marginTop: 3 }}>
-            <div style={{ height: "100%", width: `${progress * 100}%`, borderRadius: "var(--radius-full)", background: "#0369a1" }} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
 }
 
 // ─── Monthly chart ────────────────────────────────────────────────────────────
@@ -251,7 +29,6 @@ function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) 
           new Date(`${d.isoMonth}-15`)
         );
 
-        // Build stacked segments (daisy → snow_lotus, bottom to top)
         type Seg = { rarityId: string; color: string; h: number };
         const segments: Seg[] = [];
         if (d.summits > 0) {
@@ -355,108 +132,70 @@ export function HomeClient({ data, locale, t }: {
   locale: string;
   t: Dict;
 }) {
-  const router = useRouter();
-  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
-  const [progressionExpanded, setProgressionExpanded] = useState(false);
   const { user, stats, leaderboard, userRank, nextRankName, nextRankGap, recentAscents } = data;
+  const meEntry = leaderboard.find((e) => e.isCurrentUser);
+  const myEp = meEntry?.ep ?? 0;
+  const myCS = meEntry?.CS ?? 0;
 
-  function navigate(href: string) {
-    if (navigatingTo) return;
-    setNavigatingTo(href);
-    router.push(href.replace("#hero", ""));
-  }
-  const badges = computeBadges(stats);
+  // ── Level / progress for hero strip ──────────────────────────────────────
   const levelState = getLevelState(stats);
+  // The "in-progress" level is levelState.current (first not-yet-met level)
+  const heroInProgress = levelState.current;
+  const prevLevelIdx   = levelState.currentIdx - 1;
+  const heroPrevTgt    = prevLevelIdx >= 0 ? (LEVEL_DEFS[prevLevelIdx].targetAscents ?? 0) : 0;
+  const heroTarget     = heroInProgress.targetAscents ?? 0;
+  const heroProgress   = heroTarget > heroPrevTgt
+    ? Math.min(1, Math.max(0, (stats.uniquePeaks - heroPrevTgt) / (heroTarget - heroPrevTgt)))
+    : 1;
+
+  // Progress strip label: "N / M cimas · AltReq para LevelName"
+  const heroProgressBase = i(t.home_levelProgress, { current: stats.uniquePeaks, total: heroTarget });
+  const firstAltReq = heroInProgress.altReqs?.[0];
+  const altReqLabel = firstAltReq && getAltCount(stats, firstAltReq.threshold) < firstAltReq.count
+    ? `${i(t.home_altReq, { m: firstAltReq.threshold.toLocaleString(locale) })} ${i(t.home_heroForLevel, { name: t[heroInProgress.nameKey] as string })}`
+    : null;
+  const heroProgressLabel = altReqLabel
+    ? `${heroProgressBase}  ·  ${altReqLabel}`
+    : heroProgressBase;
+
   const firstName = user.name.split(" ")[0];
-
-  // Collapsed progression: 1 done before + in-progress + 2 locked (4 total)
-
-
-  // Altitude breakdown for summit card (only non-zero buckets)
-  const fmt = (n: number) => n.toLocaleString(locale);
-  const altBuckets = [
-    { icon: "🌿", name: t.home_altZone1, range: `0–${fmt(1000)} m`,             count: stats.uniquePeaks - stats.peaks1000plus },
-    { icon: "⛰️", name: t.home_altZone2, range: `${fmt(1000)}–${fmt(2000)} m`,  count: stats.peaks1000plus - stats.peaks2000plus },
-    { icon: "🏔️", name: t.home_altZone3, range: `${fmt(2000)}–${fmt(3000)} m`,  count: stats.peaks2000plus - stats.peaks3000plus },
-    { icon: "❄️", name: t.home_altZone4, range: `${fmt(3000)}–${fmt(4000)} m`,  count: stats.peaks3000plus - stats.peaks4000plus },
-    { icon: "🔥", name: t.home_altZone5, range: `${fmt(4000)}–${fmt(5000)} m`,  count: stats.peaks4000plus - stats.peaks5000plus },
-    { icon: "🌌", name: t.home_altZone6, range: `${fmt(5000)}+ m`,              count: stats.peaks5000plus },
-  ].filter((b) => b.count > 0);
-  const myCount = leaderboard.find((e) => e.isCurrentUser)?.ascentCount ?? stats.totalAscents;
-
-  // Motivation
-  const rank2 = userRank === 1 && leaderboard.length > 1 ? leaderboard[1] : null;
-  const rank2Gap = rank2 ? myCount - rank2.ascentCount : 0;
-
-  let motivationMsg: string | null = null;
-  let motivationVariant: "gold" | "green" | "warning" = "green";
-  if (leaderboard.length > 1 || stats.friendsCount > 0) {
-    if (userRank === 1) {
-      if (rank2 && rank2Gap <= 3) {
-        motivationVariant = "warning";
-        motivationMsg = i(t.home_motivationDefend, { name: rank2.name, n: rank2Gap });
-      } else {
-        motivationVariant = "gold";
-        motivationMsg = t.home_motivationFirst;
-      }
-    } else if (nextRankName && nextRankGap > 0) {
-      motivationVariant = "green";
-      motivationMsg = i(t.home_motivationBeat, { n: nextRankGap, name: nextRankName });
-    }
-  }
-
-  const SECONDARY_STATS = [
-    { emoji: "📸", value: stats.totalPhotos,  label: t.home_statPhotos,  href: "/ascents?view=mine" },
-    { emoji: "📍", value: stats.totalRegions, label: t.home_statRegions, href: "/map" },
-    { emoji: "👥", value: stats.friendsCount, label: t.home_statFriends, href: "/friends" },
-  ];
-
-  const motColors = {
-    gold:    { bg: "linear-gradient(90deg,#fef9c3,#fef08a)", icon: "🏆", color: "#713f12" },
-    green:   { bg: "linear-gradient(90deg,#dcfce7,#d1fae5)", icon: "🎯", color: "#14532d" },
-    warning: { bg: "linear-gradient(90deg,#fff7ed,#ffedd5)", icon: "⚠️", color: "#9a3412" },
-  };
-  const mot = motColors[motivationVariant];
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 0 64px" }}>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── Hero header ─────────────────────────────────────────────────── */}
-      {(() => {
-        const meEntry = leaderboard.find((e) => e.isCurrentUser);
-        const myEp = meEntry?.ep ?? 0;
-        const myCS = meEntry?.CS ?? 0;
-        const lvlColor = LEVEL_COLORS[levelState.currentIdx];
-        const lvlName = t[levelState.current.nameKey];
-        return (
-          <div style={{
-            position: "relative",
-            borderRadius: "var(--radius-xl)",
-            overflow: "hidden",
-            margin: "12px 12px 0",
-            backgroundImage: "url('/brand/hero.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "center 60%",
-            backgroundColor: "#1c2d3f",
-          }}>
-            {/* Overlay */}
-            <div style={{
-              position: "absolute", inset: 0, zIndex: 0,
-              background: "linear-gradient(to bottom, rgba(10,20,35,0.15) 0%, rgba(10,20,35,0.45) 55%, rgba(10,20,35,0.85) 100%)",
-            }} />
+      <div style={{
+        position: "relative",
+        borderRadius: "var(--radius-xl)",
+        overflow: "hidden",
+        margin: "12px 12px 0",
+        backgroundImage: "url('/brand/hero.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center 60%",
+        backgroundColor: "#1c2d3f",
+      }}>
+        {/* Gradient overlay */}
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 0,
+          background: "linear-gradient(to bottom, rgba(10,20,35,0.22) 0%, rgba(10,20,35,0.55) 55%, rgba(10,20,35,0.88) 100%)",
+        }} />
 
-            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "28px 24px 24px", gap: 10 }}>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {/* ── Top section: avatar + name/pills + metrics ──────────────── */}
+          <div style={{ padding: "14px 16px 12px" }}>
+
+            {/* Row: avatar | name·level + CS/EP pills */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* Avatar */}
-              <Link href="/profile" style={{ textDecoration: "none" }}>
+              <Link href="/profile" style={{ textDecoration: "none", flexShrink: 0 }}>
                 <div style={{
-                  width: 68, height: 68, borderRadius: "50%",
-                  border: "2.5px solid rgba(255,255,255,0.55)",
-                  boxShadow: "0 6px 24px rgba(0,0,0,0.50)",
+                  width: 56, height: 56, borderRadius: "50%",
+                  border: "2px solid rgba(255,255,255,0.75)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
                   overflow: "hidden",
                   background: "linear-gradient(145deg,#3a7bd5,#1a4a8a)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 24, fontWeight: 700, color: "white",
+                  fontSize: 20, fontWeight: 700, color: "white",
                 }}>
                   {user.avatarUrl
                     // eslint-disable-next-line @next/next/no-img-element
@@ -465,65 +204,80 @@ export function HomeClient({ data, locale, t }: {
                 </div>
               </Link>
 
-              {/* Name */}
-              <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.03em", lineHeight: 1.1, textAlign: "center", textShadow: "0 1px 3px rgba(0,0,0,0.45)" }}>
-                {user.name}
-              </h1>
-
-              {/* Level pill */}
-              <div style={{
-                display: "inline-flex", alignItems: "center",
-                padding: "2px 11px", borderRadius: "var(--radius-full)",
-                background: "#eff6ff",
-                fontSize: 12, fontWeight: 700, color: "#0369a1",
-                letterSpacing: "0.01em",
-              }}>
-                {lvlName}
-              </div>
-
-              {/* Metrics */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", marginTop: 6 }}>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.totalAscents}</span>
-                  <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.65)" }}>{t.home_metricAscents}</span>
+              {/* Name + level + pills */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Name · level */}
+                <p style={{ margin: "0 0 5px", fontSize: 18, letterSpacing: "-0.03em", lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span style={{ fontWeight: 700, color: "#ffffff" }}>{user.name}</span>
+                  <span style={{ fontWeight: 400, color: "rgba(255,255,255,0.55)" }}>{"  ·  "}{t[levelState.current.nameKey] as string}</span>
+                </p>
+                {/* CS + EP pills */}
+                <div style={{ display: "flex", gap: 6 }}>
+                  {/* CS pill */}
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    background: "rgba(34,34,34,0.90)", borderRadius: 20,
+                    padding: "4px 9px",
+                  }}>
+                    {/* Cairn icon (stacked ellipses) */}
+                    <svg width="11" height="10" viewBox="0 0 20 20" fill="#fbbf24">
+                      <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
+                      <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
+                      <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
+                      <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
+                    </svg>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24" }}>{myCS} CS</span>
+                  </div>
+                  {/* EP pill */}
+                  <div style={{
+                    display: "inline-flex", alignItems: "center",
+                    background: "rgba(34,34,34,0.90)", borderRadius: 20,
+                    padding: "4px 9px",
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#ffffff" }}>{myEp} EP</span>
+                  </div>
                 </div>
-                <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>{stats.uniquePeaks}</span>
-                  <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.65)" }}>{t.home_metricPeaks}</span>
-                </div>
-                <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>
-                    {stats.maxAltitude > 0 ? stats.maxAltitude.toLocaleString(locale) : "—"}
-                    {stats.maxAltitude > 0 && <sup style={{ fontSize: 10, fontWeight: 400, verticalAlign: "super", marginLeft: 1, opacity: 0.55 }}>m</sup>}
-                  </span>
-                  <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.65)" }}>{t.home_metricMaxAlt}</span>
-                </div>
-              </div>
-
-              {/* EP · CS */}
-              <div style={{
-                display: "flex", alignItems: "center", gap: 6,
-                fontSize: 12.5, letterSpacing: "-0.01em", marginTop: 6,
-                background: "rgba(255,255,255,0.15)",
-                borderRadius: "var(--radius-full)", padding: "5px 14px",
-              }}>
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="#fbbf24">
-                  <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
-                  <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
-                  <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
-                  <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
-                </svg>
-                <span style={{ fontWeight: 700, color: "#fbbf24" }}>{myCS}</span>
-                <span style={{ fontWeight: 400, color: "#fbbf24" }}>CS</span>
-                <span style={{ fontSize: 18, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>·</span>
-                <span style={{ fontWeight: 700, color: "#ffffff" }}>+{myEp} EP</span>
               </div>
             </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: "rgba(255,255,255,0.10)", margin: "12px 0" }} />
+
+            {/* Metrics row: Ascensiones | Cimas | Alt. máx */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MetricCell value={String(stats.totalAscents)} label={t.home_metricAscents} />
+              <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
+              <MetricCell value={String(stats.uniquePeaks)} label={t.home_metricPeaks} />
+              <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
+              <MetricCell
+                value={stats.maxAltitude > 0 ? stats.maxAltitude.toLocaleString(locale) : "—"}
+                label={t.home_metricMaxAlt}
+                unit={stats.maxAltitude > 0 ? "m" : undefined}
+              />
+            </div>
           </div>
-        );
-      })()}
+
+          {/* ── Progress strip — solid black full width ─────────────────── */}
+          <div style={{
+            background: "#000000",
+            padding: "10px 16px 14px",
+          }}>
+            <p style={{ margin: "0 0 6px", fontSize: 12, color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {levelState.isMaxLevel ? (t.home_maxLevel as string) : heroProgressLabel}
+            </p>
+            <div style={{
+              height: 9, borderRadius: 5, background: "#334155", overflow: "hidden",
+            }}>
+              <div style={{
+                height: "100%",
+                width: `${(levelState.isMaxLevel ? 1 : heroProgress) * 100}%`,
+                borderRadius: 5,
+                background: "linear-gradient(90deg, #5fa876, #4a8c5c)",
+              }} />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ── Onboarding banner (new users only) ──────────────────────────── */}
       {stats.totalAscents === 0 && (
@@ -556,63 +310,16 @@ export function HomeClient({ data, locale, t }: {
         </div>
       )}
 
-      {/* ── Progression ─────────────────────────────────────────────────── */}
-      <section style={{ padding: "20px 16px 0" }}>
-        {LEVEL_DEFS.map((def, idx) => {
-          const isDone       = idx < levelState.currentIdx;
-          const isInProgress = idx === levelState.currentIdx;
-          if (!progressionExpanded && !isInProgress) return null;
-          const status = isDone ? "completed" : isInProgress ? "current" : "locked";
-          return (
-            <LevelCard
-              key={def.idx}
-              def={def}
-              status={status}
-              stats={stats}
-              t={t}
-              locale={locale}
-            />
-          );
-        })}
-
-        {/* Expand / collapse CTA */}
-        {!progressionExpanded ? (
-          <button
-            onClick={() => setProgressionExpanded(true)}
-            style={{
-              width: "100%", marginTop: 2,
-              background: "none", border: "1.5px solid #e5e7eb", borderRadius: "var(--radius-md)",
-              padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#374151",
-              cursor: "pointer",
-            }}
-          >
-            {t.home_seeAllLevels}
-          </button>
-        ) : (
-          <button
-            onClick={() => setProgressionExpanded(false)}
-            style={{
-              width: "100%", marginTop: 2,
-              background: "none", border: "none",
-              padding: "6px", fontSize: 13, fontWeight: 600, color: "#9ca3af",
-              cursor: "pointer",
-            }}
-          >
-            {t.home_hideLevels}
-          </button>
-        )}
-      </section>
-
       {/* ── Monthly chart ───────────────────────────────────────────────── */}
-      {stats.totalAscents >= 3 && (
-        <section style={{ padding: "20px 16px 0" }}>
+      {stats.totalAscents >= 1 && data.monthlyStats.length > 0 && (
+        <section style={{ padding: "16px 16px 0" }}>
           <div style={{
             background: "white", border: "1px solid #e5e7eb",
             borderRadius: "var(--radius-lg)", padding: "16px 16px 12px",
             boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
           }}>
             {(() => {
-              const periodMeters = data.monthlyStats.reduce((s, m) => s + m.metersAscended, 0);
+              const periodMeters  = data.monthlyStats.reduce((s, m) => s + m.metersAscended, 0);
               const periodSummits = data.monthlyStats.reduce((s, m) => s + m.summits, 0);
               return (
                 <div style={{ marginBottom: 16 }}>
@@ -657,115 +364,74 @@ export function HomeClient({ data, locale, t }: {
       {/* ── Leaderboard ─────────────────────────────────────────────────── */}
       {leaderboard.length > 1 && (
         <section style={{ padding: "20px 16px 0" }}>
-          {/* Header */}
-          <div style={{ marginBottom: 12 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
-              {t.home_ranking}
-            </h2>
-          </div>
-
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 12px" }}>
+            {t.home_ranking}
+          </h2>
           <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            {/* Column headers */}
+            <div style={{ display: "flex", alignItems: "center", padding: "10px 16px 4px 38px", borderBottom: "1px solid #f3f4f6" }}>
+              <div style={{ flex: 1 }} />
+              {(["Cimas", "CS", "EP"] as const).map((col) => (
+                <div key={col} style={{ width: col === "EP" ? 44 : 52, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>{col}</div>
+              ))}
+            </div>
+
             {leaderboard.slice(0, 5).map((entry, idx) => {
               const rank = idx + 1;
               const isMe = entry.isCurrentUser;
-              const myEp2 = leaderboard.find((e) => e.isCurrentUser)?.ep ?? 0;
-              const epDiff = entry.ep - myEp2;
-              const lvlColor = LEVEL_COLORS[(entry.levelIdx - 1) % LEVEL_COLORS.length];
-              const levelName = t[LEVEL_DEFS[(entry.levelIdx - 1) % LEVEL_DEFS.length].nameKey];
-              const progressPct = entry.nextLevelTarget
-                ? Math.min(100, Math.round((entry.uniquePeakCount / entry.nextLevelTarget) * 100))
-                : 100;
-
-              // Hint for current user
-              let hint: string | null = null;
-              if (isMe) {
-                if (userRank === 1 && nextRankGap > 0 && nextRankName) {
-                  hint = i(t.home_epToSecure, { n: nextRankGap });
-                } else if (userRank > 1 && nextRankGap > 0 && nextRankName) {
-                  hint = i(t.home_epToBeat, { n: nextRankGap, name: nextRankName });
-                }
-              }
+              const levelName = t[LEVEL_DEFS[(entry.levelIdx - 1 + LEVEL_DEFS.length) % LEVEL_DEFS.length]?.nameKey ?? "home_level1"] as string;
+              const isLast = idx === Math.min(leaderboard.length, 5) - 1;
 
               if (isMe) {
-                // ── Current user card ──────────────────────────────────────
                 return (
                   <div key={entry.userId} style={{
-                    padding: "16px 16px 14px",
+                    display: "flex", alignItems: "center",
                     background: "linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%)",
-                    borderBottom: idx < Math.min(leaderboard.length, 5) - 1 ? "1px solid #dbeafe" : "none",
+                    borderBottom: isLast ? "none" : "1px solid #dbeafe",
                     borderLeft: "3px solid #0369a1",
                   }}>
-                    {/* Row: rank + name/level + metrics */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0369a1", flexShrink: 0 }}>
-                        {rank}
-                      </div>
+                    <div style={{ display: "flex", alignItems: "center", flex: 1, padding: "14px 16px 12px 13px", gap: 10 }}>
+                      <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0369a1", flexShrink: 0 }}>{rank}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {entry.name} <span style={{ fontWeight: 400, color: "#64748b", fontSize: 12 }}>({t.home_youAre})</span>
                         </p>
-                        <span style={{
-                          display: "inline-block", marginTop: 2,
-                          fontSize: 10, fontWeight: 700, color: "#374151",
-                          background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px",
-                        }}>{levelName}</span>
+                        <span style={{ display: "inline-block", marginTop: 2, fontSize: 10, fontWeight: 700, color: "#374151", background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px" }}>{levelName}</span>
                       </div>
-                      {/* Cimas + CS + EP */}
-                      <div style={{ display: "flex", gap: 0, flexShrink: 0 }}>
-                        <div style={{ textAlign: "center", width: 52 }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ascentCount}</div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
-                        </div>
-                        <div style={{ textAlign: "center", width: 52 }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>CS</div>
-                        </div>
-                        <div style={{ textAlign: "center", width: 44 }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
-                        </div>
+                      <div style={{ width: 52, textAlign: "center" }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ascentCount}</div>
+                      </div>
+                      <div style={{ width: 52, textAlign: "center" }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</div>
+                      </div>
+                      <div style={{ width: 44, textAlign: "center" }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
                       </div>
                     </div>
-
                   </div>
                 );
               }
 
-              // ── Other users row ────────────────────────────────────────
               return (
                 <div key={entry.userId} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "12px 16px",
                   background: "white",
-                  borderBottom: idx < Math.min(leaderboard.length, 5) - 1 ? "1px solid #f3f4f6" : "none",
+                  borderBottom: isLast ? "none" : "1px solid #f3f4f6",
                 }}>
-                  <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#d1d5db", flexShrink: 0 }}>
-                    {rank}
-                  </div>
+                  <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#d1d5db", flexShrink: 0 }}>{rank}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {entry.name}
-                    </p>
-                    <span style={{
-                      display: "inline-block", marginTop: 1,
-                      fontSize: 10, fontWeight: 700, color: "#374151",
-                      background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px",
-                    }}>{levelName}</span>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{entry.name}</p>
+                    <span style={{ display: "inline-block", marginTop: 1, fontSize: 10, fontWeight: 700, color: "#374151", background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px" }}>{levelName}</span>
                   </div>
-                  {/* Cimas + CS + EP */}
-                  <div style={{ display: "flex", gap: 0, flexShrink: 0 }}>
-                    <div style={{ textAlign: "center", width: 52 }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ascentCount}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{t.home_statSummits}</div>
-                    </div>
-                    <div style={{ textAlign: "center", width: 52 }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>CS</div>
-                    </div>
-                    <div style={{ textAlign: "center", width: 44 }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>EP</div>
-                    </div>
+                  <div style={{ width: 52, textAlign: "center" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ascentCount}</div>
+                  </div>
+                  <div style={{ width: 52, textAlign: "center" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</div>
+                  </div>
+                  <div style={{ width: 44, textAlign: "center" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>
                   </div>
                 </div>
               );
@@ -789,36 +455,34 @@ export function HomeClient({ data, locale, t }: {
             <p style={{ margin: "0 0 14px", fontSize: 13, color: "#6b7280" }}>
               {t.home_motivationNoFriendsSub}
             </p>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-              <Link href="/friends" style={{
-                display: "inline-block", background: "#0369a1", color: "white",
-                padding: "8px 18px", borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600, textDecoration: "none",
-              }}>
-                {t.home_inviteFriends}
-              </Link>
-            </div>
+            <Link href="/friends" style={{
+              display: "inline-block", background: "#0369a1", color: "white",
+              padding: "8px 18px", borderRadius: "var(--radius-md)", fontSize: 13, fontWeight: 600, textDecoration: "none",
+            }}>
+              {t.home_inviteFriends}
+            </Link>
           </div>
         </section>
       )}
 
-
       {/* ── Recent Ascents ──────────────────────────────────────────────── */}
-      {recentAscents.length > 0 && <section style={{ padding: "24px 0 0" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", marginBottom: 10 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
-            {t.home_recentAscents}
-          </h2>
-          <Link href="/ascents?view=mine" style={{ fontSize: 13, fontWeight: 600, color: "#0369a1", textDecoration: "none" }}>
-            {t.home_seeAll} →
-          </Link>
-        </div>
+      {recentAscents.length > 0 && (
+        <section style={{ padding: "24px 0 0" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", marginBottom: 10 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
+              {t.home_recentAscents}
+            </h2>
+            <Link href="/ascents?view=mine" style={{ fontSize: 13, fontWeight: 600, color: "#0369a1", textDecoration: "none" }}>
+              {t.home_seeAll} →
+            </Link>
+          </div>
 
-        <div style={{
-          display: "flex", gap: 12, overflowX: "auto",
-          padding: "4px 16px 8px", scrollbarWidth: "none",
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any}>
-          {recentAscents.map((a) => (
+          <div style={{
+            display: "flex", gap: 12, overflowX: "auto",
+            padding: "4px 16px 8px", scrollbarWidth: "none",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any}>
+            {recentAscents.map((a) => (
               <Link key={a.id} href={`/ascents?highlight=${a.id}`} style={{ textDecoration: "none", flexShrink: 0 }}>
                 <div style={{
                   width: 150, borderRadius: "var(--radius-lg)",
@@ -831,7 +495,6 @@ export function HomeClient({ data, locale, t }: {
                       ? <img src={imgUrl(a.photoUrl, 400)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>🏔️</div>
                     }
-                    {/* Gradient overlay with text */}
                     <div style={{
                       position: "absolute", bottom: 0, left: 0, right: 0,
                       background: "linear-gradient(transparent,rgba(0,0,0,0.65))",
@@ -848,12 +511,24 @@ export function HomeClient({ data, locale, t }: {
                 </div>
               </Link>
             ))}
-        </div>
-      </section>}
+          </div>
+        </section>
+      )}
 
+    </div>
+  );
+}
 
-      {/* ── Achievements ── hidden ───────────────────────────────────────── */}
+// ─── Metric cell (hero) ───────────────────────────────────────────────────────
 
+function MetricCell({ value, label, unit }: { value: string; label: string; unit?: string }) {
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+      <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>
+        {value}
+        {unit && <sup style={{ fontSize: 10, fontWeight: 400, verticalAlign: "super", marginLeft: 1, opacity: 0.55 }}>{unit}</sup>}
+      </span>
+      <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.65)" }}>{label}</span>
     </div>
   );
 }

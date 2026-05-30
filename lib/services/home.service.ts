@@ -93,26 +93,24 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   );
   const friendsCount = friendUserIds.length;
 
-  // 3. My ascents (for stats + recent)
-  const myAscents = await prisma.ascent.findMany({
-    where: { createdBy: userId },
-    orderBy: { date: "desc" },
-    include: {
-      peak: { select: { name: true, altitudeM: true, mountainRange: true } },
-      photos: { take: 1, orderBy: { createdAt: "asc" }, select: { url: true } },
-    },
-  });
+  // 3. My ascents (for charts + recent — stats come from user_stats)
+  const [myAscents, totalPhotos] = await Promise.all([
+    prisma.ascent.findMany({
+      where: { createdBy: userId },
+      orderBy: { date: "desc" },
+      include: {
+        peak: { select: { name: true, altitudeM: true, mountainRange: true } },
+        photos: { take: 1, orderBy: { createdAt: "asc" }, select: { url: true } },
+      },
+    }),
+    prisma.photo.count({ where: { ascent: { createdBy: userId } } }),
+  ]);
 
-  // 4. Stats
-  const totalAscents = myAscents.length;
-  const uniquePeaks = new Set(myAscents.map((a) => a.peakId)).size;
+  // 4. Derived stats from myAscents (still needed for web-only fields)
   const totalRegions = new Set(
     myAscents.map((a) => a.peak.mountainRange).filter(Boolean)
   ).size;
-  const totalPhotos = await prisma.photo.count({ where: { ascent: { createdBy: userId } } });
 
-  // Altitude stats — unique peaks only (deduplicated by peakId)
-  const maxAltitude = myAscents.length > 0 ? Math.max(...myAscents.map((a) => a.peak.altitudeM)) : 0;
   const uniquePeakAltitudes = Array.from(
     new Map(myAscents.map((a) => [a.peakId, a.peak.altitudeM])).values()
   );
@@ -127,7 +125,6 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   const peaks6500plus = uniquePeakAltitudes.filter((m) => m >= 6500).length;
   const peaks8000plus = uniquePeakAltitudes.filter((m) => m >= 8000).length;
 
-  // Unique peaks by rarity tier (altitude-based thresholds)
   function altToRarity(m: number): keyof typeof rarityBreakdown {
     if (m >= 8000) return "snow_lotus";
     if (m >= 7000) return "cinquefoil";
@@ -148,103 +145,43 @@ export async function getHomeData(userId: string): Promise<HomeData> {
     }
   }
 
-  // 5. Leaderboard (me + friends)
+  // 5. Leaderboard — reads pre-computed user_stats (replaces full ascent scan)
   const allUserIds = [userId, ...friendUserIds];
+  const LEVEL_TARGETS: (number | null)[] = [20, 50, 100, 150, 220, 300, null];
 
-  // Fetch ascents with peak data for all users (EP + altitude stats for CS)
-  const [lbAscents, friendUsers] = await Promise.all([
-    prisma.ascent.findMany({
-      where: { createdBy: { in: allUserIds } },
-      select: {
-        createdBy: true,
-        peakId: true,
-        peak: {
-          select: {
-            altitudeM: true,
-            isMythic: true,
-            rarity: { select: { ep: true } },
-          },
-        },
-      },
-    }),
+  const [allUserStats, friendUsers] = await Promise.all([
+    prisma.userStats.findMany({ where: { userId: { in: allUserIds } } }),
     prisma.user.findMany({
       where: { id: { in: friendUserIds } },
       select: { id: true, name: true, avatarUrl: true },
     }),
   ]);
 
-  // Aggregate per-user stats — altitude counts are unique peaks only
-  type LbUserStats = {
-    count: number; ep: number; mythic: number;
-    seenPeaks: Set<string>;
-    u2000: number; u3000: number; u4000: number;
-    u5000: number; u6500: number; u8000: number;
-  };
-  const lbMap = new Map<string, LbUserStats>(
-    allUserIds.map((uid) => [uid, {
-      count: 0, ep: 0, mythic: 0,
-      seenPeaks: new Set(),
-      u2000: 0, u3000: 0, u4000: 0, u5000: 0, u6500: 0, u8000: 0,
-    }])
-  );
-  for (const a of lbAscents) {
-    const s = lbMap.get(a.createdBy);
-    if (!s) continue;
-    s.count++;
-    s.ep += a.peak.rarity?.ep ?? 1;
-    if (a.peak.isMythic) s.mythic++;
-    if (!s.seenPeaks.has(a.peakId)) {
-      s.seenPeaks.add(a.peakId);
-      const m = a.peak.altitudeM;
-      if (m >= 2000) s.u2000++;
-      if (m >= 3000) s.u3000++;
-      if (m >= 4000) s.u4000++;
-      if (m >= 5000) s.u5000++;
-      if (m >= 6500) s.u6500++;
-      if (m >= 8000) s.u8000++;
-    }
-  }
-
-  function lbCS(s: LbUserStats): number {
-    return s.mythic; // +1 cairn per mythic peak ascent
-  }
-
-  // Level index based on unique peaks + altitude requirements (mirrors LEVEL_DEFS)
-  function computeLevelIdx(s: LbUserStats): number {
-    const u = s.seenPeaks.size;
-    if (u >= 300 && s.u8000 >= 1) return 6;
-    if (u >= 220 && s.u6500 >= 1) return 5;
-    if (u >= 150 && s.u5000 >= 1) return 4;
-    if (u >= 100 && s.u4000 >= 1) return 3;
-    if (u >= 50  && s.u3000 >= 1) return 2;
-    if (u >= 20  && s.u2000 >= 1) return 1;
-    return 1; // pre-level 1 shows as level 1 badge
-  }
-
+  const statsMap    = new Map(allUserStats.map((s) => [s.userId, s]));
   const friendUserMap = new Map(friendUsers.map((u) => [u.id, u]));
-  // Unique-peak targets per level index (index = levelIdx - 1); null = Zenith achieved
-  const LEVEL_TARGETS: (number | null)[] = [20, 50, 100, 150, 220, 300, null];
+
+  // Core stats — prefer user_stats, fall back to in-memory if row not yet created
+  const myStats    = statsMap.get(userId);
+  const totalAscents = myStats?.totalAscents ?? myAscents.length;
+  const uniquePeaks  = myStats?.uniquePeaks  ?? seenPeakIds.size;
+  const maxAltitude  = myStats?.maxAltitudeM ?? (uniquePeakAltitudes.length > 0 ? Math.max(...uniquePeakAltitudes) : 0);
 
   const leaderboard: LeaderboardEntry[] = allUserIds
     .map((uid) => {
-      const s = lbMap.get(uid) ?? {
-        count: 0, ep: 0, mythic: 0,
-        seenPeaks: new Set<string>(),
-        u2000: 0, u3000: 0, u4000: 0, u5000: 0, u6500: 0, u8000: 0,
-      };
-      const lvl = computeLevelIdx(s);
+      const s   = statsMap.get(uid);
+      const lvl = s?.levelIdx ?? 0;
       const isMe = uid === userId;
       return {
-        userId: uid,
-        name: isMe ? (user?.name ?? "You") : (friendUserMap.get(uid)?.name ?? "?"),
-        avatarUrl: isMe ? (user?.avatarUrl ?? null) : (friendUserMap.get(uid)?.avatarUrl ?? null),
-        ascentCount: s.count,
-        uniquePeakCount: s.seenPeaks.size,
-        ep: s.ep,
-        CS: lbCS(s),
-        levelIdx: lvl,
+        userId:         uid,
+        name:           isMe ? (user?.name ?? "You") : (friendUserMap.get(uid)?.name ?? "?"),
+        avatarUrl:      isMe ? (user?.avatarUrl ?? null) : (friendUserMap.get(uid)?.avatarUrl ?? null),
+        ascentCount:    s?.totalAscents  ?? 0,
+        uniquePeakCount: s?.uniquePeaks  ?? 0,
+        ep:             s?.totalEp       ?? 0,
+        CS:             s?.totalCairns   ?? 0,
+        levelIdx:       lvl,
         nextLevelTarget: LEVEL_TARGETS[lvl] ?? null,
-        isCurrentUser: isMe,
+        isCurrentUser:  isMe,
       };
     })
     .sort((a, b) =>
@@ -255,11 +192,9 @@ export async function getHomeData(userId: string): Promise<HomeData> {
 
   const userRank = leaderboard.findIndex((e) => e.isCurrentUser) + 1;
 
-  // Next rank up
   const personAhead = userRank > 1 ? leaderboard[userRank - 2] : null;
-  const myAscents2 = lbMap.get(userId)?.count ?? 0;
   const nextRankName = personAhead?.name ?? null;
-  const nextRankGap = personAhead ? personAhead.ascentCount - myAscents2 + 1 : 0;
+  const nextRankGap  = personAhead ? personAhead.ascentCount - totalAscents + 1 : 0;
 
   // 6. Monthly stats — last 6 months, derived from myAscents (no extra query)
   const totalMetersAscended = myAscents.reduce((sum, a) => sum + a.peak.altitudeM, 0);

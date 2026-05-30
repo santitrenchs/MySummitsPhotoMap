@@ -43,7 +43,7 @@ The app has four main sections:
 The gamification dashboard. Entry point of the app (root `/` redirects here when authenticated). Shows:
 - **Level system**: 10 gamified levels (Trail Seed → Apex Warden), defined in `LEVEL_DEFS` in `HomeClient.tsx`. Each level has `minAscents` and optional `altReqs` (altitude bracket requirements). See level definitions below.
 - **Progression section**: collapses to 4 visible rows (1 done before + in-progress + 2 locked). Expand/collapse toggle. "In-progress" level = `levelState.next` (the next unachieved level), not the current achieved one.
-- **Summit hero card**: primary metric (total ascents) displayed prominently + altitude distribution breakdown (zone names + count + range, only non-zero buckets shown).
+- **Summit hero card**: primary metric (total ascents) displayed prominently.
 - **Secondary KPIs**: photos, regions, friends as a 3-column row
 - **Leaderboard** ("Tu posición en la cordada"): friend ranking with +/- diff badges showing gap vs current user
 - **Dynamic motivation banner**: gold 🏆 if #1 with margin, orange ⚠️ if lead threatened (gap ≤ 3), green 🎯 if chasing someone — includes a direct CTA button to log an ascent
@@ -77,17 +77,58 @@ Defined as `LEVEL_DEFS: LevelDef[]` in `components/home/HomeClient.tsx`:
 
 `meetsLevel()` checks both `totalAscents >= minAscents` AND all `altReqs` (using `getAltCount()` which maps thresholds to the precomputed stats fields).
 
-#### Altitude bucket stats
+#### `user_stats` — pre-computed stats table
 
-Computed in `lib/services/home.service.ts` from the already-fetched `myAscents` array — **no extra DB queries**:
-```typescript
-peaks1000plus = myAscents.filter(a => a.peak.altitudeM > 1000).length
-peaks2000plus = ...  // same pattern up to peaks5000plus
-maxAltitude   = Math.max(...myAscents.map(a => a.peak.altitudeM))
+**Schema** (`prisma/schema.prisma` → table `user_stats`):
+```prisma
+model UserStats {
+  userId       String   @id
+  totalAscents Int      @default(0)   // all ascents including repeats
+  uniquePeaks  Int      @default(0)   // distinct peakIds
+  maxAltitudeM Int      @default(0)   // highest peak ever climbed
+  totalEp      Int      @default(0)   // sum of rarity.ep across all ascents
+  totalCairns  Int      @default(0)   // count of isMythic ascents
+  levelIdx     Int      @default(0)   // pre-computed level index (0 = no level yet)
+  updatedAt    DateTime @updatedAt
+}
 ```
-These 6 fields plus `maxAltitude` are part of `HomeData["stats"]`.
 
-The altitude distribution in the hero card shows 6 named zones (🌿 Baja montaña, ⛰️ Media montaña, 🏔️ Alta montaña, ❄️ Alta montaña técnica, 🔥 Expedición, 🌌 Expedición extrema), each derived as the difference between adjacent bracket counts. Only non-zero buckets are shown.
+**Why it exists:** the home endpoint used to fetch ALL ascents for the current user AND all their friends on every page load to compute stats and the leaderboard. With many friends each having hundreds of ascents, this meant thousands of rows per request. `user_stats` stores pre-computed values so the leaderboard becomes a simple `findMany` of N rows (one per person) instead of scanning all their ascents.
+
+**What comes from `user_stats` vs computed live:**
+
+| Field | Source |
+|---|---|
+| `totalAscents`, `uniquePeaks`, `maxAltitude` | `user_stats` (with fallback to in-memory if row missing) |
+| `totalEp`, `totalCairns` (CS), `levelIdx` | `user_stats` (leaderboard reads these directly) |
+| `rarityBreakdown`, `monthlyStats`, `totalMetersAscended` | Still computed in-memory from `myAscents` query |
+| `totalRegions`, `totalPhotos`, `recentAscents` | Still computed/queried live |
+
+**Invalidation — `lib/services/stats.service.ts` → `recomputeUserStats(userId)`:**
+
+Call this after every ascent CRUD that changes the user's stats. It fetches all ascents for the user (light select: only `peakId`, `peak.altitudeM`, `peak.isMythic`, `peak.rarity.ep`) and upserts the computed values into `user_stats`.
+
+| Operation | When to recompute |
+|---|---|
+| CREATE ascent | Always |
+| UPDATE (PATCH) ascent | Only if `peakId` changed — changing peak changes altitude, rarity, EP |
+| DELETE ascent | Always |
+
+**Endpoints where invalidation is wired (both web and v1 mobile):**
+
+| Endpoint | Trigger |
+|---|---|
+| `POST /api/ascents` | after `createAscent()` |
+| `DELETE /api/ascents/[id]` | after `deleteAscent()` |
+| `PATCH /api/ascents/[id]` | if `"peakId" in input` |
+| `POST /api/v1/ascents` | after `createAscent()` |
+| `DELETE /api/v1/ascents/[id]` | after `deleteAscent()` |
+| `PATCH /api/v1/ascents/[id]` | if `"peakId" in input` |
+
+**Fallback:** if a user has no `user_stats` row yet (existing users before first CRUD), `home.service.ts` falls back to computing `totalAscents`, `uniquePeaks`, `maxAltitude` from the in-memory `myAscents` array. The leaderboard shows 0s for friends without a row.
+
+**Backfill:** existing users need a one-time backfill script to populate `user_stats`. Until then, their own stats fall back correctly but they appear with 0s in friends' leaderboards.
+
 
 ### Mapa
 Interactive map (maplibre-gl + Carto tiles + hillshade terrain) showing all peaks. Users can:
@@ -420,7 +461,6 @@ All 5 locales (`ca`, `en`, `es`, `fr`, `de`) must have these keys in `lib/i18n/`
 | `home_levelNeedSummits` | {n} cima{n,plural,=1{}other{s}} més | {n} more summit{n,plural,=1{}other{s}} | {n} cima{n,plural,=1{}other{s}} más | encore {n} sommet{n,plural,=1{}other{s}} | noch {n} Gipfel |
 | `home_seeAllLevels` | Veure tots els nivells → | See all levels → | Ver todos los niveles → | Voir tous les niveaux → | Alle Level → |
 | `home_hideLevels` | Veure menys | See less | Ver menos | Voir moins | Weniger |
-| `home_altZone1`–`home_altZone6` | — | low/mid/high/tech/expedition/extreme | Baja/Media/Alta montaña/Alta técnica/Expedición/Expedición extrema | — | — |
 
 The `detail_with` key (also in all locales) is used in the caption as `t.detail_with.toLowerCase()` — so it can be "Amb" / "With" / "Con" / "Avec" / "Mit" stored in any case.
 

@@ -89,6 +89,9 @@
     <string name="home_leaderboard_you"> (du)</string>
     <string name="home_period_peaks_suffix"> Gipfel</string>
     <string name="home_period_meters_suffix"> m erklommen</string>
+    <string name="home_onboarding_title">🏔️ Erfasse deine erste Besteigung</string>
+    <string name="home_hero_alt_for_level">Über %1$dm für %2$s</string>
+    <string name="home_hero_for_level">für %s</string>
     <string name="home_level_req_altitude">Über %dm</string>
     <string name="home_level_progress_peaks">%1$d / %2$d Gipfel</string>
     <string name="home_level_req_altitude_progress">→ Über %d m</string>

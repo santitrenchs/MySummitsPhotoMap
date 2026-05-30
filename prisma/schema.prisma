@@ -124,12 +124,16 @@ model User {
 
   memberships            Membership[]
   ascents                Ascent[]
-  sentFriendRequests     Friendship[] @relation("SentFriendRequests")
-  receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
-  faceTags               FaceTag[]    @relation("FaceTagUser")
+  sentFriendRequests     Friendship[]   @relation("SentFriendRequests")
+  receivedFriendRequests Friendship[]   @relation("ReceivedFriendRequests")
+  faceTags               FaceTag[]      @relation("FaceTagUser")
   feedSeens              FeedSeen[]
   accounts               Account[]
   legalConsents          LegalConsent[]
+  stats                  UserStats?
+  cordadasOwned          Cordada[]      @relation("CordadaOwner")
+  cordadaMemberships     CordadaMember[]
+  cordadaInvitesSent     CordadaMember[] @relation("CordadaInviter")
   @@map("users")
 }
 
@@ -342,6 +346,74 @@ model FeedSeen {
   @@id([userId, ascentId])
   @@index([userId, seenAt])
   @@map("feed_seen")
+}
+
+// ─────────────────────────────────────────────────────────
+// STATS — pre-computed per-user metrics (invalidated on ascent CRUD)
+// ─────────────────────────────────────────────────────────
+
+model UserStats {
+  userId       String   @id
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalAscents Int      @default(0)   // all ascents including repeats
+  uniquePeaks  Int      @default(0)   // distinct peakIds
+  maxAltitudeM Int      @default(0)   // highest peak ever climbed
+  totalEp      Int      @default(0)   // sum of rarity.ep across all ascents
+  totalCairns  Int      @default(0)   // count of isMythic ascents
+  levelIdx     Int      @default(0)   // pre-computed level (0 = no level yet)
+
+  updatedAt    DateTime @updatedAt
+
+  @@map("user_stats")
+}
+
+// ─────────────────────────────────────────────────────────
+// CORDADAS — social climbing groups
+// ─────────────────────────────────────────────────────────
+
+model Cordada {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  avatarUrl   String?
+  ownerId     String
+  owner       User            @relation("CordadaOwner", fields: [ownerId], references: [id])
+  members     CordadaMember[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([ownerId])
+  @@map("cordadas")
+}
+
+model CordadaMember {
+  cordadaId   String
+  cordada     Cordada             @relation(fields: [cordadaId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        CordadaRole         @default(MEMBER)
+  status      CordadaMemberStatus @default(PENDING)
+  invitedById String?
+  invitedBy   User?               @relation("CordadaInviter", fields: [invitedById], references: [id])
+  joinedAt    DateTime?
+  createdAt   DateTime            @default(now())
+
+  @@id([cordadaId, userId])
+  @@index([userId])                  // "todas las cordadas donde está este usuario"
+  @@index([cordadaId, status])       // "miembros aceptados de esta cordada"
+  @@map("cordada_members")
+}
+
+enum CordadaRole {
+  OWNER
+  MEMBER
+}
+
+enum CordadaMemberStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
 }
 
 model NewsletterSubscriber {

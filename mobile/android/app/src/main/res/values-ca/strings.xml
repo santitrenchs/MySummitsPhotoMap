@@ -89,6 +89,9 @@
     <string name="home_leaderboard_you"> (tu)</string>
     <string name="home_period_peaks_suffix"> cims</string>
     <string name="home_period_meters_suffix"> m ascendits</string>
+    <string name="home_onboarding_title">🏔️ Registra la teva primera ascensió</string>
+    <string name="home_hero_alt_for_level">Superar els %1$dm per a %2$s</string>
+    <string name="home_hero_for_level">per a %s</string>
     <string name="home_level_req_altitude">Superar els %dm</string>
     <string name="home_level_progress_peaks">%1$d / %2$d cims</string>
     <string name="home_level_req_altitude_progress">→ Superar els %d m</string>

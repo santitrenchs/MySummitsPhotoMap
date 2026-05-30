@@ -89,6 +89,9 @@
     <string name="home_leaderboard_you"> (toi)</string>
     <string name="home_period_peaks_suffix"> sommets</string>
     <string name="home_period_meters_suffix"> m gravis</string>
+    <string name="home_onboarding_title">🏔️ Enregistre ta première ascension</string>
+    <string name="home_hero_alt_for_level">Dépasser %1$dm pour %2$s</string>
+    <string name="home_hero_for_level">pour %s</string>
     <string name="home_level_req_altitude">Dépasser %dm</string>
     <string name="home_level_progress_peaks">%1$d / %2$d sommets</string>
     <string name="home_level_req_altitude_progress">→ Dépasser %d m</string>

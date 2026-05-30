@@ -257,6 +257,7 @@ export const en: Dict = {
   home_progression: "Progression",
   home_altReq: "Reach {m}m",
   home_altReqMulti: "{n}× above {m}m",
+  home_heroForLevel: "for {name}",
   home_levelProgress: "{current} / {total} summits",
   home_levelNeedSummits: "{n} summit{n,plural,=1{}other{s}} to go",
   home_seeAllLevels: "See all levels →",

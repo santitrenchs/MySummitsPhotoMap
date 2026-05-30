@@ -257,6 +257,7 @@ export const ca: Dict = {
   home_progression: "Progressió",
   home_altReq: "Superar els {m}m",
   home_altReqMulti: "{n} cims sobre {m}m",
+  home_heroForLevel: "per a {name}",
   home_levelProgress: "{current} / {total} cims",
   home_levelNeedSummits: "{n} cim{n,plural,=1{}other{s}} més",
   home_seeAllLevels: "Veure tots els nivells →",

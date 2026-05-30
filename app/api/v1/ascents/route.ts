@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getV1Session } from "@/lib/api-v1/auth";
 import { prisma } from "@/lib/db/client";
 import { listAscents, createAscent } from "@/lib/services/ascent.service";
+import { recomputeUserStats } from "@/lib/services/stats.service";
 import { getPeakStats } from "@/lib/services/peak.service";
 
 const CreateSchema = z.object({
@@ -57,5 +58,6 @@ export async function POST(req: NextRequest) {
     ...parsed.data,
     createdBy: session.userId,
   });
+  await recomputeUserStats(session.userId);
   return NextResponse.json({ ascent }, { status: 201 });
 }

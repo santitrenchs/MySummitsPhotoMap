@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { listAscents, createAscent } from "@/lib/services/ascent.service";
+import { recomputeUserStats } from "@/lib/services/stats.service";
 
 const CreateSchema = z.object({
   peakId: z.string().uuid(),
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
       ...input,
       createdBy: session.user.id,
     });
+    await recomputeUserStats(session.user.id);
     return NextResponse.json(ascent, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {

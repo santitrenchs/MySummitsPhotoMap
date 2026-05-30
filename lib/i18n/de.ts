@@ -257,6 +257,7 @@ export const de: Dict = {
   home_progression: "Fortschritt",
   home_altReq: "{m}m erreichen",
   home_altReqMulti: "{n} Gipfel über {m}m",
+  home_heroForLevel: "für {name}",
   home_levelProgress: "{current} / {total} Gipfel",
   home_levelNeedSummits: "Noch {n} Gipfel",
   home_seeAllLevels: "Alle Level anzeigen →",
