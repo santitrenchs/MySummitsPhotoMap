@@ -40,21 +40,35 @@ The current multi-tenant abstraction. In practice, a group of users sharing the 
 The app has four main sections:
 
 ### Mi Progreso (Home)
-The gamification dashboard. Entry point of the app (root `/` redirects here when authenticated). Shows:
-- **Level system**: 10 gamified levels (Trail Seed → Apex Warden), defined in `LEVEL_DEFS` in `HomeClient.tsx`. Each level has `minAscents` and optional `altReqs` (altitude bracket requirements). See level definitions below.
-- **Progression section**: collapses to 4 visible rows (1 done before + in-progress + 2 locked). Expand/collapse toggle. "In-progress" level = `levelState.next` (the next unachieved level), not the current achieved one.
-- **Summit hero card**: primary metric (total ascents) displayed prominently.
-- **Secondary KPIs**: photos, regions, friends as a 3-column row
-- **Leaderboard** ("Tu posición en la cordada"): friend ranking with +/- diff badges showing gap vs current user
-- **Dynamic motivation banner**: gold 🏆 if #1 with margin, orange ⚠️ if lead threatened (gap ≤ 3), green 🎯 if chasing someone — includes a direct CTA button to log an ascent
+The gamification dashboard. Entry point of the app (root `/` redirects here when authenticated). Web and Android share the same section order and data model; iOS follows the same spec.
+
+**Section order (web + Android, top → bottom):**
+1. **HeroHeader** — always shown
+2. **OnboardingBanner** — only when `totalAscents == 0`
+3. **ProgressionSection** — level cards (Android/iOS only; removed from web as of 2026-05-30)
+4. **MonthlyChartSection** — "Últimos 6 meses", shown when `totalAscents >= 1` and data non-empty
+5. **RarityChartSection** — "Cimas por rareza", shown when `totalAscents >= 1`
+6. **LeaderboardCard** — "Tu cordada", shown when `leaderboard.size > 1`
+7. **NoFriendsCta** — shown when `totalFriends == 0`
+8. **RecentAscentsRow** — "Tus últimas cimas", shown when `recentAscents` non-empty
+
+**Web hero layout** (`components/home/HomeClient.tsx`): horizontal row — avatar (56px circle) + name in bold white + `· AchievedLevelName` at 55% opacity (right of name) + CS pill + EP pill. Below: horizontal divider. Below: 3-metric row (ascensiones / cimas / alt. máx). Below: solid-black progress strip with green gradient bar and label `"{uniquePeaks} / {total} cimas · para {NextLevelName}"` (or alt-req variant). The **Progression section** (level cards) and the **motivation banner** have been removed from web — they remain on Android/iOS only.
+
+**Level logic in web hero:**
+- `achievedLevel` = `LEVEL_DEFS[levelState.currentIdx - 1]` — the LAST met level, shown in the name row
+- `heroInProgress` = `levelState.current` — the NEXT unmet level, shown in the progress strip
+- Progress fraction uses `uniquePeaks` vs `heroInProgress.targetAscents`
+- Level names in the **leaderboard**: `entry.levelIdx >= 1 ? LEVEL_DEFS[entry.levelIdx - 1].name : "—"` — never use modulo wrap (it maps `levelIdx=0` → Zenith incorrectly)
+
+**Dynamic motivation banner**: removed from web (2026-05-30). Was gold 🏆 / orange ⚠️ / green 🎯. Never render on Android or iOS.
+
+- **Level system**: 6 gamified levels (Scout → Zenith), defined in `LEVEL_DEFS` in `HomeClient.tsx` (web) and `HomeScreen.kt` (Android). Each level has `targetAscents` and optional `altReqs`.
 - **Monthly chart** ("Últimos 6 meses"): stacked bar chart, one column per month. Each individual color segment is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. The month count label and month label below each bar link to the month filter (`?month=YYYY-MM&view=mine`). Empty months are not clickable.
 - **Rarity chart** ("Cimas por rareza"): 9-column bar chart, one per rarity tier. Each **active** bar (count > 0) is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. Inactive bars (count = 0) are not clickable.
   - **Web** (`components/home/HomeClient.tsx`): active bars wrapped in `<Link href="/ascents?rarity=<rarityId>&view=mine">`. Monthly segments wrapped in individual `<Link>` within the bar container.
   - **Android** (`HomeScreen.kt`): `Modifier.clickable(indication=null)` on each active `Column` / bar segment. Navigates via `onNavigateToCardsWithRarity(rarityId)` callback → `MainScaffold` sets `pendingRarityId` → `LogbookScreen` applies `clearFilters() + setRarityId() + setViewFilter(Mine)`.
   - **Rarity counts**: the rarity chart shows **unique peaks** per rarity (deduped by `peakId` in `home.service.ts`). The monthly chart shows **all ascents** (no dedup). These intentionally differ — clicking a rarity bar in the chart may show more cards in the filtered view (because the filter shows all ascents of that rarity, including repeats).
 - **Recent ascents** ("Tus últimas cimas"): horizontal scroll cards with image overlay
-- **Friends activity** ("Actividad de tu cordada"): minimal feed with dual CTAs when empty
-- **Achievements**: 7 computed badges with SVG progress rings — gold ring + checkmark when earned, blue ring with `current/target` counter when in progress, gray when locked
 
 Designed to make the user feel proud of their journey and motivated to keep climbing.
 
@@ -127,7 +141,7 @@ Call this after every ascent CRUD that changes the user's stats. It fetches all 
 
 **Fallback:** if a user has no `user_stats` row yet (existing users before first CRUD), `home.service.ts` falls back to computing `totalAscents`, `uniquePeaks`, `maxAltitude` from the in-memory `myAscents` array. The leaderboard shows 0s for friends without a row.
 
-**Backfill:** existing users need a one-time backfill script to populate `user_stats`. Until then, their own stats fall back correctly but they appear with 0s in friends' leaderboards.
+**Backfill:** completed (2026-05-30) on both staging and production via `scripts/backfill-user-stats.ts`. All existing users have `user_stats` rows. The fallback path in `home.service.ts` remains for safety.
 
 
 ### Mapa

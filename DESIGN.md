@@ -382,18 +382,18 @@ container: textAlign center · padding 80px 0
 
 ### Section order (top → bottom)
 
-| # | Section | Show condition |
-|---|---------|----------------|
-| 1 | HeroHeader | Always |
-| 2 | OnboardingBanner | `totalAscents == 0` |
-| 3 | ProgressionSection | Always |
-| 4 | MonthlyChartSection | `totalAscents >= 1` AND `monthlyStats` not empty |
-| 5 | RarityChartSection | `totalAscents >= 1` |
-| 6 | LeaderboardCard | `leaderboard.size > 1` — title **"Tu cordada"** |
-| 7 | NoFriendsCta | `totalFriends == 0` |
-| 8 | RecentAscentsRow | `recentAscents` not empty — title **"Tus últimas cimas"** |
+| # | Section | Show condition | Web | Android/iOS |
+|---|---------|----------------|-----|-------------|
+| 1 | HeroHeader | Always | ✅ | ✅ |
+| 2 | OnboardingBanner | `totalAscents == 0` | ✅ | ✅ |
+| 3 | ProgressionSection | Always | ❌ removed 2026-05-30 | ✅ |
+| 4 | MonthlyChartSection | `totalAscents >= 1` AND `monthlyStats` not empty | ✅ | ✅ |
+| 5 | RarityChartSection | `totalAscents >= 1` | ✅ | ✅ |
+| 6 | LeaderboardCard | `leaderboard.size > 1` — title **"Tu cordada"** | ✅ | ✅ |
+| 7 | NoFriendsCta | `totalFriends == 0` | ✅ | ✅ |
+| 8 | RecentAscentsRow | `recentAscents` not empty — title **"Tus últimas cimas"** | ✅ | ✅ |
 
-**Motivation banner (🏆 / ⚠️ / 🎯): web only. Never render it on Android or iOS.**
+**Motivation banner (🏆 / ⚠️ / 🎯): removed from web (2026-05-30). Never render it on Android or iOS.**
 
 ---
 
@@ -574,8 +574,10 @@ Padding: `horizontal 16dp, vertical 12dp`.
 
 ```
 bg: #F3F4F6, text: #374151, 10sp bold, 4dp radius, padding 6dp×2dp
-text = levelNameForIdx(entry.levelIdx)  ← maps 1→"Scout" … 6→"Zenith"
+text = entry.levelIdx >= 1 ? LEVEL_DEFS[entry.levelIdx - 1].name : "—"
 ```
+
+`entry.levelIdx` = number of completed levels from `user_stats` (0 = none, 1 = Scout done, …, 6 = Zenith done). **Never use `% LEVEL_DEFS.length`** — it maps `levelIdx=0` to Zenith incorrectly.
 
 #### Metric column
 
