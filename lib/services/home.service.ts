@@ -175,7 +175,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
         userId:         uid,
         name:           isMe ? (user?.name ?? "You") : (friendUserMap.get(uid)?.name ?? "?"),
         avatarUrl:      isMe ? (user?.avatarUrl ?? null) : (friendUserMap.get(uid)?.avatarUrl ?? null),
-        ascentCount:    s?.totalAscents  ?? 0,
+        ascentCount:    s?.uniquePeaks   ?? 0,
         uniquePeakCount: s?.uniquePeaks  ?? 0,
         ep:             s?.totalEp       ?? 0,
         CS:             s?.totalCairns   ?? 0,
@@ -194,7 +194,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
 
   const personAhead = userRank > 1 ? leaderboard[userRank - 2] : null;
   const nextRankName = personAhead?.name ?? null;
-  const nextRankGap  = personAhead ? personAhead.ascentCount - totalAscents + 1 : 0;
+  const nextRankGap  = personAhead ? personAhead.ascentCount - uniquePeaks + 1 : 0;
 
   // 6. Monthly stats — last 6 months, derived from myAscents (no extra query)
   const totalMetersAscended = myAscents.reduce((sum, a) => sum + a.peak.altitudeM, 0);
