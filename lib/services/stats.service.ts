@@ -1,21 +1,40 @@
 import { prisma } from "@/lib/db/client";
+import { LEVEL_DEFS, meetsLevel } from "@/lib/level-utils";
+import type { HomeData } from "@/lib/services/home.service";
 
-// Level thresholds — mirrors LEVEL_DEFS in HomeScreen.kt and computeLevelIdx in home.service.ts
+/**
+ * Builds the minimal AltStats shape that meetsLevel() needs, from a raw
+ * array of unique-peak altitudes. Single source of truth — never duplicate
+ * these threshold numbers anywhere else.
+ */
+function altStatsFromAlts(alts: number[]): HomeData["stats"] {
+  const count = (min: number) => alts.filter((m) => m >= min).length;
+  return {
+    peaks1000plus: count(1000),
+    peaks1500plus: count(1500),
+    peaks2000plus: count(2000),
+    peaks3000plus: count(3000),
+    peaks4000plus: count(4000),
+    peaks4500plus: count(4500),
+    peaks5000plus: count(5000),
+    peaks6000plus: count(6000),
+    peaks6500plus: count(6500),
+    peaks8000plus: count(8000),
+  } as HomeData["stats"];
+}
+
+/**
+ * Returns the number of completed levels (0 = none, 1 = first level done, …).
+ * Uses LEVEL_DEFS from level-utils.ts as the single source of truth.
+ */
 function computeLevelIdx(uniquePeaks: number, uniqueAlts: number[]): number {
-  const u2000 = uniqueAlts.filter((m) => m >= 2000).length;
-  const u3000 = uniqueAlts.filter((m) => m >= 3000).length;
-  const u4000 = uniqueAlts.filter((m) => m >= 4000).length;
-  const u5000 = uniqueAlts.filter((m) => m >= 5000).length;
-  const u6500 = uniqueAlts.filter((m) => m >= 6500).length;
-  const u8000 = uniqueAlts.filter((m) => m >= 8000).length;
-
-  if (uniquePeaks >= 300 && u8000 >= 1) return 6;
-  if (uniquePeaks >= 220 && u6500 >= 1) return 5;
-  if (uniquePeaks >= 150 && u5000 >= 1) return 4;
-  if (uniquePeaks >= 100 && u4000 >= 1) return 3;
-  if (uniquePeaks >= 50  && u3000 >= 1) return 2;
-  if (uniquePeaks >= 20  && u2000 >= 1) return 1;
-  return 0;
+  const altStats = altStatsFromAlts(uniqueAlts);
+  let idx = 0;
+  for (const def of LEVEL_DEFS) {
+    if (meetsLevel(def, uniquePeaks, altStats)) idx = def.idx;
+    else break;
+  }
+  return idx;
 }
 
 /**
