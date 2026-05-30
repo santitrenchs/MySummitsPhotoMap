@@ -62,7 +62,7 @@ The gamification dashboard. Entry point of the app (root `/` redirects here when
 
 **Dynamic motivation banner**: removed from web (2026-05-30). Was gold 🏆 / orange ⚠️ / green 🎯. Never render on Android or iOS.
 
-- **Level system**: 6 gamified levels (Scout → Zenith), defined in `LEVEL_DEFS` in `HomeClient.tsx` (web) and `HomeScreen.kt` (Android). Each level has `targetAscents` and optional `altReqs`.
+- **Level system**: 6 gamified levels (Scout → Zenith). **Single source of truth**: `lib/level-utils.ts` → `LEVEL_DEFS`. `stats.service.ts` → `recomputeUserStats()` uses `LEVEL_DEFS` to compute `levelIdx` and store it in `user_stats`. Both web and Android read `levelIdx` from the API — **no platform computes the level locally**. Android's local `LEVEL_DEFS` in `HomeScreen.kt` is only used for UI display (level names, progression section); the actual computed level always comes from `stats.levelIdx` in the API response.
 - **Monthly chart** ("Últimos 6 meses"): stacked bar chart, one column per month. Each individual color segment is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. The month count label and month label below each bar link to the month filter (`?month=YYYY-MM&view=mine`). Empty months are not clickable.
 - **Rarity chart** ("Cimas por rareza"): 9-column bar chart, one per rarity tier. Each **active** bar (count > 0) is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. Inactive bars (count = 0) are not clickable.
   - **Web** (`components/home/HomeClient.tsx`): active bars wrapped in `<Link href="/ascents?rarity=<rarityId>&view=mine">`. Monthly segments wrapped in individual `<Link>` within the bar container.
@@ -72,24 +72,26 @@ The gamification dashboard. Entry point of the app (root `/` redirects here when
 
 Designed to make the user feel proud of their journey and motivated to keep climbing.
 
-#### Level system (10 levels)
+#### Level system (6 levels) — single source of truth
 
-Defined as `LEVEL_DEFS: LevelDef[]` in `components/home/HomeClient.tsx`:
+Canonical definition: **`lib/level-utils.ts` → `LEVEL_DEFS`**. Never duplicate thresholds elsewhere.
 
-| idx | Emoji | Name | minAscents | altReqs |
-|-----|-------|------|------------|---------|
-| 1 | 🐣 | Trail Seed | 1 | — |
-| 2 | 🌱 | Pathling | 3 | — |
-| 3 | 🧭 | Ridge Scout | 10 | — |
-| 4 | 🥾 | Peak Walker | 15 | — |
-| 5 | ⛰️ | Summit Tamer | 25 | ≥1 peak >1000m |
-| 6 | ❄️ | Sky Breaker | 40 | ≥1 peak >2000m |
-| 7 | 👑 | Peak Master | 60 | ≥1 peak >3000m |
-| 8 | 🔥 | Legend Ascender | 80 | ≥1 peak >4000m |
-| 9 | 🌌 | Mythic Summiteer | 100 | ≥1 peak >5000m |
-| 10 | 🏔️ | Apex Warden | 120 | ≥3 peaks >3000m, ≥1 >4000m, ≥1 >5000m |
+Levels are **ranges**, not entry gates. Scout is the base level — everyone starts here.
 
-`meetsLevel()` checks both `totalAscents >= minAscents` AND all `altReqs` (using `getAltCount()` which maps thresholds to the precomputed stats fields).
+| idx | Emoji | Name | Unique peaks | Alt req |
+|-----|-------|------|--------------|---------|
+| 1 | 🌱 | Scout | — (base, always met) | — |
+| 2 | 🥾 | Guide | ≥ 20 | ≥1 peak > 2000m |
+| 3 | 🧭 | Explorer | ≥ 50 | ≥1 peak > 3000m |
+| 4 | ⛰️ | Alpinist | ≥ 100 | ≥1 peak > 4000m |
+| 5 | 🏔️ | Master | ≥ 150 | ≥1 peak > 5000m |
+| 6 | 👑 | Zenith | ≥ 220 | ≥1 peak > 6500m |
+
+`meetsLevel()` in `level-utils.ts` checks both `uniquePeaks >= targetAscents` AND all `altReqs`. Scout has no `targetAscents` so it always returns `true`.
+
+**`computeLevelIdx()` in `stats.service.ts`** uses `LEVEL_DEFS + meetsLevel()` — never hardcode thresholds separately. Returns `1` (Scout) minimum for everyone.
+
+**Leaderboard "Cimas" column** shows `uniquePeaks` (not `totalAscents`). Level pill: `entry.levelIdx >= 1 ? LEVEL_DEFS[entry.levelIdx - 1].name : "—"` — never use `% LEVEL_DEFS.length` (maps `idx=0` → Zenith).
 
 #### `user_stats` — pre-computed stats table
 
@@ -102,7 +104,7 @@ model UserStats {
   maxAltitudeM Int      @default(0)   // highest peak ever climbed
   totalEp      Int      @default(0)   // sum of rarity.ep across all ascents
   totalCairns  Int      @default(0)   // count of isMythic ascents
-  levelIdx     Int      @default(0)   // pre-computed level index (0 = no level yet)
+  levelIdx     Int      @default(1)   // pre-computed level index (1=Scout base, …, 6=Zenith)
   updatedAt    DateTime @updatedAt
 }
 ```

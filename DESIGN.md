@@ -416,7 +416,7 @@ vertical gradient:
 
 **Name** — 20sp bold white, letterSpacing −0.03em. **Resolution order**: `user.name ?? leaderboardEntry.name ?? ""`.
 
-**Level pill** — rounded full, bg `#EFF6FF`, text `#0369A1` 12sp bold. Text = `currentLevel.name` (from API) fallback `"Scout"`.
+**Level name** — shown inline after the user name (`· LevelName`). Resolved from `stats.levelIdx` (pre-computed server-side in `user_stats`): `LEVEL_DEFS[stats.levelIdx - 1].name`. Minimum `"Scout"` (idx=1, base level). **Never compute locally** — always use `stats.levelIdx` from the API response.
 
 **Metrics row** — three cells separated by 1dp white-15%-opacity dividers:
 
@@ -454,7 +454,20 @@ alignment:  center
 
 ---
 
-### 3 — ProgressionSection
+### 3 — ProgressionSection (Android/iOS only — removed from web 2026-05-30)
+
+> **Level source of truth**: `lib/level-utils.ts` → `LEVEL_DEFS`. Android reads `stats.levelIdx` from the API and converts to 0-based index: `(stats.levelIdx - 1).coerceIn(0, LEVEL_DEFS.lastIndex)`. **Never compute level locally.**
+
+Current level thresholds (all based on **unique peaks**, not total ascents):
+
+| idx | Name | Unique peaks | Alt req |
+|-----|------|--------------|---------|
+| 1 | Scout | — (base) | — |
+| 2 | Guide | ≥ 20 | ≥1 peak > 2000m |
+| 3 | Explorer | ≥ 50 | ≥1 peak > 3000m |
+| 4 | Alpinist | ≥ 100 | ≥1 peak > 4000m |
+| 5 | Master | ≥ 150 | ≥1 peak > 5000m |
+| 6 | Zenith | ≥ 220 | ≥1 peak > 6500m |
 
 Container: `16dp` horizontal padding, `20dp` top padding, `animateContentSize`.
 
