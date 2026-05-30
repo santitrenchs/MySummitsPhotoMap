@@ -13,21 +13,17 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const dryRun = process.argv.includes("--dry-run");
 
+// Levels are ranges, not entry gates. Scout (idx=1) is the base — always met.
+// Each subsequent level requires BOTH unique peaks AND ≥1 peak above the altitude threshold.
+// Keep in sync with lib/level-utils.ts LEVEL_DEFS.
 function computeLevelIdx(uniquePeaks: number, uniqueAlts: number[]): number {
-  const u2000 = uniqueAlts.filter((m) => m >= 2000).length;
-  const u3000 = uniqueAlts.filter((m) => m >= 3000).length;
-  const u4000 = uniqueAlts.filter((m) => m >= 4000).length;
-  const u5000 = uniqueAlts.filter((m) => m >= 5000).length;
-  const u6500 = uniqueAlts.filter((m) => m >= 6500).length;
-  const u8000 = uniqueAlts.filter((m) => m >= 8000).length;
-
-  if (uniquePeaks >= 300 && u8000 >= 1) return 6;
-  if (uniquePeaks >= 220 && u6500 >= 1) return 5;
-  if (uniquePeaks >= 150 && u5000 >= 1) return 4;
-  if (uniquePeaks >= 100 && u4000 >= 1) return 3;
-  if (uniquePeaks >= 50  && u3000 >= 1) return 2;
-  if (uniquePeaks >= 20  && u2000 >= 1) return 1;
-  return 0;
+  const u = (min: number) => uniqueAlts.filter((m) => m >= min).length;
+  if (uniquePeaks >= 220 && u(6500) >= 1) return 6; // Zenith
+  if (uniquePeaks >= 150 && u(5000) >= 1) return 5; // Master
+  if (uniquePeaks >= 100 && u(4000) >= 1) return 4; // Alpinist
+  if (uniquePeaks >= 50  && u(3000) >= 1) return 3; // Explorer
+  if (uniquePeaks >= 20  && u(2000) >= 1) return 2; // Guide
+  return 1; // Scout — base level, everyone starts here
 }
 
 async function backfillUser(userId: string): Promise<void> {
