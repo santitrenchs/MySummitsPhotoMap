@@ -12,15 +12,17 @@ export type LevelDef = {
   heroBg?: string;
 };
 
+// Levels are ranges, not entry gates.
+// idx=1 (Scout) is the base level — everyone starts here, no requirements.
+// Each subsequent level requires BOTH unique peaks AND ≥1 peak above the altitude threshold.
 // targetAscents counts UNIQUE peaks climbed (not total ascents).
-// getLevelState() passes stats.uniquePeaks when calling meetsLevel().
 export const LEVEL_DEFS: LevelDef[] = [
-  { idx: 1, emoji: "🌱", nameKey: "home_level1", targetAscents: 20,  altReqs: [{ threshold: 2000, count: 1 }] },
-  { idx: 2, emoji: "🥾", nameKey: "home_level2", targetAscents: 50,  altReqs: [{ threshold: 3000, count: 1 }] },
-  { idx: 3, emoji: "🧭", nameKey: "home_level3", targetAscents: 100, altReqs: [{ threshold: 4000, count: 1 }] },
-  { idx: 4, emoji: "⛰️", nameKey: "home_level4", targetAscents: 150, altReqs: [{ threshold: 5000, count: 1 }] },
-  { idx: 5, emoji: "🏔️", nameKey: "home_level5", targetAscents: 220, altReqs: [{ threshold: 6500, count: 1 }] },
-  { idx: 6, emoji: "👑", nameKey: "home_level6", targetAscents: 300, altReqs: [{ threshold: 8000, count: 1 }], quoteKey: "home_level6Quote", heroBg: "/levels/messner.jpeg" },
+  { idx: 1, emoji: "🌱", nameKey: "home_level1" },                                                                                                                              // Scout   — base, always met
+  { idx: 2, emoji: "🥾", nameKey: "home_level2", targetAscents: 20,  altReqs: [{ threshold: 2000, count: 1 }] },                                                               // Guide
+  { idx: 3, emoji: "🧭", nameKey: "home_level3", targetAscents: 50,  altReqs: [{ threshold: 3000, count: 1 }] },                                                               // Explorer
+  { idx: 4, emoji: "⛰️", nameKey: "home_level4", targetAscents: 100, altReqs: [{ threshold: 4000, count: 1 }] },                                                               // Alpinist
+  { idx: 5, emoji: "🏔️", nameKey: "home_level5", targetAscents: 150, altReqs: [{ threshold: 5000, count: 1 }] },                                                               // Master
+  { idx: 6, emoji: "👑", nameKey: "home_level6", targetAscents: 220, altReqs: [{ threshold: 6500, count: 1 }], quoteKey: "home_level6Quote", heroBg: "/levels/messner.jpeg" }, // Zenith
 ];
 
 export function getAltCount(stats: HomeData["stats"], threshold: number): number {
