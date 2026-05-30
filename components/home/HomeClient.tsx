@@ -148,12 +148,15 @@ export function HomeClient({ data, locale, t }: {
     ? Math.min(1, Math.max(0, (stats.uniquePeaks - heroPrevTgt) / (heroTarget - heroPrevTgt)))
     : 1;
 
-  // Progress strip label: "N / M cimas · AltReq para LevelName"
+  // Progress strip label: "N / M cimas · Superar los Xm para LevelName"
+  // Mirrors Android exactly: always show "para LevelName", always show altReq if one exists.
   const heroProgressBase = i(t.home_levelProgress, { current: stats.uniquePeaks, total: heroTarget });
+  const levelName = t[heroInProgress.nameKey] as string;
   const firstAltReq = heroInProgress.altReqs?.[0];
-  const altReqLabel = firstAltReq && getAltCount(stats, firstAltReq.threshold) < firstAltReq.count
-    ? `${i(t.home_altReq, { m: firstAltReq.threshold.toLocaleString(locale) })} ${i(t.home_heroForLevel, { name: t[heroInProgress.nameKey] as string })}`
-    : null;
+  const altReqLabel = levelState.isMaxLevel ? null
+    : firstAltReq
+      ? `${i(t.home_altReq, { m: firstAltReq.threshold.toLocaleString(locale) })} ${i(t.home_heroForLevel, { name: levelName })}`
+      : i(t.home_heroForLevel, { name: levelName });
   const heroProgressLabel = altReqLabel
     ? `${heroProgressBase}  ·  ${altReqLabel}`
     : heroProgressBase;
