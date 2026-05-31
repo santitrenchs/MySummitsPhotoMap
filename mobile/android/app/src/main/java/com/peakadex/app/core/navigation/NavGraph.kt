@@ -9,6 +9,7 @@ import com.peakadex.app.feature.auth.LoginScreen
 import com.peakadex.app.feature.auth.RegisterScreen
 import com.peakadex.app.feature.logbook.AscentDetailScreen
 import com.peakadex.app.feature.profile.ProfileSummaryScreen
+import com.peakadex.app.feature.friends.FriendsScreen
 import com.peakadex.app.feature.settings.SettingsScreen
 import com.peakadex.app.feature.splash.SplashScreen
 
@@ -94,6 +95,12 @@ fun NavGraph(isAuthenticated: Boolean) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
+            )
+        }
+
+        composable(Screen.Friends.route) {
+            FriendsScreen(
+                onBack = { navController.popBackStack() },
             )
         }
     }

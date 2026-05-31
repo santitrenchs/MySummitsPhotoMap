@@ -139,25 +139,56 @@ interface ApiService {
 
     // MARK: - Social
     @GET("friends")
-    suspend fun getFriends(): List<Friend>
+    suspend fun getFriendsData(): FriendsResponse
 
     @POST("friends")
-    suspend fun sendFriendRequest(@Body body: Map<String, String>): Friend
+    suspend fun sendFriendRequest(@Body body: Map<String, String>): Map<String, String>
 
     @PATCH("friends/{id}")
-    suspend fun updateFriend(
+    suspend fun updateFriendship(
         @Path("id") id: String,
         @Body body: Map<String, String>,
-    ): Friend
+    ): Map<String, String>
 
     @DELETE("friends/{id}")
-    suspend fun deleteFriend(@Path("id") id: String)
+    suspend fun deleteFriendship(@Path("id") id: String)
 
     @GET("users/search")
-    suspend fun searchUsers(@Query("q") query: String): List<UserSummary>
+    suspend fun searchUsers(@Query("q") query: String): UsersSearchResponse
 
     @GET("persons")
     suspend fun getPersons(): List<Person>
+
+    // MARK: - Cordadas
+    @GET("cordadas")
+    suspend fun getCordadas(): CordadasResponse
+
+    @POST("cordadas")
+    suspend fun createCordada(@Body body: Map<String, String>): Map<String, @JvmSuppressWildcards Any?>
+
+    @GET("cordadas/{id}")
+    suspend fun getCordadaDetail(@Path("id") id: String): CordadaDetailResponse
+
+    @POST("cordadas/{id}/invite")
+    suspend fun inviteToCordada(
+        @Path("id") id: String,
+        @Body body: Map<String, String>,
+    ): Map<String, String>
+
+    @PATCH("cordadas/{id}/respond")
+    suspend fun respondToCordadaInvite(
+        @Path("id") id: String,
+        @Body body: Map<String, String>,
+    ): Map<String, String>
+
+    @DELETE("cordadas/{id}/members/{userId}")
+    suspend fun removeCordadaMember(
+        @Path("id") cordadaId: String,
+        @Path("userId") userId: String,
+    ): Map<String, String>
+
+    @DELETE("cordadas/{id}")
+    suspend fun deleteCordada(@Path("id") id: String): Map<String, String>
 
     // MARK: - Profile
     @GET("profile")

@@ -243,4 +243,42 @@
         <item quantity="one">Ver 1 cima</item>
         <item quantity="other">Ver %d cimas</item>
     </plurals>
+
+    <!-- Friends screen -->
+    <string name="friends_title">Amigos</string>
+    <string name="friends_search_placeholder">Buscar por nombre o usuario…</string>
+    <string name="friends_add">Añadir</string>
+    <string name="friends_request_sent">Solicitud enviada</string>
+    <string name="friends_accept">Aceptar</string>
+    <string name="friends_reject">Rechazar</string>
+    <string name="friends_remove">Eliminar amigo</string>
+    <string name="friends_already_friends">Ya sois amigos</string>
+    <string name="friends_no_results">Sin resultados</string>
+    <string name="friends_section_incoming">Solicitudes recibidas</string>
+    <string name="friends_section_friends">Amigos</string>
+    <string name="friends_empty">Aún no tienes amigos en Peakadex.</string>
+    <string name="friends_menu_label">Amigos</string>
+
+    <!-- Cordadas tab -->
+    <string name="cordadas_tab">Cordadas</string>
+    <string name="cordadas_empty">Aún no perteneces a ninguna cordada.</string>
+    <string name="cordadas_new">Nueva cordada</string>
+    <string name="cordadas_create_title">Crear cordada</string>
+    <string name="cordadas_name_hint">Nombre (obligatorio)</string>
+    <string name="cordadas_desc_hint">Descripción (opcional)</string>
+    <string name="cordadas_create_btn">Crear</string>
+    <string name="cordadas_invites_section">Invitaciones pendientes</string>
+    <string name="cordadas_invite_from">Invitado por %s</string>
+    <string name="cordadas_members">%d miembros</string>
+    <string name="cordadas_owner_badge">Owner</string>
+    <string name="cordadas_invite_btn">Invitar</string>
+    <string name="cordadas_invite_title">Invitar a la cordada</string>
+    <string name="cordadas_invite_search">Buscar usuario…</string>
+    <string name="cordadas_invite_send">Invitar</string>
+    <string name="cordadas_leave">Salir de la cordada</string>
+    <string name="cordadas_delete">Eliminar cordada</string>
+    <string name="cordadas_expel">Expulsar</string>
+    <string name="cordadas_confirm_leave">¿Salir de esta cordada?</string>
+    <string name="cordadas_confirm_delete">¿Eliminar la cordada? Esta acción no se puede deshacer.</string>
+    <string name="cordadas_confirm_expel">¿Expulsar a este miembro?</string>
 </resources>

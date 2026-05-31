@@ -241,4 +241,17 @@
         <item quantity="one">Veure 1 cim</item>
         <item quantity="other">Veure %d cims</item>
     </plurals>
+    <string name="friends_title">Amics</string>
+    <string name="friends_search_placeholder">Cerca per nom o usuari…</string>
+    <string name="friends_add">Afegir</string>
+    <string name="friends_request_sent">Sol·licitud enviada</string>
+    <string name="friends_accept">Acceptar</string>
+    <string name="friends_reject">Rebutjar</string>
+    <string name="friends_remove">Eliminar amic</string>
+    <string name="friends_already_friends">Ja sou amics</string>
+    <string name="friends_no_results">Sense resultats</string>
+    <string name="friends_section_incoming">Sol·licituds rebudes</string>
+    <string name="friends_section_friends">Amics</string>
+    <string name="friends_empty">Encara no tens amics a Peakadex.</string>
+    <string name="friends_menu_label">Amics</string>
 </resources>

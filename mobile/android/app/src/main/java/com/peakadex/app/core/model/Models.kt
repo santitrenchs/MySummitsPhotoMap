@@ -157,6 +157,46 @@ enum class FriendStatus {
     @SerialName("ACCEPTED") ACCEPTED,
 }
 
+@Serializable
+data class UserStub(
+    val id: String,
+    val name: String,
+    val username: String? = null,
+)
+
+@Serializable
+data class FriendEntry(
+    val id: String,
+    val friend: UserStub,
+    val createdAt: String,
+)
+
+@Serializable
+data class IncomingRequest(
+    val id: String,
+    val requester: UserStub,
+    val createdAt: String,
+)
+
+@Serializable
+data class SentRequest(
+    val id: String,
+    val addressee: UserStub,
+    val createdAt: String,
+)
+
+@Serializable
+data class FriendsResponse(
+    val friends: List<FriendEntry> = emptyList(),
+    val incoming: List<IncomingRequest> = emptyList(),
+    val sent: List<SentRequest> = emptyList(),
+)
+
+@Serializable
+data class UsersSearchResponse(
+    val users: List<UserStub> = emptyList(),
+)
+
 // MARK: - Feed
 
 @Serializable
@@ -412,4 +452,58 @@ data class ProfileData(
     val taggedPhotos: List<ProfilePhoto>,
     val stats: ProfileStats,
     val rarities: List<Rarity>,
+)
+
+// MARK: - Cordadas
+
+@Serializable
+data class CordadaSummary(
+    val id: String,
+    val name: String,
+    val description: String? = null,
+    val ownerId: String,
+    val memberCount: Int,
+    val myRole: String,   // "OWNER" | "MEMBER"
+)
+
+@Serializable
+data class CordadaInvite(
+    val cordadaId: String,
+    val name: String,
+    val description: String? = null,
+    val ownerName: String,
+    val createdAt: String,
+)
+
+@Serializable
+data class CordadasResponse(
+    val cordadas: List<CordadaSummary> = emptyList(),
+    val pendingInvites: List<CordadaInvite> = emptyList(),
+)
+
+@Serializable
+data class CordadaMemberRanking(
+    val userId: String,
+    val name: String,
+    val avatarUrl: String? = null,
+    val levelIdx: Int,
+    val uniquePeaks: Int,
+    val totalEp: Int,
+    val isOwner: Boolean,
+    val isCurrentUser: Boolean,
+)
+
+@Serializable
+data class CordadaDetail(
+    val id: String,
+    val name: String,
+    val description: String? = null,
+    val ownerId: String,
+    val isOwner: Boolean,
+    val members: List<CordadaMemberRanking>,
+)
+
+@Serializable
+data class CordadaDetailResponse(
+    val cordada: CordadaDetail,
 )

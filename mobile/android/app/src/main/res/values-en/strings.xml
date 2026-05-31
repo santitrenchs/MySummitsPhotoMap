@@ -241,4 +241,17 @@
         <item quantity="one">See 1 peak</item>
         <item quantity="other">See %d peaks</item>
     </plurals>
+    <string name="friends_title">Friends</string>
+    <string name="friends_search_placeholder">Search by name or username…</string>
+    <string name="friends_add">Add</string>
+    <string name="friends_request_sent">Request sent</string>
+    <string name="friends_accept">Accept</string>
+    <string name="friends_reject">Decline</string>
+    <string name="friends_remove">Remove friend</string>
+    <string name="friends_already_friends">Already friends</string>
+    <string name="friends_no_results">No results</string>
+    <string name="friends_section_incoming">Incoming requests</string>
+    <string name="friends_section_friends">Friends</string>
+    <string name="friends_empty">You have no friends on Peakadex yet.</string>
+    <string name="friends_menu_label">Friends</string>
 </resources>

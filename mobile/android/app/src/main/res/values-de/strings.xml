@@ -241,4 +241,17 @@
         <item quantity="one">1 Gipfel zeigen</item>
         <item quantity="other">%d Gipfel zeigen</item>
     </plurals>
+    <string name="friends_title">Freunde</string>
+    <string name="friends_search_placeholder">Nach Name oder Benutzer suchen…</string>
+    <string name="friends_add">Hinzufügen</string>
+    <string name="friends_request_sent">Anfrage gesendet</string>
+    <string name="friends_accept">Annehmen</string>
+    <string name="friends_reject">Ablehnen</string>
+    <string name="friends_remove">Freund entfernen</string>
+    <string name="friends_already_friends">Bereits befreundet</string>
+    <string name="friends_no_results">Keine Ergebnisse</string>
+    <string name="friends_section_incoming">Eingegangene Anfragen</string>
+    <string name="friends_section_friends">Freunde</string>
+    <string name="friends_empty">Du hast noch keine Freunde auf Peakadex.</string>
+    <string name="friends_menu_label">Freunde</string>
 </resources>
