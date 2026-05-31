@@ -277,12 +277,11 @@ private fun CordadaModalSheet(
         onDismissRequest = onDismiss,
         containerColor   = Color.White,
         dragHandle       = dragHandle,
-        contentWindowInsets = { WindowInsets(0) },
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Bottom))
+                .navigationBarsPadding()
                 .imePadding(),
             content = content,
         )

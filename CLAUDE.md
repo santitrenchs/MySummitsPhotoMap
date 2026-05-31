@@ -2479,9 +2479,9 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 **Symptom**: the "Crear" button on the Create-Cordada sheet (and the bottom of the Invite/Detail sheets) rendered **behind** the Android gesture/3-button nav bar — untappable. With the keyboard up the sheet rose and the button became visible; closing the keyboard dropped it back behind the nav bar. → the applied bottom inset was effectively **0**.
 
-**Root cause**: the sheet content did not get a reliable bottom safe-area inset. Cordadas originally set `contentWindowInsets = { WindowInsets(0) }` on every `ModalBottomSheet`, then tried to replace the default behavior with a manual `bottomInset` read from `FriendsScreen`'s root view. On Android edge-to-edge with 3-button navigation, that manual value still resolved effectively to 0. Leaving Material 3's default sheet insets enabled also failed on the test device, so the blue CTA still sat underneath the translucent navigation bar.
+**Root cause**: the sheet content did not get a reliable bottom safe-area inset. Cordadas originally set `contentWindowInsets = { WindowInsets(0) }` on every `ModalBottomSheet`, then tried to replace the default behavior with a manual `bottomInset` read from `FriendsScreen`'s root view. On Android edge-to-edge with 3-button navigation, that manual value still resolved effectively to 0.
 
-**Fix strategy** (`FriendsScreen.kt` + `CordadasTab.kt`): remove the manual `FriendsScreen` inset plumbing and centralize the three sheets in a shared `CordadaModalSheet` wrapper. The wrapper disables the sheet's default insets to avoid hidden consumption, then applies `safeContent` bottom padding directly to the sheet content:
+**Fix strategy** (`FriendsScreen.kt` + `CordadasTab.kt`): remove the manual `FriendsScreen` inset plumbing and centralize the three sheets in a shared `CordadaModalSheet` wrapper. Match the working Atlas `LayersPanel` pattern: leave `ModalBottomSheet`'s default insets enabled and apply `.navigationBarsPadding()` inside the sheet content.
 
 ```kotlin
 @OptIn(ExperimentalMaterial3Api::class)
@@ -2495,12 +2495,11 @@ private fun CordadaModalSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
         dragHandle = dragHandle,
-        contentWindowInsets = { WindowInsets(0) },
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Bottom))
+                .navigationBarsPadding()
                 .imePadding(),
             content = content,
         )
@@ -2510,12 +2509,12 @@ private fun CordadaModalSheet(
 
 Important details:
 - Do not read or pass a manual `bottomInset` from `FriendsScreen`.
-- Keep `contentWindowInsets = { WindowInsets(0) }` only in the shared wrapper, so the wrapper owns safe-area behavior consistently.
-- Apply `WindowInsets.safeContent.only(WindowInsetsSides.Bottom)` inside the wrapper to clear Android 3-button / gesture navigation.
+- Do not override `ModalBottomSheet.contentWindowInsets`.
+- Apply `.navigationBarsPadding()` inside the wrapper, matching `AtlasScreen.kt`'s `LayersPanel`, which clears Android 3-button / gesture navigation correctly.
 - Keep `.imePadding()` in the shared wrapper so keyboard-open behavior remains correct.
 - Use only local visual spacing (`8.dp` / `16.dp`) inside Create / Invite / Detail; do not pass system inset values around as `Dp`.
 
-**Rule for future sheets rendered under a consuming Scaffold**: keep safe-area behavior centralized in the sheet wrapper. Do not reintroduce per-sheet `WindowInsets(0)`, manual root-view inset reads, or one-off spacers.
+**Rule for future sheets rendered under a consuming Scaffold**: keep safe-area behavior centralized in the sheet wrapper. Do not reintroduce `WindowInsets(0)`, manual root-view inset reads, or one-off system inset spacers.
 
 ### Gotchas (Cordadas)
 
