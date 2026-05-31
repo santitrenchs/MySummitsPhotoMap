@@ -1196,4 +1196,4 @@ Named climbing groups ("squads"). Accessed from the Home avatar dropdown → **A
 
 ### ⚠️ Nav-bar inset (critical for all 3 sheets)
 
-The sheets sit under `FriendsScreen`'s consuming `Scaffold`, so `.navigationBarsPadding()` / `BottomSheetDefaults.windowInsets` resolve to **0** and the bottom button hides behind the system nav bar. Fix: `FriendsScreen` reads the **raw** nav-bar inset via `ViewCompat.getRootWindowInsets(LocalView.current)` and passes it down as `bottomInset: Dp`; each sheet sets `contentWindowInsets = { WindowInsets(0) }`, applies `.imePadding()`, and pads its bottom by `bottomInset + Ndp`. Full rationale in CLAUDE.md.
+Cordadas sheets use a shared `CordadaModalSheet` wrapper around Material 3 `ModalBottomSheet`. Do **not** set `contentWindowInsets = { WindowInsets(0) }` and do **not** thread a manual `bottomInset` from `FriendsScreen`; that proved unreliable on Android edge-to-edge with 3-button navigation. Let Material 3 apply the sheet's default bottom insets, then keep only local visual spacing and `.imePadding()` in the shared wrapper. Full rationale in CLAUDE.md.

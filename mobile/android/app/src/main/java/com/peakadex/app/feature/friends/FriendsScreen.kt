@@ -1,6 +1,5 @@
 package com.peakadex.app.feature.friends
 
-import android.view.ViewTreeObserver
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,14 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.peakadex.app.R
@@ -471,40 +466,10 @@ fun FriendsScreen(
         containerColor = PeakBackground,
     ) { padding ->
         val currentUserId = AppContainer.authSession.currentUser.value?.id ?: ""
-        // Read the raw navigation-bar inset from the Android view root. Reading it via
-        // Scaffold's `padding` or `.navigationBarsPadding()` returns 0 here because the
-        // surrounding Scaffold has already consumed the inset, and ModalBottomSheet content
-        // inherits that consumed scope. Going through the root WindowInsets bypasses it.
-        val view = LocalView.current
-        val density = LocalDensity.current
-        var bottomInsetPx by remember(view) {
-            mutableIntStateOf(
-                ViewCompat.getRootWindowInsets(view)
-                    ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0,
-            )
-        }
-        DisposableEffect(view) {
-            fun updateBottomInset() {
-                bottomInsetPx = ViewCompat.getRootWindowInsets(view)
-                    ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
-            }
-
-            updateBottomInset()
-            val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { updateBottomInset() }
-            view.viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
-            ViewCompat.requestApplyInsets(view)
-
-            onDispose {
-                if (view.viewTreeObserver.isAlive) {
-                    view.viewTreeObserver.removeOnGlobalLayoutListener(layoutListener)
-                }
-            }
-        }
-        val bottomInset = with(density) { bottomInsetPx.toDp() }
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (selectedTab) {
                 0    -> AmigosTabContent(vm = friendsVm)
-                else -> CordadasTab(currentUserId = currentUserId, bottomInset = bottomInset, vm = cordadasVm)
+                else -> CordadasTab(currentUserId = currentUserId, vm = cordadasVm)
             }
         }
     }

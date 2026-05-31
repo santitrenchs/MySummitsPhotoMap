@@ -2479,54 +2479,38 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 **Symptom**: the "Crear" button on the Create-Cordada sheet (and the bottom of the Invite/Detail sheets) rendered **behind** the Android gesture/3-button nav bar — untappable. With the keyboard up the sheet rose and the button became visible; closing the keyboard dropped it back behind the nav bar. → the applied bottom inset was effectively **0**.
 
-**Root cause**: **window-inset consumption.** `FriendsScreen` has its own `Scaffold`, which consumes the system-bar insets and hands them to its content via `innerPadding`. `ModalBottomSheet` content is composed inside that already-consumed scope, so **every Compose way of reading the nav-bar inset returns 0**:
-- `padding.calculateBottomPadding()` → 0
-- `Modifier.navigationBarsPadding()` → 0
-- `WindowInsets.navigationBars` (incl. `BottomSheetDefaults.windowInsets`, the sheet's own default padding) → 0
+**Root cause**: we overrode Material 3's sheet inset handling. Cordadas originally set `contentWindowInsets = { WindowInsets(0) }` on every `ModalBottomSheet`, then tried to replace the default behavior with a manual `bottomInset` read from `FriendsScreen`'s root view. On Android edge-to-edge with 3-button navigation, that manual value still resolved effectively to 0, so the blue CTA sat underneath the translucent navigation bar.
 
-This is why `AtlasScreen`'s `PeakDetailSheet` works with a plain `.navigationBarsPadding()` (it is rendered in a **non-consumed** top-level scope) but the Cordadas sheets did not — they sit under FriendsScreen's consuming Scaffold.
-
-**Fix** (shipped — `FriendsScreen.kt` + `CordadasTab.kt`): read the **raw** nav-bar inset from the Android view root, which bypasses Compose's consumption entirely, keep it in live state so a first-composition `0` cannot get frozen forever, and thread it down as a `bottomInset: Dp`:
+**Fix strategy** (`FriendsScreen.kt` + `CordadasTab.kt`): remove the manual inset plumbing and centralize the three sheets in a shared `CordadaModalSheet` wrapper:
 
 ```kotlin
-// FriendsScreen.kt — inside Scaffold content lambda
-val view = LocalView.current
-val density = LocalDensity.current
-var bottomInsetPx by remember(view) {
-    mutableIntStateOf(
-        ViewCompat.getRootWindowInsets(view)
-            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0,
-    )
-}
-DisposableEffect(view) {
-    fun updateBottomInset() {
-        bottomInsetPx = ViewCompat.getRootWindowInsets(view)
-            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
-    }
-    updateBottomInset()
-    val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { updateBottomInset() }
-    view.viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
-    ViewCompat.requestApplyInsets(view)
-    onDispose {
-        if (view.viewTreeObserver.isAlive) {
-            view.viewTreeObserver.removeOnGlobalLayoutListener(layoutListener)
-        }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CordadaModalSheet(
+    onDismiss: () -> Unit,
+    dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        dragHandle = dragHandle,
+    ) {
+        Column(Modifier.fillMaxWidth().imePadding(), content = content)
     }
 }
-val bottomInset = with(density) { bottomInsetPx.toDp() }
-// → CordadasTab(currentUserId, bottomInset = bottomInset, vm = cordadasVm)
 ```
 
-Each of the 3 sheets then:
-- sets `contentWindowInsets = { WindowInsets(0) }` (disables the sheet's own consumption-defeated padding so it can't double up or fight the explicit value),
-- applies `.imePadding()` (keyboard handling stays correct), and
-- adds `.padding(bottom = bottomInset + Ndp)` / a trailing `Spacer(Modifier.height(bottomInset + Ndp))` so content clears the nav bar in both keyboard-up and keyboard-down states.
+Important details:
+- Leave `ModalBottomSheet`'s default `contentWindowInsets` enabled; Material 3 applies bottom insets for this component.
+- Keep `.imePadding()` in the shared wrapper so keyboard-open behavior remains correct.
+- Use only local visual spacing (`8.dp` / `16.dp`) inside Create / Invite / Detail; do not pass system inset values around as `Dp`.
 
-**Rule for future sheets rendered under a consuming Scaffold**: never trust `.navigationBarsPadding()` / `padding.calculateBottomPadding()` for the nav-bar inset inside them — they read the consumed (0) value. Either render the sheet in a non-consumed scope (sibling of the NavHost, like `NewAscentSheet`) **or** read the raw inset via `ViewCompat.getRootWindowInsets(LocalView.current)` and apply it manually.
+**Rule for future sheets rendered under a consuming Scaffold**: prefer Material 3's own inset handling first. Do not disable `contentWindowInsets` unless the sheet is moved to a different host that explicitly owns safe-area behavior.
 
 ### Gotchas (Cordadas)
 
 - **Owner cannot leave** — `removeMember` throws if `isOwner && isSelf`. The Detail sheet shows "Eliminar cordada" for the owner and "Salir de la cordada" for members; never both.
 - **Reject deletes the row** (not a soft status) — a rejected user can be cleanly re-invited.
-- **`bottomInset` must come from live raw root insets**, not `padding` and not a one-shot `remember { ... }` read — see the inset fix above. If a future refactor moves Cordadas into a NavHost wrapped in `Modifier.padding(innerPadding)`, or freezes an initial 0 before Android has applied insets, the same nav-bar overlap bug returns.
+- **Do not reintroduce manual `bottomInset` plumbing** for Cordadas sheets — see the inset fix above. If a future refactor disables `ModalBottomSheet`'s default `contentWindowInsets`, the same nav-bar overlap bug can return.
 - **Leaderboard uses `user_stats`** — a brand-new member with no ascents shows zeros until their `user_stats` row is computed (first ascent CRUD).

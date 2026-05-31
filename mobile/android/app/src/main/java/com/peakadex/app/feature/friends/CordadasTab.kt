@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -265,25 +264,42 @@ private val SearchIconSmall: ImageVector by lazy {
     }.build()
 }
 
-// ── Create sheet ───────────────────────────────────────────────────────────────
+// ── Shared sheet shell ─────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CreateCordadaSheet(bottomInset: Dp = 0.dp, onDismiss: () -> Unit, onCreate: (name: String, desc: String?) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var desc by remember { mutableStateOf("") }
-
+private fun CordadaModalSheet(
+    onDismiss: () -> Unit,
+    dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
+    content: @Composable ColumnScope.() -> Unit,
+) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor   = Color.White,
-        contentWindowInsets = { WindowInsets(0) },
+        dragHandle       = dragHandle,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .imePadding()
+                .imePadding(),
+            content = content,
+        )
+    }
+}
+
+// ── Create sheet ───────────────────────────────────────────────────────────────
+
+@Composable
+private fun CreateCordadaSheet(onDismiss: () -> Unit, onCreate: (name: String, desc: String?) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var desc by remember { mutableStateOf("") }
+
+    CordadaModalSheet(onDismiss = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(bottom = bottomInset + 8.dp),
+                .padding(bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(R.string.cordadas_create_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
@@ -316,27 +332,20 @@ private fun CreateCordadaSheet(bottomInset: Dp = 0.dp, onDismiss: () -> Unit, on
 
 // ── Invite sheet ───────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun InviteSheet(
     query: String,
     results: List<UserStub>,
     isSearching: Boolean,
     sentIds: Set<String>,
-    bottomInset: Dp = 0.dp,
     onQueryChange: (String) -> Unit,
     onInvite: (UserStub) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White,
-        contentWindowInsets = { WindowInsets(0) },
-    ) {
+    CordadaModalSheet(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .imePadding()
                 .padding(horizontal = 16.dp),
         ) {
             Text(
@@ -397,18 +406,16 @@ private fun InviteSheet(
                     HRule()
                 }
             }
-            Spacer(Modifier.height(bottomInset + 16.dp))
+            Spacer(Modifier.height(16.dp))
         }
-    } // ModalBottomSheet
+    }
 }
 
 // ── Detail sheet ───────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CordadaDetailSheet(
     detail: CordadaDetail,
-    bottomInset: Dp = 0.dp,
     inviteQuery: String,
     inviteResults: List<UserStub>,
     isSearchingInvite: Boolean,
@@ -426,10 +433,8 @@ private fun CordadaDetailSheet(
     var showConfirmDelete by remember { mutableStateOf(false) }
     var expelTarget       by remember { mutableStateOf<CordadaMemberRanking?>(null) }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor   = Color.White,
-        contentWindowInsets = { WindowInsets(0) },
+    CordadaModalSheet(
+        onDismiss = onDismiss,
         dragHandle = {
             Box(
                 modifier         = Modifier.fillMaxWidth().height(7.dp).background(Color(0xFF059669)),
@@ -501,7 +506,7 @@ private fun CordadaDetailSheet(
                     colors   = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
                 ) { Text(stringResource(R.string.cordadas_leave), fontWeight = FontWeight.SemiBold) }
             }
-            Spacer(Modifier.height(bottomInset + 8.dp))
+            Spacer(Modifier.height(8.dp))
         }
     }
 
@@ -512,7 +517,6 @@ private fun CordadaDetailSheet(
             results       = inviteResults,
             isSearching   = isSearchingInvite,
             sentIds       = inviteSentIds,
-            bottomInset   = bottomInset,
             onQueryChange = onInviteQueryChange,
             onInvite      = onInvite,
             onDismiss     = { showInviteSheet = false },
@@ -563,7 +567,6 @@ private fun CordadaDetailSheet(
 @Composable
 fun CordadasTab(
     currentUserId: String,
-    bottomInset: Dp = 0.dp,
     vm: CordadasViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -651,7 +654,6 @@ fun CordadasTab(
     // Create sheet
     if (showCreateSheet) {
         CreateCordadaSheet(
-            bottomInset = bottomInset,
             onDismiss = { showCreateSheet = false },
             onCreate  = { name, desc ->
                 showCreateSheet = false
@@ -670,7 +672,6 @@ fun CordadasTab(
         } else if (detail != null) {
             CordadaDetailSheet(
                 detail             = detail,
-                bottomInset        = bottomInset,
                 inviteQuery        = state.inviteQuery,
                 inviteResults      = state.inviteResults,
                 isSearchingInvite  = state.isSearchingInvite,
