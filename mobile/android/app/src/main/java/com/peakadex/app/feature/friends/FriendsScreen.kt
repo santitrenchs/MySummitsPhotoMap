@@ -1,5 +1,6 @@
 package com.peakadex.app.feature.friends
 
+import android.view.ViewTreeObserver
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -476,11 +477,30 @@ fun FriendsScreen(
         // inherits that consumed scope. Going through the root WindowInsets bypasses it.
         val view = LocalView.current
         val density = LocalDensity.current
-        val bottomInset = remember(view, density) {
-            val px = ViewCompat.getRootWindowInsets(view)
-                ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
-            with(density) { px.toDp() }
+        var bottomInsetPx by remember(view) {
+            mutableIntStateOf(
+                ViewCompat.getRootWindowInsets(view)
+                    ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0,
+            )
         }
+        DisposableEffect(view) {
+            fun updateBottomInset() {
+                bottomInsetPx = ViewCompat.getRootWindowInsets(view)
+                    ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
+            }
+
+            updateBottomInset()
+            val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { updateBottomInset() }
+            view.viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
+            ViewCompat.requestApplyInsets(view)
+
+            onDispose {
+                if (view.viewTreeObserver.isAlive) {
+                    view.viewTreeObserver.removeOnGlobalLayoutListener(layoutListener)
+                }
+            }
+        }
+        val bottomInset = with(density) { bottomInsetPx.toDp() }
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (selectedTab) {
                 0    -> AmigosTabContent(vm = friendsVm)

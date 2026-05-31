@@ -2486,17 +2486,34 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 This is why `AtlasScreen`'s `PeakDetailSheet` works with a plain `.navigationBarsPadding()` (it is rendered in a **non-consumed** top-level scope) but the Cordadas sheets did not — they sit under FriendsScreen's consuming Scaffold.
 
-**Fix** (shipped — `FriendsScreen.kt` + `CordadasTab.kt`): read the **raw** nav-bar inset from the Android view root, which bypasses Compose's consumption entirely, and thread it down as a `bottomInset: Dp`:
+**Fix** (shipped — `FriendsScreen.kt` + `CordadasTab.kt`): read the **raw** nav-bar inset from the Android view root, which bypasses Compose's consumption entirely, keep it in live state so a first-composition `0` cannot get frozen forever, and thread it down as a `bottomInset: Dp`:
 
 ```kotlin
 // FriendsScreen.kt — inside Scaffold content lambda
 val view = LocalView.current
 val density = LocalDensity.current
-val bottomInset = remember(view, density) {
-    val px = ViewCompat.getRootWindowInsets(view)
-        ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
-    with(density) { px.toDp() }
+var bottomInsetPx by remember(view) {
+    mutableIntStateOf(
+        ViewCompat.getRootWindowInsets(view)
+            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0,
+    )
 }
+DisposableEffect(view) {
+    fun updateBottomInset() {
+        bottomInsetPx = ViewCompat.getRootWindowInsets(view)
+            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
+    }
+    updateBottomInset()
+    val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { updateBottomInset() }
+    view.viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
+    ViewCompat.requestApplyInsets(view)
+    onDispose {
+        if (view.viewTreeObserver.isAlive) {
+            view.viewTreeObserver.removeOnGlobalLayoutListener(layoutListener)
+        }
+    }
+}
+val bottomInset = with(density) { bottomInsetPx.toDp() }
 // → CordadasTab(currentUserId, bottomInset = bottomInset, vm = cordadasVm)
 ```
 
@@ -2511,5 +2528,5 @@ Each of the 3 sheets then:
 
 - **Owner cannot leave** — `removeMember` throws if `isOwner && isSelf`. The Detail sheet shows "Eliminar cordada" for the owner and "Salir de la cordada" for members; never both.
 - **Reject deletes the row** (not a soft status) — a rejected user can be cleanly re-invited.
-- **`bottomInset` must come from the raw root insets**, not `padding` — see the inset fix above. If a future refactor moves Cordadas into a NavHost wrapped in `Modifier.padding(innerPadding)`, the same 0-inset bug returns.
+- **`bottomInset` must come from live raw root insets**, not `padding` and not a one-shot `remember { ... }` read — see the inset fix above. If a future refactor moves Cordadas into a NavHost wrapped in `Modifier.padding(innerPadding)`, or freezes an initial 0 before Android has applied insets, the same nav-bar overlap bug returns.
 - **Leaderboard uses `user_stats`** — a brand-new member with no ascents shows zeros until their `user_stats` row is computed (first ascent CRUD).
