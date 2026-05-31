@@ -409,11 +409,11 @@ private fun FriendRow(entry: FriendEntry, onClick: () -> Unit, onRemove: () -> U
                 Text("${entry.friend.uniquePeaks}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
                 Text(" ${stringResource(R.string.home_leaderboard_col_peaks)}", fontSize = 12.sp, color = FriendsTextSecondary)
                 Text("  ·  ", fontSize = 12.sp, color = sep)
-                Text("${entry.friend.totalEp}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
-                Text(" ${stringResource(R.string.home_leaderboard_col_ep)}", fontSize = 12.sp, color = FriendsTextSecondary)
-                Text("  ·  ", fontSize = 12.sp, color = sep)
                 CairnIcon(Modifier.padding(end = 3.dp))
                 Text("${entry.friend.totalCairns}", fontSize = 12.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
+                Text("  ·  ", fontSize = 12.sp, color = sep)
+                Text("${entry.friend.totalEp}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
+                Text(" ${stringResource(R.string.home_leaderboard_col_ep)}", fontSize = 12.sp, color = FriendsTextSecondary)
             }
         }
         Box {
