@@ -1145,3 +1145,55 @@ duration:   1000ms minimum, then navigates to Login or Home
 **Rationale:** the OS splash screen already shows the app icon on a white background, so this creates a seamless white → white → app transition. The wordmark at 44dp is slightly larger than the top bar (32dp) to read well on a full screen. No animation — clean and fast.
 
 **Previous design (removed):** animated `✿` emoji cycling through rarity colors (`RARITIES` list) with scale pulse, on a `#0D2538` navy background. Replaced because the navy background created a jarring color transition to the white login screen.
+
+---
+
+## Cordadas — Climbing Groups (Android, 2026-05-31)
+
+Named climbing groups ("squads"). Accessed from the Home avatar dropdown → **Amigos / Cordadas** screen. See `CLAUDE.md → "Cordadas — Climbing Groups"` for the data model, API and the ModalBottomSheet nav-bar inset fix.
+
+**File:** `feature/friends/CordadasTab.kt` (UI) + `FriendsScreen.kt` (host).
+
+### Friends screen shell
+
+`CenterAlignedTopAppBar` (white, back arrow — it's a **secondary** screen, no logo) + `SecondaryTabRow` with two tabs:
+
+```
+┌─────────────────────────────────────┐
+│  ‹      Amigos                       │   CenterAlignedTopAppBar
+├─────────────────────────────────────┤
+│   Amigos        │     Cordadas       │   SecondaryTabRow (active = PeakBlueActive)
+├─────────────────────────────────────┤
+│  (tab content)                       │
+```
+
+- Tab 0 **Amigos** → `AmigosTabContent` (existing friends/requests/search flow).
+- Tab 1 **Cordadas** → `CordadasTab`.
+
+### Cordadas tab layout (top → bottom)
+
+1. **Invitaciones pendientes** (only if any) — `InviteCard` rows: gradient-green avatar + name + "Invitado por {owner}" + **Aceptar** (blue `SmallBtn`) / **Rechazar** (ghost gray `SmallBtn`).
+2. **Tus cordadas** — `CordadaRow`s: green gradient avatar + name + (green **"Propietario"** badge pill if owner) + "{n} miembros" subtitle + chevron-right. Tapping opens the **Detail sheet**.
+3. **"+ Crear cordada"** action → opens the **Create sheet**.
+4. Empty state when no cordadas + no invites.
+
+### Avatars & colors
+
+- `CordadaAvatar`: circle, `linearGradient(#059669 → #34D399)`, white bold initials (up to 2).
+- Owner badge: `#F0FDF4` bg, `#059669` text, 10sp bold, 4dp radius.
+- Member subtitle / counts: `#9CA3AF`. Names: `#111827` SemiBold.
+
+### Three bottom sheets (`ModalBottomSheet`, white)
+
+**1. Create Cordada** — title "Crear cordada", `OutlinedTextField` name (≤60 chars) + optional description, **"Crear"** primary button.
+
+**2. Invite** (nested inside Detail) — title "Invitar", search `BasicTextField`; results = `searchUsers` minus current members; each result row has an **Invitar** button that turns into **Invitado** after tap (`inviteSentIds`).
+
+**3. Detail** — drag handle is a **7dp green (`#059669`) band** (rarity-band pattern from Atlas: `containerColor = White`, the band is drawn explicitly in `dragHandle`). Header = cordada name + description. Body = **member leaderboard** sorted by `uniquePeaks` desc then `totalEp` desc: rank + avatar + name (+ "Tú"/owner markers) + level + uniquePeaks + EP. Per-member **expel** for the owner. Footer action:
+   - Owner → **"Eliminar cordada"** (destructive) + per-member expel.
+   - Member → **"Salir de la cordada"**.
+   - Never both (owner can't leave).
+
+### ⚠️ Nav-bar inset (critical for all 3 sheets)
+
+The sheets sit under `FriendsScreen`'s consuming `Scaffold`, so `.navigationBarsPadding()` / `BottomSheetDefaults.windowInsets` resolve to **0** and the bottom button hides behind the system nav bar. Fix: `FriendsScreen` reads the **raw** nav-bar inset via `ViewCompat.getRootWindowInsets(LocalView.current)` and passes it down as `bottomInset: Dp`; each sheet sets `contentWindowInsets = { WindowInsets(0) }`, applies `.imePadding()`, and pads its bottom by `bottomInset + Ndp`. Full rationale in CLAUDE.md.

@@ -2378,3 +2378,138 @@ item {
 - **`GetCredentialCancellationException` is a subclass of `GetCredentialException`**: catch the specific subclass first or the generic handler will intercept cancellations and show a spurious error.
 - **Web Client ID vs Android Client ID**: `setServerClientId()` in `GetGoogleIdOption.Builder` must receive the **Web Client ID**, not the Android Client ID. Using the Android Client ID causes a token validation failure on the server.
 - **`GOOGLE_CLIENT_ID` env var on Railway**: must be set on both staging and production. Without it, the server skips audience validation (logs a warning) but still works — however it's a security hole. Always set it.
+
+---
+
+## Cordadas — Climbing Groups (Android + v1 API, 2026-05-31)
+
+Cordadas are named climbing groups (think "teams"/"squads"). A user can belong to many cordadas. Each cordada has one **OWNER** and N **MEMBER**s. Membership is invite-based (no auto-join). The feature shipped on Android first; web UI is pending.
+
+> **Distinction from Friends**: friendships are 1:1, bidirectional, and drive the ascents feed. A cordada is an N-person named group with its own internal leaderboard. They are independent — being in a cordada together does NOT create a friendship, and vice versa.
+
+### Data model (Prisma)
+
+```prisma
+model Cordada {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  avatarUrl   String?              // reserved, not yet used by the UI
+  ownerId     String
+  owner       User     @relation("CordadaOwner", fields: [ownerId], references: [id])
+  members     CordadaMember[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([ownerId])
+  @@map("cordadas")
+}
+
+model CordadaMember {
+  cordadaId   String
+  cordada     Cordada             @relation(fields: [cordadaId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        CordadaRole         @default(MEMBER)   // OWNER | MEMBER
+  status      CordadaMemberStatus @default(PENDING)  // PENDING | ACCEPTED
+  invitedById String?
+  joinedAt    DateTime?
+  createdAt   DateTime @default(now())
+  @@id([cordadaId, userId])                 // composite PK — one membership per (cordada,user)
+  @@index([userId])                          // "all cordadas this user is in"
+  @@index([cordadaId, status])               // "accepted members of this cordada"
+  @@map("cordada_members")
+}
+```
+
+- The **owner is also a `CordadaMember`** row (`role=OWNER, status=ACCEPTED`) created in the same `prisma.cordada.create` transaction. This keeps `memberCount` and the leaderboard uniform — no special-casing the owner.
+- An **invite** is a `CordadaMember` row with `status=PENDING`. Accepting flips it to `ACCEPTED` + sets `joinedAt`. Rejecting **deletes** the row (so the user can be re-invited later).
+- `onDelete: Cascade` on both relations: deleting a cordada or a user wipes the membership rows automatically.
+
+### Service — `lib/services/cordada.service.ts`
+
+All business logic lives here (route handlers only auth + parse + call). Uses the shared `prisma` client directly (cross-user data, like `home.service.ts`).
+
+| Function | Auth rule |
+|---|---|
+| `listMyCordadas(userId)` | returns `CordadaSummary[]` — only `status=ACCEPTED` memberships |
+| `listPendingInvites(userId)` | returns `CordadaInvite[]` — `status=PENDING`, ordered by `createdAt asc` |
+| `createCordada(ownerId, name, description?)` | creates cordada + owner membership in one call |
+| `getCordadaDetail(cordadaId, currentUserId)` | members sorted by **`uniquePeaks` desc, then `totalEp` desc** (internal leaderboard) |
+| `inviteToCordada(cordadaId, ownerId, targetUserId)` | **owner-only**; rejects self-invite + existing membership/invite |
+| `respondToCordadaInvite(cordadaId, userId, "ACCEPTED"\|"REJECTED")` | only the invitee, only if a PENDING row exists |
+| `removeMember(cordadaId, requesterId, targetUserId)` | owner can expel anyone; a member can remove **self** (leave). **Owner cannot leave — must delete instead** |
+| `deleteCordada(cordadaId, ownerId)` | **owner-only** |
+
+**Leaderboard stats source**: `getCordadaDetail` reads `levelIdx`, `uniquePeaks`, `totalEp` from the pre-computed **`user_stats`** table (same source as the home leaderboard), not by scanning ascents. Members without a `user_stats` row fall back to `levelIdx=1, uniquePeaks=0, totalEp=0`.
+
+### API — `app/api/v1/cordadas/` (Bearer JWT, mobile)
+
+| Method + path | Handler | Body / params |
+|---|---|---|
+| `GET /api/v1/cordadas` | list | → `{ cordadas, pendingInvites }` |
+| `POST /api/v1/cordadas` | create | `{ name, description? }` |
+| `GET /api/v1/cordadas/{id}` | detail | → `{ cordada }` |
+| `DELETE /api/v1/cordadas/{id}` | delete (owner) | — |
+| `POST /api/v1/cordadas/{id}/invite` | invite (owner) | `{ userId }` |
+| `PATCH /api/v1/cordadas/{id}/respond` | accept/reject invite | `{ action: "ACCEPTED"\|"REJECTED" }` |
+| `DELETE /api/v1/cordadas/{id}/members/{userId}` | expel / leave | — |
+
+Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCordada`, `getCordadaDetail`, `inviteToCordada`, `respondToCordadaInvite`, `removeCordadaMember`, `deleteCordada`). Member-search for invites reuses the existing `GET /api/v1/users/search` (`searchUsers`).
+
+### Android layer
+
+| File | Role |
+|---|---|
+| `feature/friends/FriendsScreen.kt` | Hosts a `SecondaryTabRow`: tab 0 = **Amigos** (`AmigosTabContent`), tab 1 = **Cordadas** (`CordadasTab`). Own `Scaffold` with `CenterAlignedTopAppBar` + back arrow (secondary screen). |
+| `feature/friends/CordadasTab.kt` | All Cordadas UI: list, invite cards, the 3 `ModalBottomSheet`s (Create / Invite / Detail). |
+| `feature/friends/CordadasViewModel.kt` | `CordadasUiState` + all API calls. |
+| `feature/friends/FriendsViewModel.kt` | Amigos tab state (pre-existing friends flow). |
+| `core/model/Models.kt` | `CordadaSummary`, `CordadaInvite`, `CordadasResponse`, `CordadaMemberRanking`, `CordadaDetail`, `CordadaDetailResponse`. |
+
+**Navigation**: `FriendsScreen` is a **top-level route on the outer `navController`** (`Screen.Friends`), reached from the Home avatar dropdown via `onNavigateToFriends`. It is **not** inside MainScaffold's `tabNavController` NavHost — this matters for the inset bug below.
+
+`CordadasViewModel` notes:
+- `load()` calls `getCordadas()` → fills `cordadas` + `pendingInvites`.
+- `onInviteQueryChange` debounces 350ms, then `searchUsers(query)`, then **excludes current members** by `userId`.
+- `inviteUser` tracks `inviteSentIds` so the row shows "Invitado" without a reload.
+- `respondToInvite` optimistically removes the invite from `pendingInvites`; calls `load()` only on ACCEPTED.
+- Optimistic mutation on `removeMember` (filters the member out of `selectedDetail.members`); `leaveCordada`/`deleteCordada` clear `selectedDetail` + `load()`.
+
+### ⚠️ Known issue / fix — ModalBottomSheet content hidden behind the system navigation bar
+
+**Symptom**: the "Crear" button on the Create-Cordada sheet (and the bottom of the Invite/Detail sheets) rendered **behind** the Android gesture/3-button nav bar — untappable. With the keyboard up the sheet rose and the button became visible; closing the keyboard dropped it back behind the nav bar. → the applied bottom inset was effectively **0**.
+
+**Root cause**: **window-inset consumption.** `FriendsScreen` has its own `Scaffold`, which consumes the system-bar insets and hands them to its content via `innerPadding`. `ModalBottomSheet` content is composed inside that already-consumed scope, so **every Compose way of reading the nav-bar inset returns 0**:
+- `padding.calculateBottomPadding()` → 0
+- `Modifier.navigationBarsPadding()` → 0
+- `WindowInsets.navigationBars` (incl. `BottomSheetDefaults.windowInsets`, the sheet's own default padding) → 0
+
+This is why `AtlasScreen`'s `PeakDetailSheet` works with a plain `.navigationBarsPadding()` (it is rendered in a **non-consumed** top-level scope) but the Cordadas sheets did not — they sit under FriendsScreen's consuming Scaffold.
+
+**Fix** (shipped — `FriendsScreen.kt` + `CordadasTab.kt`): read the **raw** nav-bar inset from the Android view root, which bypasses Compose's consumption entirely, and thread it down as a `bottomInset: Dp`:
+
+```kotlin
+// FriendsScreen.kt — inside Scaffold content lambda
+val view = LocalView.current
+val density = LocalDensity.current
+val bottomInset = remember(view, density) {
+    val px = ViewCompat.getRootWindowInsets(view)
+        ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
+    with(density) { px.toDp() }
+}
+// → CordadasTab(currentUserId, bottomInset = bottomInset, vm = cordadasVm)
+```
+
+Each of the 3 sheets then:
+- sets `contentWindowInsets = { WindowInsets(0) }` (disables the sheet's own consumption-defeated padding so it can't double up or fight the explicit value),
+- applies `.imePadding()` (keyboard handling stays correct), and
+- adds `.padding(bottom = bottomInset + Ndp)` / a trailing `Spacer(Modifier.height(bottomInset + Ndp))` so content clears the nav bar in both keyboard-up and keyboard-down states.
+
+**Rule for future sheets rendered under a consuming Scaffold**: never trust `.navigationBarsPadding()` / `padding.calculateBottomPadding()` for the nav-bar inset inside them — they read the consumed (0) value. Either render the sheet in a non-consumed scope (sibling of the NavHost, like `NewAscentSheet`) **or** read the raw inset via `ViewCompat.getRootWindowInsets(LocalView.current)` and apply it manually.
+
+### Gotchas (Cordadas)
+
+- **Owner cannot leave** — `removeMember` throws if `isOwner && isSelf`. The Detail sheet shows "Eliminar cordada" for the owner and "Salir de la cordada" for members; never both.
+- **Reject deletes the row** (not a soft status) — a rejected user can be cleanly re-invited.
+- **`bottomInset` must come from the raw root insets**, not `padding` — see the inset fix above. If a future refactor moves Cordadas into a NavHost wrapped in `Modifier.padding(innerPadding)`, the same 0-inset bug returns.
+- **Leaderboard uses `user_stats`** — a brand-new member with no ascents shows zeros until their `user_stats` row is computed (first ascent CRUD).
