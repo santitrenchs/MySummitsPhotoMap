@@ -1196,4 +1196,10 @@ Named climbing groups ("squads"). Accessed from the Home avatar dropdown → **A
 
 ### ⚠️ Nav-bar inset (critical for all 3 sheets)
 
-Cordadas sheets use a shared `CordadaModalSheet` wrapper around Material 3 `ModalBottomSheet`, matching the working Atlas `LayersPanel` pattern: `rememberModalBottomSheetState(skipPartiallyExpanded = true)`, do **not** override `contentWindowInsets`, do **not** thread a manual `bottomInset` from `FriendsScreen`, and apply `.navigationBarsPadding()` + `.imePadding()` inside the sheet content. Full rationale in CLAUDE.md.
+Cordadas sheets use a shared `CordadaModalSheet` wrapper around Material 3 `ModalBottomSheet`, matching the working Atlas `LayersPanel` pattern:
+- `rememberModalBottomSheetState(skipPartiallyExpanded = true)` is mandatory. Without it, closing the keyboard can let the sheet settle into a too-low partial anchor and place the CTA behind Android's 3-button nav bar.
+- Do **not** override `contentWindowInsets`.
+- Do **not** thread a manual `bottomInset` from `FriendsScreen`.
+- Apply `.navigationBarsPadding()` + `.imePadding()` inside the sheet content.
+
+Full rationale in CLAUDE.md.

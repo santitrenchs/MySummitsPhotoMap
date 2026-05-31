@@ -2477,9 +2477,14 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 ### ⚠️ Known issue / fix — ModalBottomSheet content hidden behind the system navigation bar
 
-**Symptom**: the "Crear" button on the Create-Cordada sheet (and the bottom of the Invite/Detail sheets) rendered **behind** the Android gesture/3-button nav bar — untappable. With the keyboard up the sheet rose and the button became visible; closing the keyboard dropped it back behind the nav bar. → the applied bottom inset was effectively **0**.
+**Symptom**: the "Crear" button on the Create-Cordada sheet (and the bottom of the Invite/Detail sheets) rendered **behind** the Android gesture/3-button nav bar — untappable. With the keyboard up the sheet rose and the button became visible; pressing the keyboard OK/done closed the keyboard and the sheet dropped too low again. Dragging the sheet slightly upward made the button appear correctly above the Android nav buttons.
 
-**Root cause**: the sheet content did not get a reliable bottom safe-area inset. Cordadas originally set `contentWindowInsets = { WindowInsets(0) }` on every `ModalBottomSheet`, then tried to replace the default behavior with a manual `bottomInset` read from `FriendsScreen`'s root view. On Android edge-to-edge with 3-button navigation, that manual value still resolved effectively to 0.
+**Confirmed root cause**: this was not primarily a missing padding value. The sheet was allowed to settle into Material 3's partially-expanded anchor after the IME closed. That anchor was low enough that the CTA overlapped the 3-button navigation bar. `navigationBarsPadding()` worked only once the sheet was manually nudged upward because the sheet's anchor/offset, not the content padding alone, was wrong.
+
+Earlier false fixes:
+- Manual `bottomInset` read from `FriendsScreen` via `ViewCompat.getRootWindowInsets(...)` stayed unreliable under edge-to-edge + this nested screen.
+- Leaving only Material 3's default `contentWindowInsets` was insufficient.
+- Applying `WindowInsets.safeContent.only(WindowInsetsSides.Bottom)` inside the sheet did not fix the low settled anchor.
 
 **Fix strategy** (`FriendsScreen.kt` + `CordadasTab.kt`): remove the manual `FriendsScreen` inset plumbing and centralize the three sheets in a shared `CordadaModalSheet` wrapper. Match the working Atlas `LayersPanel` pattern: use `skipPartiallyExpanded = true`, leave `ModalBottomSheet`'s default insets enabled, and apply `.navigationBarsPadding()` inside the sheet content.
 
@@ -2512,6 +2517,7 @@ private fun CordadaModalSheet(
 
 Important details:
 - Use `rememberModalBottomSheetState(skipPartiallyExpanded = true)` so the sheet does not settle into a too-low partial anchor after the keyboard closes.
+- This `skipPartiallyExpanded = true` line is the critical behavior fix; do not remove it just because the sheet seems visually similar without it.
 - Do not read or pass a manual `bottomInset` from `FriendsScreen`.
 - Do not override `ModalBottomSheet.contentWindowInsets`.
 - Apply `.navigationBarsPadding()` inside the wrapper, matching `AtlasScreen.kt`'s `LayersPanel`, which clears Android 3-button / gesture navigation correctly.
