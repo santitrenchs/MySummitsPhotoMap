@@ -309,9 +309,29 @@ private fun FriendRow(entry: FriendEntry, onClick: () -> Unit, onRemove: () -> U
     ) {
         UserAvatar(entry.friend.name, 40, entry.friend.avatarUrl)
         Column(Modifier.weight(1f)) {
-            Text(entry.friend.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary)
-            if (entry.friend.username != null) {
-                Text("@${entry.friend.username}", fontSize = 12.sp, color = FriendsTextMuted)
+            Text(entry.friend.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary)
+            Text(
+                "${levelEmoji(entry.friend.levelIdx)} ${levelName(entry.friend.levelIdx)}",
+                fontSize = 12.sp,
+                color = FriendsTextSecondary,
+                fontWeight = FontWeight.Medium,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(top = 2.dp),
+            ) {
+                Text(
+                    "${entry.friend.uniquePeaks} ${stringResource(R.string.home_leaderboard_col_peaks)}",
+                    fontSize = 11.sp, color = FriendsTextMuted,
+                )
+                Text(
+                    "${entry.friend.totalCairns} ${stringResource(R.string.home_leaderboard_col_cairns)}",
+                    fontSize = 11.sp, color = FriendsTextMuted,
+                )
+                Text(
+                    "${entry.friend.totalEp} ${stringResource(R.string.home_leaderboard_col_ep)}",
+                    fontSize = 11.sp, color = FriendsTextMuted,
+                )
             }
         }
         Box {
