@@ -241,7 +241,8 @@
         <item quantity="one">Voir 1 sommet</item>
         <item quantity="other">Voir %d sommets</item>
     </plurals>
-    <string name="friends_title">Amis</string>
+    <string name="friends_title">Amis et cordées</string>
+    <string name="friends_connections">%1$d connexions</string>
     <string name="friends_search_placeholder">Rechercher par nom ou pseudo…</string>
     <string name="friends_add">Ajouter</string>
     <string name="friends_request_sent">Demande envoyée</string>

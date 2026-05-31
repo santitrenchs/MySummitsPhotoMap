@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -71,6 +73,32 @@ private val BackIcon: ImageVector by lazy {
             strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
         ) {
             moveTo(15f, 18f); lineTo(9f, 12f); lineTo(15f, 6f)
+        }
+    }.build()
+}
+
+private val PersonAddIcon: ImageVector by lazy {
+    ImageVector.Builder("PersonAdd", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 2f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            // Head
+            moveTo(13f, 7f)
+            curveTo(13f, 9.21f, 11.21f, 11f, 9f, 11f)
+            curveTo(6.79f, 11f, 5f, 9.21f, 5f, 7f)
+            curveTo(5f, 4.79f, 6.79f, 3f, 9f, 3f)
+            curveTo(11.21f, 3f, 13f, 4.79f, 13f, 7f)
+            close()
+            // Shoulders
+            moveTo(1f, 21f)
+            curveTo(1f, 17f, 4.58f, 14f, 9f, 14f)
+            curveTo(11f, 14f, 12.83f, 14.61f, 14.24f, 15.63f)
+            // Plus
+            moveTo(19f, 8f); lineTo(19f, 14f)
+            moveTo(16f, 11f); lineTo(22f, 11f)
         }
     }.build()
 }
@@ -513,6 +541,58 @@ private fun SpeedDialRow(emoji: String, label: String, onClick: () -> Unit) {
     }
 }
 
+// ── Header with mountain background ──────────────────────────────────────────────
+
+@Composable
+private fun FriendsHeader(connections: Int, onBack: () -> Unit, onAdd: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White),
+    ) {
+        // Mountain landscape, anchored bottom-right, fading into the white background.
+        Image(
+            painter            = painterResource(R.drawable.friends_header_bg),
+            contentDescription = null,
+            contentScale       = ContentScale.Crop,
+            alignment          = Alignment.BottomEnd,
+            modifier           = Modifier
+                .align(Alignment.BottomEnd)
+                .fillMaxWidth()
+                .height(150.dp),
+        )
+        Column(Modifier.statusBarsPadding()) {
+            // Top action row: back + add.
+            Row(
+                modifier          = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(BackIcon, contentDescription = "Volver", tint = Color.Unspecified)
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = onAdd) {
+                    Icon(PersonAddIcon, contentDescription = stringResource(R.string.friends_fab_add), tint = FriendsTextPrimary)
+                }
+            }
+            // Title + subtitle.
+            Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 18.dp)) {
+                Text(
+                    stringResource(R.string.friends_title),
+                    fontSize   = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = FriendsTextPrimary,
+                )
+                Text(
+                    stringResource(R.string.friends_connections, connections),
+                    fontSize = 13.sp,
+                    color    = FriendsTextSecondary,
+                )
+            }
+        }
+    }
+}
+
 // ── Screen ─────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -549,31 +629,12 @@ fun FriendsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            CenterAlignedTopAppBar(
-                title          = {
-                    Text(
-                        stringResource(R.string.friends_title),
-                        fontSize   = 17.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(BackIcon, contentDescription = "Volver", tint = Color.Unspecified)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+            val connections = friendsState.friends.size + cordadasState.cordadas.size
+            FriendsHeader(
+                connections = connections,
+                onBack      = onBack,
+                onAdd       = { showActionSheet = true },
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick        = { showActionSheet = true },
-                shape          = CircleShape,
-                containerColor = PeakGreenCTA,
-                contentColor   = Color.White,
-            ) {
-                Icon(PlusSmallIcon, contentDescription = stringResource(R.string.friends_fab_add), tint = Color.White)
-            }
         },
         containerColor = PeakBackground,
     ) { padding ->

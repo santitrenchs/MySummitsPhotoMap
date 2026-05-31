@@ -245,7 +245,8 @@
     </plurals>
 
     <!-- Friends screen -->
-    <string name="friends_title">Amigos</string>
+    <string name="friends_title">Amigos y cordadas</string>
+    <string name="friends_connections">%1$d conexiones</string>
     <string name="friends_search_placeholder">Buscar por nombre o usuario…</string>
     <string name="friends_add">Añadir</string>
     <string name="friends_request_sent">Solicitud enviada</string>
