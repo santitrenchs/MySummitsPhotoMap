@@ -273,8 +273,11 @@ private fun CordadaModalSheet(
     dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState       = sheetState,
         containerColor   = Color.White,
         dragHandle       = dragHandle,
     ) {

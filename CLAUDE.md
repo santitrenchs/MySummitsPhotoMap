@@ -2481,7 +2481,7 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 **Root cause**: the sheet content did not get a reliable bottom safe-area inset. Cordadas originally set `contentWindowInsets = { WindowInsets(0) }` on every `ModalBottomSheet`, then tried to replace the default behavior with a manual `bottomInset` read from `FriendsScreen`'s root view. On Android edge-to-edge with 3-button navigation, that manual value still resolved effectively to 0.
 
-**Fix strategy** (`FriendsScreen.kt` + `CordadasTab.kt`): remove the manual `FriendsScreen` inset plumbing and centralize the three sheets in a shared `CordadaModalSheet` wrapper. Match the working Atlas `LayersPanel` pattern: leave `ModalBottomSheet`'s default insets enabled and apply `.navigationBarsPadding()` inside the sheet content.
+**Fix strategy** (`FriendsScreen.kt` + `CordadasTab.kt`): remove the manual `FriendsScreen` inset plumbing and centralize the three sheets in a shared `CordadaModalSheet` wrapper. Match the working Atlas `LayersPanel` pattern: use `skipPartiallyExpanded = true`, leave `ModalBottomSheet`'s default insets enabled, and apply `.navigationBarsPadding()` inside the sheet content.
 
 ```kotlin
 @OptIn(ExperimentalMaterial3Api::class)
@@ -2491,8 +2491,11 @@ private fun CordadaModalSheet(
     dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = Color.White,
         dragHandle = dragHandle,
     ) {
@@ -2508,6 +2511,7 @@ private fun CordadaModalSheet(
 ```
 
 Important details:
+- Use `rememberModalBottomSheetState(skipPartiallyExpanded = true)` so the sheet does not settle into a too-low partial anchor after the keyboard closes.
 - Do not read or pass a manual `bottomInset` from `FriendsScreen`.
 - Do not override `ModalBottomSheet.contentWindowInsets`.
 - Apply `.navigationBarsPadding()` inside the wrapper, matching `AtlasScreen.kt`'s `LayersPanel`, which clears Android 3-button / gesture navigation correctly.
