@@ -1196,4 +1196,4 @@ Named climbing groups ("squads"). Accessed from the Home avatar dropdown → **A
 
 ### ⚠️ Nav-bar inset (critical for all 3 sheets)
 
-Cordadas sheets use a shared `CordadaModalSheet` wrapper around Material 3 `ModalBottomSheet`. Do **not** set `contentWindowInsets = { WindowInsets(0) }` and do **not** thread a manual `bottomInset` from `FriendsScreen`; that proved unreliable on Android edge-to-edge with 3-button navigation. Let Material 3 apply the sheet's default bottom insets, then keep only local visual spacing and `.imePadding()` in the shared wrapper. Full rationale in CLAUDE.md.
+Cordadas sheets use a shared `CordadaModalSheet` wrapper around Material 3 `ModalBottomSheet`. Do **not** thread a manual `bottomInset` from `FriendsScreen`; that proved unreliable on Android edge-to-edge with 3-button navigation. The wrapper disables the sheet's default `contentWindowInsets` and applies `WindowInsets.safeContent.only(WindowInsetsSides.Bottom)` inside the sheet content, plus `.imePadding()` for keyboard behavior. Full rationale in CLAUDE.md.
