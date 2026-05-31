@@ -241,7 +241,8 @@
         <item quantity="one">See 1 peak</item>
         <item quantity="other">See %d peaks</item>
     </plurals>
-    <string name="friends_title">Friends</string>
+    <string name="friends_title">Friends &amp; teams</string>
+    <string name="friends_connections">%1$d connections</string>
     <string name="friends_search_placeholder">Search by name or username…</string>
     <string name="friends_add">Add</string>
     <string name="friends_request_sent">Request sent</string>

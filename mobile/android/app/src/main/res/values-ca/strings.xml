@@ -241,7 +241,8 @@
         <item quantity="one">Veure 1 cim</item>
         <item quantity="other">Veure %d cims</item>
     </plurals>
-    <string name="friends_title">Amics</string>
+    <string name="friends_title">Amics i cordades</string>
+    <string name="friends_connections">%1$d connexions</string>
     <string name="friends_search_placeholder">Cerca per nom o usuari…</string>
     <string name="friends_add">Afegir</string>
     <string name="friends_request_sent">Sol·licitud enviada</string>
