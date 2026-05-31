@@ -571,8 +571,14 @@ private fun FriendsHeader(connections: Int, onBack: () -> Unit, onAdd: () -> Uni
                     Icon(BackIcon, contentDescription = "Volver", tint = Color.Unspecified)
                 }
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = onAdd) {
-                    Icon(PersonAddIcon, contentDescription = stringResource(R.string.friends_fab_add), tint = FriendsTextPrimary)
+                FilledTonalIconButton(
+                    onClick = onAdd,
+                    colors  = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = Color.White.copy(alpha = 0.85f),
+                        contentColor   = FriendsTextPrimary,
+                    ),
+                ) {
+                    Icon(PersonAddIcon, contentDescription = stringResource(R.string.friends_fab_add))
                 }
             }
             // Title + subtitle.
