@@ -241,4 +241,17 @@
         <item quantity="one">Voir 1 sommet</item>
         <item quantity="other">Voir %d sommets</item>
     </plurals>
+    <string name="friends_title">Amis</string>
+    <string name="friends_search_placeholder">Rechercher par nom ou pseudo…</string>
+    <string name="friends_add">Ajouter</string>
+    <string name="friends_request_sent">Demande envoyée</string>
+    <string name="friends_accept">Accepter</string>
+    <string name="friends_reject">Refuser</string>
+    <string name="friends_remove">Supprimer l\'ami</string>
+    <string name="friends_already_friends">Déjà amis</string>
+    <string name="friends_no_results">Aucun résultat</string>
+    <string name="friends_section_incoming">Demandes reçues</string>
+    <string name="friends_section_friends">Amis</string>
+    <string name="friends_empty">Vous n\'avez pas encore d\'amis sur Peakadex.</string>
+    <string name="friends_menu_label">Amis</string>
 </resources>

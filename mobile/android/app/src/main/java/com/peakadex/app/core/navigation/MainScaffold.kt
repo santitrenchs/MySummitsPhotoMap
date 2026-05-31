@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,6 +48,7 @@ import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
 import com.peakadex.app.feature.logbook.LogbookScreen
 import com.peakadex.app.feature.newascent.NewAscentSheet
+import com.peakadex.app.feature.friends.FriendsScreen
 import com.peakadex.app.feature.profile.ProfileScreen
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
@@ -91,6 +93,17 @@ fun MainScaffold(navController: NavController) {
     var logbookHighlightId     by remember { mutableStateOf<String?>(null) }
     var atlasRefreshTrigger    by remember { mutableIntStateOf(0) }
 
+    // Friends badge — count of pending incoming requests
+    var pendingFriendsCount  by remember { mutableIntStateOf(0) }
+    var friendsRefreshTrigger by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(friendsRefreshTrigger) {
+        try {
+            val data = AppContainer.apiService.getFriendsData()
+            pendingFriendsCount = data.incoming.size
+        } catch (_: Exception) {}
+    }
+
     // B — Back gesture on root tab minimises the app instead of popping the back stack
     BackHandler(enabled = currentRoute == Screen.Home.route) {
         (context as? Activity)?.moveTaskToBack(true)
@@ -126,8 +139,10 @@ fun MainScaffold(navController: NavController) {
         topBar = {
             MainTopBar(
                 user                  = user,
+                pendingFriendsCount   = pendingFriendsCount,
                 onNavigateToProfile   = { navController.navigate(Screen.Profile.route) },
                 onNavigateToSettings  = { navController.navigate(Screen.Settings.route) },
+                onNavigateToFriends   = { navController.navigate(Screen.Friends.route) },
             )
         },
         // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar)
@@ -282,8 +297,10 @@ fun MainScaffold(navController: NavController) {
 @Composable
 private fun MainTopBar(
     user: User?,
+    pendingFriendsCount: Int = 0,
     onNavigateToProfile: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToFriends: () -> Unit = {},
 ) {
     val initials = user?.name?.let { name ->
         val parts = name.trim().split(" ")
@@ -304,19 +321,40 @@ private fun MainTopBar(
                     onClick  = { menuExpanded = true },
                     modifier = Modifier.padding(end = 4.dp),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(CircleShape)
-                            .background(Brush.linearGradient(listOf(PeakBlueActive, PeakBlueLight))),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text       = initials,
-                            color      = Color.White,
-                            fontSize   = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
+                    Box(modifier = Modifier.size(34.dp)) {
+                        // Avatar circle
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(Brush.linearGradient(listOf(PeakBlueActive, PeakBlueLight))),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text       = initials,
+                                color      = Color.White,
+                                fontSize   = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                        // Pending friends badge
+                        if (pendingFriendsCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFEF4444))
+                                    .align(Alignment.TopEnd),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text       = if (pendingFriendsCount > 9) "9+" else pendingFriendsCount.toString(),
+                                    color      = Color.White,
+                                    fontSize   = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -335,6 +373,40 @@ private fun MainTopBar(
                             )
                         },
                         onClick           = { menuExpanded = false; onNavigateToProfile() },
+                    )
+                    DropdownMenuItem(
+                        text              = {
+                            Row(
+                                verticalAlignment     = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(stringResource(R.string.friends_menu_label), fontSize = 14.sp)
+                                if (pendingFriendsCount > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFEF4444))
+                                            .padding(horizontal = 5.dp, vertical = 1.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text       = pendingFriendsCount.toString(),
+                                            color      = Color.White,
+                                            fontSize   = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        leadingIcon       = {
+                            Icon(
+                                FriendsIcon,
+                                contentDescription = stringResource(R.string.friends_menu_label),
+                                modifier = Modifier.size(18.dp),
+                            )
+                        },
+                        onClick           = { menuExpanded = false; onNavigateToFriends() },
                     )
                     DropdownMenuItem(
                         text              = { Text("Ajustes", fontSize = 14.sp) },
@@ -487,6 +559,58 @@ private val SettingsIcon: ImageVector by lazy {
             moveTo(18.546f, 18.546f); lineTo(19.607f, 19.607f)
             moveTo(19.607f, 10.393f); lineTo(18.546f, 11.454f)
             moveTo(11.454f, 18.546f); lineTo(10.393f, 19.607f)
+        }
+    }.build()
+}
+
+// Two-people / Friends icon
+private val FriendsIcon: ImageVector by lazy {
+    ImageVector.Builder("Friends", 24.dp, 24.dp, 24f, 24f).apply {
+        // Front person head
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 1.8f,
+        ) {
+            moveTo(9f, 11f)
+            curveTo(9f, 12.657f, 7.657f, 14f, 6f, 14f)
+            curveTo(4.343f, 14f, 3f, 12.657f, 3f, 11f)
+            curveTo(3f, 9.343f, 4.343f, 8f, 6f, 8f)
+            curveTo(7.657f, 8f, 9f, 9.343f, 9f, 11f)
+            close()
+        }
+        // Front person shoulders
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+        ) {
+            moveTo(1f, 19f)
+            curveTo(1f, 16.791f, 2.791f, 15f, 5f, 15f)
+            horizontalLineTo(7f)
+            curveTo(9.209f, 15f, 11f, 16.791f, 11f, 19f)
+        }
+        // Back person head
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 1.8f,
+        ) {
+            moveTo(20f, 11f)
+            curveTo(20f, 12.657f, 18.657f, 14f, 17f, 14f)
+            curveTo(15.343f, 14f, 14f, 12.657f, 14f, 11f)
+            curveTo(14f, 9.343f, 15.343f, 8f, 17f, 8f)
+            curveTo(18.657f, 8f, 20f, 9.343f, 20f, 11f)
+            close()
+        }
+        // Back person shoulders
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+        ) {
+            moveTo(13f, 19f)
+            curveTo(13f, 16.791f, 14.791f, 15f, 17f, 15f)
+            horizontalLineTo(19f)
+            curveTo(21.209f, 15f, 23f, 16.791f, 23f, 19f)
         }
     }.build()
 }
