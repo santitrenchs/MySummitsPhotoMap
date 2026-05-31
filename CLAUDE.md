@@ -2378,3 +2378,169 @@ item {
 - **`GetCredentialCancellationException` is a subclass of `GetCredentialException`**: catch the specific subclass first or the generic handler will intercept cancellations and show a spurious error.
 - **Web Client ID vs Android Client ID**: `setServerClientId()` in `GetGoogleIdOption.Builder` must receive the **Web Client ID**, not the Android Client ID. Using the Android Client ID causes a token validation failure on the server.
 - **`GOOGLE_CLIENT_ID` env var on Railway**: must be set on both staging and production. Without it, the server skips audience validation (logs a warning) but still works — however it's a security hole. Always set it.
+
+---
+
+## Cordadas — Climbing Groups (Android + v1 API, 2026-05-31)
+
+Cordadas are named climbing groups (think "teams"/"squads"). A user can belong to many cordadas. Each cordada has one **OWNER** and N **MEMBER**s. Membership is invite-based (no auto-join). The feature shipped on Android first; web UI is pending.
+
+> **Distinction from Friends**: friendships are 1:1, bidirectional, and drive the ascents feed. A cordada is an N-person named group with its own internal leaderboard. They are independent — being in a cordada together does NOT create a friendship, and vice versa.
+
+### Data model (Prisma)
+
+```prisma
+model Cordada {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  avatarUrl   String?              // reserved, not yet used by the UI
+  ownerId     String
+  owner       User     @relation("CordadaOwner", fields: [ownerId], references: [id])
+  members     CordadaMember[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([ownerId])
+  @@map("cordadas")
+}
+
+model CordadaMember {
+  cordadaId   String
+  cordada     Cordada             @relation(fields: [cordadaId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        CordadaRole         @default(MEMBER)   // OWNER | MEMBER
+  status      CordadaMemberStatus @default(PENDING)  // PENDING | ACCEPTED
+  invitedById String?
+  joinedAt    DateTime?
+  createdAt   DateTime @default(now())
+  @@id([cordadaId, userId])                 // composite PK — one membership per (cordada,user)
+  @@index([userId])                          // "all cordadas this user is in"
+  @@index([cordadaId, status])               // "accepted members of this cordada"
+  @@map("cordada_members")
+}
+```
+
+- The **owner is also a `CordadaMember`** row (`role=OWNER, status=ACCEPTED`) created in the same `prisma.cordada.create` transaction. This keeps `memberCount` and the leaderboard uniform — no special-casing the owner.
+- An **invite** is a `CordadaMember` row with `status=PENDING`. Accepting flips it to `ACCEPTED` + sets `joinedAt`. Rejecting **deletes** the row (so the user can be re-invited later).
+- `onDelete: Cascade` on both relations: deleting a cordada or a user wipes the membership rows automatically.
+
+### Service — `lib/services/cordada.service.ts`
+
+All business logic lives here (route handlers only auth + parse + call). Uses the shared `prisma` client directly (cross-user data, like `home.service.ts`).
+
+| Function | Auth rule |
+|---|---|
+| `listMyCordadas(userId)` | returns `CordadaSummary[]` — only `status=ACCEPTED` memberships |
+| `listPendingInvites(userId)` | returns `CordadaInvite[]` — `status=PENDING`, ordered by `createdAt asc` |
+| `createCordada(ownerId, name, description?)` | creates cordada + owner membership in one call |
+| `getCordadaDetail(cordadaId, currentUserId)` | members sorted by **`uniquePeaks` desc, then `totalEp` desc** (internal leaderboard) |
+| `inviteToCordada(cordadaId, ownerId, targetUserId)` | **owner-only**; rejects self-invite + existing membership/invite |
+| `respondToCordadaInvite(cordadaId, userId, "ACCEPTED"\|"REJECTED")` | only the invitee, only if a PENDING row exists |
+| `removeMember(cordadaId, requesterId, targetUserId)` | owner can expel anyone; a member can remove **self** (leave). **Owner cannot leave — must delete instead** |
+| `deleteCordada(cordadaId, ownerId)` | **owner-only** |
+
+**Leaderboard stats source**: `getCordadaDetail` reads `levelIdx`, `uniquePeaks`, `totalEp` from the pre-computed **`user_stats`** table (same source as the home leaderboard), not by scanning ascents. Members without a `user_stats` row fall back to `levelIdx=1, uniquePeaks=0, totalEp=0`.
+
+### API — `app/api/v1/cordadas/` (Bearer JWT, mobile)
+
+| Method + path | Handler | Body / params |
+|---|---|---|
+| `GET /api/v1/cordadas` | list | → `{ cordadas, pendingInvites }` |
+| `POST /api/v1/cordadas` | create | `{ name, description? }` |
+| `GET /api/v1/cordadas/{id}` | detail | → `{ cordada }` |
+| `DELETE /api/v1/cordadas/{id}` | delete (owner) | — |
+| `POST /api/v1/cordadas/{id}/invite` | invite (owner) | `{ userId }` |
+| `PATCH /api/v1/cordadas/{id}/respond` | accept/reject invite | `{ action: "ACCEPTED"\|"REJECTED" }` |
+| `DELETE /api/v1/cordadas/{id}/members/{userId}` | expel / leave | — |
+
+Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCordada`, `getCordadaDetail`, `inviteToCordada`, `respondToCordadaInvite`, `removeCordadaMember`, `deleteCordada`). Member-search for invites reuses the existing `GET /api/v1/users/search` (`searchUsers`).
+
+### Android layer — WhatsApp-style unified screen (rediseño 2026-05-31)
+
+`FriendsScreen` is a **single unified screen** (no Amigos/Cordadas tabs — the old `SecondaryTabRow` was removed). One `LazyColumn` (`UnifiedList`) lists everything in order: search bar → search results → **Solicitudes** (combined friend requests + cordada invites under one count) → **Amigos** → **Cordadas** → combined empty state. A floating `+` FAB opens an `ActionSpeedDialSheet` with two actions: **invite a friend** (by email) or **create a cordada**.
+
+| File | Role |
+|---|---|
+| `feature/friends/FriendsScreen.kt` | The unified screen + `Scaffold` (FAB + `CenterAlignedTopAppBar` back arrow, secondary screen). Owns `UnifiedList`, `InviteFriendSheet`, `ActionSpeedDialSheet`, `FriendStatsSheet`, and the package-visible helpers `UserAvatar`/`SectionLabel`/`HRule`/`LEVEL_EMOJIS` (the last lives in CordadasTab.kt). |
+| `feature/friends/CordadasTab.kt` | Cordadas UI pieces reused by the unified screen: `CordadaCard`, `InviteCard`, `CreateCordadaSheet`, `CordadaDetailSheet`, `CordadaDetailHost`, `CordadaModalSheet`. |
+| `feature/friends/CordadasViewModel.kt` | `CordadasUiState` + all cordada API calls (incl. `createCordada(name, desc, memberIds, avatarBytes)`). |
+| `feature/friends/FriendsViewModel.kt` | Friends state + `inviteFriendByEmail` (with `InviteState` machine) + `openUserStats`/`closeUserStats`. |
+| `core/model/Models.kt` | `CordadaSummary`, `CordadaInvite`, `CordadasResponse`, `CordadaMemberRanking`, `CordadaDetail`, `CordadaDetailResponse`, `UserStatsResponse`. |
+
+**Unified search**: when the query is ≥2 chars, `UnifiedList` shows local cordada matches (filtered from already-loaded `cordadas` by name) under a "Cordadas" label **and** remote user matches (`searchUsers`) under a "Friends" label, with a combined no-results fallback.
+
+**Invite-by-email** (`InviteFriendSheet` + `FriendsViewModel.inviteFriendByEmail`): the sheet stays open during the flow, shows a spinner while sending and a colored status message. `InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }` maps the server response (`POST /api/v1/invitations` returns `{ status: "invited" | "already_registered" }`, HTTP 400 = self-invite). Auto-closes 1.4s after success. `resetInviteState()` on dismiss.
+
+**Friend stats** (`FriendStatsSheet` + `openUserStats(userId)`): tapping a friend row opens a bottom sheet with avatar, name, level (emoji + name via `levelIdx`) and a 2×2 grid (Cimas / Ascensiones / Altitud máx. / EP). Backed by `GET /api/v1/users/{id}/stats` — **unrestricted** (works for any user, incl. cordada members who aren't friends). Stats come from the `user_stats` table; the client only renders.
+
+**Create cordada with photo + members** (`CreateCordadaSheet`): circular photo picker (`GetContent("image/*")` → `squareBitmapFromUri` center-crops to 512px square → `bitmapToJpeg` 0.85) + scrollable accepted-friends list with checkboxes (`memberIds`). On create, `CordadasViewModel.createCordada` POSTs `{ name, description, memberIds }` then uploads the avatar via `POST /api/v1/cordadas/{id}/avatar` (owner-only) with the returned id (wrapped in `runCatching` so a photo failure doesn't break creation). Members are validated server-side as ACCEPTED friends; non-friends are silently dropped.
+
+> **i18n note**: all `cordadas_*` strings (incl. `cordadas_add_members`) currently live only in the default `values/strings.xml` and rely on Android's fallback. The `friends_invite_*` and `stats_*` keys are fully translated across all 5 locales.
+
+**Navigation**: `FriendsScreen` is a **top-level route on the outer `navController`** (`Screen.Friends`), reached from the Home avatar dropdown via `onNavigateToFriends`. It is **not** inside MainScaffold's `tabNavController` NavHost — this matters for the inset bug below.
+
+`CordadasViewModel` notes:
+- `load()` calls `getCordadas()` → fills `cordadas` + `pendingInvites`.
+- `onInviteQueryChange` debounces 350ms, then `searchUsers(query)`, then **excludes current members** by `userId`.
+- `inviteUser` tracks `inviteSentIds` so the row shows "Invitado" without a reload.
+- `respondToInvite` optimistically removes the invite from `pendingInvites`; calls `load()` only on ACCEPTED.
+- Optimistic mutation on `removeMember` (filters the member out of `selectedDetail.members`); `leaveCordada`/`deleteCordada` clear `selectedDetail` + `load()`.
+
+### ⚠️ Known issue / fix — ModalBottomSheet content hidden behind the system navigation bar
+
+**Symptom**: the "Crear" button on the Create-Cordada sheet (and the bottom of the Invite/Detail sheets) rendered **behind** the Android gesture/3-button nav bar — untappable. With the keyboard up the sheet rose and the button became visible; pressing the keyboard OK/done closed the keyboard and the sheet dropped too low again. Dragging the sheet slightly upward made the button appear correctly above the Android nav buttons.
+
+**Confirmed root cause**: this was not primarily a missing padding value. The sheet was allowed to settle into Material 3's partially-expanded anchor after the IME closed. That anchor was low enough that the CTA overlapped the 3-button navigation bar. `navigationBarsPadding()` worked only once the sheet was manually nudged upward because the sheet's anchor/offset, not the content padding alone, was wrong.
+
+Earlier false fixes:
+- Manual `bottomInset` read from `FriendsScreen` via `ViewCompat.getRootWindowInsets(...)` stayed unreliable under edge-to-edge + this nested screen.
+- Leaving only Material 3's default `contentWindowInsets` was insufficient.
+- Applying `WindowInsets.safeContent.only(WindowInsetsSides.Bottom)` inside the sheet did not fix the low settled anchor.
+
+**Fix strategy** (`FriendsScreen.kt` + `CordadasTab.kt`): remove the manual `FriendsScreen` inset plumbing and centralize the three sheets in a shared `CordadaModalSheet` wrapper. Match the working Atlas `LayersPanel` pattern: use `skipPartiallyExpanded = true`, leave `ModalBottomSheet`'s default insets enabled, and apply `.navigationBarsPadding()` inside the sheet content.
+
+```kotlin
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CordadaModalSheet(
+    onDismiss: () -> Unit,
+    dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color.White,
+        dragHandle = dragHandle,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding(),
+            content = content,
+        )
+    }
+}
+```
+
+Important details:
+- Use `rememberModalBottomSheetState(skipPartiallyExpanded = true)` so the sheet does not settle into a too-low partial anchor after the keyboard closes.
+- This `skipPartiallyExpanded = true` line is the critical behavior fix; do not remove it just because the sheet seems visually similar without it.
+- Do not read or pass a manual `bottomInset` from `FriendsScreen`.
+- Do not override `ModalBottomSheet.contentWindowInsets`.
+- Apply `.navigationBarsPadding()` inside the wrapper, matching `AtlasScreen.kt`'s `LayersPanel`, which clears Android 3-button / gesture navigation correctly.
+- Keep `.imePadding()` in the shared wrapper so keyboard-open behavior remains correct.
+- Use only local visual spacing (`8.dp` / `16.dp`) inside Create / Invite / Detail; do not pass system inset values around as `Dp`.
+
+**Rule for future sheets rendered under a consuming Scaffold**: keep safe-area behavior centralized in the sheet wrapper. Do not reintroduce `WindowInsets(0)`, manual root-view inset reads, or one-off system inset spacers.
+
+### Gotchas (Cordadas)
+
+- **Owner cannot leave** — `removeMember` throws if `isOwner && isSelf`. The Detail sheet shows "Eliminar cordada" for the owner and "Salir de la cordada" for members; never both.
+- **Reject deletes the row** (not a soft status) — a rejected user can be cleanly re-invited.
+- **Do not reintroduce manual `bottomInset` plumbing** for Cordadas sheets — see the inset fix above. The shared wrapper owns nav-bar and keyboard safety for all three sheets.
+- **Leaderboard uses `user_stats`** — a brand-new member with no ascents shows zeros until their `user_stats` row is computed (first ascent CRUD).

@@ -156,6 +156,9 @@ interface ApiService {
     @GET("users/search")
     suspend fun searchUsers(@Query("q") query: String): UsersSearchResponse
 
+    @GET("users/{id}/stats")
+    suspend fun getUserStats(@Path("id") id: String): UserStatsResponse
+
     @GET("persons")
     suspend fun getPersons(): List<Person>
 
@@ -164,7 +167,14 @@ interface ApiService {
     suspend fun getCordadas(): CordadasResponse
 
     @POST("cordadas")
-    suspend fun createCordada(@Body body: Map<String, String>): Map<String, @JvmSuppressWildcards Any?>
+    suspend fun createCordada(@Body body: CreateCordadaRequest): CreatedCordadaResponse
+
+    @Multipart
+    @POST("cordadas/{id}/avatar")
+    suspend fun uploadCordadaAvatar(
+        @Path("id") id: String,
+        @Part file: MultipartBody.Part,
+    )
 
     @GET("cordadas/{id}")
     suspend fun getCordadaDetail(@Path("id") id: String): CordadaDetailResponse
@@ -173,22 +183,22 @@ interface ApiService {
     suspend fun inviteToCordada(
         @Path("id") id: String,
         @Body body: Map<String, String>,
-    ): Map<String, String>
+    )
 
     @PATCH("cordadas/{id}/respond")
     suspend fun respondToCordadaInvite(
         @Path("id") id: String,
         @Body body: Map<String, String>,
-    ): Map<String, String>
+    )
 
     @DELETE("cordadas/{id}/members/{userId}")
     suspend fun removeCordadaMember(
         @Path("id") cordadaId: String,
         @Path("userId") userId: String,
-    ): Map<String, String>
+    )
 
     @DELETE("cordadas/{id}")
-    suspend fun deleteCordada(@Path("id") id: String): Map<String, String>
+    suspend fun deleteCordada(@Path("id") id: String)
 
     // MARK: - Profile
     @GET("profile")

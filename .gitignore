@@ -45,3 +45,12 @@ design_handoff_profile_cimas/
 
 # Local scripts (not part of the app)
 scripts/
+
+# Android build/IDE artifacts
+mobile/android/.gradle/
+mobile/android/.idea/
+mobile/android/local.properties
+mobile/android/**/*.hprof
+
+# Local dev/design scratch files
+public/icon-preview.html

@@ -65,6 +65,7 @@ import com.peakadex.app.R
 import androidx.compose.ui.res.stringResource
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.theme.PeakBlueActive
+import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBorderLight
 import com.peakadex.app.core.ui.theme.PeakMuted
 import com.peakadex.app.core.ui.RarityInfo
@@ -976,7 +977,7 @@ private fun LogbookErrorState(message: String, onRetry: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = PeakBlueActive)) { Text(stringResource(R.string.action_retry)) }
+        Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA)) { Text(stringResource(R.string.action_retry)) }
     }
 }
 

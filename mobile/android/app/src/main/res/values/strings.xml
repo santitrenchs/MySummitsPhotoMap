@@ -257,16 +257,37 @@
     <string name="friends_section_incoming">Solicitudes recibidas</string>
     <string name="friends_section_friends">Amigos</string>
     <string name="friends_empty">Aún no tienes amigos en Peakadex.</string>
+    <string name="friends_empty_subtitle">Invita a tus compañeros de cordada o crea un grupo para empezar.</string>
+    <string name="friends_fab_add">Añadir</string>
+    <string name="friends_action_invite">Invitar a un amigo</string>
+    <string name="friends_action_create_cordada">Crear una cordada</string>
+    <string name="friends_invite_title">Invitar a un amigo</string>
+    <string name="friends_invite_subtitle">Le enviaremos un correo para que se una a Peakadex.</string>
+    <string name="friends_invite_email_hint">Correo electrónico</string>
+    <string name="friends_invite_send_btn">Enviar invitación</string>
+    <string name="friends_invite_ok">¡Invitación enviada! Le hemos mandado un correo.</string>
+    <string name="friends_invite_already_registered">Este usuario ya está en Peakadex. Búscalo para añadirlo.</string>
+    <string name="friends_invite_self">No puedes invitarte a ti mismo.</string>
+    <string name="friends_invite_error">No se pudo enviar la invitación. Inténtalo de nuevo.</string>
+    <string name="friends_confirm_remove">¿Eliminar a %s de tus amigos?</string>
+    <string name="friends_generic_error">Algo salió mal. Inténtalo de nuevo.</string>
+    <string name="cordadas_create_error">No se pudo crear la cordada. Inténtalo de nuevo.</string>
+    <string name="stats_unique_peaks">Cimas</string>
+    <string name="stats_total_ascents">Ascensiones</string>
+    <string name="stats_max_altitude">Altitud máx.</string>
+    <string name="stats_total_ep">EP</string>
     <string name="friends_menu_label">Amigos</string>
 
     <!-- Cordadas tab -->
     <string name="cordadas_tab">Cordadas</string>
+    <string name="cordadas_ranking">Ranking</string>
     <string name="cordadas_empty">Aún no perteneces a ninguna cordada.</string>
     <string name="cordadas_new">Nueva cordada</string>
     <string name="cordadas_create_title">Crear cordada</string>
     <string name="cordadas_name_hint">Nombre (obligatorio)</string>
     <string name="cordadas_desc_hint">Descripción (opcional)</string>
     <string name="cordadas_create_btn">Crear</string>
+    <string name="cordadas_add_members">Añadir miembros</string>
     <string name="cordadas_invites_section">Invitaciones pendientes</string>
     <string name="cordadas_invite_from">Invitado por %s</string>
     <string name="cordadas_members">%d miembros</string>
@@ -278,6 +299,7 @@
     <string name="cordadas_leave">Salir de la cordada</string>
     <string name="cordadas_delete">Eliminar cordada</string>
     <string name="cordadas_expel">Expulsar</string>
+    <string name="cordadas_pending">Pendiente</string>
     <string name="cordadas_confirm_leave">¿Salir de esta cordada?</string>
     <string name="cordadas_confirm_delete">¿Eliminar la cordada? Esta acción no se puede deshacer.</string>
     <string name="cordadas_confirm_expel">¿Expulsar a este miembro?</string>

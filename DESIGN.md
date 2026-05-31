@@ -1145,3 +1145,79 @@ duration:   1000ms minimum, then navigates to Login or Home
 **Rationale:** the OS splash screen already shows the app icon on a white background, so this creates a seamless white → white → app transition. The wordmark at 44dp is slightly larger than the top bar (32dp) to read well on a full screen. No animation — clean and fast.
 
 **Previous design (removed):** animated `✿` emoji cycling through rarity colors (`RARITIES` list) with scale pulse, on a `#0D2538` navy background. Replaced because the navy background created a jarring color transition to the white login screen.
+
+---
+
+## Cordadas + Amigos — Unified Social Screen (Android, 2026-05-31)
+
+WhatsApp-style **single screen** that shows friends and cordadas together — **no Amigos/Cordadas tabs**. Accessed from the Home avatar dropdown. See `CLAUDE.md → "Cordadas — Climbing Groups"` for the data model, API and the ModalBottomSheet nav-bar inset fix.
+
+**Files:** `feature/friends/FriendsScreen.kt` (host + friend UI + stats sheet), `feature/friends/CordadasTab.kt` (cordada UI + create/invite/detail sheets), `FriendsViewModel.kt` + `CordadasViewModel.kt`.
+
+### Screen shell
+
+`CenterAlignedTopAppBar` (white via `TopAppBarDefaults.topAppBarColors`, back arrow — it's a **secondary** screen, no logo). Single scrolling list combines pending items, friends and cordadas; one search box finds both. A floating **`+` FAB** opens a menu:
+- **Invitar amigo** (by email) → `InviteFriendSheet`
+- **Crear cordada** → `CreateCordadaSheet`
+
+```
+┌─────────────────────────────────────┐
+│  ‹      Amigos                    +  │   CenterAlignedTopAppBar + FAB
+├─────────────────────────────────────┤
+│  search (friends + cordadas)         │
+│  pending invites / requests          │
+│  friends · cordadas                  │
+```
+
+### Interactions
+
+- Tap a **friend** → `openUserStats(userId)` → `FriendStatsSheet` (general stats, **not** restricted to accepted friends — any user viewable, since cordada members may not be your friends).
+- Tap a **cordada** → Detail sheet with the member leaderboard.
+
+### Invite friend by email (`InviteFriendSheet`)
+
+`FriendsViewModel.inviteFriendByEmail(email)` → `POST /api/v1/invitations`. UI driven by `InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }`. Sheet stays open, disables field/button while sending, shows colored feedback Text, then auto-closes ~1.4s after success.
+
+### Friend stats (`FriendStatsSheet`)
+
+`GET /api/v1/users/{id}/stats` (public, server-authoritative). Shows `UserAvatar(52)` + name + level emoji (`LEVEL_EMOJIS[levelIdx-1]`) + level name, plus a 2×2 grid: uniquePeaks · totalAscents · maxAltitudeM (+" m") · totalEp.
+
+### Create cordada (`CreateCordadaSheet`)
+
+`onCreate(name, description, memberIds, avatarBytes)`. Includes:
+- Circular **84dp photo picker** (`GetContent` "image/\*") → auto square center-crop to 512px JPEG 0.85. Real R2 upload via `POST /api/v1/cordadas/{id}/avatar` after creation.
+- Name (≤60) + optional description.
+- **Member selection** — scrollable (max 200dp) list of accepted friends with `Checkbox` toggled via `mutableStateListOf<String>`. `memberIds` passed to `POST /api/v1/cordadas` (atomic transaction; server drops non-friend ids).
+
+### Cordada list/invite layout (top → bottom)
+
+1. **Invitaciones pendientes** (only if any) — `InviteCard` rows: gradient-green avatar + name + "Invitado por {owner}" + **Aceptar** (blue `SmallBtn`) / **Rechazar** (ghost gray `SmallBtn`).
+2. **Tus cordadas** — `CordadaRow`s: green gradient avatar + name + (green **"Propietario"** badge pill if owner) + "{n} miembros" subtitle + chevron-right. Tapping opens the **Detail sheet**.
+3. Empty state when no cordadas + no invites.
+
+### Avatars & colors
+
+- `CordadaAvatar`: circle, `linearGradient(#059669 → #34D399)`, white bold initials (up to 2).
+- Owner badge: `#F0FDF4` bg, `#059669` text, 10sp bold, 4dp radius.
+- Member subtitle / counts: `#9CA3AF`. Names: `#111827` SemiBold.
+
+### Three bottom sheets (`ModalBottomSheet`, white)
+
+**1. Create Cordada** — title "Crear cordada", circular 84dp photo picker, `OutlinedTextField` name (≤60 chars) + optional description, scrollable accepted-friends member checklist, **"Crear"** primary button. See the "Create cordada" section above for the full flow.
+
+**2. Invite** (nested inside Detail) — title "Invitar", search `BasicTextField`; results = `searchUsers` minus current members; each result row has an **Invitar** button that turns into **Invitado** after tap (`inviteSentIds`).
+
+**3. Detail** — drag handle is a **7dp green (`#059669`) band** (rarity-band pattern from Atlas: `containerColor = White`, the band is drawn explicitly in `dragHandle`). Header = cordada name + description. Body = **member leaderboard** sorted by `uniquePeaks` desc then `totalEp` desc: rank + avatar + name (+ "Tú"/owner markers) + level + uniquePeaks + EP. Per-member **expel** for the owner. Footer action:
+   - Owner → **"Eliminar cordada"** (destructive) + per-member expel.
+   - Member → **"Salir de la cordada"**.
+   - Never both (owner can't leave).
+
+### ⚠️ Nav-bar inset (critical for all 3 sheets)
+
+Cordadas sheets use a shared `CordadaModalSheet` wrapper around Material 3 `ModalBottomSheet`, matching the working Atlas `LayersPanel` pattern:
+- `rememberModalBottomSheetState(skipPartiallyExpanded = true)` is mandatory. Without it, closing the keyboard can let the sheet settle into a too-low partial anchor and place the CTA behind Android's 3-button nav bar.
+- Do **not** override `contentWindowInsets`.
+- Do **not** thread a manual `bottomInset` from `FriendsScreen`.
+- Apply `.navigationBarsPadding()` + `.imePadding()` inside the sheet content.
+
+Full rationale in CLAUDE.md.
