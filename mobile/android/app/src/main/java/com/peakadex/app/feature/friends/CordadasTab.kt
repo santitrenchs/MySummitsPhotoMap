@@ -89,24 +89,25 @@ fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
     Row(
         modifier          = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFFF6FAF8))
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         CordadaAvatar(item.name, 44, item.avatarUrl)
         Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(item.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (item.myRole == "OWNER") {
-                    Box(
-                        modifier         = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(Color(0xFFF0FDF4))
-                            .padding(horizontal = 5.dp, vertical = 1.dp),
-                    ) {
-                        Text(stringResource(R.string.cordadas_owner_badge), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
-                    }
+                    Icon(
+                        imageVector        = CrownIcon,
+                        contentDescription = stringResource(R.string.cordadas_owner_badge),
+                        tint               = Color.Unspecified,
+                        modifier           = Modifier.size(14.dp),
+                    )
                 }
             }
             Row(
