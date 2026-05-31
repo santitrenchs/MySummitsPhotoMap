@@ -6,6 +6,7 @@ export type CordadaSummary = {
   id: string;
   name: string;
   description: string | null;
+  avatarUrl: string | null;
   ownerId: string;
   memberCount: number;
   myRole: "OWNER" | "MEMBER";
@@ -15,6 +16,7 @@ export type CordadaInvite = {
   cordadaId: string;
   name: string;
   description: string | null;
+  avatarUrl: string | null;
   ownerName: string;
   createdAt: string;
 };
@@ -26,14 +28,17 @@ export type CordadaMemberRanking = {
   levelIdx: number;
   uniquePeaks: number;
   totalEp: number;
+  totalCairns: number;
   isOwner: boolean;
   isCurrentUser: boolean;
+  isPending: boolean;
 };
 
 export type CordadaDetail = {
   id: string;
   name: string;
   description: string | null;
+  avatarUrl: string | null;
   ownerId: string;
   isOwner: boolean;
   members: CordadaMemberRanking[];
@@ -55,6 +60,7 @@ export async function listMyCordadas(userId: string): Promise<CordadaSummary[]> 
     id:          m.cordada.id,
     name:        m.cordada.name,
     description: m.cordada.description,
+    avatarUrl:   m.cordada.avatarUrl ?? null,
     ownerId:     m.cordada.ownerId,
     memberCount: m.cordada.members.length,
     myRole:      m.cordada.ownerId === userId ? "OWNER" : "MEMBER",
@@ -74,35 +80,80 @@ export async function listPendingInvites(userId: string): Promise<CordadaInvite[
     cordadaId:   m.cordadaId,
     name:        m.cordada.name,
     description: m.cordada.description,
+    avatarUrl:   m.cordada.avatarUrl ?? null,
     ownerName:   m.cordada.owner.name ?? "",
     createdAt:   m.createdAt.toISOString(),
   }));
 }
 
-export async function createCordada(ownerId: string, name: string, description?: string) {
+export async function createCordada(
+  ownerId: string,
+  name: string,
+  description?: string,
+  memberIds?: string[],
+) {
+  // Validate that every invited member is an ACCEPTED friend of the owner.
+  let validMemberIds: string[] = [];
+  if (memberIds && memberIds.length > 0) {
+    const unique = [...new Set(memberIds)].filter((id) => id !== ownerId);
+    if (unique.length > 0) {
+      const friendships = await prisma.friendship.findMany({
+        where: {
+          status: "ACCEPTED",
+          OR: [
+            { requesterId: ownerId, addresseeId: { in: unique } },
+            { requesterId: { in: unique }, addresseeId: ownerId },
+          ],
+        },
+        select: { requesterId: true, addresseeId: true },
+      });
+      const friendSet = new Set(
+        friendships.map((f) => (f.requesterId === ownerId ? f.addresseeId : f.requesterId)),
+      );
+      validMemberIds = unique.filter((id) => friendSet.has(id));
+    }
+  }
+
   return prisma.cordada.create({
     data: {
       name,
       description: description ?? null,
       ownerId,
       members: {
-        create: {
-          userId:    ownerId,
-          role:      "OWNER",
-          status:    "ACCEPTED",
-          joinedAt:  new Date(),
-        },
+        create: [
+          {
+            userId:   ownerId,
+            role:     "OWNER",
+            status:   "ACCEPTED",
+            joinedAt: new Date(),
+          },
+          ...validMemberIds.map((userId) => ({
+            userId,
+            role:        "MEMBER" as const,
+            status:      "PENDING" as const,
+            invitedById: ownerId,
+          })),
+        ],
       },
     },
   });
 }
 
 export async function getCordadaDetail(cordadaId: string, currentUserId: string): Promise<CordadaDetail | null> {
+  // First resolve the owner so we know whether to expose PENDING invitees.
+  const ownerRow = await prisma.cordada.findUnique({
+    where:  { id: cordadaId },
+    select: { ownerId: true },
+  });
+  if (!ownerRow) return null;
+  const isOwner = ownerRow.ownerId === currentUserId;
+
   const cordada = await prisma.cordada.findUnique({
     where:   { id: cordadaId },
     include: {
       members: {
-        where:   { status: "ACCEPTED" },
+        // Only the owner sees pending (not-yet-accepted) invitees.
+        where:   isOwner ? { status: { in: ["ACCEPTED", "PENDING"] } } : { status: "ACCEPTED" },
         include: {
           user: {
             select: { id: true, name: true, avatarUrl: true },
@@ -116,7 +167,7 @@ export async function getCordadaDetail(cordadaId: string, currentUserId: string)
   const userIds    = cordada.members.map((m) => m.userId);
   const statsRows  = await prisma.userStats.findMany({
     where:  { userId: { in: userIds } },
-    select: { userId: true, uniquePeaks: true, totalEp: true, levelIdx: true },
+    select: { userId: true, uniquePeaks: true, totalEp: true, totalCairns: true, levelIdx: true },
   });
   const statsMap = new Map(statsRows.map((s) => [s.userId, s]));
 
@@ -130,11 +181,15 @@ export async function getCordadaDetail(cordadaId: string, currentUserId: string)
         levelIdx:      s?.levelIdx   ?? 1,
         uniquePeaks:   s?.uniquePeaks ?? 0,
         totalEp:       s?.totalEp    ?? 0,
+        totalCairns:   s?.totalCairns ?? 0,
         isOwner:       m.userId === cordada.ownerId,
         isCurrentUser: m.userId === currentUserId,
+        isPending:     m.status === "PENDING",
       };
     })
+    // Accepted members first (ranked by peaks/EP); pending invitees last.
     .sort((a, b) =>
+      Number(a.isPending) - Number(b.isPending) ||
       b.uniquePeaks - a.uniquePeaks ||
       b.totalEp     - a.totalEp
     );
@@ -143,8 +198,9 @@ export async function getCordadaDetail(cordadaId: string, currentUserId: string)
     id:          cordada.id,
     name:        cordada.name,
     description: cordada.description,
+    avatarUrl:   cordada.avatarUrl ?? null,
     ownerId:     cordada.ownerId,
-    isOwner:     cordada.ownerId === currentUserId,
+    isOwner,
     members,
   };
 }

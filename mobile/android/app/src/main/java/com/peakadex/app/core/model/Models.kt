@@ -162,6 +162,7 @@ data class UserStub(
     val id: String,
     val name: String,
     val username: String? = null,
+    val avatarUrl: String? = null,
 )
 
 @Serializable
@@ -461,6 +462,7 @@ data class CordadaSummary(
     val id: String,
     val name: String,
     val description: String? = null,
+    val avatarUrl: String? = null,
     val ownerId: String,
     val memberCount: Int,
     val myRole: String,   // "OWNER" | "MEMBER"
@@ -471,6 +473,7 @@ data class CordadaInvite(
     val cordadaId: String,
     val name: String,
     val description: String? = null,
+    val avatarUrl: String? = null,
     val ownerName: String,
     val createdAt: String,
 )
@@ -489,8 +492,10 @@ data class CordadaMemberRanking(
     val levelIdx: Int,
     val uniquePeaks: Int,
     val totalEp: Int,
+    val totalCairns: Int = 0,
     val isOwner: Boolean,
     val isCurrentUser: Boolean,
+    val isPending: Boolean = false,
 )
 
 @Serializable
@@ -498,6 +503,7 @@ data class CordadaDetail(
     val id: String,
     val name: String,
     val description: String? = null,
+    val avatarUrl: String? = null,
     val ownerId: String,
     val isOwner: Boolean,
     val members: List<CordadaMemberRanking>,
@@ -506,4 +512,32 @@ data class CordadaDetail(
 @Serializable
 data class CordadaDetailResponse(
     val cordada: CordadaDetail,
+)
+
+@Serializable
+data class CreateCordadaRequest(
+    val name: String,
+    val description: String? = null,
+    val memberIds: List<String>? = null,
+)
+
+@Serializable
+data class CreatedCordadaResponse(
+    val cordada: CreatedCordadaRef,
+)
+
+@Serializable
+data class CreatedCordadaRef(
+    val id: String,
+)
+
+@Serializable
+data class UserStatsResponse(
+    val user: UserStub,
+    val totalAscents: Int = 0,
+    val uniquePeaks: Int = 0,
+    val maxAltitudeM: Int = 0,
+    val totalEp: Int = 0,
+    val totalCairns: Int = 0,
+    val levelIdx: Int = 1,
 )

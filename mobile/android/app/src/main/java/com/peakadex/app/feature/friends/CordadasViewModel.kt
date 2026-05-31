@@ -6,6 +6,7 @@ import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.CordadaDetail
 import com.peakadex.app.core.model.CordadaInvite
 import com.peakadex.app.core.model.CordadaSummary
+import com.peakadex.app.core.model.CreateCordadaRequest
 import com.peakadex.app.core.model.UserStub
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 data class CordadasUiState(
     val isLoading: Boolean = true,
@@ -60,14 +63,35 @@ class CordadasViewModel : ViewModel() {
         }
     }
 
-    fun createCordada(name: String, description: String?) {
+    /**
+     * Creates a cordada with optional members (must be accepted friends — validated
+     * server-side) and an optional avatar. The avatar is uploaded after creation using
+     * the returned cordada id (owner-only endpoint).
+     */
+    fun createCordada(
+        name: String,
+        description: String?,
+        memberIds: List<String> = emptyList(),
+        avatarBytes: ByteArray? = null,
+    ) {
         viewModelScope.launch {
             try {
-                val body = buildMap<String, String> {
-                    put("name", name)
-                    if (!description.isNullOrBlank()) put("description", description)
+                val created = api.createCordada(
+                    CreateCordadaRequest(
+                        name        = name,
+                        description = description?.ifBlank { null },
+                        memberIds   = memberIds.ifEmpty { null },
+                    )
+                )
+                if (avatarBytes != null) {
+                    runCatching {
+                        val part = okhttp3.MultipartBody.Part.createFormData(
+                            "file", "cordada.jpg",
+                            avatarBytes.toRequestBody("image/jpeg".toMediaType()),
+                        )
+                        api.uploadCordadaAvatar(created.cordada.id, part)
+                    }
                 }
-                api.createCordada(body)
                 load()
             } catch (e: CancellationException) {
                 throw e
@@ -76,6 +100,10 @@ class CordadasViewModel : ViewModel() {
                 _state.update { it.copy(error = e.localizedMessage) }
             }
         }
+    }
+
+    fun clearError() {
+        _state.update { it.copy(error = null) }
     }
 
     fun respondToInvite(cordadaId: String, action: String) {

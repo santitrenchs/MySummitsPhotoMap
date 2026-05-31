@@ -2456,15 +2456,27 @@ All business logic lives here (route handlers only auth + parse + call). Uses th
 
 Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCordada`, `getCordadaDetail`, `inviteToCordada`, `respondToCordadaInvite`, `removeCordadaMember`, `deleteCordada`). Member-search for invites reuses the existing `GET /api/v1/users/search` (`searchUsers`).
 
-### Android layer
+### Android layer — WhatsApp-style unified screen (rediseño 2026-05-31)
+
+`FriendsScreen` is a **single unified screen** (no Amigos/Cordadas tabs — the old `SecondaryTabRow` was removed). One `LazyColumn` (`UnifiedList`) lists everything in order: search bar → search results → **Solicitudes** (combined friend requests + cordada invites under one count) → **Amigos** → **Cordadas** → combined empty state. A floating `+` FAB opens an `ActionSpeedDialSheet` with two actions: **invite a friend** (by email) or **create a cordada**.
 
 | File | Role |
 |---|---|
-| `feature/friends/FriendsScreen.kt` | Hosts a `SecondaryTabRow`: tab 0 = **Amigos** (`AmigosTabContent`), tab 1 = **Cordadas** (`CordadasTab`). Own `Scaffold` with `CenterAlignedTopAppBar` + back arrow (secondary screen). |
-| `feature/friends/CordadasTab.kt` | All Cordadas UI: list, invite cards, the 3 `ModalBottomSheet`s (Create / Invite / Detail). |
-| `feature/friends/CordadasViewModel.kt` | `CordadasUiState` + all API calls. |
-| `feature/friends/FriendsViewModel.kt` | Amigos tab state (pre-existing friends flow). |
-| `core/model/Models.kt` | `CordadaSummary`, `CordadaInvite`, `CordadasResponse`, `CordadaMemberRanking`, `CordadaDetail`, `CordadaDetailResponse`. |
+| `feature/friends/FriendsScreen.kt` | The unified screen + `Scaffold` (FAB + `CenterAlignedTopAppBar` back arrow, secondary screen). Owns `UnifiedList`, `InviteFriendSheet`, `ActionSpeedDialSheet`, `FriendStatsSheet`, and the package-visible helpers `UserAvatar`/`SectionLabel`/`HRule`/`LEVEL_EMOJIS` (the last lives in CordadasTab.kt). |
+| `feature/friends/CordadasTab.kt` | Cordadas UI pieces reused by the unified screen: `CordadaCard`, `InviteCard`, `CreateCordadaSheet`, `CordadaDetailSheet`, `CordadaDetailHost`, `CordadaModalSheet`. |
+| `feature/friends/CordadasViewModel.kt` | `CordadasUiState` + all cordada API calls (incl. `createCordada(name, desc, memberIds, avatarBytes)`). |
+| `feature/friends/FriendsViewModel.kt` | Friends state + `inviteFriendByEmail` (with `InviteState` machine) + `openUserStats`/`closeUserStats`. |
+| `core/model/Models.kt` | `CordadaSummary`, `CordadaInvite`, `CordadasResponse`, `CordadaMemberRanking`, `CordadaDetail`, `CordadaDetailResponse`, `UserStatsResponse`. |
+
+**Unified search**: when the query is ≥2 chars, `UnifiedList` shows local cordada matches (filtered from already-loaded `cordadas` by name) under a "Cordadas" label **and** remote user matches (`searchUsers`) under a "Friends" label, with a combined no-results fallback.
+
+**Invite-by-email** (`InviteFriendSheet` + `FriendsViewModel.inviteFriendByEmail`): the sheet stays open during the flow, shows a spinner while sending and a colored status message. `InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }` maps the server response (`POST /api/v1/invitations` returns `{ status: "invited" | "already_registered" }`, HTTP 400 = self-invite). Auto-closes 1.4s after success. `resetInviteState()` on dismiss.
+
+**Friend stats** (`FriendStatsSheet` + `openUserStats(userId)`): tapping a friend row opens a bottom sheet with avatar, name, level (emoji + name via `levelIdx`) and a 2×2 grid (Cimas / Ascensiones / Altitud máx. / EP). Backed by `GET /api/v1/users/{id}/stats` — **unrestricted** (works for any user, incl. cordada members who aren't friends). Stats come from the `user_stats` table; the client only renders.
+
+**Create cordada with photo + members** (`CreateCordadaSheet`): circular photo picker (`GetContent("image/*")` → `squareBitmapFromUri` center-crops to 512px square → `bitmapToJpeg` 0.85) + scrollable accepted-friends list with checkboxes (`memberIds`). On create, `CordadasViewModel.createCordada` POSTs `{ name, description, memberIds }` then uploads the avatar via `POST /api/v1/cordadas/{id}/avatar` (owner-only) with the returned id (wrapped in `runCatching` so a photo failure doesn't break creation). Members are validated server-side as ACCEPTED friends; non-friends are silently dropped.
+
+> **i18n note**: all `cordadas_*` strings (incl. `cordadas_add_members`) currently live only in the default `values/strings.xml` and rely on Android's fallback. The `friends_invite_*` and `stats_*` keys are fully translated across all 5 locales.
 
 **Navigation**: `FriendsScreen` is a **top-level route on the outer `navController`** (`Screen.Friends`), reached from the Home avatar dropdown via `onNavigateToFriends`. It is **not** inside MainScaffold's `tabNavController` NavHost — this matters for the inset bug below.
 

@@ -45,6 +45,7 @@ import com.peakadex.app.R
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
+import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBlueLight
 
 // ── Profile menu bottom sheet ─────────────────────────────────────────────────
@@ -321,7 +322,7 @@ fun SettingsScreen(
                             onClick  = vm::saveProfile,
                             enabled  = !state.isSaving && state.usernameError == null,
                             modifier = Modifier.fillMaxWidth(),
-                            colors   = ButtonDefaults.buttonColors(containerColor = PeakBlueActive),
+                            colors   = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
                             shape    = RoundedCornerShape(10.dp),
                         ) {
                             if (state.isSaving) {
@@ -436,7 +437,7 @@ fun SettingsScreen(
                                     onClick  = vm::savePassword,
                                     enabled  = !state.isChangingPassword,
                                     modifier = Modifier.fillMaxWidth(),
-                                    colors   = ButtonDefaults.buttonColors(containerColor = PeakBlueActive),
+                                    colors   = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
                                     shape    = RoundedCornerShape(10.dp),
                                 ) {
                                     if (state.isChangingPassword) {

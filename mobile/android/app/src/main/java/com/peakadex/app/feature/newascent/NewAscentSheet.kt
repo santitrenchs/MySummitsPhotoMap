@@ -95,6 +95,7 @@ import androidx.compose.ui.res.stringResource
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Person
 import com.peakadex.app.core.ui.theme.PeakBlueActive
+import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBlueContainer
 import com.peakadex.app.core.ui.theme.PeakBorderLight
 import com.peakadex.app.core.ui.theme.PeakMuted
@@ -242,7 +243,7 @@ private fun PhotoPickStep(
 
                 Button(
                     onClick          = onPickPhoto,
-                    colors           = ButtonDefaults.buttonColors(containerColor = PeakBlueActive),
+                    colors           = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
                     shape            = RoundedCornerShape(10.dp),
                     contentPadding   = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
                 ) {
@@ -448,7 +449,7 @@ private fun PhotoCropStep(
 
                             onDone(Bitmap.createBitmap(currentBitmap, srcX, srcY, srcW, srcH))
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = PeakBlueActive),
+                        colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
                         shape  = RoundedCornerShape(10.dp),
                         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
                     ) {

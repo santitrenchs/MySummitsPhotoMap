@@ -1,11 +1,17 @@
 package com.peakadex.app.feature.friends
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -17,6 +23,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -25,21 +35,25 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.peakadex.app.R
 import com.peakadex.app.core.model.CordadaDetail
 import com.peakadex.app.core.model.CordadaInvite
 import com.peakadex.app.core.model.CordadaMemberRanking
 import com.peakadex.app.core.model.CordadaSummary
+import com.peakadex.app.core.model.FriendEntry
 import com.peakadex.app.core.model.UserStub
+import com.peakadex.app.core.ui.levelName
+import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
+import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBlueLight
 import com.peakadex.app.core.ui.theme.PeakClimbedGreen
+import java.io.ByteArrayOutputStream
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun CordadaAvatar(name: String, size: Int = 40) {
+private fun CordadaAvatar(name: String, size: Int = 40, avatarUrl: String? = null) {
     val initials = name.trim().split(" ").take(2)
         .mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
     Box(
@@ -49,44 +63,29 @@ private fun CordadaAvatar(name: String, size: Int = 40) {
             .background(Brush.linearGradient(listOf(Color(0xFF059669), Color(0xFF34D399)))),
         contentAlignment = Alignment.Center,
     ) {
-        Text(initials, color = Color.White, fontSize = (size * 0.36f).sp, fontWeight = FontWeight.Bold)
+        if (!avatarUrl.isNullOrBlank()) {
+            AsyncImage(
+                model              = avatarUrl,
+                contentDescription = name,
+                contentScale       = ContentScale.Crop,
+                modifier           = Modifier.fillMaxSize(),
+            )
+        } else {
+            Text(initials, color = Color.White, fontSize = (size * 0.36f).sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
-@Composable
-private fun UserAvatar(name: String, size: Int = 36) {
-    val initials = name.trim().split(" ").take(2)
-        .mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
-    Box(
-        modifier         = Modifier
-            .size(size.dp)
-            .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(PeakBlueActive, PeakBlueLight))),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(initials, color = Color.White, fontSize = (size * 0.36f).sp, fontWeight = FontWeight.Bold)
-    }
-}
+// NOTE: UserAvatar, SectionLabel and HRule are declared (package-visible) in
+// FriendsScreen.kt and shared across this package.
 
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold,
-        color = Color(0xFF9CA3AF), letterSpacing = 0.8.sp,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
-}
-
-@Composable
-private fun HRule() = HorizontalDivider(color = Color(0xFFF3F4F6), thickness = 1.dp)
-
-private val LEVEL_EMOJIS = listOf("🌱", "🥾", "🧭", "⛰️", "🏔️", "👑")
-private fun levelEmoji(idx: Int) = LEVEL_EMOJIS.getOrElse(idx - 1) { "🌱" }
+// Level name/emoji come from the shared single source of truth:
+// core/ui/LevelDefs.kt → levelEmoji() / levelName(). Server owns levelIdx.
 
 // ── Cordada list card ──────────────────────────────────────────────────────────
 
 @Composable
-private fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
+fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
     Row(
         modifier          = Modifier
             .fillMaxWidth()
@@ -95,7 +94,7 @@ private fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        CordadaAvatar(item.name, 44)
+        CordadaAvatar(item.name, 44, item.avatarUrl)
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(item.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -127,7 +126,7 @@ private fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
 // ── Invite card ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun InviteCard(invite: CordadaInvite, onAccept: () -> Unit, onReject: () -> Unit) {
+fun InviteCard(invite: CordadaInvite, onAccept: () -> Unit, onReject: () -> Unit) {
     Row(
         modifier          = Modifier
             .fillMaxWidth()
@@ -135,7 +134,7 @@ private fun InviteCard(invite: CordadaInvite, onAccept: () -> Unit, onReject: ()
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        CordadaAvatar(invite.name, 40)
+        CordadaAvatar(invite.name, 40, invite.avatarUrl)
         Column(Modifier.weight(1f)) {
             Text(invite.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827))
             Text(
@@ -155,7 +154,7 @@ private fun SmallBtn(label: String, onClick: () -> Unit, ghost: Boolean = false)
     Box(
         modifier         = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(if (ghost) Color(0xFFF3F4F6) else PeakBlueActive)
+            .background(if (ghost) Color(0xFFF3F4F6) else PeakGreenCTA)
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
@@ -164,47 +163,92 @@ private fun SmallBtn(label: String, onClick: () -> Unit, ghost: Boolean = false)
     }
 }
 
-// ── Ranking row ────────────────────────────────────────────────────────────────
+// ── Ranking (Stats-style leaderboard) ────────────────────────────────────────────
 
 @Composable
-private fun RankingRow(position: Int, member: CordadaMemberRanking, isOwner: Boolean, canExpel: Boolean, onExpel: () -> Unit) {
-    var menuOpen by remember { mutableStateOf(false) }
-    Row(
-        modifier          = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+private fun CordadaLeaderboardCard(
+    members: List<CordadaMemberRanking>,
+    isOwner: Boolean,
+    onExpel: (CordadaMemberRanking) -> Unit,
+) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        shape    = MaterialTheme.shapes.large,
     ) {
-        // Position
-        Text(
-            text      = "#$position",
-            fontSize  = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color     = if (position <= 3) PeakClimbedGreen else Color(0xFF9CA3AF),
-            modifier  = Modifier.width(28.dp),
-        )
-        UserAvatar(member.name, 36)
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(member.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (member.isCurrentUser) Text("(tú)", fontSize = 11.sp, color = Color(0xFF9CA3AF))
+        // Column headers
+        Row(
+            modifier          = Modifier
+                .fillMaxWidth()
+                .padding(start = 19.dp, end = 16.dp)
+                .padding(top = 10.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(Modifier.width(22.dp))
+            Spacer(Modifier.weight(1f))
+            CordadaColHeader(stringResource(R.string.home_leaderboard_col_peaks),  Modifier.width(52.dp))
+            CordadaColHeader(stringResource(R.string.home_leaderboard_col_cairns), Modifier.width(52.dp))
+            CordadaColHeader(stringResource(R.string.home_leaderboard_col_ep),     Modifier.width(44.dp))
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+
+        val accepted = members.filter { !it.isPending }
+        val pending  = members.filter { it.isPending }
+
+        accepted.forEachIndexed { index, member ->
+            val rank = index + 1
+            if (member.isCurrentUser) {
+                CordadaRankCurrentRow(member, rank, isOwner, onExpel)
+            } else {
+                CordadaRankOtherRow(member, rank, isOwner, onExpel)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("${levelEmoji(member.levelIdx)} ${member.uniquePeaks} cimas", fontSize = 11.sp, color = Color(0xFF6B7280))
-                Text("${member.totalEp} EP", fontSize = 11.sp, color = Color(0xFF6B7280))
+            if (index < accepted.lastIndex || pending.isNotEmpty()) {
+                HorizontalDivider(
+                    color    = if (member.isCurrentUser) MaterialTheme.colorScheme.primaryContainer
+                               else MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.padding(horizontal = if (member.isCurrentUser) 0.dp else 16.dp),
+                )
             }
         }
-        if (member.isOwner) {
+
+        pending.forEachIndexed { index, member ->
+            CordadaRankPendingRow(member, isOwner, onExpel)
+            if (index < pending.lastIndex) {
+                HorizontalDivider(
+                    color    = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CordadaRankPendingRow(member: CordadaMemberRanking, canExpel: Boolean, onExpel: (CordadaMemberRanking) -> Unit) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Row(
+        modifier          = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Spacer(Modifier.width(22.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = member.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(3.dp))
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFFF0FDF4))
-                    .padding(horizontal = 5.dp, vertical = 1.dp),
+                    .background(Color(0xFFFEF3C7))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
             ) {
-                Text(stringResource(R.string.cordadas_owner_badge), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                Text(
+                    stringResource(R.string.cordadas_pending),
+                    fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309),
+                )
             }
-        } else if (canExpel) {
+        }
+        if (canExpel) {
             Box {
                 IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(32.dp)) {
                     Text("⋮", fontSize = 18.sp, color = Color(0xFF9CA3AF))
@@ -212,12 +256,127 @@ private fun RankingRow(position: Int, member: CordadaMemberRanking, isOwner: Boo
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(
                         text    = { Text(stringResource(R.string.cordadas_expel), color = Color(0xFFEF4444), fontSize = 14.sp) },
-                        onClick = { menuOpen = false; onExpel() },
+                        onClick = { menuOpen = false; onExpel(member) },
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun CordadaColHeader(label: String, modifier: Modifier = Modifier) {
+    Text(
+        text       = label,
+        fontSize   = 10.sp,
+        color      = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontWeight = FontWeight.SemiBold,
+        modifier   = modifier,
+        textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+    )
+}
+
+@Composable
+private fun CordadaRankCurrentRow(member: CordadaMemberRanking, rank: Int, canExpelOwner: Boolean, onExpel: (CordadaMemberRanking) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Box(Modifier.width(3.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
+        Row(
+            modifier          = Modifier.weight(1f).padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("$rank", Modifier.width(22.dp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = member.name, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Text(stringResource(R.string.home_leaderboard_you), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Spacer(Modifier.height(3.dp))
+                CordadaLevelPill(member.levelIdx, member.isOwner)
+            }
+            CordadaMetricCol("${member.uniquePeaks}", MaterialTheme.colorScheme.primary, Modifier.width(52.dp))
+            CordadaMetricCol("${member.totalCairns}", Color(0xFFD97706), Modifier.width(52.dp))
+            CordadaMetricCol("${member.totalEp}", MaterialTheme.colorScheme.primary, Modifier.width(44.dp))
+        }
+    }
+}
+
+@Composable
+private fun CordadaRankOtherRow(member: CordadaMemberRanking, rank: Int, canExpelOwner: Boolean, onExpel: (CordadaMemberRanking) -> Unit) {
+    var menuOpen by remember { mutableStateOf(false) }
+    val canExpel = canExpelOwner && !member.isOwner && !member.isCurrentUser
+    Row(
+        modifier          = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("$rank", Modifier.width(22.dp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.outlineVariant)
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = member.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(3.dp))
+            CordadaLevelPill(member.levelIdx, member.isOwner)
+        }
+        CordadaMetricCol("${member.uniquePeaks}", MaterialTheme.colorScheme.onSurface, Modifier.width(52.dp))
+        CordadaMetricCol("${member.totalCairns}", Color(0xFFD97706), Modifier.width(52.dp))
+        CordadaMetricCol("${member.totalEp}", MaterialTheme.colorScheme.onSurface, Modifier.width(44.dp))
+        if (canExpel) {
+            Box {
+                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(32.dp)) {
+                    Text("⋮", fontSize = 18.sp, color = Color(0xFF9CA3AF))
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text    = { Text(stringResource(R.string.cordadas_expel), color = Color(0xFFEF4444), fontSize = 14.sp) },
+                        onClick = { menuOpen = false; onExpel(member) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CordadaLevelPill(levelIdx: Int, isOwner: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+        ) {
+            Text(levelName(levelIdx), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        }
+        if (isOwner) {
+            Box(
+                Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFFF0FDF4)).padding(horizontal = 5.dp, vertical = 2.dp),
+            ) {
+                Text(stringResource(R.string.cordadas_owner_badge), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CordadaMetricCol(value: String, color: Color, modifier: Modifier = Modifier) {
+    Text(
+        text       = value,
+        fontSize   = 14.sp,
+        fontWeight = FontWeight.ExtraBold,
+        color      = color,
+        lineHeight = 16.sp,
+        textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier   = modifier,
+    )
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
@@ -233,7 +392,7 @@ private val ChevronRightIcon: ImageVector by lazy {
     }.build()
 }
 
-private val PlusSmallIcon: ImageVector by lazy {
+val PlusSmallIcon: ImageVector by lazy {
     ImageVector.Builder("Plus", 20.dp, 20.dp, 24f, 24f).apply {
         path(
             stroke          = androidx.compose.ui.graphics.SolidColor(Color.White),
@@ -268,7 +427,7 @@ private val SearchIconSmall: ImageVector by lazy {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CordadaModalSheet(
+fun CordadaModalSheet(
     onDismiss: () -> Unit,
     dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
     content: @Composable ColumnScope.() -> Unit,
@@ -293,10 +452,35 @@ private fun CordadaModalSheet(
 
 // ── Create sheet ───────────────────────────────────────────────────────────────
 
+/** Decodes [uri], center-crops to a square and scales to 512px, returns a JPEG-ready bitmap. */
+private fun squareBitmapFromUri(context: android.content.Context, uri: Uri): Bitmap? = runCatching {
+    val src = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+        ?: return null
+    val side = minOf(src.width, src.height)
+    val x = (src.width - side) / 2
+    val y = (src.height - side) / 2
+    val cropped = Bitmap.createBitmap(src, x, y, side, side)
+    if (side > 512) Bitmap.createScaledBitmap(cropped, 512, 512, true) else cropped
+}.getOrNull()
+
+private fun bitmapToJpeg(bitmap: Bitmap): ByteArray =
+    ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
+
 @Composable
-private fun CreateCordadaSheet(onDismiss: () -> Unit, onCreate: (name: String, desc: String?) -> Unit) {
+fun CreateCordadaSheet(
+    friends: List<FriendEntry>,
+    onDismiss: () -> Unit,
+    onCreate: (name: String, desc: String?, memberIds: List<String>, avatarBytes: ByteArray?) -> Unit,
+) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
+    var avatarBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val selectedIds = remember { mutableStateListOf<String>() }
+
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { avatarBitmap = squareBitmapFromUri(context, it) }
+    }
 
     CordadaModalSheet(onDismiss = onDismiss) {
         Column(
@@ -307,6 +491,32 @@ private fun CreateCordadaSheet(onDismiss: () -> Unit, onCreate: (name: String, d
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(R.string.cordadas_create_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+
+            // Avatar picker (centered circle)
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier         = Modifier
+                        .size(84.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF3F4F6))
+                        .border(1.dp, Color(0xFFE5E7EB), CircleShape)
+                        .clickable { photoPicker.launch("image/*") },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val bmp = avatarBitmap
+                    if (bmp != null) {
+                        Image(
+                            bitmap        = bmp.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale  = ContentScale.Crop,
+                            modifier      = Modifier.fillMaxSize().clip(CircleShape),
+                        )
+                    } else {
+                        Text("📷", fontSize = 26.sp)
+                    }
+                }
+            }
+
             OutlinedTextField(
                 value         = name,
                 onValueChange = { if (it.length <= 60) name = it },
@@ -322,11 +532,68 @@ private fun CreateCordadaSheet(onDismiss: () -> Unit, onCreate: (name: String, d
                 maxLines      = 4,
                 modifier      = Modifier.fillMaxWidth(),
             )
+
+            // Member selection (accepted friends)
+            if (friends.isNotEmpty()) {
+                Text(
+                    stringResource(R.string.cordadas_add_members),
+                    fontSize   = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = Color(0xFF6B7280),
+                )
+                Column(
+                    modifier            = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 200.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    friends.forEach { entry ->
+                        val checked = selectedIds.contains(entry.friend.id)
+                        Row(
+                            modifier          = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    if (checked) selectedIds.remove(entry.friend.id)
+                                    else selectedIds.add(entry.friend.id)
+                                }
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            UserAvatar(entry.friend.name, 32, entry.friend.avatarUrl)
+                            Text(
+                                entry.friend.name,
+                                fontSize = 14.sp,
+                                color    = Color(0xFF111827),
+                                modifier = Modifier.weight(1f),
+                            )
+                            Checkbox(checked = checked, onCheckedChange = null)
+                        }
+                    }
+                }
+            }
+
             Button(
-                onClick  = { if (name.isNotBlank()) onCreate(name.trim(), desc.ifBlank { null }) },
+                onClick  = {
+                    if (name.isNotBlank()) {
+                        onCreate(
+                            name.trim(),
+                            desc.ifBlank { null },
+                            selectedIds.toList(),
+                            avatarBitmap?.let { bitmapToJpeg(it) },
+                        )
+                    }
+                },
                 enabled  = name.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = PeakBlueActive),
+                colors   = ButtonDefaults.buttonColors(
+                    containerColor         = PeakGreenCTA,
+                    contentColor           = Color.White,
+                    disabledContainerColor = PeakGreenCTA.copy(alpha = 0.4f),
+                    disabledContentColor   = Color.White,
+                ),
             ) {
                 Text(stringResource(R.string.cordadas_create_btn), fontWeight = FontWeight.SemiBold)
             }
@@ -396,7 +663,7 @@ private fun InviteSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        UserAvatar(user.name, 36)
+                        UserAvatar(user.name, 36, user.avatarUrl)
                         Column(Modifier.weight(1f)) {
                             Text(user.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827))
                             if (user.username != null) Text("@${user.username}", fontSize = 11.sp, color = Color(0xFF9CA3AF))
@@ -415,10 +682,11 @@ private fun InviteSheet(
     }
 }
 
-// ── Detail sheet ───────────────────────────────────────────────────────────────
+// ── Detail page (full-screen) ────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CordadaDetailSheet(
+fun CordadaDetailScreen(
     detail: CordadaDetail,
     inviteQuery: String,
     inviteResults: List<UserStub>,
@@ -430,87 +698,84 @@ private fun CordadaDetailSheet(
     onExpel: (String) -> Unit,
     onLeave: () -> Unit,
     onDelete: () -> Unit,
-    onDismiss: () -> Unit,
+    onBack: () -> Unit,
 ) {
     var showInviteSheet   by remember { mutableStateOf(false) }
     var showConfirmLeave  by remember { mutableStateOf(false) }
     var showConfirmDelete by remember { mutableStateOf(false) }
     var expelTarget       by remember { mutableStateOf<CordadaMemberRanking?>(null) }
 
-    CordadaModalSheet(
-        onDismiss = onDismiss,
-        dragHandle = {
-            Box(
-                modifier         = Modifier.fillMaxWidth().height(7.dp).background(Color(0xFF059669)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(Modifier.width(32.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = 0.6f)))
-            }
-        },
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-        ) {
-            // Header
-            Row(
-                modifier          = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                CordadaAvatar(detail.name, 48)
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(detail.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+    Surface(modifier = Modifier.fillMaxSize(), color = PeakBackground) {
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title          = { Text(detail.name, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(BackChevronIcon, contentDescription = "Volver", tint = Color.Unspecified)
+                        }
+                    },
+                    actions = {
                         if (detail.isOwner) {
-                            Box(
-                                Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFFF0FDF4)).padding(horizontal = 5.dp, vertical = 1.dp)
-                            ) {
-                                Text(stringResource(R.string.cordadas_owner_badge), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                            TextButton(onClick = { showInviteSheet = true }) {
+                                Text(stringResource(R.string.cordadas_invite_btn), color = PeakBlueActive, fontWeight = FontWeight.SemiBold)
                             }
                         }
-                    }
-                    if (!detail.description.isNullOrBlank()) {
-                        Text(detail.description, fontSize = 12.sp, color = Color(0xFF6B7280))
-                    }
-                }
-                if (detail.isOwner) {
-                    SmallBtn(stringResource(R.string.cordadas_invite_btn), onClick = { showInviteSheet = true })
-                }
-            }
-            HRule()
-
-            // Ranking
-            SectionLabel("${stringResource(R.string.cordadas_tab)} · ${detail.members.size}")
-            detail.members.forEachIndexed { idx, member ->
-                RankingRow(
-                    position  = idx + 1,
-                    member    = member,
-                    isOwner   = detail.isOwner,
-                    canExpel  = detail.isOwner && !member.isOwner && !member.isCurrentUser,
-                    onExpel   = { expelTarget = member },
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
                 )
-                if (idx < detail.members.lastIndex) HRule()
-            }
-            HRule()
-            Spacer(Modifier.height(8.dp))
+            },
+            containerColor = PeakBackground,
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                // Header (avatar + name + description + member count)
+                Column(
+                    modifier            = Modifier.fillMaxWidth().padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    CordadaAvatar(detail.name, 72, detail.avatarUrl)
+                    Spacer(Modifier.height(10.dp))
+                    Text(detail.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                    if (!detail.description.isNullOrBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(detail.description, fontSize = 13.sp, color = Color(0xFF6B7280), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(stringResource(R.string.cordadas_members, detail.members.size), fontSize = 12.sp, color = Color(0xFF9CA3AF))
+                }
 
-            // Footer actions
-            if (detail.isOwner) {
-                TextButton(
-                    onClick  = { showConfirmDelete = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors   = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
-                ) { Text(stringResource(R.string.cordadas_delete), fontWeight = FontWeight.SemiBold) }
-            } else {
-                TextButton(
-                    onClick  = { showConfirmLeave = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors   = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
-                ) { Text(stringResource(R.string.cordadas_leave), fontWeight = FontWeight.SemiBold) }
+                // Ranking (Stats-style)
+                SectionLabel(stringResource(R.string.cordadas_ranking))
+                Spacer(Modifier.height(4.dp))
+                CordadaLeaderboardCard(
+                    members = detail.members,
+                    isOwner = detail.isOwner,
+                    onExpel = { expelTarget = it },
+                )
+
+                Spacer(Modifier.height(24.dp))
+
+                // Footer action
+                if (detail.isOwner) {
+                    TextButton(
+                        onClick  = { showConfirmDelete = true },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        colors   = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
+                    ) { Text(stringResource(R.string.cordadas_delete), fontWeight = FontWeight.SemiBold) }
+                } else {
+                    TextButton(
+                        onClick  = { showConfirmLeave = true },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        colors   = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
+                    ) { Text(stringResource(R.string.cordadas_leave), fontWeight = FontWeight.SemiBold) }
+                }
+                Spacer(Modifier.height(24.dp))
             }
-            Spacer(Modifier.height(8.dp))
         }
     }
 
@@ -566,128 +831,44 @@ private fun CordadaDetailSheet(
     }
 }
 
-// ── Main tab content ───────────────────────────────────────────────────────────
+// ── Cordada detail host (rendered by the unified FriendsScreen) ──────────────────
 
 @Composable
-fun CordadasTab(
-    currentUserId: String,
-    vm: CordadasViewModel = viewModel(),
-) {
+fun CordadaDetailHost(currentUserId: String, vm: CordadasViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
-    var showCreateSheet by remember { mutableStateOf(false) }
-
-    if (state.isLoading) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = PeakBlueActive)
+    val detail = state.selectedDetail
+    if (state.isLoadingDetail) {
+        Box(
+            Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator(color = Color.White)
         }
-        return
-    }
-
-    LazyColumn(
-        modifier       = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 32.dp),
-    ) {
-        // ── "Nueva cordada" row ─────────────────────────────────────────────
-        item {
-            Row(
-                modifier          = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .clickable { showCreateSheet = true }
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(
-                    modifier         = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFEFF6FF)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(PlusSmallIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(18.dp))
-                }
-                Text(
-                    stringResource(R.string.cordadas_new),
-                    fontSize   = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color      = PeakBlueActive,
-                )
-            }
-            HRule()
-            Spacer(Modifier.height(8.dp))
-        }
-
-        // ── Pending invites ─────────────────────────────────────────────────
-        if (state.pendingInvites.isNotEmpty()) {
-            item { SectionLabel("${stringResource(R.string.cordadas_invites_section)} · ${state.pendingInvites.size}") }
-            items(state.pendingInvites, key = { "inv-${it.cordadaId}" }) { invite ->
-                Column(Modifier.background(Color.White)) {
-                    InviteCard(
-                        invite   = invite,
-                        onAccept = { vm.respondToInvite(invite.cordadaId, "ACCEPTED") },
-                        onReject = { vm.respondToInvite(invite.cordadaId, "REJECTED") },
-                    )
-                    HRule()
-                }
-            }
-            item { Spacer(Modifier.height(8.dp)) }
-        }
-
-        // ── Cordadas list ───────────────────────────────────────────────────
-        if (state.cordadas.isNotEmpty()) {
-            item { SectionLabel("${stringResource(R.string.cordadas_tab)} · ${state.cordadas.size}") }
-            items(state.cordadas, key = { it.id }) { item ->
-                Column(Modifier.background(Color.White)) {
-                    CordadaCard(item = item) { vm.openDetail(item.id) }
-                    HRule()
-                }
-            }
-        } else if (state.pendingInvites.isEmpty()) {
-            item {
-                Box(
-                    Modifier.fillParentMaxWidth().padding(horizontal = 16.dp, vertical = 40.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(stringResource(R.string.cordadas_empty), fontSize = 14.sp, color = Color(0xFF9CA3AF))
-                }
-            }
-        }
-    }
-
-    // Create sheet
-    if (showCreateSheet) {
-        CreateCordadaSheet(
-            onDismiss = { showCreateSheet = false },
-            onCreate  = { name, desc ->
-                showCreateSheet = false
-                vm.createCordada(name, desc)
-            },
+    } else if (detail != null) {
+        CordadaDetailScreen(
+            detail              = detail,
+            inviteQuery         = state.inviteQuery,
+            inviteResults       = state.inviteResults,
+            isSearchingInvite   = state.isSearchingInvite,
+            inviteSentIds       = state.inviteSentIds,
+            currentUserId       = currentUserId,
+            onInviteQueryChange = vm::onInviteQueryChange,
+            onInvite            = { vm.inviteUser(detail.id, it) },
+            onExpel             = { vm.removeMember(detail.id, it) },
+            onLeave             = { vm.leaveCordada(detail.id, currentUserId) },
+            onDelete            = { vm.deleteCordada(detail.id) },
+            onBack              = vm::closeDetail,
         )
     }
+}
 
-    // Detail sheet
-    val detail = state.selectedDetail
-    if (detail != null || state.isLoadingDetail) {
-        if (state.isLoadingDetail) {
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color.White)
-            }
-        } else if (detail != null) {
-            CordadaDetailSheet(
-                detail             = detail,
-                inviteQuery        = state.inviteQuery,
-                inviteResults      = state.inviteResults,
-                isSearchingInvite  = state.isSearchingInvite,
-                inviteSentIds      = state.inviteSentIds,
-                currentUserId      = currentUserId,
-                onInviteQueryChange = vm::onInviteQueryChange,
-                onInvite           = { vm.inviteUser(detail.id, it) },
-                onExpel            = { vm.removeMember(detail.id, it) },
-                onLeave            = { vm.leaveCordada(detail.id, currentUserId) },
-                onDelete           = { vm.deleteCordada(detail.id) },
-                onDismiss          = vm::closeDetail,
-            )
-        }
-    }
+private val BackChevronIcon: ImageVector by lazy {
+    ImageVector.Builder("Back", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 2f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) { moveTo(15f, 18f); lineTo(9f, 12f); lineTo(15f, 6f) }
+    }.build()
 }

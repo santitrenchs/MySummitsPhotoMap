@@ -54,6 +54,10 @@ import com.peakadex.app.core.model.RecentAscentSummary
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.model.UserStats
 import com.peakadex.app.core.ui.RARITY_PALETTE
+import com.peakadex.app.core.ui.LEVEL_DEFS
+import com.peakadex.app.core.ui.LevelDef
+import com.peakadex.app.core.ui.levelName
+import com.peakadex.app.core.ui.levelAccent
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
@@ -65,34 +69,9 @@ import java.util.Locale
 // Each subsequent level requires BOTH unique peaks AND ≥1 peak above the altitude threshold.
 // Keep in sync with lib/level-utils.ts LEVEL_DEFS (server is the source of truth for levelIdx).
 
-private data class AltReq(val threshold: Int, val count: Int)
-private data class LocalLevelDef(
-    val idx: Int,
-    val emoji: String,
-    val name: String,
-    val targetAscents: Int = 0,      // 0 = no requirement (base level)
-    val altReqs: List<AltReq> = emptyList(),
-)
-
-private val LEVEL_DEFS = listOf(
-    LocalLevelDef(1, "🌱", "Scout"),                                          // base — always met
-    LocalLevelDef(2, "🥾", "Guide",    20,  listOf(AltReq(2000, 1))),
-    LocalLevelDef(3, "🧭", "Explorer", 50,  listOf(AltReq(3000, 1))),
-    LocalLevelDef(4, "⛰️", "Alpinist", 100, listOf(AltReq(4000, 1))),
-    LocalLevelDef(5, "🏔️", "Master",   150, listOf(AltReq(5000, 1))),
-    LocalLevelDef(6, "👑", "Zenith",   220, listOf(AltReq(6500, 1))),
-)
-
-// Level accent colours — matches web LEVEL_COLORS (index = def.idx - 1)
-private val LEVEL_ACCENT = listOf(
-    Color(0xFF16A34A),  // 1 Scout    — green
-    Color(0xFFD97706),  // 2 Guide    — amber
-    Color(0xFFEA580C),  // 3 Explorer — orange
-    Color(0xFF1D4ED8),  // 4 Alpinist — blue
-    Color(0xFF7C3AED),  // 5 Master   — purple
-    Color(0xFFB45309),  // 6 Zenith   — gold
-)
-private fun levelAccent(idx: Int) = LEVEL_ACCENT[(idx - 1).coerceIn(0, LEVEL_ACCENT.lastIndex)]
+// Level definitions (names, emojis, thresholds, accent colours) live in the shared
+// single source of truth: core/ui/LevelDefs.kt → LEVEL_DEFS. The server owns the
+// computed 1-based levelIdx; these helpers only display / compute progression.
 
 // ── Rarity palette — mirrors lib/rarity.ts (same IDs + colors) ───────────────
 
@@ -109,8 +88,8 @@ private fun getAltCount(stats: UserStats, threshold: Int): Int = when {
 }
 
 // Returns true if uniquePeaks + altReqs are all satisfied (mirrors meetsLevel)
-private fun meetsLevel(def: LocalLevelDef, uniquePeaks: Int, stats: UserStats): Boolean {
-    if (uniquePeaks < def.targetAscents) return false
+private fun meetsLevel(def: LevelDef, uniquePeaks: Int, stats: UserStats): Boolean {
+    if (uniquePeaks < def.targetPeaks) return false
     return def.altReqs.all { r -> getAltCount(stats, r.threshold) >= r.count }
 }
 
@@ -291,8 +270,8 @@ private fun HeroHeader(data: HomeData, user: User?) {
         val heroLevelIdx     = (heroStats.levelIdx - 1).coerceIn(0, LEVEL_DEFS.lastIndex)
         val heroCurrent  = LEVEL_DEFS[heroLevelIdx]
         val heroNext     = if (heroLevelIdx < LEVEL_DEFS.lastIndex) LEVEL_DEFS[heroLevelIdx + 1] else null
-        val heroPrevTgt  = if (heroLevelIdx > 0) LEVEL_DEFS[heroLevelIdx - 1].targetAscents else 0
-        val heroTarget   = heroNext?.targetAscents ?: heroCurrent.targetAscents
+        val heroPrevTgt  = if (heroLevelIdx > 0) LEVEL_DEFS[heroLevelIdx - 1].targetPeaks else 0
+        val heroTarget   = heroNext?.targetPeaks ?: heroCurrent.targetPeaks
         val heroProgress = if (heroTarget > heroPrevTgt)
             ((heroUniquePeaks - heroPrevTgt).coerceAtLeast(0).toFloat() / (heroTarget - heroPrevTgt)).coerceIn(0f, 1f)
         else 1f
@@ -611,7 +590,7 @@ private fun ProgressionSection(data: HomeData, expanded: Boolean, onToggle: () -
 
 @Composable
 private fun LevelCard(
-    def: LocalLevelDef,
+    def: LevelDef,
     isCurrent: Boolean,
     isDone: Boolean,
     isLocked: Boolean,
@@ -688,15 +667,15 @@ private fun LevelCard(
                 modifier             = Modifier.padding(start = 40.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Pill(pluralStringResource(R.plurals.home_level_req_ascents_pill, def.targetAscents, def.targetAscents))
+                Pill(pluralStringResource(R.plurals.home_level_req_ascents_pill, def.targetPeaks, def.targetPeaks))
                 def.altReqs.forEach { r -> Pill(stringResource(R.string.home_level_req_altitude, r.threshold)) }
             }
 
             // Progress row — in-progress level only
             if (isCurrent) {
-                val progress  = (uniquePeaks.toFloat() / def.targetAscents).coerceIn(0f, 1f)
+                val progress  = (uniquePeaks.toFloat() / def.targetPeaks).coerceIn(0f, 1f)
                 val pct       = (progress * 100).toInt()
-                val remaining = def.targetAscents - uniquePeaks
+                val remaining = def.targetPeaks - uniquePeaks
 
                 Spacer(Modifier.height(12.dp))
 
@@ -728,7 +707,7 @@ private fun LevelCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text       = stringResource(R.string.home_level_progress_peaks, uniquePeaks, def.targetAscents),
+                        text       = stringResource(R.string.home_level_progress_peaks, uniquePeaks, def.targetPeaks),
                         fontSize   = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color      = MaterialTheme.colorScheme.primary,
@@ -991,9 +970,6 @@ private fun SectionTitle(title: String) {
 
 // ── Leaderboard ────────────────────────────────────────────────────────────────
 
-private fun levelNameForIdx(idx: Int): String =
-    LEVEL_DEFS.getOrNull(idx - 1)?.name ?: LEVEL_DEFS.first().name
-
 @Composable
 private fun LeaderboardCard(entries: List<LeaderboardEntry>) {
     OutlinedCard(
@@ -1180,7 +1156,7 @@ private fun LeaderboardLevelPill(levelIdx: Int) {
             .padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
         Text(
-            text       = levelNameForIdx(levelIdx),
+            text       = levelName(levelIdx),
             fontSize   = 10.sp,
             fontWeight = FontWeight.Bold,
             color      = MaterialTheme.colorScheme.onSurface,
