@@ -99,17 +99,7 @@ fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
     ) {
         CordadaAvatar(item.name, 44, item.avatarUrl)
         Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(item.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (item.myRole == "OWNER") {
-                    Icon(
-                        imageVector        = CrownIcon,
-                        contentDescription = stringResource(R.string.cordadas_owner_badge),
-                        tint               = Color.Unspecified,
-                        modifier           = Modifier.size(14.dp),
-                    )
-                }
-            }
+            Text(item.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier          = Modifier.padding(top = 3.dp),
