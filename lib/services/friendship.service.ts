@@ -2,7 +2,16 @@ import { prisma } from "@/lib/db/client";
 
 export type FriendEntry = {
   id: string;
-  friend: { id: string; name: string; username: string | null };
+  friend: {
+    id: string;
+    name: string;
+    username: string | null;
+    avatarUrl: string | null;
+    levelIdx: number;
+    uniquePeaks: number;
+    totalEp: number;
+    totalCairns: number;
+  };
   isRequester: boolean;
   createdAt: Date;
 };
@@ -105,18 +114,40 @@ export async function listFriends(userId: string): Promise<FriendEntry[]> {
       OR: [{ requesterId: userId }, { addresseeId: userId }],
     },
     include: {
-      requester: { select: { id: true, name: true, username: true } },
-      addressee: { select: { id: true, name: true, username: true } },
+      requester: { select: { id: true, name: true, username: true, avatarUrl: true } },
+      addressee: { select: { id: true, name: true, username: true, avatarUrl: true } },
     },
     orderBy: { updatedAt: "desc" },
   });
 
-  return rows.map((f) => ({
-    id: f.id,
-    friend: f.requesterId === userId ? f.addressee : f.requester,
-    isRequester: f.requesterId === userId,
-    createdAt: f.createdAt,
-  }));
+  const friendUsers = rows.map((f) => (f.requesterId === userId ? f.addressee : f.requester));
+  const friendIds = friendUsers.map((u) => u.id);
+
+  const statsRows = await prisma.userStats.findMany({
+    where: { userId: { in: friendIds } },
+    select: { userId: true, levelIdx: true, uniquePeaks: true, totalEp: true, totalCairns: true },
+  });
+  const statsMap = new Map(statsRows.map((s) => [s.userId, s]));
+
+  return rows.map((f) => {
+    const u = f.requesterId === userId ? f.addressee : f.requester;
+    const s = statsMap.get(u.id);
+    return {
+      id: f.id,
+      friend: {
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        avatarUrl: u.avatarUrl ?? null,
+        levelIdx: s?.levelIdx ?? 1,
+        uniquePeaks: s?.uniquePeaks ?? 0,
+        totalEp: s?.totalEp ?? 0,
+        totalCairns: s?.totalCairns ?? 0,
+      },
+      isRequester: f.requesterId === userId,
+      createdAt: f.createdAt,
+    };
+  });
 }
 
 export async function listIncomingRequests(userId: string) {

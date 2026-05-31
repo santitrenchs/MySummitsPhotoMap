@@ -163,6 +163,10 @@ data class UserStub(
     val name: String,
     val username: String? = null,
     val avatarUrl: String? = null,
+    val levelIdx: Int = 1,
+    val uniquePeaks: Int = 0,
+    val totalEp: Int = 0,
+    val totalCairns: Int = 0,
 )
 
 @Serializable
