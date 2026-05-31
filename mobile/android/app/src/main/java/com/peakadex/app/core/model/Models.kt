@@ -469,6 +469,7 @@ data class CordadaSummary(
     val avatarUrl: String? = null,
     val ownerId: String,
     val memberCount: Int,
+    val memberAvatars: List<String?> = emptyList(),
     val myRole: String,   // "OWNER" | "MEMBER"
 )
 

@@ -311,7 +311,7 @@ private fun FriendRow(entry: FriendEntry, onClick: () -> Unit, onRemove: () -> U
         Column(Modifier.weight(1f)) {
             Text(entry.friend.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary)
             Text(
-                "${levelEmoji(entry.friend.levelIdx)} ${levelName(entry.friend.levelIdx)}",
+                levelName(entry.friend.levelIdx),
                 fontSize = 12.sp,
                 color = FriendsTextSecondary,
                 fontWeight = FontWeight.Medium,
