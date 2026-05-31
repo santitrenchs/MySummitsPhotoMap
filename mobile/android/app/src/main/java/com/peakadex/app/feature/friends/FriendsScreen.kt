@@ -413,7 +413,7 @@ private fun FriendRow(entry: FriendEntry, onClick: () -> Unit, onRemove: () -> U
                 Text(" ${stringResource(R.string.home_leaderboard_col_ep)}", fontSize = 12.sp, color = FriendsTextSecondary)
                 Text("  ·  ", fontSize = 12.sp, color = sep)
                 CairnIcon(Modifier.padding(end = 3.dp))
-                Text("${entry.friend.totalCairns}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
+                Text("${entry.friend.totalCairns}", fontSize = 12.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
             }
         }
         Box {
@@ -598,7 +598,7 @@ private fun SpeedDialRow(emoji: String, label: String, onClick: () -> Unit) {
 // ── Header with mountain background ──────────────────────────────────────────────
 
 @Composable
-private fun FriendsHeader(connections: Int, onBack: () -> Unit, onAdd: () -> Unit) {
+private fun FriendsHeader(onBack: () -> Unit, onAdd: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -643,11 +643,6 @@ private fun FriendsHeader(connections: Int, onBack: () -> Unit, onAdd: () -> Uni
                     fontWeight = FontWeight.Bold,
                     color      = FriendsTextPrimary,
                 )
-                Text(
-                    stringResource(R.string.friends_connections, connections),
-                    fontSize = 13.sp,
-                    color    = FriendsTextSecondary,
-                )
             }
         }
     }
@@ -689,11 +684,9 @@ fun FriendsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            val connections = friendsState.friends.size + cordadasState.cordadas.size
             FriendsHeader(
-                connections = connections,
-                onBack      = onBack,
-                onAdd       = { showActionSheet = true },
+                onBack = onBack,
+                onAdd  = { showActionSheet = true },
             )
         },
         containerColor = PeakBackground,
@@ -902,7 +895,12 @@ private fun UnifiedList(
                 cordadasState.cordadas.map { ChatEntry.Group(it) })
                 .sortedBy { it.sortName.lowercase() }
         if (chats.isNotEmpty()) {
-            item { SectionLabel("${stringResource(R.string.friends_section_friends)} · ${chats.size}") }
+            item {
+                SectionLabel(
+                    "${stringResource(R.string.friends_section_friends)} ${friendsState.friends.size}" +
+                        "   ·   ${stringResource(R.string.cordadas_tab)} ${cordadasState.cordadas.size}"
+                )
+            }
             items(chats, key = { it.key }) { chat ->
                 Column(Modifier.animateItem().background(Color.White)) {
                     when (chat) {
