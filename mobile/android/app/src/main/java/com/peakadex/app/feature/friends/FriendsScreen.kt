@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
@@ -99,6 +101,63 @@ private val PersonAddIcon: ImageVector by lazy {
             // Plus
             moveTo(19f, 8f); lineTo(19f, 14f)
             moveTo(16f, 11f); lineTo(22f, 11f)
+        }
+    }.build()
+}
+
+/** Cairn (CS) icon — three stacked amber trapezoids, identical to the Stats hero. */
+@Composable
+internal fun CairnIcon(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.size(width = 11.dp, height = 10.dp)) {
+        val w = size.width; val h = size.height
+        val amber = Color(0xFFF59E0B)
+        drawPath(Path().apply { moveTo(w*0.05f,h); lineTo(w*0.95f,h); lineTo(w*0.82f,h*0.72f); lineTo(w*0.18f,h*0.72f); close() }, color = amber)
+        drawPath(Path().apply { moveTo(w*0.18f,h*0.68f); lineTo(w*0.82f,h*0.68f); lineTo(w*0.70f,h*0.40f); lineTo(w*0.30f,h*0.40f); close() }, color = amber)
+        drawPath(Path().apply { moveTo(w*0.30f,h*0.36f); lineTo(w*0.70f,h*0.36f); lineTo(w*0.58f,h*0.04f); lineTo(w*0.42f,h*0.04f); close() }, color = amber)
+    }
+}
+
+/** Standard Material `more_vert` (three dots). */
+private val MoreVertIcon: ImageVector by lazy {
+    ImageVector.Builder("MoreVert", 24.dp, 24.dp, 24f, 24f).apply {
+        path(fill = androidx.compose.ui.graphics.SolidColor(Color(0xFF9CA3AF))) {
+            // top dot
+            moveTo(12f, 8f)
+            curveTo(13.1f, 8f, 14f, 7.1f, 14f, 6f)
+            curveTo(14f, 4.9f, 13.1f, 4f, 12f, 4f)
+            curveTo(10.9f, 4f, 10f, 4.9f, 10f, 6f)
+            curveTo(10f, 7.1f, 10.9f, 8f, 12f, 8f)
+            close()
+            // middle dot
+            moveTo(12f, 10f)
+            curveTo(10.9f, 10f, 10f, 10.9f, 10f, 12f)
+            curveTo(10f, 13.1f, 10.9f, 14f, 12f, 14f)
+            curveTo(13.1f, 14f, 14f, 13.1f, 14f, 12f)
+            curveTo(14f, 10.9f, 13.1f, 10f, 12f, 10f)
+            close()
+            // bottom dot
+            moveTo(12f, 16f)
+            curveTo(10.9f, 16f, 10f, 16.9f, 10f, 18f)
+            curveTo(10f, 19.1f, 10.9f, 20f, 12f, 20f)
+            curveTo(13.1f, 20f, 14f, 19.1f, 14f, 18f)
+            curveTo(14f, 16.9f, 13.1f, 16f, 12f, 16f)
+            close()
+        }
+    }.build()
+}
+
+/** Crown icon — small gold/amber founder marker. */
+internal val CrownIcon: ImageVector by lazy {
+    ImageVector.Builder("Crown", 24.dp, 24.dp, 24f, 24f).apply {
+        path(fill = androidx.compose.ui.graphics.SolidColor(Color(0xFFF59E0B))) {
+            moveTo(3f, 7f)
+            lineTo(6.5f, 11f)
+            lineTo(12f, 4.5f)
+            lineTo(17.5f, 11f)
+            lineTo(21f, 7f)
+            lineTo(19f, 19f)
+            lineTo(5f, 19f)
+            close()
         }
     }.build()
 }
@@ -327,44 +386,39 @@ private fun FriendRow(entry: FriendEntry, onClick: () -> Unit, onRemove: () -> U
             },
         )
     }
+    val valueColor = Color(0xFF374151)
+    val sep        = FriendsTextMuted
     Row(
         modifier          = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         UserAvatar(entry.friend.name, 40, entry.friend.avatarUrl)
         Column(Modifier.weight(1f)) {
             Text(entry.friend.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary)
-            Text(
-                levelName(entry.friend.levelIdx),
-                fontSize = 12.sp,
-                color = FriendsTextSecondary,
-                fontWeight = FontWeight.Medium,
-            )
+            // Secondary line: level · N Cimas · N EP · [CS] N
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.padding(top = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 1.dp),
             ) {
-                Text(
-                    "${entry.friend.uniquePeaks} ${stringResource(R.string.home_leaderboard_col_peaks)}",
-                    fontSize = 11.sp, color = FriendsTextMuted,
-                )
-                Text(
-                    "${entry.friend.totalCairns} ${stringResource(R.string.home_leaderboard_col_cairns)}",
-                    fontSize = 11.sp, color = FriendsTextMuted,
-                )
-                Text(
-                    "${entry.friend.totalEp} ${stringResource(R.string.home_leaderboard_col_ep)}",
-                    fontSize = 11.sp, color = FriendsTextMuted,
-                )
+                Text(levelName(entry.friend.levelIdx), fontSize = 12.sp, color = FriendsTextSecondary, fontWeight = FontWeight.Medium)
+                Text("  ·  ", fontSize = 12.sp, color = sep)
+                Text("${entry.friend.uniquePeaks}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
+                Text(" ${stringResource(R.string.home_leaderboard_col_peaks)}", fontSize = 12.sp, color = FriendsTextSecondary)
+                Text("  ·  ", fontSize = 12.sp, color = sep)
+                Text("${entry.friend.totalEp}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
+                Text(" ${stringResource(R.string.home_leaderboard_col_ep)}", fontSize = 12.sp, color = FriendsTextSecondary)
+                Text("  ·  ", fontSize = 12.sp, color = sep)
+                CairnIcon(Modifier.padding(end = 3.dp))
+                Text("${entry.friend.totalCairns}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
             }
         }
         Box {
-            IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(36.dp)) {
-                Text("⋮", fontSize = 20.sp, color = FriendsTextSecondary)
+            IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(40.dp)) {
+                Icon(MoreVertIcon, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(20.dp))
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 DropdownMenuItem(
@@ -559,7 +613,7 @@ private fun FriendsHeader(connections: Int, onBack: () -> Unit, onAdd: () -> Uni
             modifier           = Modifier
                 .align(Alignment.BottomEnd)
                 .fillMaxWidth()
-                .height(150.dp),
+                .height(105.dp),
         )
         Column(Modifier.statusBarsPadding()) {
             // Top action row: back + add.
@@ -582,10 +636,10 @@ private fun FriendsHeader(connections: Int, onBack: () -> Unit, onAdd: () -> Uni
                 }
             }
             // Title + subtitle.
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 18.dp)) {
+            Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
                 Text(
                     stringResource(R.string.friends_title),
-                    fontSize   = 28.sp,
+                    fontSize   = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color      = FriendsTextPrimary,
                 )
