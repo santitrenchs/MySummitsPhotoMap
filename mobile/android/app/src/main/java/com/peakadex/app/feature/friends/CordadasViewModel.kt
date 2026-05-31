@@ -106,6 +106,27 @@ class CordadasViewModel : ViewModel() {
         _state.update { it.copy(error = null) }
     }
 
+    /** Owner-only: replaces an existing cordada's avatar, then refreshes the detail + list. */
+    fun updateCordadaAvatar(cordadaId: String, avatarBytes: ByteArray) {
+        viewModelScope.launch {
+            try {
+                val part = okhttp3.MultipartBody.Part.createFormData(
+                    "file", "cordada.jpg",
+                    avatarBytes.toRequestBody("image/jpeg".toMediaType()),
+                )
+                api.uploadCordadaAvatar(cordadaId, part)
+                // Refresh detail so the new avatarUrl is reflected.
+                val resp = api.getCordadaDetail(cordadaId)
+                _state.update { it.copy(selectedDetail = resp.cordada) }
+                load()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                android.util.Log.e("CordadasVM", "updateCordadaAvatar error", e)
+            }
+        }
+    }
+
     fun respondToInvite(cordadaId: String, action: String) {
         viewModelScope.launch {
             try {

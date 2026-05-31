@@ -207,176 +207,89 @@ private fun SmallBtn(label: String, onClick: () -> Unit, ghost: Boolean = false)
     }
 }
 
-// ── Ranking (Stats-style leaderboard) ────────────────────────────────────────────
+// ── Ranking (Amigos-style rows) ──────────────────────────────────────────────────
+
+/** Ice-axe rank badge: gold/silver/bronze piolet for top 3, plain number for the rest. */
+@Composable
+private fun RankBadge(rank: Int) {
+    val pioletColor = when (rank) {
+        1    -> Color(0xFFFBBF24)   // gold
+        2    -> Color(0xFFB8C0CC)   // silver
+        3    -> Color(0xFFCD7F32)   // bronze
+        else -> null
+    }
+    Box(modifier = Modifier.width(28.dp), contentAlignment = Alignment.Center) {
+        if (pioletColor != null) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector        = PioletIcon,
+                    contentDescription = null,
+                    tint               = pioletColor,
+                    modifier           = Modifier.size(18.dp),
+                )
+                Text("$rank", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = pioletColor)
+            }
+        } else {
+            Text("$rank", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsTextMuted)
+        }
+    }
+}
 
 @Composable
-private fun CordadaLeaderboardCard(
-    members: List<CordadaMemberRanking>,
-    isOwner: Boolean,
+private fun CordadaRankRow(
+    member: CordadaMemberRanking,
+    rank: Int,
+    canExpelOwner: Boolean,
     onExpel: (CordadaMemberRanking) -> Unit,
 ) {
-    OutlinedCard(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        shape    = MaterialTheme.shapes.large,
-    ) {
-        // Column headers
-        Row(
-            modifier          = Modifier
-                .fillMaxWidth()
-                .padding(start = 19.dp, end = 16.dp)
-                .padding(top = 10.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Spacer(Modifier.width(22.dp))
-            Spacer(Modifier.weight(1f))
-            CordadaColHeader(stringResource(R.string.home_leaderboard_col_peaks),  Modifier.width(52.dp))
-            CordadaColHeader(stringResource(R.string.home_leaderboard_col_cairns), Modifier.width(52.dp))
-            CordadaColHeader(stringResource(R.string.home_leaderboard_col_ep),     Modifier.width(44.dp))
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-
-        val accepted = members.filter { !it.isPending }
-        val pending  = members.filter { it.isPending }
-
-        accepted.forEachIndexed { index, member ->
-            val rank = index + 1
-            if (member.isCurrentUser) {
-                CordadaRankCurrentRow(member, rank, isOwner, onExpel)
-            } else {
-                CordadaRankOtherRow(member, rank, isOwner, onExpel)
-            }
-            if (index < accepted.lastIndex || pending.isNotEmpty()) {
-                HorizontalDivider(
-                    color    = if (member.isCurrentUser) MaterialTheme.colorScheme.primaryContainer
-                               else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.padding(horizontal = if (member.isCurrentUser) 0.dp else 16.dp),
-                )
-            }
-        }
-
-        pending.forEachIndexed { index, member ->
-            CordadaRankPendingRow(member, isOwner, onExpel)
-            if (index < pending.lastIndex) {
-                HorizontalDivider(
-                    color    = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CordadaRankPendingRow(member: CordadaMemberRanking, canExpel: Boolean, onExpel: (CordadaMemberRanking) -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
+    val canExpel   = canExpelOwner && !member.isOwner && !member.isCurrentUser
+    val valueColor = Color(0xFF374151)
+    val sep        = FriendsTextMuted
     Row(
-        modifier          = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Spacer(Modifier.width(22.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = member.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(3.dp))
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFFFEF3C7))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            ) {
-                Text(
-                    stringResource(R.string.cordadas_pending),
-                    fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309),
-                )
-            }
-        }
-        if (canExpel) {
-            Box {
-                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(32.dp)) {
-                    Text("⋮", fontSize = 18.sp, color = Color(0xFF9CA3AF))
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(
-                        text    = { Text(stringResource(R.string.cordadas_expel), color = Color(0xFFEF4444), fontSize = 14.sp) },
-                        onClick = { menuOpen = false; onExpel(member) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CordadaColHeader(label: String, modifier: Modifier = Modifier) {
-    Text(
-        text       = label,
-        fontSize   = 10.sp,
-        color      = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontWeight = FontWeight.SemiBold,
-        modifier   = modifier,
-        textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
-    )
-}
-
-@Composable
-private fun CordadaRankCurrentRow(member: CordadaMemberRanking, rank: Int, canExpelOwner: Boolean, onExpel: (CordadaMemberRanking) -> Unit) {
-    Row(
-        modifier = Modifier
+        modifier          = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .background(MaterialTheme.colorScheme.primaryContainer),
-    ) {
-        Box(Modifier.width(3.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
-        Row(
-            modifier          = Modifier.weight(1f).padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("$rank", Modifier.width(22.dp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = member.name, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    Text(stringResource(R.string.home_leaderboard_you), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Spacer(Modifier.height(3.dp))
-                CordadaLevelPill(member.levelIdx, member.isOwner)
-            }
-            CordadaMetricCol("${member.uniquePeaks}", MaterialTheme.colorScheme.primary, Modifier.width(52.dp))
-            CordadaMetricCol("${member.totalCairns}", Color(0xFFD97706), Modifier.width(52.dp))
-            CordadaMetricCol("${member.totalEp}", MaterialTheme.colorScheme.primary, Modifier.width(44.dp))
-        }
-    }
-}
-
-@Composable
-private fun CordadaRankOtherRow(member: CordadaMemberRanking, rank: Int, canExpelOwner: Boolean, onExpel: (CordadaMemberRanking) -> Unit) {
-    var menuOpen by remember { mutableStateOf(false) }
-    val canExpel = canExpelOwner && !member.isOwner && !member.isCurrentUser
-    Row(
-        modifier          = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            .then(if (member.isCurrentUser) Modifier.background(Color(0xFFF0F9FF)) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("$rank", Modifier.width(22.dp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.outlineVariant)
+        RankBadge(rank)
+        UserAvatar(member.name, 40, member.avatarUrl)
         Column(Modifier.weight(1f)) {
-            Text(
-                text = member.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(3.dp))
-            CordadaLevelPill(member.levelIdx, member.isOwner)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    member.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                )
+                if (member.isCurrentUser) {
+                    Text("  ${stringResource(R.string.home_leaderboard_you)}", fontSize = 12.sp, color = FriendsTextSecondary)
+                }
+            }
+            // Level (· Fundador)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 1.dp)) {
+                Text(levelName(member.levelIdx), fontSize = 12.sp, color = FriendsTextSecondary, fontWeight = FontWeight.Medium)
+                if (member.isOwner) {
+                    Text("  ·  ", fontSize = 12.sp, color = sep)
+                    Text(stringResource(R.string.cordadas_founder), fontSize = 12.sp, color = Color(0xFF059669), fontWeight = FontWeight.SemiBold)
+                }
+            }
+            // Stats: Cimas · [CS] N · EP
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 1.dp)) {
+                Text("${member.uniquePeaks}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
+                Text(" ${stringResource(R.string.home_leaderboard_col_peaks)}", fontSize = 12.sp, color = FriendsTextSecondary)
+                Text("  ·  ", fontSize = 12.sp, color = sep)
+                CairnIcon(Modifier.padding(end = 3.dp))
+                Text("${member.totalCairns}", fontSize = 12.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
+                Text("  ·  ", fontSize = 12.sp, color = sep)
+                Text("${member.totalEp}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
+                Text(" ${stringResource(R.string.home_leaderboard_col_ep)}", fontSize = 12.sp, color = FriendsTextSecondary)
+            }
         }
-        CordadaMetricCol("${member.uniquePeaks}", MaterialTheme.colorScheme.onSurface, Modifier.width(52.dp))
-        CordadaMetricCol("${member.totalCairns}", Color(0xFFD97706), Modifier.width(52.dp))
-        CordadaMetricCol("${member.totalEp}", MaterialTheme.colorScheme.onSurface, Modifier.width(44.dp))
         if (canExpel) {
             Box {
-                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(32.dp)) {
-                    Text("⋮", fontSize = 18.sp, color = Color(0xFF9CA3AF))
+                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(40.dp)) {
+                    Text("⋮", fontSize = 18.sp, color = FriendsTextMuted)
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(
@@ -389,38 +302,42 @@ private fun CordadaRankOtherRow(member: CordadaMemberRanking, rank: Int, canExpe
     }
 }
 
+// ── Pending invites (separate section) ───────────────────────────────────────────
+
 @Composable
-private fun CordadaLevelPill(levelIdx: Int, isOwner: Boolean) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-        ) {
-            Text(levelName(levelIdx), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+private fun CordadaPendingRow(member: CordadaMemberRanking, canCancel: Boolean, onCancel: (CordadaMemberRanking) -> Unit) {
+    Row(
+        modifier          = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        UserAvatar(member.name, 40, member.avatarUrl)
+        Column(Modifier.weight(1f)) {
+            Text(member.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(R.string.cordadas_invite_sent_label), fontSize = 12.sp, color = FriendsTextMuted, modifier = Modifier.padding(top = 1.dp))
         }
-        if (isOwner) {
-            Box(
-                Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFFF0FDF4)).padding(horizontal = 5.dp, vertical = 2.dp),
-            ) {
-                Text(stringResource(R.string.cordadas_owner_badge), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
-            }
+        if (canCancel) {
+            SmallBtn(stringResource(R.string.action_cancel), onClick = { onCancel(member) }, ghost = true)
         }
     }
 }
 
-@Composable
-private fun CordadaMetricCol(value: String, color: Color, modifier: Modifier = Modifier) {
-    Text(
-        text       = value,
-        fontSize   = 14.sp,
-        fontWeight = FontWeight.ExtraBold,
-        color      = color,
-        lineHeight = 16.sp,
-        textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
-        modifier   = modifier,
-    )
+// ── Piolet icon (ice axe) ─────────────────────────────────────────────────────────
+
+private val PioletIcon: ImageVector by lazy {
+    ImageVector.Builder("Piolet", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = SolidColor(Color.White),
+            strokeLineWidth = 2.2f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            // Shaft (diagonal)
+            moveTo(15.5f, 7f); lineTo(7.5f, 20f)
+            // Pick head crossing near the top
+            moveTo(8f, 5.5f); lineTo(19.5f, 9f)
+        }
+    }.build()
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
@@ -742,12 +659,23 @@ fun CordadaDetailScreen(
     onExpel: (String) -> Unit,
     onLeave: () -> Unit,
     onDelete: () -> Unit,
+    onEditImage: (ByteArray) -> Unit,
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
     var showInviteSheet   by remember { mutableStateOf(false) }
     var showConfirmLeave  by remember { mutableStateOf(false) }
     var showConfirmDelete by remember { mutableStateOf(false) }
     var expelTarget       by remember { mutableStateOf<CordadaMemberRanking?>(null) }
+
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { u ->
+            squareBitmapFromUri(context, u)?.let { bmp -> onEditImage(bitmapToJpeg(bmp)) }
+        }
+    }
+
+    val accepted = detail.members.filter { !it.isPending }
+    val pending  = detail.members.filter { it.isPending }
 
     Surface(modifier = Modifier.fillMaxSize(), color = PeakBackground) {
         Scaffold(
@@ -777,30 +705,71 @@ fun CordadaDetailScreen(
                     .padding(padding)
                     .verticalScroll(rememberScrollState()),
             ) {
-                // Header (avatar + name + description + member count)
-                Column(
-                    modifier            = Modifier.fillMaxWidth().padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    CordadaAvatar(detail.name, 72, detail.avatarUrl)
-                    Spacer(Modifier.height(10.dp))
-                    Text(detail.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
-                    if (!detail.description.isNullOrBlank()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(detail.description, fontSize = 13.sp, color = Color(0xFF6B7280), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                // Cover image (editable) — the only identifying visual
+                Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+                    if (!detail.avatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model              = detail.avatarUrl,
+                            contentDescription = detail.name,
+                            contentScale       = ContentScale.Crop,
+                            modifier           = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Box(
+                            modifier         = Modifier
+                                .fillMaxSize()
+                                .background(Brush.linearGradient(listOf(Color(0xFF059669), Color(0xFF34D399)))),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("⛰", fontSize = 48.sp)
+                        }
                     }
-                    Spacer(Modifier.height(4.dp))
-                    Text(stringResource(R.string.cordadas_members, detail.members.size), fontSize = 12.sp, color = Color(0xFF9CA3AF))
+                    if (detail.isOwner) {
+                        SmallFloatingActionButton(
+                            onClick        = { photoPicker.launch("image/*") },
+                            containerColor = Color.White,
+                            contentColor   = PeakBlueActive,
+                            modifier       = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(12.dp),
+                        ) {
+                            Icon(EditPencilIcon, contentDescription = stringResource(R.string.cordadas_edit_photo), modifier = Modifier.size(20.dp))
+                        }
+                    }
                 }
 
-                // Ranking (Stats-style)
+                // Name + member count
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)) {
+                    Text(detail.name, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary)
+                    if (!detail.description.isNullOrBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(detail.description, fontSize = 13.sp, color = FriendsTextSecondary)
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text("👥 ${stringResource(R.string.cordadas_members, accepted.size)}", fontSize = 13.sp, color = FriendsTextMuted)
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Ranking (Amigos-style)
                 SectionLabel(stringResource(R.string.cordadas_ranking))
-                Spacer(Modifier.height(4.dp))
-                CordadaLeaderboardCard(
-                    members = detail.members,
-                    isOwner = detail.isOwner,
-                    onExpel = { expelTarget = it },
-                )
+                accepted.forEachIndexed { index, member ->
+                    CordadaRankRow(
+                        member        = member,
+                        rank          = index + 1,
+                        canExpelOwner = detail.isOwner,
+                        onExpel       = { expelTarget = it },
+                    )
+                }
+
+                // Pending invites (separate section)
+                if (pending.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    SectionLabel(stringResource(R.string.cordadas_invites_section))
+                    pending.forEach { member ->
+                        CordadaPendingRow(member, canCancel = detail.isOwner, onCancel = { expelTarget = it })
+                    }
+                }
 
                 Spacer(Modifier.height(24.dp))
 
@@ -901,9 +870,30 @@ fun CordadaDetailHost(currentUserId: String, vm: CordadasViewModel) {
             onExpel             = { vm.removeMember(detail.id, it) },
             onLeave             = { vm.leaveCordada(detail.id, currentUserId) },
             onDelete            = { vm.deleteCordada(detail.id) },
+            onEditImage         = { vm.updateCordadaAvatar(detail.id, it) },
             onBack              = vm::closeDetail,
         )
     }
+}
+
+private val EditPencilIcon: ImageVector by lazy {
+    ImageVector.Builder("EditPencil", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 2f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            moveTo(12f, 20f); lineTo(21f, 20f)
+            moveTo(16.5f, 3.5f)
+            curveTo(16.9f, 3.1f, 17.4f, 2.9f, 18f, 2.9f)
+            curveTo(18.6f, 2.9f, 19.1f, 3.1f, 19.5f, 3.5f)
+            curveTo(19.9f, 3.9f, 20.1f, 4.4f, 20.1f, 5f)
+            curveTo(20.1f, 5.6f, 19.9f, 6.1f, 19.5f, 6.5f)
+            lineTo(7f, 19f); lineTo(3f, 20f); lineTo(4f, 16f)
+            close()
+        }
+    }.build()
 }
 
 private val BackChevronIcon: ImageVector by lazy {
