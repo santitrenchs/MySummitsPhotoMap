@@ -9,6 +9,7 @@ export type CordadaSummary = {
   avatarUrl: string | null;
   ownerId: string;
   memberCount: number;
+  memberAvatars: (string | null)[];
   myRole: "OWNER" | "MEMBER";
 };
 
@@ -51,19 +52,26 @@ export async function listMyCordadas(userId: string): Promise<CordadaSummary[]> 
     where:   { userId, status: "ACCEPTED" },
     include: {
       cordada: {
-        include: { members: { where: { status: "ACCEPTED" } } },
+        include: {
+          members: {
+            where:   { status: "ACCEPTED" },
+            include: { user: { select: { avatarUrl: true } } },
+            orderBy: { joinedAt: "asc" },
+          },
+        },
       },
     },
   });
 
   return memberships.map((m) => ({
-    id:          m.cordada.id,
-    name:        m.cordada.name,
-    description: m.cordada.description,
-    avatarUrl:   m.cordada.avatarUrl ?? null,
-    ownerId:     m.cordada.ownerId,
-    memberCount: m.cordada.members.length,
-    myRole:      m.cordada.ownerId === userId ? "OWNER" : "MEMBER",
+    id:            m.cordada.id,
+    name:          m.cordada.name,
+    description:   m.cordada.description,
+    avatarUrl:     m.cordada.avatarUrl ?? null,
+    ownerId:       m.cordada.ownerId,
+    memberCount:   m.cordada.members.length,
+    memberAvatars: m.cordada.members.slice(0, 4).map((mem) => mem.user.avatarUrl ?? null),
+    myRole:        m.cordada.ownerId === userId ? "OWNER" : "MEMBER",
   }));
 }
 

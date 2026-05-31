@@ -109,10 +109,17 @@ fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
                     }
                 }
             }
-            Text(
-                stringResource(R.string.cordadas_members, item.memberCount),
-                fontSize = 12.sp, color = Color(0xFF9CA3AF),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier          = Modifier.padding(top = 3.dp),
+            ) {
+                MemberAvatarStack(item.memberAvatars, item.memberCount)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.cordadas_members, item.memberCount),
+                    fontSize = 12.sp, color = Color(0xFF9CA3AF),
+                )
+            }
         }
         Icon(
             imageVector        = ChevronRightIcon,
@@ -120,6 +127,52 @@ fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
             tint               = Color(0xFFD1D5DB),
             modifier           = Modifier.size(18.dp),
         )
+    }
+}
+
+@Composable
+private fun MemberAvatarStack(avatars: List<String?>, memberCount: Int, size: Int = 22) {
+    val shown   = avatars.take(4)
+    val overflow = memberCount - shown.size
+    val overlap = (size * 0.32f).dp
+    Row {
+        shown.forEachIndexed { i, url ->
+            Box(
+                modifier = Modifier
+                    .then(if (i > 0) Modifier.offset(x = -overlap * i) else Modifier)
+                    .size(size.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .padding(1.5.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE5E7EB)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (!url.isNullOrBlank()) {
+                    AsyncImage(
+                        model              = url,
+                        contentDescription = null,
+                        contentScale       = ContentScale.Crop,
+                        modifier           = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        }
+        if (overflow > 0) {
+            Box(
+                modifier = Modifier
+                    .offset(x = -overlap * shown.size)
+                    .size(size.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .padding(1.5.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFF3F4F6)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("+$overflow", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280))
+            }
+        }
     }
 }
 
