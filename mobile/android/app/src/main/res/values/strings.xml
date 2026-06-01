@@ -304,8 +304,9 @@
     <string name="cordadas_confirm_leave">¿Salir de esta cordada?</string>
     <string name="cordadas_confirm_delete">¿Eliminar la cordada? Esta acción no se puede deshacer.</string>
     <string name="cordadas_confirm_expel">¿Expulsar a este miembro?</string>
-    <string name="cordadas_founder">Owner</string>
+    <string name="cordadas_founder">Fundador</string>
     <string name="cordadas_of_members_prefix">Cordada de </string>
     <string name="cordadas_invite_sent_label">Invitación enviada</string>
     <string name="cordadas_edit_photo">Editar foto</string>
+    <string name="cordadas_delete_warning">Esta acción no se puede deshacer</string>
 </resources>
