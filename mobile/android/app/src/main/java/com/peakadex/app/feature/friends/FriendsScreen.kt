@@ -49,6 +49,7 @@ import com.peakadex.app.core.model.IncomingRequest
 import com.peakadex.app.core.model.UserStub
 import com.peakadex.app.core.model.UserStatsResponse
 import com.peakadex.app.AppContainer
+import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.levelEmoji
 import com.peakadex.app.core.ui.levelName
 import com.peakadex.app.core.ui.theme.PeakBackground
@@ -631,6 +632,15 @@ fun FriendsScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            CenterAlignedTopAppBar(
+                title  = { PeakadexLogo(height = 32.dp) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor    = MaterialTheme.colorScheme.surface,
+                    titleContentColor = Color.Unspecified,
+                ),
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick        = { showActionSheet = true },
