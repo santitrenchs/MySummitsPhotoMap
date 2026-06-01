@@ -21,9 +21,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
@@ -332,6 +335,55 @@ private fun CordadaPendingRow(member: CordadaMemberRanking, canCancel: Boolean, 
                 Text(stringResource(R.string.action_cancel), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         }
+    }
+}
+
+// ── Add-member button (dashed circle) ─────────────────────────────────────────────
+
+@Composable
+private fun AddMemberButton(onClick: () -> Unit) {
+    val ring = Color(0xFFD1D5DB)
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .drawBehind {
+                drawCircle(
+                    color  = ring,
+                    radius = size.minDimension / 2f - 1.dp.toPx(),
+                    style  = Stroke(
+                        width      = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(9f, 7f)),
+                    ),
+                )
+            }
+            .clip(CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(PlusSmallIcon, contentDescription = stringResource(R.string.cordadas_add_members), tint = Color(0xFF9CA3AF), modifier = Modifier.size(20.dp))
+    }
+}
+
+// ── Destructive footer row ────────────────────────────────────────────────────────
+
+@Composable
+private fun DestructiveRow(title: String, subtitle: String?, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Icon(TrashIcon, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(24.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFEF4444))
+            if (subtitle != null) {
+                Text(subtitle, fontSize = 13.sp, color = FriendsTextSecondary, modifier = Modifier.padding(top = 1.dp))
+            }
+        }
+        Icon(ChevronRightIcon, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -700,13 +752,6 @@ fun CordadaDetailScreen(
                             Icon(BackChevronIcon, contentDescription = "Volver", tint = Color.Unspecified)
                         }
                     },
-                    actions = {
-                        if (detail.isOwner) {
-                            TextButton(onClick = { showInviteSheet = true }) {
-                                Text(stringResource(R.string.cordadas_invite_btn), color = PeakBlueActive, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                    },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
                 )
             },
@@ -718,8 +763,8 @@ fun CordadaDetailScreen(
                     .padding(padding)
                     .verticalScroll(rememberScrollState()),
             ) {
-                // Cover image (editable) — the only identifying visual
-                Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+                // Cover image (editable) — full width, fixed height
+                Box(modifier = Modifier.fillMaxWidth().height(150.dp)) {
                     if (!detail.avatarUrl.isNullOrBlank()) {
                         AsyncImage(
                             model              = detail.avatarUrl,
@@ -737,47 +782,18 @@ fun CordadaDetailScreen(
                             Text("⛰", fontSize = 48.sp)
                         }
                     }
-                    // Bottom scrim for text legibility
+                    // Subtle bottom scrim to anchor the edit FAB
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .fillMaxWidth()
-                            .height(150.dp)
+                            .height(64.dp)
                             .background(
                                 Brush.verticalGradient(
-                                    listOf(
-                                        Color.Transparent,
-                                        Color.Black.copy(alpha = 0.35f),
-                                        Color.Black.copy(alpha = 0.80f),
-                                    ),
+                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.25f)),
                                 ),
                             ),
                     )
-                    // Title + member count overlaid bottom-left (card style)
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 16.dp, end = 72.dp, bottom = 14.dp),
-                    ) {
-                        Text(
-                            detail.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                            maxLines = 2, overflow = TextOverflow.Ellipsis,
-                        )
-                        Spacer(Modifier.height(2.dp))
-                        val membersPrefix = stringResource(R.string.cordadas_of_members_prefix)
-                        val membersCount  = stringResource(R.string.cordadas_members, accepted.size)
-                        Text(
-                            text = buildAnnotatedString {
-                                withStyle(
-                                    SpanStyle(color = Color.White.copy(alpha = 0.9f)),
-                                ) { append(membersPrefix) }
-                                withStyle(
-                                    SpanStyle(color = PeakGreenCTA, fontWeight = FontWeight.SemiBold),
-                                ) { append(membersCount) }
-                            },
-                            fontSize = 13.sp,
-                        )
-                    }
                     if (detail.isOwner) {
                         SmallFloatingActionButton(
                             onClick        = { photoPicker.launch("image/*") },
@@ -794,7 +810,39 @@ fun CordadaDetailScreen(
                     }
                 }
 
+                // Title + member count (below image)
+                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp)) {
+                    Text(
+                        detail.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(PeopleIcon, contentDescription = null, tint = FriendsTextSecondary, modifier = Modifier.size(16.dp))
+                        Text(
+                            stringResource(R.string.cordadas_members, accepted.size),
+                            fontSize = 14.sp, color = FriendsTextSecondary,
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(12.dp))
+
+                // Member avatars + add button
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment     = Alignment.CenterVertically,
+                ) {
+                    accepted.take(8).forEach { m ->
+                        UserAvatar(m.name, 48, m.avatarUrl)
+                    }
+                    if (detail.isOwner) {
+                        AddMemberButton(onClick = { showInviteSheet = true })
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
 
                 // Ranking (Amigos-style)
                 SectionLabel(stringResource(R.string.cordadas_ranking))
@@ -816,21 +864,22 @@ fun CordadaDetailScreen(
                     }
                 }
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(16.dp))
+                HRule()
 
-                // Footer action
+                // Footer destructive action
                 if (detail.isOwner) {
-                    TextButton(
+                    DestructiveRow(
+                        title    = stringResource(R.string.cordadas_delete),
+                        subtitle = stringResource(R.string.cordadas_delete_warning),
                         onClick  = { showConfirmDelete = true },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        colors   = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
-                    ) { Text(stringResource(R.string.cordadas_delete), fontWeight = FontWeight.SemiBold) }
+                    )
                 } else {
-                    TextButton(
+                    DestructiveRow(
+                        title    = stringResource(R.string.cordadas_leave),
+                        subtitle = null,
                         onClick  = { showConfirmLeave = true },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        colors   = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
-                    ) { Text(stringResource(R.string.cordadas_leave), fontWeight = FontWeight.SemiBold) }
+                    )
                 }
                 Spacer(Modifier.height(24.dp))
             }
@@ -949,5 +998,50 @@ private val BackChevronIcon: ImageVector by lazy {
             strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
             strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
         ) { moveTo(15f, 18f); lineTo(9f, 12f); lineTo(15f, 6f) }
+    }.build()
+}
+
+private val PeopleIcon: ImageVector by lazy {
+    ImageVector.Builder("People", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = SolidColor(Color(0xFF6B7280)),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            // left person
+            moveTo(8f, 11f)
+            curveTo(9.66f, 11f, 11f, 9.66f, 11f, 8f)
+            curveTo(11f, 6.34f, 9.66f, 5f, 8f, 5f)
+            curveTo(6.34f, 5f, 5f, 6.34f, 5f, 8f)
+            curveTo(5f, 9.66f, 6.34f, 11f, 8f, 11f)
+            close()
+            moveTo(2.5f, 19f)
+            curveTo(2.5f, 15.96f, 4.96f, 13.5f, 8f, 13.5f)
+            curveTo(11.04f, 13.5f, 13.5f, 15.96f, 13.5f, 19f)
+            // right person (offset head + shoulder)
+            moveTo(16f, 5.2f)
+            curveTo(17.5f, 5.6f, 18.5f, 6.9f, 18.5f, 8.5f)
+            curveTo(18.5f, 10.1f, 17.5f, 11.4f, 16f, 11.8f)
+            moveTo(17f, 13.7f)
+            curveTo(19.6f, 14.2f, 21.5f, 16.4f, 21.5f, 19f)
+        }
+    }.build()
+}
+
+private val TrashIcon: ImageVector by lazy {
+    ImageVector.Builder("Trash", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = SolidColor(Color(0xFFEF4444)),
+            strokeLineWidth = 2f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            moveTo(3f, 6f); lineTo(21f, 6f)
+            moveTo(8f, 6f); lineTo(8f, 4f); lineTo(16f, 4f); lineTo(16f, 6f)
+            moveTo(5f, 6f); lineTo(6f, 20f); lineTo(18f, 20f); lineTo(19f, 6f)
+            moveTo(10f, 10f); lineTo(10f, 16f)
+            moveTo(14f, 10f); lineTo(14f, 16f)
+        }
     }.build()
 }
