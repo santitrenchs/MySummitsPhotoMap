@@ -146,23 +146,26 @@ fun MainScaffold(navController: NavController) {
                 onNavigateToFriends   = { navController.navigate(Screen.Friends.route) },
             )
         },
-        // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar)
+        // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar).
+        // Hidden on the Friends/Cordada tab, which renders its own speed-dial FAB.
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { newAscentPeakId = null; newAscentPeakName = null; showNewAscent = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White,
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 4.dp,
-                    pressedElevation = 8.dp,
-                ),
-            ) {
-                Icon(
-                    imageVector        = PlusIcon,
-                    contentDescription = stringResource(R.string.nav_fab_new_ascent),
-                    modifier           = Modifier.size(24.dp),
-                )
+            if (currentRoute != Screen.Friends.route) {
+                FloatingActionButton(
+                    onClick = { newAscentPeakId = null; newAscentPeakName = null; showNewAscent = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 8.dp,
+                    ),
+                ) {
+                    Icon(
+                        imageVector        = PlusIcon,
+                        contentDescription = stringResource(R.string.nav_fab_new_ascent),
+                        modifier           = Modifier.size(24.dp),
+                    )
+                }
             }
         },
         bottomBar = {
@@ -174,16 +177,10 @@ fun MainScaffold(navController: NavController) {
                 MainTabBar(
                     currentRoute = currentRoute,
                     onTabSelected = { screen ->
-                        if (screen == Screen.Friends) {
-                            // Friends/Cordadas is a full-screen route on the outer
-                            // navController (it has its own Scaffold + header).
-                            navController.navigate(Screen.Friends.route)
-                        } else {
-                            tabNavController.navigate(screen.route) {
-                                popUpTo(Screen.Home.route) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                        tabNavController.navigate(screen.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     },
                 )
@@ -278,6 +275,9 @@ fun MainScaffold(navController: NavController) {
                         }
                     },
                 )
+            }
+            composable(Screen.Friends.route) {
+                FriendsScreen()
             }
             composable(Screen.Cards.route) {
                 LogbookScreen(
