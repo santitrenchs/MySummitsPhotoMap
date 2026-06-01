@@ -28,6 +28,9 @@ import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -747,9 +750,18 @@ fun CordadaDetailScreen(
                             maxLines = 2, overflow = TextOverflow.Ellipsis,
                         )
                         Spacer(Modifier.height(2.dp))
+                        val membersPrefix = stringResource(R.string.cordadas_of_members_prefix)
+                        val membersCount  = stringResource(R.string.cordadas_members, accepted.size)
                         Text(
-                            stringResource(R.string.cordadas_members, accepted.size),
-                            fontSize = 13.sp, color = Color.White.copy(alpha = 0.9f),
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    SpanStyle(color = Color.White.copy(alpha = 0.9f)),
+                                ) { append(membersPrefix) }
+                                withStyle(
+                                    SpanStyle(color = PeakGreenCTA, fontWeight = FontWeight.SemiBold),
+                                ) { append(membersCount) }
+                            },
+                            fontSize = 13.sp,
                         )
                     }
                     if (detail.isOwner) {
