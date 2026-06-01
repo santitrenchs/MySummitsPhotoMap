@@ -681,7 +681,7 @@ fun CordadaDetailScreen(
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    title          = { Text(detail.name, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    title          = { },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(BackChevronIcon, contentDescription = "Volver", tint = Color.Unspecified)
@@ -724,6 +724,34 @@ fun CordadaDetailScreen(
                             Text("⛰", fontSize = 48.sp)
                         }
                     }
+                    // Bottom scrim for text legibility
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)),
+                                ),
+                            ),
+                    )
+                    // Title + member count overlaid bottom-left (card style)
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 16.dp, end = 72.dp, bottom = 14.dp),
+                    ) {
+                        Text(
+                            detail.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                            maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            stringResource(R.string.cordadas_members, accepted.size),
+                            fontSize = 13.sp, color = Color.White.copy(alpha = 0.9f),
+                        )
+                    }
                     if (detail.isOwner) {
                         SmallFloatingActionButton(
                             onClick        = { photoPicker.launch("image/*") },
@@ -736,17 +764,6 @@ fun CordadaDetailScreen(
                             Icon(EditPencilIcon, contentDescription = stringResource(R.string.cordadas_edit_photo), modifier = Modifier.size(20.dp))
                         }
                     }
-                }
-
-                // Name + member count
-                Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)) {
-                    Text(detail.name, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary)
-                    if (!detail.description.isNullOrBlank()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(detail.description, fontSize = 13.sp, color = FriendsTextSecondary)
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    Text("👥 ${stringResource(R.string.cordadas_members, accepted.size)}", fontSize = 13.sp, color = FriendsTextMuted)
                 }
 
                 Spacer(Modifier.height(12.dp))
