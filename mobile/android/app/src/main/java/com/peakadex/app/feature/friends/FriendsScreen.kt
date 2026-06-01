@@ -543,12 +543,12 @@ private fun FriendsHeader(onBack: () -> Unit, onInviteFriend: () -> Unit, onCrea
             .fillMaxWidth()
             .background(Color.White),
     ) {
-        // Mountain landscape, anchored bottom-right, fading into the white background.
+        // Mountain landscape, anchored on the peaks band (less trees, more mountains).
         Image(
             painter            = painterResource(R.drawable.friends_header_bg),
             contentDescription = null,
             contentScale       = ContentScale.Crop,
-            alignment          = Alignment.BottomEnd,
+            alignment          = Alignment.TopCenter,
             modifier           = Modifier
                 .align(Alignment.BottomEnd)
                 .fillMaxWidth()
