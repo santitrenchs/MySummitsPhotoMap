@@ -98,10 +98,5 @@ fun NavGraph(isAuthenticated: Boolean) {
             )
         }
 
-        composable(Screen.Friends.route) {
-            FriendsScreen(
-                onBack = { navController.popBackStack() },
-            )
-        }
     }
 }
