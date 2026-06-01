@@ -89,11 +89,11 @@ fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
     Row(
         modifier          = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(Color(0xFFF6FAF8))
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(horizontal = 8.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
