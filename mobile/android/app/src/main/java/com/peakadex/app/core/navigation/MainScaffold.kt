@@ -58,6 +58,7 @@ data class TabItem(val screen: Screen, val label: String, val iconRes: Int)
 @Composable
 private fun tabItems() = listOf(
     TabItem(Screen.Home,    stringResource(R.string.nav_tab_home),    R.drawable.ic_tab_home),
+    TabItem(Screen.Friends, stringResource(R.string.nav_tab_cordada), R.drawable.ic_tab_friends),
     TabItem(Screen.Logbook, stringResource(R.string.nav_tab_logbook), R.drawable.ic_tab_logbook),
     TabItem(Screen.Map,     stringResource(R.string.nav_tab_map),     R.drawable.ic_tab_map),
     TabItem(Screen.Cards,   stringResource(R.string.nav_tab_cards),   R.drawable.ic_tab_cards),
@@ -173,10 +174,16 @@ fun MainScaffold(navController: NavController) {
                 MainTabBar(
                     currentRoute = currentRoute,
                     onTabSelected = { screen ->
-                        tabNavController.navigate(screen.route) {
-                            popUpTo(Screen.Home.route) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                        if (screen == Screen.Friends) {
+                            // Friends/Cordadas is a full-screen route on the outer
+                            // navController (it has its own Scaffold + header).
+                            navController.navigate(Screen.Friends.route)
+                        } else {
+                            tabNavController.navigate(screen.route) {
+                                popUpTo(Screen.Home.route) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     },
                 )
