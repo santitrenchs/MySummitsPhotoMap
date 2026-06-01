@@ -402,7 +402,7 @@ private fun IncomingRow(
 }
 
 @Composable
-private fun FriendRow(entry: FriendEntry, onClick: () -> Unit, onRemove: () -> Unit) {
+private fun FriendRow(entry: FriendEntry, onRemove: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf(false) }
 
@@ -428,7 +428,6 @@ private fun FriendRow(entry: FriendEntry, onClick: () -> Unit, onRemove: () -> U
     Row(
         modifier          = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -532,58 +531,6 @@ private fun InviteFriendSheet(
                 }
             }
         }
-    }
-}
-
-// ── Friend stats sheet ───────────────────────────────────────────────────────────
-
-@Composable
-private fun FriendStatsSheet(stats: UserStatsResponse, onDismiss: () -> Unit) {
-    CordadaModalSheet(onDismiss = onDismiss) {
-        Column(
-            modifier            = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            // Header: avatar + name + level
-            Row(
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                UserAvatar(stats.user.name, 52, stats.user.avatarUrl)
-                Column(Modifier.weight(1f)) {
-                    Text(stats.user.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary)
-                    Text("${levelEmoji(stats.levelIdx)} ${levelName(stats.levelIdx)}", fontSize = 13.sp, color = FriendsTextSecondary, fontWeight = FontWeight.Medium)
-                }
-            }
-
-            // Stats grid (2 columns)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatCell(stats.uniquePeaks.toString(), stringResource(R.string.stats_unique_peaks), Modifier.weight(1f))
-                StatCell(stats.totalAscents.toString(), stringResource(R.string.stats_total_ascents), Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatCell("${stats.maxAltitudeM} m", stringResource(R.string.stats_max_altitude), Modifier.weight(1f))
-                StatCell(stats.totalEp.toString(), stringResource(R.string.stats_total_ep), Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatCell(value: String, label: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier            = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF3F4F6))
-            .padding(vertical = 14.dp, horizontal = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary)
-        Text(label, fontSize = 12.sp, color = FriendsTextSecondary)
     }
 }
 
@@ -733,16 +680,6 @@ fun FriendsScreen(
 
     // Cordada detail (opened from a cordada row)
     CordadaDetailHost(currentUserId = currentUserId, vm = cordadasVm)
-
-    // Friend stats (opened from a friend row)
-    if (friendsState.isLoadingStats) {
-        Box(
-            Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)),
-            contentAlignment = Alignment.Center,
-        ) { CircularProgressIndicator(color = Color.White) }
-    } else if (friendsState.selectedStats != null) {
-        FriendStatsSheet(stats = friendsState.selectedStats!!, onDismiss = friendsVm::closeUserStats)
-    }
 }
 
 // ── Unified list (friends + cordadas in one column) ──────────────────────────────
@@ -899,7 +836,6 @@ private fun UnifiedList(
                     when (chat) {
                         is ChatEntry.Friend -> FriendRow(
                             entry    = chat.entry,
-                            onClick  = { friendsVm.openUserStats(chat.entry.friend.id) },
                             onRemove = { friendsVm.removeFriend(chat.entry.id) },
                         )
                         is ChatEntry.Group -> CordadaCard(item = chat.cordada) {
