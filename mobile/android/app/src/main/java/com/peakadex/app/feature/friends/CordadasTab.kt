@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -320,7 +321,16 @@ private fun CordadaPendingRow(member: CordadaMemberRanking, canCancel: Boolean, 
             Text(stringResource(R.string.cordadas_invite_sent_label), fontSize = 12.sp, color = FriendsTextMuted, modifier = Modifier.padding(top = 1.dp))
         }
         if (canCancel) {
-            SmallBtn(stringResource(R.string.action_cancel), onClick = { onCancel(member) }, ghost = true)
+            OutlinedButton(
+                onClick      = { onCancel(member) },
+                shape        = RoundedCornerShape(8.dp),
+                border       = BorderStroke(1.dp, PeakGreenCTA),
+                colors       = ButtonDefaults.outlinedButtonColors(contentColor = PeakGreenCTA),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                modifier     = Modifier.height(34.dp),
+            ) {
+                Text(stringResource(R.string.action_cancel), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
@@ -732,10 +742,14 @@ fun CordadaDetailScreen(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .fillMaxWidth()
-                            .height(120.dp)
+                            .height(150.dp)
                             .background(
                                 Brush.verticalGradient(
-                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)),
+                                    listOf(
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.35f),
+                                        Color.Black.copy(alpha = 0.80f),
+                                    ),
                                 ),
                             ),
                     )
@@ -769,11 +783,13 @@ fun CordadaDetailScreen(
                             onClick        = { photoPicker.launch("image/*") },
                             containerColor = Color.White,
                             contentColor   = PeakBlueActive,
+                            elevation      = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp, pressedElevation = 4.dp),
                             modifier       = Modifier
                                 .align(Alignment.BottomEnd)
-                                .padding(12.dp),
+                                .padding(8.dp)
+                                .size(36.dp),
                         ) {
-                            Icon(EditPencilIcon, contentDescription = stringResource(R.string.cordadas_edit_photo), modifier = Modifier.size(20.dp))
+                            Icon(EditPencilIcon, contentDescription = stringResource(R.string.cordadas_edit_photo), modifier = Modifier.size(16.dp))
                         }
                     }
                 }
