@@ -105,6 +105,43 @@ private val PersonAddIcon: ImageVector by lazy {
     }.build()
 }
 
+/** Two people + plus — "create / add to group" (cordada). */
+private val GroupAddIcon: ImageVector by lazy {
+    ImageVector.Builder("GroupAdd", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 2f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            // Head A (left)
+            moveTo(9.8f, 9f)
+            curveTo(9.8f, 10.546f, 8.546f, 11.8f, 7f, 11.8f)
+            curveTo(5.454f, 11.8f, 4.2f, 10.546f, 4.2f, 9f)
+            curveTo(4.2f, 7.454f, 5.454f, 6.2f, 7f, 6.2f)
+            curveTo(8.546f, 6.2f, 9.8f, 7.454f, 9.8f, 9f)
+            close()
+            // Shoulders A
+            moveTo(1.5f, 21f)
+            curveTo(1.5f, 17.8f, 3.96f, 15.2f, 7f, 15.2f)
+            curveTo(10.04f, 15.2f, 12.5f, 17.8f, 12.5f, 21f)
+            // Head B (right)
+            moveTo(16.8f, 9f)
+            curveTo(16.8f, 10.546f, 15.546f, 11.8f, 14f, 11.8f)
+            curveTo(12.454f, 11.8f, 11.2f, 10.546f, 11.2f, 9f)
+            curveTo(11.2f, 7.454f, 12.454f, 6.2f, 14f, 6.2f)
+            curveTo(15.546f, 6.2f, 16.8f, 7.454f, 16.8f, 9f)
+            close()
+            // Shoulders B (partial, to the right)
+            moveTo(14f, 15.2f)
+            curveTo(17.04f, 15.2f, 19.5f, 17.8f, 19.5f, 21f)
+            // Plus (top-right)
+            moveTo(20f, 3f); lineTo(20f, 9f)
+            moveTo(17f, 6f); lineTo(23f, 6f)
+        }
+    }.build()
+}
+
 /** Cairn (CS) icon — three stacked amber trapezoids, identical to the Stats hero. */
 @Composable
 internal fun CairnIcon(modifier: Modifier = Modifier) {
@@ -550,55 +587,10 @@ private fun StatCell(value: String, label: String, modifier: Modifier = Modifier
     }
 }
 
-// ── FAB speed-dial (Invitar amigo / Crear cordada) ───────────────────────────────
-
-@Composable
-private fun ActionSpeedDialSheet(
-    onDismiss: () -> Unit,
-    onInviteFriend: () -> Unit,
-    onCreateCordada: () -> Unit,
-) {
-    CordadaModalSheet(onDismiss = onDismiss) {
-        Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-            SpeedDialRow(
-                emoji = "👤",
-                label = stringResource(R.string.friends_action_invite),
-                onClick = onInviteFriend,
-            )
-            HRule()
-            SpeedDialRow(
-                emoji = "🧗",
-                label = stringResource(R.string.friends_action_create_cordada),
-                onClick = onCreateCordada,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SpeedDialRow(emoji: String, label: String, onClick: () -> Unit) {
-    Row(
-        modifier              = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Box(
-            modifier         = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFEFF6FF)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(emoji, fontSize = 18.sp)
-        }
-        Text(label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary)
-    }
-}
-
 // ── Header with mountain background ──────────────────────────────────────────────
 
 @Composable
-private fun FriendsHeader(onBack: () -> Unit, onAdd: () -> Unit) {
+private fun FriendsHeader(onBack: () -> Unit, onInviteFriend: () -> Unit, onCreateCordada: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -626,13 +618,23 @@ private fun FriendsHeader(onBack: () -> Unit, onAdd: () -> Unit) {
                 }
                 Spacer(Modifier.weight(1f))
                 FilledTonalIconButton(
-                    onClick = onAdd,
+                    onClick = onInviteFriend,
                     colors  = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = Color.White.copy(alpha = 0.85f),
                         contentColor   = FriendsTextPrimary,
                     ),
                 ) {
-                    Icon(PersonAddIcon, contentDescription = stringResource(R.string.friends_fab_add))
+                    Icon(PersonAddIcon, contentDescription = stringResource(R.string.friends_action_invite))
+                }
+                Spacer(Modifier.width(6.dp))
+                FilledTonalIconButton(
+                    onClick = onCreateCordada,
+                    colors  = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = Color.White.copy(alpha = 0.85f),
+                        contentColor   = FriendsTextPrimary,
+                    ),
+                ) {
+                    Icon(GroupAddIcon, contentDescription = stringResource(R.string.friends_action_create_cordada))
                 }
             }
             // Title + subtitle.
@@ -661,7 +663,6 @@ fun FriendsScreen(
     val cordadasState by cordadasVm.state.collectAsStateWithLifecycle()
     val currentUserId = AppContainer.authSession.currentUser.value?.id ?: ""
 
-    var showActionSheet by remember { mutableStateOf(false) }
     var showCreateSheet by remember { mutableStateOf(false) }
     var showInviteFriendSheet by remember { mutableStateOf(false) }
 
@@ -685,8 +686,9 @@ fun FriendsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             FriendsHeader(
-                onBack = onBack,
-                onAdd  = { showActionSheet = true },
+                onBack          = onBack,
+                onInviteFriend  = { showInviteFriendSheet = true },
+                onCreateCordada = { showCreateSheet = true },
             )
         },
         containerColor = PeakBackground,
@@ -703,15 +705,6 @@ fun FriendsScreen(
                 )
             }
         }
-    }
-
-    // FAB speed-dial
-    if (showActionSheet) {
-        ActionSpeedDialSheet(
-            onDismiss       = { showActionSheet = false },
-            onInviteFriend  = { showActionSheet = false; showInviteFriendSheet = true },
-            onCreateCordada = { showActionSheet = false; showCreateSheet = true },
-        )
     }
 
     // Invite friend by email
