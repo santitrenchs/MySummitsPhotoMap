@@ -216,28 +216,35 @@ private fun SmallBtn(label: String, onClick: () -> Unit, ghost: Boolean = false)
 
 // ── Ranking (Amigos-style rows) ──────────────────────────────────────────────────
 
-/** Ice-axe rank badge: gold/silver/bronze piolet for top 3, plain number for the rest. */
+/** Ice-axe rank badge: colored pill with piolet for top 3, number-only pill for the rest. */
 @Composable
 private fun RankBadge(rank: Int) {
-    val pioletColor = when (rank) {
-        1    -> Color(0xFFFBBF24)   // gold
-        2    -> Color(0xFFB8C0CC)   // silver
-        3    -> Color(0xFFCD7F32)   // bronze
-        else -> null
+    // bg = soft fill, content = darker accent (icon + number)
+    val (bg, content) = when (rank) {
+        1    -> Color(0xFFFDE68A) to Color(0xFFD97706)   // gold
+        2    -> Color(0xFFE5E7EB) to Color(0xFF6B7280)   // silver
+        3    -> Color(0xFFF8D9B8) to Color(0xFFB45309)   // bronze
+        else -> Color(0xFFF3F4F6) to Color(0xFF6B7280)   // plain
     }
-    Box(modifier = Modifier.width(28.dp), contentAlignment = Alignment.Center) {
-        if (pioletColor != null) {
+    Box(
+        modifier = Modifier
+            .size(width = 30.dp, height = 44.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (rank <= 3) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                     imageVector        = PioletIcon,
                     contentDescription = null,
-                    tint               = pioletColor,
+                    tint               = content,
                     modifier           = Modifier.size(18.dp),
                 )
-                Text("$rank", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = pioletColor)
+                Text("$rank", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = content)
             }
         } else {
-            Text("$rank", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsTextMuted)
+            Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
         }
     }
 }
@@ -262,7 +269,7 @@ private fun CordadaRankRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         RankBadge(rank)
-        UserAvatar(member.name, 40, member.avatarUrl)
+        UserAvatar(member.name, 52, member.avatarUrl)
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -345,7 +352,7 @@ private fun AddMemberButton(onClick: () -> Unit) {
     val ring = Color(0xFFD1D5DB)
     Box(
         modifier = Modifier
-            .size(48.dp)
+            .size(36.dp)
             .drawBehind {
                 drawCircle(
                     color  = ring,
@@ -764,7 +771,7 @@ fun CordadaDetailScreen(
                     .verticalScroll(rememberScrollState()),
             ) {
                 // Cover image (editable) — full width, fixed height
-                Box(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+                Box(modifier = Modifier.fillMaxWidth().height(120.dp)) {
                     if (!detail.avatarUrl.isNullOrBlank()) {
                         AsyncImage(
                             model              = detail.avatarUrl,
@@ -799,6 +806,7 @@ fun CordadaDetailScreen(
                             onClick        = { photoPicker.launch("image/*") },
                             containerColor = Color.White,
                             contentColor   = PeakBlueActive,
+                            shape          = CircleShape,
                             elevation      = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp, pressedElevation = 4.dp),
                             modifier       = Modifier
                                 .align(Alignment.BottomEnd)
@@ -828,16 +836,27 @@ fun CordadaDetailScreen(
 
                 Spacer(Modifier.height(12.dp))
 
-                // Member avatars + add button
+                // Member avatars (small, overlapping ~22%) + add button
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment     = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    accepted.take(8).forEach { m ->
-                        UserAvatar(m.name, 48, m.avatarUrl)
+                    // Overlapping cluster
+                    Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
+                        accepted.take(10).forEach { m ->
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
+                                    .padding(1.5.dp),
+                            ) {
+                                UserAvatar(m.name, 33, m.avatarUrl)
+                            }
+                        }
                     }
                     if (detail.isOwner) {
+                        Spacer(Modifier.width(10.dp))
                         AddMemberButton(onClick = { showInviteSheet = true })
                     }
                 }
