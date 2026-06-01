@@ -1,6 +1,7 @@
 <resources>
     <!-- ── Navegació principal ───────────────────────────────────────────────── -->
     <string name="nav_tab_home">Stats</string>
+    <string name="nav_tab_cordada">Cordada</string>
     <string name="nav_tab_map">Atlas</string>
     <string name="nav_tab_logbook">Bitàcola</string>
     <string name="nav_tab_cards">Cartes</string>
