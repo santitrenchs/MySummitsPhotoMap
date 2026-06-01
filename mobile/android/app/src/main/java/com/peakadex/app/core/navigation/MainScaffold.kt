@@ -382,40 +382,6 @@ private fun MainTopBar(
                         onClick           = { menuExpanded = false; onNavigateToProfile() },
                     )
                     DropdownMenuItem(
-                        text              = {
-                            Row(
-                                verticalAlignment     = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(stringResource(R.string.friends_menu_label), fontSize = 14.sp)
-                                if (pendingFriendsCount > 0) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(CircleShape)
-                                            .background(Color(0xFFEF4444))
-                                            .padding(horizontal = 5.dp, vertical = 1.dp),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Text(
-                                            text       = pendingFriendsCount.toString(),
-                                            color      = Color.White,
-                                            fontSize   = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        leadingIcon       = {
-                            Icon(
-                                FriendsIcon,
-                                contentDescription = stringResource(R.string.friends_menu_label),
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                        onClick           = { menuExpanded = false; onNavigateToFriends() },
-                    )
-                    DropdownMenuItem(
                         text              = { Text("Ajustes", fontSize = 14.sp) },
                         leadingIcon       = {
                             Icon(

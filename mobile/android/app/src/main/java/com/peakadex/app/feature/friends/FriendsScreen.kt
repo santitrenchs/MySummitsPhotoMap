@@ -534,67 +534,66 @@ private fun InviteFriendSheet(
     }
 }
 
-// ── Header with mountain background ──────────────────────────────────────────────
+// ── FAB speed-dial sheet (invite friend / create cordada) ────────────────────────
 
 @Composable
-private fun FriendsHeader(onBack: () -> Unit, onInviteFriend: () -> Unit, onCreateCordada: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White),
-    ) {
-        // Mountain landscape, anchored on the peaks band (less trees, more mountains).
-        Image(
-            painter            = painterResource(R.drawable.friends_header_bg),
-            contentDescription = null,
-            contentScale       = ContentScale.Crop,
-            alignment          = Alignment.TopCenter,
-            modifier           = Modifier
-                .align(Alignment.BottomEnd)
-                .fillMaxWidth()
-                .height(105.dp),
-        )
-        Column(Modifier.statusBarsPadding()) {
-            // Top action row: back + add.
-            Row(
-                modifier          = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(BackIcon, contentDescription = "Volver", tint = Color.Unspecified)
-                }
-                Spacer(Modifier.weight(1f))
-                FilledTonalIconButton(
-                    onClick = onInviteFriend,
-                    colors  = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = Color.White.copy(alpha = 0.85f),
-                        contentColor   = FriendsTextPrimary,
-                    ),
-                ) {
-                    Icon(PersonAddIcon, contentDescription = stringResource(R.string.friends_action_invite))
-                }
-                Spacer(Modifier.width(6.dp))
-                FilledTonalIconButton(
-                    onClick = onCreateCordada,
-                    colors  = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = Color.White.copy(alpha = 0.85f),
-                        contentColor   = FriendsTextPrimary,
-                    ),
-                ) {
-                    Icon(GroupAddIcon, contentDescription = stringResource(R.string.friends_action_create_cordada))
-                }
-            }
-            // Title + subtitle.
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
-                Text(
-                    stringResource(R.string.friends_title),
-                    fontSize   = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = FriendsTextPrimary,
-                )
-            }
+private fun ActionSpeedDialSheet(
+    onDismiss: () -> Unit,
+    onInviteFriend: () -> Unit,
+    onCreateCordada: () -> Unit,
+) {
+    CordadaModalSheet(onDismiss = onDismiss) {
+        Column(
+            modifier            = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            SpeedDialRow(
+                icon  = PersonAddIcon,
+                label = stringResource(R.string.friends_action_invite),
+                onClick = onInviteFriend,
+            )
+            SpeedDialRow(
+                icon  = GroupAddIcon,
+                label = stringResource(R.string.friends_action_create_cordada),
+                onClick = onCreateCordada,
+            )
         }
     }
+}
+
+@Composable
+private fun SpeedDialRow(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        modifier          = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Box(
+            modifier         = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(22.dp))
+        }
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary)
+    }
+}
+
+private val PlusIcon: ImageVector by lazy {
+    ImageVector.Builder("Plus", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color.White),
+            strokeLineWidth = 2.5f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+        ) { moveTo(12f, 5f); lineTo(12f, 19f) }
+        path(
+            stroke          = androidx.compose.ui.graphics.SolidColor(Color.White),
+            strokeLineWidth = 2.5f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+        ) { moveTo(5f, 12f); lineTo(19f, 12f) }
+    }.build()
 }
 
 // ── Screen ─────────────────────────────────────────────────────────────────────
@@ -612,6 +611,7 @@ fun FriendsScreen(
 
     var showCreateSheet by remember { mutableStateOf(false) }
     var showInviteFriendSheet by remember { mutableStateOf(false) }
+    var showActionSheet by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val genericError = stringResource(R.string.friends_generic_error)
@@ -631,12 +631,15 @@ fun FriendsScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            FriendsHeader(
-                onBack          = onBack,
-                onInviteFriend  = { showInviteFriendSheet = true },
-                onCreateCordada = { showCreateSheet = true },
-            )
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick        = { showActionSheet = true },
+                containerColor = PeakGreenCTA,
+                contentColor   = Color.White,
+                shape          = CircleShape,
+            ) {
+                Icon(PlusIcon, contentDescription = stringResource(R.string.friends_fab_add), modifier = Modifier.size(26.dp))
+            }
         },
         containerColor = PeakBackground,
     ) { padding ->
@@ -652,6 +655,15 @@ fun FriendsScreen(
                 )
             }
         }
+    }
+
+    // FAB speed-dial: invite a friend OR create a cordada
+    if (showActionSheet) {
+        ActionSpeedDialSheet(
+            onDismiss        = { showActionSheet = false },
+            onInviteFriend   = { showActionSheet = false; showInviteFriendSheet = true },
+            onCreateCordada  = { showActionSheet = false; showCreateSheet = true },
+        )
     }
 
     // Invite friend by email
