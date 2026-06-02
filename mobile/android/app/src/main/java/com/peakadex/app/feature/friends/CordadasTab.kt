@@ -759,7 +759,7 @@ fun CordadaDetailScreen(
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(BackChevronIcon, contentDescription = "Volver", tint = Color.Unspecified)
+                            Icon(BackChevronIcon, contentDescription = stringResource(R.string.action_back), tint = Color.Unspecified)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
