@@ -25,10 +25,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import androidx.compose.ui.res.stringResource
@@ -345,19 +348,30 @@ private fun cordadaMembersLabel(count: Int): String =
 
 @Composable
 private fun AddMemberButton(onClick: () -> Unit) {
-    FilledTonalButton(
-        onClick = onClick,
-        shape = RoundedCornerShape(999.dp),
-        colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = Color(0xFFEFF6FF),
-            contentColor = PeakBlueActive,
-        ),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
-        modifier = Modifier.heightIn(min = 36.dp),
+    val borderColor = Color(0xFFCBD5E1)
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.74f))
+            .drawBehind {
+                drawCircle(
+                    color = borderColor,
+                    style = Stroke(
+                        width = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(7f, 5f), 0f),
+                    ),
+                )
+            }
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
-        Icon(PlusSmallIcon, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(5.dp))
-        Text(stringResource(R.string.cordadas_invite_btn), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Icon(
+            PlusSmallIcon,
+            contentDescription = stringResource(R.string.cordadas_invite_btn),
+            tint = PeakBlueActive,
+            modifier = Modifier.size(17.dp),
+        )
     }
 }
 
