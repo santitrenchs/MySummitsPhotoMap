@@ -296,7 +296,7 @@
     <string name="cordadas_member_singular">1 miembro</string>
     <string name="cordadas_members">%d miembros</string>
     <string name="cordadas_pending_count">%d pendientes</string>
-    <string name="cordadas_owner_badge">Owner</string>
+    <string name="cordadas_owner_badge">Propietario</string>
     <string name="cordadas_invite_btn">Invitar</string>
     <string name="cordadas_invite_title">Invitar a la cordada</string>
     <string name="cordadas_invite_search">Buscar usuario…</string>

@@ -1,4 +1,6 @@
 <resources>
+    <string name="app_name">Peakadex</string>
+
     <!-- ── Main navigation ───────────────────────────────────────────────────── -->
     <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_cordada">Cordada</string>
@@ -303,6 +305,12 @@
     <string name="cordadas_delete_detail">Deleting this cordada will remove the group and cancel pending invitations. Members\' ascents will not be deleted.</string>
     <string name="cordadas_delete_confirm_button">Delete permanently</string>
     <string name="cordadas_confirm_expel">Remove this member?</string>
+    <string name="cordadas_pending">Pending</string>
+    <string name="cordadas_founder">Founder</string>
+    <string name="cordadas_of_members_prefix">Cordada of </string>
+    <string name="cordadas_invite_sent_label">Invitation sent</string>
     <string name="cordadas_add_photo">Add cordada photo</string>
     <string name="cordadas_photo_hint">Used as cover and avatar</string>
+    <string name="cordadas_edit_photo">Edit photo</string>
+    <string name="cordadas_delete_warning">This action cannot be undone</string>
 </resources>

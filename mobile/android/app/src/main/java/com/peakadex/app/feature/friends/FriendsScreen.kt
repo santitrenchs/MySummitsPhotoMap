@@ -909,7 +909,7 @@ private fun UnifiedList(
                         modifier         = Modifier.size(72.dp).clip(CircleShape).background(Color(0xFFEFF6FF)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("🧗", fontSize = 32.sp)
+                        Icon(RopeTeamIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(34.dp))
                     }
                     Text(
                         stringResource(R.string.friends_empty),

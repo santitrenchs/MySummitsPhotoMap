@@ -1,4 +1,6 @@
 <resources>
+    <string name="app_name">Peakadex</string>
+
     <!-- ── Navegació principal ───────────────────────────────────────────────── -->
     <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_cordada">Cordada</string>
@@ -303,6 +305,12 @@
     <string name="cordadas_delete_detail">Eliminar aquesta cordada esborrarà el grup i cancel·larà les invitacions pendents. Les ascensions dels membres no s\'eliminaran.</string>
     <string name="cordadas_delete_confirm_button">Eliminar definitivament</string>
     <string name="cordadas_confirm_expel">Expulsar aquest membre?</string>
+    <string name="cordadas_pending">Pendent</string>
+    <string name="cordadas_founder">Fundador</string>
+    <string name="cordadas_of_members_prefix">Cordada de </string>
+    <string name="cordadas_invite_sent_label">Invitació enviada</string>
     <string name="cordadas_add_photo">Afegir foto de cordada</string>
     <string name="cordadas_photo_hint">S\'usarà com a portada i avatar</string>
+    <string name="cordadas_edit_photo">Editar foto</string>
+    <string name="cordadas_delete_warning">Aquesta acció no es pot desfer</string>
 </resources>
