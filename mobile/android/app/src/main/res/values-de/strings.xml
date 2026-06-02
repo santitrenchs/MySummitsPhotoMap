@@ -270,6 +270,7 @@
     <string name="friends_confirm_remove">%s aus deinen Freunden entfernen?</string>
     <string name="friends_generic_error">Etwas ist schiefgelaufen. Bitte erneut versuchen.</string>
     <string name="cordadas_create_error">Cordada konnte nicht erstellt werden. Bitte erneut versuchen.</string>
+    <string name="cordadas_avatar_upload_error">Cordada erstellt, aber das Bild konnte nicht hochgeladen werden.</string>
     <string name="stats_unique_peaks">Gipfel</string>
     <string name="stats_total_ascents">Besteigungen</string>
     <string name="stats_max_altitude">Max. Höhe</string>

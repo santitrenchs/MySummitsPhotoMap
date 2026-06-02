@@ -1,8 +1,10 @@
 package com.peakadex.app.feature.friends
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.Color as AndroidColor
 import android.net.Uri
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,6 +13,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -31,19 +34,21 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 import com.peakadex.app.AppContainer
 import com.peakadex.app.R
 import com.peakadex.app.core.model.CordadaDetail
@@ -474,37 +479,138 @@ fun CordadaModalSheet(
 
 // ── Create sheet ───────────────────────────────────────────────────────────────
 
-/** Decodes [uri], center-crops to a square and scales to 512px, returns a JPEG-ready bitmap. */
-private fun squareBitmapFromUri(context: android.content.Context, uri: Uri): Bitmap? = runCatching {
-    val src = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
-        ?: return null
-    val side = minOf(src.width, src.height)
-    val x = (src.width - side) / 2
-    val y = (src.height - side) / 2
-    val cropped = Bitmap.createBitmap(src, x, y, side, side)
-    if (side > 512) Bitmap.createScaledBitmap(cropped, 512, 512, true) else cropped
-}.getOrNull()
-
 private fun bitmapToJpeg(bitmap: Bitmap): ByteArray =
     ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
 
 @Composable
+private fun CordadaImageCropSheet(
+    imageUri: Uri,
+    onDismiss: () -> Unit,
+    onDone: (Bitmap) -> Unit,
+) {
+    var cropImageView by remember { mutableStateOf<CropImageView?>(null) }
+    var cropError by remember { mutableStateOf(false) }
+
+    CordadaModalSheet(onDismiss = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(stringResource(R.string.cordadas_edit_photo), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+
+            AndroidView(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(420.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color.Black),
+                factory = { context ->
+                    CropImageView(context).apply {
+                        layoutParams = FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        )
+                        setBackgroundColor(AndroidColor.BLACK)
+                        setImageCropOptions(
+                            CropImageOptions(
+                                cropShape = CropImageView.CropShape.RECTANGLE,
+                                cornerShape = CropImageView.CropCornerShape.RECTANGLE,
+                                guidelines = CropImageView.Guidelines.ON,
+                                scaleType = CropImageView.ScaleType.FIT_CENTER,
+                                fixAspectRatio = true,
+                                aspectRatioX = 3,
+                                aspectRatioY = 2,
+                                autoZoomEnabled = true,
+                                multiTouchEnabled = true,
+                                centerMoveEnabled = true,
+                                maxZoom = 4,
+                                initialCropWindowPaddingRatio = 0.04f,
+                                borderLineThickness = 2f,
+                                borderLineColor = AndroidColor.argb(220, 255, 255, 255),
+                                borderCornerThickness = 3f,
+                                borderCornerColor = AndroidColor.WHITE,
+                                guidelinesThickness = 1f,
+                                guidelinesColor = AndroidColor.argb(90, 255, 255, 255),
+                                backgroundColor = AndroidColor.argb(150, 0, 0, 0),
+                                showProgressBar = true,
+                            ),
+                        )
+                        setImageUriAsync(imageUri)
+                        tag = imageUri
+                        cropImageView = this
+                    }
+                },
+                update = { view ->
+                    if (view.tag != imageUri) {
+                        view.setImageUriAsync(imageUri)
+                        view.tag = imageUri
+                    }
+                    cropImageView = view
+                },
+            )
+
+            if (cropError) {
+                Text(stringResource(R.string.friends_generic_error), fontSize = 13.sp, color = Color(0xFFDC2626))
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = { cropImageView?.rotateImage(90) }) {
+                    Text(stringResource(R.string.new_ascent_rotate_btn), fontWeight = FontWeight.SemiBold)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                    Button(
+                        onClick = {
+                            val cropped = cropImageView?.getCroppedImage(
+                                1200,
+                                800,
+                                CropImageView.RequestSizeOptions.RESIZE_FIT,
+                            )
+                            if (cropped != null) {
+                                cropError = false
+                                onDone(cropped)
+                            } else {
+                                cropError = true
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA, contentColor = Color.White),
+                    ) {
+                        Text(stringResource(R.string.action_save), fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun CreateCordadaSheet(
     friends: List<FriendEntry>,
+    isCreating: Boolean,
     onDismiss: () -> Unit,
     onCreate: (name: String, desc: String?, memberIds: List<String>, avatarBytes: ByteArray?) -> Unit,
 ) {
-    val context = LocalContext.current
     var name by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
     var avatarBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var cropUri by remember { mutableStateOf<Uri?>(null) }
+    var memberQuery by remember { mutableStateOf("") }
     val selectedIds = remember { mutableStateListOf<String>() }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { avatarBitmap = squareBitmapFromUri(context, it) }
+        uri?.let { cropUri = it }
     }
 
-    CordadaModalSheet(onDismiss = onDismiss) {
+    CordadaModalSheet(onDismiss = { if (!isCreating) onDismiss() }) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -514,27 +620,66 @@ fun CreateCordadaSheet(
         ) {
             Text(stringResource(R.string.cordadas_create_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
 
-            // Avatar picker (centered circle)
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            // Cordada image picker: one cropped 3:2 image, previewed as cover + avatar.
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(
-                    modifier         = Modifier
-                        .size(84.dp)
-                        .clip(CircleShape)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(118.dp)
+                        .clip(RoundedCornerShape(14.dp))
                         .background(Color(0xFFF3F4F6))
-                        .border(1.dp, Color(0xFFE5E7EB), CircleShape)
-                        .clickable { photoPicker.launch("image/*") },
+                        .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(14.dp))
+                        .clickable(enabled = !isCreating) { photoPicker.launch("image/*") },
                     contentAlignment = Alignment.Center,
                 ) {
-                    val bmp = avatarBitmap
-                    if (bmp != null) {
+                    avatarBitmap?.let { bmp ->
                         Image(
-                            bitmap        = bmp.asImageBitmap(),
+                            bitmap = bmp.asImageBitmap(),
                             contentDescription = null,
-                            contentScale  = ContentScale.Crop,
-                            modifier      = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
                         )
-                    } else {
-                        Text("📷", fontSize = 26.sp)
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.28f)))),
+                        )
+                    } ?: run {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("📷", fontSize = 26.sp)
+                            Text(stringResource(R.string.cordadas_edit_photo), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextSecondary)
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .background(Brush.linearGradient(listOf(Color(0xFF059669), Color(0xFF34D399))))
+                            .border(1.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        avatarBitmap?.let { bmp ->
+                            Image(
+                                bitmap = bmp.asImageBitmap(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        } ?: Text("⛰", fontSize = 20.sp, color = Color.White)
+                    }
+                    TextButton(
+                        onClick = { photoPicker.launch("image/*") },
+                        enabled = !isCreating,
+                    ) {
+                        Text(stringResource(R.string.cordadas_edit_photo), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -545,6 +690,7 @@ fun CreateCordadaSheet(
                 label         = { Text(stringResource(R.string.cordadas_name_hint)) },
                 singleLine    = true,
                 modifier      = Modifier.fillMaxWidth(),
+                enabled       = !isCreating,
             )
             OutlinedTextField(
                 value         = desc,
@@ -553,45 +699,111 @@ fun CreateCordadaSheet(
                 minLines      = 2,
                 maxLines      = 4,
                 modifier      = Modifier.fillMaxWidth(),
+                enabled       = !isCreating,
             )
 
-            // Member selection (accepted friends)
+            // Member selection (accepted friends): search locally, add chips.
             if (friends.isNotEmpty()) {
+                val selectedSnapshot = selectedIds.toSet()
+                val selectedFriends = friends.filter { it.friend.id in selectedSnapshot }
+                val filteredFriends = friends
+                    .filter { it.friend.id !in selectedSnapshot }
+                    .filter {
+                        val q = memberQuery.trim()
+                        q.isBlank() ||
+                            it.friend.name.contains(q, ignoreCase = true) ||
+                            (it.friend.username?.contains(q, ignoreCase = true) == true)
+                    }
+                    .take(6)
+
                 Text(
-                    stringResource(R.string.cordadas_add_members),
+                    if (selectedIds.isEmpty()) stringResource(R.string.cordadas_add_members)
+                    else "${stringResource(R.string.cordadas_add_members)} · ${selectedIds.size}",
                     fontSize   = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color      = Color(0xFF6B7280),
                 )
-                Column(
-                    modifier            = Modifier
+
+                if (selectedFriends.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        selectedFriends.forEach { entry ->
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(Color(0xFFEFF6FF))
+                                    .border(1.dp, Color(0xFFBFDBFE), RoundedCornerShape(999.dp))
+                                    .clickable(enabled = !isCreating) { selectedIds.remove(entry.friend.id) }
+                                    .padding(start = 4.dp, end = 9.dp, top = 4.dp, bottom = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                UserAvatar(entry.friend.name, 24, entry.friend.avatarUrl)
+                                Text(entry.friend.name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary)
+                                Text("×", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FriendsTextMuted)
+                            }
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 200.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFF3F4F6))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    friends.forEach { entry ->
-                        val checked = selectedIds.contains(entry.friend.id)
-                        Row(
-                            modifier          = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable {
-                                    if (checked) selectedIds.remove(entry.friend.id)
-                                    else selectedIds.add(entry.friend.id)
-                                }
-                                .padding(vertical = 6.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            UserAvatar(entry.friend.name, 32, entry.friend.avatarUrl)
-                            Text(
-                                entry.friend.name,
-                                fontSize = 14.sp,
-                                color    = Color(0xFF111827),
-                                modifier = Modifier.weight(1f),
-                            )
-                            Checkbox(checked = checked, onCheckedChange = null)
+                    Icon(SearchIconSmall, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    BasicTextField(
+                        value = memberQuery,
+                        onValueChange = { memberQuery = it },
+                        singleLine = true,
+                        enabled = !isCreating,
+                        textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, color = Color(0xFF111827)),
+                        cursorBrush = SolidColor(PeakBlueActive),
+                        modifier = Modifier.weight(1f),
+                        decorationBox = { inner ->
+                            if (memberQuery.isEmpty()) Text(stringResource(R.string.cordadas_invite_search), fontSize = 16.sp, color = Color(0xFF9CA3AF))
+                            inner()
+                        },
+                    )
+                }
+
+                if (memberQuery.isNotBlank() || selectedIds.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 190.dp)
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        filteredFriends.forEach { entry ->
+                            Row(
+                                modifier          = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable(enabled = !isCreating) {
+                                        selectedIds.add(entry.friend.id)
+                                        memberQuery = ""
+                                    }
+                                    .padding(vertical = 6.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                UserAvatar(entry.friend.name, 32, entry.friend.avatarUrl)
+                                Text(
+                                    entry.friend.name,
+                                    fontSize = 14.sp,
+                                    color    = Color(0xFF111827),
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text("+", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = PeakBlueActive)
+                            }
                         }
                     }
                 }
@@ -599,7 +811,7 @@ fun CreateCordadaSheet(
 
             Button(
                 onClick  = {
-                    if (name.isNotBlank()) {
+                    if (name.isNotBlank() && !isCreating) {
                         onCreate(
                             name.trim(),
                             desc.ifBlank { null },
@@ -608,7 +820,7 @@ fun CreateCordadaSheet(
                         )
                     }
                 },
-                enabled  = name.isNotBlank(),
+                enabled  = name.isNotBlank() && !isCreating,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors   = ButtonDefaults.buttonColors(
                     containerColor         = PeakGreenCTA,
@@ -617,9 +829,24 @@ fun CreateCordadaSheet(
                     disabledContentColor   = Color.White,
                 ),
             ) {
-                Text(stringResource(R.string.cordadas_create_btn), fontWeight = FontWeight.SemiBold)
+                if (isCreating) {
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                } else {
+                    Text(stringResource(R.string.cordadas_create_btn), fontWeight = FontWeight.SemiBold)
+                }
             }
         }
+    }
+
+    cropUri?.let { uri ->
+        CordadaImageCropSheet(
+            imageUri = uri,
+            onDismiss = { cropUri = null },
+            onDone = { cropped ->
+                avatarBitmap = cropped
+                cropUri = null
+            },
+        )
     }
 }
 
@@ -723,16 +950,14 @@ fun CordadaDetailScreen(
     onEditImage: (ByteArray) -> Unit,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
     var showInviteSheet   by remember { mutableStateOf(false) }
     var showConfirmLeave  by remember { mutableStateOf(false) }
     var showConfirmDelete by remember { mutableStateOf(false) }
     var expelTarget       by remember { mutableStateOf<CordadaMemberRanking?>(null) }
+    var editImageUri      by remember { mutableStateOf<Uri?>(null) }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { u ->
-            squareBitmapFromUri(context, u)?.let { bmp -> onEditImage(bitmapToJpeg(bmp)) }
-        }
+        uri?.let { editImageUri = it }
     }
 
     val accepted = detail.members.filter { !it.isPending }
@@ -954,6 +1179,16 @@ fun CordadaDetailScreen(
                 }
             },
             dismissButton    = { TextButton(onClick = { expelTarget = null }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+    editImageUri?.let { uri ->
+        CordadaImageCropSheet(
+            imageUri = uri,
+            onDismiss = { editImageUri = null },
+            onDone = { cropped ->
+                editImageUri = null
+                onEditImage(bitmapToJpeg(cropped))
+            },
         )
     }
 }

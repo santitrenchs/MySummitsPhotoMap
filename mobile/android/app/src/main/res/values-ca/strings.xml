@@ -270,6 +270,7 @@
     <string name="friends_confirm_remove">Vols eliminar %s dels teus amics?</string>
     <string name="friends_generic_error">Alguna cosa ha anat malament. Torna-ho a provar.</string>
     <string name="cordadas_create_error">No s\'ha pogut crear la cordada. Torna-ho a provar.</string>
+    <string name="cordadas_avatar_upload_error">Cordada creada, però no s\'ha pogut pujar la imatge.</string>
     <string name="stats_unique_peaks">Cims</string>
     <string name="stats_total_ascents">Ascensions</string>
     <string name="stats_max_altitude">Altitud màx.</string>

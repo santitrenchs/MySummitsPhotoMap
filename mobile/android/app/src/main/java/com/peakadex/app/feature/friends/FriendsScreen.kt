@@ -633,10 +633,11 @@ fun FriendsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val genericError = stringResource(R.string.friends_generic_error)
     val createError = stringResource(R.string.cordadas_create_error)
+    val avatarUploadError = stringResource(R.string.cordadas_avatar_upload_error)
 
     LaunchedEffect(cordadasState.error) {
-        cordadasState.error?.let {
-            snackbarHostState.showSnackbar(createError)
+        cordadasState.error?.let { error ->
+            snackbarHostState.showSnackbar(if (error == "avatar_upload_failed") avatarUploadError else createError)
             cordadasVm.clearError()
         }
     }
@@ -715,11 +716,14 @@ fun FriendsScreen(
     // Create cordada
     if (showCreateSheet) {
         CreateCordadaSheet(
-            friends   = friendsState.friends,
+            friends    = friendsState.friends,
+            isCreating = cordadasState.isCreating,
             onDismiss = { showCreateSheet = false },
             onCreate  = { name, desc, memberIds, avatarBytes ->
-                showCreateSheet = false
-                cordadasVm.createCordada(name, desc, memberIds, avatarBytes)
+                cordadasVm.createCordada(name, desc, memberIds, avatarBytes) { cordadaId ->
+                    showCreateSheet = false
+                    onOpenCordada(cordadaId)
+                }
             },
         )
     }

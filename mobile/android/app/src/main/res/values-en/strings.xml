@@ -270,6 +270,7 @@
     <string name="friends_confirm_remove">Remove %s from your friends?</string>
     <string name="friends_generic_error">Something went wrong. Please try again.</string>
     <string name="cordadas_create_error">Couldn\'t create the cordada. Please try again.</string>
+    <string name="cordadas_avatar_upload_error">Cordada created, but the image couldn\'t be uploaded.</string>
     <string name="stats_unique_peaks">Summits</string>
     <string name="stats_total_ascents">Ascents</string>
     <string name="stats_max_altitude">Max altitude</string>

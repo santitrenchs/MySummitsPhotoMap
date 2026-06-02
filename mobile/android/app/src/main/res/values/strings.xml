@@ -274,6 +274,7 @@
     <string name="friends_confirm_remove">¿Eliminar a %s de tus amigos?</string>
     <string name="friends_generic_error">Algo salió mal. Inténtalo de nuevo.</string>
     <string name="cordadas_create_error">No se pudo crear la cordada. Inténtalo de nuevo.</string>
+    <string name="cordadas_avatar_upload_error">Cordada creada, pero no se pudo subir la imagen.</string>
     <string name="stats_unique_peaks">Cimas</string>
     <string name="stats_total_ascents">Ascensiones</string>
     <string name="stats_max_altitude">Altitud máx.</string>

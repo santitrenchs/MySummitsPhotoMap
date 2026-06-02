@@ -21,6 +21,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 data class CordadasUiState(
     val isLoading: Boolean = true,
+    val isCreating: Boolean = false,
     val cordadas: List<CordadaSummary> = emptyList(),
     val pendingInvites: List<CordadaInvite> = emptyList(),
     val error: String? = null,
@@ -73,8 +74,10 @@ class CordadasViewModel : ViewModel() {
         description: String?,
         memberIds: List<String> = emptyList(),
         avatarBytes: ByteArray? = null,
+        onSuccess: (cordadaId: String) -> Unit = {},
     ) {
         viewModelScope.launch {
+            _state.update { it.copy(isCreating = true, error = null) }
             try {
                 val created = api.createCordada(
                     CreateCordadaRequest(
@@ -83,21 +86,30 @@ class CordadasViewModel : ViewModel() {
                         memberIds   = memberIds.ifEmpty { null },
                     )
                 )
+                var avatarFailed = false
                 if (avatarBytes != null) {
-                    runCatching {
+                    val avatarUpload = runCatching {
                         val part = okhttp3.MultipartBody.Part.createFormData(
                             "file", "cordada.jpg",
                             avatarBytes.toRequestBody("image/jpeg".toMediaType()),
                         )
                         api.uploadCordadaAvatar(created.cordada.id, part)
                     }
+                    if (avatarUpload.isFailure) {
+                        avatarFailed = true
+                    }
                 }
                 load()
+                if (avatarFailed) {
+                    _state.update { it.copy(error = "avatar_upload_failed") }
+                }
+                _state.update { it.copy(isCreating = false) }
+                onSuccess(created.cordada.id)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 android.util.Log.e("CordadasVM", "createCordada error", e)
-                _state.update { it.copy(error = e.localizedMessage) }
+                _state.update { it.copy(isCreating = false, error = e.localizedMessage) }
             }
         }
     }

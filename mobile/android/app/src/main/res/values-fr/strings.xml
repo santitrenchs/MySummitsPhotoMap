@@ -270,6 +270,7 @@
     <string name="friends_confirm_remove">Retirer %s de tes amis ?</string>
     <string name="friends_generic_error">Une erreur est survenue. Réessaie.</string>
     <string name="cordadas_create_error">Impossible de créer la cordée. Réessaie.</string>
+    <string name="cordadas_avatar_upload_error">Cordée créée, mais l\'image n\'a pas pu être envoyée.</string>
     <string name="stats_unique_peaks">Sommets</string>
     <string name="stats_total_ascents">Ascensions</string>
     <string name="stats_max_altitude">Altitude max.</string>
