@@ -1224,7 +1224,7 @@ This section is the **authoritative spec** for the Android new-ascent flow. Ever
 
 ```
 PICK  → user taps anywhere to open photo picker
-CROP  → crop 4:5, zoom slider, rule-of-thirds grid, rotate 90°
+CROP  → crop 4:5 with CanHub `CropImageView`, rule-of-thirds grid, rotate 90°
 FORM  → peak search, date, route (optional), notes (optional), person tags
          ↓ submit
 onSuccess(ascentId) → close sheet → navigate to Logbook + scroll to + highlight
@@ -1238,26 +1238,27 @@ onSuccess(ascentId) → close sheet → navigate to Logbook + scroll to + highli
 
 Always 4:5 — **no aspect ratio toggle**. Output mirrors web `OUTPUT_W = 1080`.
 
-```kotlin
-val cropW    = containerW * 0.92f
-val cropH    = cropW * 5f / 4f   // always 4:5
+**Important fix (2026-06-02): do NOT reimplement the crop math manually.** The previous implementation drew the image/crop frame with Compose `Canvas`, `detectTransformGestures`, manual `scale/offset`, and source rect math. It broke on real Android screens because it computed `cropAreaH` by subtracting a fixed controls height (`136.dp`) while the actual canvas height came from `Column.weight(1f)` plus `navigationBarsPadding()` and real safe-area insets. The crop frame and the bitmap transform were calculated against a different height than the one being drawn, causing the crop box to overflow/misalign on upload/create-ascent screens.
 
-val minScale = maxOf(cropW / bitmapW, cropH / bitmapH)  // fit-cover
-val maxScale = minScale * 4f
+Current implementation uses the maintained CanHub cropper:
 
-// Compress output — mirrors web:
-val targetW = 1080
-val scaled  = if (bitmap.width > targetW) {
-    val r = targetW.toFloat() / bitmap.width
-    Bitmap.createScaledBitmap(bitmap, targetW, (bitmap.height * r).toInt(), true)
-} else bitmap
-ByteArrayOutputStream().also { scaled.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
-// Result: 1080×1350px JPEG 0.85
-```
+| Item | Value |
+|---|---|
+| Dependency | `com.vanniktech:android-image-cropper:4.7.0` |
+| Gradle catalog key | `libs.android.image.cropper` |
+| Package/API | `com.canhub.cropper.CropImageView` inside Compose `AndroidView` |
+| Aspect | fixed `aspectRatioX = 4`, `aspectRatioY = 5` |
+| Output | `getCroppedImage(1080, 1350, CropImageView.RequestSizeOptions.RESIZE_FIT)` |
+| Rotate | `cropImageView.rotateImage(90)` |
 
-- Rule-of-thirds grid: draw 4 lines at 1/3 and 2/3 of crop width/height, ~50% alpha white, 0.5dp stroke.
-- Rotate 90° CW button (↻): `rotation = (rotation + 90) % 360` state, swap `bitmapW`/`bitmapH` when computing `minScale` at 90°/270°.
-- Pinch-zoom: `rememberTransformableState`. Clamp scale to `[minScale, maxScale]`, clamp offset so photo always covers crop frame.
+Why this is the correct approach: CanHub owns the hard part: image matrix, inverse matrix, crop-window bounds, auto-zoom, rotation, multitouch, and mapping crop points back to bitmap coordinates. Do not bring back formulas like `cropW = containerW * 0.92f`, `minScale = maxOf(cropW / bitmapW, cropH / bitmapH)`, custom `clamp(offset, scale)`, or manual `Bitmap.createBitmap(srcX, srcY, srcW, srcH)` for this screen.
+
+The `PhotoCropStep` still keeps Peakadex controls below the cropper:
+- Back button → `onBack`
+- Rotate 90° button → `CropImageView.rotateImage(90)`
+- Next button → `getCroppedImage(1080, 1350, RESIZE_FIT)` → `onDone(croppedBitmap)`
+
+`NewAscentViewModel.compressBitmap()` still compresses the resulting bitmap to JPEG 0.85 before upload. If the cropper already returns 1080×1350, this is just the final JPEG encoding step.
 
 ---
 
