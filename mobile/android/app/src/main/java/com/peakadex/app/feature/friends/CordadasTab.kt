@@ -96,20 +96,20 @@ private fun CordadaAvatar(name: String, size: Int = 40, avatarUrl: String? = nul
 
 @Composable
 fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
+    // Flat list row — same metrics as FriendRow (avatar 48 + 16/8 padding) so
+    // friends and cordadas read as one unified list. The group is distinguished
+    // by the cordada avatar + member-avatar stack, not a different background.
     Row(
         modifier          = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF6FAF8))
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        CordadaAvatar(item.name, 44, item.avatarUrl)
+        CordadaAvatar(item.name, ListRowAvatar, item.avatarUrl)
         Column(Modifier.weight(1f)) {
-            Text(item.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(item.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier          = Modifier.padding(top = 3.dp),
@@ -118,14 +118,14 @@ fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
                 Spacer(Modifier.width(8.dp))
                 Text(
                     stringResource(R.string.cordadas_members, item.memberCount),
-                    fontSize = 12.sp, color = Color(0xFF9CA3AF),
+                    fontSize = 12.sp, color = FriendsTextSecondary,
                 )
             }
         }
         Icon(
             imageVector        = ChevronRightIcon,
             contentDescription = null,
-            tint               = Color(0xFFD1D5DB),
+            tint               = FriendsTextMuted,
             modifier           = Modifier.size(18.dp),
         )
     }
@@ -190,30 +190,16 @@ fun InviteCard(invite: CordadaInvite, onAccept: () -> Unit, onReject: () -> Unit
     ) {
         CordadaAvatar(invite.name, 40, invite.avatarUrl)
         Column(Modifier.weight(1f)) {
-            Text(invite.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827))
+            Text(invite.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary)
             Text(
                 stringResource(R.string.cordadas_invite_from, invite.ownerName),
-                fontSize = 12.sp, color = Color(0xFF9CA3AF),
+                fontSize = 12.sp, color = FriendsTextMuted,
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            SmallBtn(stringResource(R.string.friends_accept), onAccept)
-            SmallBtn(stringResource(R.string.friends_reject), onReject, ghost = true)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RowActionButton(stringResource(R.string.friends_accept), onAccept, primary = true)
+            RowActionButton(stringResource(R.string.friends_reject), onReject, primary = false)
         }
-    }
-}
-
-@Composable
-private fun SmallBtn(label: String, onClick: () -> Unit, ghost: Boolean = false) {
-    Box(
-        modifier         = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (ghost) Color(0xFFF3F4F6) else PeakGreenCTA)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (ghost) Color(0xFF6B7280) else Color.White)
     }
 }
 
@@ -339,8 +325,8 @@ private fun CordadaPendingRow(member: CordadaMemberRanking, canCancel: Boolean, 
                 shape        = RoundedCornerShape(8.dp),
                 border       = BorderStroke(1.dp, PeakGreenCTA),
                 colors       = ButtonDefaults.outlinedButtonColors(contentColor = PeakGreenCTA),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                modifier     = Modifier.height(34.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                modifier     = Modifier.heightIn(min = 40.dp),
             ) {
                 Text(stringResource(R.string.action_cancel), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
@@ -705,9 +691,9 @@ private fun InviteSheet(
                             if (user.username != null) Text("@${user.username}", fontSize = 11.sp, color = Color(0xFF9CA3AF))
                         }
                         if (sent) {
-                            Text(stringResource(R.string.friends_request_sent), fontSize = 12.sp, color = Color(0xFF9CA3AF))
+                            Text(stringResource(R.string.friends_request_sent), fontSize = 12.sp, color = FriendsTextMuted)
                         } else {
-                            SmallBtn(stringResource(R.string.cordadas_invite_send), onClick = { onInvite(user) })
+                            RowActionButton(stringResource(R.string.cordadas_invite_send), onClick = { onInvite(user) }, primary = true)
                         }
                     }
                     HRule()
