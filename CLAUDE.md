@@ -1784,6 +1784,12 @@ TabItem(Screen.Map,     R.string.nav_tab_map,     R.drawable.ic_tab_map),
 TabItem(Screen.Cards,   R.string.nav_tab_cards,   R.drawable.ic_tab_cards),
 ```
 
+### Create-FAB visibility + color (2026-06-02)
+
+The global create-FAB in `MainScaffold` is gated to **`Logbook` + `Cards` only** (`currentRoute == Screen.Logbook.route || currentRoute == Screen.Cards.route`) — both create an ascent. It is **NOT** shown on Stats (dashboard, no create action) or Atlas (creates via the peak detail sheet). Friends renders its own speed-dial FAB inside its nested Scaffold.
+
+**All create-FABs are `PeakGreenCTA` (#2F7A5F)** — never blue. Blue (`PeakBlueActive`) is reserved for active/selected states. Same treatment everywhere: `CircleShape`, bottom-end, white `PlusIcon` 24dp, elevation 4/8dp. See `DESIGN.md → "Floating Action Buttons — app-wide rules"` for the authoritative cross-platform spec. The cordada-detail avatar-edit `SmallFloatingActionButton` is exempt (it's an edit control, not a create action).
+
 ### Active tab indicator (redesign 2026-05-28)
 
 The M3 solid pill (`primaryContainer`) was replaced with a **subtle radial glow** — lighter, more premium, less Material-ish.

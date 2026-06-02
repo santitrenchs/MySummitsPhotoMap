@@ -1176,6 +1176,30 @@ The shared `MainTopBar` (logo centered, avatar right) is present on all root tab
 
 ---
 
+## Floating Action Buttons — app-wide rules (2026-06-02)
+
+The FAB represents **the primary "create" action of a screen**. It is correct (and Material-canonical) that the FAB does a *different* action per screen — what must stay constant is the visual treatment.
+
+**Where a create-FAB appears (and nowhere else):**
+
+| Screen | FAB? | Action |
+|---|---|---|
+| Bitácora (Logbook) | ✅ | Create ascent |
+| Cards | ✅ | Create ascent |
+| Cordada (Friends) | ✅ | Speed-dial → invite friend / create cordada |
+| Stats (Home) | ❌ | Dashboard — no create action |
+| Atlas (Map) | ❌ | Creates from the peak detail sheet "Capturar", not a FAB |
+
+The global create-FAB lives in `MainScaffold` and is gated to `Logbook`/`Cards` routes only. Friends renders its own FAB inside its nested Scaffold.
+
+**Fixed visual treatment for every create-FAB:**
+- **Color: `PeakGreenCTA` (#2F7A5F)** — never blue. Per the brand rule "primary CTA = green, never #0369a1". Blue (`PeakBlueActive`) is reserved for active/selected states (tabs, controls), not for CTAs.
+- **Shape:** `CircleShape`. **Position:** bottom-end. **Icon:** white `PlusIcon` at `24dp`. **Elevation:** `4dp` default / `8dp` pressed.
+
+**Not a create-FAB (exempt):** the cordada-detail avatar-edit `SmallFloatingActionButton` (white bg + blue pencil, overlaid on the cover) is a contextual *edit* control, not a "create" action — it keeps its own styling.
+
+---
+
 ## Cordadas + Amigos — Unified Social Screen (Android, updated 2026-06-02)
 
 > **Authoritative cross-platform spec.** This is the reference for rebuilding the Amigos + Cordadas section on **web** and **iOS**. The Android implementation in `mobile/android/.../feature/friends/` is the reference. Follow the navigation, layout, behaviours, Material patterns and data contracts below exactly. See `CLAUDE.md → "Cordadas — Climbing Groups"` for the data model + API and the deeper rationale of every fix.
