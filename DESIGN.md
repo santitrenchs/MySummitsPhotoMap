@@ -1148,76 +1148,126 @@ duration:   1000ms minimum, then navigates to Login or Home
 
 ---
 
-## Cordadas + Amigos — Unified Social Screen (Android, 2026-05-31)
+## Cordadas + Amigos — Unified Social Screen (Android, updated 2026-06-02)
 
-WhatsApp-style **single screen** that shows friends and cordadas together — **no Amigos/Cordadas tabs**. Accessed from the Home avatar dropdown. See `CLAUDE.md → "Cordadas — Climbing Groups"` for the data model, API and the ModalBottomSheet nav-bar inset fix.
+> **Authoritative cross-platform spec.** This is the reference for rebuilding the Amigos + Cordadas section on **web** and **iOS**. The Android implementation in `mobile/android/.../feature/friends/` is the reference. Follow the navigation, layout, behaviours, Material patterns and data contracts below exactly. See `CLAUDE.md → "Cordadas — Climbing Groups"` for the data model + API and the deeper rationale of every fix.
 
-**Files:** `feature/friends/FriendsScreen.kt` (host + friend UI + stats sheet), `feature/friends/CordadasTab.kt` (cordada UI + create/invite/detail sheets), `FriendsViewModel.kt` + `CordadasViewModel.kt`.
+WhatsApp-style **single screen** (Option B — friends and cordadas intermixed in one list). **No Amigos/Cordadas sub-tabs.**
 
-### Screen shell
+**Files:** `feature/friends/FriendsScreen.kt` (host, friend rows, search, solicitudes, FAB speed-dial, shared row helpers/tokens) · `feature/friends/CordadasTab.kt` (`CordadaCard`, `InviteCard`, create/invite sheets, **`CordadaDetailRoute` + `CordadaDetailScreen`**) · `FriendsViewModel.kt` + `CordadasViewModel.kt`.
 
-`CenterAlignedTopAppBar` (white via `TopAppBarDefaults.topAppBarColors`, back arrow — it's a **secondary** screen, no logo). Single scrolling list combines pending items, friends and cordadas; one search box finds both. A floating **`+` FAB** opens a menu:
-- **Invitar amigo** (by email) → `InviteFriendSheet`
-- **Crear cordada** → `CreateCordadaSheet`
+### Navigation — it is a root tab, NOT a dropdown/secondary screen
+
+- Reached via a **bottom-nav tab "Cordada"** (two-users icon) sitting **between Stats and Bitácola**. It lives inside the main tab `NavHost`, so it **shares the app's `MainTopBar` (logo + avatar menu) and the bottom nav**, exactly like the other root tabs.
+- It is **NOT** in the avatar dropdown anymore (removed) and is **NOT** a standalone full-screen route.
+- **No own header.** The screen content starts directly at the search bar. (On Android the nested `Scaffold` sets `contentWindowInsets = WindowInsets(0,0,0,0)` so there is no white gap under `MainTopBar` — on web/iOS just don't render a second header.)
+- The global **"new ascent" `+` FAB is hidden on this tab**; the screen renders its own green `+` FAB instead.
+
+### Tab badge (pending-invite indicator)
+
+The **Cordada bottom-nav tab shows a red count badge** (`BadgedBox`+`Badge`, `#EF4444`, "9+" cap) when there are pending **cordada invites**. The host (`MainScaffold`) refetches `getFriendsData().incoming.size` (friend-request badge on the avatar) **and** `getCordadas().pendingInvites.size` (cordada tab badge) on **every tab change**. The friend-request avatar badge counts friend requests only; the cordada tab badge counts cordada invites only.
+
+### Screen layout (single `LazyColumn`, top → bottom)
 
 ```
 ┌─────────────────────────────────────┐
-│  ‹      Amigos                    +  │   CenterAlignedTopAppBar + FAB
+│  peakadex                        ◯   │  shared MainTopBar (logo + avatar)
 ├─────────────────────────────────────┤
-│  search (friends + cordadas)         │
-│  pending invites / requests          │
-│  friends · cordadas                  │
+│  🔍  search (friends + cordadas)     │  ← STICKY header (stays pinned)
+├─────────────────────────────────────┤
+│  [search results — only if q ≥ 2]    │
+│  SOLICITUDES · N                      │  friend requests + cordada invites
+│    👥 Cordada · Invitación de {owner}   [Aceptar][Rechazar]
+│    🙂 Persona · solicitud de amistad    [Aceptar][Rechazar]
+│  AMIGOS n · CORDADAS m                 │  one neutral count subheader
+│    … unified rows, sorted A→Z …       │
+│  [empty state if nothing & no query]  │
+│                                  (+)  │  green FAB → speed-dial
 ```
 
-### Interactions
+1. **Search** — pinned **sticky header** (white). One box searches both: cordadas filtered locally by name + users via `searchUsers` (remote). Stays reachable while scrolling.
+2. **Search results** (only when query ≥ 2 chars): cordada matches under a "Cordadas" label + user matches under a "Amigos/Personas" label; combined "Sin resultados" fallback.
+3. **Solicitudes · N** (only if N>0) — friend requests + cordada invites **combined** under one count.
+4. **Amigos n · Cordadas m** — friends + cordadas **intermixed, sorted alphabetically** (WhatsApp style). One neutral count subheader.
+5. **Empty state** — only when no friends, no cordadas, no requests and the search box is blank.
 
-- Tap a **friend** → `openUserStats(userId)` → `FriendStatsSheet` (general stats, **not** restricted to accepted friends — any user viewable, since cordada members may not be your friends).
-- Tap a **cordada** → Detail sheet with the member leaderboard.
+### Unified row style (THE key Option-B rule)
+
+Friends and cordadas render as **the same flat list row** so they read as one list:
+- **Leading 48dp avatar** (`ListRowAvatar = 48`), **16dp horizontal / 8dp vertical padding**, 12dp gap.
+- **A cordada is distinguished by its avatar + a member-avatar stack in the subtitle — NOT by a card, border or different background.** (The old mint `#F6FAF8` rounded card was removed.)
+- **Inset dividers** between rows (`InsetRule` = `HorizontalDivider` with `start = 76.dp` = 16 + 48 + 12), none after the last item.
+- **Friend row** subtitle: `level · {uniquePeaks} Cimas · 🪨{totalCairns} · {totalEp} EP`. Trailing = `⋮` overflow menu (48dp) → **Eliminar** (destructive). **Friend rows are NOT tappable** — there is no friend detail/stats sheet (removed).
+- **Cordada row** (`CordadaCard`) subtitle: member-avatar stack + "{n} miembros". Trailing = chevron-right. **Tapping opens the full-screen cordada detail.**
+
+### Solicitudes — accept/reject buttons
+
+All row actions use the shared Material **`RowActionButton`** (≥40dp touch height — never hand-rolled `Box`+`clickable`):
+- **Aceptar** = `FilledTonalButton`, **tonal green** (`containerColor #DCFCE7`, `contentColor #16A34A`) — deliberately tonal so it does **not** compete with the solid-green `+` FAB.
+- **Rechazar** = `OutlinedButton` (gray border `#E5E7EB`, secondary text).
+- Same buttons are reused for friend-request accept/reject, cordada invite accept/reject, search "Añadir", and the invite-member "Invitar".
+
+### FAB speed-dial (`ActionSpeedDialSheet`)
+
+Green circular `+` FAB (bottom-end) → bottom sheet with two rows:
+- **Invitar a un amigo** (person-add icon) → `InviteFriendSheet`
+- **Crear una cordada** (group-add icon) → `CreateCordadaSheet`
+
+### Accept / reject behaviours (must match on every platform)
+
+- **Accept friend** → optimistic (drop from incoming, append friend) **then `load()` reload** so the new friend shows with **full `user_stats`** (cimas/EP/nivel) instead of zeros.
+- **Accept cordada invite** → optimistic remove from `pendingInvites` **then `load()`** → the cordada appears in the unified list with full data.
+- **Reject cordada invite** → **deletes** the PENDING membership row (so the user can be cleanly re-invited later).
+- Returning to this screen **reloads cordadas on resume** (a member may have left / been expelled / cordada deleted while you were in the detail).
+
+### Friend/member stats source — **read `user_stats`, never recompute**
+
+All friend & cordada-member stats (`levelIdx`, `uniquePeaks`, `totalEp`, `totalCairns`) are read from the **pre-computed `user_stats` table** (`friendship.service.ts` → `prisma.userStats.findMany`, same source as the home leaderboard). They are **not** recomputed by scanning ascents on each load. Missing row → zeros fallback. The table is refreshed by `recomputeUserStats(userId)` after ascent CRUD only.
 
 ### Invite friend by email (`InviteFriendSheet`)
 
-`FriendsViewModel.inviteFriendByEmail(email)` → `POST /api/v1/invitations`. UI driven by `InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }`. Sheet stays open, disables field/button while sending, shows colored feedback Text, then auto-closes ~1.4s after success.
-
-### Friend stats (`FriendStatsSheet`)
-
-`GET /api/v1/users/{id}/stats` (public, server-authoritative). Shows `UserAvatar(52)` + name + level emoji (`LEVEL_EMOJIS[levelIdx-1]`) + level name, plus a 2×2 grid: uniquePeaks · totalAscents · maxAltitudeM (+" m") · totalEp.
+`POST /api/v1/invitations`. UI driven by `InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }`. Sheet stays open, disables field/button while sending, shows colored feedback, auto-closes ~1.4s after success. (Friend invitations to non-registered emails send a Resend email — existing behaviour.)
 
 ### Create cordada (`CreateCordadaSheet`)
 
-`onCreate(name, description, memberIds, avatarBytes)`. Includes:
-- Circular **84dp photo picker** (`GetContent` "image/\*") → auto square center-crop to 512px JPEG 0.85. Real R2 upload via `POST /api/v1/cordadas/{id}/avatar` after creation.
+`onCreate(name, description, memberIds, avatarBytes)`:
+- Circular **84dp photo picker** → square center-crop to 512px JPEG 0.85. Uploaded via `POST /api/v1/cordadas/{id}/avatar` **after** creation (best-effort, wrapped so a photo failure doesn't break creation).
 - Name (≤60) + optional description.
-- **Member selection** — scrollable (max 200dp) list of accepted friends with `Checkbox` toggled via `mutableStateListOf<String>`. `memberIds` passed to `POST /api/v1/cordadas` (atomic transaction; server drops non-friend ids).
+- **Member selection** — scrollable accepted-friends list with checkboxes. `memberIds` → `POST /api/v1/cordadas` (server drops non-friend ids).
 
-### Cordada list/invite layout (top → bottom)
+### Cordada DETAIL — full-screen destination (NOT a sheet)
 
-1. **Invitaciones pendientes** (only if any) — `InviteCard` rows: gradient-green avatar + name + "Invitado por {owner}" + **Aceptar** (blue `SmallBtn`) / **Rechazar** (ghost gray `SmallBtn`).
-2. **Tus cordadas** — `CordadaRow`s: green gradient avatar + name + (green **"Propietario"** badge pill if owner) + "{n} miembros" subtitle + chevron-right. Tapping opens the **Detail sheet**.
-3. Empty state when no cordadas + no invites.
+> **Material list→detail.** The cordada detail is a **full-screen route** (`Screen.CordadaDetail = "cordada/{id}"`) on the **outer** navController — `CordadaDetailRoute`. It is **NOT** an in-tab overlay or a bottom sheet. As a drill-down it **loses the `MainTopBar` and the bottom nav** (correct Material behaviour — bottom nav is only for top-level destinations).
 
-### Avatars & colors
+- Opened from a cordada row via `onOpenCordada(id)` → outer `navController.navigate("cordada/$id")`.
+- **One single `TopAppBar`** (start-aligned, white): **back arrow on the LEFT** + **title = cordada name** (`R.string.action_back` for the back contentDescription). A `BackHandler` makes the system back close the detail (returns to the list), same as the arrow.
+- **No second/empty top bar, no white gap** (the earlier bug of stacking a near-empty bar under `MainTopBar` is fixed by making it a real full-screen destination).
+- `CordadaDetailRoute` owns its **own `CordadasViewModel`**, loads the cordada by id (`openDetail(id)`), shows a centered spinner until loaded.
+- Body (vertical scroll): full-width **cover image** (120dp; owner sees a 44dp edit-photo FAB overlaid) → **member count** (the name lives in the top bar, not duplicated in the body) → **member-avatar cluster + add-member button** (owner) → **RÀNQUING** member leaderboard (rank badge + 52dp avatar + name/"Tú"/Fundador + level + uniquePeaks · 🪨 · EP, sorted `uniquePeaks` desc then `totalEp` desc; per-member expel for owner) → **Invitaciones pendientes** (owner) → destructive footer.
+- Footer: owner → **"Eliminar cordada"** (destructive); member → **"Salir de la cordada"**. **Never both** (owner can't leave; on leave/delete the route calls `onBack()`).
 
-- `CordadaAvatar`: circle, `linearGradient(#059669 → #34D399)`, white bold initials (up to 2).
-- Owner badge: `#F0FDF4` bg, `#059669` text, 10sp bold, 4dp radius.
-- Member subtitle / counts: `#9CA3AF`. Names: `#111827` SemiBold.
+### Invite-member sheet (inside detail)
 
-### Three bottom sheets (`ModalBottomSheet`, white)
+Title "Invitar", search `BasicTextField`; results = `searchUsers` minus current members; each row has **Invitar** (`RowActionButton`) → becomes **Invitado** (`inviteSentIds`).
 
-**1. Create Cordada** — title "Crear cordada", circular 84dp photo picker, `OutlinedTextField` name (≤60 chars) + optional description, scrollable accepted-friends member checklist, **"Crear"** primary button. See the "Create cordada" section above for the full flow.
+### Email notification on cordada invite
 
-**2. Invite** (nested inside Detail) — title "Invitar", search `BasicTextField`; results = `searchUsers` minus current members; each result row has an **Invitar** button that turns into **Invitado** after tap (`inviteSentIds`).
+`inviteToCordada()` (server) sends `sendCordadaInviteEmail(to, inviterName, cordadaName, locale)` — **all 5 locales**, branded template (CTA → `/friends`). **Best-effort** (a send failure never blocks the invite) and **gated on the recipient's `emailNotifications`** master kill-switch.
 
-**3. Detail** — drag handle is a **7dp green (`#059669`) band** (rarity-band pattern from Atlas: `containerColor = White`, the band is drawn explicitly in `dragHandle`). Header = cordada name + description. Body = **member leaderboard** sorted by `uniquePeaks` desc then `totalEp` desc: rank + avatar + name (+ "Tú"/owner markers) + level + uniquePeaks + EP. Per-member **expel** for the owner. Footer action:
-   - Owner → **"Eliminar cordada"** (destructive) + per-member expel.
-   - Member → **"Salir de la cordada"**.
-   - Never both (owner can't leave).
+### Avatars, colors & shared tokens (single source in `FriendsScreen.kt`)
 
-### ⚠️ Nav-bar inset (critical for all 3 sheets)
+- `CordadaAvatar`: circle, `linearGradient(#059669 → #34D399)`, white bold initials (≤2).
+- Tokens: `FriendsTextPrimary #111827`, `FriendsTextSecondary #6B7280`, `FriendsTextMuted #9CA3AF`, `FriendsDivider #F3F4F6`, `FriendsDanger #EF4444`, `FriendsAccept #16A34A`, `FriendsAcceptBg #DCFCE7`. Layout consts `ListRowAvatar = 48`, `ListRowInset = 76`. **Use tokens, not inline hex.**
+- All user-visible strings come from `R.string.*` and are translated in **all 5 locales** (es/ca/en/fr/de); back-button contentDescription uses `R.string.action_back`.
 
-Cordadas sheets use a shared `CordadaModalSheet` wrapper around Material 3 `ModalBottomSheet`, matching the working Atlas `LayersPanel` pattern:
-- `rememberModalBottomSheetState(skipPartiallyExpanded = true)` is mandatory. Without it, closing the keyboard can let the sheet settle into a too-low partial anchor and place the CTA behind Android's 3-button nav bar.
-- Do **not** override `contentWindowInsets`.
-- Do **not** thread a manual `bottomInset` from `FriendsScreen`.
+### ⚠️ Bottom sheets — nav-bar inset (still applies to Create/Invite/InviteFriend)
+
+Sheets use the shared `CordadaModalSheet` wrapper around Material 3 `ModalBottomSheet`, matching the Atlas `LayersPanel` pattern:
+- `rememberModalBottomSheetState(skipPartiallyExpanded = true)` is **mandatory** (otherwise closing the keyboard can settle the sheet at a too-low anchor with the CTA behind the 3-button nav bar).
+- Do **not** override `contentWindowInsets`; do **not** thread a manual `bottomInset`.
 - Apply `.navigationBarsPadding()` + `.imePadding()` inside the sheet content.
 
-Full rationale in CLAUDE.md.
+### Not yet implemented (for full parity later)
+
+- **Push notifications (FCM)** for cordada invites / friend requests — pending (only the tab badge + email exist today).
+- The tab badge refreshes on tab change, **not** in real time.
