@@ -3,6 +3,7 @@ package com.peakadex.app.feature.friends
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -749,8 +750,14 @@ fun CordadaDetailScreen(
     val accepted = detail.members.filter { !it.isPending }
     val pending  = detail.members.filter { it.isPending }
 
+    // Closing the detail returns to the cordadas list (not out of the tab).
+    BackHandler(enabled = true) { onBack() }
+
     Surface(modifier = Modifier.fillMaxSize(), color = PeakBackground) {
         Scaffold(
+            // Nested inside MainScaffold (status bar already consumed) → zero insets
+            // so there is no white gap below the main top bar.
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 CenterAlignedTopAppBar(
                     title          = { },
@@ -759,6 +766,7 @@ fun CordadaDetailScreen(
                             Icon(BackChevronIcon, contentDescription = "Volver", tint = Color.Unspecified)
                         }
                     },
+                    windowInsets = WindowInsets(0, 0, 0, 0),
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
                 )
             },
