@@ -1,6 +1,11 @@
 package com.peakadex.app.feature.home
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,6 +46,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -133,8 +139,325 @@ fun HomeScreen(
 
 @Composable
 private fun HomeLoadingState() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+    val shimmer = rememberSkeletonBrush()
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 32.dp),
+    ) {
+        item { HeroHeaderSkeleton(shimmer) }
+        item { FriendsRankingSkeleton(shimmer) }
+        item { MonthlyChartSkeleton(shimmer) }
+        item { RarityChartSkeleton(shimmer) }
+        item { RecentAscentsSkeleton(shimmer) }
+    }
+}
+
+@Composable
+private fun rememberSkeletonBrush(): Brush {
+    val transition = rememberInfiniteTransition(label = "homeSkeleton")
+    val x by transition.animateFloat(
+        initialValue = -350f,
+        targetValue = 1100f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "homeSkeletonShimmer",
+    )
+    val base = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.62f)
+    val highlight = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f)
+    return Brush.linearGradient(
+        colors = listOf(base, highlight, base),
+        start = Offset(x, 0f),
+        end = Offset(x + 350f, 0f),
+    )
+}
+
+@Composable
+private fun SkeletonBlock(
+    brush: Brush,
+    modifier: Modifier,
+    shape: RoundedCornerShape = RoundedCornerShape(8.dp),
+) {
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(brush),
+    )
+}
+
+@Composable
+private fun HeroHeaderSkeleton(brush: Brush) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 12.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF1C2D3F)),
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        colorStops = arrayOf(
+                            0.00f to Color(0x221C2D3F),
+                            0.60f to Color(0xAA0F172A),
+                            1.00f to Color(0xFF000000),
+                        )
+                    )
+                )
+        )
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 12.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SkeletonBlock(
+                        brush = brush,
+                        modifier = Modifier.size(56.dp),
+                        shape = RoundedCornerShape(28.dp),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        SkeletonBlock(brush, Modifier.fillMaxWidth(0.72f).height(20.dp))
+                        Spacer(Modifier.height(7.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            SkeletonBlock(brush, Modifier.width(72.dp).height(24.dp), RoundedCornerShape(20.dp))
+                            SkeletonBlock(brush, Modifier.width(64.dp).height(24.dp), RoundedCornerShape(20.dp))
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    MetricSkeleton(brush)
+                    Box(Modifier.width(1.dp).height(32.dp).background(Color(0x26FFFFFF)))
+                    MetricSkeleton(brush)
+                    Box(Modifier.width(1.dp).height(32.dp).background(Color(0x26FFFFFF)))
+                    MetricSkeleton(brush)
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Black)
+                    .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.82f).height(14.dp))
+                    SkeletonBlock(brush, Modifier.fillMaxWidth().height(9.dp), RoundedCornerShape(5.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricSkeleton(brush: Brush) {
+    Column(
+        modifier = Modifier.padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        SkeletonBlock(brush, Modifier.width(34.dp).height(20.dp))
+        Spacer(Modifier.height(4.dp))
+        SkeletonBlock(brush, Modifier.width(54.dp).height(11.dp))
+    }
+}
+
+@Composable
+private fun FriendsRankingSkeleton(brush: Brush) {
+    OutlinedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = MaterialTheme.shapes.large,
+    ) {
+        Column {
+            SkeletonBlock(
+                brush = brush,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .width(116.dp)
+                    .height(18.dp),
+            )
+            HorizontalDivider(color = FriendsDivider)
+            repeat(3) { index ->
+                FriendRankRowSkeleton(brush)
+                if (index < 2) {
+                    HorizontalDivider(color = FriendsDivider, modifier = Modifier.padding(start = 76.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FriendRankRowSkeleton(brush: Brush) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        SkeletonBlock(brush, Modifier.size(width = 30.dp, height = 44.dp), RoundedCornerShape(10.dp))
+        SkeletonBlock(brush, Modifier.size(52.dp), RoundedCornerShape(26.dp))
+        Column(Modifier.weight(1f)) {
+            SkeletonBlock(brush, Modifier.fillMaxWidth(0.62f).height(16.dp))
+            Spacer(Modifier.height(6.dp))
+            SkeletonBlock(brush, Modifier.fillMaxWidth(0.34f).height(12.dp))
+            Spacer(Modifier.height(6.dp))
+            SkeletonBlock(brush, Modifier.fillMaxWidth(0.76f).height(12.dp))
+        }
+    }
+}
+
+@Composable
+private fun MonthlyChartSkeleton(brush: Brush) {
+    ChartSkeletonShell(brush, titleWidth = 150.dp, subtitle = true) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            val heights = listOf(24.dp, 48.dp, 36.dp, 64.dp, 18.dp, 52.dp)
+            heights.forEach { height ->
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom,
+                ) {
+                    SkeletonBlock(brush, Modifier.width(18.dp).height(10.dp))
+                    Spacer(Modifier.height(4.dp))
+                    SkeletonBlock(
+                        brush = brush,
+                        modifier = Modifier.fillMaxWidth().height(height),
+                        shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
+                    )
+                    Spacer(Modifier.height(5.dp))
+                    SkeletonBlock(brush, Modifier.width(26.dp).height(10.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RarityChartSkeleton(brush: Brush) {
+    ChartSkeletonShell(brush, titleWidth = 132.dp, subtitle = false) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            val heights = listOf(18.dp, 38.dp, 78.dp, 48.dp, 96.dp, 26.dp, 64.dp, 34.dp, 58.dp)
+            heights.forEach { height ->
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    SkeletonBlock(brush, Modifier.width(16.dp).height(10.dp))
+                    Spacer(Modifier.height(4.dp))
+                    SkeletonBlock(
+                        brush = brush,
+                        modifier = Modifier.fillMaxWidth().height(height),
+                        shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
+                    )
+                    Spacer(Modifier.height(5.dp))
+                    SkeletonBlock(brush, Modifier.size(14.dp), RoundedCornerShape(7.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChartSkeletonShell(
+    brush: Brush,
+    titleWidth: Dp,
+    subtitle: Boolean,
+    content: @Composable () -> Unit,
+) {
+    OutlinedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = MaterialTheme.shapes.large,
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            SkeletonBlock(brush, Modifier.width(titleWidth).height(19.dp))
+            if (subtitle) {
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    SkeletonBlock(brush, Modifier.width(64.dp).height(13.dp))
+                    SkeletonBlock(brush, Modifier.width(92.dp).height(13.dp))
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            content()
+        }
+    }
+}
+
+@Composable
+private fun RecentAscentsSkeleton(brush: Brush) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 24.dp, bottom = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SkeletonBlock(brush, Modifier.width(132.dp).height(20.dp))
+        SkeletonBlock(brush, Modifier.width(54.dp).height(14.dp))
+    }
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(4) {
+            OutlinedCard(modifier = Modifier.width(150.dp)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                ) {
+                    SkeletonBlock(brush, Modifier.fillMaxSize(), RoundedCornerShape(0.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomStart)
+                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xA6000000))))
+                            .padding(horizontal = 8.dp, vertical = 7.dp),
+                    ) {
+                        Column {
+                            SkeletonBlock(brush, Modifier.fillMaxWidth(0.72f).height(12.dp))
+                            Spacer(Modifier.height(5.dp))
+                            SkeletonBlock(brush, Modifier.width(46.dp).height(10.dp))
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
