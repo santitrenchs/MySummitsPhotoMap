@@ -629,6 +629,9 @@ fun FriendsScreen(
     }
 
     Scaffold(
+        // This Scaffold is nested inside MainScaffold, which already consumes the
+        // status-bar inset. Zero the insets here so we don't double-pad (white gap).
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
