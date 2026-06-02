@@ -77,6 +77,14 @@ fun MainScaffold(navController: NavController) {
     val user    by AppContainer.authSession.currentUser.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    // Fetch current user on app restore (token present but user not yet loaded)
+    LaunchedEffect(Unit) {
+        if (user == null && AppContainer.authSession.isAuthenticated) {
+            runCatching { AppContainer.apiService.getMe() }
+                .onSuccess { AppContainer.authSession.updateUser(it) }
+        }
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope             = rememberCoroutineScope()
 
