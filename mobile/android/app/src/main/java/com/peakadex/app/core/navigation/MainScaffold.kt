@@ -463,21 +463,16 @@ private fun ProfileMenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // Fixed-width box matches the 52dp avatar so text aligns with the name in the header
-        Box(
-            modifier         = Modifier.size(width = 52.dp, height = 24.dp),
-            contentAlignment = Alignment.CenterStart,
-        ) {
-            Icon(
-                imageVector        = icon,
-                contentDescription = label,
-                tint               = tint,
-                modifier           = Modifier.size(20.dp),
-            )
-        }
+        Icon(
+            imageVector        = icon,
+            contentDescription = label,
+            tint               = tint,
+            modifier           = Modifier.size(22.dp),
+        )
         Text(
             text       = label,
             fontSize   = 15.sp,
