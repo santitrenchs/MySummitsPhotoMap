@@ -78,9 +78,9 @@ fun MainScaffold(navController: NavController) {
     val user    by AppContainer.authSession.currentUser.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // Fetch current user on app restore (token present but user not yet loaded)
+    // Fetch current user on app restore — also when avatarUrl is null (not yet persisted)
     LaunchedEffect(Unit) {
-        if (user == null && AppContainer.authSession.isAuthenticated) {
+        if (AppContainer.authSession.isAuthenticated && (user == null || user?.avatarUrl == null)) {
             runCatching { AppContainer.apiService.getMe() }
                 .onSuccess { AppContainer.authSession.updateUser(it) }
         }
@@ -463,16 +463,21 @@ private fun ProfileMenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment   = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector        = icon,
-            contentDescription = label,
-            tint               = tint,
-            modifier           = Modifier.size(20.dp),
-        )
+        // Fixed-width box matches the 52dp avatar so text aligns with the name in the header
+        Box(
+            modifier         = Modifier.size(width = 52.dp, height = 24.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Icon(
+                imageVector        = icon,
+                contentDescription = label,
+                tint               = tint,
+                modifier           = Modifier.size(20.dp),
+            )
+        }
         Text(
             text       = label,
             fontSize   = 15.sp,
