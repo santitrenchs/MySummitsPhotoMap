@@ -287,7 +287,9 @@
     <string name="cordadas_add_members">Mitglieder hinzufügen</string>
     <string name="cordadas_invites_section">Ausstehende Einladungen</string>
     <string name="cordadas_invite_from">Eingeladen von %s</string>
+    <string name="cordadas_member_singular">1 Mitglied</string>
     <string name="cordadas_members">%d Mitglieder</string>
+    <string name="cordadas_pending_count">%d ausstehend</string>
     <string name="cordadas_owner_badge">Eigentümer</string>
     <string name="cordadas_invite_btn">Einladen</string>
     <string name="cordadas_invite_title">Zur Cordada einladen</string>
@@ -298,5 +300,7 @@
     <string name="cordadas_expel">Entfernen</string>
     <string name="cordadas_confirm_leave">Diese Cordada verlassen?</string>
     <string name="cordadas_confirm_delete">Cordada löschen? Diese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="cordadas_delete_detail">Wenn du diese Cordada löschst, wird die Gruppe entfernt und ausstehende Einladungen werden storniert. Die Besteigungen der Mitglieder werden nicht gelöscht.</string>
+    <string name="cordadas_delete_confirm_button">Endgültig löschen</string>
     <string name="cordadas_confirm_expel">Dieses Mitglied entfernen?</string>
 </resources>

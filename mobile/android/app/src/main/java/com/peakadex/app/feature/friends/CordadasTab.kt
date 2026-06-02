@@ -25,12 +25,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
@@ -122,7 +119,7 @@ fun CordadaCard(item: CordadaSummary, onClick: () -> Unit) {
                 MemberAvatarStack(item.memberAvatars, item.memberCount)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    stringResource(R.string.cordadas_members, item.memberCount),
+                    cordadaMembersLabel(item.memberCount),
                     fontSize = 12.sp, color = FriendsTextSecondary,
                 )
             }
@@ -339,52 +336,76 @@ private fun CordadaPendingRow(member: CordadaMemberRanking, canCancel: Boolean, 
     }
 }
 
-// ── Add-member button (dashed circle) ─────────────────────────────────────────────
+@Composable
+private fun cordadaMembersLabel(count: Int): String =
+    if (count == 1) stringResource(R.string.cordadas_member_singular)
+    else stringResource(R.string.cordadas_members, count)
+
+// ── Add-member button ────────────────────────────────────────────────────────────
 
 @Composable
 private fun AddMemberButton(onClick: () -> Unit) {
-    val ring = Color(0xFFD1D5DB)
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .drawBehind {
-                drawCircle(
-                    color  = ring,
-                    radius = size.minDimension / 2f - 1.dp.toPx(),
-                    style  = Stroke(
-                        width      = 1.5.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(9f, 7f)),
-                    ),
-                )
-            }
-            .clip(CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
+    FilledTonalButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(999.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = Color(0xFFEFF6FF),
+            contentColor = PeakBlueActive,
+        ),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
+        modifier = Modifier.heightIn(min = 36.dp),
     ) {
-        Icon(PlusSmallIcon, contentDescription = stringResource(R.string.cordadas_add_members), tint = Color(0xFF9CA3AF), modifier = Modifier.size(20.dp))
+        Icon(PlusSmallIcon, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(5.dp))
+        Text(stringResource(R.string.cordadas_invite_btn), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
-// ── Destructive footer row ────────────────────────────────────────────────────────
+// ── Destructive footer card ───────────────────────────────────────────────────────
 
 @Composable
-private fun DestructiveRow(title: String, subtitle: String?, onClick: () -> Unit) {
-    Row(
+private fun DestructiveActionCard(
+    title: String,
+    body: String?,
+    buttonLabel: String,
+    onClick: () -> Unit,
+) {
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+            .padding(horizontal = 16.dp, vertical = 18.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color(0xFFFECACA)),
+        colors = CardDefaults.outlinedCardColors(containerColor = Color(0xFFFFF7F7)),
     ) {
-        Icon(TrashIcon, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(24.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFEF4444))
-            if (subtitle != null) {
-                Text(subtitle, fontSize = 13.sp, color = FriendsTextSecondary, modifier = Modifier.padding(top = 1.dp))
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFEE2E2)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(TrashIcon, contentDescription = null, tint = Color(0xFFDC2626), modifier = Modifier.size(20.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF991B1B))
+                    if (body != null) {
+                        Text(body, fontSize = 13.sp, color = Color(0xFF7F1D1D), lineHeight = 18.sp, modifier = Modifier.padding(top = 3.dp))
+                    }
+                }
+            }
+            OutlinedButton(
+                onClick = onClick,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, Color(0xFFEF4444)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(buttonLabel, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             }
         }
-        Icon(ChevronRightIcon, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -1000,7 +1021,7 @@ fun CordadaDetailScreen(
                     .verticalScroll(rememberScrollState()),
             ) {
                 // Cover image (editable) — full width, fixed height
-                Box(modifier = Modifier.fillMaxWidth().height(120.dp)) {
+                Box(modifier = Modifier.fillMaxWidth().height(180.dp)) {
                     if (!detail.avatarUrl.isNullOrBlank()) {
                         AsyncImage(
                             model              = detail.avatarUrl,
@@ -1023,13 +1044,33 @@ fun CordadaDetailScreen(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .fillMaxWidth()
-                            .height(64.dp)
+                            .height(92.dp)
                             .background(
                                 Brush.verticalGradient(
-                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.25f)),
+                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.48f)),
                                 ),
                             ),
                     )
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 16.dp, end = 72.dp, bottom = 14.dp),
+                    ) {
+                        Text(
+                            detail.name,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            cordadaMembersLabel(accepted.size),
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.82f),
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
                     if (detail.isOwner) {
                         SmallFloatingActionButton(
                             onClick        = { photoPicker.launch("image/*") },
@@ -1047,43 +1088,78 @@ fun CordadaDetailScreen(
                     }
                 }
 
-                // Member count (the name now lives in the top app bar)
-                Row(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Icon(PeopleIcon, contentDescription = null, tint = FriendsTextSecondary, modifier = Modifier.size(16.dp))
-                    Text(
-                        stringResource(R.string.cordadas_members, accepted.size),
-                        fontSize = 14.sp, color = FriendsTextSecondary,
-                    )
-                }
+                    if (!detail.description.isNullOrBlank()) {
+                        Text(
+                            detail.description,
+                            fontSize = 14.sp,
+                            color = FriendsTextPrimary,
+                            lineHeight = 20.sp,
+                        )
+                    }
 
-                Spacer(Modifier.height(12.dp))
-
-                // Member avatars (small, overlapping ~22%) + add button
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // Overlapping cluster
-                    Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
-                        accepted.take(10).forEach { m ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(Color.White)
+                                .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(999.dp))
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(PeopleIcon, contentDescription = null, tint = FriendsTextSecondary, modifier = Modifier.size(15.dp))
+                            Text(cordadaMembersLabel(accepted.size), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextSecondary)
+                        }
+                        if (pending.isNotEmpty()) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White)
-                                    .padding(1.5.dp),
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(Color(0xFFFFFBEB))
+                                    .border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(999.dp))
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
                             ) {
-                                UserAvatar(m.name, 33, m.avatarUrl)
+                                Text(
+                                    stringResource(R.string.cordadas_pending_count, pending.size),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF92400E),
+                                )
                             }
                         }
                     }
-                    if (detail.isOwner) {
-                        Spacer(Modifier.width(10.dp))
-                        AddMemberButton(onClick = { showInviteSheet = true })
+
+                    // Member avatars (small, overlapping ~22%) + invite button
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
+                            accepted.take(10).forEach { m ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White)
+                                        .padding(1.5.dp),
+                                ) {
+                                    UserAvatar(m.name, 33, m.avatarUrl)
+                                }
+                            }
+                        }
+                        if (detail.isOwner) {
+                            Spacer(Modifier.width(10.dp))
+                            AddMemberButton(onClick = { showInviteSheet = true })
+                        }
                     }
                 }
 
@@ -1109,21 +1185,20 @@ fun CordadaDetailScreen(
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-                HRule()
-
                 // Footer destructive action
                 if (detail.isOwner) {
-                    DestructiveRow(
-                        title    = stringResource(R.string.cordadas_delete),
-                        subtitle = stringResource(R.string.cordadas_delete_warning),
-                        onClick  = { showConfirmDelete = true },
+                    DestructiveActionCard(
+                        title = stringResource(R.string.cordadas_delete),
+                        body = stringResource(R.string.cordadas_delete_detail),
+                        buttonLabel = stringResource(R.string.cordadas_delete),
+                        onClick = { showConfirmDelete = true },
                     )
                 } else {
-                    DestructiveRow(
-                        title    = stringResource(R.string.cordadas_leave),
-                        subtitle = null,
-                        onClick  = { showConfirmLeave = true },
+                    DestructiveActionCard(
+                        title = stringResource(R.string.cordadas_leave),
+                        body = null,
+                        buttonLabel = stringResource(R.string.cordadas_leave),
+                        onClick = { showConfirmLeave = true },
                     )
                 }
                 Spacer(Modifier.height(24.dp))
@@ -1160,10 +1235,11 @@ fun CordadaDetailScreen(
     if (showConfirmDelete) {
         AlertDialog(
             onDismissRequest = { showConfirmDelete = false },
-            text             = { Text(stringResource(R.string.cordadas_confirm_delete)) },
+            title            = { Text(stringResource(R.string.cordadas_delete), fontWeight = FontWeight.Bold) },
+            text             = { Text(stringResource(R.string.cordadas_delete_detail)) },
             confirmButton    = {
                 TextButton(onClick = { showConfirmDelete = false; onDelete() }, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) {
-                    Text(stringResource(R.string.cordadas_delete))
+                    Text(stringResource(R.string.cordadas_delete_confirm_button))
                 }
             },
             dismissButton    = { TextButton(onClick = { showConfirmDelete = false }) { Text(stringResource(R.string.action_cancel)) } },

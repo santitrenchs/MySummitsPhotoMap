@@ -287,7 +287,9 @@
     <string name="cordadas_add_members">Ajouter des membres</string>
     <string name="cordadas_invites_section">Invitations en attente</string>
     <string name="cordadas_invite_from">Invité par %s</string>
+    <string name="cordadas_member_singular">1 membre</string>
     <string name="cordadas_members">%d membres</string>
+    <string name="cordadas_pending_count">%d en attente</string>
     <string name="cordadas_owner_badge">Propriétaire</string>
     <string name="cordadas_invite_btn">Inviter</string>
     <string name="cordadas_invite_title">Inviter à la cordée</string>
@@ -298,5 +300,7 @@
     <string name="cordadas_expel">Exclure</string>
     <string name="cordadas_confirm_leave">Quitter cette cordée ?</string>
     <string name="cordadas_confirm_delete">Supprimer la cordée ? Cette action est irréversible.</string>
+    <string name="cordadas_delete_detail">Supprimer cette cordée retirera le groupe et annulera les invitations en attente. Les ascensions des membres ne seront pas supprimées.</string>
+    <string name="cordadas_delete_confirm_button">Supprimer définitivement</string>
     <string name="cordadas_confirm_expel">Exclure ce membre ?</string>
 </resources>

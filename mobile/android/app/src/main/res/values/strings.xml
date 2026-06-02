@@ -293,7 +293,9 @@
     <string name="cordadas_add_members">Añadir miembros</string>
     <string name="cordadas_invites_section">Invitaciones pendientes</string>
     <string name="cordadas_invite_from">Invitado por %s</string>
+    <string name="cordadas_member_singular">1 miembro</string>
     <string name="cordadas_members">%d miembros</string>
+    <string name="cordadas_pending_count">%d pendientes</string>
     <string name="cordadas_owner_badge">Owner</string>
     <string name="cordadas_invite_btn">Invitar</string>
     <string name="cordadas_invite_title">Invitar a la cordada</string>
@@ -305,6 +307,8 @@
     <string name="cordadas_pending">Pendiente</string>
     <string name="cordadas_confirm_leave">¿Salir de esta cordada?</string>
     <string name="cordadas_confirm_delete">¿Eliminar la cordada? Esta acción no se puede deshacer.</string>
+    <string name="cordadas_delete_detail">Eliminar esta cordada borrará el grupo y cancelará las invitaciones pendientes. Las ascensiones de los miembros no se eliminarán.</string>
+    <string name="cordadas_delete_confirm_button">Eliminar definitivamente</string>
     <string name="cordadas_confirm_expel">¿Expulsar a este miembro?</string>
     <string name="cordadas_founder">Fundador</string>
     <string name="cordadas_of_members_prefix">Cordada de </string>

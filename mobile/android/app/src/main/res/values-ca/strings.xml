@@ -287,7 +287,9 @@
     <string name="cordadas_add_members">Afegir membres</string>
     <string name="cordadas_invites_section">Invitacions pendents</string>
     <string name="cordadas_invite_from">Convidat per %s</string>
+    <string name="cordadas_member_singular">1 membre</string>
     <string name="cordadas_members">%d membres</string>
+    <string name="cordadas_pending_count">%d pendents</string>
     <string name="cordadas_owner_badge">Propietari</string>
     <string name="cordadas_invite_btn">Convidar</string>
     <string name="cordadas_invite_title">Convidar a la cordada</string>
@@ -298,5 +300,7 @@
     <string name="cordadas_expel">Expulsar</string>
     <string name="cordadas_confirm_leave">Sortir d\'aquesta cordada?</string>
     <string name="cordadas_confirm_delete">Eliminar la cordada? Aquesta acció no es pot desfer.</string>
+    <string name="cordadas_delete_detail">Eliminar aquesta cordada esborrarà el grup i cancel·larà les invitacions pendents. Les ascensions dels membres no s\'eliminaran.</string>
+    <string name="cordadas_delete_confirm_button">Eliminar definitivament</string>
     <string name="cordadas_confirm_expel">Expulsar aquest membre?</string>
 </resources>

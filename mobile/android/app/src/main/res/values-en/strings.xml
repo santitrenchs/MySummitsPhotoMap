@@ -287,7 +287,9 @@
     <string name="cordadas_add_members">Add members</string>
     <string name="cordadas_invites_section">Pending invites</string>
     <string name="cordadas_invite_from">Invited by %s</string>
+    <string name="cordadas_member_singular">1 member</string>
     <string name="cordadas_members">%d members</string>
+    <string name="cordadas_pending_count">%d pending</string>
     <string name="cordadas_owner_badge">Owner</string>
     <string name="cordadas_invite_btn">Invite</string>
     <string name="cordadas_invite_title">Invite to cordada</string>
@@ -298,5 +300,7 @@
     <string name="cordadas_expel">Remove</string>
     <string name="cordadas_confirm_leave">Leave this cordada?</string>
     <string name="cordadas_confirm_delete">Delete this cordada? This action cannot be undone.</string>
+    <string name="cordadas_delete_detail">Deleting this cordada will remove the group and cancel pending invitations. Members\' ascents will not be deleted.</string>
+    <string name="cordadas_delete_confirm_button">Delete permanently</string>
     <string name="cordadas_confirm_expel">Remove this member?</string>
 </resources>
