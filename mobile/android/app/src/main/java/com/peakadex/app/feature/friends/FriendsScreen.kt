@@ -6,13 +6,16 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
@@ -64,6 +67,52 @@ internal val FriendsTextSecondary = Color(0xFF6B7280)
 internal val FriendsTextMuted     = Color(0xFF9CA3AF)
 internal val FriendsDivider       = Color(0xFFF3F4F6)
 internal val FriendsSurfaceAlt    = Color(0xFFF3F4F6)
+internal val FriendsDanger        = Color(0xFFEF4444)
+internal val FriendsAccept        = Color(0xFF16A34A)
+internal val FriendsAcceptBg      = Color(0xFFDCFCE7)
+
+// Shared list metrics — every main-list row aligns to these so the inset
+// divider lines up under the text (avatar 48 + start pad 16 + gap 12 = 76).
+internal val ListRowAvatar = 48
+internal val ListRowInset  = 76
+
+@Composable
+internal fun InsetRule() = HorizontalDivider(
+    color     = FriendsDivider,
+    thickness = 1.dp,
+    modifier  = Modifier.padding(start = ListRowInset.dp),
+)
+
+// ── Row action button (Material, ≥40dp touch height) ─────────────────────────────
+
+@Composable
+internal fun RowActionButton(label: String, onClick: () -> Unit, primary: Boolean) {
+    if (primary) {
+        FilledTonalButton(
+            onClick        = onClick,
+            shape          = RoundedCornerShape(10.dp),
+            colors         = ButtonDefaults.filledTonalButtonColors(
+                containerColor = FriendsAcceptBg,
+                contentColor   = FriendsAccept,
+            ),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            modifier       = Modifier.heightIn(min = 40.dp),
+        ) {
+            Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        }
+    } else {
+        OutlinedButton(
+            onClick        = onClick,
+            shape          = RoundedCornerShape(10.dp),
+            border         = BorderStroke(1.dp, Color(0xFFE5E7EB)),
+            colors         = ButtonDefaults.outlinedButtonColors(contentColor = FriendsTextSecondary),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            modifier       = Modifier.heightIn(min = 40.dp),
+        ) {
+            Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 
@@ -269,38 +318,6 @@ fun SectionLabel(text: String) {
 @Composable
 fun HRule() = HorizontalDivider(color = FriendsDivider, thickness = 1.dp)
 
-// ── Action button ──────────────────────────────────────────────────────────────
-
-private enum class BtnVariant { Primary, Ghost, Success }
-
-@Composable
-private fun FriendBtn(
-    label: String,
-    onClick: () -> Unit,
-    variant: BtnVariant = BtnVariant.Primary,
-) {
-    val bg = when (variant) {
-        BtnVariant.Primary -> PeakGreenCTA
-        BtnVariant.Ghost   -> Color(0xFFF3F4F6)
-        BtnVariant.Success -> Color(0xFFF0FDF4)
-    }
-    val fg = when (variant) {
-        BtnVariant.Primary -> Color.White
-        BtnVariant.Ghost   -> FriendsTextSecondary
-        BtnVariant.Success -> Color(0xFF16A34A)
-    }
-    Box(
-        modifier         = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(bg)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = fg)
-    }
-}
-
 // ── Search bar ─────────────────────────────────────────────────────────────────
 
 @Composable
@@ -365,12 +382,12 @@ private fun SearchResultRow(
             }
         }
         when (status) {
-            FriendshipStatus.NONE             -> FriendBtn(stringResource(R.string.friends_add), onAdd)
+            FriendshipStatus.NONE             -> RowActionButton(stringResource(R.string.friends_add), onAdd, primary = true)
             FriendshipStatus.PENDING_SENT     ->
                 Text(stringResource(R.string.friends_request_sent), fontSize = 12.sp, color = FriendsTextMuted, fontWeight = FontWeight.SemiBold)
-            FriendshipStatus.PENDING_RECEIVED -> FriendBtn(stringResource(R.string.friends_accept), onAccept, BtnVariant.Success)
+            FriendshipStatus.PENDING_RECEIVED -> RowActionButton(stringResource(R.string.friends_accept), onAccept, primary = true)
             FriendshipStatus.ACCEPTED         ->
-                Text("✓ ${stringResource(R.string.friends_already_friends)}", fontSize = 12.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.SemiBold)
+                Text("✓ ${stringResource(R.string.friends_already_friends)}", fontSize = 12.sp, color = FriendsAccept, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -395,9 +412,9 @@ private fun IncomingRow(
                 Text("@${request.requester.username}", fontSize = 12.sp, color = FriendsTextMuted)
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            FriendBtn(stringResource(R.string.friends_accept), onAccept)
-            FriendBtn(stringResource(R.string.friends_reject), onReject, BtnVariant.Ghost)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RowActionButton(stringResource(R.string.friends_accept), onAccept, primary = true)
+            RowActionButton(stringResource(R.string.friends_reject), onReject, primary = false)
         }
     }
 }
@@ -414,7 +431,7 @@ private fun FriendRow(entry: FriendEntry, onRemove: () -> Unit) {
             text    = { Text(stringResource(R.string.friends_confirm_remove, entry.friend.name)) },
             confirmButton = {
                 TextButton(onClick = { confirmRemove = false; onRemove() }) {
-                    Text(stringResource(R.string.friends_remove), color = Color(0xFFEF4444))
+                    Text(stringResource(R.string.friends_remove), color = FriendsDanger)
                 }
             },
             dismissButton = {
@@ -429,11 +446,11 @@ private fun FriendRow(entry: FriendEntry, onRemove: () -> Unit) {
     Row(
         modifier          = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 7.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        UserAvatar(entry.friend.name, 40, entry.friend.avatarUrl)
+        UserAvatar(entry.friend.name, ListRowAvatar, entry.friend.avatarUrl)
         Column(Modifier.weight(1f)) {
             Text(entry.friend.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary)
             // Secondary line: level · N Cimas · N EP · [CS] N
@@ -454,12 +471,12 @@ private fun FriendRow(entry: FriendEntry, onRemove: () -> Unit) {
             }
         }
         Box {
-            IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(40.dp)) {
-                Icon(MoreVertIcon, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(20.dp))
+            IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
+                Icon(MoreVertIcon, contentDescription = stringResource(R.string.friends_remove), tint = Color.Unspecified, modifier = Modifier.size(20.dp))
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 DropdownMenuItem(
-                    text    = { Text(stringResource(R.string.friends_remove), color = Color(0xFFEF4444), fontSize = 14.sp) },
+                    text    = { Text(stringResource(R.string.friends_remove), color = FriendsDanger, fontSize = 14.sp) },
                     onClick = { menuOpen = false; confirmRemove = true },
                 )
             }
@@ -722,6 +739,7 @@ private sealed interface ChatEntry {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun UnifiedList(
     friendsState: FriendsUiState,
@@ -734,8 +752,8 @@ private fun UnifiedList(
         modifier       = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 96.dp),
     ) {
-        // ── Search (friends only for now; unified search lands in Phase 3) ──
-        item {
+        // ── Search — pinned so it stays reachable while scrolling ──
+        stickyHeader {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -855,7 +873,7 @@ private fun UnifiedList(
                         "   ·   ${stringResource(R.string.cordadas_tab)} ${cordadasState.cordadas.size}"
                 )
             }
-            items(chats, key = { it.key }) { chat ->
+            itemsIndexed(chats, key = { _, it -> it.key }) { index, chat ->
                 Column(Modifier.animateItem().background(Color.White)) {
                     when (chat) {
                         is ChatEntry.Friend -> FriendRow(
@@ -866,7 +884,8 @@ private fun UnifiedList(
                             onOpenCordada(chat.cordada.id)
                         }
                     }
-                    HRule()
+                    // Inset divider between rows (aligned under the text), none after the last.
+                    if (index < chats.lastIndex) InsetRule()
                 }
             }
         }
