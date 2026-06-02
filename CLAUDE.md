@@ -1817,6 +1817,29 @@ icon = {
 
 ---
 
+### Top bar avatar + profile menu sheet (2026-06-02)
+
+`MainScaffold.kt → MainTopBar` shows the user's avatar on the right of the shared top bar. Tapping it opens a `ModalBottomSheet` (`ProfileMenuSheet`) — **not** a `DropdownMenu` (the old dropdown looked cramped and un-premium).
+
+**Avatar rendering — always use `UserAvatar`, never a hand-rolled circle:**
+- `UserAvatar(name, size, avatarUrl)` (from `feature/friends/FriendsScreen.kt`) loads the photo via Coil `AsyncImage` and falls back to initials only when `avatarUrl` is null/blank or the load fails.
+- The top bar uses `size = 34`; the sheet header uses `size = 52`.
+
+**Avatar persistence — the critical fix.** On app restart only the JWT token was restored; `authSession.currentUser` stayed `null`, so the top bar showed the "U" initial while the Hero (which fetches its own data) showed the photo. Two-part fix:
+1. **`TokenStorage`** persists `user_name` + `user_avatar_url` alongside the token (`saveUserProfile()` called from `AuthSession.login()` and `updateUser()`; cleared in `deleteToken()`). `AuthSession.init` restores them synchronously into a partial `User(id="", name, avatarUrl)` so the avatar is available **before any network call**.
+2. **`MainScaffold` `LaunchedEffect(Unit)`** calls `apiService.getMe()` when authenticated **and** (`user == null || user?.avatarUrl == null`) — refreshes the avatar if the user changed it or it wasn't persisted yet, then `authSession.updateUser(it)`.
+
+**`ProfileMenuSheet` spec:**
+- `rememberModalBottomSheetState(skipPartiallyExpanded = true)`, `containerColor = Color.White`, `dragHandle = null`, `.navigationBarsPadding()` on the content Column.
+- Header `Row`: `UserAvatar(52)` + 14dp gap + Column(name 16sp bold `#111827` / email 13sp `#6B7280`). Email row hidden if blank.
+- `HorizontalDivider(#F3F4F6)`.
+- Two `ProfileMenuItem` rows: Perfil (`PersonIcon`), Ajustes (`SettingsIcon`). Each is a `Row` with `padding(horizontal=20, vertical=16)` + `spacedBy(14dp)`, icon `size(22dp)` + label 15sp medium `#374151`.
+- **Logout lives in Ajustes, NOT here** — the avatar menu is navigation-only (matches Gmail/Spotify/Instagram). Destructive/rare actions don't belong in a quick-access surface.
+
+**⚠️ Inline-icon centering gotcha (the alignment bug).** `PersonIcon` and `SettingsIcon` are inline `ImageVector.Builder` glyphs in a `24×24` viewport. They were drawn **off-center**: `PersonIcon` spanned `x=1..15` (left-hugging), `SettingsIcon` spanned `x=9..21` (right-hugging). Same `size(22dp)` layout box, but the **visible pixels** started ~7dp apart → the gear looked indented vs the person, even though the Rows were identical. **Fix: every inline icon glyph must be drawn symmetrically around `x=12` (viewport center).** Both were re-pathed centered (head circle at (12,8) r=4; gear ring at (12,12) r=3). This is general best practice — never rely on the layout box alone to align icons; center the path data too.
+
+---
+
 ### ProfileSummaryScreen — secondary screen top bar
 
 `ProfileSummaryScreen` (opened from avatar dropdown in Home) is a **secondary screen**, not a root tab destination.
