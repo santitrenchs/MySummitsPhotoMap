@@ -417,6 +417,95 @@ ${renderBrandHeader()}
   console.log("[email] friend request sent OK, id:", data?.id);
 }
 
+const CORDADA_INVITE_COPY: Record<string, { subject: (n: string, c: string) => string; h1: string; body: (n: string, c: string) => string; cta: string }> = {
+  es: {
+    subject: (n, c) => `${n} te ha invitado a la cordada "${c}" 🧗`,
+    h1: "Invitación a una cordada",
+    body: (n, c) => `<strong>${n}</strong> te ha invitado a unirte a la cordada <strong>${c}</strong>. Acepta la invitación para aparecer en su clasificación y seguir el progreso del grupo.`,
+    cta: "Ver invitación →",
+  },
+  ca: {
+    subject: (n, c) => `${n} t'ha convidat a la cordada "${c}" 🧗`,
+    h1: "Invitació a una cordada",
+    body: (n, c) => `<strong>${n}</strong> t'ha convidat a unir-te a la cordada <strong>${c}</strong>. Accepta la invitació per aparèixer al seu rànquing i seguir el progrés del grup.`,
+    cta: "Veure la invitació →",
+  },
+  en: {
+    subject: (n, c) => `${n} invited you to the "${c}" rope team 🧗`,
+    h1: "Cordada invitation",
+    body: (n, c) => `<strong>${n}</strong> invited you to join the <strong>${c}</strong> rope team. Accept the invitation to appear in its ranking and follow the group's progress.`,
+    cta: "View invitation →",
+  },
+  fr: {
+    subject: (n, c) => `${n} t'a invité(e) dans la cordée "${c}" 🧗`,
+    h1: "Invitation à une cordée",
+    body: (n, c) => `<strong>${n}</strong> t'a invité(e) à rejoindre la cordée <strong>${c}</strong>. Accepte l'invitation pour apparaître dans son classement et suivre la progression du groupe.`,
+    cta: "Voir l'invitation →",
+  },
+  de: {
+    subject: (n, c) => `${n} hat dich zur Seilschaft "${c}" eingeladen 🧗`,
+    h1: "Einladung zu einer Cordada",
+    body: (n, c) => `<strong>${n}</strong> hat dich eingeladen, der Seilschaft <strong>${c}</strong> beizutreten. Nimm die Einladung an, um in ihrer Rangliste zu erscheinen und den Fortschritt der Gruppe zu verfolgen.`,
+    cta: "Einladung ansehen →",
+  },
+};
+
+export async function sendCordadaInviteEmail(to: string, inviterName: string, cordadaName: string, locale = "es") {
+  const copy = CORDADA_INVITE_COPY[locale] ?? CORDADA_INVITE_COPY.es;
+  const friendsUrl = `${APP_URL}/friends`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject: copy.subject(inviterName, cordadaName),
+    html: `
+<!DOCTYPE html>
+<html lang="${locale}">
+${renderEmailHead()}
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+${renderBrandHeader()}
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1}</h1>
+            <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">
+              ${copy.body(inviterName, cordadaName)}
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center">
+                  <a href="${friendsUrl}"
+                     style="display:inline-block;background:#2F7A5F;color:#ffffff;font-size:15px;font-weight:700;
+                            text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
+                    ${copy.cta}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+
+  if (error) {
+    console.error("[email] cordada invite Resend error:", error);
+    throw new Error(`Resend failed: ${JSON.stringify(error)}`);
+  }
+
+  console.log("[email] cordada invite sent OK, id:", data?.id);
+}
+
 const PHOTO_TAG_COPY: Record<string, { subject: (n: string, peak: string) => string; h1: (n: string) => string; body: (n: string, peak: string) => string; cta: string }> = {
   es: {
     subject: (n, peak) => `Revive el momento vivido con ${n} en ${peak}`,

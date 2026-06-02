@@ -97,11 +97,17 @@ fun MainScaffold(navController: NavController) {
     // Friends badge — count of pending incoming requests
     var pendingFriendsCount  by remember { mutableIntStateOf(0) }
     var friendsRefreshTrigger by remember { mutableIntStateOf(0) }
+    // Cordada badge — count of pending cordada invites (shown on the Cordada tab)
+    var pendingCordadaCount  by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(friendsRefreshTrigger) {
+    // Refresh badge counts on every tab change (and after creating an ascent) so
+    // the user sees pending friend/cordada requests without opening the screen.
+    LaunchedEffect(friendsRefreshTrigger, currentRoute) {
         try {
-            val data = AppContainer.apiService.getFriendsData()
-            pendingFriendsCount = data.incoming.size
+            pendingFriendsCount = AppContainer.apiService.getFriendsData().incoming.size
+        } catch (_: Exception) {}
+        try {
+            pendingCordadaCount = AppContainer.apiService.getCordadas().pendingInvites.size
         } catch (_: Exception) {}
     }
 
@@ -176,6 +182,7 @@ fun MainScaffold(navController: NavController) {
             ) {
                 MainTabBar(
                     currentRoute = currentRoute,
+                    cordadaBadge = pendingCordadaCount,
                     onTabSelected = { screen ->
                         tabNavController.navigate(screen.route) {
                             popUpTo(Screen.Home.route) { saveState = true }
@@ -413,6 +420,7 @@ private fun MainTopBar(
 @Composable
 private fun MainTabBar(
     currentRoute: String?,
+    cordadaBadge: Int = 0,
     onTabSelected: (Screen) -> Unit,
 ) {
     val tabs = tabItems()
@@ -430,30 +438,41 @@ private fun MainTabBar(
                     selected = selected,
                     onClick = { onTabSelected(tab.screen) },
                     icon = {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(40.dp)) {
-                            if (selected) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(
-                                            brush = Brush.radialGradient(
-                                                colors = listOf(
-                                                    PeakBlueActive.copy(alpha = 0.13f),
-                                                    Color.Transparent,
+                        val showBadge = tab.screen == Screen.Friends && cordadaBadge > 0
+                        BadgedBox(
+                            badge = {
+                                if (showBadge) {
+                                    Badge(containerColor = Color(0xFFEF4444), contentColor = Color.White) {
+                                        Text(if (cordadaBadge > 9) "9+" else cordadaBadge.toString())
+                                    }
+                                }
+                            },
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(40.dp)) {
+                                if (selected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .background(
+                                                brush = Brush.radialGradient(
+                                                    colors = listOf(
+                                                        PeakBlueActive.copy(alpha = 0.13f),
+                                                        Color.Transparent,
+                                                    ),
                                                 ),
+                                                shape = CircleShape,
                                             ),
-                                            shape = CircleShape,
-                                        ),
+                                    )
+                                }
+                                Icon(
+                                    painter = painterResource(tab.iconRes),
+                                    contentDescription = tab.label,
+                                    tint = Color.Unspecified,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .alpha(if (selected) 1f else 0.40f),
                                 )
                             }
-                            Icon(
-                                painter = painterResource(tab.iconRes),
-                                contentDescription = tab.label,
-                                tint = Color.Unspecified,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .alpha(if (selected) 1f else 0.40f),
-                            )
                         }
                     },
                     label = {
