@@ -45,6 +45,7 @@ import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakBlueLight
+import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
 import com.peakadex.app.feature.logbook.LogbookScreen
@@ -163,12 +164,14 @@ fun MainScaffold(navController: NavController) {
             )
         },
         // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar).
-        // Hidden on the Friends/Cordada tab, which renders its own speed-dial FAB.
+        // Only on Logbook (Bitácora) + Cards, where the primary action is "create ascent".
+        // Stats is a dashboard (no create action); Atlas creates from the peak detail sheet;
+        // Friends renders its own green speed-dial FAB. Color = PeakGreenCTA (DESIGN.md: CTA = green).
         floatingActionButton = {
-            if (currentRoute != Screen.Friends.route) {
+            if (currentRoute == Screen.Logbook.route || currentRoute == Screen.Cards.route) {
                 FloatingActionButton(
                     onClick = { newAscentPeakId = null; newAscentPeakName = null; showNewAscent = true },
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = PeakGreenCTA,
                     contentColor = Color.White,
                     shape = CircleShape,
                     elevation = FloatingActionButtonDefaults.elevation(

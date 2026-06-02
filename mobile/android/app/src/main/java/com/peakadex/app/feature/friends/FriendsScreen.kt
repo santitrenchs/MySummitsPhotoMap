@@ -666,8 +666,12 @@ fun FriendsScreen(
                 containerColor = PeakGreenCTA,
                 contentColor   = Color.White,
                 shape          = CircleShape,
+                elevation      = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 4.dp,
+                    pressedElevation = 8.dp,
+                ),
             ) {
-                Icon(PlusIcon, contentDescription = stringResource(R.string.friends_fab_add), modifier = Modifier.size(26.dp))
+                Icon(PlusIcon, contentDescription = stringResource(R.string.friends_fab_add), modifier = Modifier.size(24.dp))
             }
         },
         containerColor = PeakBackground,
