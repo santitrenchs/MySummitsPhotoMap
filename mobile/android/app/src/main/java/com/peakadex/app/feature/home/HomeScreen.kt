@@ -26,9 +26,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -58,6 +61,12 @@ import com.peakadex.app.core.ui.LEVEL_DEFS
 import com.peakadex.app.core.ui.LevelDef
 import com.peakadex.app.core.ui.levelName
 import com.peakadex.app.core.ui.levelAccent
+import com.peakadex.app.feature.friends.CairnIcon
+import com.peakadex.app.feature.friends.FriendsDivider
+import com.peakadex.app.feature.friends.FriendsTextMuted
+import com.peakadex.app.feature.friends.FriendsTextPrimary
+import com.peakadex.app.feature.friends.FriendsTextSecondary
+import com.peakadex.app.feature.friends.UserAvatar
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
@@ -161,12 +170,17 @@ private fun HomeContent(
         // 1 — Hero header
         item { HeroHeader(data = data, user = user) }
 
-        // 2 — Onboarding (new users)
+        // 2 — Cordada ranking (friends leaderboard, shown first)
+        if (data.leaderboard.size > 1) {
+            item { FriendsRankingSection(data.leaderboard) }
+        }
+
+        // 3 — Onboarding (new users)
         if (data.stats.totalAscents == 0) {
             item { OnboardingBanner() }
         }
 
-        // 3 — Monthly chart (≥1 ascent)
+        // 4 — Monthly chart (≥1 ascent)
         if (data.stats.totalAscents >= 1 && data.monthlyStats.isNotEmpty()) {
             item { MonthlyChartSection(data.monthlyStats, onNavigateToCardsWithRarity) }
         }
@@ -176,18 +190,12 @@ private fun HomeContent(
             item { RarityChartSection(data.stats.rarityBreakdown, onNavigateToCardsWithRarity) }
         }
 
-        // 7 — Leaderboard
-        if (data.leaderboard.size > 1) {
-            item { SectionTitle(stringResource(R.string.home_section_leaderboard)) }
-            item { LeaderboardCard(data.leaderboard) }
-        }
-
-        // 8 — No friends CTA
+        // 6 — No friends CTA
         if (data.stats.totalFriends == 0) {
             item { NoFriendsCta() }
         }
 
-        // 9 — Recent ascents
+        // 7 — Recent ascents
         if (data.recentAscents.isNotEmpty()) {
             item {
                 Row(
@@ -953,6 +961,166 @@ private fun ChartCard(
             content()
         }
     }
+}
+
+// ── Friends ranking (Cordada-style) ───────────────────────────────────────────
+
+@Composable
+private fun FriendsRankingSection(entries: List<LeaderboardEntry>) {
+    val top3        = entries.take(3)
+    val meIdx       = entries.indexOfFirst { it.isCurrentUser }
+    val meEntry     = if (meIdx >= 3) entries[meIdx] else null   // null = already in top 3
+    val showEllipsis = meEntry != null && meIdx > 3               // gap when me is at position 5+; position 4 gets just a divider
+
+    OutlinedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = MaterialTheme.shapes.large,
+    ) {
+        Column {
+            Text(
+                text       = stringResource(R.string.home_section_leaderboard),
+                fontSize   = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color      = FriendsTextPrimary,
+                modifier   = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+            HorizontalDivider(color = FriendsDivider)
+
+            top3.forEachIndexed { i, entry ->
+                FriendRankRow(entry = entry, rank = i + 1)
+                // divider after each top-3 row except the last visible one
+                val isLastVisible = i == top3.lastIndex && meEntry == null
+                if (!isLastVisible) {
+                    HorizontalDivider(color = FriendsDivider, modifier = Modifier.padding(start = 76.dp))
+                }
+            }
+
+            if (showEllipsis) {
+                RankingEllipsisRow()
+            }
+
+            if (meEntry != null) {
+                FriendRankRow(entry = meEntry, rank = meIdx + 1)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RankingEllipsisRow() {
+    Box(
+        modifier         = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(
+            text     = "· · ·",
+            fontSize = 13.sp,
+            color    = FriendsTextMuted,
+            modifier = Modifier.padding(start = 40.dp),  // aligns under the rank badge
+        )
+    }
+}
+
+@Composable
+private fun FriendRankRow(entry: LeaderboardEntry, rank: Int) {
+    val valueColor = Color(0xFF374151)
+    val sep        = FriendsTextMuted
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (entry.isCurrentUser) Modifier.background(Color(0xFFF0F9FF)) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        FriendRankBadge(rank)
+        UserAvatar(entry.name, 52, entry.avatarUrl)
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text     = entry.name,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color    = FriendsTextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (entry.isCurrentUser) {
+                    Text("  ${stringResource(R.string.home_leaderboard_you)}", fontSize = 12.sp, color = FriendsTextSecondary)
+                }
+            }
+            Text(
+                text       = levelName(entry.levelIdx),
+                fontSize   = 12.sp,
+                color      = FriendsTextSecondary,
+                fontWeight = FontWeight.Medium,
+                modifier   = Modifier.padding(top = 1.dp),
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier          = Modifier.padding(top = 1.dp),
+            ) {
+                Text("${entry.totalAscents}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
+                Text(" ${stringResource(R.string.home_leaderboard_col_peaks)}", fontSize = 12.sp, color = FriendsTextSecondary)
+                Text("  ·  ", fontSize = 12.sp, color = sep)
+                CairnIcon(Modifier.padding(end = 3.dp))
+                Text("${entry.cairns}", fontSize = 12.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
+                Text("  ·  ", fontSize = 12.sp, color = sep)
+                Text("${entry.ep}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
+                Text(" ${stringResource(R.string.home_leaderboard_col_ep)}", fontSize = 12.sp, color = FriendsTextSecondary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FriendRankBadge(rank: Int) {
+    val (bg, content) = when (rank) {
+        1    -> Color(0xFFFDE68A) to Color(0xFFD97706)
+        2    -> Color(0xFFE5E7EB) to Color(0xFF6B7280)
+        3    -> Color(0xFFF8D9B8) to Color(0xFFB45309)
+        else -> Color(0xFFF3F4F6) to Color(0xFF6B7280)
+    }
+    Box(
+        modifier         = Modifier
+            .size(width = 30.dp, height = 44.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (rank <= 3) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector        = HomePioletIcon,
+                    contentDescription = null,
+                    tint               = content,
+                    modifier           = Modifier.size(18.dp),
+                )
+                Text("$rank", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = content)
+            }
+        } else {
+            Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
+        }
+    }
+}
+
+private val HomePioletIcon: ImageVector by lazy {
+    ImageVector.Builder("Piolet", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = SolidColor(Color.White),
+            strokeLineWidth = 2.2f,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
+        ) {
+            moveTo(15.5f, 7f); lineTo(7.5f, 20f)
+            moveTo(8f, 5.5f); lineTo(19.5f, 9f)
+        }
+    }.build()
 }
 
 // ── Section title ──────────────────────────────────────────────────────────────
