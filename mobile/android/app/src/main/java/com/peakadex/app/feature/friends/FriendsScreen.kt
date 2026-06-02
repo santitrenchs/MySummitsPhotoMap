@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.peakadex.app.R
@@ -601,12 +602,12 @@ private val PlusIcon: ImageVector by lazy {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendsScreen(
+    onOpenCordada: (String) -> Unit = {},
     friendsVm: FriendsViewModel = viewModel(),
     cordadasVm: CordadasViewModel = viewModel(),
 ) {
     val friendsState by friendsVm.state.collectAsStateWithLifecycle()
     val cordadasState by cordadasVm.state.collectAsStateWithLifecycle()
-    val currentUserId = AppContainer.authSession.currentUser.value?.id ?: ""
 
     var showCreateSheet by remember { mutableStateOf(false) }
     var showInviteFriendSheet by remember { mutableStateOf(false) }
@@ -626,6 +627,15 @@ fun FriendsScreen(
         if (!friendsState.isLoading && friendsState.error != null) {
             snackbarHostState.showSnackbar(genericError)
         }
+    }
+
+    // Refresh the cordadas list when returning from the full-screen detail
+    // (a member may have left, been expelled, or the cordada deleted). Skips
+    // the very first resume to avoid a redundant load right after init.
+    var firstResume by remember { mutableStateOf(true) }
+    LifecycleResumeEffect(Unit) {
+        if (firstResume) firstResume = false else cordadasVm.load()
+        onPauseOrDispose { }
     }
 
     Scaffold(
@@ -654,6 +664,7 @@ fun FriendsScreen(
                     cordadasState = cordadasState,
                     friendsVm     = friendsVm,
                     cordadasVm    = cordadasVm,
+                    onOpenCordada = onOpenCordada,
                 )
             }
         }
@@ -692,8 +703,6 @@ fun FriendsScreen(
         )
     }
 
-    // Cordada detail (opened from a cordada row)
-    CordadaDetailHost(currentUserId = currentUserId, vm = cordadasVm)
 }
 
 // ── Unified list (friends + cordadas in one column) ──────────────────────────────
@@ -719,6 +728,7 @@ private fun UnifiedList(
     cordadasState: CordadasUiState,
     friendsVm: FriendsViewModel,
     cordadasVm: CordadasViewModel,
+    onOpenCordada: (String) -> Unit,
 ) {
     LazyColumn(
         modifier       = Modifier.fillMaxSize(),
@@ -753,7 +763,7 @@ private fun UnifiedList(
                 item { SectionLabel(stringResource(R.string.cordadas_tab)) }
                 items(cordadaMatches, key = { "scor-${it.id}" }) { item ->
                     Column(Modifier.animateItem().background(Color.White)) {
-                        CordadaCard(item = item) { cordadasVm.openDetail(item.id) }
+                        CordadaCard(item = item) { onOpenCordada(item.id) }
                         HRule()
                     }
                 }
@@ -853,7 +863,7 @@ private fun UnifiedList(
                             onRemove = { friendsVm.removeFriend(chat.entry.id) },
                         )
                         is ChatEntry.Group -> CordadaCard(item = chat.cordada) {
-                            cordadasVm.openDetail(chat.cordada.id)
+                            onOpenCordada(chat.cordada.id)
                         }
                     }
                     HRule()
