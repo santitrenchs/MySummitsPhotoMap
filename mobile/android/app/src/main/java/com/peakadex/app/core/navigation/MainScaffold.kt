@@ -49,6 +49,7 @@ import com.peakadex.app.feature.home.HomeScreen
 import com.peakadex.app.feature.logbook.LogbookScreen
 import com.peakadex.app.feature.newascent.NewAscentSheet
 import com.peakadex.app.feature.friends.FriendsScreen
+import com.peakadex.app.feature.friends.UserAvatar
 import com.peakadex.app.feature.profile.ProfileScreen
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
@@ -320,12 +321,6 @@ private fun MainTopBar(
     onNavigateToSettings: () -> Unit,
     onNavigateToFriends: () -> Unit = {},
 ) {
-    val initials = user?.name?.let { name ->
-        val parts = name.trim().split(" ")
-        if (parts.size >= 2) "${parts.first().first()}${parts.last().first()}".uppercase()
-        else name.first().uppercaseChar().toString()
-    } ?: "U"
-
     // Dropdown menu state — managed here, anchored to the avatar Box
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -341,20 +336,11 @@ private fun MainTopBar(
                 ) {
                     Box(modifier = Modifier.size(34.dp)) {
                         // Avatar circle
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(Brush.linearGradient(listOf(PeakBlueActive, PeakBlueLight))),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text       = initials,
-                                color      = Color.White,
-                                fontSize   = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
+                        UserAvatar(
+                            name      = user?.name ?: "U",
+                            size      = 34,
+                            avatarUrl = user?.avatarUrl,
+                        )
                         // Pending friends badge
                         if (pendingFriendsCount > 0) {
                             Box(
