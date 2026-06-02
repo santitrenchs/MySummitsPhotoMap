@@ -1773,11 +1773,12 @@ Files fixed: `app/api/v1/photos/[id]/persons/route.ts`, `app/api/face-detections
 
 ### Bottom tab order
 
-**Final order (left → right):** Home · Bitácora · Atlas · Cards
+**Final order (left → right):** Stats · **Cordada** · Bitácora · Atlas · Cards (5 tabs — "Cordada" added 2026-06-02, between Stats and Bitácora, two-users icon `ic_tab_friends`).
 
 ```kotlin
 // MainScaffold.kt — tabItems()
 TabItem(Screen.Home,    R.string.nav_tab_home,    R.drawable.ic_tab_home),
+TabItem(Screen.Friends, R.string.nav_tab_cordada, R.drawable.ic_tab_friends),  // Amigos + Cordadas
 TabItem(Screen.Logbook, R.string.nav_tab_logbook, R.drawable.ic_tab_logbook),
 TabItem(Screen.Map,     R.string.nav_tab_map,     R.drawable.ic_tab_map),
 TabItem(Screen.Cards,   R.string.nav_tab_cards,   R.drawable.ic_tab_cards),
@@ -2435,7 +2436,7 @@ All business logic lives here (route handlers only auth + parse + call). Uses th
 | `listPendingInvites(userId)` | returns `CordadaInvite[]` — `status=PENDING`, ordered by `createdAt asc` |
 | `createCordada(ownerId, name, description?)` | creates cordada + owner membership in one call |
 | `getCordadaDetail(cordadaId, currentUserId)` | members sorted by **`uniquePeaks` desc, then `totalEp` desc** (internal leaderboard) |
-| `inviteToCordada(cordadaId, ownerId, targetUserId)` | **owner-only**; rejects self-invite + existing membership/invite |
+| `inviteToCordada(cordadaId, ownerId, targetUserId)` | **owner-only**; rejects self-invite + existing membership/invite. Sends `sendCordadaInviteEmail` to the invitee (best-effort, gated on `emailNotifications`) |
 | `respondToCordadaInvite(cordadaId, userId, "ACCEPTED"\|"REJECTED")` | only the invitee, only if a PENDING row exists |
 | `removeMember(cordadaId, requesterId, targetUserId)` | owner can expel anyone; a member can remove **self** (leave). **Owner cannot leave — must delete instead** |
 | `deleteCordada(cordadaId, ownerId)` | **owner-only** |
@@ -2456,36 +2457,50 @@ All business logic lives here (route handlers only auth + parse + call). Uses th
 
 Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCordada`, `getCordadaDetail`, `inviteToCordada`, `respondToCordadaInvite`, `removeCordadaMember`, `deleteCordada`). Member-search for invites reuses the existing `GET /api/v1/users/search` (`searchUsers`).
 
-### Android layer — WhatsApp-style unified screen (rediseño 2026-05-31)
+### Android layer — WhatsApp-style unified screen (rediseño 2026-05-31, redesign 2026-06-02)
 
-`FriendsScreen` is a **single unified screen** (no Amigos/Cordadas tabs — the old `SecondaryTabRow` was removed). One `LazyColumn` (`UnifiedList`) lists everything in order: search bar → search results → **Solicitudes** (combined friend requests + cordada invites under one count) → **Amigos** → **Cordadas** → combined empty state. A floating `+` FAB opens an `ActionSpeedDialSheet` with two actions: **invite a friend** (by email) or **create a cordada**.
+> **`DESIGN.md → "Cordadas + Amigos — Unified Social Screen"` is the authoritative cross-platform spec** for rebuilding this on web/iOS. The notes below are the Android specifics + rationale.
+
+`FriendsScreen` is a **single unified screen** (no Amigos/Cordadas sub-tabs). One `LazyColumn` (`UnifiedList`) lists everything in order: **sticky** search → search results → **Solicitudes** (combined friend requests + cordada invites under one count) → **Amigos + Cordadas intermixed alphabetically (Option B)** → combined empty state. A floating green `+` FAB opens an `ActionSpeedDialSheet` with two actions: **invite a friend** (by email) or **create a cordada**.
 
 | File | Role |
 |---|---|
-| `feature/friends/FriendsScreen.kt` | The unified screen + `Scaffold` (FAB + `CenterAlignedTopAppBar` back arrow, secondary screen). Owns `UnifiedList`, `InviteFriendSheet`, `ActionSpeedDialSheet`, `FriendStatsSheet`, and the package-visible helpers `UserAvatar`/`SectionLabel`/`HRule`/`LEVEL_EMOJIS` (the last lives in CordadasTab.kt). |
-| `feature/friends/CordadasTab.kt` | Cordadas UI pieces reused by the unified screen: `CordadaCard`, `InviteCard`, `CreateCordadaSheet`, `CordadaDetailSheet`, `CordadaDetailHost`, `CordadaModalSheet`. |
+| `feature/friends/FriendsScreen.kt` | The unified screen (nested `Scaffold` with **no topBar** — `MainScaffold` provides it; `contentWindowInsets = WindowInsets(0,0,0,0)` to avoid a white gap) + its own `+` FAB. Owns `UnifiedList`, `FriendRow`, `SearchResultRow`, `IncomingRow`, `InviteFriendSheet`, `ActionSpeedDialSheet`, and the shared helpers/tokens: `UserAvatar`, `SectionLabel`, `HRule`, **`InsetRule`**, **`RowActionButton`**, `FriendsDanger/Accept/AcceptBg/TextPrimary/Secondary/Muted`, `ListRowAvatar(48)`, `ListRowInset(76)`. |
+| `feature/friends/CordadasTab.kt` | Cordada UI: `CordadaCard` (flat row), `InviteCard`, `CreateCordadaSheet`, `CordadaModalSheet`, and **`CordadaDetailRoute` + `CordadaDetailScreen`** (the full-screen detail). |
 | `feature/friends/CordadasViewModel.kt` | `CordadasUiState` + all cordada API calls (incl. `createCordada(name, desc, memberIds, avatarBytes)`). |
-| `feature/friends/FriendsViewModel.kt` | Friends state + `inviteFriendByEmail` (with `InviteState` machine) + `openUserStats`/`closeUserStats`. |
+| `feature/friends/FriendsViewModel.kt` | Friends state + `inviteFriendByEmail` (with `InviteState` machine). |
 | `core/model/Models.kt` | `CordadaSummary`, `CordadaInvite`, `CordadasResponse`, `CordadaMemberRanking`, `CordadaDetail`, `CordadaDetailResponse`, `UserStatsResponse`. |
 
-**Unified search**: when the query is ≥2 chars, `UnifiedList` shows local cordada matches (filtered from already-loaded `cordadas` by name) under a "Cordadas" label **and** remote user matches (`searchUsers`) under a "Friends" label, with a combined no-results fallback.
+**Navigation — root bottom-nav tab (NOT a dropdown/secondary screen):** `FriendsScreen` is registered **inside `MainScaffold`'s `tabNavController` NavHost** as the **"Cordada" tab** (two-users icon, between Stats and Bitácola). It therefore shares `MainTopBar` (logo + avatar menu) and the bottom nav. The avatar-dropdown "Amigos" entry was **removed**. The global new-ascent `+` FAB is **hidden on this tab** (`currentRoute == Screen.Friends.route`).
 
-**Invite-by-email** (`InviteFriendSheet` + `FriendsViewModel.inviteFriendByEmail`): the sheet stays open during the flow, shows a spinner while sending and a colored status message. `InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }` maps the server response (`POST /api/v1/invitations` returns `{ status: "invited" | "already_registered" }`, HTTP 400 = self-invite). Auto-closes 1.4s after success. `resetInviteState()` on dismiss.
+**Tab badge:** the Cordada tab shows a red `BadgedBox`/`Badge` (`#EF4444`, "9+" cap) with the pending **cordada-invite** count. `MainScaffold` refetches `getFriendsData().incoming.size` (avatar badge) + `getCordadas().pendingInvites.size` (cordada tab badge) on **every tab change**.
 
-**Friend stats** (`FriendStatsSheet` + `openUserStats(userId)`): tapping a friend row opens a bottom sheet with avatar, name, level (emoji + name via `levelIdx`) and a 2×2 grid (Cimas / Ascensiones / Altitud máx. / EP). Backed by `GET /api/v1/users/{id}/stats` — **unrestricted** (works for any user, incl. cordada members who aren't friends). Stats come from the `user_stats` table; the client only renders.
+**Unified flat rows (Option B):** `FriendRow` and `CordadaCard` use the **same flat row** (48dp avatar, 16/8 padding, `InsetRule` 76dp dividers). A cordada is distinguished by its avatar + member-avatar stack, **not** a card/background (the old mint `#F6FAF8` card was removed). **Friend rows are NOT tappable** — the old `FriendStatsSheet`/`openUserStats` were **removed**; the only friend action is the `⋮` overflow → Eliminar. **Cordada rows → tap navigates to the full-screen detail** via `onOpenCordada(id)` → outer `navController.navigate("cordada/$id")`.
 
-**Create cordada with photo + members** (`CreateCordadaSheet`): circular photo picker (`GetContent("image/*")` → `squareBitmapFromUri` center-crops to 512px square → `bitmapToJpeg` 0.85) + scrollable accepted-friends list with checkboxes (`memberIds`). On create, `CordadasViewModel.createCordada` POSTs `{ name, description, memberIds }` then uploads the avatar via `POST /api/v1/cordadas/{id}/avatar` (owner-only) with the returned id (wrapped in `runCatching` so a photo failure doesn't break creation). Members are validated server-side as ACCEPTED friends; non-friends are silently dropped.
+**Row buttons:** all accept/reject/add/invite actions use the shared **`RowActionButton`** (≥40dp): **Aceptar** = `FilledTonalButton` **tonal green** (`#DCFCE7`/`#16A34A`, deliberately not solid so it doesn't compete with the FAB); **Rechazar** = `OutlinedButton`. The hand-rolled `SmallBtn`/`FriendBtn` (<40dp) were removed.
 
-> **i18n note**: all `cordadas_*` strings (incl. `cordadas_add_members`) currently live only in the default `values/strings.xml` and rely on Android's fallback. The `friends_invite_*` and `stats_*` keys are fully translated across all 5 locales.
+**Cordada DETAIL = full-screen route (`Screen.CordadaDetail = "cordada/{id}"`, `CordadaDetailRoute`)** on the **outer** navController — **not** a sheet/overlay. As a drill-down it **loses `MainTopBar` + bottom nav** (correct Material). It has **one** `TopAppBar` (back arrow LEFT + title = cordada name, `R.string.action_back`) + a `BackHandler`. `CordadaDetailRoute` owns its own `CordadasViewModel`, loads by id (`openDetail(id)`); `onLeave`/`onDelete` call `onBack()`. `FriendsScreen` reloads cordadas on **resume** (`LifecycleResumeEffect`, skipping the first) so membership changes show on return.
 
-**Navigation**: `FriendsScreen` is a **top-level route on the outer `navController`** (`Screen.Friends`), reached from the Home avatar dropdown via `onNavigateToFriends`. It is **not** inside MainScaffold's `tabNavController` NavHost — this matters for the inset bug below.
+**Email on invite:** `inviteToCordada()` (server) sends `sendCordadaInviteEmail(to, inviterName, cordadaName, locale)` — all 5 locales, best-effort, gated on the recipient's `emailNotifications`.
+
+**Accept behaviours:** `FriendsViewModel.accept()` = optimistic add **+ `load()` reload** (so the new friend shows full `user_stats`, not zeros). `respondToInvite("ACCEPTED")` = optimistic remove + `load()`. Reject = deletes the PENDING row.
+
+**Stats source:** friend & cordada-member stats (`levelIdx`, `uniquePeaks`, `totalEp`, `totalCairns`) are **read from the pre-computed `user_stats` table** (`friendship.service.ts` → `userStats.findMany`; `getCordadaDetail` likewise) — **never recomputed** per load. Missing row → zeros.
+
+**Unified search**: query ≥2 chars → local cordada name matches under a "Cordadas" label + remote `searchUsers` matches under an "Amigos" label + combined no-results fallback.
+
+**Invite-by-email** (`InviteFriendSheet`): sheet stays open, spinner while sending, colored status. `InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }` (`POST /api/v1/invitations`; HTTP 400 = self-invite). Auto-closes ~1.4s after success.
+
+**Create cordada** (`CreateCordadaSheet`): circular 84dp photo picker → 512px JPEG 0.85 → `POST /api/v1/cordadas/{id}/avatar` after creation (best-effort) + name (≤60) + optional desc + accepted-friends checklist (`memberIds`). `POST /api/v1/cordadas` drops non-friend ids.
+
+> **i18n**: all `friends_*` and `cordadas_*` strings used by these screens are **fully translated in all 5 locales** (verified 2026-06-02); back-button contentDescription uses `R.string.action_back`. `nav_tab_cordada` = "Cordada" in every locale (brand term, intentionally untranslated).
 
 `CordadasViewModel` notes:
 - `load()` calls `getCordadas()` → fills `cordadas` + `pendingInvites`.
 - `onInviteQueryChange` debounces 350ms, then `searchUsers(query)`, then **excludes current members** by `userId`.
 - `inviteUser` tracks `inviteSentIds` so the row shows "Invitado" without a reload.
 - `respondToInvite` optimistically removes the invite from `pendingInvites`; calls `load()` only on ACCEPTED.
-- Optimistic mutation on `removeMember` (filters the member out of `selectedDetail.members`); `leaveCordada`/`deleteCordada` clear `selectedDetail` + `load()`.
+- Optimistic mutation on `removeMember`; `leaveCordada`/`deleteCordada` clear `selectedDetail` + `load()`.
 
 ### ⚠️ Known issue / fix — ModalBottomSheet content hidden behind the system navigation bar
 
@@ -2540,7 +2555,12 @@ Important details:
 
 ### Gotchas (Cordadas)
 
-- **Owner cannot leave** — `removeMember` throws if `isOwner && isSelf`. The Detail sheet shows "Eliminar cordada" for the owner and "Salir de la cordada" for members; never both.
+- **Owner cannot leave** — `removeMember` throws if `isOwner && isSelf`. The detail shows "Eliminar cordada" for the owner and "Salir de la cordada" for members; never both.
 - **Reject deletes the row** (not a soft status) — a rejected user can be cleanly re-invited.
-- **Do not reintroduce manual `bottomInset` plumbing** for Cordadas sheets — see the inset fix above. The shared wrapper owns nav-bar and keyboard safety for all three sheets.
+- **Do not reintroduce manual `bottomInset` plumbing** for Cordadas sheets — see the inset fix above. The shared wrapper owns nav-bar and keyboard safety for the Create/Invite sheets.
 - **Leaderboard uses `user_stats`** — a brand-new member with no ascents shows zeros until their `user_stats` row is computed (first ascent CRUD).
+- **Cordada detail is a full-screen route, NOT a sheet/overlay** (`CordadaDetailRoute` on the outer navController). It deliberately loses `MainTopBar` + bottom nav (Material list→detail). Don't re-nest it inside the Friends tab content (that caused the stacked top-bar + white-gap bug).
+- **FriendsScreen has no own header** — it's a root tab; `MainScaffold` provides the top bar. Its nested `Scaffold` must zero `contentWindowInsets` or a white gap appears under the main top bar.
+- **Friend rows are not tappable** — no friend detail/stats sheet (removed). Don't reintroduce one; tapping a friend does nothing but the `⋮` menu.
+- **Badge refreshes on tab change, not real-time** — push (FCM) is not implemented. The cordada-invite email + tab badge are the only proactive signals today.
+- **Accept reloads** — `accept()` and `respondToInvite("ACCEPTED")` both call `load()` after the optimistic update so stats render correctly; don't drop the reload.
