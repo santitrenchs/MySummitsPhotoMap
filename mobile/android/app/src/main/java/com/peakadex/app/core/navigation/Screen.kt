@@ -25,4 +25,7 @@ sealed class Screen(val route: String) {
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
     data object Friends : Screen("friends")
+    data object CordadaDetail : Screen("cordada/{id}") {
+        fun createRoute(id: String) = "cordada/$id"
+    }
 }

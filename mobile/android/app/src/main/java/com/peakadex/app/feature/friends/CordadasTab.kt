@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.peakadex.app.AppContainer
 import com.peakadex.app.R
 import com.peakadex.app.core.model.CordadaDetail
 import com.peakadex.app.core.model.CordadaInvite
@@ -755,20 +757,28 @@ fun CordadaDetailScreen(
 
     Surface(modifier = Modifier.fillMaxSize(), color = PeakBackground) {
         Scaffold(
-            // Nested inside MainScaffold (status bar already consumed) → zero insets
-            // so there is no white gap below the main top bar.
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            // Full-screen destination on the outer navController → it owns the only
+            // top app bar (back arrow on the left + cordada name as the title).
             topBar = {
-                CenterAlignedTopAppBar(
-                    title          = { },
+                TopAppBar(
+                    title = {
+                        Text(
+                            detail.name,
+                            fontSize   = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = FriendsTextPrimary,
+                            maxLines   = 1,
+                            overflow   = TextOverflow.Ellipsis,
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(BackChevronIcon, contentDescription = "Volver", tint = Color.Unspecified)
                         }
                     },
-                    windowInsets = WindowInsets(0, 0, 0, 0),
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
                 )
+                HRule()
             },
             containerColor = PeakBackground,
         ) { padding ->
@@ -819,27 +829,24 @@ fun CordadaDetailScreen(
                             modifier       = Modifier
                                 .align(Alignment.BottomEnd)
                                 .padding(8.dp)
-                                .size(36.dp),
+                                .size(44.dp),
                         ) {
-                            Icon(EditPencilIcon, contentDescription = stringResource(R.string.cordadas_edit_photo), modifier = Modifier.size(16.dp))
+                            Icon(EditPencilIcon, contentDescription = stringResource(R.string.cordadas_edit_photo), modifier = Modifier.size(18.dp))
                         }
                     }
                 }
 
-                // Title + member count (below image)
-                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp)) {
+                // Member count (the name now lives in the top app bar)
+                Row(
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(PeopleIcon, contentDescription = null, tint = FriendsTextSecondary, modifier = Modifier.size(16.dp))
                     Text(
-                        detail.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary,
-                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        stringResource(R.string.cordadas_members, accepted.size),
+                        fontSize = 14.sp, color = FriendsTextSecondary,
                     )
-                    Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(PeopleIcon, contentDescription = null, tint = FriendsTextSecondary, modifier = Modifier.size(16.dp))
-                        Text(
-                            stringResource(R.string.cordadas_members, accepted.size),
-                            fontSize = 14.sp, color = FriendsTextSecondary,
-                        )
-                    }
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -965,20 +972,27 @@ fun CordadaDetailScreen(
     }
 }
 
-// ── Cordada detail host (rendered by the unified FriendsScreen) ──────────────────
+// ── Cordada detail route (full-screen destination, own top bar) ──────────────────
 
 @Composable
-fun CordadaDetailHost(currentUserId: String, vm: CordadasViewModel) {
+fun CordadaDetailRoute(
+    cordadaId: String,
+    onBack: () -> Unit,
+    vm: CordadasViewModel = viewModel(),
+) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val currentUserId = AppContainer.authSession.currentUser.value?.id ?: ""
+
+    LaunchedEffect(cordadaId) { vm.openDetail(cordadaId) }
+
     val detail = state.selectedDetail
-    if (state.isLoadingDetail) {
-        Box(
-            Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator(color = Color.White)
+    if (detail == null) {
+        Surface(Modifier.fillMaxSize(), color = PeakBackground) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = PeakBlueActive)
+            }
         }
-    } else if (detail != null) {
+    } else {
         CordadaDetailScreen(
             detail              = detail,
             inviteQuery         = state.inviteQuery,
@@ -989,10 +1003,10 @@ fun CordadaDetailHost(currentUserId: String, vm: CordadasViewModel) {
             onInviteQueryChange = vm::onInviteQueryChange,
             onInvite            = { vm.inviteUser(detail.id, it) },
             onExpel             = { vm.removeMember(detail.id, it) },
-            onLeave             = { vm.leaveCordada(detail.id, currentUserId) },
-            onDelete            = { vm.deleteCordada(detail.id) },
+            onLeave             = { vm.leaveCordada(detail.id, currentUserId); onBack() },
+            onDelete            = { vm.deleteCordada(detail.id); onBack() },
             onEditImage         = { vm.updateCordadaAvatar(detail.id, it) },
-            onBack              = vm::closeDetail,
+            onBack              = onBack,
         )
     }
 }

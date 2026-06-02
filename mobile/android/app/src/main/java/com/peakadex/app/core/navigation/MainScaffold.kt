@@ -277,7 +277,11 @@ fun MainScaffold(navController: NavController) {
                 )
             }
             composable(Screen.Friends.route) {
-                FriendsScreen()
+                FriendsScreen(
+                    onOpenCordada = { id ->
+                        navController.navigate(Screen.CordadaDetail.createRoute(id))
+                    },
+                )
             }
             composable(Screen.Cards.route) {
                 LogbookScreen(
