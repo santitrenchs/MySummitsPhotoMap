@@ -155,39 +155,34 @@ private val PersonAddIcon: ImageVector by lazy {
     }.build()
 }
 
-/** Two people + plus — "create / add to group" (cordada). */
-private val GroupAddIcon: ImageVector by lazy {
-    ImageVector.Builder("GroupAdd", 24.dp, 24.dp, 24f, 24f).apply {
+/** Two connected rope nodes — "create cordada". */
+private val RopeTeamIcon: ImageVector by lazy {
+    ImageVector.Builder("RopeTeam", 24.dp, 24.dp, 24f, 24f).apply {
         path(
             stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
             strokeLineWidth = 2f,
             strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
             strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
         ) {
-            // Head A (left)
-            moveTo(9.8f, 9f)
-            curveTo(9.8f, 10.546f, 8.546f, 11.8f, 7f, 11.8f)
-            curveTo(5.454f, 11.8f, 4.2f, 10.546f, 4.2f, 9f)
-            curveTo(4.2f, 7.454f, 5.454f, 6.2f, 7f, 6.2f)
-            curveTo(8.546f, 6.2f, 9.8f, 7.454f, 9.8f, 9f)
+            // First climber / anchor node
+            moveTo(8.5f, 8f)
+            curveTo(8.5f, 9.66f, 7.16f, 11f, 5.5f, 11f)
+            curveTo(3.84f, 11f, 2.5f, 9.66f, 2.5f, 8f)
+            curveTo(2.5f, 6.34f, 3.84f, 5f, 5.5f, 5f)
+            curveTo(7.16f, 5f, 8.5f, 6.34f, 8.5f, 8f)
             close()
-            // Shoulders A
-            moveTo(1.5f, 21f)
-            curveTo(1.5f, 17.8f, 3.96f, 15.2f, 7f, 15.2f)
-            curveTo(10.04f, 15.2f, 12.5f, 17.8f, 12.5f, 21f)
-            // Head B (right)
-            moveTo(16.8f, 9f)
-            curveTo(16.8f, 10.546f, 15.546f, 11.8f, 14f, 11.8f)
-            curveTo(12.454f, 11.8f, 11.2f, 10.546f, 11.2f, 9f)
-            curveTo(11.2f, 7.454f, 12.454f, 6.2f, 14f, 6.2f)
-            curveTo(15.546f, 6.2f, 16.8f, 7.454f, 16.8f, 9f)
+            // Second climber / anchor node
+            moveTo(21.5f, 16f)
+            curveTo(21.5f, 17.66f, 20.16f, 19f, 18.5f, 19f)
+            curveTo(16.84f, 19f, 15.5f, 17.66f, 15.5f, 16f)
+            curveTo(15.5f, 14.34f, 16.84f, 13f, 18.5f, 13f)
+            curveTo(20.16f, 13f, 21.5f, 14.34f, 21.5f, 16f)
             close()
-            // Shoulders B (partial, to the right)
-            moveTo(14f, 15.2f)
-            curveTo(17.04f, 15.2f, 19.5f, 17.8f, 19.5f, 21f)
-            // Plus (top-right)
-            moveTo(20f, 3f); lineTo(20f, 9f)
-            moveTo(17f, 6f); lineTo(23f, 6f)
+            // Rope
+            moveTo(8.35f, 9.7f)
+            curveTo(11.2f, 10.7f, 13.45f, 12.1f, 15.65f, 14.25f)
+            moveTo(8f, 13.8f)
+            curveTo(10.95f, 12.65f, 13.35f, 11.6f, 16.2f, 10.2f)
         }
     }.build()
 }
@@ -571,7 +566,7 @@ private fun ActionSpeedDialSheet(
                 onClick = onInviteFriend,
             )
             SpeedDialRow(
-                icon  = GroupAddIcon,
+                icon  = RopeTeamIcon,
                 label = stringResource(R.string.friends_action_create_cordada),
                 onClick = onCreateCordada,
             )
