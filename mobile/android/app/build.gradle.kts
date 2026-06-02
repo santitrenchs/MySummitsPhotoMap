@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.android.image.cropper)
     implementation(libs.security.crypto)
     implementation(libs.core.splashscreen)
     implementation(libs.kotlinx.coroutines.android)
