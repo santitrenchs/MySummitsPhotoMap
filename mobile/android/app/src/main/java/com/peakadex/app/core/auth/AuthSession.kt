@@ -17,19 +17,29 @@ class AuthSession(
         get() = tokenStorage.getToken() != null
 
     init {
-        // Restore token into interceptor on app start
+        // Restore token + cached user profile on app start
         tokenStorage.getToken()?.let { token ->
             authInterceptor.token = token
+            val name = tokenStorage.getSavedUserName()
+            if (name != null) {
+                _currentUser.value = User(
+                    id        = "",
+                    name      = name,
+                    avatarUrl = tokenStorage.getSavedAvatarUrl(),
+                )
+            }
         }
     }
 
     fun login(token: String, user: User) {
         tokenStorage.saveToken(token)
+        tokenStorage.saveUserProfile(user.name, user.avatarUrl)
         authInterceptor.token = token
         _currentUser.value = user
     }
 
     fun updateUser(user: User) {
+        tokenStorage.saveUserProfile(user.name, user.avatarUrl)
         _currentUser.value = user
     }
 
