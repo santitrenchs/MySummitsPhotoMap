@@ -97,6 +97,7 @@ class FriendsViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 api.updateFriendship(request.id, mapOf("action" to "ACCEPTED"))
+                // Optimistic: drop from incoming + show the friend immediately.
                 _state.update { s ->
                     s.copy(
                         incoming = s.incoming.filter { it.id != request.id },
@@ -107,6 +108,9 @@ class FriendsViewModel : ViewModel() {
                         ),
                     )
                 }
+                // Reload so the new friend shows with full stats (cimas, EP, nivel)
+                // instead of the zeros of the optimistic stub.
+                load()
             } catch (_: Exception) {}
         }
     }
