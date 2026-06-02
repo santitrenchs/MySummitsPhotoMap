@@ -378,22 +378,24 @@ private fun DestructiveActionCard(
         border = BorderStroke(1.dp, Color(0xFFFECACA)),
         colors = CardDefaults.outlinedCardColors(containerColor = Color(0xFFFFF7F7)),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFFEE2E2)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(TrashIcon, contentDescription = null, tint = Color(0xFFDC2626), modifier = Modifier.size(20.dp))
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF991B1B))
-                    if (body != null) {
-                        Text(body, fontSize = 13.sp, color = Color(0xFF7F1D1D), lineHeight = 18.sp, modifier = Modifier.padding(top = 3.dp))
-                    }
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFEE2E2)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(TrashIcon, contentDescription = null, tint = Color(0xFFDC2626), modifier = Modifier.size(19.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF991B1B))
+                if (body != null) {
+                    Text(body, fontSize = 12.sp, color = Color(0xFF7F1D1D), lineHeight = 16.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                 }
             }
             OutlinedButton(
@@ -401,9 +403,10 @@ private fun DestructiveActionCard(
                 shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(1.dp, Color(0xFFEF4444)),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
-                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
+                modifier = Modifier.heightIn(min = 38.dp),
             ) {
-                Text(buttonLabel, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text(buttonLabel, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -989,20 +992,11 @@ fun CordadaDetailScreen(
 
     Surface(modifier = Modifier.fillMaxSize(), color = PeakBackground) {
         Scaffold(
-            // Full-screen destination on the outer navController → it owns the only
-            // top app bar (back arrow on the left + cordada name as the title).
+            // Full-screen destination on the outer navController. The real title lives
+            // in the hero; the top bar stays quiet to avoid duplicating the cordada name.
             topBar = {
                 TopAppBar(
-                    title = {
-                        Text(
-                            detail.name,
-                            fontSize   = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color      = FriendsTextPrimary,
-                            maxLines   = 1,
-                            overflow   = TextOverflow.Ellipsis,
-                        )
-                    },
+                    title = {},
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(BackChevronIcon, contentDescription = stringResource(R.string.action_back), tint = Color.Unspecified)
