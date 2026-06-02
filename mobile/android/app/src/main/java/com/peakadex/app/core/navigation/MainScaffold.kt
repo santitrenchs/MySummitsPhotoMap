@@ -567,28 +567,28 @@ private fun MainTabBar(
 // Person / Profile icon (outline head + shoulders)
 private val PersonIcon: ImageVector by lazy {
     ImageVector.Builder("Person", 24.dp, 24.dp, 24f, 24f).apply {
-        // Head circle
+        // Head circle — centered at (12,8) r=4
         path(
             stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
             strokeLineWidth = 1.8f,
         ) {
-            moveTo(12f, 12f)
-            curveTo(12f, 14.209f, 10.209f, 16f, 8f, 16f)
-            curveTo(5.791f, 16f, 4f, 14.209f, 4f, 12f)
-            curveTo(4f, 9.791f, 5.791f, 8f, 8f, 8f)
-            curveTo(10.209f, 8f, 12f, 9.791f, 12f, 12f)
+            moveTo(16f, 8f)
+            curveTo(16f, 10.209f, 14.209f, 12f, 12f, 12f)
+            curveTo(9.791f, 12f, 8f, 10.209f, 8f, 8f)
+            curveTo(8f, 5.791f, 9.791f, 4f, 12f, 4f)
+            curveTo(14.209f, 4f, 16f, 5.791f, 16f, 8f)
             close()
         }
-        // Shoulders arc
+        // Shoulders arc — centered, spans x=5..19
         path(
             stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
             strokeLineWidth = 1.8f,
             strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
         ) {
-            moveTo(1f, 20f)
-            curveTo(1f, 17.239f, 3.239f, 15f, 6f, 15f)
-            horizontalLineTo(10f)
-            curveTo(12.761f, 15f, 15f, 17.239f, 15f, 20f)
+            moveTo(5f, 20f)
+            curveTo(5f, 17.239f, 7.239f, 15f, 10f, 15f)
+            horizontalLineTo(14f)
+            curveTo(16.761f, 15f, 19f, 17.239f, 19f, 20f)
         }
     }.build()
 }
@@ -596,32 +596,32 @@ private val PersonIcon: ImageVector by lazy {
 // Gear / Settings icon
 private val SettingsIcon: ImageVector by lazy {
     ImageVector.Builder("Settings", 24.dp, 24.dp, 24f, 24f).apply {
-        // Outer gear ring
+        // Outer gear ring — centered at (12,12) r=3
         path(
             stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
             strokeLineWidth = 1.8f,
         ) {
-            moveTo(12f, 15f)
-            curveTo(12f, 13.343f, 13.343f, 12f, 15f, 12f)
-            curveTo(16.657f, 12f, 18f, 13.343f, 18f, 15f)
-            curveTo(18f, 16.657f, 16.657f, 18f, 15f, 18f)
-            curveTo(13.343f, 18f, 12f, 16.657f, 12f, 15f)
+            moveTo(15f, 12f)
+            curveTo(15f, 13.657f, 13.657f, 15f, 12f, 15f)
+            curveTo(10.343f, 15f, 9f, 13.657f, 9f, 12f)
+            curveTo(9f, 10.343f, 10.343f, 9f, 12f, 9f)
+            curveTo(13.657f, 9f, 15f, 10.343f, 15f, 12f)
             close()
         }
-        // Knob line stubs (simplified cog)
+        // Knob line stubs (simplified cog) — centered at (12,12)
         path(
             stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
             strokeLineWidth = 1.8f,
             strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
         ) {
-            moveTo(15f, 9f); lineTo(15f, 10.5f)
-            moveTo(15f, 19.5f); lineTo(15f, 21f)
-            moveTo(9f, 15f); lineTo(10.5f, 15f)
-            moveTo(19.5f, 15f); lineTo(21f, 15f)
-            moveTo(10.393f, 10.393f); lineTo(11.454f, 11.454f)
-            moveTo(18.546f, 18.546f); lineTo(19.607f, 19.607f)
-            moveTo(19.607f, 10.393f); lineTo(18.546f, 11.454f)
-            moveTo(11.454f, 18.546f); lineTo(10.393f, 19.607f)
+            moveTo(12f, 6f); lineTo(12f, 7.5f)
+            moveTo(12f, 16.5f); lineTo(12f, 18f)
+            moveTo(6f, 12f); lineTo(7.5f, 12f)
+            moveTo(16.5f, 12f); lineTo(18f, 12f)
+            moveTo(7.393f, 7.393f); lineTo(8.454f, 8.454f)
+            moveTo(15.546f, 15.546f); lineTo(16.607f, 16.607f)
+            moveTo(16.607f, 7.393f); lineTo(15.546f, 8.454f)
+            moveTo(8.454f, 15.546f); lineTo(7.393f, 16.607f)
         }
     }.build()
 }
