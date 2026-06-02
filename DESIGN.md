@@ -1148,6 +1148,34 @@ duration:   1000ms minimum, then navigates to Login or Home
 
 ---
 
+## Top Bar — Avatar + Profile Menu Sheet (cross-platform, 2026-06-02)
+
+The shared `MainTopBar` (logo centered, avatar right) is present on all root tabs. The avatar is the entry point to the profile menu.
+
+**Avatar:** 34dp circle. Always render the user's **photo** (`avatarUrl`) with initials only as fallback. On Android use the shared `UserAvatar(name, size, avatarUrl)` component (Coil `AsyncImage` + initials fallback) — never a hand-rolled circle that only shows initials. A red count badge (`#EF4444`, "9+" cap) overlays the top-right corner for pending **friend requests**.
+
+**Tap → bottom sheet, not a dropdown.** A small dropdown menu reads cramped and un-premium. Use a bottom sheet (Gmail/Spotify/Instagram pattern):
+
+```
+┌─────────────────────────────────────┐
+│  ◯  Santi                            │  52dp avatar + name 16sp bold
+│     santi@gmail.com                  │  email 13sp #6B7280 (hidden if blank)
+├─────────────────────────────────────┤
+│  👤  Perfil                          │  icon 22dp + label 15sp medium
+│  ⚙   Ajustes                         │
+└─────────────────────────────────────┘
+```
+
+- White surface, no drag handle, `skipPartiallyExpanded`, safe-area bottom padding.
+- Header: avatar + name + email. Rows: icon `size 22` + 14dp gap + label 15sp medium `#374151`, row padding 20/16.
+- **Logout is NOT here — it lives in Ajustes.** The avatar menu is navigation-only; destructive/rare actions don't belong in a quick-access surface.
+
+**Avatar must survive app restart.** Persist `name` + `avatarUrl` locally next to the auth token and restore them synchronously on launch, so the avatar shows immediately without waiting for a network call. Refresh via the user/me endpoint when the cached `avatarUrl` is null (or to pick up a changed photo).
+
+**Inline-icon alignment rule.** When icons are drawn as vector paths (not bitmaps), center the path content around the viewport center — do NOT rely on the layout box alone. Two glyphs of equal box size but off-center content (e.g. one hugging the left edge, one the right) will look misaligned in a vertical list even though their Rows are identical.
+
+---
+
 ## Cordadas + Amigos — Unified Social Screen (Android, updated 2026-06-02)
 
 > **Authoritative cross-platform spec.** This is the reference for rebuilding the Amigos + Cordadas section on **web** and **iOS**. The Android implementation in `mobile/android/.../feature/friends/` is the reference. Follow the navigation, layout, behaviours, Material patterns and data contracts below exactly. See `CLAUDE.md → "Cordadas — Climbing Groups"` for the data model + API and the deeper rationale of every fix.
