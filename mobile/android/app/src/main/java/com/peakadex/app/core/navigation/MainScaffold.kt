@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
@@ -329,74 +330,38 @@ private fun MainTopBar(
     onNavigateToSettings: () -> Unit,
     onNavigateToFriends: () -> Unit = {},
 ) {
-    // Dropdown menu state — managed here, anchored to the avatar Box
-    var menuExpanded by remember { mutableStateOf(false) }
+    var sheetOpen by remember { mutableStateOf(false) }
 
     CenterAlignedTopAppBar(
         title = { PeakadexLogo(height = 32.dp) },
         actions = {
-            // Anchor Box: avatar button + DropdownMenu hang off the same Box
-            Box(contentAlignment = Alignment.TopEnd) {
-                // Avatar circle — IconButton provides the 48dp M3 touch target
-                IconButton(
-                    onClick  = { menuExpanded = true },
-                    modifier = Modifier.padding(end = 4.dp),
-                ) {
-                    Box(modifier = Modifier.size(34.dp)) {
-                        // Avatar circle
-                        UserAvatar(
-                            name      = user?.name ?: "U",
-                            size      = 34,
-                            avatarUrl = user?.avatarUrl,
-                        )
-                        // Pending friends badge
-                        if (pendingFriendsCount > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFEF4444))
-                                    .align(Alignment.TopEnd),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text       = if (pendingFriendsCount > 9) "9+" else pendingFriendsCount.toString(),
-                                    color      = Color.White,
-                                    fontSize   = 8.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
+            IconButton(
+                onClick  = { sheetOpen = true },
+                modifier = Modifier.padding(end = 4.dp),
+            ) {
+                Box(modifier = Modifier.size(34.dp)) {
+                    UserAvatar(
+                        name      = user?.name ?: "U",
+                        size      = 34,
+                        avatarUrl = user?.avatarUrl,
+                    )
+                    if (pendingFriendsCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFEF4444))
+                                .align(Alignment.TopEnd),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text       = if (pendingFriendsCount > 9) "9+" else pendingFriendsCount.toString(),
+                                color      = Color.White,
+                                fontSize   = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                     }
-                }
-
-                // M3 DropdownMenu — anchored to the parent Box, appears below the avatar
-                DropdownMenu(
-                    expanded         = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                ) {
-                    DropdownMenuItem(
-                        text              = { Text("Perfil", fontSize = 14.sp) },
-                        leadingIcon       = {
-                            Icon(
-                                PersonIcon,
-                                contentDescription = "Perfil",
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                        onClick           = { menuExpanded = false; onNavigateToProfile() },
-                    )
-                    DropdownMenuItem(
-                        text              = { Text("Ajustes", fontSize = 14.sp) },
-                        leadingIcon       = {
-                            Icon(
-                                SettingsIcon,
-                                contentDescription = "Ajustes",
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                        onClick           = { menuExpanded = false; onNavigateToSettings() },
-                    )
                 }
             }
         },
@@ -407,6 +372,114 @@ private fun MainTopBar(
         windowInsets = TopAppBarDefaults.windowInsets,
     )
     HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+
+    if (sheetOpen) {
+        ProfileMenuSheet(
+            user               = user,
+            onDismiss          = { sheetOpen = false },
+            onNavigateToProfile = { sheetOpen = false; onNavigateToProfile() },
+            onNavigateToSettings = { sheetOpen = false; onNavigateToSettings() },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ProfileMenuSheet(
+    user: User?,
+    onDismiss: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState       = sheetState,
+        containerColor   = Color.White,
+        dragHandle       = null,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(bottom = 12.dp),
+        ) {
+            // ── User header ──────────────────────────────────────────────────
+            Row(
+                modifier            = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalAlignment   = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                UserAvatar(
+                    name      = user?.name ?: "",
+                    size      = 52,
+                    avatarUrl = user?.avatarUrl,
+                )
+                Column {
+                    Text(
+                        text       = user?.name ?: "",
+                        fontSize   = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = Color(0xFF111827),
+                    )
+                    if (!user?.email.isNullOrBlank()) {
+                        Text(
+                            text     = user!!.email,
+                            fontSize = 13.sp,
+                            color    = Color(0xFF6B7280),
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(color = Color(0xFFF3F4F6))
+
+            // ── Menu items ───────────────────────────────────────────────────
+            ProfileMenuItem(
+                icon    = PersonIcon,
+                label   = "Perfil",
+                onClick = onNavigateToProfile,
+            )
+            ProfileMenuItem(
+                icon    = SettingsIcon,
+                label   = "Ajustes",
+                onClick = onNavigateToSettings,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileMenuItem(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    tint: Color = Color(0xFF374151),
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment   = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(
+            imageVector        = icon,
+            contentDescription = label,
+            tint               = tint,
+            modifier           = Modifier.size(20.dp),
+        )
+        Text(
+            text       = label,
+            fontSize   = 15.sp,
+            fontWeight = FontWeight.Medium,
+            color      = tint,
+        )
+    }
 }
 
 // ── Bottom tab bar (M3 NavigationBar) ─────────────────────────────────────────
