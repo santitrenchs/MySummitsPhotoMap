@@ -303,4 +303,6 @@
     <string name="cordadas_delete_detail">Supprimer cette cordée retirera le groupe et annulera les invitations en attente. Les ascensions des membres ne seront pas supprimées.</string>
     <string name="cordadas_delete_confirm_button">Supprimer définitivement</string>
     <string name="cordadas_confirm_expel">Exclure ce membre ?</string>
+    <string name="cordadas_add_photo">Ajouter une photo de cordée</string>
+    <string name="cordadas_photo_hint">Utilisée comme couverture et avatar</string>
 </resources>

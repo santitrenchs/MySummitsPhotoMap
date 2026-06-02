@@ -303,4 +303,6 @@
     <string name="cordadas_delete_detail">Wenn du diese Cordada löschst, wird die Gruppe entfernt und ausstehende Einladungen werden storniert. Die Besteigungen der Mitglieder werden nicht gelöscht.</string>
     <string name="cordadas_delete_confirm_button">Endgültig löschen</string>
     <string name="cordadas_confirm_expel">Dieses Mitglied entfernen?</string>
+    <string name="cordadas_add_photo">Cordada-Foto hinzufügen</string>
+    <string name="cordadas_photo_hint">Wird als Titelbild und Avatar verwendet</string>
 </resources>

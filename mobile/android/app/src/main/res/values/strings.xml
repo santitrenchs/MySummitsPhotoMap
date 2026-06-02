@@ -313,6 +313,8 @@
     <string name="cordadas_founder">Fundador</string>
     <string name="cordadas_of_members_prefix">Cordada de </string>
     <string name="cordadas_invite_sent_label">Invitación enviada</string>
+    <string name="cordadas_add_photo">Añadir foto de cordada</string>
+    <string name="cordadas_photo_hint">Se usará como portada y avatar</string>
     <string name="cordadas_edit_photo">Editar foto</string>
     <string name="cordadas_delete_warning">Esta acción no se puede deshacer</string>
 </resources>

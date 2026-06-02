@@ -303,4 +303,6 @@
     <string name="cordadas_delete_detail">Deleting this cordada will remove the group and cancel pending invitations. Members\' ascents will not be deleted.</string>
     <string name="cordadas_delete_confirm_button">Delete permanently</string>
     <string name="cordadas_confirm_expel">Remove this member?</string>
+    <string name="cordadas_add_photo">Add cordada photo</string>
+    <string name="cordadas_photo_hint">Used as cover and avatar</string>
 </resources>

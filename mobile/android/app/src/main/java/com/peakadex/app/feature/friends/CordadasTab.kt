@@ -470,6 +470,36 @@ val PlusSmallIcon: ImageVector by lazy {
     }.build()
 }
 
+private val PhotoImageIcon: ImageVector by lazy {
+    ImageVector.Builder("PhotoImage", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+        ) {
+            moveTo(4.5f, 6.5f)
+            curveTo(4.5f, 5.4f, 5.4f, 4.5f, 6.5f, 4.5f)
+            lineTo(17.5f, 4.5f)
+            curveTo(18.6f, 4.5f, 19.5f, 5.4f, 19.5f, 6.5f)
+            lineTo(19.5f, 17.5f)
+            curveTo(19.5f, 18.6f, 18.6f, 19.5f, 17.5f, 19.5f)
+            lineTo(6.5f, 19.5f)
+            curveTo(5.4f, 19.5f, 4.5f, 18.6f, 4.5f, 17.5f)
+            close()
+            moveTo(8f, 14.5f)
+            lineTo(10.3f, 12.2f)
+            curveTo(10.7f, 11.8f, 11.3f, 11.8f, 11.7f, 12.2f)
+            lineTo(13f, 13.5f)
+            lineTo(14.4f, 12.1f)
+            curveTo(14.8f, 11.7f, 15.4f, 11.7f, 15.8f, 12.1f)
+            lineTo(18.2f, 14.5f)
+            moveTo(9f, 9f)
+            lineTo(9.01f, 9f)
+        }
+    }.build()
+}
+
 private val SearchIconSmall: ImageVector by lazy {
     ImageVector.Builder("Search", 18.dp, 18.dp, 24f, 24f).apply {
         path(
@@ -659,49 +689,86 @@ fun CreateCordadaSheet(
             Text(stringResource(R.string.cordadas_create_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
 
             // Cordada image picker: one cropped 3:2 image, previewed as cover + avatar.
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(118.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFFF3F4F6))
-                        .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(14.dp))
-                        .clickable(enabled = !isCreating) { photoPicker.launch("image/*") },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    avatarBitmap?.let { bmp ->
-                        Image(
-                            bitmap = bmp.asImageBitmap(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                                .height(48.dp)
-                                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.28f)))),
-                        )
-                    } ?: run {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("📷", fontSize = 26.sp)
-                            Text(stringResource(R.string.cordadas_edit_photo), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextSecondary)
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(148.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFF8FAFC))
+                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                    .clickable(enabled = !isCreating) { photoPicker.launch("image/*") },
+            ) {
+                avatarBitmap?.let { bmp ->
+                    Image(
+                        bitmap = bmp.asImageBitmap(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(Brush.linearGradient(listOf(Color(0xFF059669), Color(0xFF34D399))))
-                            .border(1.dp, Color.White, CircleShape),
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(64.dp)
+                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.34f)))),
+                    )
+                    Text(
+                        stringResource(R.string.cordadas_edit_photo),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 14.dp, bottom = 13.dp),
+                    )
+                } ?: run {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Brush.linearGradient(listOf(Color(0xFFF8FAFC), Color(0xFFEFF6FF)))),
+                    )
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                                .border(1.dp, Color(0xFFE2E8F0), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(PhotoImageIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(21.dp))
+                        }
+                        Text(
+                            stringResource(R.string.cordadas_add_photo),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = FriendsTextPrimary,
+                        )
+                        Text(
+                            stringResource(R.string.cordadas_photo_hint),
+                            fontSize = 12.sp,
+                            color = FriendsTextSecondary,
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 14.dp, bottom = 12.dp)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .background(Brush.linearGradient(listOf(Color(0xFF059669), Color(0xFF34D399)))),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
                     ) {
                         avatarBitmap?.let { bmp ->
@@ -711,13 +778,7 @@ fun CreateCordadaSheet(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize(),
                             )
-                        } ?: Text("⛰", fontSize = 20.sp, color = Color.White)
-                    }
-                    TextButton(
-                        onClick = { photoPicker.launch("image/*") },
-                        enabled = !isCreating,
-                    ) {
-                        Text(stringResource(R.string.cordadas_edit_photo), fontWeight = FontWeight.SemiBold)
+                        } ?: Icon(PhotoImageIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -1044,7 +1105,15 @@ fun CordadaDetailScreen(
                                 .background(Brush.linearGradient(listOf(Color(0xFF059669), Color(0xFF34D399)))),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("⛰", fontSize = 48.sp)
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.18f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(PhotoImageIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
+                            }
                         }
                     }
                     // Subtle bottom scrim to anchor the edit FAB
