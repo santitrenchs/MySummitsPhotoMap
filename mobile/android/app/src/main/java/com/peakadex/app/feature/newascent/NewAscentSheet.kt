@@ -92,6 +92,7 @@ import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
 import com.peakadex.app.R
 import androidx.compose.ui.res.stringResource
+import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Person
 import com.peakadex.app.core.ui.theme.PeakBlueActive
@@ -115,7 +116,7 @@ import java.time.format.FormatStyle
 @Composable
 fun NewAscentSheet(
     onDismiss: () -> Unit,
-    onSuccess: (ascentId: String, taggingWarning: String?) -> Unit = { _, _ -> },
+    onSuccess: (ascent: Ascent, taggingWarning: String?) -> Unit = { _, _ -> },
     initialPeakId: String? = null,
     initialPeakName: String? = null,
     vm: NewAscentViewModel = viewModel(),
@@ -175,7 +176,7 @@ fun NewAscentSheet(
                 state    = state,
                 vm       = vm,
                 onBack   = vm::onFormBack,
-                onSubmit = { vm.submit { ascentId, warning -> onSuccess(ascentId, warning); onDismiss() } },
+                onSubmit = { vm.submit { ascent, warning -> onSuccess(ascent, warning); onDismiss() } },
                 onClose  = { scope.launch { sheetState.hide(); onDismiss() } },
             )
         }
