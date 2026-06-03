@@ -280,6 +280,9 @@
     <string name="friends_invite_whatsapp_subtitle">Obrir WhatsApp amb un missatge</string>
     <string name="friends_invite_email_channel">Email</string>
     <string name="friends_invite_no_contact_data">Aquest contacte no té email ni telèfon disponible.</string>
+    <string name="friends_invite_no_contact_data_title">Sense dades de contacte</string>
+    <string name="friends_invite_no_contact_data_body">Aquest contacte no té email ni telèfon disponible. Pots escriure un email manualment.</string>
+    <string name="friends_invite_write_email">Escriure email</string>
     <string name="friends_invite_whatsapp_message">Uneix-te a Peakadex per compartir ascensions i cordades amb mi! https://www.peakadex.com</string>
     <string name="friends_invite_self">No pots convidar-te a tu mateix.</string>
     <string name="friends_invite_error">No s\'ha pogut enviar la invitació. Torna-ho a provar.</string>

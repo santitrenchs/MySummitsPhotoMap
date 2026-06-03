@@ -282,6 +282,9 @@
     <string name="friends_invite_whatsapp_subtitle">Abrir WhatsApp con un mensaje</string>
     <string name="friends_invite_email_channel">Email</string>
     <string name="friends_invite_no_contact_data">Este contacto no tiene email ni teléfono disponible.</string>
+    <string name="friends_invite_no_contact_data_title">Sin datos de contacto</string>
+    <string name="friends_invite_no_contact_data_body">Este contacto no tiene email ni teléfono disponible. Puedes escribir un email manualmente.</string>
+    <string name="friends_invite_write_email">Escribir email</string>
     <string name="friends_invite_whatsapp_message">¡Únete a Peakadex para compartir ascensiones y cordadas conmigo! https://www.peakadex.com</string>
     <string name="friends_invite_self">No puedes invitarte a ti mismo.</string>
     <string name="friends_invite_error">No se pudo enviar la invitación. Inténtalo de nuevo.</string>

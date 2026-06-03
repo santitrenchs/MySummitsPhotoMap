@@ -38,6 +38,7 @@ enum class InviteState {
     IDLE,
     RESOLVING,
     CONTACT_NOT_REGISTERED,
+    CONTACT_NO_DATA,
     SENDING,
     INVITED,
     FRIEND_REQUEST_SENT,
@@ -179,7 +180,7 @@ class FriendsViewModel : ViewModel() {
             _state.update { it.copy(inviteState = InviteState.RESOLVING) }
             val normalizedEmail = email?.trim().orEmpty()
             if (normalizedEmail.isBlank()) {
-                _state.update { it.copy(inviteState = InviteState.CONTACT_NOT_REGISTERED) }
+                _state.update { it.copy(inviteState = InviteState.CONTACT_NO_DATA) }
                 return@launch
             }
             try {

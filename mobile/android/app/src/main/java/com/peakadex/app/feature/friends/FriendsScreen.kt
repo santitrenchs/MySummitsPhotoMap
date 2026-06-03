@@ -619,7 +619,14 @@ private fun InviteFriendSheet(
                 Text(msg, fontSize = 13.sp, color = color, fontWeight = FontWeight.Medium)
             }
 
-            if (inviteState == InviteState.CONTACT_NOT_REGISTERED) {
+            if (inviteState == InviteState.CONTACT_NO_DATA && selectedContact != null) {
+                InviteNoContactDataCard(
+                    onManualEmail = {
+                        selectedContact = null
+                        manualEmail = ""
+                    },
+                )
+            } else if (inviteState == InviteState.CONTACT_NOT_REGISTERED) {
                 InviteChannelChoices(
                     email = candidateEmail,
                     phone = candidatePhone,
@@ -696,13 +703,54 @@ private fun InviteContactPickerRow(
                 maxLines = 1,
             )
             Text(
-                selectedContact?.email ?: selectedContact?.phone ?: stringResource(R.string.friends_invite_choose_contact_subtitle),
+                selectedContact?.email ?: selectedContact?.phone
+                    ?: if (selectedContact != null) stringResource(R.string.friends_invite_no_contact_data_title)
+                    else stringResource(R.string.friends_invite_choose_contact_subtitle),
                 fontSize = 12.sp,
                 color = FriendsTextSecondary,
                 maxLines = 1,
             )
         }
         Text("›", fontSize = 24.sp, color = FriendsTextMuted)
+    }
+}
+
+@Composable
+private fun InviteNoContactDataCard(onManualEmail: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFFF8FAFC))
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(PersonAddIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(22.dp))
+        }
+        Text(
+            stringResource(R.string.friends_invite_no_contact_data_title),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = FriendsTextPrimary,
+        )
+        Text(
+            stringResource(R.string.friends_invite_no_contact_data_body),
+            fontSize = 12.sp,
+            color = FriendsTextSecondary,
+            textAlign = TextAlign.Center,
+            lineHeight = 17.sp,
+        )
+        TextButton(onClick = onManualEmail) {
+            Text(stringResource(R.string.friends_invite_write_email), fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 
@@ -733,9 +781,6 @@ private fun InviteChannelChoices(
                 enabled = !sending,
                 onClick = { onEmail(email) },
             )
-        }
-        if (email == null && phone == null) {
-            Text(stringResource(R.string.friends_invite_no_contact_data), fontSize = 13.sp, color = FriendsDanger)
         }
     }
 }
