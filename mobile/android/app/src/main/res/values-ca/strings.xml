@@ -129,6 +129,7 @@
     <string name="new_ascent_tag_placeholder">Cercar persona...</string>
     <string name="capture_reveal_title">Raresa \"%1$s\" capturada</string>
     <string name="capture_reveal_subtitle">Nova flor afegida a les teves cards</string>
+    <string name="capture_reveal_continue">Toca per continuar</string>
 
     <!-- ── Ajustos ───────────────────────────────────────────────────────────── -->
     <string name="settings_title">Ajustos</string>
