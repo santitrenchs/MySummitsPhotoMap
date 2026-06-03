@@ -153,9 +153,13 @@ import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
 import org.maplibre.android.style.layers.PropertyFactory.iconImage
 import org.maplibre.android.style.layers.PropertyFactory.iconSize
 import org.maplibre.android.style.layers.PropertyFactory.textAllowOverlap
+import org.maplibre.android.style.layers.PropertyFactory.textAnchor
 import org.maplibre.android.style.layers.PropertyFactory.textColor
 import org.maplibre.android.style.layers.PropertyFactory.textField
+import org.maplibre.android.style.layers.PropertyFactory.textHaloColor
+import org.maplibre.android.style.layers.PropertyFactory.textHaloWidth
 import org.maplibre.android.style.layers.PropertyFactory.textIgnorePlacement
+import org.maplibre.android.style.layers.PropertyFactory.textOffset
 import org.maplibre.android.style.layers.PropertyFactory.textSize
 import org.maplibre.android.style.layers.PropertyFactory.visibility
 import org.maplibre.android.style.layers.SymbolLayer
@@ -183,6 +187,7 @@ private const val SRC_UNCLIMBED           = "unclimbed-source"
 private const val LYR_CLIMBED             = "climbed-layer"
 private const val LYR_UNCLIMBED_CLUSTER   = "unclimbed-cluster-layer"
 private const val LYR_UNCLIMBED_SINGLE    = "unclimbed-single-layer"
+private const val LYR_UNCLIMBED_LABELS    = "unclimbed-labels-layer"
 private const val LYR_CLUSTER_COUNT       = "cluster-count-layer"
 private const val DEFAULT_RARITY_COLOR    = "#22C55E"   // green-500
 private const val UNCLIMBED_COLOR         = "#3B82F6"   // blue-500
@@ -701,8 +706,8 @@ private fun setupSources(style: org.maplibre.android.maps.Style) {
             FeatureCollection.fromFeatures(emptyList<Feature>()),
             GeoJsonOptions()
                 .withCluster(true)
-                .withClusterMaxZoom(12)
-                .withClusterRadius(50),
+                .withClusterMaxZoom(9)
+                .withClusterRadius(42),
         ),
     )
 }
@@ -767,6 +772,23 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 circleStrokeWidth(1.5f),
                 circleStrokeColor("#FFFFFF"),
             ),
+    )
+    // Peak labels appear once the map is close enough for real discovery.
+    style.addLayer(
+        SymbolLayer(LYR_UNCLIMBED_LABELS, SRC_UNCLIMBED)
+            .withFilter(not(has("point_count")))
+            .withProperties(
+                textField("{name}"),
+                textSize(11f),
+                textOffset(arrayOf(0f, 1.15f)),
+                textAnchor("top"),
+                textColor("#374151"),
+                textHaloColor("rgba(255,255,255,0.92)"),
+                textHaloWidth(1.5f),
+                textIgnorePlacement(false),
+                textAllowOverlap(false),
+            )
+            .also { it.setMinZoom(10.5f) },
     )
     // Cluster count labels
     style.addLayer(
@@ -857,6 +879,7 @@ private fun updateMapSources(
 
     style.getLayer(LYR_CLIMBED)?.setProperties(visibility(showClimbed))
     style.getLayer(LYR_UNCLIMBED_SINGLE)?.setProperties(visibility(showUnclimbed))
+    style.getLayer(LYR_UNCLIMBED_LABELS)?.setProperties(visibility(showUnclimbed))
     style.getLayer(LYR_UNCLIMBED_CLUSTER)?.setProperties(visibility(showUnclimbed))
     style.getLayer(LYR_CLUSTER_COUNT)?.setProperties(visibility(showUnclimbed))
 }

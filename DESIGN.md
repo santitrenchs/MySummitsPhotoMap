@@ -1066,13 +1066,15 @@ Unclimbed peaks are rendered as colored circle dots (rarity color, radius 7dp). 
 
 | Zoom | What the user sees | % of viewport peaks shown |
 |---|---|---|
-| ≤ 5 | Continent / country | 5% — only the most significant landmarks |
-| 8 | Mountain range | ~38% |
-| 11 | Region / valley | ~86% |
-| ≥ 13 | Valley / town | 100% — no culling |
+| ≤ 5 | Continent / country | 10% — only the most significant landmarks |
+| 8 | Mountain range | ~49% |
+| 10 | Region / valley | ~74% |
+| ≥ 12 | Valley / town | 100% — no culling |
 
 Score formula per peak: `normAlt × 0.5 + rarityWeight × 0.3 + normDist × 0.2`  
 (`normDist` = proximity to viewport center, closer = higher score)
+
+Unclimbed peaks are clustered only at broad exploration zooms (`clusterMaxZoom=9`). From close regional zoom onward, individual dots take over; peak labels appear progressively from zoom 10.5.
 
 ### List view — data source
 
