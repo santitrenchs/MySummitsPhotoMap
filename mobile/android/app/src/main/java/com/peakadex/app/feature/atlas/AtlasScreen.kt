@@ -184,6 +184,7 @@ enum class MapType { NORMAL, TERRAIN, SATELLITE }
 
 private const val SRC_CLIMBED             = "climbed-source"
 private const val SRC_UNCLIMBED           = "unclimbed-source"
+private const val SRC_UNCLIMBED_CLUSTERED = "unclimbed-clustered-source"
 private const val LYR_CLIMBED             = "climbed-layer"
 private const val LYR_UNCLIMBED_CLUSTER   = "unclimbed-cluster-layer"
 private const val LYR_UNCLIMBED_SINGLE    = "unclimbed-single-layer"
@@ -700,9 +701,10 @@ private fun setupSources(style: org.maplibre.android.maps.Style) {
     // Peak data sources
     style.addSource(GeoJsonSource(SRC_CLIMBED, FeatureCollection.fromFeatures(emptyList<Feature>())))
     style.addSource(GeoJsonSource(SRC_SELECTED, FeatureCollection.fromFeatures(emptyList<Feature>())))
+    style.addSource(GeoJsonSource(SRC_UNCLIMBED, FeatureCollection.fromFeatures(emptyList<Feature>())))
     style.addSource(
         GeoJsonSource(
-            SRC_UNCLIMBED,
+            SRC_UNCLIMBED_CLUSTERED,
             FeatureCollection.fromFeatures(emptyList<Feature>()),
             GeoJsonOptions()
                 .withCluster(true)
@@ -744,7 +746,7 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
 
     // Clustered groups of unclimbed peaks
     style.addLayer(
-        CircleLayer(LYR_UNCLIMBED_CLUSTER, SRC_UNCLIMBED)
+        CircleLayer(LYR_UNCLIMBED_CLUSTER, SRC_UNCLIMBED_CLUSTERED)
             .withFilter(has("point_count"))
             .withProperties(
                 circleRadius(
@@ -771,7 +773,8 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 circleOpacity(0.85f),
                 circleStrokeWidth(1.5f),
                 circleStrokeColor("#FFFFFF"),
-            ),
+            )
+            .also { it.setMinZoom(9.0f) },
     )
     // Peak labels appear once the map is close enough for real discovery.
     style.addLayer(
@@ -792,7 +795,7 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
     )
     // Cluster count labels
     style.addLayer(
-        SymbolLayer(LYR_CLUSTER_COUNT, SRC_UNCLIMBED)
+        SymbolLayer(LYR_CLUSTER_COUNT, SRC_UNCLIMBED_CLUSTERED)
             .withFilter(has("point_count"))
             .withProperties(
                 textField("{point_count_abbreviated}"),
@@ -872,6 +875,8 @@ private fun updateMapSources(
     } else emptyList()
 
     style.getSourceAs<GeoJsonSource>(SRC_UNCLIMBED)
+        ?.setGeoJson(FeatureCollection.fromFeatures(unclimbedFeatures))
+    style.getSourceAs<GeoJsonSource>(SRC_UNCLIMBED_CLUSTERED)
         ?.setGeoJson(FeatureCollection.fromFeatures(unclimbedFeatures))
 
     val showClimbed   = if (filter != AtlasFilter.NOT_YET) VISIBLE else NONE
