@@ -770,21 +770,52 @@ private fun MiniElevationCanvas(
 ) {
     val pts = profile?.points?.takeIf { it.size >= 2 }
     if (pts == null) {
-        val pct = (altitudeM / 8849f).coerceIn(0f, 1f)
         Canvas(modifier = modifier) {
-            val barH = 4.dp.toPx()
-            val y = size.height * 0.54f
-            drawRoundRect(
-                color = color.copy(alpha = 0.18f),
-                topLeft = androidx.compose.ui.geometry.Offset(0f, y),
-                size = androidx.compose.ui.geometry.Size(size.width, barH),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),
+            val w = size.width
+            val h = size.height
+            val padX = 1.dp.toPx()
+            val altitudeFactor = (altitudeM / 8849f).coerceIn(0.28f, 0.78f)
+            val summitX = w * (0.50f + ((altitudeM % 7) - 3) * 0.025f)
+            val summitY = h * (0.72f - altitudeFactor * 0.62f)
+            val leftShoulderY = h * (0.52f + ((altitudeM % 5) * 0.025f))
+            val rightShoulderY = h * (0.50f + ((altitudeM % 3) * 0.035f))
+            val baseY = h * 0.82f
+
+            val areaPath = Path().apply {
+                moveTo(padX, baseY)
+                lineTo(w * 0.17f, leftShoulderY)
+                lineTo(w * 0.32f, h * 0.44f)
+                lineTo(summitX, summitY)
+                lineTo(w * 0.68f, h * 0.38f)
+                lineTo(w * 0.83f, rightShoulderY)
+                lineTo(w - padX, baseY)
+                close()
+            }
+            drawPath(areaPath, color = color.copy(alpha = 0.16f))
+
+            val ridgePath = Path().apply {
+                moveTo(padX, baseY)
+                lineTo(w * 0.17f, leftShoulderY)
+                lineTo(w * 0.32f, h * 0.44f)
+                lineTo(summitX, summitY)
+                lineTo(w * 0.68f, h * 0.38f)
+                lineTo(w * 0.83f, rightShoulderY)
+                lineTo(w - padX, baseY)
+            }
+            drawPath(
+                path = ridgePath,
+                color = color.copy(alpha = 0.92f),
+                style = Stroke(width = 1.7.dp.toPx(), join = StrokeJoin.Round),
             )
-            drawRoundRect(
-                color = color.copy(alpha = 0.70f),
-                topLeft = androidx.compose.ui.geometry.Offset(0f, y),
-                size = androidx.compose.ui.geometry.Size(size.width * pct, barH),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),
+
+            val baselinePath = Path().apply {
+                moveTo(padX, baseY)
+                lineTo(w - padX, baseY)
+            }
+            drawPath(
+                path = baselinePath,
+                color = color.copy(alpha = 0.22f),
+                style = Stroke(width = 1.dp.toPx(), join = StrokeJoin.Round),
             )
         }
         return
