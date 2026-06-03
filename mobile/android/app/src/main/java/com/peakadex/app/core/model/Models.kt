@@ -427,6 +427,7 @@ data class ProfilePeak(
     val lastDate: String,        // "YYYY-MM-DD"
     val firstDate: String? = null,
     val firstPhotoUrl: String? = null,
+    val elevationProfile: ElevationProfileData? = null,
 )
 
 @Serializable

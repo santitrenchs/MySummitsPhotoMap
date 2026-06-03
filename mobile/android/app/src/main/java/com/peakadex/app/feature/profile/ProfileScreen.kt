@@ -1,6 +1,7 @@
 package com.peakadex.app.feature.profile
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,7 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
@@ -594,7 +598,7 @@ private fun PeakRowCard(
             1.dp, MaterialTheme.colorScheme.outlineVariant
         ),
     ) {
-        Row(Modifier.height(IntrinsicSize.Min)) {
+        Row(Modifier.height(82.dp)) {
             // Rarity colour strip
             Box(
                 Modifier
@@ -603,56 +607,19 @@ private fun PeakRowCard(
                     .background(rarityColor),
             )
 
-            // Photo thumbnail
-            Box(
-                modifier           = Modifier.width(90.dp).fillMaxHeight(),
-                contentAlignment   = Alignment.Center,
-            ) {
-                if (peak.firstPhotoUrl != null) {
-                    AsyncImage(
-                        model             = peak.firstPhotoUrl,
-                        contentDescription = peak.name,
-                        contentScale      = ContentScale.Crop,
-                        modifier          = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF0D2538)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("🏔", fontSize = 26.sp)
-                    }
-                }
-                // Altitude overlay at bottom
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color(0x8C0D2538)),
-                            )
-                        )
-                        .padding(bottom = 5.dp, top = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text       = "${peak.altitudeM} m",
-                        fontSize   = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = Color.White,
-                    )
-                }
-            }
+            PeakMiniElevationProfile(
+                peak     = peak,
+                color    = rarityColor,
+                darkColor = rarityColorDark,
+                modifier = Modifier.width(92.dp).fillMaxHeight(),
+            )
 
             // Content
             Column(
                 Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 // Name row + count
                 Row(
@@ -662,7 +629,7 @@ private fun PeakRowCard(
                 ) {
                     Text(
                         text       = peak.name,
-                        fontSize   = 14.sp,
+                        fontSize   = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color      = PeakNavyDark,
                         maxLines   = 1,
@@ -679,7 +646,7 @@ private fun PeakRowCard(
                         ) {
                             Text(
                                 text       = "×${peak.count}",
-                                fontSize   = 10.sp,
+                                fontSize   = 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 color      = rarityColorDark,
                             )
@@ -697,7 +664,7 @@ private fun PeakRowCard(
                     ) {
                         Text(
                             text       = "✿ ${rarity.label}",
-                            fontSize   = 10.sp,
+                            fontSize   = 9.sp,
                             fontWeight = FontWeight.Bold,
                             color      = rarityColorDark,
                         )
@@ -714,14 +681,14 @@ private fun PeakRowCard(
                     Column {
                         Text(
                             text          = stringResource(R.string.profile_stat_last),
-                            fontSize      = 8.sp,
+                            fontSize      = 7.sp,
                             fontWeight    = FontWeight.Bold,
                             color         = PeakNavyLight,
                             letterSpacing = 1.2.sp,
                         )
                         Text(
                             text       = formatDate(peak.lastDate),
-                            fontSize   = 11.sp,
+                            fontSize   = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color      = PeakNavyDark,
                         )
@@ -731,14 +698,14 @@ private fun PeakRowCard(
                         Column {
                             Text(
                                 text          = stringResource(R.string.profile_stat_first),
-                                fontSize      = 8.sp,
+                                fontSize      = 7.sp,
                                 fontWeight    = FontWeight.Bold,
                                 color         = PeakNavyLight,
                                 letterSpacing = 1.2.sp,
                             )
                             Text(
                                 text       = formatDate(peak.firstDate),
-                                fontSize   = 11.sp,
+                                fontSize   = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color      = PeakNavyDark,
                             )
@@ -748,7 +715,7 @@ private fun PeakRowCard(
                     if (peak.mountainRange != null) {
                         Text(
                             text     = peak.mountainRange,
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
                             color    = Color(0xFFCBD5E1),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -758,6 +725,102 @@ private fun PeakRowCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PeakMiniElevationProfile(
+    peak: ProfilePeak,
+    color: Color,
+    darkColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .background(color.copy(alpha = 0.10f))
+            .padding(horizontal = 8.dp, vertical = 7.dp),
+    ) {
+        MiniElevationCanvas(
+            profile   = peak.elevationProfile,
+            altitudeM = peak.altitudeM,
+            color     = color,
+            modifier  = Modifier
+                .fillMaxWidth()
+                .height(45.dp)
+                .align(Alignment.TopCenter),
+        )
+        Text(
+            text       = "${peak.altitudeM} m",
+            fontSize   = 10.sp,
+            lineHeight = 10.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color      = darkColor,
+            maxLines   = 1,
+            modifier   = Modifier.align(Alignment.BottomCenter),
+        )
+    }
+}
+
+@Composable
+private fun MiniElevationCanvas(
+    profile: com.peakadex.app.core.model.ElevationProfileData?,
+    altitudeM: Int,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val pts = profile?.points?.takeIf { it.size >= 2 }
+    if (pts == null) {
+        val pct = (altitudeM / 8849f).coerceIn(0f, 1f)
+        Canvas(modifier = modifier) {
+            val barH = 4.dp.toPx()
+            val y = size.height * 0.54f
+            drawRoundRect(
+                color = color.copy(alpha = 0.18f),
+                topLeft = androidx.compose.ui.geometry.Offset(0f, y),
+                size = androidx.compose.ui.geometry.Size(size.width, barH),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),
+            )
+            drawRoundRect(
+                color = color.copy(alpha = 0.70f),
+                topLeft = androidx.compose.ui.geometry.Offset(0f, y),
+                size = androidx.compose.ui.geometry.Size(size.width * pct, barH),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),
+            )
+        }
+        return
+    }
+
+    val minElev = profile.minElevation
+    val maxElev = profile.maxElevation
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val padX = 1.dp.toPx()
+        val padY = 5.dp.toPx()
+        val range = (maxElev - minElev).coerceAtLeast(1.0)
+
+        fun toX(i: Int) = padX + (i.toFloat() / (pts.size - 1)) * (w - padX * 2)
+        fun toY(elev: Double) = padY + ((1.0 - (elev - minElev) / range) * (h - padY * 2)).toFloat()
+
+        val areaPath = Path().apply {
+            moveTo(toX(0), h)
+            pts.forEachIndexed { i, p -> lineTo(toX(i), toY(p.elevation)) }
+            lineTo(toX(pts.size - 1), h)
+            close()
+        }
+        drawPath(areaPath, color = color.copy(alpha = 0.18f))
+
+        val linePath = Path().apply {
+            pts.forEachIndexed { i, p ->
+                if (i == 0) moveTo(toX(i), toY(p.elevation))
+                else lineTo(toX(i), toY(p.elevation))
+            }
+        }
+        drawPath(
+            path = linePath,
+            color = color.copy(alpha = 0.92f),
+            style = Stroke(width = 1.7.dp.toPx(), join = StrokeJoin.Round),
+        )
     }
 }
 

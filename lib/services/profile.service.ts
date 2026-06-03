@@ -25,6 +25,7 @@ export async function getProfileData(tenantId: string, userId: string) {
           select: {
             id: true, name: true, altitudeM: true,
             mountainRange: true, country: true, rarityId: true, isMythic: true,
+            elevationProfile: true,
           },
         },
         photos: { orderBy: { createdAt: "asc" }, select: { id: true, url: true } },
@@ -58,6 +59,7 @@ export async function getProfileData(tenantId: string, userId: string) {
     id: string; name: string; altitudeM: number;
     mountainRange: string | null; country: string | null;
     rarityId: RarityId; isMythic: boolean;
+    elevationProfile: unknown;
     count: number;
     firstDate: Date; lastDate: Date;
     firstPhotoUrl: string | null;
@@ -72,6 +74,7 @@ export async function getProfileData(tenantId: string, userId: string) {
         id: pk.id, name: pk.name, altitudeM: pk.altitudeM,
         mountainRange: pk.mountainRange, country: pk.country ?? null,
         rarityId, isMythic: pk.isMythic ?? false,
+        elevationProfile: pk.elevationProfile ?? null,
         count: 0,
         firstDate: a.date, lastDate: a.date,
         firstPhotoUrl: a.photos[0]?.url ?? null,
