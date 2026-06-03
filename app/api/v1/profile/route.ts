@@ -42,7 +42,6 @@ export async function GET(req: NextRequest) {
         lastDate:      toDateStr(p.lastDate),
         firstDate:     toDateStr(p.firstDate),
         firstPhotoUrl: p.firstPhotoUrl ?? null,
-        elevationProfile: p.elevationProfile ?? null,
       })),
       photos: data.allPhotos.map((p) => ({
         id:       p.id,
