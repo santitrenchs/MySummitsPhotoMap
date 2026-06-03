@@ -303,6 +303,19 @@ boxShadow: 0 4px 14px rgba(47,122,95,0.32)
 
 Peakadex uses a **rarity-cycling ✿ spinner** instead of grey block skeletons. Every route-level loading screen (`app/**/loading.tsx`) shares the same pattern.
 
+### Android Stats/Home Skeleton
+
+Android `HomeScreen`/Stats uses a **structural skeleton**, not a generic spinner, because it is a dense dashboard. The skeleton must match the loaded screen's hierarchy so loading does not feel like a layout jump:
+- same vertical `LazyColumn` rhythm as Stats.
+- placeholder bands for hero/progress, stat summaries, chart block and friends ranking.
+- shimmer blocks reuse the existing quiet neutral palette; no marketing-style cards or decorative gradients.
+- Keep dimensions stable; the skeleton should reserve the same space as the real content.
+- Compile gotcha fixed 2026-06-02: if shimmer/offset helpers use `Offset`, import `androidx.compose.ui.geometry.Offset`.
+
+### Android Photo Cropper Rule
+
+Android ascent creation/edit photo crop uses the maintained CanHub cropper (`com.canhub.cropper.CropImageView`) inside Compose `AndroidView`. Do **not** reintroduce a custom Compose `Canvas` cropper with manual `scale/offset/srcRect` math: it misaligned on real safe-area/nav-bar layouts. The crop UI keeps Peakadex controls below the cropper (zoom slider, rotate 90°, next/save), but image matrix/crop-window bounds belong to CanHub.
+
 ### Layout
 
 ```
@@ -1200,7 +1213,7 @@ The global create-FAB lives in `MainScaffold` and is gated to `Logbook`/`Cards` 
 
 ---
 
-## Cordadas + Amigos — Unified Social Screen (Android, updated 2026-06-02)
+## Cordadas + Amigos — Unified Social Screen (Android, updated 2026-06-03)
 
 > **Authoritative cross-platform spec.** This is the reference for rebuilding the Amigos + Cordadas section on **web** and **iOS**. The Android implementation in `mobile/android/.../feature/friends/` is the reference. Follow the navigation, layout, behaviours, Material patterns and data contracts below exactly. See `CLAUDE.md → "Cordadas — Climbing Groups"` for the data model + API and the deeper rationale of every fix.
 
@@ -1263,7 +1276,9 @@ All row actions use the shared Material **`RowActionButton`** (≥40dp touch hei
 
 Green circular `+` FAB (bottom-end) → bottom sheet with two rows:
 - **Invitar a un amigo** (person-add icon) → `InviteFriendSheet`
-- **Crear una cordada** (group-add icon) → `CreateCordadaSheet`
+- **Crear una cordada** (**two connected rope nodes** icon, no plus/users cluster) → `CreateCordadaSheet`
+
+The create-cordada icon is intentionally **not** "two users + plus". That symbol looked cramped inside the 56dp pale-blue icon well and duplicated the meaning of "create". Use the rope-node icon to signal a climbing team/cordada while the text provides the action.
 
 ### Accept / reject behaviours (must match on every platform)
 
@@ -1276,27 +1291,98 @@ Green circular `+` FAB (bottom-end) → bottom sheet with two rows:
 
 All friend & cordada-member stats (`levelIdx`, `uniquePeaks`, `totalEp`, `totalCairns`) are read from the **pre-computed `user_stats` table** (`friendship.service.ts` → `prisma.userStats.findMany`, same source as the home leaderboard). They are **not** recomputed by scanning ascents on each load. Missing row → zeros fallback. The table is refreshed by `recomputeUserStats(userId)` after ascent CRUD only.
 
-### Invite friend by email (`InviteFriendSheet`)
+### Invite friend (`InviteFriendSheet`) — contact-first flow
 
-`POST /api/v1/invitations`. UI driven by `InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }`. Sheet stays open, disables field/button while sending, shows colored feedback, auto-closes ~1.4s after success. (Friend invitations to non-registered emails send a Resend email — existing behaviour.)
+This sheet is no longer a plain email form. It is a compact premium **intent + contact + channel** flow.
+
+Layout:
+
+```
+Convidar un amic
+Li enviarem un correu perquè s'uneixi a Peakadex.
+
+[  icon  Triar de contactes                 ›  ]
+[        Només usarem el contacte que triïs    ]
+
+──────────────  O  ──────────────
+
+Correu electrònic
+[________________________________]
+
+[ Continuar ]
+```
+
+Behaviour:
+- `Triar de contactes` opens the native Android contact picker (`PickContact`). **No `READ_CONTACTS` permission** is requested; this is deliberate.
+- The app reads only the selected contact: display name, first email, first phone. It does **not** sync the address book.
+- Pressing `Continuar` calls `POST /api/v1/invitations/resolve` if an email is available.
+- If the email belongs to a Peakadex user: create/send an internal friend request and show success.
+- If not registered: show channel choices.
+- If the contact has phone: show **WhatsApp** row. It opens WhatsApp/share sheet with prefilled text; Peakadex does not send WhatsApp automatically.
+- If the contact has email: show **Email** row. It calls `POST /api/v1/invitations` and sends the email via backend.
+
+States:
+- `RESOLVING` / `SENDING`: primary button spinner, inputs disabled.
+- `FRIEND_REQUEST_SENT`: green success, auto-close ~1.4s.
+- `INVITED`: green success, auto-close ~1.4s.
+- `ALREADY_FRIENDS` / `REQUEST_PENDING`: neutral secondary feedback.
+- `CONTACT_NOT_REGISTERED`: neutral feedback + channel cards.
+- `CONTACT_NO_DATA`: **soft empty-state card**, no red:
+  - surface `#F8FAFC`, radius 16dp
+  - 42dp pale-blue circular icon well
+  - title `Sense dades de contacte`
+  - body explaining no email/phone is available
+  - text action `Escriure email`
+- Red is reserved for true errors (`ERROR`, failed send).
+
+Do not show an empty "Convidar per" section. If there are no channels, show `CONTACT_NO_DATA`.
 
 ### Create cordada (`CreateCordadaSheet`)
 
 `onCreate(name, description, memberIds, avatarBytes)`:
-- Circular **84dp photo picker** → square center-crop to 512px JPEG 0.85. Uploaded via `POST /api/v1/cordadas/{id}/avatar` **after** creation (best-effort, wrapped so a photo failure doesn't break creation).
-- Name (≤60) + optional description.
-- **Member selection** — scrollable accepted-friends list with checkboxes. `memberIds` → `POST /api/v1/cordadas` (server drops non-friend ids).
+- **Photo picker is a cover preview**, not a circular emoji placeholder:
+  - 148dp high rounded rectangle, radius 16dp.
+  - Empty state: subtle neutral/blue surface (`#F8FAFC → #EFF6FF`), local vector photo icon in a white 42dp circle, title `Afegir foto de cordada`, hint `S'usarà com a portada i avatar`.
+  - A 48dp circular avatar preview is overlaid bottom-start. It uses the same selected crop as the future avatar.
+  - When a photo exists: full cover image with bottom scrim and discreet `Editar foto` text bottom-end.
+  - **No emoji camera/mountain placeholders.**
+- Picked image opens `CordadaImageCropSheet`:
+  - CanHub `CropImageView` in Compose `AndroidView`.
+  - Fixed aspect ratio **3:2**, output approx 1200×800, rotate 90° action.
+  - This single cropped image is used as cover and circular avatar preview.
+  - Uploaded via `POST /api/v1/cordadas/{id}/avatar` **after** creation (best-effort, wrapped so a photo failure doesn't break creation).
+- Name (≤60) + optional description (≤200).
+- **Member selection** is searchable, not a fixed checklist:
+  - Section label `Afegir membres` with selected count when >0.
+  - Selected friends render as horizontal chips with 24dp avatar + name + remove `×`.
+  - Search field filters accepted friends locally; result rows use 32dp avatar + plus circular affordance.
+  - `memberIds` → `POST /api/v1/cordadas`; server drops non-friend ids.
 
 ### Cordada DETAIL — full-screen destination (NOT a sheet)
 
 > **Material list→detail.** The cordada detail is a **full-screen route** (`Screen.CordadaDetail = "cordada/{id}"`) on the **outer** navController — `CordadaDetailRoute`. It is **NOT** an in-tab overlay or a bottom sheet. As a drill-down it **loses the `MainTopBar` and the bottom nav** (correct Material behaviour — bottom nav is only for top-level destinations).
 
 - Opened from a cordada row via `onOpenCordada(id)` → outer `navController.navigate("cordada/$id")`.
-- **One single `TopAppBar`** (start-aligned, white): **back arrow on the LEFT** + **title = cordada name** (`R.string.action_back` for the back contentDescription). A `BackHandler` makes the system back close the detail (returns to the list), same as the arrow.
+- **One single quiet `TopAppBar`** (white): **back arrow on the LEFT**, **empty title**. The cordada name lives in the hero, not in both places. A `BackHandler` makes the system back close the detail (returns to the list), same as the arrow.
 - **No second/empty top bar, no white gap** (the earlier bug of stacking a near-empty bar under `MainTopBar` is fixed by making it a real full-screen destination).
 - `CordadaDetailRoute` owns its **own `CordadasViewModel`**, loads the cordada by id (`openDetail(id)`), shows a centered spinner until loaded.
-- Body (vertical scroll): full-width **cover image** (120dp; owner sees a 44dp edit-photo FAB overlaid) → **member count** (the name lives in the top bar, not duplicated in the body) → **member-avatar cluster + add-member button** (owner) → **RÀNQUING** member leaderboard (rank badge + 52dp avatar + name/"Tú"/Fundador + level + uniquePeaks · 🪨 · EP, sorted `uniquePeaks` desc then `totalEp` desc; per-member expel for owner) → **Invitaciones pendientes** (owner) → destructive footer.
-- Footer: owner → **"Eliminar cordada"** (destructive); member → **"Salir de la cordada"**. **Never both** (owner can't leave; on leave/delete the route calls `onBack()`).
+- Body (vertical scroll):
+  - full-width **cover image** 180dp, `ContentScale.Crop`, bottom scrim.
+  - Hero text bottom-left: cordada name (22sp extra-bold white) + member count.
+  - Owner sees a 44dp white circular edit-photo FAB bottom-right.
+  - If no image, use the vector photo placeholder inside a translucent circle; **no emoji placeholders**.
+  - **Description sits below the hero**, before members/ranking. It is the group description, not a leaderboard field.
+  - Member count pill + member-avatar cluster.
+  - Owner invite affordance = **final circular dashed `+` avatar slot** (36dp), not a text pill `Convidar`.
+  - **RÀNQUING** member leaderboard (unchanged): rank badge + 52dp avatar + name/"Tú"/Fundador + level + uniquePeaks · cairns · EP, sorted `uniquePeaks` desc then `totalEp` desc; per-member expel for owner.
+  - **Invitaciones pendientes** (owner).
+  - Compact destructive footer.
+- Footer:
+  - owner → compact **"Eliminar cordada"** outlined destructive card.
+  - member → compact **"Salir de la cordada"** card.
+  - **Never both** (owner can't leave; on leave/delete the route calls `onBack()`).
+  - Do not label this section "Zona de peligro". It is too heavy for this product.
+  - Current destructive card: light red surface/border, 36dp icon circle, title/body, compact outlined red button. It should not be a large full-width danger panel.
 
 ### Invite-member sheet (inside detail)
 
@@ -1309,6 +1395,7 @@ Title "Invitar", search `BasicTextField`; results = `searchUsers` minus current 
 ### Avatars, colors & shared tokens (single source in `FriendsScreen.kt`)
 
 - `CordadaAvatar`: circle, `linearGradient(#059669 → #34D399)`, white bold initials (≤2).
+- `AddMemberButton`: 36dp circular dashed border `+`, visually part of the member avatar row. No text label in the row.
 - Tokens: `FriendsTextPrimary #111827`, `FriendsTextSecondary #6B7280`, `FriendsTextMuted #9CA3AF`, `FriendsDivider #F3F4F6`, `FriendsDanger #EF4444`, `FriendsAccept #16A34A`, `FriendsAcceptBg #DCFCE7`. Layout consts `ListRowAvatar = 48`, `ListRowInset = 76`. **Use tokens, not inline hex.**
 - All user-visible strings come from `R.string.*` and are translated in **all 5 locales** (es/ca/en/fr/de); back-button contentDescription uses `R.string.action_back`.
 
@@ -1318,6 +1405,17 @@ Sheets use the shared `CordadaModalSheet` wrapper around Material 3 `ModalBottom
 - `rememberModalBottomSheetState(skipPartiallyExpanded = true)` is **mandatory** (otherwise closing the keyboard can settle the sheet at a too-low anchor with the CTA behind the 3-button nav bar).
 - Do **not** override `contentWindowInsets`; do **not** thread a manual `bottomInset`.
 - Apply `.navigationBarsPadding()` + `.imePadding()` inside the sheet content.
+
+### ⚠️ Contacts picker — privacy and crash rules
+
+- Do **not** add `READ_CONTACTS` for the current invite flow. The chosen pattern is native contact picker → explicit single contact → minimal read.
+- Android implementation uses `ActivityResultContracts.PickContact()`.
+- Read contact data through the selected contact URI:
+  - query selected URI for `DISPLAY_NAME_PRIMARY`
+  - read email/phone via `Uri.withAppendedPath(uri, ContactsContract.Contacts.Entity.CONTENT_DIRECTORY)`
+  - guard all reads with `runCatching`
+- Do **not** query `CommonDataKinds.Email.CONTENT_URI` / `Phone.CONTENT_URI` globally by contact id unless the product explicitly changes to full address-book permission. That caused real device crashes when selecting a contact.
+- If the selected contact has no email/phone, show the soft `CONTACT_NO_DATA` empty card. Never show a red error or an empty channel section.
 
 ### Not yet implemented (for full parity later)
 

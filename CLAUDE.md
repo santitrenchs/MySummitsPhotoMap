@@ -580,8 +580,8 @@ When tapping a climbed peak, the panel shows the hero photo (if any) with altitu
 - **Prisma client cache after `db push`**: After running `prisma db push`, the dev server must be restarted. If you only run `prisma generate` without restarting, the running server still uses the old client from memory — new fields will appear as `Unknown argument` errors at runtime even though the DB is correct.
 - **`Person.userId` is NOT globally unique**: Changed from `@unique` to `@@unique([tenantId, userId])`. One User can have one linked Person per tenant. This is intentional — the same user can appear as a tag in multiple tenants. Never revert to global `@unique`.
 - **All face tags are always ACCEPTED**: `reviewTagsBeforePost` feature was removed (2026-04-21). `setFaceTag()` always creates tags with `status: "ACCEPTED"`. The only remaining check is `allowOthersToTag` — if the tagged user has it disabled, `setFaceTag` returns `null`. Always pass `session.user.id` as `taggerUserId` when calling `setFaceTag` from API routes (self-tagging bypasses the `allowOthersToTag` check).
-- **Invitations use Vouchers, not a separate model**: Friend invitations create a standard `Voucher` record with `maxUses: 1`, `inviterId`, and `inviteeEmail` set. Admin-created vouchers have these fields null. The invitation flow does NOT create any new token model — it reuses the existing voucher system.
-- **Email before voucher creation**: In `POST /api/invitations`, the email is sent BEFORE creating the Voucher in the DB. This ensures no orphaned vouchers if the email fails. If you reorder this, a failed email will leave an active voucher that blocks re-invitation.
+- **Friend invitations no longer use Vouchers**: The Android friends flow uses `POST /api/v1/invitations/resolve` to detect registered emails and create internal friend requests, and `POST /api/v1/invitations` to send external email invitations. Do not reintroduce voucher/token state for friend invites unless the registration-link product changes.
+- **External invite emails are direct sends**: `POST /api/v1/invitations` calls `sendFriendInvitationEmail(to, inviterName, locale)` and returns `{ status: "invited" }` for non-registered emails. Because no DB token is created, there is no voucher cleanup/orphan-voucher concern in the current flow.
 - **PhotoTagStep header must be outside the zIndex 1100 stacking context**: The face-selection bottom sheet backdrop renders as `position:fixed; inset:0; zIndex:1200`. If the header (skip/done buttons) is inside the `zIndex:1100` container, the backdrop covers it and touches on the buttons are intercepted by the backdrop — the button feels unresponsive. Fix: render the header as a separate `position:fixed; zIndex:1300` div at the top of the JSX, outside the main container. Use a `headerRef` + `useEffect` to measure its height and apply it as `paddingTop` on the main container so the photo area starts below the header.
 - **`ImageCropModal` touchmove and wheel must be non-passive**: React registers `onTouchMove` and `onWheel` as passive event listeners, so calling `e.preventDefault()` inside them has no effect and logs a warning. Register both handlers as native listeners with `{ passive: false }` via `useEffect` on the container ref. Keep each handler logic in a `useRef` that is reassigned every render (not a dependency of the effect) so the native listener always reads fresh React state without needing to be re-registered.
 
@@ -600,14 +600,10 @@ When tapping a climbed peak, the panel shows the hero photo (if any) with altitu
 
 ### Friend Invitations
 
-- **`POST /api/invitations`**: Creates a single-use `Voucher` (7-day expiry) and sends `sendFriendInvitationEmail()`. Checks:
-  - Email already registered → `{ status: "already_registered" }` (no voucher created)
-  - Active invitation exists for same `{inviterId, email}` → `{ status: "already_invited" }` (reuses existing)
-  - Otherwise → creates voucher + sends email → `{ status: "invited" }`
-- **`GET /api/invitations`**: Returns all vouchers where `inviterId = currentUser.id` with status (pending/used/expired).
-- **`lib/email.ts`**: `sendFriendInvitationEmail(to, inviterName, voucherCode)` — branded HTML with voucher code in a highlighted box. Text instructs the invitee to search for the inviter in Amigos after registering.
-- **Voucher model extended**: `inviterId String?` (FK → User), `inviteeEmail String?`. Admin-created vouchers have both null. `@@index([inviterId])` added.
-- **UI in `/friends`**: "Invitar a un amigo" section at the bottom — email input + send button + list of sent invitations with status badges (Pendiente / Registrado / Expirada).
+- **`POST /api/v1/invitations/resolve`**: Android contact/email resolver. If the email belongs to an existing user, creates a friend request and returns `{ status: "friend_request_sent" }`; already friends → `already_friends`; pending → `request_pending`; unknown email → `not_registered`; self → `cannot_invite_self`.
+- **`POST /api/v1/invitations`**: External email invitation for non-registered emails. Sends `sendFriendInvitationEmail(to, inviterName, locale)` directly; no voucher is created. Existing registered email → `{ status: "already_registered" }`; otherwise → `{ status: "invited" }`.
+- **`GET /api/v1/invitations`**: Currently returns an empty invitation list because the voucher-based invitation model was removed.
+- **Android UI**: `InviteFriendSheet` is contact-first with native `PickContact`, manual email fallback, resolver, and WhatsApp/email channel selection for non-registered contacts. See the Android layer section below for the full visual and permission contract.
 
 ### Tag Reconciliation (Person → registered User)
 
@@ -625,7 +621,7 @@ When tapping a climbed peak, the panel shows the hero photo (if any) with altitu
 - Email verification on register
 - Rate limiting on login
 - Apple Sign-In (Google Sign-In already implemented)
-- Registering with an invitation voucher doesn't auto-create the friendship or link the Person — the invitee must find the inviter manually in Amigos and send a friend request
+- External email/WhatsApp invitations do not currently auto-create the friendship when the recipient registers. `resolve` can create an internal friend request only when the selected email already belongs to a registered Peakadex user.
 
 ---
 
@@ -1550,6 +1546,12 @@ Color `#0EA5E9` = sky-500. Duration: visible 2500ms (in `LogbookList`), fade 400
 
 After creating an ascent, always call `vm.refresh()` (not `vm.load()`) — keeps the list visible during the reload so the scroll + highlight happen into an already-rendered list.
 
+### Android Stats/Home skeleton (2026-06-02)
+
+`HomeScreen.kt` / Stats uses a structural skeleton matching the actual dashboard hierarchy while `_uiState = Loading`: hero/progress area, summary/stat blocks, chart placeholder, and friends-ranking rows. It should not be replaced by a single centered spinner. The point is to keep the loaded layout's rhythm and reduce perceived shift.
+
+Implementation gotcha: the skeleton shimmer/geometry uses `Offset`; keep `import androidx.compose.ui.geometry.Offset` in `HomeScreen.kt`. A previous build failed with `Unresolved reference 'Offset'` after a refactor removed the import.
+
 ---
 
 ### Backward compatibility — Atlas → Logbook peak filter
@@ -1589,7 +1591,7 @@ This fires on initial composition (when navigating from Atlas) and is unaffected
 Keep these in mind but do not over-engineer for them in the MVP:
 
 - **Email verification**: send verification link on register, block or warn until verified
-- **Friend system**: User search, friend requests, accepted friends feed — core friendship flow is complete. Pending: auto-link Person when invitee registers with invitation voucher
+- **Friend system**: User search, friend requests, accepted friends feed, contact-first invite, external email/WhatsApp sharing, and cordadas are implemented. Pending: automatic friendship/link creation when a non-registered external invitee later registers.
 - **Challenges**: Time-limited goals (e.g., "Climb 3 peaks this month") to drive retention
 - **Collections / Lists**: Curated peak lists (e.g., "100 Pyrenean 3000ers") a user can work through
 - **Notifications**: Friend activity alerts, milestone celebrations
@@ -2487,18 +2489,27 @@ All business logic lives here (route handlers only auth + parse + call). Uses th
 
 Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCordada`, `getCordadaDetail`, `inviteToCordada`, `respondToCordadaInvite`, `removeCordadaMember`, `deleteCordada`). Member-search for invites reuses the existing `GET /api/v1/users/search` (`searchUsers`).
 
-### Android layer — WhatsApp-style unified screen (rediseño 2026-05-31, redesign 2026-06-02)
+### API — friend invitation/contact resolve
+
+| Endpoint | Purpose | Body / Result |
+|---|---|---|
+| `POST /api/v1/invitations/resolve` | Resolve selected contact email before choosing external invite channel | `{ email? }` → `friend_request_sent`, `already_friends`, `request_pending`, `not_registered`, `cannot_invite_self` |
+| `POST /api/v1/invitations` | External email invitation for non-registered emails | `{ email }` → `invited`, `already_registered` |
+
+`resolve` intentionally only accepts **email**. Phone matching is not possible today because `User` has no phone column. Android may offer WhatsApp for selected contacts with a phone, but WhatsApp is opened via a share intent and is not sent by the backend.
+
+### Android layer — WhatsApp-style unified screen (rediseño 2026-05-31, redesign 2026-06-03)
 
 > **`DESIGN.md → "Cordadas + Amigos — Unified Social Screen"` is the authoritative cross-platform spec** for rebuilding this on web/iOS. The notes below are the Android specifics + rationale.
 
-`FriendsScreen` is a **single unified screen** (no Amigos/Cordadas sub-tabs). One `LazyColumn` (`UnifiedList`) lists everything in order: **sticky** search → search results → **Solicitudes** (combined friend requests + cordada invites under one count) → **Amigos + Cordadas intermixed alphabetically (Option B)** → combined empty state. A floating green `+` FAB opens an `ActionSpeedDialSheet` with two actions: **invite a friend** (by email) or **create a cordada**.
+`FriendsScreen` is a **single unified screen** (no Amigos/Cordadas sub-tabs). One `LazyColumn` (`UnifiedList`) lists everything in order: **sticky** search → search results → **Solicitudes** (combined friend requests + cordada invites under one count) → **Amigos + Cordadas intermixed alphabetically (Option B)** → combined empty state. A floating green `+` FAB opens an `ActionSpeedDialSheet` with two actions: **invite a friend** (contact/email flow) or **create a cordada**.
 
 | File | Role |
 |---|---|
-| `feature/friends/FriendsScreen.kt` | The unified screen (nested `Scaffold` with **no topBar** — `MainScaffold` provides it; `contentWindowInsets = WindowInsets(0,0,0,0)` to avoid a white gap) + its own `+` FAB. Owns `UnifiedList`, `FriendRow`, `SearchResultRow`, `IncomingRow`, `InviteFriendSheet`, `ActionSpeedDialSheet`, and the shared helpers/tokens: `UserAvatar`, `SectionLabel`, `HRule`, **`InsetRule`**, **`RowActionButton`**, `FriendsDanger/Accept/AcceptBg/TextPrimary/Secondary/Muted`, `ListRowAvatar(48)`, `ListRowInset(76)`. |
-| `feature/friends/CordadasTab.kt` | Cordada UI: `CordadaCard` (flat row), `InviteCard`, `CreateCordadaSheet`, `CordadaModalSheet`, and **`CordadaDetailRoute` + `CordadaDetailScreen`** (the full-screen detail). |
+| `feature/friends/FriendsScreen.kt` | The unified screen (nested `Scaffold` with **no topBar** — `MainScaffold` provides it; `contentWindowInsets = WindowInsets(0,0,0,0)` to avoid a white gap) + its own `+` FAB. Owns `UnifiedList`, `FriendRow`, `SearchResultRow`, `IncomingRow`, `InviteFriendSheet`, `ActionSpeedDialSheet`, contact picker/read helpers, and the shared helpers/tokens: `UserAvatar`, `SectionLabel`, `HRule`, **`InsetRule`**, **`RowActionButton`**, `FriendsDanger/Accept/AcceptBg/TextPrimary/Secondary/Muted`, `ListRowAvatar(48)`, `ListRowInset(76)`. |
+| `feature/friends/CordadasTab.kt` | Cordada UI: `CordadaCard` (flat row), `InviteCard`, `CreateCordadaSheet`, `CordadaModalSheet`, `CordadaImageCropSheet`, and **`CordadaDetailRoute` + `CordadaDetailScreen`** (the full-screen detail). |
 | `feature/friends/CordadasViewModel.kt` | `CordadasUiState` + all cordada API calls (incl. `createCordada(name, desc, memberIds, avatarBytes)`). |
-| `feature/friends/FriendsViewModel.kt` | Friends state + `inviteFriendByEmail` (with `InviteState` machine). |
+| `feature/friends/FriendsViewModel.kt` | Friends state + `resolveInvitation(email?)` + `inviteFriendByEmail(email)` (with the full `InviteState` machine). |
 | `core/model/Models.kt` | `CordadaSummary`, `CordadaInvite`, `CordadasResponse`, `CordadaMemberRanking`, `CordadaDetail`, `CordadaDetailResponse`, `UserStatsResponse`. |
 
 **Navigation — root bottom-nav tab (NOT a dropdown/secondary screen):** `FriendsScreen` is registered **inside `MainScaffold`'s `tabNavController` NavHost** as the **"Cordada" tab** (two-users icon, between Stats and Bitácola). It therefore shares `MainTopBar` (logo + avatar menu) and the bottom nav. The avatar-dropdown "Amigos" entry was **removed**. The global new-ascent `+` FAB is **hidden on this tab** (`currentRoute == Screen.Friends.route`).
@@ -2509,7 +2520,7 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 **Row buttons:** all accept/reject/add/invite actions use the shared **`RowActionButton`** (≥40dp): **Aceptar** = `FilledTonalButton` **tonal green** (`#DCFCE7`/`#16A34A`, deliberately not solid so it doesn't compete with the FAB); **Rechazar** = `OutlinedButton`. The hand-rolled `SmallBtn`/`FriendBtn` (<40dp) were removed.
 
-**Cordada DETAIL = full-screen route (`Screen.CordadaDetail = "cordada/{id}"`, `CordadaDetailRoute`)** on the **outer** navController — **not** a sheet/overlay. As a drill-down it **loses `MainTopBar` + bottom nav** (correct Material). It has **one** `TopAppBar` (back arrow LEFT + title = cordada name, `R.string.action_back`) + a `BackHandler`. `CordadaDetailRoute` owns its own `CordadasViewModel`, loads by id (`openDetail(id)`); `onLeave`/`onDelete` call `onBack()`. `FriendsScreen` reloads cordadas on **resume** (`LifecycleResumeEffect`, skipping the first) so membership changes show on return.
+**Cordada DETAIL = full-screen route (`Screen.CordadaDetail = "cordada/{id}"`, `CordadaDetailRoute`)** on the **outer** navController — **not** a sheet/overlay. As a drill-down it **loses `MainTopBar` + bottom nav** (correct Material). It has **one quiet `TopAppBar`**: back arrow LEFT, **empty title**. The cordada name lives in the cover hero only; do not duplicate it in the app bar and the hero. `BackHandler` returns to the list. `CordadaDetailRoute` owns its own `CordadasViewModel`, loads by id (`openDetail(id)`); `onLeave`/`onDelete` call `onBack()`. `FriendsScreen` reloads cordadas on **resume** (`LifecycleResumeEffect`, skipping the first) so membership changes show on return.
 
 **Email on invite:** `inviteToCordada()` (server) sends `sendCordadaInviteEmail(to, inviterName, cordadaName, locale)` — all 5 locales, best-effort, gated on the recipient's `emailNotifications`.
 
@@ -2519,11 +2530,31 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 **Unified search**: query ≥2 chars → local cordada name matches under a "Cordadas" label + remote `searchUsers` matches under an "Amigos" label + combined no-results fallback.
 
-**Invite-by-email** (`InviteFriendSheet`): sheet stays open, spinner while sending, colored status. `InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }` (`POST /api/v1/invitations`; HTTP 400 = self-invite). Auto-closes ~1.4s after success.
+**Invite friend (`InviteFriendSheet`) — contact-first, privacy-first flow (2026-06-03):**
+- Uses `ActivityResultContracts.PickContact()`; **do not add `READ_CONTACTS`**. The user explicitly chooses one contact; Peakadex never gets the whole address book.
+- Contact reading uses the selected contact URI + `ContactsContract.Contacts.Entity.CONTENT_DIRECTORY`. **Do not query global Email/Phone tables by contact id without `READ_CONTACTS`**; that crashed on some Android devices. The read helper is wrapped in `runCatching`; failure must degrade to a controlled empty state, never close the app.
+- Data read: display name, first email, first phone. Phone is used only to offer WhatsApp/share; it is not sent to the backend because `User` has no phone field.
+- Manual email remains available in the same sheet. The primary button says **Continuar** because it first resolves whether the email is already registered.
+- New endpoint: `POST /api/v1/invitations/resolve` with `{ email }`.
+  - Existing user → creates a friend request via `sendFriendRequest`, sends friend-request email best-effort, returns `friend_request_sent`.
+  - Existing friendship → `already_friends`; pending request → `request_pending`; self → `cannot_invite_self`; unknown email → `not_registered`.
+  - No email → Android state `CONTACT_NO_DATA`.
+- If not registered, Android shows channel cards:
+  - **WhatsApp** only when the selected contact has a phone. Opens `Intent.ACTION_SEND` with `setPackage("com.whatsapp")`, fallback to chooser. Peakadex never sends WhatsApp automatically.
+  - **Email** only when there is an email. Calls existing `POST /api/v1/invitations` via `inviteFriendByEmail`.
+- `InviteState` is now: `{ IDLE, RESOLVING, CONTACT_NOT_REGISTERED, CONTACT_NO_DATA, SENDING, INVITED, FRIEND_REQUEST_SENT, ALREADY_REGISTERED, ALREADY_FRIENDS, REQUEST_PENDING, CANNOT_INVITE_SELF, ERROR }`.
+- Visual states: no red for expected empty cases. `CONTACT_NO_DATA` shows a soft `#F8FAFC` empty-state card with icon, title "Sin/Sense datos de contacto", body, and "Escribir/Escriure email". Red is reserved for real send errors.
+- Auto-close after success (`INVITED` or `FRIEND_REQUEST_SENT`) remains ~1.4s.
 
-**Create cordada** (`CreateCordadaSheet`): circular 84dp photo picker → 512px JPEG 0.85 → `POST /api/v1/cordadas/{id}/avatar` after creation (best-effort) + name (≤60) + optional desc + accepted-friends checklist (`memberIds`). `POST /api/v1/cordadas` drops non-friend ids.
+**Create cordada (`CreateCordadaSheet`) — current flow:**
+- One **cover-style photo picker** (not an emoji placeholder): 3:2 rectangular cover, subtle neutral/blue placeholder, vector photo icon, copy "Añadir/Afegir foto de cordada", hint "Se usará/S'usará como portada y avatar".
+- A 48dp circular avatar preview is overlaid on the cover. It previews the same cropped image as a circle; do not add a second separate "Editar foto" row.
+- Picking a photo opens `CordadaImageCropSheet` using CanHub `CropImageView`, **fixed 3:2 aspect ratio**, rotate 90°, and returns a 1200×800 bitmap. JPEG is uploaded via `POST /api/v1/cordadas/{id}/avatar` after creation (best-effort).
+- Name (≤60) + optional description (≤200).
+- Member selection is a **searchable friend picker**, not a fixed checkbox list: selected friends render as horizontal chips; search filters accepted friends locally and adds/removes members ergonomically.
+- `createCordada(..., onSuccess)` sets `isCreating`, disables inputs while creating, uploads avatar best-effort, and navigates to the new detail on success.
 
-> **i18n**: all `friends_*` and `cordadas_*` strings used by these screens are **fully translated in all 5 locales** (verified 2026-06-02); back-button contentDescription uses `R.string.action_back`. `nav_tab_cordada` = "Cordada" in every locale (brand term, intentionally untranslated).
+> **i18n**: all `friends_*` and `cordadas_*` strings used by these screens are **fully translated in all 5 locales** (verified 2026-06-03); back-button contentDescription uses `R.string.action_back`. `nav_tab_cordada` = "Cordada" in every locale (brand term, intentionally untranslated). Do not hardcode user-visible strings in `feature/friends`.
 
 `CordadasViewModel` notes:
 - `load()` calls `getCordadas()` → fills `cordadas` + `pendingInvites`.
@@ -2531,6 +2562,15 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 - `inviteUser` tracks `inviteSentIds` so the row shows "Invitado" without a reload.
 - `respondToInvite` optimistically removes the invite from `pendingInvites`; calls `load()` only on ACCEPTED.
 - Optimistic mutation on `removeMember`; `leaveCordada`/`deleteCordada` clear `selectedDetail` + `load()`.
+
+`CordadaDetailScreen` current visual contract:
+- Quiet top app bar: back icon only, no title. The hero owns the cordada name.
+- Hero cover is 180dp, full-width, `ContentScale.Crop`, with bottom scrim, name + member count anchored bottom-left, edit photo FAB bottom-right for owner.
+- If no cover image, use the same vector photo placeholder style as the create flow; **never use emoji placeholders**.
+- Description sits directly below the hero, before member chips/avatars. This is the natural location because it describes the group, not the leaderboard.
+- Member summary pill + avatar row: owner can invite with a final circular dashed `+` slot that behaves like the last avatar. Do not use a text pill "Convidar" there.
+- Ranking section is unchanged by recent visual work and should remain the established member leaderboard style.
+- Destructive action is a **compact outlined card**, not a giant "danger zone" block and not labelled "Zona de peligro". Use light red surface/border, trash icon, concise copy, and a compact outlined red button.
 
 ### ⚠️ Known issue / fix — ModalBottomSheet content hidden behind the system navigation bar
 
@@ -2591,6 +2631,9 @@ Important details:
 - **Leaderboard uses `user_stats`** — a brand-new member with no ascents shows zeros until their `user_stats` row is computed (first ascent CRUD).
 - **Cordada detail is a full-screen route, NOT a sheet/overlay** (`CordadaDetailRoute` on the outer navController). It deliberately loses `MainTopBar` + bottom nav (Material list→detail). Don't re-nest it inside the Friends tab content (that caused the stacked top-bar + white-gap bug).
 - **FriendsScreen has no own header** — it's a root tab; `MainScaffold` provides the top bar. Its nested `Scaffold` must zero `contentWindowInsets` or a white gap appears under the main top bar.
+- **Do not add `READ_CONTACTS` for InviteFriendSheet** unless the product intentionally changes to full address-book sync. Current UX uses `PickContact`; only the selected contact is read.
+- **Do not query `CommonDataKinds.Email/Phone.CONTENT_URI` globally after `PickContact`**. Read `ContactsContract.Contacts.Entity` from the selected URI and guard with `runCatching`; otherwise some Android devices crash or close the app.
+- **No emoji placeholders** in the friends/cordadas UI. Use local vector icons (`RopeTeamIcon`, `PhotoImageIcon`, `PersonAddIcon`) inside calm circular/surface containers.
 - **Friend rows are not tappable** — no friend detail/stats sheet (removed). Don't reintroduce one; tapping a friend does nothing but the `⋮` menu.
 - **Badge refreshes on tab change, not real-time** — push (FCM) is not implemented. The cordada-invite email + tab badge are the only proactive signals today.
 - **Accept reloads** — `accept()` and `respondToInvite("ACCEPTED")` both call `load()` after the optimistic update so stats render correctly; don't drop the reload.
