@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
@@ -63,7 +64,9 @@ import androidx.compose.runtime.snapshotFlow
 import coil3.compose.AsyncImage
 import com.peakadex.app.R
 import androidx.compose.ui.res.stringResource
+import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.Ascent
+import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBorderLight
@@ -82,8 +85,55 @@ import kotlin.math.cos
 import kotlin.math.ln
 import kotlin.math.roundToInt
 import kotlin.math.tan
+import kotlin.math.sqrt
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
+
+private const val NEARBY_PEAK_RADIUS_DEGREES = 0.8
+private const val MAX_NEARBY_PEAKS = 5
+private const val MAX_NEARBY_PEAK_CANDIDATES = 20
+private const val MIN_NEARBY_MARKER_DISTANCE_DP = 24f
+
+private data class GridPoint(
+    val xFrac: Float,
+    val yFrac: Float,
+)
+
+private object NearbyPeaksCache {
+    private val cache = mutableMapOf<String, List<Peak>>()
+    private val inFlight = mutableSetOf<String>()
+
+    fun cached(peakId: String): List<Peak>? = cache[peakId]
+
+    suspend fun load(peak: Peak): List<Peak>? {
+        cache[peak.id]?.let { return it }
+        if (!inFlight.add(peak.id)) return null
+
+        return try {
+            val nearby = AppContainer.apiService
+                .getNearbyPeaks(
+                    lat = peak.latitude,
+                    lng = peak.longitude,
+                    radius = NEARBY_PEAK_RADIUS_DEGREES,
+                )
+                .peaks
+                .asSequence()
+                .filter { it.id != peak.id }
+                .sortedByDescending { it.altitudeM }
+                .take(MAX_NEARBY_PEAK_CANDIDATES)
+                .toList()
+            cache[peak.id] = nearby
+            nearby
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.d("CardMiniMap", "nearby peaks fetch failed for ${peak.id}: ${e.message}")
+            emptyList()
+        } finally {
+            inFlight.remove(peak.id)
+        }
+    }
+}
 
 // Returns a 2×2 grid of tile coordinates surrounding the peak, chosen so the peak
 // lands as close to the centre of the composed grid as possible.
@@ -127,6 +177,18 @@ private fun peakTileGrid(lat: Double, lon: Double, zoom: Int = 10): PeakTileGrid
         peakGridFracX = peakGridFracX,
         peakGridFracY = peakGridFracY,
         zoom          = zoom,
+    )
+}
+
+private fun gridPointFor(lat: Double, lon: Double, grid: PeakTileGrid): GridPoint {
+    val n = 1 shl grid.zoom
+    val xCont = (lon + 180.0) / 360.0 * n
+    val latRad = Math.toRadians(lat)
+    val yCont = (1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n
+
+    return GridPoint(
+        xFrac = ((xCont - grid.cols.first()) / 2.0).toFloat(),
+        yFrac = ((yCont - grid.rows.first()) / 2.0).toFloat(),
     )
 }
 
@@ -677,8 +739,15 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
 // The dot is always drawn at the container centre, matching the map below it.
 
 @Composable
-private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.ui.graphics.Color) {
-    val grid = remember(lat, lng) { peakTileGrid(lat, lng) }
+private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Color) {
+    val grid = remember(peak.latitude, peak.longitude) { peakTileGrid(peak.latitude, peak.longitude) }
+    var nearbyPeaks by remember(peak.id) { mutableStateOf(NearbyPeaksCache.cached(peak.id).orEmpty()) }
+
+    LaunchedEffect(peak.id) {
+        if (nearbyPeaks.isEmpty()) {
+            NearbyPeaksCache.load(peak)?.let { nearbyPeaks = it }
+        }
+    }
 
     val density = LocalDensity.current
 
@@ -724,14 +793,48 @@ private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.
             }
         }
 
-        // Peak dot is always at the exact centre of the container.
+        // Nearby peaks are secondary: smaller, hollow, and collision-culled so
+        // dense ranges don't turn into an unreadable stack of dots.
         Canvas(modifier = Modifier.fillMaxSize()) {
             val cx = size.width  / 2f
             val cy = size.height / 2f
+            val minDist = MIN_NEARBY_MARKER_DISTANCE_DP.dp.toPx()
+            val placed = mutableListOf<androidx.compose.ui.geometry.Offset>()
+
+            nearbyPeaks.forEach { nearby ->
+                if (placed.size >= MAX_NEARBY_PEAKS) return@forEach
+                val p = gridPointFor(nearby.latitude, nearby.longitude, grid)
+                val x = offX + gridPx * p.xFrac
+                val y = offY + gridPx * p.yFrac
+                if (x < 10.dp.toPx() || x > size.width - 10.dp.toPx()) return@forEach
+                if (y < 10.dp.toPx() || y > size.height - 10.dp.toPx()) return@forEach
+
+                val pos = androidx.compose.ui.geometry.Offset(x, y)
+                val tooCloseToMain = distance(pos, androidx.compose.ui.geometry.Offset(cx, cy)) < minDist
+                val tooCloseToOther = placed.any { distance(pos, it) < minDist }
+                if (tooCloseToMain || tooCloseToOther) return@forEach
+
+                placed.add(pos)
+                drawCircle(color = Color.White.copy(alpha = 0.90f), radius = 6.dp.toPx(), center = pos)
+                drawCircle(
+                    color = Color(0xFF1E293B).copy(alpha = 0.58f),
+                    radius = 4.dp.toPx(),
+                    center = pos,
+                    style = Stroke(width = 1.5.dp.toPx()),
+                )
+            }
+
+            // Peak dot is always at the exact centre of the container.
             drawCircle(color = Color.White, radius = 11.dp.toPx(), center = androidx.compose.ui.geometry.Offset(cx, cy))
             drawCircle(color = rarityColor,  radius =  8.dp.toPx(), center = androidx.compose.ui.geometry.Offset(cx, cy))
         }
     }
+}
+
+private fun distance(a: androidx.compose.ui.geometry.Offset, b: androidx.compose.ui.geometry.Offset): Float {
+    val dx = a.x - b.x
+    val dy = a.y - b.y
+    return sqrt(dx * dx + dy * dy)
 }
 
 // ── Elevation profile ──────────────────────────────────────────────────────────
@@ -850,7 +953,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                     .clip(RoundedCornerShape(18.dp))
                     .background(Color(0xFF0A1929)),
             ) {
-                CardMiniMap(lat = ascent.peak.latitude, lng = ascent.peak.longitude, rarityColor = rarity.color)
+                CardMiniMap(peak = ascent.peak, rarityColor = rarity.color)
                 // Bottom gradient — just tall enough to sit above the peak name/profile overlay
                 Box(modifier = Modifier.fillMaxWidth().height(160.dp).align(Alignment.BottomStart)
                     .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.4f to Color(0x8007121F), 1f to Color(0xE007121F)))))
