@@ -1,7 +1,6 @@
 package com.peakadex.app.feature.newascent
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,22 +12,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.EaseOutBack
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import app.rive.runtime.kotlin.RiveAnimationView
+import app.rive.runtime.kotlin.core.Fit
+import app.rive.runtime.kotlin.core.Loop
 import com.peakadex.app.R
 import com.peakadex.app.core.ui.RarityInfo
 import com.peakadex.app.core.ui.theme.PeakBackground
@@ -69,7 +66,20 @@ fun AscentCaptureReveal(
                 color = Color.Transparent,
                 shape = RoundedCornerShape(8.dp),
             ) {
-                CaptureFlowerFallback(rarity.color)
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { context ->
+                        RiveAnimationView(context).apply {
+                            setRiveResource(
+                                resId = R.raw.bloom,
+                                artboardName = "flor",
+                                animationName = "idle",
+                                fit = Fit.CONTAIN,
+                                loop = Loop.ONESHOT,
+                            )
+                        }
+                    },
+                )
             }
 
             Column(
@@ -100,52 +110,5 @@ fun AscentCaptureReveal(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun CaptureFlowerFallback(color: Color) {
-    val bloom = remember { Animatable(0f) }
-
-    LaunchedEffect(Unit) {
-        bloom.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = 900, easing = EaseOutBack),
-        )
-    }
-
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val center = this.center
-        val petalRadius = size.minDimension * 0.18f
-        val petalDistance = size.minDimension * 0.16f * bloom.value
-
-        repeat(8) { index ->
-            val angle = Math.toRadians((index * 45.0) - 90.0)
-            val petalCenter = androidx.compose.ui.geometry.Offset(
-                x = center.x + kotlin.math.cos(angle).toFloat() * petalDistance,
-                y = center.y + kotlin.math.sin(angle).toFloat() * petalDistance,
-            )
-            drawCircle(
-                color = color.copy(alpha = 0.72f),
-                radius = petalRadius * bloom.value.coerceAtLeast(0.12f),
-                center = petalCenter,
-            )
-        }
-
-        drawCircle(color = Color.White, radius = petalRadius * 0.78f, center = center)
-        drawCircle(color = color, radius = petalRadius * 0.48f, center = center)
-
-        val stem = Path().apply {
-            moveTo(center.x, center.y + petalRadius)
-            cubicTo(
-                center.x - petalRadius * 0.4f,
-                center.y + petalRadius * 2.0f,
-                center.x + petalRadius * 0.25f,
-                center.y + petalRadius * 2.8f,
-                center.x - petalRadius * 0.2f,
-                center.y + petalRadius * 3.4f,
-            )
-        }
-        drawPath(stem, Color(0xFF0F766E), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 7f))
     }
 }
