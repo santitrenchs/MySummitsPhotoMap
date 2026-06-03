@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import app.rive.runtime.kotlin.RiveAnimationView
-import app.rive.runtime.kotlin.core.Fit
 import com.peakadex.app.R
 import com.peakadex.app.core.ui.RarityInfo
 import com.peakadex.app.core.ui.theme.PeakBackground
@@ -74,12 +73,7 @@ fun AscentCaptureReveal(
                     modifier = Modifier.fillMaxSize(),
                     factory = { context ->
                         RiveAnimationView(context).apply {
-                            setRiveResource(
-                                resId = R.raw.bloom,
-                                artboardName = "flor",
-                                animationName = "idle",
-                                fit = Fit.CONTAIN,
-                            )
+                            setRiveResource(R.raw.bloom)
                         }
                     },
                 )
