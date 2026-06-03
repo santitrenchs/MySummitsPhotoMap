@@ -127,8 +127,6 @@
     <string name="new_ascent_route_placeholder">Route name...</string>
     <string name="new_ascent_notes_placeholder">Add a description, conditions...</string>
     <string name="new_ascent_tag_placeholder">Search person...</string>
-    <string name="capture_reveal_title">Rarity \"%1$s\" captured</string>
-    <string name="capture_reveal_subtitle">New flower added to your cards</string>
 
     <!-- ── Settings ─────────────────────────────────────────────────────────── -->
     <string name="settings_title">Settings</string>

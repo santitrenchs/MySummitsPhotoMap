@@ -42,8 +42,6 @@ import androidx.navigation.compose.rememberNavController
 import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.PeakadexLogo
-import com.peakadex.app.core.ui.RarityInfo
-import com.peakadex.app.core.ui.rarityForAltitude
 import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakBlueLight
@@ -51,7 +49,6 @@ import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
 import com.peakadex.app.feature.logbook.LogbookScreen
-import com.peakadex.app.feature.newascent.AscentCaptureReveal
 import com.peakadex.app.feature.newascent.NewAscentSheet
 import com.peakadex.app.feature.friends.FriendsScreen
 import com.peakadex.app.feature.friends.UserAvatar
@@ -60,12 +57,6 @@ import com.peakadex.app.feature.profile.ProfileScreen
 // ── Tab definitions ────────────────────────────────────────────────────────────
 
 data class TabItem(val screen: Screen, val label: String, val iconRes: Int)
-
-private data class CaptureRevealState(
-    val ascentId: String,
-    val rarity: RarityInfo,
-    val taggingWarning: String?,
-)
 
 @Composable
 private fun tabItems() = listOf(
@@ -113,7 +104,6 @@ fun MainScaffold(navController: NavController) {
     var logbookRefreshTrigger  by remember { mutableIntStateOf(0) }
     var logbookHighlightId     by remember { mutableStateOf<String?>(null) }
     var atlasRefreshTrigger    by remember { mutableIntStateOf(0) }
-    var captureReveal          by remember { mutableStateOf<CaptureRevealState?>(null) }
 
     // Friends badge — count of pending incoming requests
     var pendingFriendsCount  by remember { mutableIntStateOf(0) }
@@ -136,8 +126,6 @@ fun MainScaffold(navController: NavController) {
     BackHandler(enabled = currentRoute == Screen.Home.route) {
         (context as? Activity)?.moveTaskToBack(true)
     }
-
-    BackHandler(enabled = captureReveal != null) {}
 
     // ── Bottom bar hide-on-scroll ──────────────────────────────────────────────
     // available.y < 0 → scrolling down (reading more) → hide bar
@@ -226,16 +214,19 @@ fun MainScaffold(navController: NavController) {
     if (showNewAscent) {
         NewAscentSheet(
             onDismiss       = { showNewAscent = false },
-            onSuccess       = { ascent, taggingWarning ->
+            onSuccess       = { ascentId, taggingWarning ->
                 showNewAscent      = false
-                logbookHighlightId = ascent.id
+                logbookHighlightId = ascentId
                 logbookRefreshTrigger++
                 atlasRefreshTrigger++
-                captureReveal = CaptureRevealState(
-                    ascentId       = ascent.id,
-                    rarity         = rarityForAltitude(ascent.peak.altitudeM),
-                    taggingWarning = taggingWarning,
-                )
+                tabNavController.navigate(Screen.Cards.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState    = false   // force fresh so LaunchedEffect fires
+                }
+                if (taggingWarning != null) {
+                    scope.launch { snackbarHostState.showSnackbar(taggingWarning) }
+                }
             },
             initialPeakId   = newAscentPeakId,
             initialPeakName = newAscentPeakName,
@@ -327,24 +318,6 @@ fun MainScaffold(navController: NavController) {
                     onHighlightConsumed = { logbookHighlightId = null },
                 )
             }
-        }
-
-        captureReveal?.let { reveal ->
-            AscentCaptureReveal(
-                ascentId = reveal.ascentId,
-                rarity = reveal.rarity,
-                onFinished = {
-                    captureReveal = null
-                    tabNavController.navigate(Screen.Cards.route) {
-                        popUpTo(Screen.Home.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState    = false
-                    }
-                    if (reveal.taggingWarning != null) {
-                        scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }
-                    }
-                },
-            )
         }
     }
 }

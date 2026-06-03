@@ -26,15 +26,6 @@
             </intent-filter>
         </activity>
 
-        <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
-            android:exported="false">
-            <meta-data
-                android:name="app.rive.runtime.kotlin.RiveInitializer"
-                android:value="androidx.startup" />
-        </provider>
-
     </application>
 
 </manifest>
