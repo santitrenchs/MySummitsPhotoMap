@@ -496,42 +496,41 @@ private data class ContactInviteCandidate(
 
 private fun readContactInviteCandidate(resolver: ContentResolver, uri: Uri): ContactInviteCandidate? {
     val contactProjection = arrayOf(
-        ContactsContract.Contacts._ID,
         ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
     )
-    resolver.query(uri, contactProjection, null, null, null)?.use { cursor ->
-        if (!cursor.moveToFirst()) return null
-        val id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
-        val name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY))
-            ?: return null
+    return runCatching {
+        resolver.query(uri, contactProjection, null, null, null)?.use { cursor ->
+            if (!cursor.moveToFirst()) return@runCatching null
+            val name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY))
+                ?: return@runCatching null
 
-        val email = resolver.query(
-            ContactsContract.CommonDataKinds.Email.CONTENT_URI,
-            arrayOf(ContactsContract.CommonDataKinds.Email.ADDRESS),
-            "${ContactsContract.CommonDataKinds.Email.CONTACT_ID} = ?",
-            arrayOf(id),
-            null,
-        )?.use { emails ->
-            if (emails.moveToFirst()) {
-                emails.getString(emails.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.ADDRESS))
-            } else null
+            var email: String? = null
+            var phone: String? = null
+            val entityUri = Uri.withAppendedPath(uri, ContactsContract.Contacts.Entity.CONTENT_DIRECTORY)
+            runCatching {
+                resolver.query(
+                    entityUri,
+                    arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.Data.DATA1),
+                    null,
+                    null,
+                    null,
+                )?.use { rows ->
+                    val mimeIndex = rows.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
+                    val dataIndex = rows.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
+                    while (rows.moveToNext() && (email == null || phone == null)) {
+                        when (rows.getString(mimeIndex)) {
+                            ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
+                                if (email == null) email = rows.getString(dataIndex)
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE ->
+                                if (phone == null) phone = rows.getString(dataIndex)
+                        }
+                    }
+                }
+            }
+
+            ContactInviteCandidate(name = name, email = email, phone = phone)
         }
-
-        val phone = resolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
-            arrayOf(id),
-            null,
-        )?.use { phones ->
-            if (phones.moveToFirst()) {
-                phones.getString(phones.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
-            } else null
-        }
-
-        return ContactInviteCandidate(name = name, email = email, phone = phone)
-    }
-    return null
+    }.getOrNull()
 }
 
 @Composable
