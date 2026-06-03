@@ -1,5 +1,11 @@
 package com.peakadex.app.feature.friends
 
+import android.content.ContentResolver
+import android.content.Intent
+import android.net.Uri
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -36,6 +42,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -479,18 +486,79 @@ private fun FriendRow(entry: FriendEntry, onRemove: () -> Unit) {
     }
 }
 
-// ── Invite-friend-by-email sheet ─────────────────────────────────────────────────
+// ── Invite friend sheet ──────────────────────────────────────────────────────────
+
+private data class ContactInviteCandidate(
+    val name: String,
+    val email: String?,
+    val phone: String?,
+)
+
+private fun readContactInviteCandidate(resolver: ContentResolver, uri: Uri): ContactInviteCandidate? {
+    val contactProjection = arrayOf(
+        ContactsContract.Contacts._ID,
+        ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
+    )
+    resolver.query(uri, contactProjection, null, null, null)?.use { cursor ->
+        if (!cursor.moveToFirst()) return null
+        val id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+        val name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY))
+            ?: return null
+
+        val email = resolver.query(
+            ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+            arrayOf(ContactsContract.CommonDataKinds.Email.ADDRESS),
+            "${ContactsContract.CommonDataKinds.Email.CONTACT_ID} = ?",
+            arrayOf(id),
+            null,
+        )?.use { emails ->
+            if (emails.moveToFirst()) {
+                emails.getString(emails.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.ADDRESS))
+            } else null
+        }
+
+        val phone = resolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+            arrayOf(id),
+            null,
+        )?.use { phones ->
+            if (phones.moveToFirst()) {
+                phones.getString(phones.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+            } else null
+        }
+
+        return ContactInviteCandidate(name = name, email = email, phone = phone)
+    }
+    return null
+}
 
 @Composable
 private fun InviteFriendSheet(
     inviteState: InviteState,
     onDismiss: () -> Unit,
-    onSend: (String) -> Unit,
+    onResolve: (String?) -> Unit,
+    onSendEmail: (String) -> Unit,
 ) {
-    var email by remember { mutableStateOf("") }
-    val valid = email.contains("@") && email.contains(".")
+    val context = LocalContext.current
+    var manualEmail by remember { mutableStateOf("") }
+    var selectedContact by remember { mutableStateOf<ContactInviteCandidate?>(null) }
+    val candidateEmail = selectedContact?.email ?: manualEmail.trim().takeIf { it.contains("@") && it.contains(".") }
+    val candidatePhone = selectedContact?.phone
+    val valid = candidateEmail != null
     val sending = inviteState == InviteState.SENDING
-    val isSuccess = inviteState == InviteState.INVITED
+    val resolving = inviteState == InviteState.RESOLVING
+    val isSuccess = inviteState == InviteState.INVITED || inviteState == InviteState.FRIEND_REQUEST_SENT
+
+    val contactPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickContact()) { uri ->
+        if (uri != null) {
+            val contact = readContactInviteCandidate(context.contentResolver, uri)
+            selectedContact = contact
+            manualEmail = contact?.email.orEmpty()
+            onResolve(contact?.email)
+        }
+    }
 
     // Auto-close shortly after a successful send.
     LaunchedEffect(isSuccess) {
@@ -510,18 +578,39 @@ private fun InviteFriendSheet(
         ) {
             Text(stringResource(R.string.friends_invite_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
             Text(stringResource(R.string.friends_invite_subtitle), fontSize = 13.sp, color = FriendsTextSecondary)
+
+            InviteContactPickerRow(
+                selectedContact = selectedContact,
+                enabled = !sending && !resolving && !isSuccess,
+                onClick = { contactPicker.launch(null) },
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                HorizontalDivider(color = FriendsDivider, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.friends_invite_or), fontSize = 12.sp, color = FriendsTextMuted, fontWeight = FontWeight.SemiBold)
+                HorizontalDivider(color = FriendsDivider, modifier = Modifier.weight(1f))
+            }
+
             OutlinedTextField(
-                value         = email,
-                onValueChange = { email = it },
+                value         = manualEmail,
+                onValueChange = { manualEmail = it; selectedContact = null },
                 label         = { Text(stringResource(R.string.friends_invite_email_hint)) },
                 singleLine    = true,
-                enabled       = !sending && !isSuccess,
+                enabled       = !sending && !resolving && !isSuccess,
                 modifier      = Modifier.fillMaxWidth(),
             )
 
             // Status feedback
             val feedback: Pair<String, Color>? = when (inviteState) {
+                InviteState.CONTACT_NOT_REGISTERED -> stringResource(R.string.friends_invite_not_registered) to FriendsTextSecondary
                 InviteState.INVITED            -> stringResource(R.string.friends_invite_ok) to Color(0xFF15803D)
+                InviteState.FRIEND_REQUEST_SENT -> stringResource(R.string.friends_invite_request_ok) to Color(0xFF15803D)
+                InviteState.ALREADY_FRIENDS     -> stringResource(R.string.friends_invite_already_friends) to FriendsTextSecondary
+                InviteState.REQUEST_PENDING     -> stringResource(R.string.friends_invite_request_pending) to FriendsTextSecondary
                 InviteState.ALREADY_REGISTERED -> stringResource(R.string.friends_invite_already_registered) to FriendsTextSecondary
                 InviteState.CANNOT_INVITE_SELF -> stringResource(R.string.friends_invite_self) to Color(0xFFDC2626)
                 InviteState.ERROR              -> stringResource(R.string.friends_invite_error) to Color(0xFFDC2626)
@@ -531,19 +620,159 @@ private fun InviteFriendSheet(
                 Text(msg, fontSize = 13.sp, color = color, fontWeight = FontWeight.Medium)
             }
 
-            Button(
-                onClick  = { if (valid && !sending) onSend(email.trim()) },
-                enabled  = valid && !sending && !isSuccess,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
-            ) {
-                if (sending) {
-                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
-                } else {
-                    Text(stringResource(R.string.friends_invite_send_btn), fontWeight = FontWeight.SemiBold)
+            if (inviteState == InviteState.CONTACT_NOT_REGISTERED) {
+                InviteChannelChoices(
+                    email = candidateEmail,
+                    phone = candidatePhone,
+                    sending = sending,
+                    onEmail = { email -> onSendEmail(email) },
+                    onWhatsApp = {
+                        val message = context.getString(R.string.friends_invite_whatsapp_message)
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, message)
+                            setPackage("com.whatsapp")
+                        }
+                        runCatching { context.startActivity(intent) }
+                            .onFailure {
+                                context.startActivity(Intent.createChooser(
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, message)
+                                    },
+                                    context.getString(R.string.friends_invite_whatsapp),
+                                ))
+                            }
+                    },
+                )
+            } else {
+                Button(
+                    onClick  = { if (valid && !sending && !resolving) onResolve(candidateEmail) },
+                    enabled  = valid && !sending && !resolving && !isSuccess,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors   = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
+                ) {
+                    if (sending || resolving) {
+                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                    } else {
+                        Text(stringResource(R.string.friends_invite_continue_btn), fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun InviteContactPickerRow(
+    selectedContact: ContactInviteCandidate?,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFFF8FAFC))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(PersonAddIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(22.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                selectedContact?.name ?: stringResource(R.string.friends_invite_choose_contact),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = FriendsTextPrimary,
+                maxLines = 1,
+            )
+            Text(
+                selectedContact?.email ?: selectedContact?.phone ?: stringResource(R.string.friends_invite_choose_contact_subtitle),
+                fontSize = 12.sp,
+                color = FriendsTextSecondary,
+                maxLines = 1,
+            )
+        }
+        Text("›", fontSize = 24.sp, color = FriendsTextMuted)
+    }
+}
+
+@Composable
+private fun InviteChannelChoices(
+    email: String?,
+    phone: String?,
+    sending: Boolean,
+    onEmail: (String) -> Unit,
+    onWhatsApp: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.friends_invite_channel_title), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary)
+        if (phone != null) {
+            InviteChannelRow(
+                title = stringResource(R.string.friends_invite_whatsapp),
+                subtitle = stringResource(R.string.friends_invite_whatsapp_subtitle),
+                icon = RopeTeamIcon,
+                enabled = !sending,
+                onClick = onWhatsApp,
+            )
+        }
+        if (email != null) {
+            InviteChannelRow(
+                title = stringResource(R.string.friends_invite_email_channel),
+                subtitle = email,
+                icon = PersonAddIcon,
+                enabled = !sending,
+                onClick = { onEmail(email) },
+            )
+        }
+        if (email == null && phone == null) {
+            Text(stringResource(R.string.friends_invite_no_contact_data), fontSize = 13.sp, color = FriendsDanger)
+        }
+    }
+}
+
+@Composable
+private fun InviteChannelRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(20.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary)
+            Text(subtitle, fontSize = 12.sp, color = FriendsTextSecondary, maxLines = 1)
+        }
+        Text("›", fontSize = 22.sp, color = FriendsTextMuted)
     }
 }
 
@@ -704,7 +933,8 @@ fun FriendsScreen(
                 showInviteFriendSheet = false
                 friendsVm.resetInviteState()
             },
-            onSend      = { email -> friendsVm.inviteFriendByEmail(email) },
+            onResolve   = { email -> friendsVm.resolveInvitation(email) },
+            onSendEmail = { email -> friendsVm.inviteFriendByEmail(email) },
         )
     }
 

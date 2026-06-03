@@ -210,4 +210,7 @@ interface ApiService {
 
     @POST("invitations")
     suspend fun sendInvitation(@Body body: Map<String, String>): Map<String, String>
+
+    @POST("invitations/resolve")
+    suspend fun resolveInvitation(@Body body: Map<String, String>): Map<String, String>
 }
