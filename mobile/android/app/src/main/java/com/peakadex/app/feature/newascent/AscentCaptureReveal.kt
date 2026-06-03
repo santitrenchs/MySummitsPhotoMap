@@ -1,7 +1,6 @@
 package com.peakadex.app.feature.newascent
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -25,11 +25,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import app.rive.runtime.kotlin.RiveAnimationView
 import app.rive.runtime.kotlin.core.Fit
-import app.rive.runtime.kotlin.core.Loop
 import com.peakadex.app.R
 import com.peakadex.app.core.ui.RarityInfo
 import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakNavyDark
+import kotlinx.coroutines.delay
 
 @Composable
 fun AscentCaptureReveal(
@@ -38,10 +38,14 @@ fun AscentCaptureReveal(
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    LaunchedEffect(ascentId) {
+        delay(2_200)
+        onFinished()
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .clickable(onClick = onFinished)
             .background(
                 Brush.radialGradient(
                     colors = listOf(
@@ -75,7 +79,6 @@ fun AscentCaptureReveal(
                                 artboardName = "flor",
                                 animationName = "idle",
                                 fit = Fit.CONTAIN,
-                                loop = Loop.ONESHOT,
                             )
                         }
                     },
@@ -99,13 +102,6 @@ fun AscentCaptureReveal(
                     color = rarity.color,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = stringResource(R.string.capture_reveal_continue),
-                    color = PeakNavyDark.copy(alpha = 0.58f),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                 )
             }
