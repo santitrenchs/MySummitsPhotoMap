@@ -48,6 +48,7 @@ import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.SkeletonBlock
 import com.peakadex.app.core.ui.rememberSkeletonBrush
 import com.peakadex.app.core.ui.theme.*
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Locale
 
@@ -539,12 +540,7 @@ private fun CimasTab(
     val focusManager = LocalFocusManager.current
     val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
     val listState = rememberLazyListState()
-
-    LaunchedEffect(query, rarityFilter, peaks.size) {
-        if (query.isNotBlank() || rarityFilter != null) {
-            listState.animateScrollToItem(2)
-        }
-    }
+    val scope = rememberCoroutineScope()
 
     LazyColumn(
         state          = listState,
@@ -588,7 +584,14 @@ private fun CimasTab(
                     }
                 }) else null,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        focusManager.clearFocus()
+                        if (peaks.isNotEmpty()) {
+                            scope.launch { listState.animateScrollToItem(2) }
+                        }
+                    },
+                ),
                 shape  = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor   = PeakBlueActive,
