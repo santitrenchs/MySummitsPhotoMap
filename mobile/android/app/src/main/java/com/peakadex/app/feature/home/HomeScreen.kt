@@ -32,9 +32,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -64,7 +61,6 @@ import com.peakadex.app.core.ui.RARITY_PALETTE
 import com.peakadex.app.core.ui.LEVEL_DEFS
 import com.peakadex.app.core.ui.LevelDef
 import com.peakadex.app.core.ui.levelName
-import com.peakadex.app.core.ui.levelAccent
 import com.peakadex.app.feature.friends.CairnIcon
 import com.peakadex.app.feature.friends.FriendsDivider
 import com.peakadex.app.feature.friends.FriendsTextMuted
