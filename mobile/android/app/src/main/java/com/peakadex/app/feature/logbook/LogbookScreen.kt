@@ -66,6 +66,7 @@ import com.peakadex.app.R
 import androidx.compose.ui.res.stringResource
 import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.Ascent
+import com.peakadex.app.core.model.NearbyPeak
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.ui.SkeletonBlock
 import com.peakadex.app.core.ui.theme.PeakBlueActive
@@ -101,12 +102,12 @@ private data class GridPoint(
 )
 
 private object NearbyPeaksCache {
-    private val cache = mutableMapOf<String, List<Peak>>()
+    private val cache = mutableMapOf<String, List<NearbyPeak>>()
     private val inFlight = mutableSetOf<String>()
 
-    fun cached(peakId: String): List<Peak>? = cache[peakId]
+    fun cached(peakId: String): List<NearbyPeak>? = cache[peakId]
 
-    suspend fun load(peak: Peak): List<Peak>? {
+    suspend fun load(peak: Peak): List<NearbyPeak>? {
         cache[peak.id]?.let { return it }
         if (!inFlight.add(peak.id)) {
             while (inFlight.contains(peak.id)) {
@@ -127,6 +128,17 @@ private object NearbyPeaksCache {
                 .asSequence()
                 .filter { it.id != peak.id }
                 .sortedBy { distanceDegreesSquared(peak.latitude, peak.longitude, it.latitude, it.longitude) }
+                .map {
+                    NearbyPeak(
+                        id = it.id,
+                        name = it.name,
+                        nameEn = it.nameEn,
+                        latitude = it.latitude,
+                        longitude = it.longitude,
+                        altitudeM = it.altitudeM,
+                        rarityId = it.rarityId,
+                    )
+                }
                 .toList()
             cache[peak.id] = nearby
             nearby
@@ -747,7 +759,9 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
 @Composable
 private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Color) {
     val grid = remember(peak.latitude, peak.longitude) { peakTileGrid(peak.latitude, peak.longitude) }
-    var nearbyPeaks by remember(peak.id) { mutableStateOf(NearbyPeaksCache.cached(peak.id).orEmpty()) }
+    var nearbyPeaks by remember(peak.id) {
+        mutableStateOf(peak.nearbyPeaks ?: NearbyPeaksCache.cached(peak.id).orEmpty())
+    }
 
     LaunchedEffect(peak.id) {
         if (nearbyPeaks.isEmpty()) {
