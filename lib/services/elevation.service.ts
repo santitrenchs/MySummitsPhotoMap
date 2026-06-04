@@ -1,3 +1,5 @@
+import { prisma } from "@/lib/db/client";
+
 export type ElevationPoint = {
   distance: number; // km from center, negative = south, positive = north
   elevation: number; // metres
@@ -72,4 +74,28 @@ export async function fetchElevationProfile(
     maxElevation: Math.max(...points.map((p) => p.elevation)),
     summitIndex,
   };
+}
+
+export async function ensureElevationProfileForPeak(peakId: string): Promise<ElevationProfile | null> {
+  const peak = await prisma.peak.findUnique({
+    where: { id: peakId },
+    select: {
+      id: true,
+      latitude: true,
+      longitude: true,
+      elevationProfile: true,
+    },
+  });
+
+  if (!peak) return null;
+  if (peak.elevationProfile) return peak.elevationProfile as ElevationProfile;
+
+  const profile = await fetchElevationProfile(peak.latitude, peak.longitude);
+
+  await prisma.peak.update({
+    where: { id: peak.id },
+    data: { elevationProfile: profile as object },
+  });
+
+  return profile;
 }

@@ -1,5 +1,6 @@
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { prisma } from "@/lib/db/client";
+import { ensureElevationProfileForPeak } from "@/lib/services/elevation.service";
 import { ensureNearbyPeaksForPeak } from "@/lib/services/nearby-peaks.service";
 
 export type CreateAscentInput = {
@@ -198,11 +199,18 @@ export async function createAscent(
     },
   });
 
-  try {
-    await ensureNearbyPeaksForPeak(input.peakId);
-  } catch (err) {
-    console.error(`[nearby-peaks] Failed to cache neighbors for peak ${input.peakId}:`, err);
-  }
+  await Promise.allSettled([
+    ensureElevationProfileForPeak(input.peakId),
+    ensureNearbyPeaksForPeak(input.peakId),
+  ]).then((results) => {
+    const [elevationResult, nearbyResult] = results;
+    if (elevationResult.status === "rejected") {
+      console.error(`[elevation] Failed to cache profile for peak ${input.peakId}:`, elevationResult.reason);
+    }
+    if (nearbyResult.status === "rejected") {
+      console.error(`[nearby-peaks] Failed to cache neighbors for peak ${input.peakId}:`, nearbyResult.reason);
+    }
+  });
 
   return ascent;
 }
