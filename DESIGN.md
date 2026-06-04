@@ -1365,7 +1365,7 @@ Do not show an empty "Convidar per" section. If there are no channels, show `CON
 > **Material list→detail.** The cordada detail is a **full-screen route** (`Screen.CordadaDetail = "cordada/{id}"`) on the **outer** navController — `CordadaDetailRoute`. It is **NOT** an in-tab overlay or a bottom sheet. As a drill-down it **loses the `MainTopBar` and the bottom nav** (correct Material behaviour — bottom nav is only for top-level destinations).
 
 - Opened from a cordada row via `onOpenCordada(id)` → outer `navController.navigate("cordada/$id")`.
-- **One single quiet `TopAppBar`** (white): **back arrow on the LEFT**, **empty title**. The cordada name lives in the hero, not in both places. A `BackHandler` makes the system back close the detail (returns to the list), same as the arrow.
+- **One single quiet `TopAppBar`** (white): **back arrow on the LEFT**, **empty title**, overflow `⋮` on the RIGHT for destructive screen actions. The cordada name lives in the hero, not in both places. A `BackHandler` makes the system back close the detail (returns to the list), same as the arrow.
 - **No second/empty top bar, no white gap** (the earlier bug of stacking a near-empty bar under `MainTopBar` is fixed by making it a real full-screen destination).
 - `CordadaDetailRoute` owns its **own `CordadasViewModel`**, loads the cordada by id (`openDetail(id)`), shows a centered spinner until loaded.
 - Body (vertical scroll):
@@ -1378,13 +1378,11 @@ Do not show an empty "Convidar per" section. If there are no channels, show `CON
   - Owner invite affordance = **final circular dashed `+` avatar slot** (36dp), not a text pill `Convidar`.
   - **RÀNQUING** member leaderboard (unchanged): rank badge + 52dp avatar + name/"Tú"/Fundador + level + uniquePeaks · cairns · EP, sorted `uniquePeaks` desc then `totalEp` desc; per-member expel for owner.
   - **Invitaciones pendientes** (owner).
-  - Compact destructive footer.
-- Footer:
-  - owner → compact **"Eliminar cordada"** outlined destructive card.
-  - member → compact **"Salir de la cordada"** card.
+- Destructive actions live in the TopAppBar overflow menu, never as a persistent footer/card:
+  - owner overflow → **"Eliminar cordada"** (red, trash icon) → confirmation dialog.
+  - member overflow → **"Salir de la cordada"** (red, trash icon) → confirmation dialog.
   - **Never both** (owner can't leave; on leave/delete the route calls `onBack()`).
-  - Do not label this section "Zona de peligro". It is too heavy for this product.
-  - Current destructive card: light red surface/border, 36dp icon circle, title/body, compact outlined red button. It should not be a large full-width danger panel.
+  - Do not label this action "Zona de peligro" and do not render a full-width danger panel; it is a rare secondary action.
 
 ### Invite-member sheet (inside detail)
 

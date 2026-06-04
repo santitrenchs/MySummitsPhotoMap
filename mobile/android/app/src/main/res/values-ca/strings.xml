@@ -21,6 +21,7 @@
     <string name="action_share">Compartir</string>
     <string name="action_delete">Eliminar</string>
     <string name="action_clear">Netejar</string>
+    <string name="action_options">Opcions</string>
 
     <!-- ── Autenticació / Login ─────────────────────────────────────────────── -->
     <string name="auth_email_placeholder">Correu electrònic</string>

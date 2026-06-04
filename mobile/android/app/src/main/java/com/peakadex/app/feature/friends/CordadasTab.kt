@@ -403,57 +403,6 @@ private fun AddMemberButton(onClick: () -> Unit) {
     }
 }
 
-// ── Destructive footer card ───────────────────────────────────────────────────────
-
-@Composable
-private fun DestructiveActionCard(
-    title: String,
-    body: String?,
-    buttonLabel: String,
-    onClick: () -> Unit,
-) {
-    OutlinedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFFFECACA)),
-        colors = CardDefaults.outlinedCardColors(containerColor = Color(0xFFFFF7F7)),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFEE2E2)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(TrashIcon, contentDescription = null, tint = Color(0xFFDC2626), modifier = Modifier.size(19.dp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF991B1B))
-                if (body != null) {
-                    Text(body, fontSize = 12.sp, color = Color(0xFF7F1D1D), lineHeight = 16.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
-                }
-            }
-            OutlinedButton(
-                onClick = onClick,
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, Color(0xFFEF4444)),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
-                modifier = Modifier.heightIn(min = 38.dp),
-            ) {
-                Text(buttonLabel, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
-    }
-}
-
 // ── Piolet icon (ice axe) ─────────────────────────────────────────────────────────
 
 private val PioletIcon: ImageVector by lazy {
@@ -1196,6 +1145,7 @@ fun CordadaDetailScreen(
     var showConfirmDelete by remember { mutableStateOf(false) }
     var expelTarget       by remember { mutableStateOf<CordadaMemberRanking?>(null) }
     var editImageUri      by remember { mutableStateOf<Uri?>(null) }
+    var detailMenuOpen    by remember { mutableStateOf(false) }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { editImageUri = it }
@@ -1217,6 +1167,38 @@ fun CordadaDetailScreen(
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(BackChevronIcon, contentDescription = stringResource(R.string.action_back), tint = Color.Unspecified)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { detailMenuOpen = true }) {
+                            Icon(
+                                MoreVertIcon,
+                                contentDescription = stringResource(R.string.action_options),
+                                tint = FriendsTextSecondary,
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = detailMenuOpen,
+                            onDismissRequest = { detailMenuOpen = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (detail.isOwner) stringResource(R.string.cordadas_delete)
+                                        else stringResource(R.string.cordadas_leave),
+                                        color = Color(0xFFDC2626),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(TrashIcon, contentDescription = null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
+                                },
+                                onClick = {
+                                    detailMenuOpen = false
+                                    if (detail.isOwner) showConfirmDelete = true else showConfirmLeave = true
+                                },
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
@@ -1404,22 +1386,6 @@ fun CordadaDetailScreen(
                     }
                 }
 
-                // Footer destructive action
-                if (detail.isOwner) {
-                    DestructiveActionCard(
-                        title = stringResource(R.string.cordadas_delete),
-                        body = stringResource(R.string.cordadas_delete_detail),
-                        buttonLabel = stringResource(R.string.cordadas_delete),
-                        onClick = { showConfirmDelete = true },
-                    )
-                } else {
-                    DestructiveActionCard(
-                        title = stringResource(R.string.cordadas_leave),
-                        body = null,
-                        buttonLabel = stringResource(R.string.cordadas_leave),
-                        onClick = { showConfirmLeave = true },
-                    )
-                }
                 Spacer(Modifier.height(24.dp))
             }
         }
@@ -1599,6 +1565,31 @@ private val TrashIcon: ImageVector by lazy {
             moveTo(5f, 6f); lineTo(6f, 20f); lineTo(18f, 20f); lineTo(19f, 6f)
             moveTo(10f, 10f); lineTo(10f, 16f)
             moveTo(14f, 10f); lineTo(14f, 16f)
+        }
+    }.build()
+}
+
+private val MoreVertIcon: ImageVector by lazy {
+    ImageVector.Builder("MoreVert", 24.dp, 24.dp, 24f, 24f).apply {
+        path(fill = SolidColor(Color(0xFF6B7280))) {
+            moveTo(12f, 4f)
+            curveTo(12.55f, 4f, 13f, 4.45f, 13f, 5f)
+            curveTo(13f, 5.55f, 12.55f, 6f, 12f, 6f)
+            curveTo(11.45f, 6f, 11f, 5.55f, 11f, 5f)
+            curveTo(11f, 4.45f, 11.45f, 4f, 12f, 4f)
+            close()
+            moveTo(12f, 11f)
+            curveTo(12.55f, 11f, 13f, 11.45f, 13f, 12f)
+            curveTo(13f, 12.55f, 12.55f, 13f, 12f, 13f)
+            curveTo(11.45f, 13f, 11f, 12.55f, 11f, 12f)
+            curveTo(11f, 11.45f, 11.45f, 11f, 12f, 11f)
+            close()
+            moveTo(12f, 18f)
+            curveTo(12.55f, 18f, 13f, 18.45f, 13f, 19f)
+            curveTo(13f, 19.55f, 12.55f, 20f, 12f, 20f)
+            curveTo(11.45f, 20f, 11f, 19.55f, 11f, 19f)
+            curveTo(11f, 18.45f, 11.45f, 18f, 12f, 18f)
+            close()
         }
     }.build()
 }

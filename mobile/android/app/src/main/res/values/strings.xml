@@ -21,6 +21,7 @@
     <string name="action_share">Compartir</string>
     <string name="action_delete">Eliminar</string>
     <string name="action_clear">Limpiar</string>
+    <string name="action_options">Opciones</string>
 
     <!-- ── Auth / Login ─────────────────────────────────────────────────────── -->
     <string name="auth_email_placeholder">Email</string>
