@@ -195,22 +195,8 @@ private fun HeroHeaderSkeleton(brush: Brush) {
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 12.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF1C2D3F)),
+            .background(MaterialTheme.colorScheme.surface),
     ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    Brush.verticalGradient(
-                        colorStops = arrayOf(
-                            0.00f to Color(0x221C2D3F),
-                            0.60f to Color(0xAA0F172A),
-                            1.00f to Color(0xFF000000),
-                        )
-                    )
-                )
-        )
-
         Column(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier
@@ -238,7 +224,7 @@ private fun HeroHeaderSkeleton(brush: Brush) {
                 }
 
                 Spacer(Modifier.height(8.dp))
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+                Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
                 Spacer(Modifier.height(8.dp))
 
                 Row(
@@ -247,9 +233,9 @@ private fun HeroHeaderSkeleton(brush: Brush) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     MetricSkeleton(brush)
-                    Box(Modifier.width(1.dp).height(32.dp).background(Color(0x26FFFFFF)))
+                    Box(Modifier.width(1.dp).height(32.dp).background(MaterialTheme.colorScheme.outlineVariant))
                     MetricSkeleton(brush)
-                    Box(Modifier.width(1.dp).height(32.dp).background(Color(0x26FFFFFF)))
+                    Box(Modifier.width(1.dp).height(32.dp).background(MaterialTheme.colorScheme.outlineVariant))
                     MetricSkeleton(brush)
                 }
             }
@@ -257,7 +243,7 @@ private fun HeroHeaderSkeleton(brush: Brush) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.Black)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
