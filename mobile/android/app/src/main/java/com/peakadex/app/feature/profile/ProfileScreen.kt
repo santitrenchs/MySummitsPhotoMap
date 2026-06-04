@@ -43,6 +43,8 @@ import com.peakadex.app.core.model.ProfileStats
 import com.peakadex.app.core.model.Rarity
 import com.peakadex.app.R
 import com.peakadex.app.core.model.User
+import com.peakadex.app.core.ui.SkeletonBlock
+import com.peakadex.app.core.ui.rememberSkeletonBrush
 import com.peakadex.app.core.ui.theme.*
 import java.time.LocalDate
 import java.util.Locale
@@ -139,9 +141,7 @@ fun ProfileScreen(
     ) {
         when (val s = state) {
             is ProfileUiState.Loading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = PeakBlueActive)
-                }
+                ProfileLoadingState()
             }
             is ProfileUiState.Error -> {
                 Column(
@@ -162,6 +162,166 @@ fun ProfileScreen(
                     onNavigateToLogbook = onNavigateToLogbook,
                     onAscentClick       = onAscentClick,
                 )
+            }
+        }
+    }
+}
+
+// ── Loading ───────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ProfileLoadingState() {
+    val shimmer = rememberSkeletonBrush("profileSkeleton")
+
+    Column(Modifier.fillMaxSize().background(PeakBackground)) {
+        Surface(color = Color.White) {
+            Row(
+                modifier              = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                repeat(3) {
+                    Box(
+                        modifier         = Modifier.weight(1f).height(48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        SkeletonBlock(shimmer, Modifier.fillMaxWidth(0.72f).height(13.dp))
+                    }
+                }
+            }
+        }
+
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = 24.dp),
+            modifier       = Modifier.fillMaxSize().background(PeakBackground),
+        ) {
+            item { CimasStatsHeaderSkeleton(shimmer) }
+            item { SearchFieldSkeleton(shimmer) }
+            items(6) {
+                PeakRowCardSkeleton(
+                    brush    = shimmer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 5.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CimasStatsHeaderSkeleton(brush: Brush) {
+    Surface(color = Color.White, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.Top,
+            ) {
+                Column {
+                    SkeletonBlock(brush, Modifier.width(68.dp).height(9.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        SkeletonBlock(brush, Modifier.width(44.dp).height(28.dp))
+                        SkeletonBlock(brush, Modifier.width(48.dp).height(14.dp))
+                        SkeletonBlock(brush, Modifier.width(28.dp).height(14.dp))
+                        SkeletonBlock(brush, Modifier.width(72.dp).height(14.dp))
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    SkeletonBlock(brush, Modifier.width(78.dp).height(9.dp))
+                    Spacer(Modifier.height(8.dp))
+                    SkeletonBlock(brush, Modifier.width(82.dp).height(20.dp))
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            Row(
+                modifier              = Modifier.fillMaxWidth().height(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                listOf(0.20f, 0.14f, 0.28f, 0.18f, 0.20f).forEach { weight ->
+                    SkeletonBlock(
+                        brush    = brush,
+                        modifier = Modifier.weight(weight).fillMaxHeight(),
+                        shape    = RoundedCornerShape(4.dp),
+                    )
+                }
+            }
+        }
+    }
+    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+@Composable
+private fun SearchFieldSkeleton(brush: Brush) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape  = RoundedCornerShape(12.dp),
+        color  = Color.White,
+        border = BorderStroke(1.dp, PeakBorderLight),
+    ) {
+        Row(
+            modifier          = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SkeletonBlock(brush, Modifier.size(18.dp), RoundedCornerShape(9.dp))
+            Spacer(Modifier.width(12.dp))
+            SkeletonBlock(brush, Modifier.fillMaxWidth(0.48f).height(14.dp))
+        }
+    }
+}
+
+@Composable
+private fun PeakRowCardSkeleton(brush: Brush, modifier: Modifier = Modifier) {
+    Surface(
+        modifier        = modifier,
+        shape           = RoundedCornerShape(12.dp),
+        color           = Color.White,
+        shadowElevation = 2.dp,
+        border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(Modifier.height(108.dp)) {
+            SkeletonBlock(
+                brush    = brush,
+                modifier = Modifier.width(4.dp).fillMaxHeight(),
+                shape    = RoundedCornerShape(0.dp),
+            )
+            SkeletonBlock(
+                brush    = brush,
+                modifier = Modifier.width(90.dp).fillMaxHeight(),
+                shape    = RoundedCornerShape(0.dp),
+            )
+            Column(
+                modifier            = Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.58f).height(15.dp))
+                    Spacer(Modifier.weight(1f))
+                    SkeletonBlock(brush, Modifier.width(34.dp).height(18.dp), RoundedCornerShape(6.dp))
+                }
+                SkeletonBlock(brush, Modifier.width(86.dp).height(18.dp), RoundedCornerShape(100.dp))
+                Spacer(Modifier.weight(1f))
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment     = Alignment.Bottom,
+                ) {
+                    Column {
+                        SkeletonBlock(brush, Modifier.width(38.dp).height(8.dp))
+                        Spacer(Modifier.height(5.dp))
+                        SkeletonBlock(brush, Modifier.width(56.dp).height(11.dp))
+                    }
+                    Column {
+                        SkeletonBlock(brush, Modifier.width(42.dp).height(8.dp))
+                        Spacer(Modifier.height(5.dp))
+                        SkeletonBlock(brush, Modifier.width(54.dp).height(11.dp))
+                    }
+                    Spacer(Modifier.weight(1f))
+                    SkeletonBlock(brush, Modifier.width(72.dp).height(10.dp))
+                }
             }
         }
     }

@@ -67,12 +67,14 @@ import androidx.compose.ui.res.stringResource
 import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.Peak
+import com.peakadex.app.core.ui.SkeletonBlock
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBorderLight
 import com.peakadex.app.core.ui.theme.PeakMuted
 import com.peakadex.app.core.ui.RarityInfo
 import com.peakadex.app.core.ui.RARITY_PALETTE
+import com.peakadex.app.core.ui.rememberSkeletonBrush
 import com.peakadex.app.core.ui.rarityForAltitude
 import com.peakadex.app.core.ui.theme.PeakOnSurface
 import com.peakadex.app.core.ui.theme.PeakSubtle
@@ -1070,7 +1072,102 @@ private fun LogbookNoResultsState() {
 
 @Composable
 private fun LogbookLoadingState() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PeakBlueActive) }
+    val shimmer = rememberSkeletonBrush("cardsSkeleton")
+
+    LazyColumn(
+        contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        modifier            = Modifier.fillMaxSize(),
+    ) {
+        items(3) {
+            CardSkeleton(shimmer)
+        }
+    }
+}
+
+@Composable
+private fun CardSkeleton(brush: Brush) {
+    Surface(
+        modifier        = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation     = 8.dp,
+                shape         = RoundedCornerShape(28.dp),
+                clip          = false,
+                ambientColor  = Color(0x1A0D2538),
+                spotColor     = Color(0x1A0D2538),
+            ),
+        shape           = RoundedCornerShape(28.dp),
+        color           = Color.White,
+        shadowElevation = 0.dp,
+    ) {
+        Column(Modifier.fillMaxWidth().padding(7.dp)) {
+            Row(
+                modifier          = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SkeletonBlock(brush, Modifier.size(32.dp), RoundedCornerShape(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.38f).height(13.dp))
+                    Spacer(Modifier.height(5.dp))
+                    SkeletonBlock(brush, Modifier.width(74.dp).height(11.dp))
+                }
+                SkeletonBlock(brush, Modifier.size(28.dp), RoundedCornerShape(14.dp))
+                Spacer(Modifier.width(2.dp))
+                SkeletonBlock(brush, Modifier.size(28.dp), RoundedCornerShape(14.dp))
+            }
+
+            Spacer(Modifier.height(2.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 3.dp)
+                    .aspectRatio(4f / 5f)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                SkeletonBlock(brush, Modifier.fillMaxSize(), RoundedCornerShape(18.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomStart)
+                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                ) {
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.72f).height(26.dp))
+                    Spacer(Modifier.height(6.dp))
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.48f).height(13.dp))
+                    Spacer(Modifier.height(5.dp))
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.56f).height(10.dp))
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+
+            Row(
+                modifier              = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                repeat(3) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFF8FAFC))
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        SkeletonBlock(brush, Modifier.fillMaxWidth(0.62f).height(9.dp))
+                        Spacer(Modifier.height(4.dp))
+                        SkeletonBlock(brush, Modifier.fillMaxWidth(0.74f).height(12.dp))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(3.dp))
+        }
+    }
 }
 
 @Composable
