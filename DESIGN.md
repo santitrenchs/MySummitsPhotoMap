@@ -1365,15 +1365,14 @@ Do not show an empty "Convidar per" section. If there are no channels, show `CON
 > **Material list→detail.** The cordada detail is a **full-screen route** (`Screen.CordadaDetail = "cordada/{id}"`) on the **outer** navController — `CordadaDetailRoute`. It is **NOT** an in-tab overlay or a bottom sheet. As a drill-down it **loses the `MainTopBar` and the bottom nav** (correct Material behaviour — bottom nav is only for top-level destinations).
 
 - Opened from a cordada row via `onOpenCordada(id)` → outer `navController.navigate("cordada/$id")`.
-- **One single quiet `TopAppBar`** (white): **back arrow on the LEFT**, **empty title**, overflow `⋮` on the RIGHT for destructive screen actions. The cordada name lives in the hero, not in both places. A `BackHandler` makes the system back close the detail (returns to the list), same as the arrow.
+- **One single quiet `TopAppBar`** (white): **back arrow on the LEFT**, **empty title**, overflow `⋮` on the RIGHT for destructive screen actions. The cordada name lives in the hero when there is a real photo, or in the compact identity header when there is not; never duplicate it in the app bar. A `BackHandler` makes the system back close the detail (returns to the list), same as the arrow.
 - **No second/empty top bar, no white gap** (the earlier bug of stacking a near-empty bar under `MainTopBar` is fixed by making it a real full-screen destination).
 - `CordadaDetailRoute` owns its **own `CordadasViewModel`**, loads the cordada by id (`openDetail(id)`), shows a centered spinner until loaded.
 - Body (vertical scroll):
-  - full-width **cover image** 180dp, `ContentScale.Crop`, bottom scrim.
-  - Hero text bottom-left: cordada name (22sp extra-bold white) + member count.
-  - Owner sees a 44dp white circular edit-photo FAB bottom-right.
-  - If no image, use the vector photo placeholder inside a translucent circle; **no emoji placeholders**.
-  - **Description sits below the hero**, before members/ranking. It is the group description, not a leaderboard field.
+  - If `avatarUrl` exists: full-width **cover image** 180dp, `ContentScale.Crop`, bottom scrim, cordada name (22sp extra-bold white) + member count bottom-left, and owner 44dp white circular edit-photo FAB bottom-right.
+  - If `avatarUrl` is empty: **do not render a large rectangular fake cover**. Use a compact white identity header with a 68dp circular `CordadaAvatar` initials/gradient, cordada name, member count, and owner edit-photo pencil over the avatar.
+  - **No generic mountain/camera hero images and no emoji placeholders.** Placeholder visuals are only for the create-flow photo picker, where the user is actively being invited to add a photo.
+  - **Description sits below the hero/header**, before members/ranking. It is the group description, not a leaderboard field.
   - Member count pill + member-avatar cluster.
   - Owner invite affordance = **final circular dashed `+` avatar slot** (36dp), not a text pill `Convidar`.
   - **RÀNQUING** member leaderboard (unchanged): rank badge + 52dp avatar + name/"Tú"/Fundador + level + uniquePeaks · cairns · EP, sorted `uniquePeaks` desc then `totalEp` desc; per-member expel for owner.

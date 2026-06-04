@@ -1213,80 +1213,112 @@ fun CordadaDetailScreen(
                     .padding(padding)
                     .verticalScroll(rememberScrollState()),
             ) {
-                // Cover image (editable) — full width, fixed height
-                Box(modifier = Modifier.fillMaxWidth().height(180.dp)) {
-                    if (!detail.avatarUrl.isNullOrBlank()) {
+                if (!detail.avatarUrl.isNullOrBlank()) {
+                    // Real photos earn the large cover treatment; empty cordadas use
+                    // a compact identity header below so the UI never fakes a hero image.
+                    Box(modifier = Modifier.fillMaxWidth().height(180.dp)) {
                         AsyncImage(
                             model              = detail.avatarUrl,
                             contentDescription = detail.name,
                             contentScale       = ContentScale.Crop,
                             modifier           = Modifier.fillMaxSize(),
                         )
-                    } else {
                         Box(
-                            modifier         = Modifier
-                                .fillMaxSize()
-                                .background(Brush.linearGradient(listOf(Color(0xFF059669), Color(0xFF34D399)))),
-                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(92.dp)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(Color.Transparent, Color.Black.copy(alpha = 0.48f)),
+                                    ),
+                                ),
+                        )
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(start = 16.dp, end = 72.dp, bottom = 14.dp),
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.18f)),
-                                contentAlignment = Alignment.Center,
+                            Text(
+                                detail.name,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                cordadaMembersLabel(accepted.size),
+                                fontSize = 13.sp,
+                                color = Color.White.copy(alpha = 0.82f),
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        if (detail.isOwner) {
+                            SmallFloatingActionButton(
+                                onClick        = { photoPicker.launch("image/*") },
+                                containerColor = Color.White,
+                                contentColor   = PeakBlueActive,
+                                shape          = CircleShape,
+                                elevation      = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp, pressedElevation = 4.dp),
+                                modifier       = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(8.dp)
+                                    .size(44.dp),
                             ) {
-                                Icon(PhotoImageIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
+                                Icon(EditPencilIcon, contentDescription = stringResource(R.string.cordadas_edit_photo), modifier = Modifier.size(18.dp))
                             }
                         }
                     }
-                    // Subtle bottom scrim to anchor the edit FAB
-                    Box(
+                } else {
+                    Row(
                         modifier = Modifier
-                            .align(Alignment.BottomCenter)
                             .fillMaxWidth()
-                            .height(92.dp)
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.48f)),
-                                ),
-                            ),
-                    )
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 16.dp, end = 72.dp, bottom = 14.dp),
+                            .background(Color.White)
+                            .padding(horizontal = 16.dp, vertical = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
-                        Text(
-                            detail.name,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            cordadaMembersLabel(accepted.size),
-                            fontSize = 13.sp,
-                            color = Color.White.copy(alpha = 0.82f),
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    if (detail.isOwner) {
-                        SmallFloatingActionButton(
-                            onClick        = { photoPicker.launch("image/*") },
-                            containerColor = Color.White,
-                            contentColor   = PeakBlueActive,
-                            shape          = CircleShape,
-                            elevation      = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp, pressedElevation = 4.dp),
-                            modifier       = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(8.dp)
-                                .size(44.dp),
+                        Box(
+                            modifier = Modifier.size(72.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Icon(EditPencilIcon, contentDescription = stringResource(R.string.cordadas_edit_photo), modifier = Modifier.size(18.dp))
+                            CordadaAvatar(detail.name, 68)
+                            if (detail.isOwner) {
+                                SmallFloatingActionButton(
+                                    onClick        = { photoPicker.launch("image/*") },
+                                    containerColor = Color.White,
+                                    contentColor   = PeakBlueActive,
+                                    shape          = CircleShape,
+                                    elevation      = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp, pressedElevation = 4.dp),
+                                    modifier       = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .size(30.dp),
+                                ) {
+                                    Icon(EditPencilIcon, contentDescription = stringResource(R.string.cordadas_edit_photo), modifier = Modifier.size(15.dp))
+                                }
+                            }
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                detail.name,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = FriendsTextPrimary,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                lineHeight = 26.sp,
+                            )
+                            Text(
+                                cordadaMembersLabel(accepted.size),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = FriendsTextSecondary,
+                                modifier = Modifier.padding(top = 3.dp),
+                            )
                         }
                     }
+                    HRule()
                 }
 
                 Column(

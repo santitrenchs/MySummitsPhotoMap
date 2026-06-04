@@ -2520,7 +2520,7 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 **Row buttons:** all accept/reject/add/invite actions use the shared **`RowActionButton`** (≥40dp): **Aceptar** = `FilledTonalButton` **tonal green** (`#DCFCE7`/`#16A34A`, deliberately not solid so it doesn't compete with the FAB); **Rechazar** = `OutlinedButton`. The hand-rolled `SmallBtn`/`FriendBtn` (<40dp) were removed.
 
-**Cordada DETAIL = full-screen route (`Screen.CordadaDetail = "cordada/{id}"`, `CordadaDetailRoute`)** on the **outer** navController — **not** a sheet/overlay. As a drill-down it **loses `MainTopBar` + bottom nav** (correct Material). It has **one quiet `TopAppBar`**: back arrow LEFT, **empty title**, overflow `⋮` RIGHT for destructive actions. The cordada name lives in the cover hero only; do not duplicate it in the app bar and the hero. `BackHandler` returns to the list. `CordadaDetailRoute` owns its own `CordadasViewModel`, loads by id (`openDetail(id)`); `onLeave`/`onDelete` call `onBack()`. `FriendsScreen` reloads cordadas on **resume** (`LifecycleResumeEffect`, skipping the first) so membership changes show on return.
+**Cordada DETAIL = full-screen route (`Screen.CordadaDetail = "cordada/{id}"`, `CordadaDetailRoute`)** on the **outer** navController — **not** a sheet/overlay. As a drill-down it **loses `MainTopBar` + bottom nav** (correct Material). It has **one quiet `TopAppBar`**: back arrow LEFT, **empty title**, overflow `⋮` RIGHT for destructive actions. The cordada name lives in the cover hero when there is a real photo, or in a compact identity header when there is not; never duplicate it in the app bar. `BackHandler` returns to the list. `CordadaDetailRoute` owns its own `CordadasViewModel`, loads by id (`openDetail(id)`); `onLeave`/`onDelete` call `onBack()`. `FriendsScreen` reloads cordadas on **resume** (`LifecycleResumeEffect`, skipping the first) so membership changes show on return.
 
 **Email on invite:** `inviteToCordada()` (server) sends `sendCordadaInviteEmail(to, inviterName, cordadaName, locale)` — all 5 locales, best-effort, gated on the recipient's `emailNotifications`.
 
@@ -2564,10 +2564,10 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 - Optimistic mutation on `removeMember`; `leaveCordada`/`deleteCordada` clear `selectedDetail` + `load()`.
 
 `CordadaDetailScreen` current visual contract:
-- Quiet top app bar: back icon only, no title. The hero owns the cordada name.
-- Hero cover is 180dp, full-width, `ContentScale.Crop`, with bottom scrim, name + member count anchored bottom-left, edit photo FAB bottom-right for owner.
-- If no cover image, use the same vector photo placeholder style as the create flow; **never use emoji placeholders**.
-- Description sits directly below the hero, before member chips/avatars. This is the natural location because it describes the group, not the leaderboard.
+- Quiet top app bar: back icon only, no title. The hero/header owns the cordada name.
+- If `avatarUrl` exists: hero cover is 180dp, full-width, `ContentScale.Crop`, with bottom scrim, name + member count anchored bottom-left, edit photo FAB bottom-right for owner.
+- If `avatarUrl` is empty: **do not render a large rectangular placeholder cover**. Use a compact white identity header with a 68dp circular `CordadaAvatar` initials/gradient, name, member count, and owner edit-photo pencil over the avatar. No generic mountain/camera hero images and no emoji placeholders.
+- Description sits directly below the hero/header, before member chips/avatars. This is the natural location because it describes the group, not the leaderboard.
 - Member summary pill + avatar row: owner can invite with a final circular dashed `+` slot that behaves like the last avatar. Do not use a text pill "Convidar" there.
 - Ranking section is unchanged by recent visual work and should remain the established member leaderboard style.
 - Destructive actions are **not persistent content**. They live in the TopAppBar overflow menu (`⋮`) as a red row with trash icon: owner → "Eliminar cordada", member → "Salir de la cordada", both followed by the existing confirmation dialog. Do not reintroduce a footer danger card/panel.
