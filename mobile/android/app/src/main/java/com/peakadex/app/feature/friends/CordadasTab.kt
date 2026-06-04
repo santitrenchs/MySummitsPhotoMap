@@ -37,6 +37,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.focus.FocusManager
@@ -49,9 +51,6 @@ import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -76,8 +75,6 @@ import com.peakadex.app.core.ui.levelName
 import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
-import com.peakadex.app.core.ui.theme.PeakBlueLight
-import com.peakadex.app.core.ui.theme.PeakClimbedGreen
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -410,8 +407,8 @@ private val PioletIcon: ImageVector by lazy {
         path(
             stroke          = SolidColor(Color.White),
             strokeLineWidth = 2.2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
         ) {
             // Shaft (diagonal)
             moveTo(15.5f, 7f); lineTo(7.5f, 20f)
@@ -426,10 +423,10 @@ private val PioletIcon: ImageVector by lazy {
 private val ChevronRightIcon: ImageVector by lazy {
     ImageVector.Builder("ChevronRight", 24.dp, 24.dp, 24f, 24f).apply {
         path(
-            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFFD1D5DB)),
+            stroke          = SolidColor(Color(0xFFD1D5DB)),
             strokeLineWidth = 2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
         ) { moveTo(9f, 6f); lineTo(15f, 12f); lineTo(9f, 18f) }
     }.build()
 }
@@ -437,9 +434,9 @@ private val ChevronRightIcon: ImageVector by lazy {
 val PlusSmallIcon: ImageVector by lazy {
     ImageVector.Builder("Plus", 20.dp, 20.dp, 24f, 24f).apply {
         path(
-            stroke          = androidx.compose.ui.graphics.SolidColor(Color.White),
+            stroke          = SolidColor(Color.White),
             strokeLineWidth = 2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineCap   = StrokeCap.Round,
         ) {
             moveTo(12f, 5f); lineTo(12f, 19f)
             moveTo(5f, 12f); lineTo(19f, 12f)
@@ -452,8 +449,8 @@ private val PhotoImageIcon: ImageVector by lazy {
         path(
             stroke          = SolidColor(Color.Black),
             strokeLineWidth = 1.8f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
         ) {
             moveTo(4.5f, 6.5f)
             curveTo(4.5f, 5.4f, 5.4f, 4.5f, 6.5f, 4.5f)
@@ -480,9 +477,9 @@ private val PhotoImageIcon: ImageVector by lazy {
 private val SearchIconSmall: ImageVector by lazy {
     ImageVector.Builder("Search", 18.dp, 18.dp, 24f, 24f).apply {
         path(
-            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF9CA3AF)),
+            stroke          = SolidColor(Color(0xFF9CA3AF)),
             strokeLineWidth = 2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineCap   = StrokeCap.Round,
         ) {
             moveTo(21f, 21f); lineTo(16.65f, 16.65f)
             moveTo(19f, 11f)
@@ -697,6 +694,13 @@ fun CreateCordadaSheet(
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { cropUri = it }
+    }
+    fun closeCropSheet() {
+        cropUri = null
+    }
+    fun saveCroppedAvatar(cropped: Bitmap) {
+        avatarBitmap = cropped
+        closeCropSheet()
     }
 
     CordadaModalSheet(onDismiss = { if (!isCreating) onDismiss() }) {
@@ -1010,11 +1014,8 @@ fun CreateCordadaSheet(
     cropUri?.let { uri ->
         CordadaImageCropSheet(
             imageUri = uri,
-            onDismiss = { cropUri = null },
-            onDone = { cropped ->
-                avatarBitmap = cropped
-                cropUri = null
-            },
+            onDismiss = ::closeCropSheet,
+            onDone = ::saveCroppedAvatar,
         )
     }
 }
@@ -1131,7 +1132,6 @@ fun CordadaDetailScreen(
     inviteResults: List<UserStub>,
     isSearchingInvite: Boolean,
     inviteSentIds: Set<String>,
-    currentUserId: String,
     onInviteQueryChange: (String) -> Unit,
     onInvite: (UserStub) -> Unit,
     onExpel: (String) -> Unit,
@@ -1149,6 +1149,31 @@ fun CordadaDetailScreen(
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { editImageUri = it }
+    }
+    fun closeInviteSheet() {
+        showInviteSheet = false
+    }
+    fun openInviteSheet() {
+        showInviteSheet = true
+    }
+    fun closeLeaveDialog() {
+        showConfirmLeave = false
+    }
+    fun closeDeleteDialog() {
+        showConfirmDelete = false
+    }
+    fun selectExpelTarget(target: CordadaMemberRanking) {
+        expelTarget = target
+    }
+    fun clearExpelTarget() {
+        expelTarget = null
+    }
+    fun closeEditImageSheet() {
+        editImageUri = null
+    }
+    fun saveDetailImage(cropped: Bitmap) {
+        closeEditImageSheet()
+        onEditImage(bitmapToJpeg(cropped))
     }
 
     val accepted = detail.members.filter { !it.isPending }
@@ -1391,7 +1416,7 @@ fun CordadaDetailScreen(
                         }
                         if (detail.isOwner) {
                             Spacer(Modifier.width(10.dp))
-                            AddMemberButton(onClick = { showInviteSheet = true })
+                            AddMemberButton(onClick = ::openInviteSheet)
                         }
                     }
                 }
@@ -1405,7 +1430,7 @@ fun CordadaDetailScreen(
                         member        = member,
                         rank          = index + 1,
                         canExpelOwner = detail.isOwner,
-                        onExpel       = { expelTarget = it },
+                        onExpel       = ::selectExpelTarget,
                     )
                 }
 
@@ -1414,7 +1439,7 @@ fun CordadaDetailScreen(
                     Spacer(Modifier.height(12.dp))
                     SectionLabel(stringResource(R.string.cordadas_invites_section))
                     pending.forEach { member ->
-                        CordadaPendingRow(member, canCancel = detail.isOwner, onCancel = { expelTarget = it })
+                        CordadaPendingRow(member, canCancel = detail.isOwner, onCancel = ::selectExpelTarget)
                     }
                 }
 
@@ -1432,56 +1457,53 @@ fun CordadaDetailScreen(
             sentIds       = inviteSentIds,
             onQueryChange = onInviteQueryChange,
             onInvite      = onInvite,
-            onDismiss     = { showInviteSheet = false },
+            onDismiss     = ::closeInviteSheet,
         )
     }
 
     // Confirm dialogs
     if (showConfirmLeave) {
         AlertDialog(
-            onDismissRequest = { showConfirmLeave = false },
+            onDismissRequest = ::closeLeaveDialog,
             text             = { Text(stringResource(R.string.cordadas_confirm_leave)) },
             confirmButton    = {
-                TextButton(onClick = { showConfirmLeave = false; onLeave() }, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) {
+                TextButton(onClick = onLeave, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) {
                     Text(stringResource(R.string.cordadas_leave))
                 }
             },
-            dismissButton    = { TextButton(onClick = { showConfirmLeave = false }) { Text(stringResource(R.string.action_cancel)) } },
+            dismissButton    = { TextButton(onClick = ::closeLeaveDialog) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
     if (showConfirmDelete) {
         AlertDialog(
-            onDismissRequest = { showConfirmDelete = false },
+            onDismissRequest = ::closeDeleteDialog,
             title            = { Text(stringResource(R.string.cordadas_delete), fontWeight = FontWeight.Bold) },
             text             = { Text(stringResource(R.string.cordadas_delete_detail)) },
             confirmButton    = {
-                TextButton(onClick = { showConfirmDelete = false; onDelete() }, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) {
+                TextButton(onClick = onDelete, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) {
                     Text(stringResource(R.string.cordadas_delete_confirm_button))
                 }
             },
-            dismissButton    = { TextButton(onClick = { showConfirmDelete = false }) { Text(stringResource(R.string.action_cancel)) } },
+            dismissButton    = { TextButton(onClick = ::closeDeleteDialog) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
     expelTarget?.let { target ->
         AlertDialog(
-            onDismissRequest = { expelTarget = null },
+            onDismissRequest = ::clearExpelTarget,
             text             = { Text(stringResource(R.string.cordadas_confirm_expel)) },
             confirmButton    = {
-                TextButton(onClick = { expelTarget = null; onExpel(target.userId) }, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) {
+                TextButton(onClick = { clearExpelTarget(); onExpel(target.userId) }, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) {
                     Text(stringResource(R.string.cordadas_expel))
                 }
             },
-            dismissButton    = { TextButton(onClick = { expelTarget = null }) { Text(stringResource(R.string.action_cancel)) } },
+            dismissButton    = { TextButton(onClick = ::clearExpelTarget) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
     editImageUri?.let { uri ->
         CordadaImageCropSheet(
             imageUri = uri,
-            onDismiss = { editImageUri = null },
-            onDone = { cropped ->
-                editImageUri = null
-                onEditImage(bitmapToJpeg(cropped))
-            },
+            onDismiss = ::closeEditImageSheet,
+            onDone = ::saveDetailImage,
         )
     }
 }
@@ -1513,7 +1535,6 @@ fun CordadaDetailRoute(
             inviteResults       = state.inviteResults,
             isSearchingInvite   = state.isSearchingInvite,
             inviteSentIds       = state.inviteSentIds,
-            currentUserId       = currentUserId,
             onInviteQueryChange = vm::onInviteQueryChange,
             onInvite            = { vm.inviteUser(detail.id, it) },
             onExpel             = { vm.removeMember(detail.id, it) },
@@ -1530,8 +1551,8 @@ private val EditPencilIcon: ImageVector by lazy {
         path(
             stroke          = SolidColor(Color(0xFF374151)),
             strokeLineWidth = 2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
         ) {
             moveTo(12f, 20f); lineTo(21f, 20f)
             moveTo(16.5f, 3.5f)
@@ -1548,10 +1569,10 @@ private val EditPencilIcon: ImageVector by lazy {
 private val BackChevronIcon: ImageVector by lazy {
     ImageVector.Builder("Back", 24.dp, 24.dp, 24f, 24f).apply {
         path(
-            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
+            stroke          = SolidColor(Color(0xFF374151)),
             strokeLineWidth = 2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
         ) { moveTo(15f, 18f); lineTo(9f, 12f); lineTo(15f, 6f) }
     }.build()
 }
@@ -1561,8 +1582,8 @@ private val PeopleIcon: ImageVector by lazy {
         path(
             stroke          = SolidColor(Color(0xFF6B7280)),
             strokeLineWidth = 1.8f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
         ) {
             // left person
             moveTo(8f, 11f)
@@ -1589,8 +1610,8 @@ private val TrashIcon: ImageVector by lazy {
         path(
             stroke          = SolidColor(Color(0xFFEF4444)),
             strokeLineWidth = 2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
+            strokeLineCap   = StrokeCap.Round,
+            strokeLineJoin  = StrokeJoin.Round,
         ) {
             moveTo(3f, 6f); lineTo(21f, 6f)
             moveTo(8f, 6f); lineTo(8f, 4f); lineTo(16f, 4f); lineTo(16f, 6f)
