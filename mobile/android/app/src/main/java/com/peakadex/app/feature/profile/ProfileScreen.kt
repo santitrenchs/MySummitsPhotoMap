@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -283,7 +284,7 @@ private fun PeakRowCardSkeleton(brush: Brush, modifier: Modifier = Modifier) {
         border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.height(64.dp).padding(end = 12.dp),
+            modifier = Modifier.height(70.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SkeletonBlock(
@@ -292,15 +293,20 @@ private fun PeakRowCardSkeleton(brush: Brush, modifier: Modifier = Modifier) {
                 shape    = RoundedCornerShape(0.dp),
             )
             Column(
-                modifier            = Modifier.weight(1f).padding(horizontal = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier            = Modifier.fillMaxWidth().padding(start = 12.dp, end = 14.dp, top = 10.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
                 SkeletonBlock(brush, Modifier.fillMaxWidth(0.56f).height(15.dp))
-                SkeletonBlock(brush, Modifier.width(82.dp).height(16.dp), RoundedCornerShape(100.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SkeletonBlock(brush, Modifier.width(82.dp).height(16.dp), RoundedCornerShape(100.dp))
+                    Spacer(Modifier.weight(1f))
+                    SkeletonBlock(brush, Modifier.width(76.dp).height(16.dp))
+                    SkeletonBlock(brush, Modifier.width(78.dp).height(14.dp))
+                }
             }
-            SkeletonBlock(brush, Modifier.width(64.dp).height(16.dp))
-            Spacer(Modifier.width(16.dp))
-            SkeletonBlock(brush, Modifier.width(62.dp).height(14.dp))
         }
     }
 }
@@ -763,7 +769,7 @@ private fun PeakRowCard(
         border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.height(64.dp).padding(end = 12.dp),
+            modifier = Modifier.height(70.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -775,9 +781,9 @@ private fun PeakRowCard(
 
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 14.dp, top = 10.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
                 Text(
                     text       = peak.name,
@@ -787,30 +793,38 @@ private fun PeakRowCard(
                     maxLines   = 1,
                     overflow   = TextOverflow.Ellipsis,
                 )
-                if (rarity != null) {
-                    CompactRarityPill(
-                        label     = rarity.label,
-                        color     = rarityColor,
-                        darkColor = rarityColorDark,
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (rarity != null) {
+                        CompactRarityPill(
+                            label     = rarity.label,
+                            color     = rarityColor,
+                            darkColor = rarityColorDark,
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        text       = "${peak.altitudeM} m",
+                        fontSize   = 13.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color      = PeakNavyDark,
+                        maxLines   = 1,
+                        modifier   = Modifier.width(76.dp),
+                    )
+                    Text(
+                        text       = formatDate(peak.lastDate),
+                        fontSize   = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color      = PeakNavyMid,
+                        maxLines   = 1,
+                        textAlign  = TextAlign.End,
+                        modifier   = Modifier.width(78.dp),
                     )
                 }
             }
-
-            Text(
-                text       = "${peak.altitudeM} m",
-                fontSize   = 13.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color      = PeakNavyDark,
-                maxLines   = 1,
-            )
-            Spacer(Modifier.width(16.dp))
-            Text(
-                text       = formatDate(peak.lastDate),
-                fontSize   = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color      = PeakNavyMid,
-                maxLines   = 1,
-            )
         }
     }
 }
