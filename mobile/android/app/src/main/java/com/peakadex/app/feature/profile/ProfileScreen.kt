@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -31,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,7 +45,10 @@ import com.peakadex.app.core.model.ProfileStats
 import com.peakadex.app.core.model.Rarity
 import com.peakadex.app.R
 import com.peakadex.app.core.model.User
+import com.peakadex.app.core.ui.SkeletonBlock
+import com.peakadex.app.core.ui.rememberSkeletonBrush
 import com.peakadex.app.core.ui.theme.*
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Locale
 
@@ -139,9 +144,7 @@ fun ProfileScreen(
     ) {
         when (val s = state) {
             is ProfileUiState.Loading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = PeakBlueActive)
-                }
+                ProfileLoadingState()
             }
             is ProfileUiState.Error -> {
                 Column(
@@ -164,6 +167,183 @@ fun ProfileScreen(
                 )
             }
         }
+    }
+}
+
+// ── Loading ───────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ProfileLoadingState() {
+    val shimmer = rememberSkeletonBrush("profileSkeleton")
+
+    Column(Modifier.fillMaxSize().background(PeakBackground)) {
+        Surface(color = Color.White) {
+            Row(
+                modifier              = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                repeat(3) {
+                    Box(
+                        modifier         = Modifier.weight(1f).height(48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        SkeletonBlock(shimmer, Modifier.fillMaxWidth(0.72f).height(13.dp))
+                    }
+                }
+            }
+        }
+
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = 24.dp),
+            modifier       = Modifier.fillMaxSize().background(PeakBackground),
+        ) {
+            item { CimasStatsHeaderSkeleton(shimmer) }
+            item { SearchFieldSkeleton(shimmer) }
+            items(6) {
+                PeakRowCardSkeleton(
+                    brush    = shimmer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 5.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CimasStatsHeaderSkeleton(brush: Brush) {
+    Surface(color = Color.White, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.Top,
+            ) {
+                Column {
+                    SkeletonBlock(brush, Modifier.width(68.dp).height(9.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        SkeletonBlock(brush, Modifier.width(44.dp).height(28.dp))
+                        SkeletonBlock(brush, Modifier.width(48.dp).height(14.dp))
+                        SkeletonBlock(brush, Modifier.width(28.dp).height(14.dp))
+                        SkeletonBlock(brush, Modifier.width(72.dp).height(14.dp))
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    SkeletonBlock(brush, Modifier.width(78.dp).height(9.dp))
+                    Spacer(Modifier.height(8.dp))
+                    SkeletonBlock(brush, Modifier.width(82.dp).height(20.dp))
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            Row(
+                modifier              = Modifier.fillMaxWidth().height(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                listOf(0.20f, 0.14f, 0.28f, 0.18f, 0.20f).forEach { weight ->
+                    SkeletonBlock(
+                        brush    = brush,
+                        modifier = Modifier.weight(weight).fillMaxHeight(),
+                        shape    = RoundedCornerShape(4.dp),
+                    )
+                }
+            }
+        }
+    }
+    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+@Composable
+private fun SearchFieldSkeleton(brush: Brush) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape  = RoundedCornerShape(12.dp),
+        color  = Color.White,
+        border = BorderStroke(1.dp, PeakBorderLight),
+    ) {
+        Row(
+            modifier          = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SkeletonBlock(brush, Modifier.size(18.dp), RoundedCornerShape(9.dp))
+            Spacer(Modifier.width(12.dp))
+            SkeletonBlock(brush, Modifier.fillMaxWidth(0.48f).height(14.dp))
+        }
+    }
+}
+
+@Composable
+private fun PeakRowCardSkeleton(brush: Brush, modifier: Modifier = Modifier) {
+    Surface(
+        modifier        = modifier,
+        shape           = RoundedCornerShape(12.dp),
+        color           = Color.White,
+        shadowElevation = 2.dp,
+        border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            modifier = Modifier.height(84.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SkeletonBlock(
+                brush    = brush,
+                modifier = Modifier.width(4.dp).fillMaxHeight(),
+                shape    = RoundedCornerShape(0.dp),
+            )
+            Column(
+                modifier            = Modifier.fillMaxWidth().padding(start = 12.dp, end = 14.dp, top = 12.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
+                SkeletonBlock(brush, Modifier.fillMaxWidth(0.56f).height(15.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SkeletonBlock(brush, Modifier.width(92.dp).height(26.dp), RoundedCornerShape(100.dp))
+                    Spacer(Modifier.weight(1f))
+                    SkeletonBlock(brush, Modifier.width(76.dp).height(16.dp))
+                    SkeletonBlock(brush, Modifier.width(78.dp).height(14.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RarityDot(color: Color) {
+    Box(
+        modifier = Modifier
+            .size(9.dp)
+            .clip(CircleShape)
+            .background(color),
+    )
+}
+
+@Composable
+private fun CompactRarityPill(label: String, color: Color, darkColor: Color) {
+    Row(
+        modifier = Modifier
+            .heightIn(min = 26.dp)
+            .clip(RoundedCornerShape(100.dp))
+            .background(color.copy(alpha = 0.13f))
+            .padding(horizontal = 9.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        RarityDot(color)
+        Text(
+            text       = label,
+            fontSize   = 10.sp,
+            lineHeight = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color      = darkColor,
+            maxLines   = 1,
+            overflow   = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -359,10 +539,13 @@ private fun CimasTab(
 ) {
     val focusManager = LocalFocusManager.current
     val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
 
     LazyColumn(
-        contentPadding = PaddingValues(bottom = 24.dp),
-        modifier       = Modifier.fillMaxSize().background(PeakBackground),
+        state          = listState,
+        contentPadding = PaddingValues(bottom = 180.dp),
+        modifier       = Modifier.fillMaxSize().background(PeakBackground).imePadding(),
     ) {
         // Stats header
         item(key = "stats_header") {
@@ -401,7 +584,14 @@ private fun CimasTab(
                     }
                 }) else null,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        focusManager.clearFocus()
+                        if (peaks.isNotEmpty()) {
+                            scope.launch { listState.animateScrollToItem(2) }
+                        }
+                    },
+                ),
                 shape  = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor   = PeakBlueActive,
@@ -590,12 +780,12 @@ private fun PeakRowCard(
         shape           = RoundedCornerShape(12.dp),
         color           = Color.White,
         shadowElevation = 2.dp,
-        border          = androidx.compose.foundation.BorderStroke(
-            1.dp, MaterialTheme.colorScheme.outlineVariant
-        ),
+        border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            // Rarity colour strip
+        Row(
+            modifier = Modifier.height(84.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Box(
                 Modifier
                     .width(4.dp)
@@ -603,158 +793,50 @@ private fun PeakRowCard(
                     .background(rarityColor),
             )
 
-            // Photo thumbnail
-            Box(
-                modifier           = Modifier.width(90.dp).fillMaxHeight(),
-                contentAlignment   = Alignment.Center,
-            ) {
-                if (peak.firstPhotoUrl != null) {
-                    AsyncImage(
-                        model             = peak.firstPhotoUrl,
-                        contentDescription = peak.name,
-                        contentScale      = ContentScale.Crop,
-                        modifier          = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF0D2538)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("🏔", fontSize = 26.sp)
-                    }
-                }
-                // Altitude overlay at bottom
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color(0x8C0D2538)),
-                            )
-                        )
-                        .padding(bottom = 5.dp, top = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text       = "${peak.altitudeM} m",
-                        fontSize   = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = Color.White,
-                    )
-                }
-            }
-
-            // Content
             Column(
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 14.dp, top = 12.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                // Name row + count
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment     = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text       = peak.name,
-                        fontSize   = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = PeakNavyDark,
-                        maxLines   = 1,
-                        overflow   = TextOverflow.Ellipsis,
-                        modifier   = Modifier.weight(1f).padding(end = 4.dp),
-                    )
-                    if (peak.count > 1) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(rarityColor.copy(alpha = 0.13f))
-                                .border(1.dp, rarityColor.copy(alpha = 0.30f), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text       = "×${peak.count}",
-                                fontSize   = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color      = rarityColorDark,
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text       = peak.name,
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = PeakNavyDark,
+                    maxLines   = 1,
+                    overflow   = TextOverflow.Ellipsis,
+                )
 
-                // Rarity pill
-                if (rarity != null) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(100.dp))
-                            .background(rarityColor.copy(alpha = 0.13f))
-                            .padding(horizontal = 7.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text       = "✿ ${rarity.label}",
-                            fontSize   = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color      = rarityColorDark,
-                        )
-                    }
-                }
-
-                // Bottom row: dates + range
                 Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment     = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Last date
-                    Column {
-                        Text(
-                            text          = stringResource(R.string.profile_stat_last),
-                            fontSize      = 8.sp,
-                            fontWeight    = FontWeight.Bold,
-                            color         = PeakNavyLight,
-                            letterSpacing = 1.2.sp,
+                    if (rarity != null) {
+                        CompactRarityPill(
+                            label     = rarity.label,
+                            color     = rarityColor,
+                            darkColor = rarityColorDark,
                         )
-                        Text(
-                            text       = formatDate(peak.lastDate),
-                            fontSize   = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color      = PeakNavyDark,
-                        )
-                    }
-                    // First date (only if climbed more than once)
-                    if (peak.count > 1 && !peak.firstDate.isNullOrBlank() && peak.firstDate != peak.lastDate) {
-                        Column {
-                            Text(
-                                text          = stringResource(R.string.profile_stat_first),
-                                fontSize      = 8.sp,
-                                fontWeight    = FontWeight.Bold,
-                                color         = PeakNavyLight,
-                                letterSpacing = 1.2.sp,
-                            )
-                            Text(
-                                text       = formatDate(peak.firstDate),
-                                fontSize   = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color      = PeakNavyDark,
-                            )
-                        }
                     }
                     Spacer(Modifier.weight(1f))
-                    if (peak.mountainRange != null) {
-                        Text(
-                            text     = peak.mountainRange,
-                            fontSize = 10.sp,
-                            color    = Color(0xFFCBD5E1),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.widthIn(max = 80.dp),
-                        )
-                    }
+                    Text(
+                        text       = "${peak.altitudeM} m",
+                        fontSize   = 13.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color      = PeakNavyDark,
+                        maxLines   = 1,
+                        modifier   = Modifier.width(76.dp),
+                    )
+                    Text(
+                        text       = formatDate(peak.lastDate),
+                        fontSize   = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color      = PeakNavyMid,
+                        maxLines   = 1,
+                        textAlign  = TextAlign.End,
+                        modifier   = Modifier.width(78.dp),
+                    )
                 }
             }
         }

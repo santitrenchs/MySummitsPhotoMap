@@ -115,6 +115,13 @@ interface ApiService {
         @Query("zoom") zoom: Int,
     ): PeaksResponse
 
+    @GET("peaks")
+    suspend fun getNearbyPeaks(
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double,
+        @Query("radius") radius: Double,
+    ): PeaksResponse
+
     @GET("peaks/{id}")
     suspend fun getPeak(@Path("id") id: String): Peak
 
@@ -210,4 +217,7 @@ interface ApiService {
 
     @POST("invitations")
     suspend fun sendInvitation(@Body body: Map<String, String>): Map<String, String>
+
+    @POST("invitations/resolve")
+    suspend fun resolveInvitation(@Body body: Map<String, String>): Map<String, String>
 }

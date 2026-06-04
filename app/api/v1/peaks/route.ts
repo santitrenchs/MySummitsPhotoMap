@@ -47,6 +47,9 @@ export async function GET(req: NextRequest) {
   const south  = parseFloat(searchParams.get("south") ?? "");
   const east   = parseFloat(searchParams.get("east")  ?? "");
   const west   = parseFloat(searchParams.get("west")  ?? "");
+  const lat    = parseFloat(searchParams.get("lat")    ?? "");
+  const lng    = parseFloat(searchParams.get("lng")    ?? "");
+  const radius = parseFloat(searchParams.get("radius") ?? "");
 
   if (q.length >= 2) {
     // Text search — run DB + Nominatim in parallel
@@ -84,6 +87,7 @@ export async function GET(req: NextRequest) {
 
   let where: Record<string, unknown> | undefined;
   let take: number | undefined;
+  let includeElevationProfile = true;
 
   if (!isNaN(north) && !isNaN(south) && !isNaN(east) && !isNaN(west)) {
     where = {
@@ -98,6 +102,13 @@ export async function GET(req: NextRequest) {
       : zoom < 11 ? 300
       :             500
       : 300; // fallback for clients that don't send zoom
+  } else if (!isNaN(lat) && !isNaN(lng) && !isNaN(radius)) {
+    where = {
+      latitude:  { gte: lat - radius, lte: lat + radius },
+      longitude: { gte: lng - radius, lte: lng + radius },
+    };
+    take = 50;
+    includeElevationProfile = false;
   }
 
   const peaks = await prisma.peak.findMany({
@@ -115,7 +126,7 @@ export async function GET(req: NextRequest) {
       country: true,
       rarityId: true,
       isMythic: true,
-      elevationProfile: true,
+      ...(includeElevationProfile ? { elevationProfile: true } : {}),
     },
   });
 

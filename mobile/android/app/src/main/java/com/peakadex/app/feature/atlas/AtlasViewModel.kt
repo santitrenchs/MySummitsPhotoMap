@@ -268,10 +268,11 @@ class AtlasViewModel : ViewModel() {
     //   rarity     0.3  — rarer peaks deserve more visibility
     //   proximity  0.2  — peaks near the viewport center are more relevant
     //
-    // The percentage of peaks kept follows a smooth linear ramp (no abrupt jumps):
-    //   zoom ≤ 5  →  5 %
-    //   zoom = 9  → ~52 %
-    //   zoom ≥ 13 → 100 %  (no culling needed at street level)
+    // The percentage of peaks kept follows a discovery-friendly ramp:
+    //   zoom ≤ 5  → 10 %
+    //   zoom = 8  → ~49 %
+    //   zoom = 10 → ~74 %
+    //   zoom ≥ 12 → 100 %  (no culling needed at valley level)
 
     private fun applyViewportScore(
         peaks: List<Peak>,
@@ -279,7 +280,7 @@ class AtlasViewModel : ViewModel() {
         centerLat: Double,
         centerLon: Double,
     ): List<Peak> {
-        if (zoom >= 13.0) return peaks
+        if (zoom >= 12.0) return peaks
         val rarityWeights = _uiState.value.rarities.associate { it.id to it.scoreWeight }
         val maxAlt  = peaks.maxOfOrNull { it.altitudeM } ?: return peaks
         val maxDist = peaks.maxOfOrNull { haversineKm(centerLat, centerLon, it.latitude, it.longitude) }
@@ -293,11 +294,10 @@ class AtlasViewModel : ViewModel() {
             peak to (normAlt * 0.5 + rw * 0.3 + normDist * 0.2)
         }.sortedByDescending { it.second }
 
-        // Linear ramp: 5 % at zoom 5 → 100 % at zoom 13.
         val pct = when {
-            zoom <= 5.0  -> 0.05
-            zoom >= 13.0 -> 1.0
-            else         -> 0.05 + (zoom - 5.0) / 8.0 * 0.95
+            zoom <= 5.0  -> 0.10
+            zoom >= 12.0 -> 1.0
+            else         -> 0.10 + (zoom - 5.0) / 7.0 * 0.90
         }
         val take = maxOf(1, (peaks.size * pct).toInt())
         return scored.take(take).map { it.first }

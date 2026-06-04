@@ -33,8 +33,21 @@ data class FriendsUiState(
 
 enum class FriendshipStatus { NONE, PENDING_SENT, PENDING_RECEIVED, ACCEPTED }
 
-/** State machine for the invite-by-email flow. */
-enum class InviteState { IDLE, SENDING, INVITED, ALREADY_REGISTERED, CANNOT_INVITE_SELF, ERROR }
+/** State machine for invite-by-contact/email. */
+enum class InviteState {
+    IDLE,
+    RESOLVING,
+    CONTACT_NOT_REGISTERED,
+    CONTACT_NO_DATA,
+    SENDING,
+    INVITED,
+    FRIEND_REQUEST_SENT,
+    ALREADY_REGISTERED,
+    ALREADY_FRIENDS,
+    REQUEST_PENDING,
+    CANNOT_INVITE_SELF,
+    ERROR,
+}
 
 class FriendsViewModel : ViewModel() {
 
@@ -149,6 +162,39 @@ class FriendsViewModel : ViewModel() {
                     else                  -> InviteState.INVITED
                 }
                 _state.update { it.copy(inviteState = next) }
+            } catch (e: HttpException) {
+                _state.update {
+                    it.copy(
+                        inviteState = if (e.code() == 400) InviteState.CANNOT_INVITE_SELF
+                                      else InviteState.ERROR,
+                    )
+                }
+            } catch (_: Exception) {
+                _state.update { it.copy(inviteState = InviteState.ERROR) }
+            }
+        }
+    }
+
+    fun resolveInvitation(email: String?) {
+        viewModelScope.launch {
+            _state.update { it.copy(inviteState = InviteState.RESOLVING) }
+            val normalizedEmail = email?.trim().orEmpty()
+            if (normalizedEmail.isBlank()) {
+                _state.update { it.copy(inviteState = InviteState.CONTACT_NO_DATA) }
+                return@launch
+            }
+            try {
+                val res = api.resolveInvitation(mapOf("email" to normalizedEmail))
+                val next = when (res["status"]) {
+                    "friend_request_sent" -> InviteState.FRIEND_REQUEST_SENT
+                    "already_friends"     -> InviteState.ALREADY_FRIENDS
+                    "request_pending"     -> InviteState.REQUEST_PENDING
+                    "not_registered"      -> InviteState.CONTACT_NOT_REGISTERED
+                    "already_registered"  -> InviteState.ALREADY_REGISTERED
+                    else                  -> InviteState.CONTACT_NOT_REGISTERED
+                }
+                _state.update { it.copy(inviteState = next) }
+                if (next == InviteState.FRIEND_REQUEST_SENT) load()
             } catch (e: HttpException) {
                 _state.update {
                     it.copy(

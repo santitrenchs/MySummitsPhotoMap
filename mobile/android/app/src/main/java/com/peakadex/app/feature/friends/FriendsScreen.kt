@@ -1,5 +1,11 @@
 package com.peakadex.app.feature.friends
 
+import android.content.ContentResolver
+import android.content.Intent
+import android.net.Uri
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -36,6 +42,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -155,39 +162,34 @@ private val PersonAddIcon: ImageVector by lazy {
     }.build()
 }
 
-/** Two people + plus — "create / add to group" (cordada). */
-private val GroupAddIcon: ImageVector by lazy {
-    ImageVector.Builder("GroupAdd", 24.dp, 24.dp, 24f, 24f).apply {
+/** Two connected rope nodes — "create cordada". */
+private val RopeTeamIcon: ImageVector by lazy {
+    ImageVector.Builder("RopeTeam", 24.dp, 24.dp, 24f, 24f).apply {
         path(
             stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
             strokeLineWidth = 2f,
             strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
             strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
         ) {
-            // Head A (left)
-            moveTo(9.8f, 9f)
-            curveTo(9.8f, 10.546f, 8.546f, 11.8f, 7f, 11.8f)
-            curveTo(5.454f, 11.8f, 4.2f, 10.546f, 4.2f, 9f)
-            curveTo(4.2f, 7.454f, 5.454f, 6.2f, 7f, 6.2f)
-            curveTo(8.546f, 6.2f, 9.8f, 7.454f, 9.8f, 9f)
+            // First climber / anchor node
+            moveTo(8.5f, 8f)
+            curveTo(8.5f, 9.66f, 7.16f, 11f, 5.5f, 11f)
+            curveTo(3.84f, 11f, 2.5f, 9.66f, 2.5f, 8f)
+            curveTo(2.5f, 6.34f, 3.84f, 5f, 5.5f, 5f)
+            curveTo(7.16f, 5f, 8.5f, 6.34f, 8.5f, 8f)
             close()
-            // Shoulders A
-            moveTo(1.5f, 21f)
-            curveTo(1.5f, 17.8f, 3.96f, 15.2f, 7f, 15.2f)
-            curveTo(10.04f, 15.2f, 12.5f, 17.8f, 12.5f, 21f)
-            // Head B (right)
-            moveTo(16.8f, 9f)
-            curveTo(16.8f, 10.546f, 15.546f, 11.8f, 14f, 11.8f)
-            curveTo(12.454f, 11.8f, 11.2f, 10.546f, 11.2f, 9f)
-            curveTo(11.2f, 7.454f, 12.454f, 6.2f, 14f, 6.2f)
-            curveTo(15.546f, 6.2f, 16.8f, 7.454f, 16.8f, 9f)
+            // Second climber / anchor node
+            moveTo(21.5f, 16f)
+            curveTo(21.5f, 17.66f, 20.16f, 19f, 18.5f, 19f)
+            curveTo(16.84f, 19f, 15.5f, 17.66f, 15.5f, 16f)
+            curveTo(15.5f, 14.34f, 16.84f, 13f, 18.5f, 13f)
+            curveTo(20.16f, 13f, 21.5f, 14.34f, 21.5f, 16f)
             close()
-            // Shoulders B (partial, to the right)
-            moveTo(14f, 15.2f)
-            curveTo(17.04f, 15.2f, 19.5f, 17.8f, 19.5f, 21f)
-            // Plus (top-right)
-            moveTo(20f, 3f); lineTo(20f, 9f)
-            moveTo(17f, 6f); lineTo(23f, 6f)
+            // Rope
+            moveTo(8.35f, 9.7f)
+            curveTo(11.2f, 10.7f, 13.45f, 12.1f, 15.65f, 14.25f)
+            moveTo(8f, 13.8f)
+            curveTo(10.95f, 12.65f, 13.35f, 11.6f, 16.2f, 10.2f)
         }
     }.build()
 }
@@ -484,18 +486,78 @@ private fun FriendRow(entry: FriendEntry, onRemove: () -> Unit) {
     }
 }
 
-// ── Invite-friend-by-email sheet ─────────────────────────────────────────────────
+// ── Invite friend sheet ──────────────────────────────────────────────────────────
+
+private data class ContactInviteCandidate(
+    val name: String,
+    val email: String?,
+    val phone: String?,
+)
+
+private fun readContactInviteCandidate(resolver: ContentResolver, uri: Uri): ContactInviteCandidate? {
+    val contactProjection = arrayOf(
+        ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
+    )
+    return runCatching {
+        resolver.query(uri, contactProjection, null, null, null)?.use { cursor ->
+            if (!cursor.moveToFirst()) return@runCatching null
+            val name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY))
+                ?: return@runCatching null
+
+            var email: String? = null
+            var phone: String? = null
+            val entityUri = Uri.withAppendedPath(uri, ContactsContract.Contacts.Entity.CONTENT_DIRECTORY)
+            runCatching {
+                resolver.query(
+                    entityUri,
+                    arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.Data.DATA1),
+                    null,
+                    null,
+                    null,
+                )?.use { rows ->
+                    val mimeIndex = rows.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
+                    val dataIndex = rows.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
+                    while (rows.moveToNext() && (email == null || phone == null)) {
+                        when (rows.getString(mimeIndex)) {
+                            ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
+                                if (email == null) email = rows.getString(dataIndex)
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE ->
+                                if (phone == null) phone = rows.getString(dataIndex)
+                        }
+                    }
+                }
+            }
+
+            ContactInviteCandidate(name = name, email = email, phone = phone)
+        }
+    }.getOrNull()
+}
 
 @Composable
 private fun InviteFriendSheet(
     inviteState: InviteState,
     onDismiss: () -> Unit,
-    onSend: (String) -> Unit,
+    onResolve: (String?) -> Unit,
+    onSendEmail: (String) -> Unit,
 ) {
-    var email by remember { mutableStateOf("") }
-    val valid = email.contains("@") && email.contains(".")
+    val context = LocalContext.current
+    var manualEmail by remember { mutableStateOf("") }
+    var selectedContact by remember { mutableStateOf<ContactInviteCandidate?>(null) }
+    val candidateEmail = selectedContact?.email ?: manualEmail.trim().takeIf { it.contains("@") && it.contains(".") }
+    val candidatePhone = selectedContact?.phone
+    val valid = candidateEmail != null
     val sending = inviteState == InviteState.SENDING
-    val isSuccess = inviteState == InviteState.INVITED
+    val resolving = inviteState == InviteState.RESOLVING
+    val isSuccess = inviteState == InviteState.INVITED || inviteState == InviteState.FRIEND_REQUEST_SENT
+
+    val contactPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickContact()) { uri ->
+        if (uri != null) {
+            val contact = readContactInviteCandidate(context.contentResolver, uri)
+            selectedContact = contact
+            manualEmail = contact?.email.orEmpty()
+            onResolve(contact?.email)
+        }
+    }
 
     // Auto-close shortly after a successful send.
     LaunchedEffect(isSuccess) {
@@ -515,18 +577,39 @@ private fun InviteFriendSheet(
         ) {
             Text(stringResource(R.string.friends_invite_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
             Text(stringResource(R.string.friends_invite_subtitle), fontSize = 13.sp, color = FriendsTextSecondary)
+
+            InviteContactPickerRow(
+                selectedContact = selectedContact,
+                enabled = !sending && !resolving && !isSuccess,
+                onClick = { contactPicker.launch(null) },
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                HorizontalDivider(color = FriendsDivider, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.friends_invite_or), fontSize = 12.sp, color = FriendsTextMuted, fontWeight = FontWeight.SemiBold)
+                HorizontalDivider(color = FriendsDivider, modifier = Modifier.weight(1f))
+            }
+
             OutlinedTextField(
-                value         = email,
-                onValueChange = { email = it },
+                value         = manualEmail,
+                onValueChange = { manualEmail = it; selectedContact = null },
                 label         = { Text(stringResource(R.string.friends_invite_email_hint)) },
                 singleLine    = true,
-                enabled       = !sending && !isSuccess,
+                enabled       = !sending && !resolving && !isSuccess,
                 modifier      = Modifier.fillMaxWidth(),
             )
 
             // Status feedback
             val feedback: Pair<String, Color>? = when (inviteState) {
+                InviteState.CONTACT_NOT_REGISTERED -> stringResource(R.string.friends_invite_not_registered) to FriendsTextSecondary
                 InviteState.INVITED            -> stringResource(R.string.friends_invite_ok) to Color(0xFF15803D)
+                InviteState.FRIEND_REQUEST_SENT -> stringResource(R.string.friends_invite_request_ok) to Color(0xFF15803D)
+                InviteState.ALREADY_FRIENDS     -> stringResource(R.string.friends_invite_already_friends) to FriendsTextSecondary
+                InviteState.REQUEST_PENDING     -> stringResource(R.string.friends_invite_request_pending) to FriendsTextSecondary
                 InviteState.ALREADY_REGISTERED -> stringResource(R.string.friends_invite_already_registered) to FriendsTextSecondary
                 InviteState.CANNOT_INVITE_SELF -> stringResource(R.string.friends_invite_self) to Color(0xFFDC2626)
                 InviteState.ERROR              -> stringResource(R.string.friends_invite_error) to Color(0xFFDC2626)
@@ -536,19 +619,204 @@ private fun InviteFriendSheet(
                 Text(msg, fontSize = 13.sp, color = color, fontWeight = FontWeight.Medium)
             }
 
-            Button(
-                onClick  = { if (valid && !sending) onSend(email.trim()) },
-                enabled  = valid && !sending && !isSuccess,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
-            ) {
-                if (sending) {
-                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
-                } else {
-                    Text(stringResource(R.string.friends_invite_send_btn), fontWeight = FontWeight.SemiBold)
+            if (inviteState == InviteState.CONTACT_NO_DATA && selectedContact != null) {
+                InviteNoContactDataCard(
+                    onManualEmail = {
+                        selectedContact = null
+                        manualEmail = ""
+                    },
+                )
+            } else if (inviteState == InviteState.CONTACT_NOT_REGISTERED) {
+                InviteChannelChoices(
+                    email = candidateEmail,
+                    phone = candidatePhone,
+                    sending = sending,
+                    onEmail = { email -> onSendEmail(email) },
+                    onWhatsApp = {
+                        val message = context.getString(R.string.friends_invite_whatsapp_message)
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, message)
+                            setPackage("com.whatsapp")
+                        }
+                        runCatching { context.startActivity(intent) }
+                            .onFailure {
+                                context.startActivity(Intent.createChooser(
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, message)
+                                    },
+                                    context.getString(R.string.friends_invite_whatsapp),
+                                ))
+                            }
+                    },
+                )
+            } else {
+                Button(
+                    onClick  = { if (valid && !sending && !resolving) onResolve(candidateEmail) },
+                    enabled  = valid && !sending && !resolving && !isSuccess,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors   = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
+                ) {
+                    if (sending || resolving) {
+                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                    } else {
+                        Text(stringResource(R.string.friends_invite_continue_btn), fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun InviteContactPickerRow(
+    selectedContact: ContactInviteCandidate?,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFFF8FAFC))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(PersonAddIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(22.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                selectedContact?.name ?: stringResource(R.string.friends_invite_choose_contact),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = FriendsTextPrimary,
+                maxLines = 1,
+            )
+            Text(
+                selectedContact?.email ?: selectedContact?.phone
+                    ?: if (selectedContact != null) stringResource(R.string.friends_invite_no_contact_data_title)
+                    else stringResource(R.string.friends_invite_choose_contact_subtitle),
+                fontSize = 12.sp,
+                color = FriendsTextSecondary,
+                maxLines = 1,
+            )
+        }
+        Text("›", fontSize = 24.sp, color = FriendsTextMuted)
+    }
+}
+
+@Composable
+private fun InviteNoContactDataCard(onManualEmail: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFFF8FAFC))
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(PersonAddIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(22.dp))
+        }
+        Text(
+            stringResource(R.string.friends_invite_no_contact_data_title),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = FriendsTextPrimary,
+        )
+        Text(
+            stringResource(R.string.friends_invite_no_contact_data_body),
+            fontSize = 12.sp,
+            color = FriendsTextSecondary,
+            textAlign = TextAlign.Center,
+            lineHeight = 17.sp,
+        )
+        TextButton(onClick = onManualEmail) {
+            Text(stringResource(R.string.friends_invite_write_email), fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun InviteChannelChoices(
+    email: String?,
+    phone: String?,
+    sending: Boolean,
+    onEmail: (String) -> Unit,
+    onWhatsApp: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.friends_invite_channel_title), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary)
+        if (phone != null) {
+            InviteChannelRow(
+                title = stringResource(R.string.friends_invite_whatsapp),
+                subtitle = stringResource(R.string.friends_invite_whatsapp_subtitle),
+                icon = RopeTeamIcon,
+                enabled = !sending,
+                onClick = onWhatsApp,
+            )
+        }
+        if (email != null) {
+            InviteChannelRow(
+                title = stringResource(R.string.friends_invite_email_channel),
+                subtitle = email,
+                icon = PersonAddIcon,
+                enabled = !sending,
+                onClick = { onEmail(email) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun InviteChannelRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(20.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = FriendsTextPrimary)
+            Text(subtitle, fontSize = 12.sp, color = FriendsTextSecondary, maxLines = 1)
+        }
+        Text("›", fontSize = 22.sp, color = FriendsTextMuted)
     }
 }
 
@@ -571,7 +839,7 @@ private fun ActionSpeedDialSheet(
                 onClick = onInviteFriend,
             )
             SpeedDialRow(
-                icon  = GroupAddIcon,
+                icon  = RopeTeamIcon,
                 label = stringResource(R.string.friends_action_create_cordada),
                 onClick = onCreateCordada,
             )
@@ -633,10 +901,11 @@ fun FriendsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val genericError = stringResource(R.string.friends_generic_error)
     val createError = stringResource(R.string.cordadas_create_error)
+    val avatarUploadError = stringResource(R.string.cordadas_avatar_upload_error)
 
     LaunchedEffect(cordadasState.error) {
-        cordadasState.error?.let {
-            snackbarHostState.showSnackbar(createError)
+        cordadasState.error?.let { error ->
+            snackbarHostState.showSnackbar(if (error == "avatar_upload_failed") avatarUploadError else createError)
             cordadasVm.clearError()
         }
     }
@@ -708,18 +977,22 @@ fun FriendsScreen(
                 showInviteFriendSheet = false
                 friendsVm.resetInviteState()
             },
-            onSend      = { email -> friendsVm.inviteFriendByEmail(email) },
+            onResolve   = { email -> friendsVm.resolveInvitation(email) },
+            onSendEmail = { email -> friendsVm.inviteFriendByEmail(email) },
         )
     }
 
     // Create cordada
     if (showCreateSheet) {
         CreateCordadaSheet(
-            friends   = friendsState.friends,
+            friends    = friendsState.friends,
+            isCreating = cordadasState.isCreating,
             onDismiss = { showCreateSheet = false },
             onCreate  = { name, desc, memberIds, avatarBytes ->
-                showCreateSheet = false
-                cordadasVm.createCordada(name, desc, memberIds, avatarBytes)
+                cordadasVm.createCordada(name, desc, memberIds, avatarBytes) { cordadaId ->
+                    showCreateSheet = false
+                    onOpenCordada(cordadaId)
+                }
             },
         )
     }
@@ -910,7 +1183,7 @@ private fun UnifiedList(
                         modifier         = Modifier.size(72.dp).clip(CircleShape).background(Color(0xFFEFF6FF)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("🧗", fontSize = 32.sp)
+                        Icon(RopeTeamIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(34.dp))
                     }
                     Text(
                         stringResource(R.string.friends_empty),

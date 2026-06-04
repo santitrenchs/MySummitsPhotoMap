@@ -1,4 +1,6 @@
 <resources>
+    <string name="app_name">Peakadex</string>
+
     <!-- ── Main navigation ───────────────────────────────────────────────────── -->
     <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_cordada">Cordada</string>
@@ -19,6 +21,7 @@
     <string name="action_share">Share</string>
     <string name="action_delete">Delete</string>
     <string name="action_clear">Clear</string>
+    <string name="action_options">Options</string>
 
     <!-- ── Auth / Login ─────────────────────────────────────────────────────── -->
     <string name="auth_email_placeholder">Email</string>
@@ -125,6 +128,9 @@
     <string name="new_ascent_route_placeholder">Route name...</string>
     <string name="new_ascent_notes_placeholder">Add a description, conditions...</string>
     <string name="new_ascent_tag_placeholder">Search person...</string>
+    <string name="capture_reveal_title">Rarity \"%1$s\" captured</string>
+    <string name="capture_reveal_subtitle">New flower added to your cards</string>
+    <string name="capture_reveal_continue">Tap to continue</string>
 
     <!-- ── Settings ─────────────────────────────────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -262,14 +268,32 @@
     <string name="friends_invite_title">Invite a friend</string>
     <string name="friends_invite_subtitle">We\'ll email them to join Peakadex.</string>
     <string name="friends_invite_email_hint">Email address</string>
+    <string name="friends_invite_or">Or</string>
+    <string name="friends_invite_choose_contact">Choose from contacts</string>
+    <string name="friends_invite_choose_contact_subtitle">We\'ll only use the contact you choose</string>
+    <string name="friends_invite_continue_btn">Continue</string>
     <string name="friends_invite_send_btn">Send invitation</string>
     <string name="friends_invite_ok">Invitation sent! We\'ve emailed them.</string>
+    <string name="friends_invite_request_ok">Request sent in Peakadex.</string>
+    <string name="friends_invite_not_registered">They don\'t seem to be on Peakadex yet. Choose how to invite them.</string>
+    <string name="friends_invite_already_friends">You\'re already friends.</string>
+    <string name="friends_invite_request_pending">The request is already pending.</string>
     <string name="friends_invite_already_registered">This user is already on Peakadex. Search for them to add.</string>
+    <string name="friends_invite_channel_title">Invite by</string>
+    <string name="friends_invite_whatsapp">WhatsApp</string>
+    <string name="friends_invite_whatsapp_subtitle">Open WhatsApp with a message</string>
+    <string name="friends_invite_email_channel">Email</string>
+    <string name="friends_invite_no_contact_data">This contact has no available email or phone.</string>
+    <string name="friends_invite_no_contact_data_title">No contact details</string>
+    <string name="friends_invite_no_contact_data_body">This contact has no available email or phone. You can type an email manually.</string>
+    <string name="friends_invite_write_email">Write email</string>
+    <string name="friends_invite_whatsapp_message">Join Peakadex to share ascents and cordadas with me! https://www.peakadex.com</string>
     <string name="friends_invite_self">You can\'t invite yourself.</string>
     <string name="friends_invite_error">Couldn\'t send the invitation. Please try again.</string>
     <string name="friends_confirm_remove">Remove %s from your friends?</string>
     <string name="friends_generic_error">Something went wrong. Please try again.</string>
     <string name="cordadas_create_error">Couldn\'t create the cordada. Please try again.</string>
+    <string name="cordadas_avatar_upload_error">Cordada created, but the image couldn\'t be uploaded.</string>
     <string name="stats_unique_peaks">Summits</string>
     <string name="stats_total_ascents">Ascents</string>
     <string name="stats_max_altitude">Max altitude</string>
@@ -286,7 +310,9 @@
     <string name="cordadas_add_members">Add members</string>
     <string name="cordadas_invites_section">Pending invites</string>
     <string name="cordadas_invite_from">Invited by %s</string>
+    <string name="cordadas_member_singular">1 member</string>
     <string name="cordadas_members">%d members</string>
+    <string name="cordadas_pending_count">%d pending</string>
     <string name="cordadas_owner_badge">Owner</string>
     <string name="cordadas_invite_btn">Invite</string>
     <string name="cordadas_invite_title">Invite to cordada</string>
@@ -297,5 +323,15 @@
     <string name="cordadas_expel">Remove</string>
     <string name="cordadas_confirm_leave">Leave this cordada?</string>
     <string name="cordadas_confirm_delete">Delete this cordada? This action cannot be undone.</string>
+    <string name="cordadas_delete_detail">Deleting this cordada will remove the group and cancel pending invitations. Members\' ascents will not be deleted.</string>
+    <string name="cordadas_delete_confirm_button">Delete permanently</string>
     <string name="cordadas_confirm_expel">Remove this member?</string>
+    <string name="cordadas_pending">Pending</string>
+    <string name="cordadas_founder">Founder</string>
+    <string name="cordadas_of_members_prefix">Cordada of </string>
+    <string name="cordadas_invite_sent_label">Invitation sent</string>
+    <string name="cordadas_add_photo">Add cordada photo</string>
+    <string name="cordadas_photo_hint">Used as cover and avatar</string>
+    <string name="cordadas_edit_photo">Edit photo</string>
+    <string name="cordadas_delete_warning">This action cannot be undone</string>
 </resources>

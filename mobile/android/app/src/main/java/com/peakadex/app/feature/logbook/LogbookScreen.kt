@@ -1,5 +1,7 @@
 package com.peakadex.app.feature.logbook
 
+import android.graphics.Paint
+import android.graphics.RectF
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -32,12 +34,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import android.content.Intent
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
@@ -63,13 +68,18 @@ import androidx.compose.runtime.snapshotFlow
 import coil3.compose.AsyncImage
 import com.peakadex.app.R
 import androidx.compose.ui.res.stringResource
+import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.Ascent
+import com.peakadex.app.core.model.NearbyPeak
+import com.peakadex.app.core.model.Peak
+import com.peakadex.app.core.ui.SkeletonBlock
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBorderLight
 import com.peakadex.app.core.ui.theme.PeakMuted
 import com.peakadex.app.core.ui.RarityInfo
 import com.peakadex.app.core.ui.RARITY_PALETTE
+import com.peakadex.app.core.ui.rememberSkeletonBrush
 import com.peakadex.app.core.ui.rarityForAltitude
 import com.peakadex.app.core.ui.theme.PeakOnSurface
 import com.peakadex.app.core.ui.theme.PeakSubtle
@@ -82,8 +92,70 @@ import kotlin.math.cos
 import kotlin.math.ln
 import kotlin.math.roundToInt
 import kotlin.math.tan
+import kotlin.math.sqrt
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
+
+private const val NEARBY_PEAK_RADIUS_DEGREES = 0.8
+private const val MAX_NEARBY_PEAKS = 5
+private const val MIN_NEARBY_MARKER_DISTANCE_DP = 14f
+
+private data class GridPoint(
+    val xFrac: Float,
+    val yFrac: Float,
+)
+
+private object NearbyPeaksCache {
+    private val cache = mutableMapOf<String, List<NearbyPeak>>()
+    private val inFlight = mutableSetOf<String>()
+
+    fun cached(peakId: String): List<NearbyPeak>? = cache[peakId]
+
+    suspend fun load(peak: Peak): List<NearbyPeak>? {
+        cache[peak.id]?.let { return it }
+        if (!inFlight.add(peak.id)) {
+            while (inFlight.contains(peak.id)) {
+                delay(50)
+                cache[peak.id]?.let { return it }
+            }
+            return cache[peak.id] ?: emptyList()
+        }
+
+        return try {
+            val nearby = AppContainer.apiService
+                .getNearbyPeaks(
+                    lat = peak.latitude,
+                    lng = peak.longitude,
+                    radius = NEARBY_PEAK_RADIUS_DEGREES,
+                )
+                .peaks
+                .asSequence()
+                .filter { it.id != peak.id }
+                .sortedBy { distanceDegreesSquared(peak.latitude, peak.longitude, it.latitude, it.longitude) }
+                .map {
+                    NearbyPeak(
+                        id = it.id,
+                        name = it.name,
+                        nameEn = it.nameEn,
+                        latitude = it.latitude,
+                        longitude = it.longitude,
+                        altitudeM = it.altitudeM,
+                        rarityId = it.rarityId,
+                    )
+                }
+                .toList()
+            cache[peak.id] = nearby
+            nearby
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.d("CardMiniMap", "nearby peaks fetch failed for ${peak.id}: ${e.message}")
+            emptyList()
+        } finally {
+            inFlight.remove(peak.id)
+        }
+    }
+}
 
 // Returns a 2×2 grid of tile coordinates surrounding the peak, chosen so the peak
 // lands as close to the centre of the composed grid as possible.
@@ -95,7 +167,7 @@ private data class PeakTileGrid(
     val zoom: Int,
 )
 
-private fun peakTileGrid(lat: Double, lon: Double, zoom: Int = 10): PeakTileGrid {
+private fun peakTileGrid(lat: Double, lon: Double, zoom: Int = 12): PeakTileGrid {
     val n      = 1 shl zoom
     val xCont  = (lon + 180.0) / 360.0 * n
     val latRad = Math.toRadians(lat)
@@ -127,6 +199,18 @@ private fun peakTileGrid(lat: Double, lon: Double, zoom: Int = 10): PeakTileGrid
         peakGridFracX = peakGridFracX,
         peakGridFracY = peakGridFracY,
         zoom          = zoom,
+    )
+}
+
+private fun gridPointFor(lat: Double, lon: Double, grid: PeakTileGrid): GridPoint {
+    val n = 1 shl grid.zoom
+    val xCont = (lon + 180.0) / 360.0 * n
+    val latRad = Math.toRadians(lat)
+    val yCont = (1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n
+
+    return GridPoint(
+        xFrac = ((xCont - grid.cols.first()) / 2.0).toFloat(),
+        yFrac = ((yCont - grid.rows.first()) / 2.0).toFloat(),
     )
 }
 
@@ -677,8 +761,21 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
 // The dot is always drawn at the container centre, matching the map below it.
 
 @Composable
-private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.ui.graphics.Color) {
-    val grid = remember(lat, lng) { peakTileGrid(lat, lng) }
+private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Color) {
+    val grid = remember(peak.latitude, peak.longitude) { peakTileGrid(peak.latitude, peak.longitude) }
+    val precalculatedNearbyPeaks = peak.nearbyPeaks
+    var nearbyPeaks by remember(peak.id) {
+        mutableStateOf(precalculatedNearbyPeaks ?: NearbyPeaksCache.cached(peak.id).orEmpty())
+    }
+
+    LaunchedEffect(peak.id, precalculatedNearbyPeaks) {
+        if (precalculatedNearbyPeaks != null) {
+            nearbyPeaks = precalculatedNearbyPeaks
+        } else if (nearbyPeaks.isEmpty()) {
+            android.util.Log.d("CardMiniMap", "nearbyPeaks missing in ascent payload for ${peak.id}; falling back to API")
+            NearbyPeaksCache.load(peak)?.let { nearbyPeaks = it }
+        }
+    }
 
     val density = LocalDensity.current
 
@@ -724,14 +821,114 @@ private fun CardMiniMap(lat: Double, lng: Double, rarityColor: androidx.compose.
             }
         }
 
-        // Peak dot is always at the exact centre of the container.
+        // Nearby peaks are secondary: smaller, hollow, and collision-culled so
+        // dense ranges don't turn into an unreadable stack of dots.
         Canvas(modifier = Modifier.fillMaxSize()) {
             val cx = size.width  / 2f
             val cy = size.height / 2f
+            val minDist = MIN_NEARBY_MARKER_DISTANCE_DP.dp.toPx()
+            val placed = mutableListOf<androidx.compose.ui.geometry.Offset>()
+            val labelRects = mutableListOf<RectF>()
+            val mainPeakGuard = RectF(cx - 82.dp.toPx(), cy - 38.dp.toPx(), cx + 82.dp.toPx(), cy + 54.dp.toPx())
+            val labelMaxWidth = 104.dp.toPx()
+            val labelGap = 8.dp.toPx()
+            val labelTextSize = 8.5.sp.toPx()
+            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color(0xFF1E293B).toArgb()
+                textSize = labelTextSize
+                typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            }
+            val labelHaloPaint = Paint(labelPaint).apply {
+                color = Color.White.copy(alpha = 0.92f).toArgb()
+                style = Paint.Style.STROKE
+                strokeWidth = 3.dp.toPx()
+                strokeJoin = Paint.Join.ROUND
+            }
+            val labelMetrics = labelPaint.fontMetrics
+            val labelHeight = labelMetrics.descent - labelMetrics.ascent
+            val labelBottomLimit = size.height - 126.dp.toPx()
+
+            nearbyPeaks.forEach { nearby ->
+                if (placed.size >= MAX_NEARBY_PEAKS) return@forEach
+                val p = gridPointFor(nearby.latitude, nearby.longitude, grid)
+                val x = offX + gridPx * p.xFrac
+                val y = offY + gridPx * p.yFrac
+                if (x < 10.dp.toPx() || x > size.width - 10.dp.toPx()) return@forEach
+                if (y < 10.dp.toPx() || y > size.height - 10.dp.toPx()) return@forEach
+
+                val pos = androidx.compose.ui.geometry.Offset(x, y)
+                val tooCloseToMain = distance(pos, androidx.compose.ui.geometry.Offset(cx, cy)) < minDist
+                val tooCloseToOther = placed.any { distance(pos, it) < minDist }
+                if (tooCloseToMain || tooCloseToOther) return@forEach
+
+                placed.add(pos)
+                drawCircle(color = Color.White.copy(alpha = 0.90f), radius = 6.dp.toPx(), center = pos)
+                drawCircle(
+                    color = Color(0xFF1E293B).copy(alpha = 0.58f),
+                    radius = 4.dp.toPx(),
+                    center = pos,
+                    style = Stroke(width = 1.5.dp.toPx()),
+                )
+
+                if (pos.y < labelBottomLimit) {
+                    val rawLabel = "${nearby.name} · ${nearby.altitudeM} m"
+                    val label = fitTextToWidth(rawLabel, labelPaint, labelMaxWidth)
+                    val labelWidth = labelPaint.measureText(label)
+                    val baselineY = pos.y + (labelHeight / 2f) - labelMetrics.descent
+                    val rightRect = RectF(
+                        pos.x + labelGap,
+                        baselineY + labelMetrics.ascent - 3.dp.toPx(),
+                        pos.x + labelGap + labelWidth,
+                        baselineY + labelMetrics.descent + 3.dp.toPx(),
+                    )
+                    val leftRect = RectF(
+                        pos.x - labelGap - labelWidth,
+                        rightRect.top,
+                        pos.x - labelGap,
+                        rightRect.bottom,
+                    )
+                    val labelRect = listOf(rightRect, leftRect).firstOrNull { rect ->
+                        rect.left >= 8.dp.toPx() &&
+                            rect.right <= size.width - 8.dp.toPx() &&
+                            !RectF.intersects(rect, mainPeakGuard) &&
+                            labelRects.none { RectF.intersects(rect, it) }
+                    }
+                    if (labelRect != null) {
+                        labelRects.add(labelRect)
+                        val textX = labelRect.left
+                        drawContext.canvas.nativeCanvas.drawText(label, textX, baselineY, labelHaloPaint)
+                        drawContext.canvas.nativeCanvas.drawText(label, textX, baselineY, labelPaint)
+                    }
+                }
+            }
+
+            // Peak dot is always at the exact centre of the container.
             drawCircle(color = Color.White, radius = 11.dp.toPx(), center = androidx.compose.ui.geometry.Offset(cx, cy))
             drawCircle(color = rarityColor,  radius =  8.dp.toPx(), center = androidx.compose.ui.geometry.Offset(cx, cy))
         }
     }
+}
+
+private fun distance(a: androidx.compose.ui.geometry.Offset, b: androidx.compose.ui.geometry.Offset): Float {
+    val dx = a.x - b.x
+    val dy = a.y - b.y
+    return sqrt(dx * dx + dy * dy)
+}
+
+private fun distanceDegreesSquared(latA: Double, lonA: Double, latB: Double, lonB: Double): Double {
+    val dLat = latA - latB
+    val dLon = lonA - lonB
+    return dLat * dLat + dLon * dLon
+}
+
+private fun fitTextToWidth(text: String, paint: Paint, maxWidth: Float): String {
+    if (paint.measureText(text) <= maxWidth) return text
+    val suffix = "..."
+    var end = text.length
+    while (end > 0 && paint.measureText(text.substring(0, end).trimEnd() + suffix) > maxWidth) {
+        end--
+    }
+    return if (end <= 0) suffix else text.substring(0, end).trimEnd() + suffix
 }
 
 // ── Elevation profile ──────────────────────────────────────────────────────────
@@ -850,7 +1047,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                     .clip(RoundedCornerShape(18.dp))
                     .background(Color(0xFF0A1929)),
             ) {
-                CardMiniMap(lat = ascent.peak.latitude, lng = ascent.peak.longitude, rarityColor = rarity.color)
+                CardMiniMap(peak = ascent.peak, rarityColor = rarity.color)
                 // Bottom gradient — just tall enough to sit above the peak name/profile overlay
                 Box(modifier = Modifier.fillMaxWidth().height(160.dp).align(Alignment.BottomStart)
                     .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.4f to Color(0x8007121F), 1f to Color(0xE007121F)))))
@@ -967,7 +1164,102 @@ private fun LogbookNoResultsState() {
 
 @Composable
 private fun LogbookLoadingState() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PeakBlueActive) }
+    val shimmer = rememberSkeletonBrush("cardsSkeleton")
+
+    LazyColumn(
+        contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        modifier            = Modifier.fillMaxSize(),
+    ) {
+        items(3) {
+            CardSkeleton(shimmer)
+        }
+    }
+}
+
+@Composable
+private fun CardSkeleton(brush: Brush) {
+    Surface(
+        modifier        = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation     = 8.dp,
+                shape         = RoundedCornerShape(28.dp),
+                clip          = false,
+                ambientColor  = Color(0x1A0D2538),
+                spotColor     = Color(0x1A0D2538),
+            ),
+        shape           = RoundedCornerShape(28.dp),
+        color           = Color.White,
+        shadowElevation = 0.dp,
+    ) {
+        Column(Modifier.fillMaxWidth().padding(7.dp)) {
+            Row(
+                modifier          = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SkeletonBlock(brush, Modifier.size(32.dp), RoundedCornerShape(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.38f).height(13.dp))
+                    Spacer(Modifier.height(5.dp))
+                    SkeletonBlock(brush, Modifier.width(74.dp).height(11.dp))
+                }
+                SkeletonBlock(brush, Modifier.size(28.dp), RoundedCornerShape(14.dp))
+                Spacer(Modifier.width(2.dp))
+                SkeletonBlock(brush, Modifier.size(28.dp), RoundedCornerShape(14.dp))
+            }
+
+            Spacer(Modifier.height(2.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 3.dp)
+                    .aspectRatio(4f / 5f)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                SkeletonBlock(brush, Modifier.fillMaxSize(), RoundedCornerShape(18.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomStart)
+                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                ) {
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.72f).height(26.dp))
+                    Spacer(Modifier.height(6.dp))
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.48f).height(13.dp))
+                    Spacer(Modifier.height(5.dp))
+                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.56f).height(10.dp))
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+
+            Row(
+                modifier              = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                repeat(3) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFF8FAFC))
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        SkeletonBlock(brush, Modifier.fillMaxWidth(0.62f).height(9.dp))
+                        Spacer(Modifier.height(4.dp))
+                        SkeletonBlock(brush, Modifier.fillMaxWidth(0.74f).height(12.dp))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(3.dp))
+        }
+    }
 }
 
 @Composable

@@ -47,6 +47,8 @@ model Peak {
   isMythic          Boolean  @default(false)
   rarityId          String?
   elevationProfile  Json?
+  nearbyPeaks       Json?
+  nearbyPeaksUpdatedAt DateTime?
   createdAt         DateTime @default(now())
 
   osmId     String?        @unique
@@ -442,4 +444,3 @@ model LegalConsent {
   @@index([userId])
   @@map("legal_consents")
 }
-

@@ -1,5 +1,7 @@
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { prisma } from "@/lib/db/client";
+import { ensureElevationProfileForPeak } from "@/lib/services/elevation.service";
+import { ensureNearbyPeaksForPeak } from "@/lib/services/nearby-peaks.service";
 
 export type CreateAscentInput = {
   peakId: string;
@@ -10,7 +12,7 @@ export type CreateAscentInput = {
 };
 
 const PEAK_SELECT = {
-  select: { id: true, name: true, nameEn: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true, isMythic: true, elevationProfile: true },
+  select: { id: true, name: true, nameEn: true, altitudeM: true, mountainRange: true, latitude: true, longitude: true, isMythic: true, elevationProfile: true, nearbyPeaks: true },
 } as const;
 
 const PHOTOS_SELECT = {
@@ -183,7 +185,7 @@ export async function createAscent(
   input: CreateAscentInput
 ) {
   const db = await getTenantConnection(tenantId);
-  return db.ascent.create({
+  const ascent = await db.ascent.create({
     data: {
       tenantId,
       peakId: input.peakId,
@@ -196,6 +198,21 @@ export async function createAscent(
       peak: { select: { id: true, name: true, altitudeM: true } },
     },
   });
+
+  await Promise.allSettled([
+    ensureElevationProfileForPeak(input.peakId),
+    ensureNearbyPeaksForPeak(input.peakId),
+  ]).then((results) => {
+    const [elevationResult, nearbyResult] = results;
+    if (elevationResult.status === "rejected") {
+      console.error(`[elevation] Failed to cache profile for peak ${input.peakId}:`, elevationResult.reason);
+    }
+    if (nearbyResult.status === "rejected") {
+      console.error(`[nearby-peaks] Failed to cache neighbors for peak ${input.peakId}:`, nearbyResult.reason);
+    }
+  });
+
+  return ascent;
 }
 
 export async function deleteAscent(tenantId: string, ascentId: string, userId: string) {

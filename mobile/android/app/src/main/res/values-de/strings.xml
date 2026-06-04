@@ -1,4 +1,6 @@
 <resources>
+    <string name="app_name">Peakadex</string>
+
     <!-- ── Hauptnavigation ───────────────────────────────────────────────────── -->
     <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_cordada">Cordada</string>
@@ -19,6 +21,7 @@
     <string name="action_share">Teilen</string>
     <string name="action_delete">Löschen</string>
     <string name="action_clear">Leeren</string>
+    <string name="action_options">Optionen</string>
 
     <!-- ── Anmeldung ─────────────────────────────────────────────────────────── -->
     <string name="auth_email_placeholder">E-Mail</string>
@@ -125,6 +128,9 @@
     <string name="new_ascent_route_placeholder">Name der Route...</string>
     <string name="new_ascent_notes_placeholder">Beschreibung, Bedingungen hinzufügen...</string>
     <string name="new_ascent_tag_placeholder">Person suchen...</string>
+    <string name="capture_reveal_title">Seltenheit \"%1$s\" erfasst</string>
+    <string name="capture_reveal_subtitle">Neue Blume zu deinen Cards hinzugefügt</string>
+    <string name="capture_reveal_continue">Tippen zum Fortfahren</string>
 
     <!-- ── Einstellungen ─────────────────────────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -262,14 +268,32 @@
     <string name="friends_invite_title">Freund einladen</string>
     <string name="friends_invite_subtitle">Wir senden ihm eine E-Mail, um Peakadex beizutreten.</string>
     <string name="friends_invite_email_hint">E-Mail-Adresse</string>
+    <string name="friends_invite_or">Oder</string>
+    <string name="friends_invite_choose_contact">Aus Kontakten wählen</string>
+    <string name="friends_invite_choose_contact_subtitle">Wir verwenden nur den ausgewählten Kontakt</string>
+    <string name="friends_invite_continue_btn">Weiter</string>
     <string name="friends_invite_send_btn">Einladung senden</string>
     <string name="friends_invite_ok">Einladung gesendet! Wir haben eine E-Mail verschickt.</string>
+    <string name="friends_invite_request_ok">Anfrage in Peakadex gesendet.</string>
+    <string name="friends_invite_not_registered">Diese Person scheint noch nicht bei Peakadex zu sein. Wähle aus, wie du sie einladen möchtest.</string>
+    <string name="friends_invite_already_friends">Ihr seid bereits befreundet.</string>
+    <string name="friends_invite_request_pending">Die Anfrage ist bereits ausstehend.</string>
     <string name="friends_invite_already_registered">Dieser Nutzer ist bereits bei Peakadex. Suche ihn, um ihn hinzuzufügen.</string>
+    <string name="friends_invite_channel_title">Einladen per</string>
+    <string name="friends_invite_whatsapp">WhatsApp</string>
+    <string name="friends_invite_whatsapp_subtitle">WhatsApp mit einer Nachricht öffnen</string>
+    <string name="friends_invite_email_channel">E-Mail</string>
+    <string name="friends_invite_no_contact_data">Dieser Kontakt hat keine verfügbare E-Mail oder Telefonnummer.</string>
+    <string name="friends_invite_no_contact_data_title">Keine Kontaktdaten</string>
+    <string name="friends_invite_no_contact_data_body">Dieser Kontakt hat keine verfügbare E-Mail oder Telefonnummer. Du kannst eine E-Mail manuell eingeben.</string>
+    <string name="friends_invite_write_email">E-Mail eingeben</string>
+    <string name="friends_invite_whatsapp_message">Tritt Peakadex bei, um Aufstiege und Cordadas mit mir zu teilen! https://www.peakadex.com</string>
     <string name="friends_invite_self">Du kannst dich nicht selbst einladen.</string>
     <string name="friends_invite_error">Einladung konnte nicht gesendet werden. Bitte erneut versuchen.</string>
     <string name="friends_confirm_remove">%s aus deinen Freunden entfernen?</string>
     <string name="friends_generic_error">Etwas ist schiefgelaufen. Bitte erneut versuchen.</string>
     <string name="cordadas_create_error">Cordada konnte nicht erstellt werden. Bitte erneut versuchen.</string>
+    <string name="cordadas_avatar_upload_error">Cordada erstellt, aber das Bild konnte nicht hochgeladen werden.</string>
     <string name="stats_unique_peaks">Gipfel</string>
     <string name="stats_total_ascents">Besteigungen</string>
     <string name="stats_max_altitude">Max. Höhe</string>
@@ -286,7 +310,9 @@
     <string name="cordadas_add_members">Mitglieder hinzufügen</string>
     <string name="cordadas_invites_section">Ausstehende Einladungen</string>
     <string name="cordadas_invite_from">Eingeladen von %s</string>
+    <string name="cordadas_member_singular">1 Mitglied</string>
     <string name="cordadas_members">%d Mitglieder</string>
+    <string name="cordadas_pending_count">%d ausstehend</string>
     <string name="cordadas_owner_badge">Eigentümer</string>
     <string name="cordadas_invite_btn">Einladen</string>
     <string name="cordadas_invite_title">Zur Cordada einladen</string>
@@ -297,5 +323,15 @@
     <string name="cordadas_expel">Entfernen</string>
     <string name="cordadas_confirm_leave">Diese Cordada verlassen?</string>
     <string name="cordadas_confirm_delete">Cordada löschen? Diese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="cordadas_delete_detail">Wenn du diese Cordada löschst, wird die Gruppe entfernt und ausstehende Einladungen werden storniert. Die Besteigungen der Mitglieder werden nicht gelöscht.</string>
+    <string name="cordadas_delete_confirm_button">Endgültig löschen</string>
     <string name="cordadas_confirm_expel">Dieses Mitglied entfernen?</string>
+    <string name="cordadas_pending">Ausstehend</string>
+    <string name="cordadas_founder">Gründer</string>
+    <string name="cordadas_of_members_prefix">Cordada von </string>
+    <string name="cordadas_invite_sent_label">Einladung gesendet</string>
+    <string name="cordadas_add_photo">Cordada-Foto hinzufügen</string>
+    <string name="cordadas_photo_hint">Wird als Titelbild und Avatar verwendet</string>
+    <string name="cordadas_edit_photo">Foto bearbeiten</string>
+    <string name="cordadas_delete_warning">Diese Aktion kann nicht rückgängig gemacht werden</string>
 </resources>

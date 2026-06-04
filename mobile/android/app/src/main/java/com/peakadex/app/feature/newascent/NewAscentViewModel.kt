@@ -8,6 +8,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.CreateAscentRequest
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Person
@@ -197,7 +198,7 @@ class NewAscentViewModel : ViewModel() {
 
     // ── Submit ─────────────────────────────────────────────────────────────────
 
-    fun submit(onSuccess: (ascentId: String, taggingWarning: String?) -> Unit) {
+    fun submit(onSuccess: (ascent: Ascent, taggingWarning: String?) -> Unit) {
         val s = _state.value
         if (s.selectedPeak == null) { _state.update { it.copy(error = "Selecciona una cima") }; return }
         val bitmap = s.croppedBitmap ?: run { _state.update { it.copy(error = "La foto es obligatoria") }; return }
@@ -240,7 +241,7 @@ class NewAscentViewModel : ViewModel() {
                 else null
 
                 _state.update { it.copy(isLoading = false) }
-                onSuccess(ascent.id, warning)
+                onSuccess(ascent, warning)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

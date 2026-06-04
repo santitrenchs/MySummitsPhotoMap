@@ -1,4 +1,6 @@
 <resources>
+    <string name="app_name">Peakadex</string>
+
     <!-- ── Navegació principal ───────────────────────────────────────────────── -->
     <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_cordada">Cordada</string>
@@ -19,6 +21,7 @@
     <string name="action_share">Compartir</string>
     <string name="action_delete">Eliminar</string>
     <string name="action_clear">Netejar</string>
+    <string name="action_options">Opcions</string>
 
     <!-- ── Autenticació / Login ─────────────────────────────────────────────── -->
     <string name="auth_email_placeholder">Correu electrònic</string>
@@ -125,6 +128,9 @@
     <string name="new_ascent_route_placeholder">Nom de la ruta...</string>
     <string name="new_ascent_notes_placeholder">Afegeix una descripció, condicions...</string>
     <string name="new_ascent_tag_placeholder">Cercar persona...</string>
+    <string name="capture_reveal_title">Raresa \"%1$s\" capturada</string>
+    <string name="capture_reveal_subtitle">Nova flor afegida a les teves cards</string>
+    <string name="capture_reveal_continue">Toca per continuar</string>
 
     <!-- ── Ajustos ───────────────────────────────────────────────────────────── -->
     <string name="settings_title">Ajustos</string>
@@ -262,14 +268,32 @@
     <string name="friends_invite_title">Convidar un amic</string>
     <string name="friends_invite_subtitle">Li enviarem un correu perquè s\'uneixi a Peakadex.</string>
     <string name="friends_invite_email_hint">Correu electrònic</string>
+    <string name="friends_invite_or">O</string>
+    <string name="friends_invite_choose_contact">Triar de contactes</string>
+    <string name="friends_invite_choose_contact_subtitle">Només usarem el contacte que triïs</string>
+    <string name="friends_invite_continue_btn">Continuar</string>
     <string name="friends_invite_send_btn">Enviar invitació</string>
     <string name="friends_invite_ok">Invitació enviada! Li hem enviat un correu.</string>
+    <string name="friends_invite_request_ok">Sol·licitud enviada a Peakadex.</string>
+    <string name="friends_invite_not_registered">No sembla que sigui a Peakadex. Tria com convidar-lo.</string>
+    <string name="friends_invite_already_friends">Ja sou amics.</string>
+    <string name="friends_invite_request_pending">La sol·licitud ja està pendent.</string>
     <string name="friends_invite_already_registered">Aquest usuari ja és a Peakadex. Cerca\'l per afegir-lo.</string>
+    <string name="friends_invite_channel_title">Convidar per</string>
+    <string name="friends_invite_whatsapp">WhatsApp</string>
+    <string name="friends_invite_whatsapp_subtitle">Obrir WhatsApp amb un missatge</string>
+    <string name="friends_invite_email_channel">Email</string>
+    <string name="friends_invite_no_contact_data">Aquest contacte no té email ni telèfon disponible.</string>
+    <string name="friends_invite_no_contact_data_title">Sense dades de contacte</string>
+    <string name="friends_invite_no_contact_data_body">Aquest contacte no té email ni telèfon disponible. Pots escriure un email manualment.</string>
+    <string name="friends_invite_write_email">Escriure email</string>
+    <string name="friends_invite_whatsapp_message">Uneix-te a Peakadex per compartir ascensions i cordades amb mi! https://www.peakadex.com</string>
     <string name="friends_invite_self">No pots convidar-te a tu mateix.</string>
     <string name="friends_invite_error">No s\'ha pogut enviar la invitació. Torna-ho a provar.</string>
     <string name="friends_confirm_remove">Vols eliminar %s dels teus amics?</string>
     <string name="friends_generic_error">Alguna cosa ha anat malament. Torna-ho a provar.</string>
     <string name="cordadas_create_error">No s\'ha pogut crear la cordada. Torna-ho a provar.</string>
+    <string name="cordadas_avatar_upload_error">Cordada creada, però no s\'ha pogut pujar la imatge.</string>
     <string name="stats_unique_peaks">Cims</string>
     <string name="stats_total_ascents">Ascensions</string>
     <string name="stats_max_altitude">Altitud màx.</string>
@@ -286,7 +310,9 @@
     <string name="cordadas_add_members">Afegir membres</string>
     <string name="cordadas_invites_section">Invitacions pendents</string>
     <string name="cordadas_invite_from">Convidat per %s</string>
+    <string name="cordadas_member_singular">1 membre</string>
     <string name="cordadas_members">%d membres</string>
+    <string name="cordadas_pending_count">%d pendents</string>
     <string name="cordadas_owner_badge">Propietari</string>
     <string name="cordadas_invite_btn">Convidar</string>
     <string name="cordadas_invite_title">Convidar a la cordada</string>
@@ -297,5 +323,15 @@
     <string name="cordadas_expel">Expulsar</string>
     <string name="cordadas_confirm_leave">Sortir d\'aquesta cordada?</string>
     <string name="cordadas_confirm_delete">Eliminar la cordada? Aquesta acció no es pot desfer.</string>
+    <string name="cordadas_delete_detail">Eliminar aquesta cordada esborrarà el grup i cancel·larà les invitacions pendents. Les ascensions dels membres no s\'eliminaran.</string>
+    <string name="cordadas_delete_confirm_button">Eliminar definitivament</string>
     <string name="cordadas_confirm_expel">Expulsar aquest membre?</string>
+    <string name="cordadas_pending">Pendent</string>
+    <string name="cordadas_founder">Fundador</string>
+    <string name="cordadas_of_members_prefix">Cordada de </string>
+    <string name="cordadas_invite_sent_label">Invitació enviada</string>
+    <string name="cordadas_add_photo">Afegir foto de cordada</string>
+    <string name="cordadas_photo_hint">S\'usarà com a portada i avatar</string>
+    <string name="cordadas_edit_photo">Editar foto</string>
+    <string name="cordadas_delete_warning">Aquesta acció no es pot desfer</string>
 </resources>

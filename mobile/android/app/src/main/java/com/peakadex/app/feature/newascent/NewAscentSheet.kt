@@ -1,7 +1,9 @@
 package com.peakadex.app.feature.newascent
 
 import android.graphics.Bitmap
-import android.graphics.Matrix
+import android.graphics.Color as AndroidColor
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,11 +12,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -58,7 +58,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,20 +77,22 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 import com.peakadex.app.R
 import androidx.compose.ui.res.stringResource
+import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Person
 import com.peakadex.app.core.ui.theme.PeakBlueActive
@@ -115,7 +116,7 @@ import java.time.format.FormatStyle
 @Composable
 fun NewAscentSheet(
     onDismiss: () -> Unit,
-    onSuccess: (ascentId: String, taggingWarning: String?) -> Unit = { _, _ -> },
+    onSuccess: (ascent: Ascent, taggingWarning: String?) -> Unit = { _, _ -> },
     initialPeakId: String? = null,
     initialPeakName: String? = null,
     vm: NewAscentViewModel = viewModel(),
@@ -175,7 +176,7 @@ fun NewAscentSheet(
                 state    = state,
                 vm       = vm,
                 onBack   = vm::onFormBack,
-                onSubmit = { vm.submit { ascentId, warning -> onSuccess(ascentId, warning); onDismiss() } },
+                onSubmit = { vm.submit { ascent, warning -> onSuccess(ascent, warning); onDismiss() } },
                 onClose  = { scope.launch { sheetState.hide(); onDismiss() } },
             )
         }
@@ -263,198 +264,113 @@ private fun PhotoCropStep(
     onBack: () -> Unit,
     onDone: (Bitmap) -> Unit,
 ) {
-    // currentBitmap holds the displayed (possibly user-rotated) bitmap
-    var currentBitmap by remember { mutableStateOf(bitmap) }
-    var scale  by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
+    var cropImageView by remember { mutableStateOf<CropImageView?>(null) }
+    var cropError by remember { mutableStateOf<String?>(null) }
 
-    BoxWithConstraints(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
             .systemBarsPadding(),
     ) {
-        if (constraints.maxWidth == 0 || constraints.maxHeight == 0) return@BoxWithConstraints
-
-        val density    = LocalDensity.current
-        val containerW = constraints.maxWidth.toFloat()
-        val containerH = constraints.maxHeight.toFloat()
-
-        // Controls bar height: slider row (48dp) + rotate+next row (56dp) + padding (32dp)
-        val controlsHeightPx = with(density) { 136.dp.toPx() }
-        val cropAreaH = (containerH - controlsHeightPx).coerceAtLeast(1f)
-
-        // Crop rect — 92% of width, always 4:5 portrait
-        val cropW    = containerW * 0.92f
-        val cropH    = cropW * 5f / 4f
-        val cropLeft = (containerW - cropW) / 2f
-        val cropTop  = ((cropAreaH - cropH) / 2f).coerceAtLeast(0f)
-
-        val bW = currentBitmap.width.toFloat()
-        val bH = currentBitmap.height.toFloat()
-        val minScale = maxOf(cropW / bW, cropH / bH)
-        val maxScale = minScale * 4f
-
-        LaunchedEffect(currentBitmap) {
-            scale  = minScale
-            offset = Offset.Zero
-        }
-
-        fun clamp(off: Offset, s: Float): Offset {
-            val halfW = bW * s / 2f
-            val halfH = bH * s / 2f
-            val cx    = containerW / 2f + off.x
-            val cy    = cropAreaH  / 2f + off.y
-            return Offset(
-                cx.coerceIn(cropLeft + cropW - halfW, cropLeft + halfW) - containerW / 2f,
-                cy.coerceIn(cropTop  + cropH - halfH, cropTop  + halfH) - cropAreaH  / 2f,
-            )
-        }
-
-        Column(modifier = Modifier.fillMaxSize()) {
-
-            // ── Crop canvas ──────────────────────────────────────────────────
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .pointerInput(currentBitmap) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            val newScale  = (scale * zoom).coerceIn(minScale, maxScale)
-                            val newOffset = clamp(offset + pan, newScale)
-                            scale  = newScale
-                            offset = newOffset
-                        }
-                    },
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val imgCx = size.width  / 2f + offset.x
-                    val imgCy = size.height / 2f + offset.y
-
-                    withTransform({
-                        translate(imgCx, imgCy)
-                        scale(scale, scale)
-                        translate(-bW / 2f, -bH / 2f)
-                    }) {
-                        drawImage(currentBitmap.asImageBitmap())
-                    }
-
-                    // Dark overlay (4 rects around crop)
-                    val overlay = Color.Black.copy(alpha = 0.55f)
-                    if (cropTop > 0f)
-                        drawRect(overlay, Offset.Zero, Size(size.width, cropTop))
-                    if (cropTop + cropH < size.height)
-                        drawRect(overlay, Offset(0f, cropTop + cropH), Size(size.width, size.height - cropTop - cropH))
-                    drawRect(overlay, Offset(0f, cropTop),                Size(cropLeft, cropH))
-                    drawRect(overlay, Offset(cropLeft + cropW, cropTop),  Size(size.width - cropLeft - cropW, cropH))
-
-                    // White crop border
-                    drawRect(
-                        color   = Color.White.copy(alpha = 0.85f),
-                        topLeft = Offset(cropLeft, cropTop),
-                        size    = Size(cropW, cropH),
-                        style   = Stroke(width = 2f),
+        AndroidView(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            factory = { context ->
+                CropImageView(context).apply {
+                    layoutParams = FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
                     )
-                    // Rule-of-thirds grid
-                    val gridColor = Color.White.copy(alpha = 0.25f)
-                    listOf(1f/3f, 2f/3f).forEach { f ->
-                        drawLine(gridColor, Offset(cropLeft + cropW*f, cropTop), Offset(cropLeft + cropW*f, cropTop + cropH), 1f)
-                        drawLine(gridColor, Offset(cropLeft, cropTop + cropH*f), Offset(cropLeft + cropW, cropTop + cropH*f), 1f)
-                    }
-                    // L-corner markers
-                    val cLen = 22f; val cSw = 3f
-                    fun corner(x: Float, y: Float, dx: Float, dy: Float) {
-                        drawLine(Color.White, Offset(x, y), Offset(x + dx*cLen, y), cSw, StrokeCap.Round)
-                        drawLine(Color.White, Offset(x, y), Offset(x, y + dy*cLen), cSw, StrokeCap.Round)
-                    }
-                    corner(cropLeft,         cropTop,          1f,  1f)
-                    corner(cropLeft + cropW, cropTop,         -1f,  1f)
-                    corner(cropLeft,         cropTop + cropH,  1f, -1f)
-                    corner(cropLeft + cropW, cropTop + cropH, -1f, -1f)
-                }
-            }
-
-            // ── Controls bar ─────────────────────────────────────────────────
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF111111))
-                    .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                // Zoom slider (mirrors web range input)
-                Row(
-                    modifier          = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("−", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp)
-                    androidx.compose.material3.Slider(
-                        value         = ((scale - minScale) / (maxScale - minScale)).coerceIn(0f, 1f),
-                        onValueChange = { v ->
-                            val newScale = minScale + v * (maxScale - minScale)
-                            scale  = newScale
-                            offset = clamp(offset, newScale)
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors   = androidx.compose.material3.SliderDefaults.colors(
-                            thumbColor       = Color.White,
-                            activeTrackColor = Color.White,
-                            inactiveTrackColor = Color.White.copy(alpha = 0.25f),
+                    setBackgroundColor(AndroidColor.BLACK)
+                    setImageCropOptions(
+                        CropImageOptions(
+                            cropShape = CropImageView.CropShape.RECTANGLE,
+                            cornerShape = CropImageView.CropCornerShape.RECTANGLE,
+                            guidelines = CropImageView.Guidelines.ON,
+                            scaleType = CropImageView.ScaleType.FIT_CENTER,
+                            fixAspectRatio = true,
+                            aspectRatioX = 4,
+                            aspectRatioY = 5,
+                            autoZoomEnabled = true,
+                            multiTouchEnabled = true,
+                            centerMoveEnabled = true,
+                            maxZoom = 4,
+                            initialCropWindowPaddingRatio = 0.04f,
+                            borderLineThickness = 2f,
+                            borderLineColor = AndroidColor.argb(220, 255, 255, 255),
+                            borderCornerThickness = 3f,
+                            borderCornerColor = AndroidColor.WHITE,
+                            guidelinesThickness = 1f,
+                            guidelinesColor = AndroidColor.argb(90, 255, 255, 255),
+                            backgroundColor = AndroidColor.argb(150, 0, 0, 0),
+                            showProgressBar = false,
                         ),
                     )
-                    Text("+", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp)
+                    setImageBitmap(bitmap)
+                    tag = bitmap
+                    cropImageView = this
+                }
+            },
+            update = { view ->
+                if (view.tag !== bitmap) {
+                    view.setImageBitmap(bitmap)
+                    view.tag = bitmap
+                }
+                cropImageView = view
+            },
+        )
+
+        // ── Controls bar ─────────────────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF111111))
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            cropError?.let {
+                Text(it, color = Color(0xFFEF4444), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp))
+            }
+
+            Row(
+                modifier             = Modifier.fillMaxWidth(),
+                verticalAlignment    = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(BackArrowIcon, contentDescription = stringResource(R.string.action_back), tint = Color.White)
                 }
 
-                // Rotate + Next row
-                Row(
-                    modifier             = Modifier.fillMaxWidth(),
-                    verticalAlignment    = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    // Back
-                    IconButton(onClick = onBack) {
-                        Icon(BackArrowIcon, contentDescription = stringResource(R.string.action_back), tint = Color.White)
-                    }
+                TextButton(onClick = {
+                    cropError = null
+                    cropImageView?.rotateImage(90)
+                }) {
+                    Icon(RotateIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Text(stringResource(R.string.new_ascent_rotate_btn), color = Color.White, fontSize = 13.sp)
+                }
 
-                    // Rotate 90°
-                    TextButton(onClick = {
-                        val m = Matrix().apply { postRotate(90f) }
-                        currentBitmap = Bitmap.createBitmap(
-                            currentBitmap, 0, 0,
-                            currentBitmap.width, currentBitmap.height,
-                            m, true,
+                Button(
+                    onClick = {
+                        val cropped = cropImageView?.getCroppedImage(
+                            1080,
+                            1350,
+                            CropImageView.RequestSizeOptions.RESIZE_FIT,
                         )
-                    }) {
-                        Icon(RotateIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        Text(stringResource(R.string.new_ascent_rotate_btn), color = Color.White, fontSize = 13.sp)
-                    }
-
-                    // Next
-                    Button(
-                        onClick = {
-                            val s   = scale; val off = offset
-                            val bwF = currentBitmap.width.toFloat()
-                            val bhF = currentBitmap.height.toFloat()
-                            val imgCx   = containerW / 2f + off.x
-                            val imgCy   = cropAreaH  / 2f + off.y
-                            val imgLeft = imgCx - bwF * s / 2f
-                            val imgTop  = imgCy - bhF * s / 2f
-
-                            val srcX = ((cropLeft - imgLeft) / s).coerceAtLeast(0f).toInt()
-                            val srcY = ((cropTop  - imgTop)  / s).coerceAtLeast(0f).toInt()
-                            val srcW = (cropW / s).toInt().coerceIn(1, currentBitmap.width  - srcX)
-                            val srcH = (cropH / s).toInt().coerceIn(1, currentBitmap.height - srcY)
-
-                            onDone(Bitmap.createBitmap(currentBitmap, srcX, srcY, srcW, srcH))
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
-                        shape  = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
-                    ) {
-                        Text(stringResource(R.string.new_ascent_next_btn), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                    }
+                        if (cropped != null) {
+                            cropError = null
+                            onDone(cropped)
+                        } else {
+                            cropError = "No se pudo recortar la foto"
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
+                    shape  = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+                ) {
+                    Text(stringResource(R.string.new_ascent_next_btn), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 }
             }
         }
