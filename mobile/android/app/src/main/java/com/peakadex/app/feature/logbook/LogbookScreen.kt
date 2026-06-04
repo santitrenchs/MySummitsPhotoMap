@@ -829,7 +829,7 @@ private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Co
             val minDist = MIN_NEARBY_MARKER_DISTANCE_DP.dp.toPx()
             val placed = mutableListOf<androidx.compose.ui.geometry.Offset>()
             val labelRects = mutableListOf<RectF>()
-            val mainPeakGuard = RectF(cx - 82.dp.toPx(), cy - 38.dp.toPx(), cx + 82.dp.toPx(), cy + 54.dp.toPx())
+            val mainPeakGuard = RectF(cx - 20.dp.toPx(), cy - 20.dp.toPx(), cx + 20.dp.toPx(), cy + 20.dp.toPx())
             val labelMaxWidth = 104.dp.toPx()
             val labelGap = 8.dp.toPx()
             val labelTextSize = 8.5.sp.toPx()
@@ -875,29 +875,52 @@ private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Co
                     val label = fitTextToWidth(rawLabel, labelPaint, labelMaxWidth)
                     val labelWidth = labelPaint.measureText(label)
                     val baselineY = pos.y + (labelHeight / 2f) - labelMetrics.descent
+                    val labelTop = baselineY + labelMetrics.ascent - 3.dp.toPx()
+                    val labelBottom = baselineY + labelMetrics.descent + 3.dp.toPx()
                     val rightRect = RectF(
                         pos.x + labelGap,
-                        baselineY + labelMetrics.ascent - 3.dp.toPx(),
+                        labelTop,
                         pos.x + labelGap + labelWidth,
-                        baselineY + labelMetrics.descent + 3.dp.toPx(),
+                        labelBottom,
                     )
                     val leftRect = RectF(
                         pos.x - labelGap - labelWidth,
-                        rightRect.top,
+                        labelTop,
                         pos.x - labelGap,
-                        rightRect.bottom,
+                        labelBottom,
                     )
-                    val labelRect = listOf(rightRect, leftRect).firstOrNull { rect ->
+                    val topBaselineY = pos.y - labelGap
+                    val topRect = RectF(
+                        pos.x - labelWidth / 2f,
+                        topBaselineY + labelMetrics.ascent - 3.dp.toPx(),
+                        pos.x + labelWidth / 2f,
+                        topBaselineY + labelMetrics.descent + 3.dp.toPx(),
+                    )
+                    val bottomBaselineY = pos.y + labelGap + labelHeight
+                    val bottomRect = RectF(
+                        pos.x - labelWidth / 2f,
+                        bottomBaselineY + labelMetrics.ascent - 3.dp.toPx(),
+                        pos.x + labelWidth / 2f,
+                        bottomBaselineY + labelMetrics.descent + 3.dp.toPx(),
+                    )
+                    val labelRect = listOf(rightRect, leftRect, topRect, bottomRect).firstOrNull { rect ->
                         rect.left >= 8.dp.toPx() &&
                             rect.right <= size.width - 8.dp.toPx() &&
+                            rect.top >= 8.dp.toPx() &&
+                            rect.bottom <= labelBottomLimit &&
                             !RectF.intersects(rect, mainPeakGuard) &&
                             labelRects.none { RectF.intersects(rect, it) }
                     }
                     if (labelRect != null) {
                         labelRects.add(labelRect)
                         val textX = labelRect.left
-                        drawContext.canvas.nativeCanvas.drawText(label, textX, baselineY, labelHaloPaint)
-                        drawContext.canvas.nativeCanvas.drawText(label, textX, baselineY, labelPaint)
+                        val textBaselineY = when (labelRect) {
+                            topRect -> topBaselineY
+                            bottomRect -> bottomBaselineY
+                            else -> baselineY
+                        }
+                        drawContext.canvas.nativeCanvas.drawText(label, textX, textBaselineY, labelHaloPaint)
+                        drawContext.canvas.nativeCanvas.drawText(label, textX, textBaselineY, labelPaint)
                     }
                 }
             }
