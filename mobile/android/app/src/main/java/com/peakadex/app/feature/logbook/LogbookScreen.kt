@@ -93,8 +93,7 @@ import kotlin.math.sqrt
 
 private const val NEARBY_PEAK_RADIUS_DEGREES = 0.8
 private const val MAX_NEARBY_PEAKS = 5
-private const val MAX_NEARBY_PEAK_CANDIDATES = 20
-private const val MIN_NEARBY_MARKER_DISTANCE_DP = 24f
+private const val MIN_NEARBY_MARKER_DISTANCE_DP = 14f
 
 private data class GridPoint(
     val xFrac: Float,
@@ -109,7 +108,13 @@ private object NearbyPeaksCache {
 
     suspend fun load(peak: Peak): List<Peak>? {
         cache[peak.id]?.let { return it }
-        if (!inFlight.add(peak.id)) return null
+        if (!inFlight.add(peak.id)) {
+            while (inFlight.contains(peak.id)) {
+                delay(50)
+                cache[peak.id]?.let { return it }
+            }
+            return cache[peak.id] ?: emptyList()
+        }
 
         return try {
             val nearby = AppContainer.apiService
@@ -121,8 +126,7 @@ private object NearbyPeaksCache {
                 .peaks
                 .asSequence()
                 .filter { it.id != peak.id }
-                .sortedByDescending { it.altitudeM }
-                .take(MAX_NEARBY_PEAK_CANDIDATES)
+                .sortedBy { distanceDegreesSquared(peak.latitude, peak.longitude, it.latitude, it.longitude) }
                 .toList()
             cache[peak.id] = nearby
             nearby
@@ -147,7 +151,7 @@ private data class PeakTileGrid(
     val zoom: Int,
 )
 
-private fun peakTileGrid(lat: Double, lon: Double, zoom: Int = 10): PeakTileGrid {
+private fun peakTileGrid(lat: Double, lon: Double, zoom: Int = 12): PeakTileGrid {
     val n      = 1 shl zoom
     val xCont  = (lon + 180.0) / 360.0 * n
     val latRad = Math.toRadians(lat)
@@ -837,6 +841,12 @@ private fun distance(a: androidx.compose.ui.geometry.Offset, b: androidx.compose
     val dx = a.x - b.x
     val dy = a.y - b.y
     return sqrt(dx * dx + dy * dy)
+}
+
+private fun distanceDegreesSquared(latA: Double, lonA: Double, latB: Double, lonB: Double): Double {
+    val dLat = latA - latB
+    val dLon = lonA - lonB
+    return dLat * dLat + dLon * dLon
 }
 
 // ── Elevation profile ──────────────────────────────────────────────────────────
