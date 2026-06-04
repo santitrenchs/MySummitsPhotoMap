@@ -2620,6 +2620,7 @@ Important details:
 - Apply `.navigationBarsPadding()` inside the wrapper, matching `AtlasScreen.kt`'s `LayersPanel`, which clears Android 3-button / gesture navigation correctly.
 - Keep `.imePadding()` in the shared wrapper so keyboard-open behavior remains correct.
 - Forms inside Cordadas sheets must make their content scrollable and attach `BringIntoViewRequester` to each focused input. This is required for `CreateCordadaSheet`'s name/description/member-search fields and `InviteSheet`'s search field so the keyboard cannot cover what the user is typing.
+- Member autocomplete in `CreateCordadaSheet` treats search field + suggestions as one visibility block. While the search field is focused, suggestions render **above** the field so they stay above the IME; when unfocused, they render below as a normal list.
 - Text inputs should declare keyboard actions: `ImeAction.Next` for intermediate fields and `ImeAction.Done` + `focusManager.clearFocus()` for final/search fields. `Next` must use explicit `FocusRequester`s (name → description → member search), not generic `focusManager.moveFocus(...)`, because the latter failed to move/scroll reliably in the Cordadas sheet.
 - Sheet forms use `clearFocusOnUnconsumedTap(focusManager)` on the scrollable content so tapping blank space exits text-entry mode without stealing taps from fields/buttons.
 - Use only local visual spacing (`8.dp` / `16.dp`) inside Create / Invite / Detail; do not pass system inset values around as `Dp`.

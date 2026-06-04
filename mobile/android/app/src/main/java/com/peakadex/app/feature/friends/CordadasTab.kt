@@ -579,6 +579,41 @@ private fun bitmapToJpeg(bitmap: Bitmap): ByteArray =
     ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
 
 @Composable
+private fun MemberSuggestionList(
+    entries: List<FriendEntry>,
+    enabled: Boolean,
+    onAdd: (FriendEntry) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 168.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        entries.forEach { entry ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(enabled = enabled) { onAdd(entry) }
+                    .padding(vertical = 6.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                UserAvatar(entry.friend.name, 32, entry.friend.avatarUrl)
+                Text(
+                    entry.friend.name,
+                    fontSize = 14.sp,
+                    color = Color(0xFF111827),
+                    modifier = Modifier.weight(1f),
+                )
+                Text("+", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = PeakBlueActive)
+            }
+        }
+    }
+}
+
+@Composable
 private fun CordadaImageCropSheet(
     imageUri: Uri,
     onDismiss: () -> Unit,
@@ -700,13 +735,14 @@ fun CreateCordadaSheet(
     var avatarBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var cropUri by remember { mutableStateOf<Uri?>(null) }
     var memberQuery by remember { mutableStateOf("") }
+    var memberSearchFocused by remember { mutableStateOf(false) }
     val selectedIds = remember { mutableStateListOf<String>() }
     val formScrollState = rememberScrollState()
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
     val nameBringIntoView = remember { BringIntoViewRequester() }
     val descBringIntoView = remember { BringIntoViewRequester() }
-    val membersBringIntoView = remember { BringIntoViewRequester() }
+    val membersBlockBringIntoView = remember { BringIntoViewRequester() }
     val descFocusRequester = remember { FocusRequester() }
     val membersFocusRequester = remember { FocusRequester() }
 
@@ -882,6 +918,12 @@ fun CreateCordadaSheet(
                             (it.friend.username?.contains(q, ignoreCase = true) == true)
                     }
                     .take(6)
+                val showMemberSuggestions = memberQuery.isNotBlank() || selectedIds.isEmpty()
+
+                fun addMember(entry: FriendEntry) {
+                    selectedIds.add(entry.friend.id)
+                    memberQuery = ""
+                }
 
                 Text(
                     if (selectedIds.isEmpty()) stringResource(R.string.cordadas_add_members)
@@ -917,76 +959,72 @@ fun CreateCordadaSheet(
                     }
                 }
 
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF3F4F6))
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .bringIntoViewRequester(membersBlockBringIntoView),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(SearchIconSmall, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    BasicTextField(
-                        value = memberQuery,
-                        onValueChange = { memberQuery = it },
-                        singleLine = true,
-                        enabled = !isCreating,
-                        textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, color = Color(0xFF111827)),
-                        cursorBrush = SolidColor(PeakBlueActive),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = { focusManager.clearFocus() },
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusRequester(membersFocusRequester)
-                            .bringIntoViewRequester(membersBringIntoView)
-                            .onFocusChanged {
-                                if (it.isFocused) {
-                                    scope.launch {
-                                        delay(250)
-                                        membersBringIntoView.bringIntoView()
-                                    }
-                                }
-                            },
-                        decorationBox = { inner ->
-                            if (memberQuery.isEmpty()) Text(stringResource(R.string.cordadas_invite_search), fontSize = 16.sp, color = Color(0xFF9CA3AF))
-                            inner()
-                        },
-                    )
-                }
+                    if (showMemberSuggestions && memberSearchFocused) {
+                        MemberSuggestionList(
+                            entries = filteredFriends,
+                            enabled = !isCreating,
+                            onAdd = { addMember(it) },
+                        )
+                    }
 
-                if (memberQuery.isNotBlank() || selectedIds.isEmpty()) {
-                    Column(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 190.dp)
-                            .verticalScroll(rememberScrollState()),
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFF3F4F6))
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        filteredFriends.forEach { entry ->
-                            Row(
-                                modifier          = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable(enabled = !isCreating) {
-                                        selectedIds.add(entry.friend.id)
-                                        memberQuery = ""
+                        Icon(SearchIconSmall, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        BasicTextField(
+                            value = memberQuery,
+                            onValueChange = { value ->
+                                memberQuery = value
+                                scope.launch {
+                                    delay(120)
+                                    membersBlockBringIntoView.bringIntoView()
+                                }
+                            },
+                            singleLine = true,
+                            enabled = !isCreating,
+                            textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, color = Color(0xFF111827)),
+                            cursorBrush = SolidColor(PeakBlueActive),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = { focusManager.clearFocus() },
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(membersFocusRequester)
+                                .onFocusChanged {
+                                    memberSearchFocused = it.isFocused
+                                    if (it.isFocused) {
+                                        scope.launch {
+                                            delay(250)
+                                            membersBlockBringIntoView.bringIntoView()
+                                        }
                                     }
-                                    .padding(vertical = 6.dp, horizontal = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                UserAvatar(entry.friend.name, 32, entry.friend.avatarUrl)
-                                Text(
-                                    entry.friend.name,
-                                    fontSize = 14.sp,
-                                    color    = Color(0xFF111827),
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Text("+", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = PeakBlueActive)
-                            }
-                        }
+                                },
+                            decorationBox = { inner ->
+                                if (memberQuery.isEmpty()) Text(stringResource(R.string.cordadas_invite_search), fontSize = 16.sp, color = Color(0xFF9CA3AF))
+                                inner()
+                            },
+                        )
+                    }
+
+                    if (showMemberSuggestions && !memberSearchFocused) {
+                        MemberSuggestionList(
+                            entries = filteredFriends,
+                            enabled = !isCreating,
+                            onAdd = { addMember(it) },
+                        )
                     }
                 }
             }
