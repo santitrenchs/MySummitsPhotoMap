@@ -37,7 +37,13 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.awaitEachGesture
+import androidx.compose.ui.input.pointer.awaitFirstDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.waitForUpOrCancellation
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import androidx.compose.ui.platform.LocalFocusManager
@@ -76,6 +82,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+private fun Modifier.clearFocusOnUnconsumedTap(focusManager: FocusManager): Modifier =
+    pointerInput(focusManager) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Main)
+            val up = waitForUpOrCancellation(pass = PointerEventPass.Main)
+            if (up != null && !down.isConsumed && !up.isConsumed) {
+                focusManager.clearFocus()
+            }
+        }
+    }
 
 @Composable
 private fun CordadaAvatar(name: String, size: Int = 40, avatarUrl: String? = null) {
@@ -699,6 +716,7 @@ fun CreateCordadaSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(formScrollState)
+                .clearFocusOnUnconsumedTap(focusManager)
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -840,9 +858,8 @@ fun CreateCordadaSheet(
                         }
                     },
                 enabled       = !isCreating,
-                keyboardOptions = KeyboardOptions(imeAction = if (friends.isNotEmpty()) ImeAction.Next else ImeAction.Done),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
                     onDone = { focusManager.clearFocus() },
                 ),
             )
@@ -1031,6 +1048,7 @@ private fun InviteSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(sheetScrollState)
+                .clearFocusOnUnconsumedTap(focusManager)
                 .padding(horizontal = 16.dp),
         ) {
             Text(
