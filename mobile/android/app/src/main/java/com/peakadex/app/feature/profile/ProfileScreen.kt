@@ -282,48 +282,58 @@ private fun PeakRowCardSkeleton(brush: Brush, modifier: Modifier = Modifier) {
         shadowElevation = 2.dp,
         border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(Modifier.height(108.dp)) {
+        Row(
+            modifier = Modifier.height(64.dp).padding(end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             SkeletonBlock(
                 brush    = brush,
                 modifier = Modifier.width(4.dp).fillMaxHeight(),
                 shape    = RoundedCornerShape(0.dp),
             )
-            SkeletonBlock(
-                brush    = brush,
-                modifier = Modifier.width(90.dp).fillMaxHeight(),
-                shape    = RoundedCornerShape(0.dp),
-            )
             Column(
-                modifier            = Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(7.dp),
+                modifier            = Modifier.weight(1f).padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    SkeletonBlock(brush, Modifier.fillMaxWidth(0.58f).height(15.dp))
-                    Spacer(Modifier.weight(1f))
-                    SkeletonBlock(brush, Modifier.width(34.dp).height(18.dp), RoundedCornerShape(6.dp))
-                }
-                SkeletonBlock(brush, Modifier.width(86.dp).height(18.dp), RoundedCornerShape(100.dp))
-                Spacer(Modifier.weight(1f))
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment     = Alignment.Bottom,
-                ) {
-                    Column {
-                        SkeletonBlock(brush, Modifier.width(38.dp).height(8.dp))
-                        Spacer(Modifier.height(5.dp))
-                        SkeletonBlock(brush, Modifier.width(56.dp).height(11.dp))
-                    }
-                    Column {
-                        SkeletonBlock(brush, Modifier.width(42.dp).height(8.dp))
-                        Spacer(Modifier.height(5.dp))
-                        SkeletonBlock(brush, Modifier.width(54.dp).height(11.dp))
-                    }
-                    Spacer(Modifier.weight(1f))
-                    SkeletonBlock(brush, Modifier.width(72.dp).height(10.dp))
-                }
+                SkeletonBlock(brush, Modifier.fillMaxWidth(0.56f).height(15.dp))
+                SkeletonBlock(brush, Modifier.width(82.dp).height(16.dp), RoundedCornerShape(100.dp))
             }
+            SkeletonBlock(brush, Modifier.width(64.dp).height(16.dp))
+            Spacer(Modifier.width(16.dp))
+            SkeletonBlock(brush, Modifier.width(62.dp).height(14.dp))
         }
+    }
+}
+
+@Composable
+private fun RarityDot(color: Color) {
+    Box(
+        modifier = Modifier
+            .size(9.dp)
+            .clip(CircleShape)
+            .background(color),
+    )
+}
+
+@Composable
+private fun CompactRarityPill(label: String, color: Color, darkColor: Color) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(color.copy(alpha = 0.13f))
+            .padding(horizontal = 7.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        RarityDot(color)
+        Text(
+            text       = label,
+            fontSize   = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color      = darkColor,
+            maxLines   = 1,
+            overflow   = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -750,12 +760,12 @@ private fun PeakRowCard(
         shape           = RoundedCornerShape(12.dp),
         color           = Color.White,
         shadowElevation = 2.dp,
-        border          = androidx.compose.foundation.BorderStroke(
-            1.dp, MaterialTheme.colorScheme.outlineVariant
-        ),
+        border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            // Rarity colour strip
+        Row(
+            modifier = Modifier.height(64.dp).padding(end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Box(
                 Modifier
                     .width(4.dp)
@@ -763,160 +773,44 @@ private fun PeakRowCard(
                     .background(rarityColor),
             )
 
-            // Photo thumbnail
-            Box(
-                modifier           = Modifier.width(90.dp).fillMaxHeight(),
-                contentAlignment   = Alignment.Center,
-            ) {
-                if (peak.firstPhotoUrl != null) {
-                    AsyncImage(
-                        model             = peak.firstPhotoUrl,
-                        contentDescription = peak.name,
-                        contentScale      = ContentScale.Crop,
-                        modifier          = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF0D2538)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("🏔", fontSize = 26.sp)
-                    }
-                }
-                // Altitude overlay at bottom
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color(0x8C0D2538)),
-                            )
-                        )
-                        .padding(bottom = 5.dp, top = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text       = "${peak.altitudeM} m",
-                        fontSize   = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = Color.White,
-                    )
-                }
-            }
-
-            // Content
             Column(
-                Modifier
+                modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(5.dp),
             ) {
-                // Name row + count
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment     = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text       = peak.name,
-                        fontSize   = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = PeakNavyDark,
-                        maxLines   = 1,
-                        overflow   = TextOverflow.Ellipsis,
-                        modifier   = Modifier.weight(1f).padding(end = 4.dp),
-                    )
-                    if (peak.count > 1) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(rarityColor.copy(alpha = 0.13f))
-                                .border(1.dp, rarityColor.copy(alpha = 0.30f), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text       = "×${peak.count}",
-                                fontSize   = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color      = rarityColorDark,
-                            )
-                        }
-                    }
-                }
-
-                // Rarity pill
+                Text(
+                    text       = peak.name,
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = PeakNavyDark,
+                    maxLines   = 1,
+                    overflow   = TextOverflow.Ellipsis,
+                )
                 if (rarity != null) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(100.dp))
-                            .background(rarityColor.copy(alpha = 0.13f))
-                            .padding(horizontal = 7.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text       = "✿ ${rarity.label}",
-                            fontSize   = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color      = rarityColorDark,
-                        )
-                    }
-                }
-
-                // Bottom row: dates + range
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment     = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    // Last date
-                    Column {
-                        Text(
-                            text          = stringResource(R.string.profile_stat_last),
-                            fontSize      = 8.sp,
-                            fontWeight    = FontWeight.Bold,
-                            color         = PeakNavyLight,
-                            letterSpacing = 1.2.sp,
-                        )
-                        Text(
-                            text       = formatDate(peak.lastDate),
-                            fontSize   = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color      = PeakNavyDark,
-                        )
-                    }
-                    // First date (only if climbed more than once)
-                    if (peak.count > 1 && !peak.firstDate.isNullOrBlank() && peak.firstDate != peak.lastDate) {
-                        Column {
-                            Text(
-                                text          = stringResource(R.string.profile_stat_first),
-                                fontSize      = 8.sp,
-                                fontWeight    = FontWeight.Bold,
-                                color         = PeakNavyLight,
-                                letterSpacing = 1.2.sp,
-                            )
-                            Text(
-                                text       = formatDate(peak.firstDate),
-                                fontSize   = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color      = PeakNavyDark,
-                            )
-                        }
-                    }
-                    Spacer(Modifier.weight(1f))
-                    if (peak.mountainRange != null) {
-                        Text(
-                            text     = peak.mountainRange,
-                            fontSize = 10.sp,
-                            color    = Color(0xFFCBD5E1),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.widthIn(max = 80.dp),
-                        )
-                    }
+                    CompactRarityPill(
+                        label     = rarity.label,
+                        color     = rarityColor,
+                        darkColor = rarityColorDark,
+                    )
                 }
             }
+
+            Text(
+                text       = "${peak.altitudeM} m",
+                fontSize   = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color      = PeakNavyDark,
+                maxLines   = 1,
+            )
+            Spacer(Modifier.width(16.dp))
+            Text(
+                text       = formatDate(peak.lastDate),
+                fontSize   = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color      = PeakNavyMid,
+                maxLines   = 1,
+            )
         }
     }
 }
