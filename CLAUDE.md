@@ -2622,6 +2622,7 @@ Important details:
 - Forms inside Cordadas sheets must make their content scrollable and attach `BringIntoViewRequester` to each focused input. This is required for `CreateCordadaSheet`'s name/description/member-search fields and `InviteSheet`'s search field so the keyboard cannot cover what the user is typing.
 - Text inputs should declare keyboard actions: `ImeAction.Next` for intermediate fields and `ImeAction.Done` + `focusManager.clearFocus()` for final/search fields.
 - Sheet forms use `clearFocusOnUnconsumedTap(focusManager)` on the scrollable content so tapping blank space exits text-entry mode without stealing taps from fields/buttons.
+- Do not rely only on the keyboard's icon affordance. Focused sheet inputs show an explicit text action in the form (`Siguiente` for name, `OK` for description/search) because Android keyboards render IME actions differently.
 - Use only local visual spacing (`8.dp` / `16.dp`) inside Create / Invite / Detail; do not pass system inset values around as `Dp`.
 
 **Rule for future sheets rendered under a consuming Scaffold**: keep safe-area behavior centralized in the sheet wrapper. Do not reintroduce `WindowInsets(0)`, manual root-view inset reads, or one-off system inset spacers.

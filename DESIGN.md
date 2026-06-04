@@ -1409,6 +1409,7 @@ Sheets use the shared `CordadaModalSheet` wrapper around Material 3 `ModalBottom
 - Apply `.navigationBarsPadding()` + `.imePadding()` inside the sheet content.
 - Any sheet form with text input must be scrollable and each input must use `BringIntoViewRequester` on focus. Keyboard actions: `Next` between fields, `Done` for final/search fields. This applies to create-cordada name/description/member search and invite search.
 - Scrollable sheet forms clear focus on unconsumed blank-space taps so users can exit the keyboard without relying on a specific keyboard's checkmark/done affordance.
+- Focused sheet inputs also show explicit text actions inside the form: `Siguiente` for the name field and `OK` for description/search fields.
 
 ### ⚠️ Contacts picker — privacy and crash rules
 

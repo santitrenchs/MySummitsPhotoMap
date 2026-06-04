@@ -699,6 +699,9 @@ fun CreateCordadaSheet(
     var avatarBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var cropUri by remember { mutableStateOf<Uri?>(null) }
     var memberQuery by remember { mutableStateOf("") }
+    var nameFocused by remember { mutableStateOf(false) }
+    var descFocused by remember { mutableStateOf(false) }
+    var memberQueryFocused by remember { mutableStateOf(false) }
     val selectedIds = remember { mutableStateListOf<String>() }
     val formScrollState = rememberScrollState()
     val focusManager = LocalFocusManager.current
@@ -827,6 +830,7 @@ fun CreateCordadaSheet(
                     .fillMaxWidth()
                     .bringIntoViewRequester(nameBringIntoView)
                     .onFocusChanged {
+                        nameFocused = it.isFocused
                         if (it.isFocused) {
                             scope.launch {
                                 delay(250)
@@ -839,6 +843,18 @@ fun CreateCordadaSheet(
                 keyboardActions = KeyboardActions(
                     onNext = { focusManager.moveFocus(FocusDirection.Down) },
                 ),
+                trailingIcon = if (nameFocused) {
+                    {
+                        TextButton(
+                            onClick = { focusManager.moveFocus(FocusDirection.Down) },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        ) {
+                            Text(stringResource(R.string.action_next), fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                } else {
+                    null
+                }
             )
             OutlinedTextField(
                 value         = desc,
@@ -850,6 +866,7 @@ fun CreateCordadaSheet(
                     .fillMaxWidth()
                     .bringIntoViewRequester(descBringIntoView)
                     .onFocusChanged {
+                        descFocused = it.isFocused
                         if (it.isFocused) {
                             scope.launch {
                                 delay(250)
@@ -862,6 +879,18 @@ fun CreateCordadaSheet(
                 keyboardActions = KeyboardActions(
                     onDone = { focusManager.clearFocus() },
                 ),
+                trailingIcon = if (descFocused) {
+                    {
+                        TextButton(
+                            onClick = { focusManager.clearFocus() },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        ) {
+                            Text(stringResource(R.string.action_ok), fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                } else {
+                    null
+                }
             )
 
             // Member selection (accepted friends): search locally, add chips.
@@ -937,6 +966,7 @@ fun CreateCordadaSheet(
                             .weight(1f)
                             .bringIntoViewRequester(membersBringIntoView)
                             .onFocusChanged {
+                                memberQueryFocused = it.isFocused
                                 if (it.isFocused) {
                                     scope.launch {
                                         delay(250)
@@ -949,6 +979,14 @@ fun CreateCordadaSheet(
                             inner()
                         },
                     )
+                    if (memberQueryFocused) {
+                        TextButton(
+                            onClick = { focusManager.clearFocus() },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        ) {
+                            Text(stringResource(R.string.action_ok), fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
 
                 if (memberQuery.isNotBlank() || selectedIds.isEmpty()) {
@@ -1042,6 +1080,7 @@ private fun InviteSheet(
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
     val searchBringIntoView = remember { BringIntoViewRequester() }
+    var searchFocused by remember { mutableStateOf(false) }
 
     CordadaModalSheet(onDismiss = onDismiss) {
         Column(
@@ -1082,6 +1121,7 @@ private fun InviteSheet(
                         .weight(1f)
                         .bringIntoViewRequester(searchBringIntoView)
                         .onFocusChanged {
+                            searchFocused = it.isFocused
                             if (it.isFocused) {
                                 scope.launch {
                                     delay(250)
@@ -1094,6 +1134,14 @@ private fun InviteSheet(
                         inner()
                     },
                 )
+                if (searchFocused) {
+                    TextButton(
+                        onClick = { focusManager.clearFocus() },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    ) {
+                        Text(stringResource(R.string.action_ok), fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
             Spacer(Modifier.height(8.dp))
             // Results
