@@ -1,7 +1,20 @@
 import { prisma } from "@/lib/db/client";
 
 const NEARBY_RADIUS_DEGREES = 0.8;
+const RELEVANT_RADIUS_M = 20_000;
 const MAX_NEARBY_PEAKS = 5;
+const RARITY_WEIGHT: Record<string, number> = {
+  daisy: 1,
+  heather: 2,
+  gentian: 3,
+  tundra: 4,
+  edelweiss: 5,
+  draba: 6,
+  saxifrage: 7,
+  cinquefoil: 8,
+  snow_lotus: 9,
+  lavender: 3,
+};
 
 type PeakForNearby = {
   id: string;
@@ -29,7 +42,15 @@ function haversineM(latA: number, lonA: number, latB: number, lonB: number): num
   return Math.round(earthRadiusM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
-export async function ensureNearbyPeaksForPeak(peakId: string): Promise<NearbyPeakSnapshot[]> {
+function nearbyRelevanceScore(peak: NearbyPeakSnapshot): number {
+  const rarityBonus = peak.rarityId ? (RARITY_WEIGHT[peak.rarityId] ?? 0) * 50 : 0;
+  return peak.altitudeM + rarityBonus - peak.distanceM / 100;
+}
+
+export async function ensureNearbyPeaksForPeak(
+  peakId: string,
+  options: { force?: boolean } = {},
+): Promise<NearbyPeakSnapshot[]> {
   const peak = await prisma.peak.findUnique({
     where: { id: peakId },
     select: {
@@ -41,7 +62,7 @@ export async function ensureNearbyPeaksForPeak(peakId: string): Promise<NearbyPe
   });
 
   if (!peak) return [];
-  if (Array.isArray(peak.nearbyPeaks)) return peak.nearbyPeaks as NearbyPeakSnapshot[];
+  if (!options.force && Array.isArray(peak.nearbyPeaks)) return peak.nearbyPeaks as NearbyPeakSnapshot[];
 
   const candidates = await prisma.peak.findMany({
     where: {
@@ -60,12 +81,14 @@ export async function ensureNearbyPeaksForPeak(peakId: string): Promise<NearbyPe
     },
   });
 
-  const nearby = candidates
+  const scoredCandidates = candidates
     .map((candidate) => ({
       ...candidate,
       distanceM: haversineM(peak.latitude, peak.longitude, candidate.latitude, candidate.longitude),
-    }))
-    .sort((a, b) => a.distanceM - b.distanceM)
+    }));
+  const relevantCandidates = scoredCandidates.filter((candidate) => candidate.distanceM <= RELEVANT_RADIUS_M);
+  const nearby = (relevantCandidates.length >= MAX_NEARBY_PEAKS ? relevantCandidates : scoredCandidates)
+    .sort((a, b) => nearbyRelevanceScore(b) - nearbyRelevanceScore(a) || a.distanceM - b.distanceM)
     .slice(0, MAX_NEARBY_PEAKS);
 
   await prisma.peak.update({
