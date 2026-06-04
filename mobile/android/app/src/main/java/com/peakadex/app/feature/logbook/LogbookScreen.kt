@@ -763,12 +763,16 @@ private fun StatBandItem(label: String, value: String, color: Color, modifier: M
 @Composable
 private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Color) {
     val grid = remember(peak.latitude, peak.longitude) { peakTileGrid(peak.latitude, peak.longitude) }
+    val precalculatedNearbyPeaks = peak.nearbyPeaks
     var nearbyPeaks by remember(peak.id) {
-        mutableStateOf(peak.nearbyPeaks ?: NearbyPeaksCache.cached(peak.id).orEmpty())
+        mutableStateOf(precalculatedNearbyPeaks ?: NearbyPeaksCache.cached(peak.id).orEmpty())
     }
 
-    LaunchedEffect(peak.id) {
-        if (nearbyPeaks.isEmpty()) {
+    LaunchedEffect(peak.id, precalculatedNearbyPeaks) {
+        if (precalculatedNearbyPeaks != null) {
+            nearbyPeaks = precalculatedNearbyPeaks
+        } else if (nearbyPeaks.isEmpty()) {
+            android.util.Log.d("CardMiniMap", "nearbyPeaks missing in ascent payload for ${peak.id}; falling back to API")
             NearbyPeaksCache.load(peak)?.let { nearbyPeaks = it }
         }
     }
