@@ -16,6 +16,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,13 +36,17 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
@@ -64,6 +72,8 @@ import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBlueLight
 import com.peakadex.app.core.ui.theme.PeakClimbedGreen
 import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -673,6 +683,12 @@ fun CreateCordadaSheet(
     var cropUri by remember { mutableStateOf<Uri?>(null) }
     var memberQuery by remember { mutableStateOf("") }
     val selectedIds = remember { mutableStateListOf<String>() }
+    val formScrollState = rememberScrollState()
+    val focusManager = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
+    val nameBringIntoView = remember { BringIntoViewRequester() }
+    val descBringIntoView = remember { BringIntoViewRequester() }
+    val membersBringIntoView = remember { BringIntoViewRequester() }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { cropUri = it }
@@ -682,6 +698,7 @@ fun CreateCordadaSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(formScrollState)
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -788,8 +805,22 @@ fun CreateCordadaSheet(
                 onValueChange = { if (it.length <= 60) name = it },
                 label         = { Text(stringResource(R.string.cordadas_name_hint)) },
                 singleLine    = true,
-                modifier      = Modifier.fillMaxWidth(),
+                modifier      = Modifier
+                    .fillMaxWidth()
+                    .bringIntoViewRequester(nameBringIntoView)
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            scope.launch {
+                                delay(250)
+                                nameBringIntoView.bringIntoView()
+                            }
+                        }
+                    },
                 enabled       = !isCreating,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                ),
             )
             OutlinedTextField(
                 value         = desc,
@@ -797,8 +828,23 @@ fun CreateCordadaSheet(
                 label         = { Text(stringResource(R.string.cordadas_desc_hint)) },
                 minLines      = 2,
                 maxLines      = 4,
-                modifier      = Modifier.fillMaxWidth(),
+                modifier      = Modifier
+                    .fillMaxWidth()
+                    .bringIntoViewRequester(descBringIntoView)
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            scope.launch {
+                                delay(250)
+                                descBringIntoView.bringIntoView()
+                            }
+                        }
+                    },
                 enabled       = !isCreating,
+                keyboardOptions = KeyboardOptions(imeAction = if (friends.isNotEmpty()) ImeAction.Next else ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                    onDone = { focusManager.clearFocus() },
+                ),
             )
 
             // Member selection (accepted friends): search locally, add chips.
@@ -866,7 +912,21 @@ fun CreateCordadaSheet(
                         enabled = !isCreating,
                         textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, color = Color(0xFF111827)),
                         cursorBrush = SolidColor(PeakBlueActive),
-                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() },
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .bringIntoViewRequester(membersBringIntoView)
+                            .onFocusChanged {
+                                if (it.isFocused) {
+                                    scope.launch {
+                                        delay(250)
+                                        membersBringIntoView.bringIntoView()
+                                    }
+                                }
+                            },
                         decorationBox = { inner ->
                             if (memberQuery.isEmpty()) Text(stringResource(R.string.cordadas_invite_search), fontSize = 16.sp, color = Color(0xFF9CA3AF))
                             inner()
@@ -961,10 +1021,16 @@ private fun InviteSheet(
     onInvite: (UserStub) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val sheetScrollState = rememberScrollState()
+    val focusManager = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
+    val searchBringIntoView = remember { BringIntoViewRequester() }
+
     CordadaModalSheet(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(sheetScrollState)
                 .padding(horizontal = 16.dp),
         ) {
             Text(
@@ -990,7 +1056,21 @@ private fun InviteSheet(
                     singleLine    = true,
                     textStyle     = LocalTextStyle.current.copy(fontSize = 16.sp, color = Color(0xFF111827)),
                     cursorBrush   = SolidColor(PeakBlueActive),
-                    modifier      = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = { focusManager.clearFocus() },
+                    ),
+                    modifier      = Modifier
+                        .weight(1f)
+                        .bringIntoViewRequester(searchBringIntoView)
+                        .onFocusChanged {
+                            if (it.isFocused) {
+                                scope.launch {
+                                    delay(250)
+                                    searchBringIntoView.bringIntoView()
+                                }
+                            }
+                        },
                     decorationBox = { inner ->
                         if (query.isEmpty()) Text(stringResource(R.string.cordadas_invite_search), fontSize = 16.sp, color = Color(0xFF9CA3AF))
                         inner()
