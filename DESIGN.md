@@ -1215,11 +1215,11 @@ The global create-FAB lives in `MainScaffold` and is gated to `Logbook`/`Cards` 
 
 ---
 
-## Cordadas + Amigos — Unified Social Screen (Android, updated 2026-06-03)
+## Cordadas + Amigos — Unified Social Screen (Android, updated 2026-06-04)
 
 > **Authoritative cross-platform spec.** This is the reference for rebuilding the Amigos + Cordadas section on **web** and **iOS**. The Android implementation in `mobile/android/.../feature/friends/` is the reference. Follow the navigation, layout, behaviours, Material patterns and data contracts below exactly. See `CLAUDE.md → "Cordadas — Climbing Groups"` for the data model + API and the deeper rationale of every fix.
 
-WhatsApp-style **single screen** (Option B — friends and cordadas intermixed in one list). **No Amigos/Cordadas sub-tabs.**
+WhatsApp-style **single screen** (Option B — friends and cordadas intermixed in one list). **No Amigos/Cordadas sub-tabs.** In Android the bottom-nav label is **Cordada**, but the screen contains both friends and cordadas because it is the unified social surface.
 
 **Files:** `feature/friends/FriendsScreen.kt` (host, friend rows, search, solicitudes, FAB speed-dial, shared row helpers/tokens) · `feature/friends/CordadasTab.kt` (`CordadaCard`, `InviteCard`, create/invite sheets, **`CordadaDetailRoute` + `CordadaDetailScreen`**) · `FriendsViewModel.kt` + `CordadasViewModel.kt`.
 
@@ -1229,6 +1229,7 @@ WhatsApp-style **single screen** (Option B — friends and cordadas intermixed i
 - It is **NOT** in the avatar dropdown anymore (removed) and is **NOT** a standalone full-screen route.
 - **No own header.** The screen content starts directly at the search bar. (On Android the nested `Scaffold` sets `contentWindowInsets = WindowInsets(0,0,0,0)` so there is no white gap under `MainTopBar` — on web/iOS just don't render a second header.)
 - The global **"new ascent" `+` FAB is hidden on this tab**; the screen renders its own green `+` FAB instead.
+- The screen reloads/reconciles cordadas when returning from detail/resume so leave/delete/expel/invite changes are reflected without a manual refresh.
 
 ### Tab badge (pending-invite indicator)
 
@@ -1342,6 +1343,7 @@ Do not show an empty "Convidar per" section. If there are no channels, show `CON
 ### Create cordada (`CreateCordadaSheet`)
 
 `onCreate(name, description, memberIds, avatarBytes)`:
+- Rendered as a **Material 3 `ModalBottomSheet`** through `CordadaModalSheet`: white surface, default drag handle, `skipPartiallyExpanded = true`, `.navigationBarsPadding()` and `.imePadding()` applied by the wrapper. The form itself is vertically scrollable.
 - **Photo picker is a cover preview**, not a circular emoji placeholder:
   - 148dp high rounded rectangle, radius 16dp.
   - Empty state: subtle neutral/blue surface (`#F8FAFC → #EFF6FF`), local vector photo icon in a white 42dp circle, title `Afegir foto de cordada`, hint `S'usarà com a portada i avatar`.
@@ -1354,11 +1356,19 @@ Do not show an empty "Convidar per" section. If there are no channels, show `CON
   - This single cropped image is used as cover and circular avatar preview.
   - Uploaded via `POST /api/v1/cordadas/{id}/avatar` **after** creation (best-effort, wrapped so a photo failure doesn't break creation).
 - Name (≤60) + optional description (≤200).
+- Keyboard/focus:
+  - name uses `ImeAction.Next` → description.
+  - description uses `ImeAction.Next` when members exist, otherwise `Done`.
+  - final/search fields use `Done` and clear focus.
+  - Every text input has `BringIntoViewRequester`; the keyboard must never hide the focused field.
+  - Tapping blank scrollable space clears focus so users can leave text-entry mode without depending on a keyboard-specific checkmark.
 - **Member selection** is searchable, not a fixed checklist:
   - Section label `Afegir membres` with selected count when >0.
   - Selected friends render as horizontal chips with 24dp avatar + name + remove `×`.
   - Search field filters accepted friends locally; result rows use 32dp avatar + plus circular affordance.
+  - While the member search field is focused, suggestions render **above** the field so they stay above the soft keyboard. When the field is unfocused, suggestions render below as normal form content.
   - `memberIds` → `POST /api/v1/cordadas`; server drops non-friend ids.
+- Bottom CTA: full-width 48dp green `Crear`. Disabled until name is non-blank; while creating, inputs are disabled and the button shows a spinner.
 
 ### Cordada DETAIL — full-screen destination (NOT a sheet)
 
@@ -1370,7 +1380,7 @@ Do not show an empty "Convidar per" section. If there are no channels, show `CON
 - `CordadaDetailRoute` owns its **own `CordadasViewModel`**, loads the cordada by id (`openDetail(id)`), shows a centered spinner until loaded.
 - Body (vertical scroll):
   - If `avatarUrl` exists: full-width **cover image** 180dp, `ContentScale.Crop`, bottom scrim, cordada name (22sp extra-bold white) + member count bottom-left, and owner 44dp white circular edit-photo FAB bottom-right.
-  - If `avatarUrl` is empty: **do not render a large rectangular fake cover**. Use a compact white identity header with a 68dp circular `CordadaAvatar` initials/gradient, cordada name, member count, and owner edit-photo pencil over the avatar.
+  - If `avatarUrl` is empty: **do not render a large rectangular fake cover**. Use a compact white identity header with a 68dp circular `CordadaAvatar` initials/gradient, cordada name (22sp extra-bold, max 2 lines), member count, and owner 30dp edit-photo pencil over the avatar. A divider follows the compact header.
   - **No generic mountain/camera hero images and no emoji placeholders.** Placeholder visuals are only for the create-flow photo picker, where the user is actively being invited to add a photo.
   - **Description sits below the hero/header**, before members/ranking. It is the group description, not a leaderboard field.
   - Member count pill + member-avatar cluster.
@@ -1385,7 +1395,7 @@ Do not show an empty "Convidar per" section. If there are no channels, show `CON
 
 ### Invite-member sheet (inside detail)
 
-Title "Invitar", search `BasicTextField`; results = `searchUsers` minus current members; each row has **Invitar** (`RowActionButton`) → becomes **Invitado** (`inviteSentIds`).
+Title "Invitar", search `BasicTextField`; results = `searchUsers` minus current members; each row has 36dp avatar/name plus **Invitar** (`RowActionButton`) → becomes **Invitado** (`inviteSentIds`). The sheet uses the same `CordadaModalSheet`, scroll + `BringIntoViewRequester`, `ImeAction.Done`, and clear-focus-on-blank-tap rules as create-cordada.
 
 ### Email notification on cordada invite
 

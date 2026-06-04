@@ -2414,7 +2414,7 @@ item {
 
 ---
 
-## Cordadas — Climbing Groups (Android + v1 API, 2026-05-31)
+## Cordadas — Climbing Groups (Android + v1 API, updated 2026-06-04)
 
 Cordadas are named climbing groups (think "teams"/"squads"). A user can belong to many cordadas. Each cordada has one **OWNER** and N **MEMBER**s. Membership is invite-based (no auto-join). The feature shipped on Android first; web UI is pending.
 
@@ -2427,7 +2427,7 @@ model Cordada {
   id          String   @id @default(cuid())
   name        String
   description String?
-  avatarUrl   String?              // reserved, not yet used by the UI
+  avatarUrl   String?              // optional cover/avatar image URL used by list + detail
   ownerId     String
   owner       User     @relation("CordadaOwner", fields: [ownerId], references: [id])
   members     CordadaMember[]
@@ -2481,6 +2481,7 @@ All business logic lives here (route handlers only auth + parse + call). Uses th
 |---|---|---|
 | `GET /api/v1/cordadas` | list | → `{ cordadas, pendingInvites }` |
 | `POST /api/v1/cordadas` | create | `{ name, description? }` |
+| `POST /api/v1/cordadas/{id}/avatar` | upload/replace avatar (owner) | multipart `file` → `{ avatarUrl }` |
 | `GET /api/v1/cordadas/{id}` | detail | → `{ cordada }` |
 | `DELETE /api/v1/cordadas/{id}` | delete (owner) | — |
 | `POST /api/v1/cordadas/{id}/invite` | invite (owner) | `{ userId }` |
@@ -2502,7 +2503,7 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 > **`DESIGN.md → "Cordadas + Amigos — Unified Social Screen"` is the authoritative cross-platform spec** for rebuilding this on web/iOS. The notes below are the Android specifics + rationale.
 
-`FriendsScreen` is a **single unified screen** (no Amigos/Cordadas sub-tabs). One `LazyColumn` (`UnifiedList`) lists everything in order: **sticky** search → search results → **Solicitudes** (combined friend requests + cordada invites under one count) → **Amigos + Cordadas intermixed alphabetically (Option B)** → combined empty state. A floating green `+` FAB opens an `ActionSpeedDialSheet` with two actions: **invite a friend** (contact/email flow) or **create a cordada**.
+`FriendsScreen` is a **single unified screen** (no Amigos/Cordadas sub-tabs). Android labels the bottom-nav item **Cordada**, but the screen is the unified social surface: friends and cordadas live together in one WhatsApp-style list. One `LazyColumn` (`UnifiedList`) lists everything in order: **sticky** search → search results → **Solicitudes** (combined friend requests + cordada invites under one count) → **Amigos + Cordadas intermixed alphabetically (Option B)** → combined empty state. A floating green `+` FAB opens an `ActionSpeedDialSheet` with two actions: **invite a friend** (contact/email flow) or **create a cordada**.
 
 | File | Role |
 |---|---|
@@ -2512,7 +2513,7 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 | `feature/friends/FriendsViewModel.kt` | Friends state + `resolveInvitation(email?)` + `inviteFriendByEmail(email)` (with the full `InviteState` machine). |
 | `core/model/Models.kt` | `CordadaSummary`, `CordadaInvite`, `CordadasResponse`, `CordadaMemberRanking`, `CordadaDetail`, `CordadaDetailResponse`, `UserStatsResponse`. |
 
-**Navigation — root bottom-nav tab (NOT a dropdown/secondary screen):** `FriendsScreen` is registered **inside `MainScaffold`'s `tabNavController` NavHost** as the **"Cordada" tab** (two-users icon, between Stats and Bitácola). It therefore shares `MainTopBar` (logo + avatar menu) and the bottom nav. The avatar-dropdown "Amigos" entry was **removed**. The global new-ascent `+` FAB is **hidden on this tab** (`currentRoute == Screen.Friends.route`).
+**Navigation — root bottom-nav tab (NOT a dropdown/secondary screen):** `FriendsScreen` is registered **inside `MainScaffold`'s `tabNavController` NavHost** as the **"Cordada" tab** (two-users icon, between Stats and Bitácola). It therefore shares `MainTopBar` (logo + avatar menu) and the bottom nav. The avatar-dropdown "Amigos" entry was **removed**. The screen has no own header; its nested `Scaffold` uses `contentWindowInsets = WindowInsets(0,0,0,0)` so no white gap appears under `MainTopBar`. The global new-ascent `+` FAB is **hidden on this tab** (`currentRoute == Screen.Friends.route`); the social screen renders its own green `+` FAB.
 
 **Tab badge:** the Cordada tab shows a red `BadgedBox`/`Badge` (`#EF4444`, "9+" cap) with the pending **cordada-invite** count. `MainScaffold` refetches `getFriendsData().incoming.size` (avatar badge) + `getCordadas().pendingInvites.size` (cordada tab badge) on **every tab change**.
 
@@ -2547,11 +2548,15 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 - Auto-close after success (`INVITED` or `FRIEND_REQUEST_SENT`) remains ~1.4s.
 
 **Create cordada (`CreateCordadaSheet`) — current flow:**
+- It is a `CordadaModalSheet` `ModalBottomSheet`: white surface, default drag handle, `rememberModalBottomSheetState(skipPartiallyExpanded = true)`, default Material insets, and wrapper `.navigationBarsPadding().imePadding()`. The content `Column` is vertically scrollable, has horizontal 20dp padding, and uses `clearFocusOnUnconsumedTap(focusManager)`.
 - One **cover-style photo picker** (not an emoji placeholder): 3:2 rectangular cover, subtle neutral/blue placeholder, vector photo icon, copy "Añadir/Afegir foto de cordada", hint "Se usará/S'usará como portada y avatar".
 - A 48dp circular avatar preview is overlaid on the cover. It previews the same cropped image as a circle; do not add a second separate "Editar foto" row.
 - Picking a photo opens `CordadaImageCropSheet` using CanHub `CropImageView`, **fixed 3:2 aspect ratio**, rotate 90°, and returns a 1200×800 bitmap. JPEG is uploaded via `POST /api/v1/cordadas/{id}/avatar` after creation (best-effort).
-- Name (≤60) + optional description (≤200).
+- Name (≤60) + optional description (≤200). Keyboard actions are explicit: name `Next` → description; description `Next` → member search when friends exist, otherwise `Done`; final/search fields use `Done` and clear focus. Do **not** use generic `focusManager.moveFocus(...)`; use explicit `FocusRequester`s because generic focus failed to move/scroll reliably here.
+- Every text input has `BringIntoViewRequester` on focus, with a short delay before `bringIntoView()`, so the IME cannot cover the field being edited.
 - Member selection is a **searchable friend picker**, not a fixed checkbox list: selected friends render as horizontal chips; search filters accepted friends locally and adds/removes members ergonomically.
+- Member autocomplete suggestions render **above** the member search field while it is focused, keeping tappable rows above the keyboard. When unfocused, suggestions render below as normal form content.
+- Create CTA is full-width 48dp green. It is disabled until name is non-blank; during creation inputs are disabled and the button shows a spinner.
 - `createCordada(..., onSuccess)` sets `isCreating`, disables inputs while creating, uploads avatar best-effort, and navigates to the new detail on success.
 
 > **i18n**: all `friends_*` and `cordadas_*` strings used by these screens are **fully translated in all 5 locales** (verified 2026-06-03); back-button contentDescription uses `R.string.action_back`. `nav_tab_cordada` = "Cordada" in every locale (brand term, intentionally untranslated). Do not hardcode user-visible strings in `feature/friends`.
@@ -2566,11 +2571,16 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 `CordadaDetailScreen` current visual contract:
 - Quiet top app bar: back icon only, no title. The hero/header owns the cordada name.
 - If `avatarUrl` exists: hero cover is 180dp, full-width, `ContentScale.Crop`, with bottom scrim, name + member count anchored bottom-left, edit photo FAB bottom-right for owner.
-- If `avatarUrl` is empty: **do not render a large rectangular placeholder cover**. Use a compact white identity header with a 68dp circular `CordadaAvatar` initials/gradient, name, member count, and owner edit-photo pencil over the avatar. No generic mountain/camera hero images and no emoji placeholders.
+- If `avatarUrl` is empty: **do not render a large rectangular placeholder cover**. Use a compact white identity header with a 68dp circular `CordadaAvatar` initials/gradient, name (22sp extra-bold, max 2 lines), member count, and owner 30dp edit-photo pencil over the avatar. Follow it with `HRule()`. No generic mountain/camera hero images and no emoji placeholders.
 - Description sits directly below the hero/header, before member chips/avatars. This is the natural location because it describes the group, not the leaderboard.
-- Member summary pill + avatar row: owner can invite with a final circular dashed `+` slot that behaves like the last avatar. Do not use a text pill "Convidar" there.
+- Member summary pill + avatar row: accepted members show overlapping avatars; owner can invite with a final circular dashed `+` slot that behaves like the last avatar. Do not use a text pill "Convidar" there.
 - Ranking section is unchanged by recent visual work and should remain the established member leaderboard style.
 - Destructive actions are **not persistent content**. They live in the TopAppBar overflow menu (`⋮`) as a red row with trash icon: owner → "Eliminar cordada", member → "Salir de la cordada", both followed by the existing confirmation dialog. Do not reintroduce a footer danger card/panel.
+
+`InviteSheet` inside detail:
+- Opened only by the owner from the dashed `+` avatar slot.
+- Uses the same `CordadaModalSheet`/scroll/IME/focus rules as create-cordada.
+- Search reuses `searchUsers`, excludes current members, debounces in `CordadasViewModel.onInviteQueryChange`, and tracks `inviteSentIds` so invited rows switch from **Invitar** to **Invitado** without requiring an immediate reload.
 
 ### ⚠️ Known issue / fix — ModalBottomSheet content hidden behind the system navigation bar
 
