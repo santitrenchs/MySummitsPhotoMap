@@ -1912,15 +1912,20 @@ The old bottom-right 8dp dot was replaced by this badge. Both Fotos and Etiqueta
 
 **Web equivalent** (`components/profile/PhotosTabV2.tsx`): `position: absolute; top: 5; left: 5; width: 20; height: 20; borderRadius: 50%; background: rgba(255,255,255,0.95)` wrapping a `<RarityFlower id={photo.rarityId} size={14} />`.
 
-#### PeakRowCard — repeat count pill (Cimas tab)
+#### PeakRowCard — compact rows (Cimas tab)
 
-When `peak.count > 1`, a styled pill appears to the right of the peak name in the header row:
+The Cimas tab uses compact text-first rows. Do **not** show the peak photo in this list — Fotos/Etiquetado already provide photo grids, and removing the thumbnail keeps Cimas scannable.
 
-- **Container**: `RoundedCornerShape(6.dp)`, `rarityColor.copy(alpha = 0.13f)` background, `rarityColor.copy(alpha = 0.30f)` border (1dp)
-- **Content**: `"×${peak.count}"` text, `fontSize = 10.sp`, `FontWeight.Bold`, color = `rarityColorDark`
-- Single ascents (count = 1) show nothing — same as web.
+- Row height: `84.dp`, left rarity strip 4dp full height, row shape `RoundedCornerShape(12.dp)`.
+- Content padding: start 12dp, end 14dp, top 12dp, bottom 16dp.
+- First line: peak name, 14sp bold, `PeakNavyDark`, one-line ellipsis.
+- Second line: rarity pill left, then fixed metadata columns on the right.
+- Rarity pill: min height 26dp, rounded 100dp, `rarityColor.copy(alpha = 0.13f)`, 9dp rarity dot + 10sp bold label, `lineHeight = 12.sp`, `rarityColorDark`.
+- Altitude: fixed width 76dp, left-aligned, 13sp extra-bold, `PeakNavyDark`.
+- Last ascent date: fixed width 78dp, `TextAlign.End`, 12sp semibold, `PeakNavyMid`.
+- Removed from the Cimas row: photo thumbnail, repeat-count pill, first-date column, mountain-range text.
 
-**Web equivalent** (`components/profile/CaptureStack.tsx`): stacked-squares badge for count > 1, `null` for count ≤ 1. The `×1` plain-text case was removed from web to match (returns `null` when `count <= 1`).
+Search UX: the Cimas search field stays visible and focused while typing; results update below it. Never auto-scroll on every keystroke because that hides what the user is typing. On IME Search only, clear focus and scroll to the first result (`LazyListState.animateScrollToItem(2)`) if results exist. The `LazyColumn` uses `imePadding()` plus generous bottom padding so rows remain reachable above the soft keyboard and bottom nav.
 
 ---
 

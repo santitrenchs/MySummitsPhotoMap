@@ -1026,31 +1026,30 @@ Each photo tile in the Fotos and Etiquetado 3-column grid has a rarity flower ba
 
 ---
 
-### PeakRowCard — repeat count pill (Cimas tab)
+### PeakRowCard — compact rows (Cimas tab)
 
-When a peak has been climbed more than once (`peak.count > 1`), a compact pill appears to the right of the peak name:
+The Cimas tab uses compact text-first rows. Photos are intentionally **not** shown here because the Fotos and Etiquetado tabs already provide the visual photo grids.
 
 ```
-┌────────────────────────────────────────┐
-│  [photo]  │ Pica d'Estats    ┌────┐    │
-│           │                  │ ×3 │    │  ← rarity-tinted pill
-│           │ ✿ Snow Lotus     └────┘    │
-│           │ Última: 12 ene '24         │
-└────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  │ Pica d'Estats                             │
+│  │ ● Snow Lotus            3143 m  12 ene '24│
+└──────────────────────────────────────────────┘
 ```
 
 | Property | Value |
 |---|---|
-| Shape | `RoundedCornerShape(6.dp)` |
-| Background | `rarityColor.copy(alpha = 0.13f)` |
-| Border | 1dp, `rarityColor.copy(alpha = 0.30f)` |
-| Text | `"×{count}"`, 10sp, `FontWeight.Bold` |
-| Text color | `rarityColorDark` |
-| Shown when | `peak.count > 1` only — single ascents show nothing |
+| Row height | 84dp |
+| Left strip | 4dp, `rarityColor`, full height |
+| Row content padding | start 12dp, end 14dp, top 12dp, bottom 16dp |
+| Name | 14sp, bold, `PeakNavyDark`, 1 line ellipsis |
+| Second line | rarity pill left; altitude fixed-width column; last ascent date fixed-width and right-aligned |
+| Rarity pill | min height 26dp, rounded 100dp, `rarityColor.copy(alpha = 0.13f)`, dot + label |
+| Rarity label | 10sp bold, `lineHeight = 12.sp`, `rarityColorDark`, 1 line ellipsis |
+| Altitude | 13sp extra-bold, `PeakNavyDark`, width 76dp, left-aligned |
+| Last date | 12sp semibold, `PeakNavyMid`, width 78dp, `TextAlign.End` |
 
-**Web** (`CaptureStack.tsx`): stacked-squares visual for count > 1 (up to 4 squares in rarity color, overflow badge `+N`). Returns `null` for `count ≤ 1` — the `×1` plain-text case was removed to avoid noise.
-
-**Why both patterns**: tap-active-tab is iOS convention but invisible to users who don't know it; FAB is discoverable but adds visual weight. Coexist without conflict.
+Search behaviour: while typing, the search field must stay visible and focused; results update below it. Do **not** auto-scroll on every keystroke. On IME Search, clear focus and scroll to the first result (`LazyListState.animateScrollToItem(2)`) if any results exist. The list uses `imePadding()` and enough bottom content padding so results remain reachable above the keyboard and bottom nav.
 
 ---
 
