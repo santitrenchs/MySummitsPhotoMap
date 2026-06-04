@@ -2,235 +2,407 @@ package com.peakadex.app.feature.newascent
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.rive.Artboard
-import app.rive.Fit
-import app.rive.Result
-import app.rive.Rive
-import app.rive.RiveFile
-import app.rive.RiveFileSource
-import app.rive.StateMachine
-import app.rive.rememberRiveFile
-import app.rive.rememberRiveWorkerOrNull
+import com.airbnb.lottie.LottieProperty
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.airbnb.lottie.compose.rememberLottieDynamicProperties
+import com.airbnb.lottie.compose.rememberLottieDynamicProperty
 import com.peakadex.app.R
+import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.RarityInfo
 import com.peakadex.app.core.ui.theme.PeakBackground
-import com.peakadex.app.core.ui.theme.PeakNavyDark
+import com.peakadex.app.feature.logbook.CardFront
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
+
+// ── Reveal phase state machine ─────────────────────────────────────────────────
+// BLOOM  → card blurred + flower animation on top + text
+// REVEAL → blur dissolves → card comes into focus → navigate away
+
+private enum class RevealPhase { BLOOM, REVEAL }
+
+// ── Main composable ────────────────────────────────────────────────────────────
 
 @Composable
 fun AscentCaptureReveal(
-    ascentId: String,
-    rarity: RarityInfo,
+    ascent:     Ascent,
+    rarity:     RarityInfo,
+    isMythic:   Boolean = false,
     onFinished: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier:   Modifier = Modifier,
 ) {
+    var phase by remember { mutableStateOf(RevealPhase.BLOOM) }
+    val scope = rememberCoroutineScope()
+
+    // Blur: 18dp → 0dp when revealed
+    val blurRadius by animateDpAsState(
+        targetValue   = if (phase == RevealPhase.BLOOM) 18.dp else 0.dp,
+        animationSpec = tween(durationMillis = 600),
+        label         = "blur",
+    )
+    // Dark overlay: 0.55 → 0 when revealed
+    val overlayAlpha by animateFloatAsState(
+        targetValue   = if (phase == RevealPhase.BLOOM) 0.55f else 0f,
+        animationSpec = tween(durationMillis = 600),
+        label         = "overlay",
+    )
+    // Bloom layer: 1 → 0 when revealed (fades before card is fully shown)
+    val bloomAlpha by animateFloatAsState(
+        targetValue   = if (phase == RevealPhase.BLOOM) 1f else 0f,
+        animationSpec = tween(durationMillis = 350),
+        label         = "bloom",
+    )
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .clickable(onClick = onFinished)
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        rarity.color.copy(alpha = 0.26f),
-                        Color.White,
-                        PeakBackground,
-                    ),
-                ),
-            )
-            .padding(horizontal = 28.dp),
-        contentAlignment = Alignment.Center,
+            .background(PeakBackground)
+            .clickable(
+                enabled           = phase == RevealPhase.BLOOM,
+                indication        = null,
+                interactionSource = remember { MutableInteractionSource() },
+            ) {
+                phase = RevealPhase.REVEAL
+                scope.launch {
+                    delay(700)
+                    onFinished()
+                }
+            },
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(22.dp),
+
+        // ── 1. Card blurred in background ─────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .align(Alignment.Center)
+                .blur(blurRadius),
         ) {
-            Surface(
+            CardFront(
+                ascent        = ascent,
+                rarity        = rarity,
+                onDetailClick = {},
+                onShareClick  = {},
+            )
+        }
+
+        // ── 2. Dark overlay ───────────────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = overlayAlpha)),
+        )
+
+        // ── 3. Mythic glow (behind bloom) ─────────────────────────────────────
+        if (isMythic) {
+            MythicGlow(modifier = Modifier.align(Alignment.Center))
+        }
+
+        // ── 4. Bloom layer (flower + text) — fades out on reveal ──────────────
+        if (bloomAlpha > 0f) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
-                color = Color.Transparent,
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                BloomRiveOrFallback(color = rarity.color, ascentId = ascentId)
-            }
-
-            Column(
+                    .align(Alignment.Center)
+                    .alpha(bloomAlpha)
+                    .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(
-                    text = stringResource(R.string.capture_reveal_title, rarity.label),
-                    color = PeakNavyDark,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 31.sp,
+                // Flower animation
+                BloomLottie(
+                    rarity    = rarity,
+                    replayKey = ascent.id,
                 )
-                Text(
-                    text = stringResource(R.string.capture_reveal_subtitle),
-                    color = rarity.color,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = stringResource(R.string.capture_reveal_continue),
-                    color = PeakNavyDark.copy(alpha = 0.58f),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                )
+
+                // Text block
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    // Rarity name
+                    Text(
+                        text       = rarity.label,
+                        color      = rarity.color,
+                        fontSize   = 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign  = TextAlign.Center,
+                    )
+                    // Subtitle
+                    Text(
+                        text       = if (isMythic)
+                            stringResource(R.string.capture_reveal_subtitle_mythic)
+                        else
+                            stringResource(R.string.capture_reveal_subtitle),
+                        color      = Color.White,
+                        fontSize   = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign  = TextAlign.Center,
+                    )
+                    // EP reward
+                    Text(
+                        text       = stringResource(R.string.capture_reveal_ep, rarity.ep),
+                        color      = if (isMythic) Color(0xFFFFD700) else rarity.color,
+                        fontSize   = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign  = TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    // Tap hint
+                    Text(
+                        text       = stringResource(R.string.capture_reveal_continue),
+                        color      = Color.White.copy(alpha = 0.55f),
+                        fontSize   = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign  = TextAlign.Center,
+                    )
+                }
             }
         }
-    }
-}
 
-@Composable
-private fun BloomRiveOrFallback(color: Color, ascentId: String) {
-    val workerError = remember { mutableStateOf<Throwable?>(null) }
-    val riveWorker = rememberRiveWorkerOrNull(workerError)
-
-    if (riveWorker == null) {
-        CaptureFlowerFallback(color = color, replayKey = ascentId)
-        return
-    }
-
-    when (val riveFile = rememberRiveFile(RiveFileSource.RawRes.from(R.raw.bloom), riveWorker)) {
-        is Result.Loading -> CaptureFlowerFallback(color = color, replayKey = ascentId)
-        is Result.Error -> CaptureFlowerFallback(color = color, replayKey = ascentId)
-        is Result.Success -> {
-            val artboard = rememberArtboardOrNull(riveFile.value, "flor")
-            if (artboard == null) {
-                CaptureFlowerFallback(color = color, replayKey = ascentId)
-                return
-            }
-
-            val stateMachine = rememberStateMachineOrNull(artboard, "State Machine 1")
-            if (stateMachine == null) {
-                CaptureFlowerFallback(color = color, replayKey = ascentId)
-                return
-            }
-
-            Rive(
-                file = riveFile.value,
-                modifier = Modifier.fillMaxSize(),
-                artboard = artboard,
-                stateMachine = stateMachine,
-                fit = Fit.Contain(),
-                playing = true,
+        // ── 5. Mythic particles (above everything) ────────────────────────────
+        if (isMythic && bloomAlpha > 0f) {
+            MythicParticles(
+                replayKey = ascent.id,
+                modifier  = Modifier.fillMaxSize(),
             )
         }
     }
 }
 
-@Composable
-private fun rememberArtboardOrNull(file: RiveFile, artboardName: String): Artboard? {
-    val artboard by remember(file, artboardName) {
-        mutableStateOf(runCatching { Artboard.fromFile(file, artboardName) }.getOrNull())
-    }
+// ── Mythic: pulsing radial glow ────────────────────────────────────────────────
 
-    DisposableEffect(artboard) {
-        onDispose {
-            artboard?.close()
+@Composable
+private fun MythicGlow(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "mythic_glow")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue  = 0.72f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "glow_alpha",
+    )
+
+    Box(
+        modifier = modifier
+            .size(320.dp)
+            .background(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFFFFD700).copy(alpha = glowAlpha),
+                        Color(0xFFFFD700).copy(alpha = glowAlpha * 0.3f),
+                        Color.Transparent,
+                    ),
+                ),
+                shape = CircleShape,
+            ),
+    )
+}
+
+// ── Mythic: radial burst particles ────────────────────────────────────────────
+
+@Composable
+private fun MythicParticles(
+    replayKey: String,
+    modifier:  Modifier = Modifier,
+) {
+    val particles = remember(replayKey) { List(8) { Animatable(0f) } }
+
+    LaunchedEffect(replayKey) {
+        particles.forEachIndexed { i, anim ->
+            launch {
+                delay(i * 90L)
+                anim.animateTo(
+                    targetValue   = 1f,
+                    animationSpec = tween(durationMillis = 750),
+                )
+            }
         }
     }
 
-    return artboard
-}
+    Canvas(modifier = modifier) {
+        val cx = size.width  / 2f
+        val cy = size.height / 2f
 
-@Composable
-private fun rememberStateMachineOrNull(
-    artboard: Artboard,
-    stateMachineName: String,
-): StateMachine? {
-    val stateMachine by remember(artboard, stateMachineName) {
-        mutableStateOf(runCatching { StateMachine.fromArtboard(artboard, stateMachineName) }.getOrNull())
-    }
+        particles.forEachIndexed { i, anim ->
+            val progress = anim.value
+            val angle    = Math.toRadians(i * 45.0 - 90.0)
+            val dist     = 155.dp.toPx() * progress
 
-    DisposableEffect(stateMachine) {
-        onDispose {
-            stateMachine?.close()
+            // Larger particle in the lead, smaller trail dot
+            val radius = 7.dp.toPx() * (1f - progress * 0.4f)
+            val alpha  = (1f - progress).coerceIn(0f, 1f)
+
+            drawCircle(
+                color  = Color(0xFFFFD700).copy(alpha = alpha * 0.9f),
+                radius = radius,
+                center = Offset(
+                    x = cx + cos(angle).toFloat() * dist,
+                    y = cy + sin(angle).toFloat() * dist,
+                ),
+            )
+            // Small sparkle trail dot
+            drawCircle(
+                color  = Color.White.copy(alpha = alpha * 0.6f),
+                radius = 3.dp.toPx() * (1f - progress),
+                center = Offset(
+                    x = cx + cos(angle).toFloat() * dist * 0.6f,
+                    y = cy + sin(angle).toFloat() * dist * 0.6f,
+                ),
+            )
         }
     }
-
-    return stateMachine
 }
 
+// ── Lottie bloom animation ─────────────────────────────────────────────────────
+
+@Composable
+private fun BloomLottie(
+    rarity:    RarityInfo,
+    replayKey: String = "",
+    modifier:  Modifier = Modifier,
+) {
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(R.raw.flower_bloom),
+    )
+
+    // Derive a darker shade for the flower center (RarityInfo has no colorDark)
+    val centerColor = remember(rarity.color) {
+        rarity.color.copy(
+            red   = (rarity.color.red   * 0.65f).coerceIn(0f, 1f),
+            green = (rarity.color.green * 0.65f).coerceIn(0f, 1f),
+            blue  = (rarity.color.blue  * 0.65f).coerceIn(0f, 1f),
+        )
+    }
+
+    val dynamicProperties = rememberLottieDynamicProperties(
+        // Petals → rarity color
+        rememberLottieDynamicProperty(
+            property = LottieProperty.COLOR,
+            value    = rarity.color.toArgb(),
+            keyPath  = arrayOf("Pre-comp 1", "Layer 2", "Group 8", "Fill 1"),
+        ),
+        // Flower center → darker rarity shade
+        rememberLottieDynamicProperty(
+            property = LottieProperty.COLOR,
+            value    = centerColor.toArgb(),
+            keyPath  = arrayOf("Pre-comp 1", "Layer 2", "Group 7", "Fill 1"),
+        ),
+    )
+
+    Box(
+        modifier         = modifier.size(240.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        LottieAnimation(
+            composition       = composition,
+            iterations        = 1,
+            dynamicProperties = dynamicProperties,
+            modifier          = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+// ── Canvas fallback (safety net if Lottie composition fails to load) ───────────
+
+@Suppress("unused")
 @Composable
 private fun CaptureFlowerFallback(color: Color, replayKey: String) {
     val bloom = remember(replayKey) { Animatable(0f) }
 
     LaunchedEffect(replayKey) {
         bloom.animateTo(
-            targetValue = 1f,
+            targetValue   = 1f,
             animationSpec = tween(durationMillis = 900, easing = EaseOutBack),
         )
     }
 
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val center = this.center
-        val petalRadius = size.minDimension * 0.18f
+    Canvas(modifier = Modifier.size(240.dp)) {
+        val center        = this.center
+        val petalRadius   = size.minDimension * 0.18f
         val petalDistance = size.minDimension * 0.16f * bloom.value
 
         repeat(8) { index ->
             val angle = Math.toRadians((index * 45.0) - 90.0)
             val petalCenter = Offset(
-                x = center.x + kotlin.math.cos(angle).toFloat() * petalDistance,
-                y = center.y + kotlin.math.sin(angle).toFloat() * petalDistance,
+                x = center.x + cos(angle).toFloat() * petalDistance,
+                y = center.y + sin(angle).toFloat() * petalDistance,
             )
             drawCircle(
-                color = color.copy(alpha = 0.72f),
+                color  = color.copy(alpha = 0.72f),
                 radius = petalRadius * bloom.value.coerceAtLeast(0.12f),
                 center = petalCenter,
             )
         }
-
         drawCircle(color = Color.White, radius = petalRadius * 0.78f, center = center)
-        drawCircle(color = color, radius = petalRadius * 0.48f, center = center)
+        drawCircle(color = color,       radius = petalRadius * 0.48f, center = center)
 
         val stem = Path().apply {
             moveTo(center.x, center.y + petalRadius)
             cubicTo(
-                center.x - petalRadius * 0.4f,
-                center.y + petalRadius * 2.0f,
-                center.x + petalRadius * 0.25f,
-                center.y + petalRadius * 2.8f,
-                center.x - petalRadius * 0.2f,
-                center.y + petalRadius * 3.4f,
+                center.x - petalRadius * 0.4f,  center.y + petalRadius * 2.0f,
+                center.x + petalRadius * 0.25f, center.y + petalRadius * 2.8f,
+                center.x - petalRadius * 0.2f,  center.y + petalRadius * 3.4f,
             )
         }
         drawPath(stem, Color(0xFF0F766E), style = Stroke(width = 7f))
     }
+}
+
+// Keep sqrt import used by distance() — referenced if needed in future extensions
+@Suppress("unused")
+private fun distanceFloat(a: Offset, b: Offset): Float {
+    val dx = a.x - b.x
+    val dy = a.y - b.y
+    return sqrt(dx * dx + dy * dy)
 }

@@ -208,7 +208,7 @@ private val CloseSmallIcon: ImageVector by lazy {
 }
 
 // Share icon — 3 nodes connected by lines (matches web AscentCard)
-private val ShareNetworkIcon: ImageVector by lazy {
+internal val ShareNetworkIcon: ImageVector by lazy {
     ImageVector.Builder("ShareNetwork", 20.dp, 20.dp, 20f, 20f).apply {
         // Top-right circle (cx=16, cy=4, r=2) → fill
         path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
@@ -233,7 +233,7 @@ private val ShareNetworkIcon: ImageVector by lazy {
 }
 
 // Pencil / edit icon (matches web AscentCard)
-private val PencilIcon: ImageVector by lazy {
+internal val PencilIcon: ImageVector by lazy {
     ImageVector.Builder("Pencil", 20.dp, 20.dp, 20f, 20f).apply {
         path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f,
             strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round, fill = null) {
@@ -611,7 +611,7 @@ private fun AscentFlipCard(
 // ── Card front ─────────────────────────────────────────────────────────────────
 
 @Composable
-private fun CardFront(
+internal fun CardFront(
     ascent:       Ascent,
     rarity:       RarityInfo,
     onDetailClick: () -> Unit,
@@ -727,7 +727,7 @@ private fun CardFront(
 }
 
 @Composable
-private fun StatBandItem(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+internal fun StatBandItem(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
