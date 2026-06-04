@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -537,10 +538,18 @@ private fun CimasTab(
 ) {
     val focusManager = LocalFocusManager.current
     val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(query, rarityFilter, peaks.size) {
+        if (query.isNotBlank() || rarityFilter != null) {
+            listState.animateScrollToItem(2)
+        }
+    }
 
     LazyColumn(
-        contentPadding = PaddingValues(bottom = 24.dp),
-        modifier       = Modifier.fillMaxSize().background(PeakBackground),
+        state          = listState,
+        contentPadding = PaddingValues(bottom = 180.dp),
+        modifier       = Modifier.fillMaxSize().background(PeakBackground).imePadding(),
     ) {
         // Stats header
         item(key = "stats_header") {
