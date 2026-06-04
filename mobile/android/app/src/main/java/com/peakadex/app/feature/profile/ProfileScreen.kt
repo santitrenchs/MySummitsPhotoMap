@@ -284,7 +284,7 @@ private fun PeakRowCardSkeleton(brush: Brush, modifier: Modifier = Modifier) {
         border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.height(70.dp),
+            modifier = Modifier.height(78.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SkeletonBlock(
@@ -293,15 +293,15 @@ private fun PeakRowCardSkeleton(brush: Brush, modifier: Modifier = Modifier) {
                 shape    = RoundedCornerShape(0.dp),
             )
             Column(
-                modifier            = Modifier.fillMaxWidth().padding(start = 12.dp, end = 14.dp, top = 10.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(7.dp),
+                modifier            = Modifier.fillMaxWidth().padding(start = 12.dp, end = 14.dp, top = 12.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 SkeletonBlock(brush, Modifier.fillMaxWidth(0.56f).height(15.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    SkeletonBlock(brush, Modifier.width(82.dp).height(16.dp), RoundedCornerShape(100.dp))
+                    SkeletonBlock(brush, Modifier.width(82.dp).height(20.dp), RoundedCornerShape(100.dp))
                     Spacer(Modifier.weight(1f))
                     SkeletonBlock(brush, Modifier.width(76.dp).height(16.dp))
                     SkeletonBlock(brush, Modifier.width(78.dp).height(14.dp))
@@ -327,7 +327,7 @@ private fun CompactRarityPill(label: String, color: Color, darkColor: Color) {
         modifier = Modifier
             .clip(RoundedCornerShape(100.dp))
             .background(color.copy(alpha = 0.13f))
-            .padding(horizontal = 7.dp, vertical = 2.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -769,7 +769,7 @@ private fun PeakRowCard(
         border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.height(70.dp),
+            modifier = Modifier.height(78.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -782,8 +782,8 @@ private fun PeakRowCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 12.dp, end = 14.dp, top = 10.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(7.dp),
+                    .padding(start = 12.dp, end = 14.dp, top = 12.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     text       = peak.name,
