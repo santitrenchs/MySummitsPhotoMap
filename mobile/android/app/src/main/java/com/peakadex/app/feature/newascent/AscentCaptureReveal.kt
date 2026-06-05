@@ -13,6 +13,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -99,7 +100,6 @@ fun AscentCaptureReveal(
         delay(T_PEAK);     step = 2   // peak name + altitude
         delay(T_RARITY);   step = 3   // rarity line
         delay(T_EP);       step = 4   // EP counter starts
-        delay(EP_COUNT_MS + T_HINT); step = 5   // tap hint
     }
 
     // EP roll-up + bounce
@@ -126,7 +126,7 @@ fun AscentCaptureReveal(
         label         = "blur",
     )
     val overlayAlpha by animateFloatAsState(
-        targetValue   = if (phase == RevealPhase.BUILD) 0.50f else 0f,
+        targetValue   = if (phase == RevealPhase.BUILD) 0.60f else 0f,
         animationSpec = tween(durationMillis = 750),
         label         = "overlay",
     )
@@ -244,15 +244,9 @@ fun AscentCaptureReveal(
                     }
                 }
 
-                // Step 3 — rarity line
+                // Step 3 — rarity pill (translucent, like the cards)
                 StepText(visible = step >= 3) {
-                    Text(
-                        text       = stringResource(R.string.capture_reveal_rarity_line, rarity.label),
-                        color      = rarity.color,
-                        fontSize   = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign  = TextAlign.Center,
-                    )
+                    RarityPill(rarity = rarity)
                 }
 
                 // Step 4 — EP counter (rolling) + bounce, separated from above
@@ -273,18 +267,6 @@ fun AscentCaptureReveal(
                         },
                     )
                 }
-
-                // Step 5 — tap hint
-                StepText(visible = step >= 5) {
-                    Spacer(Modifier.height(14.dp))
-                    Text(
-                        text       = stringResource(R.string.capture_reveal_continue),
-                        color      = Color.White.copy(alpha = 0.5f),
-                        fontSize   = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign  = TextAlign.Center,
-                    )
-                }
             }
         }
 
@@ -292,6 +274,34 @@ fun AscentCaptureReveal(
         if (isMythic && contentAlpha > 0f) {
             MythicParticles(replayKey = ascent.id, modifier = Modifier.fillMaxSize().alpha(contentAlpha))
         }
+    }
+}
+
+// Rarity pill — translucent rounded chip, "✿ Label", matching the cards' style.
+@Composable
+private fun RarityPill(rarity: RarityInfo) {
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier
+            .background(
+                color = rarity.color.copy(alpha = 0.20f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(100),
+            )
+            .border(
+                width = 1.dp,
+                color = rarity.color.copy(alpha = 0.55f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(100),
+            )
+            .padding(horizontal = 16.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(text = "✿", color = rarity.color, fontSize = 15.sp)
+        Text(
+            text       = rarity.label,
+            color      = rarity.color,
+            fontSize   = 15.sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
