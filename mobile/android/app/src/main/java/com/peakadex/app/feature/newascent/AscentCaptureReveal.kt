@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -210,7 +211,7 @@ fun AscentCaptureReveal(
                 StepText(visible = step >= 1) {
                     Text(
                         text       = stringResource(R.string.capture_reveal_unlocked),
-                        color      = Color.White.copy(alpha = 0.75f),
+                        color      = Color(0xFFF5C842),
                         fontSize   = 13.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.18.em,
@@ -244,16 +245,17 @@ fun AscentCaptureReveal(
             }
         }
 
-        // ── 6. EP reward — separate block, lower, with rarity glow + sparkles ──
+        // ── 6. EP reward — anchored near the bottom (never overlaps 2-line names)
         if (contentAlpha > 0f && epStarted) {
             EpReward(
                 text      = stringResource(R.string.capture_reveal_ep, epCount.value.roundToInt()),
-                accent    = if (isMythic) Color(0xFFFFD700) else rarity.color,
+                glowColor = if (isMythic) Color(0xFFFFD700) else rarity.color,
                 pop       = epPop.value,
                 celebrate = epDone,
                 modifier  = Modifier
-                    .align(Alignment.Center)
-                    .offset(y = 132.dp)
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 64.dp)
                     .alpha(contentAlpha),
             )
         }
@@ -270,49 +272,49 @@ fun AscentCaptureReveal(
 @Composable
 private fun EpReward(
     text:      String,
-    accent:    Color,
+    glowColor: Color,
     pop:       Float,
     celebrate: Boolean,
     modifier:  Modifier = Modifier,
 ) {
-    // Soft pulsing glow behind the number
+    // Soft pulsing glow behind the number (rarity colored)
     val glow by rememberInfiniteTransition(label = "ep_glow").animateFloat(
-        initialValue  = 0.16f,
-        targetValue   = 0.34f,
+        initialValue  = 0.22f,
+        targetValue   = 0.45f,
         animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
         label         = "ep_glow_alpha",
     )
 
     // One-shot sparkle burst when EP lands
-    val sparks = remember(celebrate) { List(7) { Animatable(0f) } }
+    val sparks = remember(celebrate) { List(12) { Animatable(0f) } }
     LaunchedEffect(celebrate) {
         if (celebrate) {
             sparks.forEachIndexed { i, a ->
                 launch {
-                    delay(i * 45L)
-                    a.animateTo(1f, tween(750, easing = LinearOutSlowInEasing))
+                    delay(i * 35L)
+                    a.animateTo(1f, tween(850, easing = LinearOutSlowInEasing))
                 }
             }
         }
     }
 
     Box(
-        modifier         = modifier.size(240.dp),
+        modifier         = modifier.size(280.dp),
         contentAlignment = Alignment.Center,
     ) {
         // Glow disc
         Box(
             modifier = Modifier
-                .size(180.dp)
+                .size(200.dp)
                 .background(
                     brush = Brush.radialGradient(
-                        colors = listOf(accent.copy(alpha = glow), Color.Transparent),
+                        colors = listOf(glowColor.copy(alpha = glow), Color.Transparent),
                     ),
                     shape = CircleShape,
                 ),
         )
 
-        // Sparkles
+        // Sparkles — bright and prominent
         if (celebrate) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val cx = size.width / 2f
@@ -320,22 +322,31 @@ private fun EpReward(
                 sparks.forEachIndexed { i, a ->
                     val p     = a.value
                     val angle = Math.toRadians(i * (360.0 / sparks.size) - 90.0)
-                    val dist  = 78.dp.toPx() * p
-                    val alpha = (1f - p).coerceIn(0f, 1f)
+                    val dist  = 118.dp.toPx() * p
+                    val alpha = (1f - p * 0.85f).coerceIn(0f, 1f)
+                    val cxp   = cx + cos(angle).toFloat() * dist
+                    val cyp   = cy + sin(angle).toFloat() * dist
+                    // colored halo
                     drawCircle(
-                        color  = accent.copy(alpha = alpha * 0.85f),
-                        radius = 4.dp.toPx() * (1f - p * 0.5f),
-                        center = Offset(cx + cos(angle).toFloat() * dist, cy + sin(angle).toFloat() * dist),
+                        color  = glowColor.copy(alpha = alpha * 0.9f),
+                        radius = 7.dp.toPx() * (1f - p * 0.35f),
+                        center = Offset(cxp, cyp),
+                    )
+                    // bright white core
+                    drawCircle(
+                        color  = Color.White.copy(alpha = alpha),
+                        radius = 3.dp.toPx() * (1f - p * 0.4f),
+                        center = Offset(cxp, cyp),
                     )
                 }
             }
         }
 
-        // The EP number
+        // The EP number — white
         Text(
             text       = text,
-            color      = accent,
-            fontSize   = 32.sp,
+            color      = Color.White,
+            fontSize   = 34.sp,
             fontWeight = FontWeight.Black,
             textAlign  = TextAlign.Center,
             modifier   = Modifier.graphicsLayer {
