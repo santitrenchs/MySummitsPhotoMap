@@ -1412,6 +1412,42 @@ Swallowing `CancellationException` causes a brief error state flash when the Vie
 
 ---
 
+### Capture Reveal — cinematic post-creation animation (Android)
+
+**File:** `feature/newascent/AscentCaptureReveal.kt` (Lottie-based). Shown full-screen as an overlay after an ascent is created, before landing on the new card.
+
+**Tech:** Lottie (`com.airbnb.android:lottie-compose`), **NOT Rive** — Rive was a prototype and has been fully removed (no `app.rive` dep, no `bloom.riv`, no `RiveInitializer` in the manifest). The flower asset is `res/raw/flower_bloom.json` ("Flower growing Lottie JSON animation2", free from LottieFiles, ~15KB, 2s/30fps).
+
+**Flower tinting (runtime, per rarity):** `rememberLottieDynamicProperties` overrides only the petals + center, leaving stem/leaves their natural green:
+- Petals → `rarity.color` via keyPath `arrayOf("Pre-comp 1", "Layer 2", "Group 8", "Fill 1")`
+- Center → darker rarity shade (rarity.color × 0.6) via keyPath `... "Group 7", "Fill 1"`
+- **Do NOT use the `"**"` wildcard keyPath** — it tints the whole flower (stem/leaves) one color, which looks wrong.
+
+**Flower lifecycle:** grows once via `animateLottieCompositionAsState(iterations = 1, speed = GROW_SPEED=0.85)`, then stays "alive" with a subtle breathing (scale ±3.5%) + sway (±1.5°) via `infiniteTransition`, anchored near the stem base (`transformOrigin 0.5, 0.85`). While the composition is loading, render **nothing** (fallback Canvas flower only on genuine `isFailure`) — avoids a green/white dot flicker. `onBloomed` callback fires when `progress >= 0.99`.
+
+**Staged timeline (auto):**
+1. Flower blooms (~2.35s).
+2. At `T_INFO`=1500ms, the info block fades in **all at once**: "Carta desbloqueada" (gold `#F5C842`, 13sp) + peak name (UPPERCASE, 30sp ExtraBold white) + a **Row of two translucent pills**: rarity (`✿ Label`, rarity color) on the left + altitude (`{n} m`, white) on the right (shared `RevealPill(accent, leading, label)` composable).
+3. After `onBloomed` + `T_EP`=1200ms beat, the EP counter rolls 0→N (`Animatable`, `EP_COUNT_MS`=900ms) then bounces (spring). EP text is **white, 20sp, "+ N EP"**, anchored to the bottom (`BottomCenter` + `navigationBarsPadding` + 18dp) so it never overlaps two-line peak names. Behind it: `EpReward` draws a pulsing rarity-colored glow + a one-shot **sparkle burst** (12 dots, white core + colored halo, fully fade to 0).
+
+**Layout balance:** main block (flower+info) is shifted up `offset(y = -104.dp)`; EP block is bottom-anchored — gives a balanced top/bottom composition. Flower-to-text spacing is `Arrangement.spacedBy(4.dp)`.
+
+**Card behind + focus-pull:** the just-created `CardFront` (made `internal` in `LogbookScreen.kt` for cross-feature reuse) is rendered behind, blurred (16dp) under a dark overlay (0.80). On tap (`phase = REVEAL`), a "focus pull" sharpens the card (blur→0) + dissolves the overlay over 750ms, then `onFinished` (after an 800ms beat) removes the overlay.
+
+**Mythic:** `isMythic` adds a gold pulsing `MythicGlow` + `MythicParticles` and tints the EP glow gold.
+
+**`onSuccess` must attach the photo:** `createAscent` returns the ascent BEFORE the photo upload, so `NewAscentViewModel.submit` does `onSuccess(ascent.copy(photos = listOf(photo)), warning)` — otherwise the reveal card shows no image.
+
+### Post-creation navigation — avoiding the cordada flash
+
+`CaptureRevealState(ascent, rarity, isMythic, taggingWarning)` carries the **full `Ascent`** (+ `isMythic` from `ascent.peak.isMythic`). The reveal sits on top; navigation happens **underneath it during `onSuccess`**, not on dismiss:
+
+- **`onSuccess`** (hidden behind the overlay): set `logbookHighlightId = ascent.id` **before** bumping `logbookRefreshTrigger++`, then `navigate(Cards)`. The highlight id must be set first so `LogbookScreen`'s scroll `LaunchedEffect(refreshTrigger)` finds the new card by id (not index 0, which fails for past-dated ascents). This settles Cards on the **Mine** filter + scrolls to the new card while still hidden.
+- **`onFinished`** (on tap): `captureReveal = null`, then **re-arm** the ring: `logbookHighlightId = null` → next frame → `= ascent.id` (the 2.5s consume timer burns during the multi-second reveal, so re-setting makes the ring appear fresh).
+- **`LogbookScreen`** switches to Mine **synchronously** on first composition via `remember(refreshTrigger){ if (refreshTrigger>0) vm.setViewFilter(ViewFilter.Mine) }` — before the initial load completes — so the Friends/cordada feed never flashes before the switch.
+
+**Why this order matters:** doing the nav/highlight on dismiss (`onFinished`) instead caused (a) a cordada-feed flash when the overlay was removed, and (b) the highlight-consume timer to burn during the reveal so the new card had no ring. Keep nav + highlight in `onSuccess`, re-arm the ring in `onFinished`.
+
 ### Post-creation UX — MainScaffold state machine
 
 After `onSuccess(ascentId)` fires from `NewAscentSheet`, `MainScaffold` must:

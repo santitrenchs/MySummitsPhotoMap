@@ -1129,6 +1129,65 @@ The list panel is **decoupled from the map zoom**. When the user taps "Lista":
 
 ---
 
+## Capture Reveal — post-creation animation (Android)
+
+Full-screen cinematic overlay shown right after an ascent is created, before landing on the new card. Implemented with **Lottie** (`feature/newascent/AscentCaptureReveal.kt`). Authoritative cross-platform spec for web/iOS.
+
+### Visual composition (top → bottom)
+
+```
+            🌼  (Lottie flower, tinted to rarity)
+
+         Carta desbloqueada      ← gold #F5C842, 13sp Black, letter-spaced
+          PEAK NAME (UPPERCASE)  ← 30sp ExtraBold white
+       [ ✿ Rarity ]  [ 0000 m ]  ← two translucent pills, centered
+
+                 ⋮               (large gap)
+
+              + N EP             ← white 20sp, rarity glow + sparkles (bottom-anchored)
+```
+
+The whole **card the user just earned** sits behind everything, blurred, under a dark scrim. Background is dark navy `#0A1628`.
+
+### Flower
+
+- Asset: `res/raw/flower_bloom.json` (a free "flower growing" Lottie, 2s, ~15KB).
+- **Tinting is per-rarity at runtime** — only the petals + center are recolored; stem and leaves stay their natural green. Petals = `rarity.color`, center = `rarity.color × 0.6` (darker). Never tint the whole flower (no `"**"` wildcard) — the stem/leaves must read as a real plant.
+- Grows once (speed 0.85 → ~2.35s), then stays **alive**: subtle breathing (scale ±3.5%, 2.6s) + sway (±1.5°, 3.4s), pivoting near the stem base. A soft white radial halo sits behind it (spotlight) so petals/stem/leaves all pop against the photo.
+
+### Rarity color palette (flower + pills + glow)
+
+The flower petals, rarity pill, and EP glow all use the rarity's vivid `color` (see "Rarity colors" / "Rarity definitions" sections). Each rarity therefore reveals as a different-colored flower — daisy = green, gentian = navy, edelweiss = violet, etc.
+
+### Copy & type
+
+| Element | Text | Style |
+|---|---|---|
+| Label | "Carta desbloqueada" | gold `#F5C842`, 13sp Black, 0.18em tracking |
+| Peak name | `peak.name` UPPERCASE | 30sp ExtraBold, white |
+| Rarity pill | `✿ {label}` | translucent pill, rarity color (bg 20%, border 55%) |
+| Altitude pill | `{altitudeM} m` | same pill, white accent |
+| EP | `+ {ep} EP` | white, 20sp Black, rolls 0→N then bounces |
+
+Pills share one `RevealPill(accent, leading, label)` — rounded-100 chip, `accent×0.20` bg, `accent×0.55` border, 16/7 padding.
+
+### Timeline (automatic, no taps until the end)
+
+1. Flower blooms (~2.35s).
+2. **+1.5s**: info block (label + peak name + both pills) fades in **together** (single group, slide-up).
+3. **bloom-done + 1.2s beat**: EP counter rolls `0 → N` (900ms) then a spring **bounce**; behind it a rarity-colored glow pulses and a one-shot **sparkle burst** (12 dots, bright white cores + colored halos) radiates out and fully fades — Duolingo-style celebration.
+4. **On tap** anywhere: "focus pull" — the blurred card sharpens (blur 16→0) and the dark scrim + overlay dissolve over 750ms, as if the user discovers the card; then it navigates to the new card.
+
+### EP celebration is bottom-anchored
+
+EP is a separate block anchored to the bottom (`BottomCenter` + nav-bar padding + 18dp) so it never collides with two-line peak names. The main block (flower + info) is shifted up to balance the composition.
+
+### Mythic
+
+For mythic peaks the glow + sparkles + EP glow turn **gold** and an extra pulsing gold halo + particle burst plays around the flower.
+
+---
+
 ## Cards Screen — View filter (Android, 2026-05-29)
 
 The view filter uses `SecondaryTabRow` (M3), replacing the previous `SingleChoiceSegmentedButtonRow`. Tabs are 48dp tall with no extra vertical padding — saves ~12dp vs the segmented button.
