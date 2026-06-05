@@ -75,12 +75,9 @@ import kotlin.math.sin
 // Card stays blurred behind the whole build-up. On tap, a "focus pull" sharpens
 // the card (blur → 0) and fades the overlay, as if discovering the card.
 private const val GROW_SPEED   = 0.85f   // flower bloom speed (file is 2s → ~2.35s)
-private const val T_UNLOCKED   = 300L    // "Carta desbloqueada" fades in
-private const val T_PEAK       = 2300L   // peak name + altitude (after flower blooms)
-private const val T_RARITY     = 750L    // rarity line (delay after peak)
-private const val T_EP         = 600L    // EP counter starts (delay after rarity)
+private const val T_INFO       = 1500L   // info block (unlocked + peak + pills) appears together
+private const val T_EP         = 1200L   // EP starts after bloom finishes (~20% longer beat)
 private const val EP_COUNT_MS  = 900L    // EP roll-up duration
-private const val T_HINT       = 700L    // tap hint (delay after EP)
 
 private enum class RevealPhase { BUILD, REVEAL }
 
@@ -95,16 +92,15 @@ fun AscentCaptureReveal(
     var phase by remember { mutableStateOf(RevealPhase.BUILD) }
     val scope = rememberCoroutineScope()
 
-    // Step gate for the staged text (advances on a timeline)
-    var step by remember { mutableIntStateOf(0) }
+    // Info block (Carta desbloqueada + peak name + pills) all appear together.
+    var showInfo by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        delay(T_UNLOCKED); step = 1   // Carta desbloqueada
-        delay(T_PEAK);     step = 2   // peak name
-        delay(T_RARITY);   step = 3   // rarity + altitude pills
+        delay(T_INFO)
+        showInfo = true
     }
 
     // Bloom completion is reported by BloomLottie; EP only starts once the
-    // flower is fully open and breathing.
+    // flower is fully open and breathing (with a longer beat after).
     var bloomDone by remember { mutableStateOf(false) }
     var epStarted by remember { mutableStateOf(false) }
 
@@ -113,7 +109,7 @@ fun AscentCaptureReveal(
     var epDone  by remember { mutableStateOf(false) }
     LaunchedEffect(bloomDone) {
         if (bloomDone && !epDone) {
-            delay(T_EP)            // small beat after the flower settles
+            delay(T_EP)            // longer beat after the flower settles
             epStarted = true
             epCount.animateTo(rarity.ep.toFloat(), tween(EP_COUNT_MS.toInt(), easing = LinearOutSlowInEasing))
             epDone = true
@@ -207,39 +203,36 @@ fun AscentCaptureReveal(
                     onBloomed = { bloomDone = true },
                 )
 
-                // Step 1 — "Carta desbloqueada"
-                StepText(visible = step >= 1) {
-                    Text(
-                        text       = stringResource(R.string.capture_reveal_unlocked),
-                        color      = Color(0xFFF5C842),
-                        fontSize   = 13.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.18.em,
-                        textAlign  = TextAlign.Center,
-                    )
-                }
-
-                // Step 2 — peak name (big)
-                StepText(visible = step >= 2) {
-                    Text(
-                        text       = ascent.peak.name.uppercase(),
-                        color      = Color.White,
-                        fontSize   = 30.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-0.02).em,
-                        lineHeight = 33.sp,
-                        textAlign  = TextAlign.Center,
-                    )
-                }
-
-                // Step 3 — two pills: rarity (left) + altitude (right)
-                StepText(visible = step >= 3) {
-                    androidx.compose.foundation.layout.Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment     = Alignment.CenterVertically,
+                // Info block — appears all at once: unlocked + peak + pills
+                StepText(visible = showInfo) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        RevealPill(accent = rarity.color, leading = "✿", label = rarity.label)
-                        RevealPill(accent = Color.White,   leading = "",  label = "${ascent.peak.altitudeM} m")
+                        Text(
+                            text       = stringResource(R.string.capture_reveal_unlocked),
+                            color      = Color(0xFFF5C842),
+                            fontSize   = 13.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 0.18.em,
+                            textAlign  = TextAlign.Center,
+                        )
+                        Text(
+                            text       = ascent.peak.name.uppercase(),
+                            color      = Color.White,
+                            fontSize   = 30.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.02).em,
+                            lineHeight = 33.sp,
+                            textAlign  = TextAlign.Center,
+                        )
+                        androidx.compose.foundation.layout.Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment     = Alignment.CenterVertically,
+                        ) {
+                            RevealPill(accent = rarity.color, leading = "✿", label = rarity.label)
+                            RevealPill(accent = Color.White,   leading = "",  label = "${ascent.peak.altitudeM} m")
+                        }
                     }
                 }
             }
@@ -255,7 +248,7 @@ fun AscentCaptureReveal(
                 modifier  = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(bottom = 64.dp)
+                    .padding(bottom = 18.dp)
                     .alpha(contentAlpha),
             )
         }
@@ -299,13 +292,13 @@ private fun EpReward(
     }
 
     Box(
-        modifier         = modifier.size(280.dp),
+        modifier         = modifier.size(220.dp),
         contentAlignment = Alignment.Center,
     ) {
         // Glow disc
         Box(
             modifier = Modifier
-                .size(200.dp)
+                .size(180.dp)
                 .background(
                     brush = Brush.radialGradient(
                         colors = listOf(glowColor.copy(alpha = glow), Color.Transparent),
@@ -322,7 +315,7 @@ private fun EpReward(
                 sparks.forEachIndexed { i, a ->
                     val p     = a.value
                     val angle = Math.toRadians(i * (360.0 / sparks.size) - 90.0)
-                    val dist  = 118.dp.toPx() * p
+                    val dist  = 92.dp.toPx() * p
                     val alpha = (1f - p * 0.85f).coerceIn(0f, 1f)
                     val cxp   = cx + cos(angle).toFloat() * dist
                     val cyp   = cy + sin(angle).toFloat() * dist
