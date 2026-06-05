@@ -233,9 +233,11 @@ fun MainScaffold(navController: NavController) {
             onDismiss       = { showNewAscent = false },
             onSuccess       = { ascent, taggingWarning ->
                 showNewAscent      = false
-                logbookHighlightId = ascent.id
-                logbookRefreshTrigger++
-                atlasRefreshTrigger++
+                // NOTE: highlight + refresh triggers are fired in the reveal's
+                // onFinished (not here) so they apply exactly when we land on
+                // Cards after the reveal — otherwise the 2.5s highlight-consume
+                // timer burns during the multi-second reveal and the card is
+                // no longer highlighted / Mine filter doesn't stick.
                 captureReveal = CaptureRevealState(
                     ascent         = ascent,
                     rarity         = rarityForAltitude(ascent.peak.altitudeM),
@@ -345,6 +347,11 @@ fun MainScaffold(navController: NavController) {
             isMythic = reveal.isMythic,
             onFinished = {
                 captureReveal = null
+                // Fire highlight + refresh now, so the fresh Cards screen lands on
+                // the Mine filter and scrolls to the just-created card.
+                logbookHighlightId = reveal.ascent.id
+                logbookRefreshTrigger++
+                atlasRefreshTrigger++
                 tabNavController.navigate(Screen.Cards.route) {
                     popUpTo(Screen.Home.route) { saveState = true }
                     launchSingleTop = true
