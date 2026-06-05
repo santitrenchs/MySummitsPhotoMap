@@ -14,6 +14,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.peakadex.app.AppContainer
 import com.peakadex.app.BuildConfig
 import com.peakadex.app.R
+import com.peakadex.app.core.model.RegisterRequest
 import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -93,14 +94,14 @@ class AuthViewModel : ViewModel() {
             _uiState.value = AuthUiState.Loading
             try {
                 val response = AppContainer.apiService.register(
-                    mapOf(
-                        "name"            to name.trim(),
-                        "username"        to username.trim().ifEmpty { null },
-                        "email"           to email.trim(),
-                        "password"        to password,
-                        "acceptedTerms"   to true,
-                        "acceptedPrivacy" to true,
-                        "marketing"       to marketing,
+                    RegisterRequest(
+                        name            = name.trim(),
+                        username        = username.trim().ifEmpty { null },
+                        email           = email.trim(),
+                        password        = password,
+                        acceptedTerms   = true,
+                        acceptedPrivacy = true,
+                        marketing       = marketing,
                     )
                 )
                 AppContainer.authSession.login(response.token, response.user)
@@ -115,9 +116,9 @@ class AuthViewModel : ViewModel() {
                         else -> UiText.Dynamic("Error ${e.code()}")
                     }
                 )
-            } catch (e: IOException) {
+            } catch (_: IOException) {
                 _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_no_connection))
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_unexpected))
             }
         }
@@ -146,7 +147,7 @@ class AuthViewModel : ViewModel() {
                 AppContainer.authSession.login(response.token, response.user)
                 _uiState.value = AuthUiState.Success
 
-            } catch (e: GetCredentialCancellationException) {
+            } catch (_: GetCredentialCancellationException) {
                 Log.d(TAG, "Google sign-in cancelled by user")
                 _uiState.value = AuthUiState.Idle
             } catch (e: NoCredentialException) {

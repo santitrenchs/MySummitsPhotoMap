@@ -15,7 +15,7 @@ interface ApiService {
     suspend fun loginWithGoogle(@Body body: Map<String, String>): AuthResponse
 
     @POST("auth/register")
-    suspend fun register(@Body body: Map<String, String?>): AuthResponse
+    suspend fun register(@Body body: RegisterRequest): AuthResponse
 
     @POST("auth/forgot-password")
     suspend fun forgotPassword(@Body body: Map<String, String>)

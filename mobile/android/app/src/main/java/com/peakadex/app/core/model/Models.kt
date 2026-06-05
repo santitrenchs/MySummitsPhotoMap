@@ -26,6 +26,17 @@ data class User(
 data class SettingsResponse(val user: User)
 
 @Serializable
+data class RegisterRequest(
+    val name: String,
+    val username: String? = null,
+    val email: String,
+    val password: String,
+    val acceptedTerms: Boolean = true,
+    val acceptedPrivacy: Boolean = true,
+    val marketing: Boolean = false,
+)
+
+@Serializable
 data class UpdateSettingsRequest(
     val name: String? = null,
     val username: String? = null,
