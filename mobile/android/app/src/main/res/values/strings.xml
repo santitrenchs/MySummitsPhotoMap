@@ -131,6 +131,8 @@
     <string name="capture_reveal_title">Rareza \"%1$s\" capturada</string>
     <string name="capture_reveal_subtitle">Nueva flor añadida a tus cards</string>
     <string name="capture_reveal_continue">Toca para continuar</string>
+    <string name="capture_reveal_headline">Has capturado una nueva cima</string>
+    <string name="capture_reveal_rarity_line">Rareza «%1$s»</string>
     <string name="capture_reveal_ep">+ %1$d EP</string>
     <string name="capture_reveal_subtitle_mythic">¡Cima mítica capturada!</string>
 

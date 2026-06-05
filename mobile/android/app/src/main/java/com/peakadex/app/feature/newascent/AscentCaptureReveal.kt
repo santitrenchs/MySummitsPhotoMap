@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -44,14 +43,17 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.rememberLottieAnimatable
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.airbnb.lottie.compose.rememberLottieDynamicProperties
 import com.airbnb.lottie.compose.rememberLottieDynamicProperty
@@ -84,15 +86,15 @@ fun AscentCaptureReveal(
     var phase by remember { mutableStateOf(RevealPhase.BLOOM) }
     val scope = rememberCoroutineScope()
 
-    // Blur: 6dp (subtle, card still legible) → 0dp when revealed
+    // Blur: card stays recognisable but clearly behind the flower → 0 when revealed
     val blurRadius by animateDpAsState(
-        targetValue   = if (phase == RevealPhase.BLOOM) 6.dp else 0.dp,
+        targetValue   = if (phase == RevealPhase.BLOOM) 14.dp else 0.dp,
         animationSpec = tween(durationMillis = 1200),
         label         = "blur",
     )
-    // Dark overlay: light tint so card shows through → 0 when revealed
+    // Dark overlay: darker so the flower + text pop → 0 when revealed
     val overlayAlpha by animateFloatAsState(
-        targetValue   = if (phase == RevealPhase.BLOOM) 0.28f else 0f,
+        targetValue   = if (phase == RevealPhase.BLOOM) 0.48f else 0f,
         animationSpec = tween(durationMillis = 1200),
         label         = "overlay",
     )
@@ -136,60 +138,88 @@ fun AscentCaptureReveal(
             )
         }
 
-        // ── 2. Light dark overlay ─────────────────────────────────────────────
+        // ── 2. Dark overlay ───────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = overlayAlpha)),
         )
 
-        // ── 3. Mythic glow (centered, behind bloom) ───────────────────────────
+        // ── 3. Radial scrim behind the flower (extra contrast so it pops) ──────
+        if (bloomAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(360.dp)
+                    .alpha(bloomAlpha)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.38f),
+                                Color.Transparent,
+                            ),
+                        ),
+                    ),
+            )
+        }
+
+        // ── 4. Mythic glow (centered, behind bloom) ───────────────────────────
         if (isMythic) {
             MythicGlow(modifier = Modifier.align(Alignment.Center))
         }
 
-        // ── 4. Lottie flower — centered ───────────────────────────────────────
-        if (bloomAlpha > 0f) {
-            BloomLottie(
-                rarity    = rarity,
-                replayKey = ascent.id,
-                modifier  = Modifier
-                    .align(Alignment.Center)
-                    .alpha(bloomAlpha),
-            )
-        }
-
-        // ── 5. Text block — bottom-anchored above nav bar ─────────────────────
+        // ── 5. Flower + text grouped, centered ────────────────────────────────
         if (bloomAlpha > 0f) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
+                    .align(Alignment.Center)
                     .alpha(bloomAlpha)
-                    .navigationBarsPadding()
-                    .padding(bottom = 80.dp, start = 28.dp, end = 28.dp),
+                    .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                // Rarity name
-                Text(
-                    text       = rarity.label,
-                    color      = rarity.color,
-                    fontSize   = 30.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign  = TextAlign.Center,
+                BloomLottie(
+                    rarity    = rarity,
+                    replayKey = ascent.id,
                 )
-                // Subtitle
+
+                // Headline
                 Text(
                     text       = if (isMythic)
                         stringResource(R.string.capture_reveal_subtitle_mythic)
                     else
-                        stringResource(R.string.capture_reveal_subtitle),
+                        stringResource(R.string.capture_reveal_headline),
                     color      = Color.White,
-                    fontSize   = 15.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize   = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign  = TextAlign.Center,
+                    lineHeight = 24.sp,
+                )
+                // Rarity line — "Rareza «Gentian»" with name in rarity color
+                Text(
+                    text = buildAnnotatedString {
+                        val template = stringResource(R.string.capture_reveal_rarity_line, rarity.label)
+                        val idx = template.indexOf(rarity.label)
+                        if (idx >= 0) {
+                            withStyle(SpanStyle(color = Color.White.copy(alpha = 0.85f))) {
+                                append(template.substring(0, idx))
+                            }
+                            withStyle(SpanStyle(color = rarity.color, fontWeight = FontWeight.ExtraBold)) {
+                                append(rarity.label)
+                            }
+                            withStyle(SpanStyle(color = Color.White.copy(alpha = 0.85f))) {
+                                append(template.substring(idx + rarity.label.length))
+                            }
+                        } else {
+                            append(template)
+                        }
+                    },
+                    fontSize   = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
                     textAlign  = TextAlign.Center,
                 )
+                Spacer(Modifier.height(2.dp))
                 // EP reward
                 Text(
                     text       = stringResource(R.string.capture_reveal_ep, rarity.ep),
@@ -198,7 +228,7 @@ fun AscentCaptureReveal(
                     fontWeight = FontWeight.ExtraBold,
                     textAlign  = TextAlign.Center,
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
                 // Tap hint
                 Text(
                     text       = stringResource(R.string.capture_reveal_continue),
@@ -309,7 +339,7 @@ private fun MythicParticles(
 //          scale + gentle sway, so it never looks like a frozen frame.
 
 // Tuning knobs — adjust to taste:
-private const val GROW_SPEED      = 0.7f    // <1 slower / dramatic, >1 faster
+private const val GROW_SPEED      = 0.5f    // <1 slower / dramatic, >1 faster (slower also gives card photo time to load)
 private const val BREATHE_SCALE   = 0.035f  // breathing amplitude (3.5% size pulse)
 private const val BREATHE_MS      = 2600    // one breath cycle (in→out)
 private const val SWAY_DEGREES    = 1.5f    // gentle left-right tilt
@@ -321,23 +351,31 @@ private fun BloomLottie(
     replayKey: String = "",
     modifier:  Modifier = Modifier,
 ) {
-    val composition by rememberLottieComposition(
+    val compositionResult = rememberLottieComposition(
         LottieCompositionSpec.RawRes(R.raw.flower_bloom),
     )
+    val composition = compositionResult.value
 
-    // Phase 1 — grow once, then mark as bloomed.
-    val lottieAnimatable = rememberLottieAnimatable()
-    var bloomed by remember(replayKey) { mutableStateOf(false) }
-    LaunchedEffect(composition, replayKey) {
-        if (composition != null) {
-            lottieAnimatable.animate(
-                composition = composition,
-                iterations  = 1,
-                speed       = GROW_SPEED,
-            )
-            bloomed = true   // progress now at 1f (flower fully open)
-        }
+    // ── DEBUG: log composition load state ──────────────────────────────────────
+    LaunchedEffect(composition, compositionResult.isFailure) {
+        android.util.Log.d(
+            "CaptureReveal",
+            "Lottie state — loading=${compositionResult.isLoading} " +
+                "complete=${compositionResult.isComplete} " +
+                "failure=${compositionResult.isFailure} " +
+                "composition=${if (composition != null) "LOADED (${composition.durationFrames}f)" else "null"} " +
+                "error=${compositionResult.error?.message}",
+        )
     }
+
+    // Auto-playing progress. iterations=1 → plays once and holds last frame.
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations  = 1,
+        speed       = GROW_SPEED,
+        restartOnPlay = false,
+    )
+    val bloomed = progress >= 0.99f
 
     // Phase 2 — breathing + sway, only after fully grown.
     val infinite = rememberInfiniteTransition(label = "flower_alive")
@@ -356,13 +394,27 @@ private fun BloomLottie(
     val aliveScale = if (bloomed) breathe else 1f
     val aliveSway  = if (bloomed) sway   else 0f
 
+    // Tint ONLY the petals (Group 8 in the precomp) — leave stem/leaves/center
+    // in their natural colors. Center (Group 7) gets the darker shade.
+    val centerColor = remember(rarity.color) {
+        rarity.color.copy(
+            red   = (rarity.color.red   * 0.6f).coerceIn(0f, 1f),
+            green = (rarity.color.green * 0.6f).coerceIn(0f, 1f),
+            blue  = (rarity.color.blue  * 0.6f).coerceIn(0f, 1f),
+        )
+    }
     val dynamicProperties = rememberLottieDynamicProperties(
-        // Wildcard: tints ALL fill layers with rarity color so the flower is
-        // always visible regardless of the file's internal layer naming.
+        // Petals
         rememberLottieDynamicProperty(
             property = LottieProperty.COLOR,
             value    = rarity.color.toArgb(),
-            keyPath  = arrayOf("**"),
+            keyPath  = arrayOf("Pre-comp 1", "Layer 2", "Group 8", "Fill 1"),
+        ),
+        // Flower center (the orange disc)
+        rememberLottieDynamicProperty(
+            property = LottieProperty.COLOR,
+            value    = centerColor.toArgb(),
+            keyPath  = arrayOf("Pre-comp 1", "Layer 2", "Group 7", "Fill 1"),
         ),
     )
 
@@ -370,25 +422,30 @@ private fun BloomLottie(
         modifier         = modifier.size(240.dp),
         contentAlignment = Alignment.Center,
     ) {
-        LottieAnimation(
-            composition       = composition,
-            progress          = { lottieAnimatable.progress },
-            dynamicProperties = dynamicProperties,
-            modifier          = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX        = aliveScale
-                    scaleY        = aliveScale
-                    rotationZ     = aliveSway
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.85f)
-                },
-        )
+        if (composition != null) {
+            LottieAnimation(
+                composition       = composition,
+                progress          = { progress },
+                dynamicProperties = dynamicProperties,
+                modifier          = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        scaleX          = aliveScale
+                        scaleY          = aliveScale
+                        rotationZ       = aliveSway
+                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.85f)
+                    },
+            )
+        } else {
+            // Lottie failed/slow to load → show the Canvas flower so SOMETHING shows.
+            // If you see THIS simple flower instead of the sunflower, the JSON failed.
+            CaptureFlowerFallback(color = rarity.color, replayKey = replayKey)
+        }
     }
 }
 
 // ── Canvas fallback (safety net if Lottie composition fails to load) ───────────
 
-@Suppress("unused")
 @Composable
 private fun CaptureFlowerFallback(color: Color, replayKey: String) {
     val bloom = remember(replayKey) { Animatable(0f) }
