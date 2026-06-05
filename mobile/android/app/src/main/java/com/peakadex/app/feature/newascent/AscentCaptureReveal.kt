@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -187,12 +188,13 @@ fun AscentCaptureReveal(
             MythicGlow(modifier = Modifier.align(Alignment.Center).alpha(contentAlpha))
         }
 
-        // ── 5. Flower + staged text, centered ─────────────────────────────────
+        // ── 5. Main block (flower + text), shifted up for balance ─────────────
         if (contentAlpha > 0f) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.Center)
+                    .offset(y = (-72).dp)
                     .alpha(contentAlpha)
                     .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -239,32 +241,108 @@ fun AscentCaptureReveal(
                         RevealPill(accent = Color.White,   leading = "",  label = "${ascent.peak.altitudeM} m")
                     }
                 }
-
-                // EP counter — only once the flower has bloomed & is breathing
-                StepText(visible = epStarted) {
-                    Spacer(Modifier.height(40.dp))
-                    Text(
-                        text       = stringResource(
-                            R.string.capture_reveal_ep,
-                            epCount.value.roundToInt(),
-                        ),
-                        color      = if (isMythic) Color(0xFFFFD700) else rarity.color,
-                        fontSize   = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        textAlign  = TextAlign.Center,
-                        modifier   = Modifier.graphicsLayer {
-                            scaleX = epPop.value
-                            scaleY = epPop.value
-                        },
-                    )
-                }
             }
+        }
+
+        // ── 6. EP reward — separate block, lower, with rarity glow + sparkles ──
+        if (contentAlpha > 0f && epStarted) {
+            EpReward(
+                text      = stringResource(R.string.capture_reveal_ep, epCount.value.roundToInt()),
+                accent    = if (isMythic) Color(0xFFFFD700) else rarity.color,
+                pop       = epPop.value,
+                celebrate = epDone,
+                modifier  = Modifier
+                    .align(Alignment.Center)
+                    .offset(y = 132.dp)
+                    .alpha(contentAlpha),
+            )
         }
 
         // ── 6. Mythic particles ───────────────────────────────────────────────
         if (isMythic && contentAlpha > 0f) {
             MythicParticles(replayKey = ascent.id, modifier = Modifier.fillMaxSize().alpha(contentAlpha))
         }
+    }
+}
+
+// EP reward — number with a soft rarity-colored glow + a gentle sparkle burst
+// when it lands (Duolingo-style celebration), tinted with the rarity color.
+@Composable
+private fun EpReward(
+    text:      String,
+    accent:    Color,
+    pop:       Float,
+    celebrate: Boolean,
+    modifier:  Modifier = Modifier,
+) {
+    // Soft pulsing glow behind the number
+    val glow by rememberInfiniteTransition(label = "ep_glow").animateFloat(
+        initialValue  = 0.16f,
+        targetValue   = 0.34f,
+        animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
+        label         = "ep_glow_alpha",
+    )
+
+    // One-shot sparkle burst when EP lands
+    val sparks = remember(celebrate) { List(7) { Animatable(0f) } }
+    LaunchedEffect(celebrate) {
+        if (celebrate) {
+            sparks.forEachIndexed { i, a ->
+                launch {
+                    delay(i * 45L)
+                    a.animateTo(1f, tween(750, easing = LinearOutSlowInEasing))
+                }
+            }
+        }
+    }
+
+    Box(
+        modifier         = modifier.size(240.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        // Glow disc
+        Box(
+            modifier = Modifier
+                .size(180.dp)
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(accent.copy(alpha = glow), Color.Transparent),
+                    ),
+                    shape = CircleShape,
+                ),
+        )
+
+        // Sparkles
+        if (celebrate) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                sparks.forEachIndexed { i, a ->
+                    val p     = a.value
+                    val angle = Math.toRadians(i * (360.0 / sparks.size) - 90.0)
+                    val dist  = 78.dp.toPx() * p
+                    val alpha = (1f - p).coerceIn(0f, 1f)
+                    drawCircle(
+                        color  = accent.copy(alpha = alpha * 0.85f),
+                        radius = 4.dp.toPx() * (1f - p * 0.5f),
+                        center = Offset(cx + cos(angle).toFloat() * dist, cy + sin(angle).toFloat() * dist),
+                    )
+                }
+            }
+        }
+
+        // The EP number
+        Text(
+            text       = text,
+            color      = accent,
+            fontSize   = 32.sp,
+            fontWeight = FontWeight.Black,
+            textAlign  = TextAlign.Center,
+            modifier   = Modifier.graphicsLayer {
+                scaleX = pop
+                scaleY = pop
+            },
+        )
     }
 }
 
