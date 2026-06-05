@@ -132,7 +132,7 @@
     <string name="capture_reveal_subtitle">Nouvelle fleur ajoutée à tes cards</string>
     <string name="capture_reveal_unlocked">Carte débloquée</string>
     <string name="capture_reveal_rarity_line">Rareté : %1$s</string>
-    <string name="capture_reveal_ep">%1$d EP</string>
+    <string name="capture_reveal_ep">+ %1$d EP</string>
     <string name="capture_reveal_subtitle_mythic">Sommet mythique capturé!</string>
     <string name="capture_reveal_continue">Touche pour continuer</string>
 

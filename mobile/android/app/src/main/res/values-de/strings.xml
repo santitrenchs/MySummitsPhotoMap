@@ -132,7 +132,7 @@
     <string name="capture_reveal_subtitle">Neue Blume zu deinen Cards hinzugefügt</string>
     <string name="capture_reveal_unlocked">Karte freigeschaltet</string>
     <string name="capture_reveal_rarity_line">Seltenheit: %1$s</string>
-    <string name="capture_reveal_ep">%1$d EP</string>
+    <string name="capture_reveal_ep">+ %1$d EP</string>
     <string name="capture_reveal_subtitle_mythic">Mythischer Gipfel erfasst!</string>
     <string name="capture_reveal_continue">Tippen zum Fortfahren</string>
 

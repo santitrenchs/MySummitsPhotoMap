@@ -64,7 +64,6 @@ import com.airbnb.lottie.compose.rememberLottieDynamicProperty
 import com.peakadex.app.R
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.RarityInfo
-import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.feature.logbook.CardFront
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -335,10 +334,10 @@ private fun EpReward(
             }
         }
 
-        // The EP number — Peakadex green
+        // The EP number — white
         Text(
             text       = text,
-            color      = PeakGreenCTA,
+            color      = Color.White,
             fontSize   = 34.sp,
             fontWeight = FontWeight.Black,
             textAlign  = TextAlign.Center,
