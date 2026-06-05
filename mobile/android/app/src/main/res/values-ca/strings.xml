@@ -48,6 +48,12 @@
     <string name="auth_terms_link">Termes i condicions</string>
     <string name="auth_terms_and"> i la </string>
     <string name="auth_privacy_link">Política de privacitat</string>
+    <string name="auth_username_placeholder">nom d\'usuari</string>
+    <string name="auth_username_hint">Es genera automàticament a partir del teu nom</string>
+    <string name="auth_creating_account">Creant compte…</string>
+    <string name="auth_legal_marketing">Accepto rebre novetats i comunicacions de Peakadex (opcional)</string>
+    <string name="auth_legal_must_accept">Has d\'acceptar els termes i la política de privacitat</string>
+    <string name="error_username_taken_register">Aquest nom d\'usuari ja està en ús. Prova\'n un altre.</string>
 
     <!-- ── Perfil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Perfil</string>

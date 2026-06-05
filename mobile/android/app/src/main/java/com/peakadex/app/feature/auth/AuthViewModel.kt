@@ -78,16 +78,14 @@ class AuthViewModel : ViewModel() {
 
     fun register(
         name: String,
+        username: String,
         email: String,
         password: String,
-        confirmPassword: String,
-        voucherCode: String,
+        marketing: Boolean,
     ) {
         when {
             name.isBlank() || email.isBlank() || password.isBlank() ->
                 { _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_fields_required)); return }
-            password != confirmPassword ->
-                { _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_passwords_mismatch)); return }
             password.length < 8 ->
                 { _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_password_too_short)); return }
         }
@@ -96,19 +94,24 @@ class AuthViewModel : ViewModel() {
             try {
                 val response = AppContainer.apiService.register(
                     mapOf(
-                        "name"        to name.trim(),
-                        "email"       to email.trim(),
-                        "password"    to password,
-                        "voucherCode" to voucherCode.trim().ifEmpty { null },
+                        "name"            to name.trim(),
+                        "username"        to username.trim().ifEmpty { null },
+                        "email"           to email.trim(),
+                        "password"        to password,
+                        "acceptedTerms"   to true,
+                        "acceptedPrivacy" to true,
+                        "marketing"       to marketing,
                     )
                 )
                 AppContainer.authSession.login(response.token, response.user)
                 _uiState.value = AuthUiState.Success
             } catch (e: HttpException) {
                 _uiState.value = AuthUiState.Error(
-                    when (e.code()) {
-                        400  -> UiText.StringRes(R.string.error_invite_code_invalid)
-                        409  -> UiText.StringRes(R.string.error_email_already_exists)
+                    when {
+                        e.code() == 409 && e.response()?.errorBody()?.string()?.contains("Username") == true ->
+                            UiText.StringRes(R.string.error_username_taken_register)
+                        e.code() == 409 ->
+                            UiText.StringRes(R.string.error_email_already_exists)
                         else -> UiText.Dynamic("Error ${e.code()}")
                     }
                 )
@@ -166,4 +169,5 @@ class AuthViewModel : ViewModel() {
     }
 
     fun resetState() { _uiState.value = AuthUiState.Idle }
+    fun setError(msg: UiText) { _uiState.value = AuthUiState.Error(msg) }
 }

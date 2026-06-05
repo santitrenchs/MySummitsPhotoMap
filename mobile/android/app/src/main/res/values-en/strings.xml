@@ -48,6 +48,12 @@
     <string name="auth_terms_link">Terms and conditions</string>
     <string name="auth_terms_and"> and the </string>
     <string name="auth_privacy_link">Privacy policy</string>
+    <string name="auth_username_placeholder">username</string>
+    <string name="auth_username_hint">Auto-generated from your name</string>
+    <string name="auth_creating_account">Creating account…</string>
+    <string name="auth_legal_marketing">I agree to receive news and updates from Peakadex (optional)</string>
+    <string name="auth_legal_must_accept">You must accept the terms and privacy policy</string>
+    <string name="error_username_taken_register">That username is already taken. Please try another.</string>
 
     <!-- ── Profile ──────────────────────────────────────────────────────────── -->
     <string name="profile_title">Profile</string>

@@ -48,6 +48,12 @@
     <string name="auth_terms_link">Nutzungsbedingungen</string>
     <string name="auth_terms_and"> und die </string>
     <string name="auth_privacy_link">Datenschutzrichtlinie</string>
+    <string name="auth_username_placeholder">Benutzername</string>
+    <string name="auth_username_hint">Wird automatisch aus deinem Namen generiert</string>
+    <string name="auth_creating_account">Konto wird erstellt…</string>
+    <string name="auth_legal_marketing">Ich stimme zu, Neuigkeiten und Mitteilungen von Peakadex zu erhalten (optional)</string>
+    <string name="auth_legal_must_accept">Du musst die Nutzungsbedingungen und Datenschutzrichtlinie akzeptieren</string>
+    <string name="error_username_taken_register">Dieser Benutzername ist bereits vergeben. Bitte einen anderen wählen.</string>
 
     <!-- ── Profil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Profil</string>
