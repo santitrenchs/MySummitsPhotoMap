@@ -57,7 +57,6 @@ import com.airbnb.lottie.compose.rememberLottieDynamicProperty
 import com.peakadex.app.R
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.RarityInfo
-import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.feature.logbook.CardFront
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -106,7 +105,7 @@ fun AscentCaptureReveal(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(PeakBackground)
+            .background(Color(0xFF0A1628))  // dark navy — flower and card pop against it
             .clickable(
                 enabled           = phase == RevealPhase.BLOOM,
                 indication        = null,
@@ -330,25 +329,14 @@ private fun BloomLottie(
         }
     }
 
-    // Derive a darker shade for the flower center (RarityInfo has no colorDark)
-    val centerColor = remember(rarity.color) {
-        rarity.color.copy(
-            red   = (rarity.color.red   * 0.65f).coerceIn(0f, 1f),
-            green = (rarity.color.green * 0.65f).coerceIn(0f, 1f),
-            blue  = (rarity.color.blue  * 0.65f).coerceIn(0f, 1f),
-        )
-    }
-
     val dynamicProperties = rememberLottieDynamicProperties(
+        // Wildcard: tints ALL fill layers with rarity color.
+        // Leaves/stem will also be tinted — acceptable for v1 since it ensures
+        // the animation is always visible. Refine keypaths once we can test per-layer.
         rememberLottieDynamicProperty(
             property = LottieProperty.COLOR,
             value    = rarity.color.toArgb(),
-            keyPath  = arrayOf("Pre-comp 1", "Layer 2", "Group 8", "Fill 1"),
-        ),
-        rememberLottieDynamicProperty(
-            property = LottieProperty.COLOR,
-            value    = centerColor.toArgb(),
-            keyPath  = arrayOf("Pre-comp 1", "Layer 2", "Group 7", "Fill 1"),
+            keyPath  = arrayOf("**"),
         ),
     )
 

@@ -165,6 +165,9 @@ fun MainScaffold(navController: NavController) {
         isBottomBarVisible = true
     }
 
+    // Outer Box so captureReveal can overlay the full screen (including top/bottom bars)
+    Box(modifier = Modifier.fillMaxSize()) {
+
     Scaffold(
         modifier = Modifier.nestedScroll(hideOnScrollConnection),
         // ① CenterAlignedTopAppBar — M3 standard, replaces custom Surface/Box header
@@ -332,25 +335,29 @@ fun MainScaffold(navController: NavController) {
             }
         }
 
-        captureReveal?.let { reveal ->
-            AscentCaptureReveal(
-                ascent   = reveal.ascent,
-                rarity   = reveal.rarity,
-                isMythic = reveal.isMythic,
-                onFinished = {
-                    captureReveal = null
-                    tabNavController.navigate(Screen.Cards.route) {
-                        popUpTo(Screen.Home.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState    = false
-                    }
-                    if (reveal.taggingWarning != null) {
-                        scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }
-                    }
-                },
-            )
-        }
+    } // end Scaffold
+
+    // Capture reveal overlays the FULL screen (above top bar, FAB and bottom nav)
+    captureReveal?.let { reveal ->
+        AscentCaptureReveal(
+            ascent   = reveal.ascent,
+            rarity   = reveal.rarity,
+            isMythic = reveal.isMythic,
+            onFinished = {
+                captureReveal = null
+                tabNavController.navigate(Screen.Cards.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState    = false
+                }
+                if (reveal.taggingWarning != null) {
+                    scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }
+                }
+            },
+        )
     }
+
+    } // end outer Box
 }
 
 // ── Top bar (M3 CenterAlignedTopAppBar) ────────────────────────────────────────
