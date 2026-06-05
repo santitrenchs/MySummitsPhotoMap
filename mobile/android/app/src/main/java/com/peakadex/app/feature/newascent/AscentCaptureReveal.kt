@@ -338,7 +338,7 @@ private fun EpReward(
         Text(
             text       = text,
             color      = Color.White,
-            fontSize   = 30.sp,
+            fontSize   = 20.sp,
             fontWeight = FontWeight.Black,
             textAlign  = TextAlign.Center,
             modifier   = Modifier.graphicsLayer {
