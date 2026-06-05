@@ -36,6 +36,18 @@
     <string name="auth_password_show">Mostrar</string>
     <string name="auth_tagline_p1">Convierte tus cimas</string>
     <string name="auth_tagline_p2">en cartas coleccionables.</string>
+    <string name="auth_register_title">Crear cuenta</string>
+    <string name="auth_register_subtitle">Empieza a registrar tus cumbres</string>
+    <string name="auth_name_placeholder">Nombre</string>
+    <string name="auth_confirm_password_placeholder">Confirmar contraseña</string>
+    <string name="auth_invite_code_placeholder">Código de invitación (opcional)</string>
+    <string name="auth_register_btn">Crear cuenta</string>
+    <string name="auth_have_account">¿Ya tienes cuenta?</string>
+    <string name="auth_sign_in_link">Inicia sesión</string>
+    <string name="auth_terms_prefix">He leído y acepto los </string>
+    <string name="auth_terms_link">Términos y condiciones</string>
+    <string name="auth_terms_and"> y la </string>
+    <string name="auth_privacy_link">Política de privacidad</string>
 
     <!-- ── Perfil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Perfil</string>

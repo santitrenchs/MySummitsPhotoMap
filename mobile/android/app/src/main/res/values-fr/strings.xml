@@ -36,6 +36,18 @@
     <string name="auth_password_show">Afficher</string>
     <string name="auth_tagline_p1">Transforme tes sommets</string>
     <string name="auth_tagline_p2">en cartes à collectionner.</string>
+    <string name="auth_register_title">Créer un compte</string>
+    <string name="auth_register_subtitle">Commence à enregistrer tes sommets</string>
+    <string name="auth_name_placeholder">Nom</string>
+    <string name="auth_confirm_password_placeholder">Confirmer le mot de passe</string>
+    <string name="auth_invite_code_placeholder">Code d\'invitation (optionnel)</string>
+    <string name="auth_register_btn">Créer un compte</string>
+    <string name="auth_have_account">Déjà un compte ?</string>
+    <string name="auth_sign_in_link">Se connecter</string>
+    <string name="auth_terms_prefix">J\'ai lu et j\'accepte les </string>
+    <string name="auth_terms_link">Conditions d\'utilisation</string>
+    <string name="auth_terms_and"> et la </string>
+    <string name="auth_privacy_link">Politique de confidentialité</string>
 
     <!-- ── Profil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Profil</string>

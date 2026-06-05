@@ -36,6 +36,18 @@
     <string name="auth_password_show">Anzeigen</string>
     <string name="auth_tagline_p1">Verwandle deine Gipfel</string>
     <string name="auth_tagline_p2">in Sammelkarten.</string>
+    <string name="auth_register_title">Konto erstellen</string>
+    <string name="auth_register_subtitle">Fang an, deine Gipfel zu erfassen</string>
+    <string name="auth_name_placeholder">Name</string>
+    <string name="auth_confirm_password_placeholder">Passwort bestätigen</string>
+    <string name="auth_invite_code_placeholder">Einladungscode (optional)</string>
+    <string name="auth_register_btn">Konto erstellen</string>
+    <string name="auth_have_account">Bereits ein Konto?</string>
+    <string name="auth_sign_in_link">Anmelden</string>
+    <string name="auth_terms_prefix">Ich habe die </string>
+    <string name="auth_terms_link">Nutzungsbedingungen</string>
+    <string name="auth_terms_and"> und die </string>
+    <string name="auth_privacy_link">Datenschutzrichtlinie</string>
 
     <!-- ── Profil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Profil</string>

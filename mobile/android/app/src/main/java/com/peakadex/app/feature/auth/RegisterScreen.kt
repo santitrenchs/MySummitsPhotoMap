@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.peakadex.app.R
 import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.theme.*
 
@@ -103,13 +105,13 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Crear cuenta",
+                        text = stringResource(R.string.auth_register_title),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = PeakNavyDark,
                     )
                     Text(
-                        text = "Empieza a registrar tus cumbres",
+                        text = stringResource(R.string.auth_register_subtitle),
                         fontSize = 13.sp,
                         color = PeakNavyMid,
                         modifier = Modifier.padding(top = 4.dp, bottom = 24.dp),
@@ -119,7 +121,7 @@ fun RegisterScreen(
                     PeakTextField(
                         value = name,
                         onValueChange = { name = it; clearError() },
-                        placeholder = "Nombre",
+                        placeholder = stringResource(R.string.auth_name_placeholder),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     )
@@ -128,7 +130,7 @@ fun RegisterScreen(
                     PeakTextField(
                         value = email,
                         onValueChange = { email = it; clearError() },
-                        placeholder = "Email",
+                        placeholder = stringResource(R.string.auth_email_placeholder),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     )
@@ -137,7 +139,7 @@ fun RegisterScreen(
                     PeakTextField(
                         value = password,
                         onValueChange = { password = it; clearError() },
-                        placeholder = "Contraseña",
+                        placeholder = stringResource(R.string.auth_password_placeholder),
                         visualTransformation = pwTransform,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
@@ -157,7 +159,7 @@ fun RegisterScreen(
                     PeakTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it; clearError() },
-                        placeholder = "Confirmar contraseña",
+                        placeholder = stringResource(R.string.auth_confirm_password_placeholder),
                         visualTransformation = pwTransform,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
@@ -167,7 +169,7 @@ fun RegisterScreen(
                     PeakTextField(
                         value = voucherCode,
                         onValueChange = { voucherCode = it; clearError() },
-                        placeholder = "Código de invitación (opcional)",
+                        placeholder = stringResource(R.string.auth_invite_code_placeholder),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(
                             onDone = {
@@ -207,16 +209,16 @@ fun RegisterScreen(
                     )
                     val legalText = buildAnnotatedString {
                         withStyle(SpanStyle(color = Color(0xFF6B7280), fontSize = 13.sp)) {
-                            append("He leído y acepto los ")
+                            append(stringResource(R.string.auth_terms_prefix))
                         }
                         pushLink(LinkAnnotation.Url("https://www.peakadex.com/terms", linkStyle))
-                        append("Términos y condiciones")
+                        append(stringResource(R.string.auth_terms_link))
                         pop()
                         withStyle(SpanStyle(color = Color(0xFF6B7280), fontSize = 13.sp)) {
-                            append(" y la ")
+                            append(stringResource(R.string.auth_terms_and))
                         }
                         pushLink(LinkAnnotation.Url("https://www.peakadex.com/privacy", linkStyle))
-                        append("Política de privacidad")
+                        append(stringResource(R.string.auth_privacy_link))
                         pop()
                     }
                     Row(
@@ -257,7 +259,7 @@ fun RegisterScreen(
                         if (isLoading) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                         } else {
-                            Text("Crear cuenta", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                            Text(stringResource(R.string.auth_register_btn), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                         }
                     }
 
@@ -271,9 +273,9 @@ fun RegisterScreen(
                             .padding(horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("¿Ya tienes cuenta?", color = PeakNavyMid, fontSize = 14.sp)
+                        Text(stringResource(R.string.auth_have_account), color = PeakNavyMid, fontSize = 14.sp)
                         Spacer(Modifier.width(4.dp))
-                        Text("Inicia sesión", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = PeakGreenCTA)
+                        Text(stringResource(R.string.auth_sign_in_link), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = PeakGreenCTA)
                     }
                 }
             }

@@ -36,6 +36,18 @@
     <string name="auth_password_show">Show</string>
     <string name="auth_tagline_p1">Turn your summits</string>
     <string name="auth_tagline_p2">into collectible cards.</string>
+    <string name="auth_register_title">Create account</string>
+    <string name="auth_register_subtitle">Start logging your summits</string>
+    <string name="auth_name_placeholder">Name</string>
+    <string name="auth_confirm_password_placeholder">Confirm password</string>
+    <string name="auth_invite_code_placeholder">Invitation code (optional)</string>
+    <string name="auth_register_btn">Create account</string>
+    <string name="auth_have_account">Already have an account?</string>
+    <string name="auth_sign_in_link">Sign in</string>
+    <string name="auth_terms_prefix">I have read and accept the </string>
+    <string name="auth_terms_link">Terms and conditions</string>
+    <string name="auth_terms_and"> and the </string>
+    <string name="auth_privacy_link">Privacy policy</string>
 
     <!-- ── Profile ──────────────────────────────────────────────────────────── -->
     <string name="profile_title">Profile</string>

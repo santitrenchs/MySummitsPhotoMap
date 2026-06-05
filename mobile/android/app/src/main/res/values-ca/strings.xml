@@ -36,6 +36,18 @@
     <string name="auth_password_show">Mostra</string>
     <string name="auth_tagline_p1">Converteix els teus cims</string>
     <string name="auth_tagline_p2">en cartes col·leccionables.</string>
+    <string name="auth_register_title">Crear compte</string>
+    <string name="auth_register_subtitle">Comença a registrar els teus cims</string>
+    <string name="auth_name_placeholder">Nom</string>
+    <string name="auth_confirm_password_placeholder">Confirmar contrasenya</string>
+    <string name="auth_invite_code_placeholder">Codi d\'invitació (opcional)</string>
+    <string name="auth_register_btn">Crear compte</string>
+    <string name="auth_have_account">Ja tens compte?</string>
+    <string name="auth_sign_in_link">Inicia sessió</string>
+    <string name="auth_terms_prefix">He llegit i accepto els </string>
+    <string name="auth_terms_link">Termes i condicions</string>
+    <string name="auth_terms_and"> i la </string>
+    <string name="auth_privacy_link">Política de privacitat</string>
 
     <!-- ── Perfil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Perfil</string>
