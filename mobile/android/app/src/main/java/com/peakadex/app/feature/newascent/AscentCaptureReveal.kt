@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -303,8 +304,16 @@ private fun MythicParticles(
 }
 
 // ── Lottie bloom animation ─────────────────────────────────────────────────────
-// Uses rememberLottieAnimatable so the animation freezes on the last frame
-// after playing once — the flower stays fully bloomed until the user taps.
+// Phase 1: the flower grows once at GROW_SPEED.
+// Phase 2: once grown, it stays fully bloomed but "alive" — a subtle breathing
+//          scale + gentle sway, so it never looks like a frozen frame.
+
+// Tuning knobs — adjust to taste:
+private const val GROW_SPEED      = 0.7f    // <1 slower / dramatic, >1 faster
+private const val BREATHE_SCALE   = 0.035f  // breathing amplitude (3.5% size pulse)
+private const val BREATHE_MS      = 2600    // one breath cycle (in→out)
+private const val SWAY_DEGREES    = 1.5f    // gentle left-right tilt
+private const val SWAY_MS         = 3400    // one sway cycle
 
 @Composable
 private fun BloomLottie(
@@ -316,23 +325,40 @@ private fun BloomLottie(
         LottieCompositionSpec.RawRes(R.raw.flower_bloom),
     )
 
-    // Use animatable so we can freeze on last frame (progress = 1f) after playing
+    // Phase 1 — grow once, then mark as bloomed.
     val lottieAnimatable = rememberLottieAnimatable()
+    var bloomed by remember(replayKey) { mutableStateOf(false) }
     LaunchedEffect(composition, replayKey) {
         if (composition != null) {
             lottieAnimatable.animate(
                 composition = composition,
                 iterations  = 1,
+                speed       = GROW_SPEED,
             )
-            // animate() returns when done — lottieAnimatable.progress is now 1f
-            // (last frame = flower fully bloomed). Stays here until recomposition.
+            bloomed = true   // progress now at 1f (flower fully open)
         }
     }
 
+    // Phase 2 — breathing + sway, only after fully grown.
+    val infinite = rememberInfiniteTransition(label = "flower_alive")
+    val breathe by infinite.animateFloat(
+        initialValue  = 1f,
+        targetValue   = 1f + BREATHE_SCALE,
+        animationSpec = infiniteRepeatable(tween(BREATHE_MS), RepeatMode.Reverse),
+        label         = "breathe",
+    )
+    val sway by infinite.animateFloat(
+        initialValue  = -SWAY_DEGREES,
+        targetValue   = SWAY_DEGREES,
+        animationSpec = infiniteRepeatable(tween(SWAY_MS), RepeatMode.Reverse),
+        label         = "sway",
+    )
+    val aliveScale = if (bloomed) breathe else 1f
+    val aliveSway  = if (bloomed) sway   else 0f
+
     val dynamicProperties = rememberLottieDynamicProperties(
-        // Wildcard: tints ALL fill layers with rarity color.
-        // Leaves/stem will also be tinted — acceptable for v1 since it ensures
-        // the animation is always visible. Refine keypaths once we can test per-layer.
+        // Wildcard: tints ALL fill layers with rarity color so the flower is
+        // always visible regardless of the file's internal layer naming.
         rememberLottieDynamicProperty(
             property = LottieProperty.COLOR,
             value    = rarity.color.toArgb(),
@@ -348,7 +374,14 @@ private fun BloomLottie(
             composition       = composition,
             progress          = { lottieAnimatable.progress },
             dynamicProperties = dynamicProperties,
-            modifier          = Modifier.fillMaxSize(),
+            modifier          = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX        = aliveScale
+                    scaleY        = aliveScale
+                    rotationZ     = aliveSway
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.85f)
+                },
         )
     }
 }
