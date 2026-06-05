@@ -64,6 +64,7 @@ import com.airbnb.lottie.compose.rememberLottieDynamicProperty
 import com.peakadex.app.R
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.RarityInfo
+import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.feature.logbook.CardFront
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -191,7 +192,7 @@ fun AscentCaptureReveal(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.Center)
-                    .offset(y = (-72).dp)
+                    .offset(y = (-104).dp)
                     .alpha(contentAlpha)
                     .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -292,13 +293,13 @@ private fun EpReward(
     }
 
     Box(
-        modifier         = modifier.size(220.dp),
+        modifier         = modifier.size(170.dp),
         contentAlignment = Alignment.Center,
     ) {
         // Glow disc
         Box(
             modifier = Modifier
-                .size(180.dp)
+                .size(150.dp)
                 .background(
                     brush = Brush.radialGradient(
                         colors = listOf(glowColor.copy(alpha = glow), Color.Transparent),
@@ -307,25 +308,24 @@ private fun EpReward(
                 ),
         )
 
-        // Sparkles — bright and prominent
+        // Sparkles — bright burst that fully fades out (no frozen dots)
         if (celebrate) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val cx = size.width / 2f
                 val cy = size.height / 2f
                 sparks.forEachIndexed { i, a ->
                     val p     = a.value
+                    if (p >= 1f) return@forEachIndexed   // fully gone
                     val angle = Math.toRadians(i * (360.0 / sparks.size) - 90.0)
-                    val dist  = 92.dp.toPx() * p
-                    val alpha = (1f - p * 0.85f).coerceIn(0f, 1f)
+                    val dist  = 78.dp.toPx() * p
+                    val alpha = (1f - p).coerceIn(0f, 1f)   // → 0 at the end
                     val cxp   = cx + cos(angle).toFloat() * dist
                     val cyp   = cy + sin(angle).toFloat() * dist
-                    // colored halo
                     drawCircle(
                         color  = glowColor.copy(alpha = alpha * 0.9f),
                         radius = 7.dp.toPx() * (1f - p * 0.35f),
                         center = Offset(cxp, cyp),
                     )
-                    // bright white core
                     drawCircle(
                         color  = Color.White.copy(alpha = alpha),
                         radius = 3.dp.toPx() * (1f - p * 0.4f),
@@ -335,10 +335,10 @@ private fun EpReward(
             }
         }
 
-        // The EP number — white
+        // The EP number — Peakadex green
         Text(
             text       = text,
-            color      = Color.White,
+            color      = PeakGreenCTA,
             fontSize   = 34.sp,
             fontWeight = FontWeight.Black,
             textAlign  = TextAlign.Center,

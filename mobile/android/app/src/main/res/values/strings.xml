@@ -133,7 +133,7 @@
     <string name="capture_reveal_continue">Toca para continuar</string>
     <string name="capture_reveal_unlocked">Carta desbloqueada</string>
     <string name="capture_reveal_rarity_line">Rareza: %1$s</string>
-    <string name="capture_reveal_ep">+ %1$d EP</string>
+    <string name="capture_reveal_ep">%1$d EP</string>
     <string name="capture_reveal_subtitle_mythic">¡Cima mítica capturada!</string>
 
     <!-- ── Ajustes ───────────────────────────────────────────────────────────── -->
