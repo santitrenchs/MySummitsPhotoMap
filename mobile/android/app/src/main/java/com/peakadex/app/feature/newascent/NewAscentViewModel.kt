@@ -241,7 +241,10 @@ class NewAscentViewModel : ViewModel() {
                 else null
 
                 _state.update { it.copy(isLoading = false) }
-                onSuccess(ascent, warning)
+                // Attach the just-uploaded photo so the capture-reveal card shows it
+                // (createAscent returns the ascent BEFORE the photo upload, so its
+                // photos list is empty otherwise).
+                onSuccess(ascent.copy(photos = listOf(photo)), warning)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
