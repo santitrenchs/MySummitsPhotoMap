@@ -306,7 +306,7 @@ fun SettingsScreen(
                         placeholder    = stringResource(R.string.settings_field_username_placeholder),
                         prefix         = "@",
                         isError        = state.usernameError != null,
-                        supportingText = state.usernameError,
+                        supportingText = state.usernameError?.asString(),
                         imeAction      = ImeAction.Done,
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

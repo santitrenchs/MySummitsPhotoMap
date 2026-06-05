@@ -267,6 +267,7 @@ private fun PhotoCropStep(
 ) {
     var cropImageView by remember { mutableStateOf<CropImageView?>(null) }
     var cropError by remember { mutableStateOf<String?>(null) }
+    val cropErrorMsg = stringResource(R.string.error_crop_photo)
 
     Column(
         modifier = Modifier
@@ -364,7 +365,7 @@ private fun PhotoCropStep(
                             cropError = null
                             onDone(cropped)
                         } else {
-                            cropError = "No se pudo recortar la foto"
+                            cropError = cropErrorMsg
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),

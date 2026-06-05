@@ -377,4 +377,7 @@
     <string name="error_load_photo">No s\'ha pogut carregar la foto</string>
     <string name="error_select_peak">Selecciona un cim</string>
     <string name="error_photo_required">La foto és obligatòria</string>
+    <string name="error_crop_photo">No s\'ha pogut retallar la foto</string>
+    <string name="logbook_you">Tu</string>
+    <string name="settings_username_format_error">Només lletres, números, punts i guions baixos (3–20 caràcters)</string>
 </resources>

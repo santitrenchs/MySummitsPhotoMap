@@ -643,7 +643,7 @@ internal fun CardFront(
     onShareClick:  () -> Unit,
 ) {
     val heroUrl  = ascent.photos.firstOrNull()?.url
-    val userName = ascent.user?.name ?: "Tú"
+    val userName = ascent.user?.name ?: stringResource(R.string.logbook_you)
     val initials = userName.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
 
     Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
@@ -1060,7 +1060,7 @@ private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) 
 
 @Composable
 private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
-    val bylineName  = ascent.user?.name ?: "Tú"
+    val bylineName  = ascent.user?.name ?: stringResource(R.string.logbook_you)
 
     // BoxWithConstraints lets us compute heights in dp so the map is exactly 65% of the
     // total card height while keeping the card the same size as before.

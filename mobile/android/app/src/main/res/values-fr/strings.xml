@@ -377,4 +377,7 @@
     <string name="error_load_photo">Impossible de charger la photo</string>
     <string name="error_select_peak">Sélectionne un sommet</string>
     <string name="error_photo_required">Une photo est obligatoire</string>
+    <string name="error_crop_photo">Impossible de rogner la photo</string>
+    <string name="logbook_you">Toi</string>
+    <string name="settings_username_format_error">Lettres, chiffres, points et underscores uniquement (3–20 caractères)</string>
 </resources>

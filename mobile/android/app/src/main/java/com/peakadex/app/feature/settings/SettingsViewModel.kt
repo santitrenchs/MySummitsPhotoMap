@@ -34,7 +34,7 @@ data class SettingsUiState(
     // editable fields (dirty copies)
     val nameInput: String = "",
     val usernameInput: String = "",
-    val usernameError: String? = null,
+    val usernameError: UiText? = null,
     // toggles
     val appearInSearch: Boolean = true,
     val allowOthersToTag: Boolean = true,
@@ -112,7 +112,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     fun onUsernameChange(value: String) {
         val error = when {
             value.isNotEmpty() && !USERNAME_RE.matches(value) ->
-                "Solo letras, números, puntos y guiones bajos (3–20 caracteres)"
+                UiText.StringRes(R.string.settings_username_format_error)
             else -> null
         }
         _state.update { it.copy(usernameInput = value, usernameError = error) }

@@ -377,4 +377,7 @@
     <string name="error_load_photo">Could not load photo</string>
     <string name="error_select_peak">Select a peak</string>
     <string name="error_photo_required">A photo is required</string>
+    <string name="error_crop_photo">Could not crop the photo</string>
+    <string name="logbook_you">You</string>
+    <string name="settings_username_format_error">Only letters, numbers, dots and underscores (3–20 chars)</string>
 </resources>

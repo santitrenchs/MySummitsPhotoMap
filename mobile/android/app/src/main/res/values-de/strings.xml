@@ -377,4 +377,7 @@
     <string name="error_load_photo">Foto konnte nicht geladen werden</string>
     <string name="error_select_peak">Wähle einen Gipfel</string>
     <string name="error_photo_required">Ein Foto ist erforderlich</string>
+    <string name="error_crop_photo">Foto konnte nicht zugeschnitten werden</string>
+    <string name="logbook_you">Du</string>
+    <string name="settings_username_format_error">Nur Buchstaben, Zahlen, Punkte und Unterstriche (3–20 Zeichen)</string>
 </resources>

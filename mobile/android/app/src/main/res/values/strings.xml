@@ -381,4 +381,7 @@
     <string name="error_load_photo">No se pudo cargar la foto</string>
     <string name="error_select_peak">Selecciona una cima</string>
     <string name="error_photo_required">La foto es obligatoria</string>
+    <string name="error_crop_photo">No se pudo recortar la foto</string>
+    <string name="logbook_you">Tú</string>
+    <string name="settings_username_format_error">Solo letras, números, puntos y guiones bajos (3–20 caracteres)</string>
 </resources>
