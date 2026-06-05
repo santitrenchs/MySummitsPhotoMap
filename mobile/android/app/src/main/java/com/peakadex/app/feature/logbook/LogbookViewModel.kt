@@ -4,7 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.R
 import com.peakadex.app.core.model.Ascent
+import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -23,7 +25,7 @@ private const val TAG = "LogbookViewModel"
 sealed class LogbookUiState {
     data object Loading : LogbookUiState()
     data class Success(val ascents: List<Ascent>) : LogbookUiState()
-    data class Error(val message: String) : LogbookUiState()
+    data class Error(val message: UiText) : LogbookUiState()
 }
 
 class LogbookViewModel : ViewModel() {
@@ -103,13 +105,13 @@ class LogbookViewModel : ViewModel() {
             throw e   // never swallow cancellation — structured concurrency requires it
         } catch (e: HttpException) {
             Log.e(TAG, "getAscents HTTP ${e.code()}")
-            _uiState.value = LogbookUiState.Error("Error del servidor (${e.code()})")
+            _uiState.value = LogbookUiState.Error(UiText.Dynamic("Error ${e.code()}"))
         } catch (e: IOException) {
             Log.e(TAG, "getAscents network error", e)
-            _uiState.value = LogbookUiState.Error("Sin conexión. Comprueba tu red.")
+            _uiState.value = LogbookUiState.Error(UiText.StringRes(R.string.error_no_connection))
         } catch (e: Exception) {
             Log.e(TAG, "getAscents unexpected", e)
-            _uiState.value = LogbookUiState.Error("Error inesperado: ${e.message}")
+            _uiState.value = LogbookUiState.Error(UiText.StringRes(R.string.error_unexpected))
         }
     }
 

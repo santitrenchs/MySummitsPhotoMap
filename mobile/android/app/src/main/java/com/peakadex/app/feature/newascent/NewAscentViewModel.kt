@@ -8,7 +8,9 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.R
 import com.peakadex.app.core.model.Ascent
+import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.model.CreateAscentRequest
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Person
@@ -52,7 +54,7 @@ data class NewAscentUiState(
     val initialPeakName: String? = null,
     // Async
     val isLoading: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
 )
 
 class NewAscentViewModel : ViewModel() {
@@ -90,7 +92,7 @@ class NewAscentViewModel : ViewModel() {
                 val raw = context.contentResolver.openInputStream(uri)!!
                     .use { BitmapFactory.decodeStream(it) }
                     ?: run {
-                        withContext(Dispatchers.Main) { _state.update { it.copy(error = "No se pudo cargar la foto") } }
+                        withContext(Dispatchers.Main) { _state.update { it.copy(error = UiText.StringRes(R.string.error_load_photo)) } }
                         return@launch
                     }
 
@@ -129,7 +131,7 @@ class NewAscentViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    _state.update { it.copy(error = "Error al cargar la foto: ${e.localizedMessage}") }
+                    _state.update { it.copy(error = UiText.StringRes(R.string.error_load_photo)) }
                 }
             }
         }
@@ -200,8 +202,8 @@ class NewAscentViewModel : ViewModel() {
 
     fun submit(onSuccess: (ascent: Ascent, taggingWarning: String?) -> Unit) {
         val s = _state.value
-        if (s.selectedPeak == null) { _state.update { it.copy(error = "Selecciona una cima") }; return }
-        val bitmap = s.croppedBitmap ?: run { _state.update { it.copy(error = "La foto es obligatoria") }; return }
+        if (s.selectedPeak == null) { _state.update { it.copy(error = UiText.StringRes(R.string.error_select_peak)) }; return }
+        val bitmap = s.croppedBitmap ?: run { _state.update { it.copy(error = UiText.StringRes(R.string.error_photo_required)) }; return }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
@@ -248,7 +250,7 @@ class NewAscentViewModel : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, error = "Error al guardar: ${e.localizedMessage}") }
+                _state.update { it.copy(isLoading = false, error = UiText.StringRes(R.string.error_save)) }
             }
         }
     }

@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.peakadex.app.R
 import com.peakadex.app.core.ui.PeakadexLogo
+import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.ui.theme.*
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -74,7 +75,7 @@ fun LoginScreen(
     }
 
     val isLoading    = uiState is AuthUiState.Loading
-    val errorMessage = (uiState as? AuthUiState.Error)?.message
+    val errorMessage = (uiState as? AuthUiState.Error)?.message?.asString()
 
     Column(
         modifier = Modifier

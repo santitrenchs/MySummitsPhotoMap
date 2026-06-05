@@ -350,4 +350,31 @@
     <string name="cordadas_photo_hint">Utilisée comme couverture et avatar</string>
     <string name="cordadas_edit_photo">Modifier la photo</string>
     <string name="cordadas_delete_warning">Cette action est irréversible</string>
+
+    <!-- ── Errors ─────────────────────────────────────────────────────────────── -->
+    <string name="error_fields_required">Veuillez remplir tous les champs</string>
+    <string name="error_invalid_credentials">Email ou mot de passe incorrect</string>
+    <string name="error_too_many_attempts">Trop de tentatives. Attends un moment</string>
+    <string name="error_server_response">Erreur lors du traitement de la réponse serveur</string>
+    <string name="error_no_connection">Pas de connexion internet</string>
+    <string name="error_unexpected">Erreur inattendue. Réessaie</string>
+    <string name="error_passwords_mismatch">Les mots de passe ne correspondent pas</string>
+    <string name="error_password_too_short">Le mot de passe doit contenir au moins 8 caractères</string>
+    <string name="error_invite_code_invalid">Code d\'invitation invalide ou expiré</string>
+    <string name="error_email_already_exists">Un compte avec cet email existe déjà</string>
+    <string name="error_google_no_account">Aucun compte Google trouvé sur cet appareil. Ajoute un compte dans les Paramètres système et réessaie.</string>
+    <string name="error_google_unexpected">Erreur inattendue avec Google Sign-In</string>
+    <string name="error_load_profile">Erreur lors du chargement du profil</string>
+    <string name="error_load_config">Erreur lors du chargement de la configuration</string>
+    <string name="error_name_empty">Le nom ne peut pas être vide</string>
+    <string name="error_username_taken">Ce nom d\'utilisateur est déjà pris</string>
+    <string name="error_save">Erreur lors de l\'enregistrement</string>
+    <string name="error_password_current_required">Saisis ton mot de passe actuel</string>
+    <string name="error_password_current_wrong">Mot de passe actuel incorrect</string>
+    <string name="error_password_change">Erreur lors du changement de mot de passe</string>
+    <string name="error_save_language">Erreur lors de l\'enregistrement de la langue</string>
+    <string name="error_unlink_google">Erreur lors de la dissociation de Google</string>
+    <string name="error_load_photo">Impossible de charger la photo</string>
+    <string name="error_select_peak">Sélectionne un sommet</string>
+    <string name="error_photo_required">Une photo est obligatoire</string>
 </resources>

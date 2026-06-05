@@ -3,7 +3,9 @@ package com.peakadex.app.feature.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.R
 import com.peakadex.app.core.model.ProfileData
+import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.model.ProfilePeak
 import com.peakadex.app.core.model.ProfilePhoto
 import kotlinx.coroutines.CancellationException
@@ -14,7 +16,7 @@ import kotlinx.coroutines.launch
 
 sealed interface ProfileUiState {
     data object Loading  : ProfileUiState
-    data class Error(val message: String) : ProfileUiState
+    data class Error(val message: UiText) : ProfileUiState
     data class Success(
         val data: ProfileData,
         // Cimas tab
@@ -48,7 +50,7 @@ class ProfileViewModel : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = ProfileUiState.Error("Error al cargar el perfil")
+                _state.value = ProfileUiState.Error(UiText.StringRes(R.string.error_load_profile))
             }
         }
     }

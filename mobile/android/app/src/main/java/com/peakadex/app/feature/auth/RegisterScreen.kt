@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.peakadex.app.R
 import com.peakadex.app.core.ui.PeakadexLogo
+import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.ui.theme.*
 
 private val CardShapeReg   = RoundedCornerShape(20.dp)
@@ -68,7 +69,7 @@ fun RegisterScreen(
     }
 
     val isLoading    = uiState is AuthUiState.Loading
-    val errorMessage = (uiState as? AuthUiState.Error)?.message
+    val errorMessage = (uiState as? AuthUiState.Error)?.message?.asString()
     fun clearError() { if (uiState is AuthUiState.Error) viewModel.resetState() }
 
     val pwTransform = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()

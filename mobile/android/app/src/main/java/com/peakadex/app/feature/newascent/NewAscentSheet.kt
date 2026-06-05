@@ -103,6 +103,7 @@ import com.peakadex.app.core.ui.theme.PeakMuted
 import com.peakadex.app.core.ui.theme.PeakNavyDark
 import com.peakadex.app.core.ui.theme.PeakOnSurface
 import com.peakadex.app.core.ui.theme.PeakSubtle
+import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -187,7 +188,7 @@ fun NewAscentSheet(
 
 @Composable
 private fun PhotoPickStep(
-    error: String?,
+    error: UiText?,
     onPickPhoto: () -> Unit,
     onClose: () -> Unit,
 ) {
@@ -239,7 +240,7 @@ private fun PhotoPickStep(
                 }
 
                 if (error != null) {
-                    Text(error, fontSize = 13.sp, color = Color(0xFFEF4444))
+                    Text(error.asString(), fontSize = 13.sp, color = Color(0xFFEF4444))
                 }
 
                 Button(
@@ -691,7 +692,7 @@ private fun AscentFormStep(
                         border = BorderStroke(1.dp, Color(0xFFFECACA)),
                     ) {
                         Text(
-                            text     = state.error!!,
+                            text     = state.error!!.asString(),
                             modifier = Modifier.padding(12.dp),
                             fontSize = 13.sp,
                             color    = Color(0xFFDC2626),

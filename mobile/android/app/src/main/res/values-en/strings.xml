@@ -350,4 +350,31 @@
     <string name="cordadas_photo_hint">Used as cover and avatar</string>
     <string name="cordadas_edit_photo">Edit photo</string>
     <string name="cordadas_delete_warning">This action cannot be undone</string>
+
+    <!-- ── Errors ─────────────────────────────────────────────────────────────── -->
+    <string name="error_fields_required">Please fill in all fields</string>
+    <string name="error_invalid_credentials">Incorrect email or password</string>
+    <string name="error_too_many_attempts">Too many attempts. Please wait a moment</string>
+    <string name="error_server_response">Error processing the server response</string>
+    <string name="error_no_connection">No internet connection</string>
+    <string name="error_unexpected">Unexpected error. Please try again</string>
+    <string name="error_passwords_mismatch">Passwords do not match</string>
+    <string name="error_password_too_short">Password must be at least 8 characters</string>
+    <string name="error_invite_code_invalid">Invalid or expired invitation code</string>
+    <string name="error_email_already_exists">An account with this email already exists</string>
+    <string name="error_google_no_account">No Google account found on this device. Add an account in system Settings and try again.</string>
+    <string name="error_google_unexpected">Unexpected error with Google Sign-In</string>
+    <string name="error_load_profile">Error loading profile</string>
+    <string name="error_load_config">Error loading configuration</string>
+    <string name="error_name_empty">Name cannot be empty</string>
+    <string name="error_username_taken">That username is already taken</string>
+    <string name="error_save">Error saving</string>
+    <string name="error_password_current_required">Enter your current password</string>
+    <string name="error_password_current_wrong">Incorrect current password</string>
+    <string name="error_password_change">Error changing password</string>
+    <string name="error_save_language">Error saving language</string>
+    <string name="error_unlink_google">Error unlinking Google</string>
+    <string name="error_load_photo">Could not load photo</string>
+    <string name="error_select_peak">Select a peak</string>
+    <string name="error_photo_required">A photo is required</string>
 </resources>

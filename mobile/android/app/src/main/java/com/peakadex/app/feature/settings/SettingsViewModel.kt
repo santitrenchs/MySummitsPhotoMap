@@ -8,7 +8,9 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.R
 import com.peakadex.app.core.model.UpdatePasswordRequest
+import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.model.UpdateSettingsRequest
 import com.peakadex.app.core.model.User
 import kotlinx.coroutines.CancellationException
@@ -57,8 +59,8 @@ data class SettingsUiState(
     val passwordSuccess: Boolean = false,
     val languageSaved: Boolean = false,
     val googleUnlinked: Boolean = false,
-    val error: String? = null,
-    val passwordError: String? = null,
+    val error: UiText? = null,
+    val passwordError: UiText? = null,
 )
 
 val SettingsUiState.isProfileDirty: Boolean
@@ -97,10 +99,10 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: IOException) {
                 Log.e(TAG, "load: network error", e)
-                _state.update { it.copy(isLoading = false, error = "Sin conexión a internet") }
+                _state.update { it.copy(isLoading = false, error = UiText.StringRes(R.string.error_no_connection)) }
             } catch (e: Exception) {
                 Log.e(TAG, "load: error", e)
-                _state.update { it.copy(isLoading = false, error = "Error al cargar configuración") }
+                _state.update { it.copy(isLoading = false, error = UiText.StringRes(R.string.error_load_config)) }
             }
         }
     }
@@ -119,7 +121,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     fun saveProfile() {
         val s = _state.value
         if (s.nameInput.isBlank()) {
-            _state.update { it.copy(error = "El nombre no puede estar vacío") }
+            _state.update { it.copy(error = UiText.StringRes(R.string.error_name_empty)) }
             return
         }
         if (s.usernameError != null) return
@@ -147,13 +149,13 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 Log.e(TAG, "saveProfile HTTP ${e.code()}")
                 _state.update { it.copy(
                     isSaving = false,
-                    error = if (e.code() == 409) "Ese nombre de usuario ya está en uso" else "Error al guardar",
+                    error = if (e.code() == 409) UiText.StringRes(R.string.error_username_taken) else UiText.StringRes(R.string.error_save),
                 ) }
             } catch (e: IOException) {
-                _state.update { it.copy(isSaving = false, error = "Sin conexión a internet") }
+                _state.update { it.copy(isSaving = false, error = UiText.StringRes(R.string.error_no_connection)) }
             } catch (e: Exception) {
                 Log.e(TAG, "saveProfile error", e)
-                _state.update { it.copy(isSaving = false, error = "Error al guardar") }
+                _state.update { it.copy(isSaving = false, error = UiText.StringRes(R.string.error_save)) }
             }
         }
     }
@@ -218,11 +220,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         val s = _state.value
         when {
             s.currentPassword.isBlank() ->
-                { _state.update { it.copy(passwordError = "Introduce tu contraseña actual") }; return }
+                { _state.update { it.copy(passwordError = UiText.StringRes(R.string.error_password_current_required)) }; return }
             s.newPassword.length < 8 ->
-                { _state.update { it.copy(passwordError = "La contraseña debe tener al menos 8 caracteres") }; return }
+                { _state.update { it.copy(passwordError = UiText.StringRes(R.string.error_password_too_short)) }; return }
             s.newPassword != s.confirmPassword ->
-                { _state.update { it.copy(passwordError = "Las contraseñas no coinciden") }; return }
+                { _state.update { it.copy(passwordError = UiText.StringRes(R.string.error_passwords_mismatch)) }; return }
         }
         viewModelScope.launch {
             _state.update { it.copy(isChangingPassword = true, passwordError = null, passwordSuccess = false) }
@@ -247,13 +249,13 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 Log.e(TAG, "savePassword HTTP ${e.code()}")
                 _state.update { it.copy(
                     isChangingPassword = false,
-                    passwordError = if (e.code() == 400) "Contraseña actual incorrecta" else "Error al cambiar contraseña",
+                    passwordError = if (e.code() == 400) UiText.StringRes(R.string.error_password_current_wrong) else UiText.StringRes(R.string.error_password_change),
                 ) }
             } catch (e: IOException) {
-                _state.update { it.copy(isChangingPassword = false, passwordError = "Sin conexión a internet") }
+                _state.update { it.copy(isChangingPassword = false, passwordError = UiText.StringRes(R.string.error_no_connection)) }
             } catch (e: Exception) {
                 Log.e(TAG, "savePassword error", e)
-                _state.update { it.copy(isChangingPassword = false, passwordError = "Error al cambiar contraseña") }
+                _state.update { it.copy(isChangingPassword = false, passwordError = UiText.StringRes(R.string.error_password_change)) }
             }
         }
     }
@@ -288,7 +290,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "saveLanguage error", e)
-                _state.update { it.copy(isSavingLanguage = false, error = "Error al guardar idioma") }
+                _state.update { it.copy(isSavingLanguage = false, error = UiText.StringRes(R.string.error_save_language)) }
             }
         }
     }
@@ -314,7 +316,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "unlinkGoogle error", e)
-                _state.update { it.copy(isUnlinkingGoogle = false, error = "Error al desvincular Google") }
+                _state.update { it.copy(isUnlinkingGoogle = false, error = UiText.StringRes(R.string.error_unlink_google)) }
             }
         }
     }

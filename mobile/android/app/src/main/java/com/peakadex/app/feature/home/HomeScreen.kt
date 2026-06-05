@@ -67,6 +67,7 @@ import com.peakadex.app.feature.friends.FriendsTextMuted
 import com.peakadex.app.feature.friends.FriendsTextPrimary
 import com.peakadex.app.feature.friends.FriendsTextSecondary
 import com.peakadex.app.feature.friends.UserAvatar
+import com.peakadex.app.core.ui.UiText
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
@@ -116,7 +117,7 @@ fun HomeScreen(
 
     when (val s = state) {
         is HomeUiState.Loading -> HomeLoadingState()
-        is HomeUiState.Error   -> HomeErrorState(s.message) { vm.load() }
+        is HomeUiState.Error   -> HomeErrorState(s.message.asString()) { vm.load() }
         is HomeUiState.Success -> {
             PullToRefreshBox(
                 isRefreshing = isRefreshing,

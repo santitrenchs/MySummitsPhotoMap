@@ -13,6 +13,8 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.peakadex.app.AppContainer
 import com.peakadex.app.BuildConfig
+import com.peakadex.app.R
+import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,7 +29,7 @@ sealed class AuthUiState {
     data object Idle    : AuthUiState()
     data object Loading : AuthUiState()
     data object Success : AuthUiState()
-    data class  Error(val message: String) : AuthUiState()
+    data class  Error(val message: UiText) : AuthUiState()
 }
 
 class AuthViewModel : ViewModel() {
@@ -39,7 +41,7 @@ class AuthViewModel : ViewModel() {
 
     fun login(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {
-            _uiState.value = AuthUiState.Error("Por favor completa todos los campos")
+            _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_fields_required))
             return
         }
         viewModelScope.launch {
@@ -54,20 +56,20 @@ class AuthViewModel : ViewModel() {
                 Log.e(TAG, "login HTTP ${e.code()}")
                 _uiState.value = AuthUiState.Error(
                     when (e.code()) {
-                        401  -> "Email o contraseña incorrectos"
-                        429  -> "Demasiados intentos. Espera un momento"
-                        else -> "Error del servidor (${e.code()})"
+                        401  -> UiText.StringRes(R.string.error_invalid_credentials)
+                        429  -> UiText.StringRes(R.string.error_too_many_attempts)
+                        else -> UiText.Dynamic("Error ${e.code()}")
                     }
                 )
             } catch (e: SerializationException) {
                 Log.e(TAG, "login serialization error", e)
-                _uiState.value = AuthUiState.Error("Error al procesar la respuesta del servidor")
+                _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_server_response))
             } catch (e: IOException) {
                 Log.e(TAG, "login network error", e)
-                _uiState.value = AuthUiState.Error("Sin conexión a internet")
+                _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_no_connection))
             } catch (e: Exception) {
                 Log.e(TAG, "login unexpected error: ${e::class.simpleName}", e)
-                _uiState.value = AuthUiState.Error("Error inesperado: ${e::class.simpleName}")
+                _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_unexpected))
             }
         }
     }
@@ -83,11 +85,11 @@ class AuthViewModel : ViewModel() {
     ) {
         when {
             name.isBlank() || email.isBlank() || password.isBlank() ->
-                { _uiState.value = AuthUiState.Error("Por favor completa todos los campos"); return }
+                { _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_fields_required)); return }
             password != confirmPassword ->
-                { _uiState.value = AuthUiState.Error("Las contraseñas no coinciden"); return }
+                { _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_passwords_mismatch)); return }
             password.length < 8 ->
-                { _uiState.value = AuthUiState.Error("La contraseña debe tener al menos 8 caracteres"); return }
+                { _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_password_too_short)); return }
         }
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
@@ -105,15 +107,15 @@ class AuthViewModel : ViewModel() {
             } catch (e: HttpException) {
                 _uiState.value = AuthUiState.Error(
                     when (e.code()) {
-                        400  -> "Código de invitación inválido o expirado"
-                        409  -> "Ya existe una cuenta con ese email"
-                        else -> "Error del servidor (${e.code()})"
+                        400  -> UiText.StringRes(R.string.error_invite_code_invalid)
+                        409  -> UiText.StringRes(R.string.error_email_already_exists)
+                        else -> UiText.Dynamic("Error ${e.code()}")
                     }
                 )
             } catch (e: IOException) {
-                _uiState.value = AuthUiState.Error("Sin conexión a internet")
+                _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_no_connection))
             } catch (e: Exception) {
-                _uiState.value = AuthUiState.Error("Error inesperado. Inténtalo de nuevo")
+                _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_unexpected))
             }
         }
     }
@@ -124,7 +126,6 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                // 1. Request Google ID token via Credential Manager
                 val credentialManager = CredentialManager.create(context)
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setFilterByAuthorizedAccounts(false)
@@ -138,33 +139,28 @@ class AuthViewModel : ViewModel() {
                 val credential = GoogleIdTokenCredential.createFrom(result.credential.data)
                 val idToken = credential.idToken
 
-                // 2. Exchange token for Peakadex JWT
                 val response = AppContainer.apiService.loginWithGoogle(mapOf("idToken" to idToken))
                 AppContainer.authSession.login(response.token, response.user)
                 _uiState.value = AuthUiState.Success
 
             } catch (e: GetCredentialCancellationException) {
-                // User dismissed the picker — silent, no error shown
                 Log.d(TAG, "Google sign-in cancelled by user")
                 _uiState.value = AuthUiState.Idle
             } catch (e: NoCredentialException) {
                 Log.e(TAG, "Google sign-in: no credentials available", e)
-                _uiState.value = AuthUiState.Error(
-                    "No se encontró ninguna cuenta de Google en este dispositivo. " +
-                    "Añade una cuenta en Ajustes del sistema e inténtalo de nuevo."
-                )
+                _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_google_no_account))
             } catch (e: GetCredentialException) {
                 Log.e(TAG, "Google credential error type=${e.type} class=${e::class.simpleName} msg=${e.message}", e)
-                _uiState.value = AuthUiState.Error("Error con Google Sign-In: ${e.message}")
+                _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_google_unexpected))
             } catch (e: HttpException) {
                 Log.e(TAG, "Google login HTTP ${e.code()}", e)
-                _uiState.value = AuthUiState.Error("Error al iniciar sesión con Google (${e.code()})")
+                _uiState.value = AuthUiState.Error(UiText.Dynamic("Error Google (${e.code()})"))
             } catch (e: IOException) {
                 Log.e(TAG, "Google login network error", e)
-                _uiState.value = AuthUiState.Error("Sin conexión a internet")
+                _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_no_connection))
             } catch (e: Exception) {
                 Log.e(TAG, "Google login unexpected: ${e::class.simpleName}", e)
-                _uiState.value = AuthUiState.Error("Error inesperado con Google Sign-In")
+                _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_google_unexpected))
             }
         }
     }

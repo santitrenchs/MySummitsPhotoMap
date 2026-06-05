@@ -84,6 +84,7 @@ import com.peakadex.app.core.ui.rarityForAltitude
 import com.peakadex.app.core.ui.theme.PeakOnSurface
 import com.peakadex.app.core.ui.theme.PeakSubtle
 import com.peakadex.app.core.ui.theme.PeakTextHeadline
+import com.peakadex.app.core.ui.UiText
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
@@ -399,7 +400,7 @@ fun LogbookScreen(
 
         when (uiState) {
             is LogbookUiState.Loading -> LogbookLoadingState()
-            is LogbookUiState.Error   -> LogbookErrorState((uiState as LogbookUiState.Error).message) { vm.load() }
+            is LogbookUiState.Error   -> LogbookErrorState((uiState as LogbookUiState.Error).message.asString()) { vm.load() }
             is LogbookUiState.Success -> PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh    = { vm.refresh() },

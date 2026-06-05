@@ -350,4 +350,31 @@
     <string name="cordadas_photo_hint">S\'usarà com a portada i avatar</string>
     <string name="cordadas_edit_photo">Editar foto</string>
     <string name="cordadas_delete_warning">Aquesta acció no es pot desfer</string>
+
+    <!-- ── Errors ─────────────────────────────────────────────────────────────── -->
+    <string name="error_fields_required">Si us plau, omple tots els camps</string>
+    <string name="error_invalid_credentials">Correu electrònic o contrasenya incorrectes</string>
+    <string name="error_too_many_attempts">Massa intents. Espera un moment</string>
+    <string name="error_server_response">Error en processar la resposta del servidor</string>
+    <string name="error_no_connection">Sense connexió a internet</string>
+    <string name="error_unexpected">Error inesperat. Torna-ho a intentar</string>
+    <string name="error_passwords_mismatch">Les contrasenyes no coincideixen</string>
+    <string name="error_password_too_short">La contrasenya ha de tenir almenys 8 caràcters</string>
+    <string name="error_invite_code_invalid">Codi d\'invitació invàlid o caducat</string>
+    <string name="error_email_already_exists">Ja existeix un compte amb aquest correu</string>
+    <string name="error_google_no_account">No s\'ha trobat cap compte de Google en aquest dispositiu. Afegeix un compte als Ajustos del sistema i torna-ho a intentar.</string>
+    <string name="error_google_unexpected">Error inesperat amb Google Sign-In</string>
+    <string name="error_load_profile">Error en carregar el perfil</string>
+    <string name="error_load_config">Error en carregar la configuració</string>
+    <string name="error_name_empty">El nom no pot estar buit</string>
+    <string name="error_username_taken">Aquest nom d\'usuari ja està en ús</string>
+    <string name="error_save">Error en desar</string>
+    <string name="error_password_current_required">Introdueix la teva contrasenya actual</string>
+    <string name="error_password_current_wrong">Contrasenya actual incorrecta</string>
+    <string name="error_password_change">Error en canviar la contrasenya</string>
+    <string name="error_save_language">Error en desar l\'idioma</string>
+    <string name="error_unlink_google">Error en desvincular Google</string>
+    <string name="error_load_photo">No s\'ha pogut carregar la foto</string>
+    <string name="error_select_peak">Selecciona un cim</string>
+    <string name="error_photo_required">La foto és obligatòria</string>
 </resources>

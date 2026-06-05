@@ -46,6 +46,7 @@ import com.peakadex.app.core.model.Rarity
 import com.peakadex.app.R
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.SkeletonBlock
+import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.ui.rememberSkeletonBrush
 import com.peakadex.app.core.ui.theme.*
 import kotlinx.coroutines.launch
@@ -110,7 +111,7 @@ fun ProfileSummaryScreen(
                 }
                 is ProfileUiState.Error -> {
                     Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text(s.message, color = PeakMuted, fontSize = 14.sp)
+                        Text(s.message.asString(), color = PeakMuted, fontSize = 14.sp)
                     }
                 }
                 is ProfileUiState.Success -> {
@@ -152,7 +153,7 @@ fun ProfileScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(s.message, color = PeakMuted, fontSize = 14.sp)
+                    Text(s.message.asString(), color = PeakMuted, fontSize = 14.sp)
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { vm.load() }) { Text(stringResource(R.string.action_retry)) }
                 }

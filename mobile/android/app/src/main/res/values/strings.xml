@@ -354,4 +354,31 @@
     <string name="cordadas_photo_hint">Se usará como portada y avatar</string>
     <string name="cordadas_edit_photo">Editar foto</string>
     <string name="cordadas_delete_warning">Esta acción no se puede deshacer</string>
+
+    <!-- ── Errors (shared across all ViewModels) ──────────────────────────────── -->
+    <string name="error_fields_required">Por favor completa todos los campos</string>
+    <string name="error_invalid_credentials">Email o contraseña incorrectos</string>
+    <string name="error_too_many_attempts">Demasiados intentos. Espera un momento</string>
+    <string name="error_server_response">Error al procesar la respuesta del servidor</string>
+    <string name="error_no_connection">Sin conexión a internet</string>
+    <string name="error_unexpected">Error inesperado. Inténtalo de nuevo</string>
+    <string name="error_passwords_mismatch">Las contraseñas no coinciden</string>
+    <string name="error_password_too_short">La contraseña debe tener al menos 8 caracteres</string>
+    <string name="error_invite_code_invalid">Código de invitación inválido o expirado</string>
+    <string name="error_email_already_exists">Ya existe una cuenta con ese email</string>
+    <string name="error_google_no_account">No se encontró ninguna cuenta de Google en este dispositivo. Añade una cuenta en Ajustes del sistema e inténtalo de nuevo.</string>
+    <string name="error_google_unexpected">Error inesperado con Google Sign-In</string>
+    <string name="error_load_profile">Error al cargar el perfil</string>
+    <string name="error_load_config">Error al cargar la configuración</string>
+    <string name="error_name_empty">El nombre no puede estar vacío</string>
+    <string name="error_username_taken">Ese nombre de usuario ya está en uso</string>
+    <string name="error_save">Error al guardar</string>
+    <string name="error_password_current_required">Introduce tu contraseña actual</string>
+    <string name="error_password_current_wrong">Contraseña actual incorrecta</string>
+    <string name="error_password_change">Error al cambiar contraseña</string>
+    <string name="error_save_language">Error al guardar idioma</string>
+    <string name="error_unlink_google">Error al desvincular Google</string>
+    <string name="error_load_photo">No se pudo cargar la foto</string>
+    <string name="error_select_peak">Selecciona una cima</string>
+    <string name="error_photo_required">La foto es obligatoria</string>
 </resources>
