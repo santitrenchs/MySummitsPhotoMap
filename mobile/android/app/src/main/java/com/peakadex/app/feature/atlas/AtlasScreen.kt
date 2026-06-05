@@ -356,7 +356,7 @@ fun AtlasScreen(
                             )
                             val peakId = features.firstOrNull()?.getStringProperty("id")
                             if (peakId != null) {
-                                vm.onPeakSelected(peakId)
+                                vm.onPeakSelectedById(peakId)
                             } else {
                                 vm.onSelectionDismissed()
                             }
@@ -401,7 +401,7 @@ fun AtlasScreen(
 
         // ── Update GeoJSON sources when peaks / filter change ─────────────────
         val climbed           = uiState.climbedByPeakId
-        val viewport          = uiState.viewportPeaks
+        val viewport          = uiState.peaksCache.values.toList()
         val filter            = uiState.filter
         val rarities          = uiState.rarities
         val selectedRarityIds = uiState.selectedRarityIds
@@ -609,7 +609,7 @@ fun AtlasScreen(
                 sortMode          = uiState.sortMode,
                 rarities          = rarities,
                 onPeakClick       = { peak ->
-                    vm.onPeakSelected(peak.id)
+                    vm.onPeakSelected(peak)   // full object — never fails silently
                     vm.onToggleList()
                     mapRef.value?.animateCamera(
                         CameraUpdateFactory.newLatLngZoom(
@@ -1888,11 +1888,12 @@ private fun FiltersPanel(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Count climbed peaks per rarity
-    val rarityClimbedCounts = remember(climbed, rarities) {
-        rarities.associateWith { rarity ->
-            climbed.values.count { it.peak.rarityId == rarity.id }
-        }
+    // Count all known peaks per rarity (climbed + cached unclimbed).
+    // Using the accumulative viewport cache mirrors the web MapView's allPeaks count,
+    // so pills show the total of peaks known in that rarity — not only the user's captures.
+    val rarityTotalCounts = remember(climbed, viewport, rarities) {
+        val allKnown = (climbed.values.map { it.peak } + viewport).distinctBy { it.id }
+        rarities.associateWith { rarity -> allKnown.count { it.rarityId == rarity.id } }
     }
 
     // Total visible peaks after all active filters
@@ -1982,7 +1983,7 @@ private fun FiltersPanel(
                             rarities.forEach { rarity ->
                                 RarityPill(
                                     rarity   = rarity,
-                                    count    = rarityClimbedCounts[rarity] ?: 0,
+                                    count    = rarityTotalCounts[rarity] ?: 0,
                                     selected = rarity.id in selectedRarityIds,
                                     onToggle = {
                                         val newSet = selectedRarityIds.toMutableSet()
