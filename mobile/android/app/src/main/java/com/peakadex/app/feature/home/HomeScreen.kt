@@ -1387,13 +1387,12 @@ private fun FriendRankBadge(rank: Int) {
         1    -> Color(0xFFFDE68A) to Color(0xFFD97706)
         2    -> Color(0xFFE5E7EB) to Color(0xFF6B7280)
         3    -> Color(0xFFF8D9B8) to Color(0xFFB45309)
-        else -> Color(0xFFF3F4F6) to Color(0xFF6B7280)
+        else -> Color.Transparent to Color(0xFF111827)
     }
     Box(
         modifier         = Modifier
             .size(width = 30.dp, height = 44.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(bg),
+            .then(if (rank <= 3) Modifier.clip(RoundedCornerShape(10.dp)).background(bg) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
