@@ -301,6 +301,14 @@ fun LogbookScreen(
         }
     }
 
+    // When arriving right after creating an ascent (refreshTrigger > 0), switch to
+    // the Mine filter SYNCHRONOUSLY on the first composition — before the initial
+    // load completes — so the Friends feed never flashes before we switch.
+    remember(refreshTrigger) {
+        if (refreshTrigger > 0) vm.setViewFilter(ViewFilter.Mine)
+        refreshTrigger
+    }
+
     val uiState         by vm.uiState.collectAsStateWithLifecycle()
     val isRefreshing    by vm.isRefreshing.collectAsStateWithLifecycle()
     val filters         by vm.filters.collectAsStateWithLifecycle()
