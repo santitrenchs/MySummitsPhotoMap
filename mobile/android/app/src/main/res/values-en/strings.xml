@@ -130,8 +130,8 @@
     <string name="new_ascent_tag_placeholder">Search person...</string>
     <string name="capture_reveal_title">Rarity \"%1$s\" captured</string>
     <string name="capture_reveal_subtitle">New flower added to your cards</string>
-    <string name="capture_reveal_headline">You captured a new summit</string>
-    <string name="capture_reveal_rarity_line">Rarity «%1$s»</string>
+    <string name="capture_reveal_unlocked">Card unlocked</string>
+    <string name="capture_reveal_rarity_line">Rarity: %1$s</string>
     <string name="capture_reveal_ep">+ %1$d EP</string>
     <string name="capture_reveal_subtitle_mythic">Mythic summit captured!</string>
     <string name="capture_reveal_continue">Tap to continue</string>
