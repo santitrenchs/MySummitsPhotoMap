@@ -234,10 +234,12 @@ fun MainScaffold(navController: NavController) {
             onSuccess       = { ascent, taggingWarning ->
                 showNewAscent      = false
                 // Navigate to Cards + switch to Mine NOW, while it's hidden behind
-                // the reveal overlay. By the time the user dismisses the reveal,
-                // Cards has already settled on the Mine filter with the new ascent
-                // at the top — so removing the overlay never flashes the Friends
-                // feed underneath. (Mine sorts date-desc → new card is index 0.)
+                // the reveal overlay. highlightId must be set BEFORE the refresh so
+                // the scroll LaunchedEffect can find the new card by id (not index 0,
+                // which fails for past-dated ascents). By the time the user dismisses
+                // the reveal, Cards has settled on Mine + scrolled to the new card —
+                // so removing the overlay never flashes the Friends feed.
+                logbookHighlightId = ascent.id
                 logbookRefreshTrigger++
                 atlasRefreshTrigger++
                 tabNavController.navigate(Screen.Cards.route) {
@@ -354,10 +356,17 @@ fun MainScaffold(navController: NavController) {
             isMythic = reveal.isMythic,
             onFinished = {
                 // Cards is already on Mine + scrolled to the new card (set up in
-                // onSuccess, behind the overlay). Just drop the overlay and flash
-                // the highlight ring on the now-visible card.
+                // onSuccess, behind the overlay). Drop the overlay and RE-ARM the
+                // highlight ring — the 2.5s consume timer likely burned during the
+                // multi-second reveal, so re-setting the id makes the ring appear
+                // fresh on the now-visible card.
                 captureReveal = null
-                logbookHighlightId = reveal.ascent.id
+                logbookHighlightId = null
+                scope.launch {
+                    // next frame so the null→id change re-fires the ring effect
+                    kotlinx.coroutines.delay(16)
+                    logbookHighlightId = reveal.ascent.id
+                }
                 if (reveal.taggingWarning != null) {
                     scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }
                 }
