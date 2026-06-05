@@ -176,21 +176,6 @@ fun AscentCaptureReveal(
                 .background(Color.Black.copy(alpha = overlayAlpha)),
         )
 
-        // ── 3. Radial scrim behind the flower ─────────────────────────────────
-        if (contentAlpha > 0f) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(380.dp)
-                    .alpha(contentAlpha)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color.Black.copy(alpha = 0.42f), Color.Transparent),
-                        ),
-                    ),
-            )
-        }
-
         // ── 4. Mythic glow ────────────────────────────────────────────────────
         if (isMythic && contentAlpha > 0f) {
             MythicGlow(modifier = Modifier.align(Alignment.Center).alpha(contentAlpha))
@@ -453,16 +438,35 @@ private fun BloomLottie(
     )
 
     Box(
-        modifier         = modifier.size(220.dp),
+        modifier         = modifier.size(260.dp),
         contentAlignment = Alignment.Center,
     ) {
-        if (composition != null) {
-            LottieAnimation(
+        // Soft light halo so petals/stem/leaves all pop (spotlight effect).
+        // Only shown once the flower has started blooming, to avoid an empty glow.
+        if (composition != null && progress > 0.02f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.22f),
+                                Color.White.copy(alpha = 0.08f),
+                                Color.Transparent,
+                            ),
+                        ),
+                        shape = CircleShape,
+                    ),
+            )
+        }
+
+        when {
+            composition != null -> LottieAnimation(
                 composition       = composition,
                 progress          = { progress },
                 dynamicProperties = dynamicProperties,
                 modifier          = Modifier
-                    .fillMaxSize()
+                    .size(220.dp)
                     .graphicsLayer {
                         scaleX          = aliveScale
                         scaleY          = aliveScale
@@ -470,8 +474,9 @@ private fun BloomLottie(
                         transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.85f)
                     },
             )
-        } else {
-            CaptureFlowerFallback(color = rarity.color, replayKey = replayKey)
+            // Only fall back to the Canvas flower on a genuine load FAILURE —
+            // while loading we render nothing (avoids the green/white dot flicker).
+            compositionResult.isFailure -> CaptureFlowerFallback(color = rarity.color, replayKey = replayKey)
         }
     }
 }
