@@ -97,16 +97,22 @@ fun AscentCaptureReveal(
     var step by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         delay(T_UNLOCKED); step = 1   // Carta desbloqueada
-        delay(T_PEAK);     step = 2   // peak name + altitude
-        delay(T_RARITY);   step = 3   // rarity line
-        delay(T_EP);       step = 4   // EP counter starts
+        delay(T_PEAK);     step = 2   // peak name
+        delay(T_RARITY);   step = 3   // rarity + altitude pills
     }
 
-    // EP roll-up + bounce
+    // Bloom completion is reported by BloomLottie; EP only starts once the
+    // flower is fully open and breathing.
+    var bloomDone by remember { mutableStateOf(false) }
+    var epStarted by remember { mutableStateOf(false) }
+
+    // EP roll-up + bounce — gated on bloomDone
     val epCount = remember { Animatable(0f) }
     var epDone  by remember { mutableStateOf(false) }
-    LaunchedEffect(step) {
-        if (step >= 4 && !epDone) {
+    LaunchedEffect(bloomDone) {
+        if (bloomDone && !epDone) {
+            delay(T_EP)            // small beat after the flower settles
+            epStarted = true
             epCount.animateTo(rarity.ep.toFloat(), tween(EP_COUNT_MS.toInt(), easing = LinearOutSlowInEasing))
             epDone = true
         }
@@ -126,7 +132,7 @@ fun AscentCaptureReveal(
         label         = "blur",
     )
     val overlayAlpha by animateFloatAsState(
-        targetValue   = if (phase == RevealPhase.BUILD) 0.60f else 0f,
+        targetValue   = if (phase == RevealPhase.BUILD) 0.80f else 0f,
         animationSpec = tween(durationMillis = 750),
         label         = "overlay",
     )
@@ -192,7 +198,11 @@ fun AscentCaptureReveal(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                BloomLottie(rarity = rarity, replayKey = ascent.id)
+                BloomLottie(
+                    rarity    = rarity,
+                    replayKey = ascent.id,
+                    onBloomed = { bloomDone = true },
+                )
 
                 // Step 1 — "Carta desbloqueada"
                 StepText(visible = step >= 1) {
@@ -206,44 +216,40 @@ fun AscentCaptureReveal(
                     )
                 }
 
-                // Step 2 — peak name (big) + altitude (small)
+                // Step 2 — peak name (big)
                 StepText(visible = step >= 2) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text       = ascent.peak.name.uppercase(),
-                            color      = Color.White,
-                            fontSize   = 30.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-0.02).em,
-                            lineHeight = 33.sp,
-                            textAlign  = TextAlign.Center,
-                        )
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            text       = "${ascent.peak.altitudeM} m",
-                            color      = Color.White.copy(alpha = 0.7f),
-                            fontSize   = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign  = TextAlign.Center,
-                        )
+                    Text(
+                        text       = ascent.peak.name.uppercase(),
+                        color      = Color.White,
+                        fontSize   = 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.02).em,
+                        lineHeight = 33.sp,
+                        textAlign  = TextAlign.Center,
+                    )
+                }
+
+                // Step 3 — two pills: rarity (left) + altitude (right)
+                StepText(visible = step >= 3) {
+                    androidx.compose.foundation.layout.Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment     = Alignment.CenterVertically,
+                    ) {
+                        RevealPill(accent = rarity.color, leading = "✿", label = rarity.label)
+                        RevealPill(accent = Color.White,   leading = "",  label = "${ascent.peak.altitudeM} m")
                     }
                 }
 
-                // Step 3 — rarity pill (translucent, like the cards)
-                StepText(visible = step >= 3) {
-                    RarityPill(rarity = rarity)
-                }
-
-                // Step 4 — EP counter (rolling) + bounce, separated from above
-                StepText(visible = step >= 4) {
-                    Spacer(Modifier.height(26.dp))
+                // EP counter — only once the flower has bloomed & is breathing
+                StepText(visible = epStarted) {
+                    Spacer(Modifier.height(40.dp))
                     Text(
                         text       = stringResource(
                             R.string.capture_reveal_ep,
                             epCount.value.roundToInt(),
                         ),
                         color      = if (isMythic) Color(0xFFFFD700) else rarity.color,
-                        fontSize   = 30.sp,
+                        fontSize   = 32.sp,
                         fontWeight = FontWeight.Black,
                         textAlign  = TextAlign.Center,
                         modifier   = Modifier.graphicsLayer {
@@ -262,28 +268,30 @@ fun AscentCaptureReveal(
     }
 }
 
-// Rarity pill — translucent rounded chip, "✿ Label", matching the cards' style.
+// Translucent rounded pill — "[leading] label" — matching the cards' style.
 @Composable
-private fun RarityPill(rarity: RarityInfo) {
+private fun RevealPill(accent: Color, leading: String, label: String) {
     androidx.compose.foundation.layout.Row(
         modifier = Modifier
             .background(
-                color = rarity.color.copy(alpha = 0.20f),
+                color = accent.copy(alpha = 0.20f),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(100),
             )
             .border(
                 width = 1.dp,
-                color = rarity.color.copy(alpha = 0.55f),
+                color = accent.copy(alpha = 0.55f),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(100),
             )
             .padding(horizontal = 16.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(text = "✿", color = rarity.color, fontSize = 15.sp)
+        if (leading.isNotEmpty()) {
+            Text(text = leading, color = accent, fontSize = 15.sp)
+        }
         Text(
-            text       = rarity.label,
-            color      = rarity.color,
+            text       = label,
+            color      = accent,
             fontSize   = 15.sp,
             fontWeight = FontWeight.Bold,
         )
@@ -385,6 +393,7 @@ private const val SWAY_MS       = 3400
 private fun BloomLottie(
     rarity:    RarityInfo,
     replayKey: String = "",
+    onBloomed: () -> Unit = {},
     modifier:  Modifier = Modifier,
 ) {
     val compositionResult = rememberLottieComposition(
@@ -399,6 +408,7 @@ private fun BloomLottie(
         restartOnPlay = false,
     )
     val bloomed = progress >= 0.99f
+    LaunchedEffect(bloomed) { if (bloomed) onBloomed() }
 
     val infinite = rememberInfiniteTransition(label = "flower_alive")
     val breathe by infinite.animateFloat(
@@ -450,8 +460,8 @@ private fun BloomLottie(
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.22f),
-                                Color.White.copy(alpha = 0.08f),
+                                Color.White.copy(alpha = 0.42f),
+                                Color.White.copy(alpha = 0.18f),
                                 Color.Transparent,
                             ),
                         ),
