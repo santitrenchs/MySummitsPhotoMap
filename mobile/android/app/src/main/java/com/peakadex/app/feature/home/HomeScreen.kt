@@ -32,12 +32,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -67,7 +61,6 @@ import com.peakadex.app.core.ui.RARITY_PALETTE
 import com.peakadex.app.core.ui.LEVEL_DEFS
 import com.peakadex.app.core.ui.LevelDef
 import com.peakadex.app.core.ui.levelName
-import com.peakadex.app.core.ui.levelAccent
 import com.peakadex.app.feature.friends.CairnIcon
 import com.peakadex.app.feature.friends.FriendsDivider
 import com.peakadex.app.feature.friends.FriendsTextMuted
@@ -1404,34 +1397,18 @@ private fun FriendRankBadge(rank: Int) {
         contentAlignment = Alignment.Center,
     ) {
         if (rank <= 3) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector        = HomePioletIcon,
-                    contentDescription = null,
-                    tint               = content,
-                    modifier           = Modifier.size(18.dp),
-                )
-                Text("$rank", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = content)
-            }
+            Icon(
+                painter            = painterResource(R.drawable.ic_piolet),
+                contentDescription = null,
+                tint               = content,
+                modifier           = Modifier.size(22.dp),
+            )
         } else {
             Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
         }
     }
 }
 
-private val HomePioletIcon: ImageVector by lazy {
-    ImageVector.Builder("Piolet", 24.dp, 24.dp, 24f, 24f).apply {
-        path(
-            stroke          = SolidColor(Color.White),
-            strokeLineWidth = 2.2f,
-            strokeLineCap   = StrokeCap.Round,
-            strokeLineJoin  = StrokeJoin.Round,
-        ) {
-            moveTo(15.5f, 7f); lineTo(7.5f, 20f)
-            moveTo(8f, 5.5f); lineTo(19.5f, 9f)
-        }
-    }.build()
-}
 
 // ── Section title ──────────────────────────────────────────────────────────────
 

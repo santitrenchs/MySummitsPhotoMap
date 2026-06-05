@@ -40,6 +40,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.peakadex.app.AppContainer
+import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.RarityInfo
@@ -62,8 +63,9 @@ import com.peakadex.app.feature.profile.ProfileScreen
 data class TabItem(val screen: Screen, val label: String, val iconRes: Int)
 
 private data class CaptureRevealState(
-    val ascentId: String,
-    val rarity: RarityInfo,
+    val ascent:         Ascent,
+    val rarity:         RarityInfo,
+    val isMythic:       Boolean,
     val taggingWarning: String?,
 )
 
@@ -163,6 +165,9 @@ fun MainScaffold(navController: NavController) {
         isBottomBarVisible = true
     }
 
+    // Outer Box so captureReveal can overlay the full screen (including top/bottom bars)
+    Box(modifier = Modifier.fillMaxSize()) {
+
     Scaffold(
         modifier = Modifier.nestedScroll(hideOnScrollConnection),
         // ① CenterAlignedTopAppBar — M3 standard, replaces custom Surface/Box header
@@ -232,8 +237,9 @@ fun MainScaffold(navController: NavController) {
                 logbookRefreshTrigger++
                 atlasRefreshTrigger++
                 captureReveal = CaptureRevealState(
-                    ascentId       = ascent.id,
+                    ascent         = ascent,
                     rarity         = rarityForAltitude(ascent.peak.altitudeM),
+                    isMythic       = ascent.peak.isMythic == true,
                     taggingWarning = taggingWarning,
                 )
             },
@@ -329,24 +335,29 @@ fun MainScaffold(navController: NavController) {
             }
         }
 
-        captureReveal?.let { reveal ->
-            AscentCaptureReveal(
-                ascentId = reveal.ascentId,
-                rarity = reveal.rarity,
-                onFinished = {
-                    captureReveal = null
-                    tabNavController.navigate(Screen.Cards.route) {
-                        popUpTo(Screen.Home.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState    = false
-                    }
-                    if (reveal.taggingWarning != null) {
-                        scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }
-                    }
-                },
-            )
-        }
+    } // end Scaffold
+
+    // Capture reveal overlays the FULL screen (above top bar, FAB and bottom nav)
+    captureReveal?.let { reveal ->
+        AscentCaptureReveal(
+            ascent   = reveal.ascent,
+            rarity   = reveal.rarity,
+            isMythic = reveal.isMythic,
+            onFinished = {
+                captureReveal = null
+                tabNavController.navigate(Screen.Cards.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState    = false
+                }
+                if (reveal.taggingWarning != null) {
+                    scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }
+                }
+            },
+        )
     }
+
+    } // end outer Box
 }
 
 // ── Top bar (M3 CenterAlignedTopAppBar) ────────────────────────────────────────

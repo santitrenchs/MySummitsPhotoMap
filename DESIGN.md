@@ -311,6 +311,17 @@ Android `HomeScreen`/Stats uses a **structural skeleton**, not a generic spinner
 - shimmer blocks reuse the existing quiet neutral palette; no marketing-style cards or decorative gradients.
 - Keep dimensions stable; the skeleton should reserve the same space as the real content.
 - Compile gotcha fixed 2026-06-02: if shimmer/offset helpers use `Offset`, import `androidx.compose.ui.geometry.Offset`.
+- Android status/header area must use the same page background as the rest of the skeleton. Do not add a darker or stronger top band above the first skeleton block.
+
+### Android Bitácora + Cards Skeletons
+
+Android `LogbookScreen` and Cards use structural skeletons in the same quiet style as Stats:
+- same top bar/logo/avatar context as the loaded screen.
+- same page background from top to bottom; no stronger header color or separate top band.
+- same spacing rhythm and stable row/card dimensions as the loaded content.
+- Bitácora skeleton: filter/search area placeholder followed by feed-card placeholders.
+- Cards skeleton: tab row placeholder followed by a card-shaped placeholder matching the flip-card footprint.
+- Shimmer blocks use neutral surfaces only; no decorative gradients or fake content labels.
 
 ### Android Photo Cropper Rule
 
@@ -737,6 +748,15 @@ The card flips on tap (Y-axis rotation, 700 ms). Front shows the photo; back sho
 | Persons byline | `{name} con {persons…}` · 13sp · 2-line clamp |
 | Description | 13sp muted · 2-line clamp |
 
+#### Back-side mini-map + nearby peaks
+
+The card back mini-map renders immediately from the ascent payload:
+- Prefer `ascent.peak.nearbyPeaks` from `GET /api/v1/ascents`.
+- Only call the fallback nearby-peaks endpoint when the `nearbyPeaks` field is **missing/null**. If it is present as an empty array, do not fallback.
+- The main peak is the large highlighted marker. Nearby peaks are small muted circles.
+- Nearby peaks may display compact labels when there is room: one line, `Name · altitude m`, small white text with a subtle dark halo. Labels must avoid colliding with the main peak name/altitude overlay and with each other. It is acceptable that not every nearby marker has a label on cramped maps.
+- Nearby peaks are selected by backend relevance, not pure distance: important/high/rare peaks in the local area should win over tiny closer points. Do not re-rank on Android.
+
 ---
 
 ### Filter bottom sheet — sections
@@ -1050,6 +1070,10 @@ The Cimas tab uses compact text-first rows. Photos are intentionally **not** sho
 | Last date | 12sp semibold, `PeakNavyMid`, width 78dp, `TextAlign.End` |
 
 Search behaviour: while typing, the search field must stay visible and focused; results update below it. Do **not** auto-scroll on every keystroke. On IME Search, clear focus and scroll to the first result (`LazyListState.animateScrollToItem(2)`) if any results exist. The list uses `imePadding()` and enough bottom content padding so results remain reachable above the keyboard and bottom nav.
+
+Search input gotcha: when typing, the user must always see the text they are entering. Partial filter results may update live, but never at the cost of hiding the focused `OutlinedTextField` behind the keyboard or scrolling it off-screen. The right behaviour is: keep the input pinned in view, keep focus, update results below, and only jump to the result list after the keyboard search action.
+
+Rarity pill gotcha: the pill must never be clipped vertically. Keep the row at least `84dp`, give the second line enough top/bottom breathing room, and center altitude/date against the rarity pill's vertical center.
 
 ---
 
