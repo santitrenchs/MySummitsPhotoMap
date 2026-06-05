@@ -1099,6 +1099,49 @@ Score formula per peak: `normAlt × 0.5 + rarityWeight × 0.3 + normDist × 0.2`
 
 Unclimbed peaks are clustered only at broad exploration zooms (`clusterMaxZoom=9`). From close regional zoom onward, individual dots take over; peak labels appear progressively from zoom 10.5.
 
+### Peak selection — two paths, never fails silently (fix 2026-06-05)
+
+Two separate entry points for selecting a peak, matching web's `flyToPeak(peak)` pattern:
+
+| Entry point | Method | Why |
+|---|---|---|
+| Tap on map dot/marker | `onPeakSelectedById(peakId)` | GeoJSON feature only exposes the id |
+| Tap in list or search results | `onPeakSelected(peak: Peak)` | Full object available — no lookup needed |
+
+`onPeakSelected(peak)` inserts the peak into `peaksCache` before setting `selected`, so the peak is guaranteed to exist on the map when the camera flies to it.
+
+**Do NOT call `onPeakSelectedById` from the list.** The old bug: list called `onPeakSelected(peak.id)`, ViewModel searched in `viewportPeaks` (which only contained the current viewport) — if the peak was far away it wasn't found, `selected` stayed `null`, the camera flew but the detail sheet never opened.
+
+### Peaks cache — accumulative, never destructive (fix 2026-06-05)
+
+`peaksCache: Map<String, Peak>` replaces the old `viewportPeaks: List<Peak>`. Key differences:
+
+| Old `viewportPeaks` | New `peaksCache` |
+|---|---|
+| Replaced on every `onMapIdle` | Merged — peaks are never removed unless cache > 2000 |
+| Empty when camera leaves an area | Peaks from previous viewports remain available |
+| `onPeakSelectedById` failed for out-of-viewport peaks | Always finds the peak if it was ever loaded |
+
+`peaksCache` is populated by three sources: `onMapIdle` (viewport fetch), `loadListPeaks` (list open), and `onPeakSelected(peak)` (explicit selection). All merge via `LinkedHashMap` — insertion order used for LRU eviction at 2000 entries.
+
+**iOS port:** implement the same `peaksCache` pattern. A `var peaksCache: [String: Peak]` dictionary on the ViewModel that merges — never replaces. Same two-method split: `selectPeak(_ peak: Peak)` and `selectPeakById(_ peakId: String)`.
+
+**Web:** `peaksCacheRef` in `MapView.tsx` already implements the equivalent pattern correctly. See the pending parity task in CLAUDE.md for the rarity pill count fix needed on web.
+
+### Rarity pill counts — context-aware by status filter (fix 2026-06-05)
+
+The count shown on each rarity pill in the filters panel depends on the active status filter:
+
+| Status filter | Pill count shows |
+|---|---|
+| **Todas** | Peaks in current viewport cache (climbed + unclimbed in this area) |
+| **Sin capturar** | Unclimbed peaks in current viewport cache only |
+| **Capturadas** | All user captures globally (personal inventory, not location-dependent) |
+
+**Rationale:** "Capturadas" is a personal inventory — showing global count makes sense. "Sin capturar" and "Todas" are exploration tools — showing local count is actionable ("X peaks of this rarity near me now").
+
+**iOS port:** same logic. **Web TODO:** update `MapView.tsx` rarity pill `count` to be filter-aware (currently always counts full `allPeaks` cache regardless of filter).
+
 ### List view — data source
 
 The list panel is **decoupled from the map zoom**. When the user taps "Lista":

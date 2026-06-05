@@ -972,7 +972,10 @@ data class SelectedPeakUi(val peak: Peak, val ascent: MapAscent?)  // ascent=nul
 data class AtlasUiState(
     val isLoadingAscents:   Boolean                  = true,
     val climbedByPeakId:    Map<String, MapAscent>   = emptyMap(),
-    val viewportPeaks:      List<Peak>               = emptyList(),   // unclimbed peaks for map dots
+    // Accumulative cache of all unclimbed peaks seen so far (keyed by peak id).
+    // Merges on every viewport fetch — never replaces — so peaks remain available
+    // after the camera moves away. Mirrors web MapView's peaksCacheRef. Max 2000 entries.
+    val peaksCache:         Map<String, Peak>        = emptyMap(),
     val listPeaks:          List<Peak>               = emptyList(),   // fixed-radius peaks for list view
     val isLoadingList:      Boolean                  = false,
     val filter:             AtlasFilter              = AtlasFilter.ALL,
@@ -1007,9 +1010,15 @@ val lon = centerLon ?: lastBounds?.let { (it.east + it.west) / 2 }
 - `VIEWPORT_DEBOUNCE_MS = 500L` — viewport queries (longer to avoid mid-animation firing)
 - `SEARCH_DEBOUNCE_MS = 300L` — text search
 
-`onMapIdle()` receives `zoom: Double`, saves bounds in `lastBounds`, computes center, passes to `applyViewportScore()`. Unclimbed only — already-climbed peaks are filtered out of `viewportPeaks`.
+`onMapIdle()` receives `zoom: Double`, saves bounds in `lastBounds`, merges new peaks into `peaksCache`. Unclimbed only — already-climbed peaks are always available via `climbedByPeakId`.
 
-**`lastBounds` re-fetch:** when switching from CLIMBED filter back to ALL/NOT_YET, `viewportPeaks` is empty (queries were skipped). `onFilterChanged` re-calls `onMapIdle(lastBounds)` to repopulate immediately.
+**`lastBounds` re-fetch:** when switching from CLIMBED filter back to ALL/NOT_YET, `peaksCache` may be empty if no viewport fetches ran. `onFilterChanged` re-calls `onMapIdle(lastBounds)` to repopulate immediately.
+
+**`onPeakSelected` vs `onPeakSelectedById` (fix 2026-06-05):** Two separate functions to avoid silent failures:
+- `onPeakSelected(peak: Peak)` — called from list and search results where the full `Peak` object is available. Inserts peak into `peaksCache` and sets `selected` immediately. Never fails silently. Mirrors web's `flyToPeak(peak)`.
+- `onPeakSelectedById(peakId: String)` — called from map tap events (GeoJSON feature only has the id). Looks up in: `climbedByPeakId → peaksCache → searchResults → listPeaks`. Returns silently only if genuinely not found anywhere.
+
+**`peaksCache` merge pattern:** both `onMapIdle` and `loadListPeaks` merge into `peaksCache` (never replace). Eviction via `LinkedHashMap` insertion order when size > 2000. `onPeakSelected(peak)` also inserts the peak so it remains selectable after the list closes and the camera flies to a remote area.
 
 **Initial viewport fetch:** `addOnCameraIdleListener` does NOT fire for the initial resting position. Trigger `vm.onMapIdle(...)` once manually after style loads (inside `map.setStyle { style -> ... }`).
 
@@ -1149,7 +1158,7 @@ Flow:
 The list is **decoupled from the map viewport**. When the user opens the list:
 1. `onToggleList(centerLat, centerLon)` is called with the current map center coordinates.
 2. `loadListPeaks(lat, lon)` fires a fresh API query with a fixed ~50 km radius bbox (±0.45° lat, ±0.60° lon) and `zoom=12` (500-peak server limit).
-3. The list shows peaks from `listPeaks` (fixed radius) not from `viewportPeaks` (zoom-culled).
+3. The list shows peaks from `listPeaks` (fixed radius) not from `peaksCache` (zoom-culled viewport).
 
 This means: even if the user is at zoom 6 (showing a whole mountain range), the list shows all peaks within ~50 km of the map center — not the tiny zoom-culled subset visible on the map.
 
@@ -1208,6 +1217,26 @@ A `CircularProgressIndicator` shows while `isLoadingList = true`. When the list 
 **No Material Icons dependency.** All icons in `AtlasScreen.kt` are defined as private `val` using `ImageVector.Builder` + path DSL. Icon names: `SearchIcon`, `CloseIcon`, `FiltersIcon`, `LayersIcon`, `LocationIcon`, `MapOutlineIcon`, `ListIcon`, `TerrainIcon`, `TrailsIcon`, `CheckIcon`, **`SatelliteIcon`** (rounded square frame + 2×2 grid lines).
 
 `SatelliteIcon` uses `curveTo()` for bezier curves — NOT `cubicTo()` (that name does not exist in Compose `PathBuilder` and causes a compile error).
+
+---
+
+### Web MapView — pending parity with Android fixes (2026-06-05)
+
+The Android Atlas received two architectural fixes that the **web `MapView.tsx` already implements correctly** but should be kept in sync if the web map is ever refactored:
+
+**1. Accumulative peak cache (web already correct)**
+Web `MapView.tsx` uses `peaksCacheRef` (a `Map<string, MapPeak>`) that merges on every `fetchPeaksForViewport` call and never replaces. Android now matches this with `peaksCache: Map<String, Peak>`. Do NOT revert Android to a `List<Peak>` that replaces on each idle event.
+
+**2. `flyToPeak(peak)` receives the full object (web already correct)**
+Web always passes the full `MapPeak` object to `flyToPeak()` which sets `selected` immediately before the camera flies — no lookup by id that can fail. Android now has the same split: `onPeakSelected(peak: Peak)` for list/search, `onPeakSelectedById(peakId)` for map taps. When porting to iOS, follow the same pattern.
+
+**3. Rarity pill counts — context-aware by status filter (web TODO)**
+Web `MapView.tsx` line ~1451: `const count = allPeaks.filter((p) => p.rarityId === r.id).length` — always counts the full accumulative cache regardless of the active status filter. Android now applies context-aware counts:
+- `CLIMBED` filter → global user captures only
+- `NOT_YET` filter → viewport unclimbed only  
+- `ALL` filter → full viewport cache
+
+**Web task:** update `MapView.tsx` rarity pill count logic to match the Android behaviour. The count variable should be derived from the active `filter` state (`"climbed"` / `"not-climbed"` / `"all"`).
 
 ---
 
