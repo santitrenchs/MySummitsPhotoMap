@@ -73,6 +73,7 @@ data class ElevationResponse(val profile: ElevationProfileData)
 data class Peak(
     val id: String,
     val name: String,
+    val nameEn: String? = null,
     val latitude: Double = 0.0,   // may be absent in some API responses (e.g. createAscent)
     val longitude: Double = 0.0,  // always present when fetched via map/atlas endpoints
     val altitudeM: Int,
@@ -81,6 +82,19 @@ data class Peak(
     val rarityId: String? = null,
     val isMythic: Boolean? = null,
     val elevationProfile: ElevationProfileData? = null,
+    val nearbyPeaks: List<NearbyPeak>? = null,
+)
+
+@Serializable
+data class NearbyPeak(
+    val id: String,
+    val name: String,
+    val nameEn: String? = null,
+    val latitude: Double,
+    val longitude: Double,
+    val altitudeM: Int,
+    val rarityId: String? = null,
+    val distanceM: Int? = null,
 )
 
 // MARK: - Ascent

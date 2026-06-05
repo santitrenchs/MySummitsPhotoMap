@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db/client";
-import { fetchElevationProfile, type ElevationProfile } from "@/lib/services/elevation.service";
+import { ensureElevationProfileForPeak } from "@/lib/services/elevation.service";
 
 export async function GET(
   _req: Request,
@@ -14,29 +13,11 @@ export async function GET(
 
   const { id } = await params;
 
-  const peak = await prisma.peak.findUnique({
-    where: { id },
-    select: { id: true, latitude: true, longitude: true, elevationProfile: true },
-  });
-
-  if (!peak) {
-    return NextResponse.json({ error: "Peak not found" }, { status: 404 });
-  }
-
-  // Return cached profile if available
-  if (peak.elevationProfile) {
-    return NextResponse.json({ profile: peak.elevationProfile as ElevationProfile });
-  }
-
-  // Calculate and cache
   try {
-    const profile = await fetchElevationProfile(peak.latitude, peak.longitude);
-
-    await prisma.peak.update({
-      where: { id },
-      data: { elevationProfile: profile as object },
-    });
-
+    const profile = await ensureElevationProfileForPeak(id);
+    if (!profile) {
+      return NextResponse.json({ error: "Peak not found" }, { status: 404 });
+    }
     return NextResponse.json({ profile });
   } catch (err) {
     console.error(`[elevation] Failed for peak ${id}:`, err);

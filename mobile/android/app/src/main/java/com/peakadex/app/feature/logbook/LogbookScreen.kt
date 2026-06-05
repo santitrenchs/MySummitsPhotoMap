@@ -1,5 +1,7 @@
 package com.peakadex.app.feature.logbook
 
+import android.graphics.Paint
+import android.graphics.RectF
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -32,12 +34,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import android.content.Intent
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -66,6 +70,7 @@ import com.peakadex.app.R
 import androidx.compose.ui.res.stringResource
 import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.Ascent
+import com.peakadex.app.core.model.NearbyPeak
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.ui.SkeletonBlock
 import com.peakadex.app.core.ui.theme.PeakBlueActive
@@ -101,12 +106,12 @@ private data class GridPoint(
 )
 
 private object NearbyPeaksCache {
-    private val cache = mutableMapOf<String, List<Peak>>()
+    private val cache = mutableMapOf<String, List<NearbyPeak>>()
     private val inFlight = mutableSetOf<String>()
 
-    fun cached(peakId: String): List<Peak>? = cache[peakId]
+    fun cached(peakId: String): List<NearbyPeak>? = cache[peakId]
 
-    suspend fun load(peak: Peak): List<Peak>? {
+    suspend fun load(peak: Peak): List<NearbyPeak>? {
         cache[peak.id]?.let { return it }
         if (!inFlight.add(peak.id)) {
             while (inFlight.contains(peak.id)) {
@@ -127,6 +132,17 @@ private object NearbyPeaksCache {
                 .asSequence()
                 .filter { it.id != peak.id }
                 .sortedBy { distanceDegreesSquared(peak.latitude, peak.longitude, it.latitude, it.longitude) }
+                .map {
+                    NearbyPeak(
+                        id = it.id,
+                        name = it.name,
+                        nameEn = it.nameEn,
+                        latitude = it.latitude,
+                        longitude = it.longitude,
+                        altitudeM = it.altitudeM,
+                        rarityId = it.rarityId,
+                    )
+                }
                 .toList()
             cache[peak.id] = nearby
             nearby
@@ -747,10 +763,16 @@ internal fun StatBandItem(label: String, value: String, color: Color, modifier: 
 @Composable
 private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Color) {
     val grid = remember(peak.latitude, peak.longitude) { peakTileGrid(peak.latitude, peak.longitude) }
-    var nearbyPeaks by remember(peak.id) { mutableStateOf(NearbyPeaksCache.cached(peak.id).orEmpty()) }
+    val precalculatedNearbyPeaks = peak.nearbyPeaks
+    var nearbyPeaks by remember(peak.id) {
+        mutableStateOf(precalculatedNearbyPeaks ?: NearbyPeaksCache.cached(peak.id).orEmpty())
+    }
 
-    LaunchedEffect(peak.id) {
-        if (nearbyPeaks.isEmpty()) {
+    LaunchedEffect(peak.id, precalculatedNearbyPeaks) {
+        if (precalculatedNearbyPeaks != null) {
+            nearbyPeaks = precalculatedNearbyPeaks
+        } else if (nearbyPeaks.isEmpty()) {
+            android.util.Log.d("CardMiniMap", "nearbyPeaks missing in ascent payload for ${peak.id}; falling back to API")
             NearbyPeaksCache.load(peak)?.let { nearbyPeaks = it }
         }
     }
@@ -806,6 +828,25 @@ private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Co
             val cy = size.height / 2f
             val minDist = MIN_NEARBY_MARKER_DISTANCE_DP.dp.toPx()
             val placed = mutableListOf<androidx.compose.ui.geometry.Offset>()
+            val labelRects = mutableListOf<RectF>()
+            val mainPeakGuard = RectF(cx - 20.dp.toPx(), cy - 20.dp.toPx(), cx + 20.dp.toPx(), cy + 20.dp.toPx())
+            val labelMaxWidth = 104.dp.toPx()
+            val labelGap = 8.dp.toPx()
+            val labelTextSize = 8.5.sp.toPx()
+            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color(0xFF1E293B).toArgb()
+                textSize = labelTextSize
+                typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            }
+            val labelHaloPaint = Paint(labelPaint).apply {
+                color = Color.White.copy(alpha = 0.92f).toArgb()
+                style = Paint.Style.STROKE
+                strokeWidth = 3.dp.toPx()
+                strokeJoin = Paint.Join.ROUND
+            }
+            val labelMetrics = labelPaint.fontMetrics
+            val labelHeight = labelMetrics.descent - labelMetrics.ascent
+            val labelBottomLimit = size.height - 126.dp.toPx()
 
             nearbyPeaks.forEach { nearby ->
                 if (placed.size >= MAX_NEARBY_PEAKS) return@forEach
@@ -828,6 +869,60 @@ private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Co
                     center = pos,
                     style = Stroke(width = 1.5.dp.toPx()),
                 )
+
+                if (pos.y < labelBottomLimit) {
+                    val rawLabel = "${nearby.name} · ${nearby.altitudeM} m"
+                    val label = fitTextToWidth(rawLabel, labelPaint, labelMaxWidth)
+                    val labelWidth = labelPaint.measureText(label)
+                    val baselineY = pos.y + (labelHeight / 2f) - labelMetrics.descent
+                    val labelTop = baselineY + labelMetrics.ascent - 3.dp.toPx()
+                    val labelBottom = baselineY + labelMetrics.descent + 3.dp.toPx()
+                    val rightRect = RectF(
+                        pos.x + labelGap,
+                        labelTop,
+                        pos.x + labelGap + labelWidth,
+                        labelBottom,
+                    )
+                    val leftRect = RectF(
+                        pos.x - labelGap - labelWidth,
+                        labelTop,
+                        pos.x - labelGap,
+                        labelBottom,
+                    )
+                    val topBaselineY = pos.y - labelGap
+                    val topRect = RectF(
+                        pos.x - labelWidth / 2f,
+                        topBaselineY + labelMetrics.ascent - 3.dp.toPx(),
+                        pos.x + labelWidth / 2f,
+                        topBaselineY + labelMetrics.descent + 3.dp.toPx(),
+                    )
+                    val bottomBaselineY = pos.y + labelGap + labelHeight
+                    val bottomRect = RectF(
+                        pos.x - labelWidth / 2f,
+                        bottomBaselineY + labelMetrics.ascent - 3.dp.toPx(),
+                        pos.x + labelWidth / 2f,
+                        bottomBaselineY + labelMetrics.descent + 3.dp.toPx(),
+                    )
+                    val labelRect = listOf(rightRect, leftRect, topRect, bottomRect).firstOrNull { rect ->
+                        rect.left >= 8.dp.toPx() &&
+                            rect.right <= size.width - 8.dp.toPx() &&
+                            rect.top >= 8.dp.toPx() &&
+                            rect.bottom <= labelBottomLimit &&
+                            !RectF.intersects(rect, mainPeakGuard) &&
+                            labelRects.none { RectF.intersects(rect, it) }
+                    }
+                    if (labelRect != null) {
+                        labelRects.add(labelRect)
+                        val textX = labelRect.left
+                        val textBaselineY = when (labelRect) {
+                            topRect -> topBaselineY
+                            bottomRect -> bottomBaselineY
+                            else -> baselineY
+                        }
+                        drawContext.canvas.nativeCanvas.drawText(label, textX, textBaselineY, labelHaloPaint)
+                        drawContext.canvas.nativeCanvas.drawText(label, textX, textBaselineY, labelPaint)
+                    }
+                }
             }
 
             // Peak dot is always at the exact centre of the container.
@@ -847,6 +942,16 @@ private fun distanceDegreesSquared(latA: Double, lonA: Double, latB: Double, lon
     val dLat = latA - latB
     val dLon = lonA - lonB
     return dLat * dLat + dLon * dLon
+}
+
+private fun fitTextToWidth(text: String, paint: Paint, maxWidth: Float): String {
+    if (paint.measureText(text) <= maxWidth) return text
+    val suffix = "..."
+    var end = text.length
+    while (end > 0 && paint.measureText(text.substring(0, end).trimEnd() + suffix) > maxWidth) {
+        end--
+    }
+    return if (end <= 0) suffix else text.substring(0, end).trimEnd() + suffix
 }
 
 // ── Elevation profile ──────────────────────────────────────────────────────────
