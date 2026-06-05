@@ -8,7 +8,7 @@ import androidx.compose.ui.res.stringResource
 /** Bridges ViewModel error messages (no Context) with the UI layer (stringResource). */
 sealed class UiText {
     /** A static string resource, resolved at render time. */
-    data class StringRes(@StringRes val id: Int) : UiText()
+    data class StringRes(@get:StringRes val id: Int) : UiText()
     /** A dynamic string already built (e.g. includes an HTTP code). */
     data class Dynamic(val value: String) : UiText()
 
