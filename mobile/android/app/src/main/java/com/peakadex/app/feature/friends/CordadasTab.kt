@@ -235,36 +235,21 @@ fun InviteCard(invite: CordadaInvite, onAccept: () -> Unit, onReject: () -> Unit
 
 // ── Ranking (Amigos-style rows) ──────────────────────────────────────────────────
 
-/** Ice-axe rank badge: colored pill with piolet for top 3, number-only pill for the rest. */
 @Composable
 private fun RankBadge(rank: Int) {
-    // bg = soft fill, content = darker accent (icon + number)
     val (bg, content) = when (rank) {
-        1    -> Color(0xFFFDE68A) to Color(0xFFD97706)   // gold
-        2    -> Color(0xFFE5E7EB) to Color(0xFF6B7280)   // silver
-        3    -> Color(0xFFF8D9B8) to Color(0xFFB45309)   // bronze
-        else -> Color(0xFFF3F4F6) to Color(0xFF6B7280)   // plain
+        1    -> Color(0xFFFDE68A) to Color(0xFFD97706)
+        2    -> Color(0xFFE5E7EB) to Color(0xFF6B7280)
+        3    -> Color(0xFFF8D9B8) to Color(0xFFB45309)
+        else -> Color.Transparent to Color(0xFF111827)
     }
     Box(
         modifier = Modifier
             .size(width = 30.dp, height = 44.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(bg),
+            .then(if (rank <= 3) Modifier.clip(RoundedCornerShape(10.dp)).background(bg) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        if (rank <= 3) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector        = PioletIcon,
-                    contentDescription = null,
-                    tint               = content,
-                    modifier           = Modifier.size(18.dp),
-                )
-                Text("$rank", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = content)
-            }
-        } else {
-            Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
-        }
+        Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
     }
 }
 
