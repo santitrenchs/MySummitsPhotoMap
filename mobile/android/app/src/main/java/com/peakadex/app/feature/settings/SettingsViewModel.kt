@@ -1,10 +1,9 @@
 package com.peakadex.app.feature.settings
 
 import android.app.Application
-import android.app.LocaleManager
-import android.os.Build
-import android.os.LocaleList
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
@@ -278,14 +277,9 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 _state.update { it.copy(
                     isSavingLanguage = false,
                     selectedLanguage = locale,
-                    // Only show snackbar on API < 33; on API 33+ the Activity restarts
-                    languageSaved = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU,
                 ) }
-                // Apply locale change — triggers Activity recreation on API 33+
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    val lm = getApplication<Application>().getSystemService(LocaleManager::class.java)
-                    lm.applicationLocales = LocaleList.forLanguageTags(locale)
-                }
+                // AppCompatDelegate works on all API levels (21+) and triggers Activity recreation.
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(locale))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
