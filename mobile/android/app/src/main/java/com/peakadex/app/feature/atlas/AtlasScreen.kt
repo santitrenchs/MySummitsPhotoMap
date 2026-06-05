@@ -1888,12 +1888,17 @@ private fun FiltersPanel(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Count all known peaks per rarity (climbed + cached unclimbed).
-    // Using the accumulative viewport cache mirrors the web MapView's allPeaks count,
-    // so pills show the total of peaks known in that rarity — not only the user's captures.
-    val rarityTotalCounts = remember(climbed, viewport, rarities) {
-        val allKnown = (climbed.values.map { it.peak } + viewport).distinctBy { it.id }
-        rarities.associateWith { rarity -> allKnown.count { it.rarityId == rarity.id } }
+    // Rarity pill counts — depends on the active status filter:
+    //   CLIMBED  → all user captures globally (personal inventory, not location-dependent)
+    //   NOT_YET  → unclimbed peaks in the current viewport cache only
+    //   ALL      → all peaks in the current viewport cache (climbed + unclimbed in this area)
+    val rarityTotalCounts = remember(climbed, viewport, filter, rarities) {
+        val peaks: List<Peak> = when (filter) {
+            AtlasFilter.CLIMBED -> climbed.values.map { it.peak }
+            AtlasFilter.NOT_YET -> viewport.filter { it.id !in climbed }
+            AtlasFilter.ALL     -> viewport
+        }
+        rarities.associateWith { rarity -> peaks.count { it.rarityId == rarity.id } }
     }
 
     // Total visible peaks after all active filters
