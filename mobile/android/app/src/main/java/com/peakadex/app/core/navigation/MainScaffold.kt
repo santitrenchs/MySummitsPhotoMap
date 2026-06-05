@@ -233,11 +233,18 @@ fun MainScaffold(navController: NavController) {
             onDismiss       = { showNewAscent = false },
             onSuccess       = { ascent, taggingWarning ->
                 showNewAscent      = false
-                // NOTE: highlight + refresh triggers are fired in the reveal's
-                // onFinished (not here) so they apply exactly when we land on
-                // Cards after the reveal — otherwise the 2.5s highlight-consume
-                // timer burns during the multi-second reveal and the card is
-                // no longer highlighted / Mine filter doesn't stick.
+                // Navigate to Cards + switch to Mine NOW, while it's hidden behind
+                // the reveal overlay. By the time the user dismisses the reveal,
+                // Cards has already settled on the Mine filter with the new ascent
+                // at the top — so removing the overlay never flashes the Friends
+                // feed underneath. (Mine sorts date-desc → new card is index 0.)
+                logbookRefreshTrigger++
+                atlasRefreshTrigger++
+                tabNavController.navigate(Screen.Cards.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState    = false
+                }
                 captureReveal = CaptureRevealState(
                     ascent         = ascent,
                     rarity         = rarityForAltitude(ascent.peak.altitudeM),
@@ -346,17 +353,11 @@ fun MainScaffold(navController: NavController) {
             rarity   = reveal.rarity,
             isMythic = reveal.isMythic,
             onFinished = {
+                // Cards is already on Mine + scrolled to the new card (set up in
+                // onSuccess, behind the overlay). Just drop the overlay and flash
+                // the highlight ring on the now-visible card.
                 captureReveal = null
-                // Fire highlight + refresh now, so the fresh Cards screen lands on
-                // the Mine filter and scrolls to the just-created card.
                 logbookHighlightId = reveal.ascent.id
-                logbookRefreshTrigger++
-                atlasRefreshTrigger++
-                tabNavController.navigate(Screen.Cards.route) {
-                    popUpTo(Screen.Home.route) { saveState = true }
-                    launchSingleTop = true
-                    restoreState    = false
-                }
                 if (reveal.taggingWarning != null) {
                     scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }
                 }
