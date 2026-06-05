@@ -195,7 +195,7 @@ fun AscentCaptureReveal(
                     .alpha(contentAlpha)
                     .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 BloomLottie(
                     rarity    = rarity,
