@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -118,7 +117,6 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
 private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .rotate(-4f)
             .shadow(
                 elevation    = 16.dp,
                 shape        = RoundedCornerShape(18.dp),
