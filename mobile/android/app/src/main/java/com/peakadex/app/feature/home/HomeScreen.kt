@@ -109,6 +109,7 @@ private fun meetsLevel(def: LevelDef, uniquePeaks: Int, stats: UserStats): Boole
 @Composable
 fun HomeScreen(
     onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
+    onNavigateToFriends: () -> Unit = {},
     vm: HomeViewModel = viewModel(),
 ) {
     val state        by vm.uiState.collectAsStateWithLifecycle()
@@ -124,7 +125,7 @@ fun HomeScreen(
                 onRefresh    = { vm.refresh() },
                 modifier     = Modifier.fillMaxSize(),
             ) {
-                HomeContent(data = s.data, user = user, onNavigateToCardsWithRarity = onNavigateToCardsWithRarity)
+                HomeContent(data = s.data, user = user, onNavigateToCardsWithRarity = onNavigateToCardsWithRarity, onNavigateToFriends = onNavigateToFriends)
             }
         }
     }
@@ -468,6 +469,7 @@ private fun HomeContent(
     data: HomeData,
     user: User?,
     onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
+    onNavigateToFriends: () -> Unit = {},
 ) {
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
 
@@ -494,9 +496,9 @@ private fun HomeContent(
             item { RarityChartSection(data.stats.rarityBreakdown, onNavigateToCardsWithRarity) }
         }
 
-        // 6 — No friends CTA
-        if (data.stats.totalFriends == 0) {
-            item { NoFriendsCta() }
+        // 6 — Solo ranking (no friends yet)
+        if (data.stats.totalFriends == 0 && data.leaderboard.isNotEmpty()) {
+            item { SoloRankingSection(meEntry = data.leaderboard.first { it.isCurrentUser }, onInvite = onNavigateToFriends) }
         }
 
         // 7 — Recent ascents
@@ -1630,37 +1632,80 @@ private fun LeaderboardMetricCol(value: String, color: Color, modifier: Modifier
 // ── No friends CTA ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun NoFriendsCta() {
-    Column(
+private fun SoloRankingSection(
+    meEntry: LeaderboardEntry,
+    onInvite: () -> Unit,
+) {
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 20.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primaryContainer)))
-            .border(BorderStroke(1.5.dp, MaterialTheme.colorScheme.primaryContainer), RoundedCornerShape(12.dp))
-            .padding(22.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
-        Text("👥", fontSize = 36.sp)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text  = stringResource(R.string.home_no_friends_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text       = stringResource(R.string.home_no_friends_desc),
-            fontSize   = 13.sp,
-            color      = MaterialTheme.colorScheme.onSurfaceVariant,
-            lineHeight = 18.sp,
-        )
-        Spacer(Modifier.height(14.dp))
-        Button(
-            onClick = { /* Phase 5 */ },
-            colors  = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-        ) {
-            Text(stringResource(R.string.home_invite_friends_btn), fontWeight = FontWeight.SemiBold)
+        Column {
+            // ── Title (identical to FriendsRankingSection) ────────────────────
+            Text(
+                text       = stringResource(R.string.home_section_leaderboard),
+                fontSize   = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color      = FriendsTextPrimary,
+                modifier   = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+            HorizontalDivider(color = FriendsDivider)
+
+            // ── User row at rank 1 (reuses exact FriendRankRow) ──────────────
+            FriendRankRow(entry = meEntry, rank = 1)
+
+            HorizontalDivider(color = FriendsDivider, modifier = Modifier.padding(start = 76.dp))
+
+            // ── Placeholder "your friends go here" ───────────────────────────
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // 3 ghost avatar circles
+                repeat(3) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFF3F4F6))
+                            .border(1.5.dp, Color(0xFFE5E7EB), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("?", fontSize = 16.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.Bold)
+                    }
+                }
+                Text(
+                    text       = stringResource(R.string.home_solo_placeholder),
+                    fontSize   = 13.sp,
+                    color      = FriendsTextSecondary,
+                    lineHeight = 18.sp,
+                    modifier   = Modifier.weight(1f),
+                )
+            }
+
+            HorizontalDivider(color = FriendsDivider)
+
+            // ── CTA button ────────────────────────────────────────────────────
+            Button(
+                onClick  = onInvite,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .height(48.dp),
+                shape  = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
+            ) {
+                Text(
+                    text       = stringResource(R.string.home_solo_invite_btn),
+                    fontWeight = FontWeight.Bold,
+                    fontSize   = 14.sp,
+                )
+            }
         }
     }
 }

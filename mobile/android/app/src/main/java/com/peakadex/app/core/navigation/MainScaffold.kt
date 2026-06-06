@@ -271,7 +271,14 @@ fun MainScaffold(navController: NavController) {
                         tabNavController.navigate(Screen.Cards.route) {
                             popUpTo(Screen.Home.route) { saveState = true }
                             launchSingleTop = true
-                            restoreState    = false  // force fresh so LaunchedEffect fires
+                            restoreState    = false
+                        }
+                    },
+                    onNavigateToFriends = {
+                        tabNavController.navigate(Screen.Friends.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = true
                         }
                     },
                 )

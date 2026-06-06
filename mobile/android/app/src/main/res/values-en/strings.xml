@@ -99,6 +99,8 @@
     <string name="home_no_friends_title">Compete with your friends!</string>
     <string name="home_no_friends_desc">Invite friends to see your rank in the crew.</string>
     <string name="home_invite_friends_btn">Invite friends</string>
+    <string name="home_solo_placeholder">Your friends will appear here</string>
+    <string name="home_solo_invite_btn">Invite friends and create your cordada →</string>
     <string name="home_empty_ascents_desc">Start building your peak history.</string>
     <string name="home_register_ascent_btn">+ Log ascent</string>
     <string name="home_levels_see_all">See all levels →</string>

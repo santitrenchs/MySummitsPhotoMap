@@ -99,6 +99,8 @@
     <string name="home_no_friends_title">Competeix amb els teus amics!</string>
     <string name="home_no_friends_desc">Convida amics per veure la teva posició a la cordada.</string>
     <string name="home_invite_friends_btn">Convidar amics</string>
+    <string name="home_solo_placeholder">Aquí apareixeran els teus amics</string>
+    <string name="home_solo_invite_btn">Convida amics i crea la teva cordada →</string>
     <string name="home_empty_ascents_desc">Comença a construir el teu historial de cims.</string>
     <string name="home_register_ascent_btn">+ Registrar ascensió</string>
     <string name="home_levels_see_all">Veure tots els nivells →</string>
