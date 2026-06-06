@@ -68,6 +68,7 @@ import com.peakadex.app.feature.friends.FriendsTextPrimary
 import com.peakadex.app.feature.friends.FriendsTextSecondary
 import com.peakadex.app.feature.friends.UserAvatar
 import com.peakadex.app.core.ui.UiText
+import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
