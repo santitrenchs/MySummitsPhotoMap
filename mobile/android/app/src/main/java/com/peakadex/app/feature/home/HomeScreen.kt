@@ -1668,7 +1668,7 @@ private fun SoloRankingSection(
             Column(
                 modifier            = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, top = 20.dp, bottom = 8.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // 4 dashed circles with dotted connectors between them
