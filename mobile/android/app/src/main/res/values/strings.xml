@@ -100,7 +100,9 @@
     <string name="home_no_friends_desc">Invita a amigos para ver tu posición en la cordada.</string>
     <string name="home_invite_friends_btn">Invitar amigos</string>
     <string name="home_solo_placeholder">Aquí aparecerán tus amigos</string>
-    <string name="home_solo_invite_btn">Invita amigos y crea tu cordada →</string>
+    <string name="home_solo_invite_btn">Invitar amigos</string>
+    <string name="home_solo_empty_title">Tu cordada está vacía.</string>
+    <string name="home_solo_empty_desc">Invita a tus primeros compañeros para compartir cimas y competir juntos.</string>
     <string name="home_empty_ascents_desc">Empieza a construir tu historial de cimas.</string>
     <string name="home_register_ascent_btn">+ Registrar ascensión</string>
     <string name="home_levels_see_all">Ver todos los niveles →</string>

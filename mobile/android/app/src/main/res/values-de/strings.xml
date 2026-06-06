@@ -100,7 +100,9 @@
     <string name="home_no_friends_desc">Lade Freunde ein, um deinen Rang in der Seilschaft zu sehen.</string>
     <string name="home_invite_friends_btn">Freunde einladen</string>
     <string name="home_solo_placeholder">Deine Freunde erscheinen hier</string>
-    <string name="home_solo_invite_btn">Freunde einladen und Cordada erstellen →</string>
+    <string name="home_solo_invite_btn">Freunde einladen</string>
+    <string name="home_solo_empty_title">Deine Cordada ist leer.</string>
+    <string name="home_solo_empty_desc">Lade deine ersten Teammitglieder ein, um Gipfel zu teilen und gemeinsam zu wetteifern.</string>
     <string name="home_empty_ascents_desc">Beginne, deine Gipfelgeschichte aufzubauen.</string>
     <string name="home_register_ascent_btn">+ Besteigung erfassen</string>
     <string name="home_levels_see_all">Alle Level sehen →</string>

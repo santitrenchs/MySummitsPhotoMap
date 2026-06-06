@@ -29,9 +29,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -1659,34 +1664,78 @@ private fun SoloRankingSection(
 
             HorizontalDivider(color = FriendsDivider, modifier = Modifier.padding(start = 76.dp))
 
-            // ── Placeholder "your friends go here" ───────────────────────────
-            Row(
-                modifier = Modifier
+            // ── Ghost avatars + aspirational text ─────────────────────────────
+            Column(
+                modifier            = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    .padding(horizontal = 16.dp, top = 20.dp, bottom = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // 3 ghost avatar circles
-                repeat(3) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFF3F4F6))
-                            .border(1.5.dp, Color(0xFFE5E7EB), CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("?", fontSize = 16.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.Bold)
+                // 4 dashed circles with dotted connectors between them
+                Row(
+                    verticalAlignment      = Alignment.CenterVertically,
+                    horizontalArrangement  = Arrangement.Center,
+                    modifier               = Modifier.fillMaxWidth(),
+                ) {
+                    repeat(4) { i ->
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .drawBehind {
+                                    val stroke = 1.5.dp.toPx()
+                                    val intervals = floatArrayOf(6.dp.toPx(), 4.dp.toPx())
+                                    drawCircle(
+                                        color       = Color(0xFFD1D5DB),
+                                        radius      = size.minDimension / 2f - stroke / 2f,
+                                        style       = Stroke(
+                                            width       = stroke,
+                                            pathEffect  = PathEffect.dashPathEffect(intervals, 0f),
+                                        ),
+                                    )
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector        = GhostPersonIcon,
+                                contentDescription = null,
+                                tint               = Color(0xFFD1D5DB),
+                                modifier           = Modifier.size(22.dp),
+                            )
+                        }
+                        if (i < 3) {
+                            // Dotted connector line
+                            Canvas(modifier = Modifier.width(16.dp).height(1.dp)) {
+                                val intervals = floatArrayOf(3.dp.toPx(), 3.dp.toPx())
+                                drawLine(
+                                    color       = Color(0xFFD1D5DB),
+                                    start       = Offset(0f, size.height / 2f),
+                                    end         = Offset(size.width, size.height / 2f),
+                                    strokeWidth = 1.5.dp.toPx(),
+                                    pathEffect  = PathEffect.dashPathEffect(intervals, 0f),
+                                )
+                            }
+                        }
                     }
                 }
+
+                Spacer(Modifier.height(16.dp))
+
                 Text(
-                    text       = stringResource(R.string.home_solo_placeholder),
+                    text       = stringResource(R.string.home_solo_empty_title),
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = FriendsTextPrimary,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text       = stringResource(R.string.home_solo_empty_desc),
                     fontSize   = 13.sp,
                     color      = FriendsTextSecondary,
-                    lineHeight = 18.sp,
-                    modifier   = Modifier.weight(1f),
+                    lineHeight = 19.sp,
+                    textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier   = Modifier.padding(horizontal = 8.dp),
                 )
+                Spacer(Modifier.height(20.dp))
             }
 
             HorizontalDivider(color = FriendsDivider)
@@ -1799,3 +1848,34 @@ private fun initials(name: String): String {
     else
         name.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
 }
+
+// ── Ghost person icon (inline, no Material dependency) ─────────────────────────
+
+private val GhostPersonIcon: ImageVector get() = ImageVector.Builder(
+    name = "GhostPerson", defaultWidth = 24.dp, defaultHeight = 24.dp,
+    viewportWidth = 24f, viewportHeight = 24f,
+).apply {
+    // Head circle
+    addPath(
+        pathData = PathBuilder().apply {
+            moveTo(12f, 4f)
+            curveTo(9.79f, 4f, 8f, 5.79f, 8f, 8f)
+            curveTo(8f, 10.21f, 9.79f, 12f, 12f, 12f)
+            curveTo(14.21f, 12f, 16f, 10.21f, 16f, 8f)
+            curveTo(16f, 5.79f, 14.21f, 4f, 12f, 4f)
+            close()
+        }.nodes,
+        fill = androidx.compose.ui.graphics.SolidColor(Color(0xFFD1D5DB)),
+    )
+    // Body / shoulders
+    addPath(
+        pathData = PathBuilder().apply {
+            moveTo(12f, 14f)
+            curveTo(7.58f, 14f, 4f, 16.69f, 4f, 20f)
+            lineTo(20f, 20f)
+            curveTo(20f, 16.69f, 16.42f, 14f, 12f, 14f)
+            close()
+        }.nodes,
+        fill = androidx.compose.ui.graphics.SolidColor(Color(0xFFD1D5DB)),
+    )
+}.build()
