@@ -75,7 +75,7 @@
 
     <!-- ── Logbook / Cards ──────────────────────────────────────────────────── -->
     <string name="logbook_filter_mine">My Cards</string>
-    <string name="logbook_filter_friends">My Crew</string>
+    <string name="logbook_filter_friends">My Rope Team</string>
     <string name="logbook_stat_rarity">RARITY</string>
     <string name="logbook_stat_altitude">ALTITUDE</string>
     <string name="logbook_stat_ep">EP</string>
@@ -93,11 +93,11 @@
     <string name="home_stat_ascents_label">ascents</string>
     <string name="home_stat_peaks_label">peaks</string>
     <string name="home_stat_max_alt_label">max. alt.</string>
-    <string name="home_section_leaderboard">Your crew</string>
+    <string name="home_section_leaderboard">Your rope team</string>
     <string name="home_section_last_peaks">Your latest peaks</string>
     <string name="home_see_all_btn">See all →</string>
     <string name="home_no_friends_title">Compete with your friends!</string>
-    <string name="home_no_friends_desc">Invite friends to see your rank in the crew.</string>
+    <string name="home_no_friends_desc">Invite friends to see your rank in the rope team.</string>
     <string name="home_invite_friends_btn">Invite friends</string>
     <string name="home_solo_placeholder">Your friends will appear here</string>
     <string name="home_solo_invite_btn">Invite friends</string>
