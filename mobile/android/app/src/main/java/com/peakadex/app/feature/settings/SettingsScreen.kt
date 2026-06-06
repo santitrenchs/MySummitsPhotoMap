@@ -6,8 +6,10 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -153,6 +155,14 @@ fun SettingsScreen(
     }
     LaunchedEffect(state.languageSaved) {
         if (state.languageSaved) { snackbarHostState.showSnackbar(languageSavedMsg); vm.clearLanguageSaved() }
+    }
+    // Explicit Activity.recreate() — required on API < 33 where AppCompatDelegate
+    // stores the locale but does not automatically recreate the Activity.
+    LaunchedEffect(state.localeToApply) {
+        val locale = state.localeToApply ?: return@LaunchedEffect
+        Log.d("SettingsScreen", "localeToApply=$locale — calling Activity.recreate()")
+        vm.clearLocaleToApply()
+        (context as? Activity)?.recreate()
     }
     LaunchedEffect(state.googleUnlinked) {
         if (state.googleUnlinked) { snackbarHostState.showSnackbar(googleUnlinkedMsg); vm.clearGoogleUnlinked() }

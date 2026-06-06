@@ -60,6 +60,8 @@ data class SettingsUiState(
     val googleUnlinked: Boolean = false,
     val error: UiText? = null,
     val passwordError: UiText? = null,
+    // Non-null signals the UI to apply this locale and call Activity.recreate()
+    val localeToApply: String? = null,
 )
 
 val SettingsUiState.isProfileDirty: Boolean
@@ -274,18 +276,17 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(isSavingLanguage = true, isLanguageSheetOpen = false) }
         viewModelScope.launch {
             try {
-                Log.d(TAG, "saveLanguage: calling API...")
                 AppContainer.apiService.updateSettings(UpdateSettingsRequest(language = locale))
-                Log.d(TAG, "saveLanguage: API ok")
+                Log.d(TAG, "saveLanguage: API ok — signalling UI to apply locale")
+                // Set the locale via AppCompatDelegate (stores the preference)
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(locale))
+                // Signal the UI composable to call Activity.recreate() explicitly —
+                // required on API < 33 where AppCompatDelegate doesn't auto-recreate.
                 _state.update { it.copy(
                     isSavingLanguage = false,
                     selectedLanguage = locale,
+                    localeToApply    = locale,
                 ) }
-                val before = AppCompatDelegate.getApplicationLocales()
-                Log.d(TAG, "saveLanguage: locales BEFORE = $before")
-                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(locale))
-                val after = AppCompatDelegate.getApplicationLocales()
-                Log.d(TAG, "saveLanguage: locales AFTER  = $after")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -296,6 +297,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun clearLanguageSaved() = _state.update { it.copy(languageSaved = false) }
+    fun clearLocaleToApply() = _state.update { it.copy(localeToApply = null) }
 
     // ─── Google unlink ────────────────────────────────────────────────────────
 
