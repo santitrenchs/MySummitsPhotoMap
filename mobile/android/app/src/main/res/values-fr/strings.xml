@@ -3,7 +3,7 @@
 
     <!-- ── Navigation principale ─────────────────────────────────────────────── -->
     <string name="nav_tab_home">Stats</string>
-    <string name="nav_tab_cordada">Cordada</string>
+    <string name="nav_tab_cordada">Cordée</string>
     <string name="nav_tab_map">Atlas</string>
     <string name="nav_tab_logbook">Carnet</string>
     <string name="nav_tab_cards">Cartes</string>
@@ -101,7 +101,7 @@
     <string name="home_invite_friends_btn">Inviter des amis</string>
     <string name="home_solo_placeholder">Tes amis apparaîtront ici</string>
     <string name="home_solo_invite_btn">Inviter des amis</string>
-    <string name="home_solo_empty_title">Ta cordada est vide.</string>
+    <string name="home_solo_empty_title">Ta cordée est vide.</string>
     <string name="home_solo_empty_desc">Invite tes premiers coéquipiers pour partager des sommets et vous affronter.</string>
     <string name="home_empty_ascents_desc">Commence à construire ton historique de sommets.</string>
     <string name="home_register_ascent_btn">+ Enregistrer l\'ascension</string>
