@@ -2,6 +2,7 @@ package com.peakadex.app.core.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,12 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.peakadex.app.R
@@ -27,10 +28,25 @@ import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakNavyDark
 import com.peakadex.app.core.ui.theme.PeakNavyMid
 
+// Design tokens from PeakCard.tsx
+private val CardBorder        = Color(0x170D2538)   // rgba(13,37,56,0.09)
+private val CardShadow        = Color(0x240D2538)   // rgba(13,37,56,0.14)
+private val AvatarColor       = Color(0xFFEC4899)   // Luc Moreau — pink
+private val UserNameColor     = Color(0xFF0D2538)
+private val DateColor         = Color(0xFF6B7280)
+private val PeakNameColor     = Color.White
+private val CoordsColor       = Color(0xBFFFFFFF)   // rgba(255,255,255,0.75)
+private val StatBg            = Color(0xFFF8FAFC)
+private val StatLabelColor    = Color(0x660D2538)   // rgba(13,37,56,0.4)
+private val AltitudeColor     = Color(0xFF0D2538)
+private val RarityColor       = Color(0xFFA855F7)   // Edelweiss purple
+private val RewardColor       = Color(0xFFF97316)   // orange-500
+private val ThreeDotsColor    = Color(0x4D0D2538)   // rgba(13,37,56,0.3)
+
 /**
  * Reusable onboarding banner shown when the user has no ascents.
- * Uses the Mont Blanc collectible card as the hero element.
- * Can be reused across different sections of the app.
+ * Uses the Mont Blanc collectible card (pixel-perfect match with peakadex.com/peaks/mont-blanc)
+ * as the hero element. Can be reused across different sections of the app.
  *
  * @param onCapture  Called when the user taps the CTA button.
  */
@@ -47,16 +63,12 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
     ) {
         // ── Card + Text row ───────────────────────────────────────────────────
         Row(
-            verticalAlignment      = Alignment.CenterVertically,
-            horizontalArrangement  = Arrangement.spacedBy(20.dp),
-            modifier               = Modifier.fillMaxWidth(),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            modifier              = Modifier.fillMaxWidth(),
         ) {
             // Left: Mont Blanc card mockup (tilted)
-            MontBlancCardMockup(
-                modifier = Modifier
-                    .weight(0.85f)
-                    .wrapContentHeight(),
-            )
+            MontBlancCardMockup(modifier = Modifier.weight(0.85f))
 
             // Right: Headline + description
             Column(
@@ -64,11 +76,11 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    text       = stringResource(R.string.onboarding_card_title),
-                    fontSize   = 22.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color      = PeakNavyDark,
-                    lineHeight = 26.sp,
+                    text          = stringResource(R.string.onboarding_card_title),
+                    fontSize      = 22.sp,
+                    fontWeight    = FontWeight.ExtraBold,
+                    color         = PeakNavyDark,
+                    lineHeight    = 26.sp,
                     letterSpacing = (-0.3).sp,
                 )
                 Text(
@@ -84,12 +96,10 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
 
         // ── CTA button ────────────────────────────────────────────────────────
         Button(
-            onClick  = onCapture,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape  = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
+            onClick   = onCapture,
+            modifier  = Modifier.fillMaxWidth().height(52.dp),
+            shape     = RoundedCornerShape(14.dp),
+            colors    = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
         ) {
             Text(
@@ -102,7 +112,7 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
     }
 }
 
-// ── Mont Blanc card mockup ─────────────────────────────────────────────────────
+// ── Mont Blanc card — pixel-perfect match with PeakCard.tsx ───────────────────
 
 @Composable
 private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
@@ -110,123 +120,204 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
         modifier = modifier
             .rotate(-4f)
             .shadow(
-                elevation    = 12.dp,
-                shape        = RoundedCornerShape(16.dp),
-                spotColor    = Color(0x33000000),
-                ambientColor = Color(0x1A000000),
+                elevation    = 16.dp,
+                shape        = RoundedCornerShape(18.dp),
+                spotColor    = CardShadow,
+                ambientColor = Color(0x0F0D2538),
             )
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White),
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color.White)
+            .border(1.dp, CardBorder, RoundedCornerShape(18.dp)),
     ) {
         Column {
-            // ── Card header ───────────────────────────────────────────────────
+
+            // ── Header ────────────────────────────────────────────────────────
             Row(
-                modifier          = Modifier
+                modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
             ) {
                 // Avatar
                 Box(
                     modifier         = Modifier
-                        .size(24.dp)
+                        .size(32.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF3B82F6)),
+                        .background(AvatarColor),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text       = "LM",
-                        fontSize   = 8.sp,
+                        fontSize   = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color      = Color.White,
                     )
                 }
+
+                // Name + date
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text       = stringResource(R.string.onboarding_card_user),
-                        fontSize   = 9.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color      = Color(0xFF111827),
+                        fontSize   = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = UserNameColor,
                     )
                     Text(
-                        text     = stringResource(R.string.onboarding_card_date),
-                        fontSize = 8.sp,
-                        color    = Color(0xFF9CA3AF),
+                        text       = stringResource(R.string.onboarding_card_date),
+                        fontSize   = 11.sp,
+                        color      = DateColor,
                     )
+                }
+
+                // 3-dot decorative menu
+                Column(
+                    verticalArrangement   = Arrangement.spacedBy(3.dp),
+                    horizontalAlignment   = Alignment.CenterHorizontally,
+                ) {
+                    repeat(3) {
+                        Box(
+                            modifier = Modifier
+                                .size(3.dp)
+                                .clip(CircleShape)
+                                .background(ThreeDotsColor),
+                        )
+                    }
                 }
             }
 
-            // ── Mountain photo ────────────────────────────────────────────────
-            Box {
+            // ── Photo ─────────────────────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 10.dp)
+                    .clip(RoundedCornerShape(14.dp)),
+            ) {
                 Image(
                     painter            = painterResource(R.drawable.onboarding_montblanc),
                     contentDescription = null,
                     contentScale       = ContentScale.Crop,
                     modifier           = Modifier
                         .fillMaxWidth()
-                        .height(130.dp),
+                        .height(160.dp),
                 )
-                // Bottom gradient overlay with peak name
+                // Gradient overlay: bottom → top
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
-                        .align(Alignment.BottomCenter)
+                        .fillMaxHeight()
                         .background(
-                            androidx.compose.ui.graphics.Brush.verticalGradient(
-                                listOf(Color.Transparent, Color(0xCC000000))
+                            Brush.verticalGradient(
+                                0.0f to Color.Transparent,
+                                0.5f to Color(0x1A000000),
+                                1.0f to Color(0x8C000000),
                             )
                         ),
                 )
+                // Peak name + coords at bottom
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(start = 10.dp, bottom = 8.dp),
+                        .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
                 ) {
                     Text(
                         text       = stringResource(R.string.onboarding_card_peak),
-                        fontSize   = 13.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color      = Color.White,
+                        fontSize   = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = PeakNameColor,
+                        lineHeight = 20.sp,
                     )
-                    Text(
-                        text     = stringResource(R.string.onboarding_card_coords),
-                        fontSize = 7.sp,
-                        color    = Color.White.copy(alpha = 0.8f),
-                    )
+                    Spacer(Modifier.height(2.dp))
+                    Row(
+                        verticalAlignment      = Alignment.CenterVertically,
+                        horizontalArrangement  = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text("📍", fontSize = 9.sp)
+                        Text(
+                            text       = stringResource(R.string.onboarding_card_coords),
+                            fontSize   = 10.sp,
+                            color      = CoordsColor,
+                        )
+                    }
                 }
             }
 
-            // ── Stats row ─────────────────────────────────────────────────────
+            // ── Stats band — 3-column grid ─────────────────────────────────
             Row(
                 modifier              = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .padding(horizontal = 10.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                CardStat(label = "RARITY",   value = stringResource(R.string.onboarding_card_rarity), valueColor = Color(0xFF6366F1))
-                CardStat(label = "ALTITUDE", value = stringResource(R.string.onboarding_card_altitude))
+                // RAREZA
+                CardStatCell(
+                    label      = "RAREZA",
+                    modifier   = Modifier.weight(1f),
+                ) {
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        Text("✿", fontSize = 9.sp, color = RarityColor)
+                        Text(
+                            text       = stringResource(R.string.onboarding_card_rarity),
+                            fontSize   = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = RarityColor,
+                        )
+                    }
+                }
+
+                // ALTITUD
+                CardStatCell(
+                    label    = "ALTITUD",
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        text       = stringResource(R.string.onboarding_card_altitude),
+                        fontSize   = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color      = AltitudeColor,
+                    )
+                }
+
+                // RECOMPENSA
+                CardStatCell(
+                    label    = "RECOMPENSA",
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        text       = "+120 EP",
+                        fontSize   = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = RewardColor,
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun CardStat(label: String, value: String, valueColor: Color = Color(0xFF111827)) {
-    Column(horizontalAlignment = Alignment.Start) {
+private fun CardStatCell(
+    label: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier            = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(StatBg)
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text(
-            text       = label,
-            fontSize   = 7.sp,
-            fontWeight = FontWeight.SemiBold,
-            color      = Color(0xFF9CA3AF),
-            letterSpacing = 0.5.sp,
+            text          = label,
+            fontSize      = 7.sp,
+            fontWeight    = FontWeight.Bold,
+            color         = StatLabelColor,
+            letterSpacing = 0.6.sp,
         )
-        Text(
-            text       = value,
-            fontSize   = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color      = valueColor,
-        )
+        Spacer(Modifier.height(4.dp))
+        content()
     }
 }
