@@ -270,16 +270,22 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(isLanguageSheetOpen = show) }
 
     fun saveLanguage(locale: String) {
+        Log.d(TAG, "saveLanguage: called with locale='$locale'")
         _state.update { it.copy(isSavingLanguage = true, isLanguageSheetOpen = false) }
         viewModelScope.launch {
             try {
+                Log.d(TAG, "saveLanguage: calling API...")
                 AppContainer.apiService.updateSettings(UpdateSettingsRequest(language = locale))
+                Log.d(TAG, "saveLanguage: API ok")
                 _state.update { it.copy(
                     isSavingLanguage = false,
                     selectedLanguage = locale,
                 ) }
-                // AppCompatDelegate works on all API levels (21+) and triggers Activity recreation.
+                val before = AppCompatDelegate.getApplicationLocales()
+                Log.d(TAG, "saveLanguage: locales BEFORE = $before")
                 AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(locale))
+                val after = AppCompatDelegate.getApplicationLocales()
+                Log.d(TAG, "saveLanguage: locales AFTER  = $after")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
