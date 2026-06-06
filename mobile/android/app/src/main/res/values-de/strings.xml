@@ -116,6 +116,15 @@
     <string name="home_period_peaks_suffix"> Gipfel</string>
     <string name="home_period_meters_suffix"> m erklommen</string>
     <string name="home_onboarding_title">🏔️ Erfasse deine erste Besteigung</string>
+    <string name="onboarding_card_title">Deine erste Karte wartet</string>
+    <string name="onboarding_card_desc">Besteige einen Gipfel und schalte deine erste Sammelkarte frei.</string>
+    <string name="onboarding_card_btn">Meinen ersten Gipfel erfassen</string>
+    <string name="onboarding_card_peak">Mont Blanc</string>
+    <string name="onboarding_card_user">Luc Moreau</string>
+    <string name="onboarding_card_date">22. Juli 2023</string>
+    <string name="onboarding_card_altitude">4.808 m</string>
+    <string name="onboarding_card_rarity">Edelweiss</string>
+    <string name="onboarding_card_coords">45.8326°N · 6.8652°E</string>
     <string name="home_hero_alt_for_level">Über %1$dm für %2$s</string>
     <string name="home_hero_for_level">für %s</string>
     <string name="home_level_req_altitude">Über %dm</string>

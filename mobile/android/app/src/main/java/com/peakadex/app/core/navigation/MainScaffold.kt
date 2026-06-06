@@ -281,6 +281,7 @@ fun MainScaffold(navController: NavController) {
                             restoreState    = true
                         }
                     },
+                    onCaptureFirstSummit = { showNewAscent = true },
                 )
             }
             composable(Screen.Map.route) {

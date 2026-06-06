@@ -72,6 +72,7 @@ import com.peakadex.app.feature.friends.FriendsTextMuted
 import com.peakadex.app.feature.friends.FriendsTextPrimary
 import com.peakadex.app.feature.friends.FriendsTextSecondary
 import com.peakadex.app.feature.friends.UserAvatar
+import com.peakadex.app.core.ui.FirstCardOnboardingBanner
 import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import java.time.YearMonth
@@ -116,6 +117,7 @@ private fun meetsLevel(def: LevelDef, uniquePeaks: Int, stats: UserStats): Boole
 fun HomeScreen(
     onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
     onNavigateToFriends: () -> Unit = {},
+    onCaptureFirstSummit: () -> Unit = {},
     vm: HomeViewModel = viewModel(),
 ) {
     val state        by vm.uiState.collectAsStateWithLifecycle()
@@ -131,7 +133,7 @@ fun HomeScreen(
                 onRefresh    = { vm.refresh() },
                 modifier     = Modifier.fillMaxSize(),
             ) {
-                HomeContent(data = s.data, user = user, onNavigateToCardsWithRarity = onNavigateToCardsWithRarity, onNavigateToFriends = onNavigateToFriends)
+                HomeContent(data = s.data, user = user, onNavigateToCardsWithRarity = onNavigateToCardsWithRarity, onNavigateToFriends = onNavigateToFriends, onCaptureFirstSummit = onCaptureFirstSummit)
             }
         }
     }
@@ -476,6 +478,7 @@ private fun HomeContent(
     user: User?,
     onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
     onNavigateToFriends: () -> Unit = {},
+    onCaptureFirstSummit: () -> Unit = {},
 ) {
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
 
@@ -489,7 +492,7 @@ private fun HomeContent(
 
         // 3 — Onboarding (new users)
         if (data.stats.totalAscents == 0) {
-            item { OnboardingBanner() }
+            item { FirstCardOnboardingBanner(onCapture = onCaptureFirstSummit) }
         }
 
         // 4 — Monthly chart (≥1 ascent)
