@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.peakadex.app.R
@@ -133,40 +134,42 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 8.dp, vertical = 5.dp),
                 verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 // Avatar
                 Box(
                     modifier         = Modifier
-                        .size(20.dp)
+                        .size(18.dp)
                         .clip(CircleShape)
                         .background(AvatarColor),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text       = "LM",
-                        fontSize   = 7.sp,
+                        fontSize   = 6.sp,
                         fontWeight = FontWeight.Bold,
                         color      = Color.White,
                     )
                 }
 
-                // Name + date
+                // Name + date — strict single lines, ellipsis on overflow
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text       = stringResource(R.string.onboarding_card_user),
-                        fontSize   = 8.sp,
+                        text     = stringResource(R.string.onboarding_card_user),
+                        fontSize = 7.sp,
                         fontWeight = FontWeight.Bold,
-                        color      = UserNameColor,
-                        maxLines   = 1,
+                        color    = UserNameColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text     = stringResource(R.string.onboarding_card_date),
-                        fontSize = 7.sp,
+                        fontSize = 6.sp,
                         color    = DateColor,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
 
@@ -198,7 +201,7 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                     contentScale       = ContentScale.Crop,
                     modifier           = Modifier
                         .fillMaxWidth()
-                        .height(90.dp),
+                        .height(80.dp),
                 )
                 Box(
                     modifier = Modifier
@@ -258,6 +261,7 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                             fontWeight = FontWeight.Bold,
                             color      = RarityColor,
                             maxLines   = 1,
+                            overflow   = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -302,6 +306,7 @@ private fun CardStatCell(
             color         = StatLabelColor,
             letterSpacing = 0.4.sp,
             maxLines      = 1,
+            overflow      = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(3.dp))
         content()
