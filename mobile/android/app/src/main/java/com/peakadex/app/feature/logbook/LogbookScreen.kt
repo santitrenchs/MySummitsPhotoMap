@@ -72,6 +72,9 @@ import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.NearbyPeak
 import com.peakadex.app.core.model.Peak
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.peakadex.app.core.ui.FirstCardOnboardingBanner
 import com.peakadex.app.core.ui.SkeletonBlock
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
@@ -268,6 +271,7 @@ internal val PencilIcon: ImageVector by lazy {
 @Composable
 fun LogbookScreen(
     onAscentClick: (String) -> Unit,
+    onCaptureFirstSummit: () -> Unit = {},
     initialPeakId:       String? = null,
     initialPeakName:     String? = null,
     onPeakIdConsumed:    () -> Unit = {},
@@ -412,7 +416,7 @@ fun LogbookScreen(
                     filteredAscents.isEmpty() && filters.viewFilter == ViewFilter.Friends ->
                         LogbookFriendsEmptyState()
                     filteredAscents.isEmpty() ->
-                        LogbookEmptyState()
+                        LogbookEmptyState(onCaptureFirstSummit = onCaptureFirstSummit)
                     else ->
                         LogbookList(
                             ascents             = filteredAscents,
@@ -1165,17 +1169,16 @@ private fun LogbookFriendsEmptyState() {
 }
 
 @Composable
-private fun LogbookEmptyState() {
+private fun LogbookEmptyState(onCaptureFirstSummit: () -> Unit = {}) {
     Column(
-        Modifier.fillMaxSize().padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Center,
     ) {
-        Text("🏔️", fontSize = 52.sp)
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.logbook_empty_mine_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)
-        Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.logbook_empty_mine_desc), fontSize = 14.sp, color = PeakMuted, lineHeight = 20.sp,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.height(24.dp))
+        FirstCardOnboardingBanner(onCapture = onCaptureFirstSummit)
+        Spacer(Modifier.height(24.dp))
     }
 }
 
