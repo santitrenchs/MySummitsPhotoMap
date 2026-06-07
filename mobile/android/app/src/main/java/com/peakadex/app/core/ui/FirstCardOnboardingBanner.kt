@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -104,8 +103,8 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
         contentScale       = ContentScale.Fit,
         modifier           = modifier.graphicsLayer {
             shadowElevation    = 18.dp.toPx()
-            ambientShadowColor = android.graphics.Color.argb(30, 13, 37, 56)
-            spotShadowColor    = android.graphics.Color.argb(70, 13, 37, 56)
+            ambientShadowColor = Color(0x1E0D2538)
+            spotShadowColor    = Color(0x460D2538)
         },
     )
 }
