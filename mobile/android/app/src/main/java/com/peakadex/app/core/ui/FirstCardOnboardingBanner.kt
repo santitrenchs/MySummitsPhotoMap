@@ -66,8 +66,8 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             modifier              = Modifier.fillMaxWidth(),
         ) {
-            // Left: Mont Blanc card mockup (tilted)
-            MontBlancCardMockup(modifier = Modifier.weight(0.85f))
+            // Left: Mont Blanc card mockup — fixed width so it stays compact
+            MontBlancCardMockup(modifier = Modifier.width(130.dp))
 
             // Right: Headline + description
             Column(
@@ -133,21 +133,21 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
                 verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(9.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 // Avatar
                 Box(
                     modifier         = Modifier
-                        .size(32.dp)
+                        .size(20.dp)
                         .clip(CircleShape)
                         .background(AvatarColor),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text       = "LM",
-                        fontSize   = 11.sp,
+                        fontSize   = 7.sp,
                         fontWeight = FontWeight.Bold,
                         color      = Color.White,
                     )
@@ -157,26 +157,28 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text       = stringResource(R.string.onboarding_card_user),
-                        fontSize   = 13.sp,
+                        fontSize   = 8.sp,
                         fontWeight = FontWeight.Bold,
                         color      = UserNameColor,
+                        maxLines   = 1,
                     )
                     Text(
-                        text       = stringResource(R.string.onboarding_card_date),
-                        fontSize   = 11.sp,
-                        color      = DateColor,
+                        text     = stringResource(R.string.onboarding_card_date),
+                        fontSize = 7.sp,
+                        color    = DateColor,
+                        maxLines = 1,
                     )
                 }
 
                 // 3-dot decorative menu
                 Column(
-                    verticalArrangement   = Arrangement.spacedBy(3.dp),
-                    horizontalAlignment   = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     repeat(3) {
                         Box(
                             modifier = Modifier
-                                .size(3.dp)
+                                .size(2.dp)
                                 .clip(CircleShape)
                                 .background(ThreeDotsColor),
                         )
@@ -187,8 +189,8 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
             // ── Photo ─────────────────────────────────────────────────────────
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 10.dp)
-                    .clip(RoundedCornerShape(14.dp)),
+                    .padding(horizontal = 6.dp)
+                    .clip(RoundedCornerShape(10.dp)),
             ) {
                 Image(
                     painter            = painterResource(R.drawable.onboarding_montblanc),
@@ -196,9 +198,8 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                     contentScale       = ContentScale.Crop,
                     modifier           = Modifier
                         .fillMaxWidth()
-                        .height(160.dp),
+                        .height(90.dp),
                 )
-                // Gradient overlay: bottom → top
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -211,29 +212,28 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                             )
                         ),
                 )
-                // Peak name + coords at bottom
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
+                        .padding(start = 8.dp, end = 8.dp, bottom = 7.dp),
                 ) {
                     Text(
                         text       = stringResource(R.string.onboarding_card_peak),
-                        fontSize   = 17.sp,
+                        fontSize   = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color      = PeakNameColor,
-                        lineHeight = 20.sp,
+                        lineHeight = 13.sp,
                     )
-                    Spacer(Modifier.height(2.dp))
                     Row(
-                        verticalAlignment      = Alignment.CenterVertically,
-                        horizontalArrangement  = Arrangement.spacedBy(2.dp),
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(1.dp),
                     ) {
-                        Text("📍", fontSize = 9.sp)
+                        Text("📍", fontSize = 6.sp)
                         Text(
-                            text       = stringResource(R.string.onboarding_card_coords),
-                            fontSize   = 10.sp,
-                            color      = CoordsColor,
+                            text     = stringResource(R.string.onboarding_card_coords),
+                            fontSize = 6.sp,
+                            color    = CoordsColor,
+                            maxLines = 1,
                         )
                     }
                 }
@@ -243,49 +243,36 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
             Row(
                 modifier              = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                // RAREZA
-                CardStatCell(
-                    label      = "RAREZA",
-                    modifier   = Modifier.weight(1f),
-                ) {
+                CardStatCell(label = "RAREZA", modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        Text("✿", fontSize = 9.sp, color = RarityColor)
+                        Text("✿", fontSize = 7.sp, color = RarityColor)
                         Text(
                             text       = stringResource(R.string.onboarding_card_rarity),
-                            fontSize   = 10.sp,
+                            fontSize   = 7.sp,
                             fontWeight = FontWeight.Bold,
                             color      = RarityColor,
+                            maxLines   = 1,
                         )
                     }
                 }
-
-                // ALTITUD
-                CardStatCell(
-                    label    = "ALTITUD",
-                    modifier = Modifier.weight(1f),
-                ) {
+                CardStatCell(label = "ALTITUD", modifier = Modifier.weight(1f)) {
                     Text(
                         text       = stringResource(R.string.onboarding_card_altitude),
-                        fontSize   = 10.sp,
+                        fontSize   = 7.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color      = AltitudeColor,
                     )
                 }
-
-                // RECOMPENSA
-                CardStatCell(
-                    label    = "RECOMPENSA",
-                    modifier = Modifier.weight(1f),
-                ) {
+                CardStatCell(label = "EP", modifier = Modifier.weight(1f)) {
                     Text(
-                        text       = "+120 EP",
-                        fontSize   = 10.sp,
+                        text       = "+120",
+                        fontSize   = 7.sp,
                         fontWeight = FontWeight.Bold,
                         color      = RewardColor,
                     )
@@ -303,19 +290,20 @@ private fun CardStatCell(
 ) {
     Column(
         modifier            = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(StatBg)
-            .padding(horizontal = 4.dp, vertical = 8.dp),
+            .padding(horizontal = 3.dp, vertical = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text          = label,
-            fontSize      = 7.sp,
+            fontSize      = 5.5.sp,
             fontWeight    = FontWeight.Bold,
             color         = StatLabelColor,
-            letterSpacing = 0.6.sp,
+            letterSpacing = 0.4.sp,
+            maxLines      = 1,
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(3.dp))
         content()
     }
 }
