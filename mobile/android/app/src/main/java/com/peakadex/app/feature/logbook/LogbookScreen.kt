@@ -414,7 +414,7 @@ fun LogbookScreen(
                     filteredAscents.isEmpty() && (filters.peakId != null || filters.rarityId != null) ->
                         LogbookNoResultsState()
                     filteredAscents.isEmpty() && filters.viewFilter == ViewFilter.Friends ->
-                        LogbookFriendsEmptyState()
+                        LogbookFriendsEmptyState(onCaptureFirstSummit = onCaptureFirstSummit)
                     filteredAscents.isEmpty() ->
                         LogbookEmptyState(onCaptureFirstSummit = onCaptureFirstSummit)
                     else ->
@@ -1154,17 +1154,16 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
 // ── States ─────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LogbookFriendsEmptyState() {
+private fun LogbookFriendsEmptyState(onCaptureFirstSummit: () -> Unit = {}) {
     Column(
-        Modifier.fillMaxSize().padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Center,
     ) {
-        Text("👥", fontSize = 52.sp)
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.logbook_empty_friends_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)
-        Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.logbook_empty_friends_desc), fontSize = 14.sp, color = PeakMuted, lineHeight = 20.sp,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.height(24.dp))
+        FirstCardOnboardingBanner(onCapture = onCaptureFirstSummit)
+        Spacer(Modifier.height(24.dp))
     }
 }
 
