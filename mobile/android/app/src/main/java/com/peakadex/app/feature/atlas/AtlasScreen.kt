@@ -242,6 +242,10 @@ fun AtlasScreen(
     var geoLocating   by remember { mutableStateOf(false) }
     val hasInitialFlown = remember { mutableStateOf(false) }
 
+    // ── Atlas onboarding sheet — shown once until user checks "don't show" ────
+    val prefs = remember { context.getSharedPreferences("peakadex_prefs", android.content.Context.MODE_PRIVATE) }
+    var showOnboarding by remember { mutableStateOf(!prefs.getBoolean("map_onboarding_seen", false)) }
+
     // ── Location permission + geolocate ──────────────────────────────────────
     val locationPermLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -663,6 +667,17 @@ fun AtlasScreen(
                 isDirty               = isDirty,
                 onClearFilters        = vm::clearFilters,
                 onDismiss             = { filtersOpen = false },
+            )
+        }
+
+        // ── Atlas onboarding sheet ────────────────────────────────────────────
+        if (showOnboarding) {
+            MapOnboardingSheet(
+                onDismiss  = { showOnboarding = false },
+                onDontShow = {
+                    prefs.edit().putBoolean("map_onboarding_seen", true).apply()
+                    showOnboarding = false
+                },
             )
         }
 

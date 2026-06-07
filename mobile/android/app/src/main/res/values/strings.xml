@@ -403,4 +403,11 @@
     <string name="error_crop_photo">No se pudo recortar la foto</string>
     <string name="logbook_you">Tú</string>
     <string name="settings_username_format_error">Solo letras, números, puntos y guiones bajos (3–20 caracteres)</string>
+
+    <!-- ── Atlas onboarding ───────────────────────────────────────────────────── -->
+    <string name="map_onboarding_title">Captura las rarezas\nde la montaña</string>
+    <string name="map_onboarding_sub">Cada cima esconde una flor única. Cuanto más alto llegues, más rara es la conquista. Explora, asciende y construye tu colección.</string>
+    <string name="map_onboarding_rarities">Niveles de rareza</string>
+    <string name="map_onboarding_cta">Explorar el mapa</string>
+    <string name="map_onboarding_dont_show">No volver a mostrar</string>
 </resources>

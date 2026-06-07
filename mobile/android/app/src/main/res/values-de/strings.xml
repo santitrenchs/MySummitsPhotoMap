@@ -399,4 +399,10 @@
     <string name="error_crop_photo">Foto konnte nicht zugeschnitten werden</string>
     <string name="logbook_you">Du</string>
     <string name="settings_username_format_error">Nur Buchstaben, Zahlen, Punkte und Unterstriche (3–20 Zeichen)</string>
+    <!-- ── Atlas onboarding ─────────────────────────────────────────────────── -->
+    <string name="map_onboarding_title">Sammle die seltenen\nBlumen der Berge</string>
+    <string name="map_onboarding_sub">Jeder Gipfel birgt eine einzigartige Blume. Je höher du steigst, desto seltener der Fund. Erkunde, besteige und baue deine Sammlung auf.</string>
+    <string name="map_onboarding_rarities">Seltenheitsstufen</string>
+    <string name="map_onboarding_cta">Karte erkunden</string>
+    <string name="map_onboarding_dont_show">Nicht mehr anzeigen</string>
 </resources>

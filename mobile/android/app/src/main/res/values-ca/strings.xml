@@ -399,4 +399,10 @@
     <string name="error_crop_photo">No s\'ha pogut retallar la foto</string>
     <string name="logbook_you">Tu</string>
     <string name="settings_username_format_error">Només lletres, números, punts i guions baixos (3–20 caràcters)</string>
+    <!-- ── Atlas onboarding ─────────────────────────────────────────────────── -->
+    <string name="map_onboarding_title">Captura les rareses\nde la muntanya</string>
+    <string name="map_onboarding_sub">Cada cim amaga una flor única. Com més alt arribes, més rara és la troballa. Explora, ascendeix i construeix la teva col·lecció.</string>
+    <string name="map_onboarding_rarities">Nivells de raresa</string>
+    <string name="map_onboarding_cta">Explorar el mapa</string>
+    <string name="map_onboarding_dont_show">No tornar a mostrar</string>
 </resources>
