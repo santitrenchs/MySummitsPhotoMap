@@ -308,6 +308,7 @@ fun MainScaffold(navController: NavController) {
             composable(Screen.Logbook.route) {
                 ProfileScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                    onCaptureFirstSummit = { showNewAscent = true },
                     onNavigateToLogbook  = { peakId, peakName ->
                         pendingPeakId   = peakId
                         pendingPeakName = peakName

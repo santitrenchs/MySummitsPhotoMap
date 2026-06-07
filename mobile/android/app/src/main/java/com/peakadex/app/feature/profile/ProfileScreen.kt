@@ -45,6 +45,7 @@ import com.peakadex.app.core.model.ProfileStats
 import com.peakadex.app.core.model.Rarity
 import com.peakadex.app.R
 import com.peakadex.app.core.model.User
+import com.peakadex.app.core.ui.FirstCardOnboardingBanner
 import com.peakadex.app.core.ui.SkeletonBlock
 import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.ui.rememberSkeletonBrush
@@ -129,6 +130,7 @@ fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
+    onCaptureFirstSummit: () -> Unit = {},
     vm: ProfileViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -160,11 +162,12 @@ fun ProfileScreen(
             }
             is ProfileUiState.Success -> {
                 ProfileContent(
-                    state               = s,
-                    onPeakQuery         = vm::setPeakQuery,
-                    onPeakRarityFilter  = vm::setPeakRarityFilter,
-                    onNavigateToLogbook = onNavigateToLogbook,
-                    onAscentClick       = onAscentClick,
+                    state                = s,
+                    onPeakQuery          = vm::setPeakQuery,
+                    onPeakRarityFilter   = vm::setPeakRarityFilter,
+                    onNavigateToLogbook  = onNavigateToLogbook,
+                    onAscentClick        = onAscentClick,
+                    onCaptureFirstSummit = onCaptureFirstSummit,
                 )
             }
         }
@@ -357,6 +360,7 @@ private fun ProfileContent(
     onPeakRarityFilter: (String?) -> Unit,
     onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
+    onCaptureFirstSummit: () -> Unit = {},
 ) {
     var activeTab by remember { mutableIntStateOf(0) }
     val tabs = listOf(
@@ -392,13 +396,14 @@ private fun ProfileContent(
         // ── Tab content ──
         when (activeTab) {
             0 -> CimasTab(
-                peaks               = state.filteredPeaks,
-                allPeaks            = state.data.peaks,
-                stats               = state.data.stats,
-                rarities            = state.data.rarities,
-                query               = state.peakQuery,
-                rarityFilter        = state.peakRarityFilter,
-                onQuery             = onPeakQuery,
+                peaks                = state.filteredPeaks,
+                allPeaks             = state.data.peaks,
+                stats                = state.data.stats,
+                rarities             = state.data.rarities,
+                query                = state.peakQuery,
+                rarityFilter         = state.peakRarityFilter,
+                onQuery              = onPeakQuery,
+                onCaptureFirstSummit = onCaptureFirstSummit,
                 onRarityFilter      = onPeakRarityFilter,
                 onNavigateToLogbook = onNavigateToLogbook,
             )
@@ -537,6 +542,7 @@ private fun CimasTab(
     onQuery: (String) -> Unit,
     onRarityFilter: (String?) -> Unit,
     onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onCaptureFirstSummit: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
@@ -609,18 +615,21 @@ private fun CimasTab(
 
         if (peaks.isEmpty()) {
             item(key = "empty") {
-                Box(
-                    Modifier.fillMaxWidth().padding(48.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text     = if (query.isNotBlank() || rarityFilter != null)
-                            stringResource(R.string.profile_empty_filtered)
-                        else
-                            stringResource(R.string.profile_empty_peaks),
-                        fontSize = 14.sp,
-                        color    = PeakSubtle,
-                    )
+                if (query.isNotBlank() || rarityFilter != null) {
+                    // Filtered empty state
+                    Box(
+                        Modifier.fillMaxWidth().padding(48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text     = stringResource(R.string.profile_empty_filtered),
+                            fontSize = 14.sp,
+                            color    = PeakSubtle,
+                        )
+                    }
+                } else {
+                    // No ascents at all — show onboarding banner
+                    FirstCardOnboardingBanner(onCapture = onCaptureFirstSummit)
                 }
             }
         } else {
