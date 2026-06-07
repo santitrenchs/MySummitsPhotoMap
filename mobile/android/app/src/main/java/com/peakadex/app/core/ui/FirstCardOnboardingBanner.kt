@@ -51,10 +51,10 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
             // Left: Mont Blanc card mockup — fixed width so it stays compact
             MontBlancCardMockup(modifier = Modifier.width(143.dp))
 
-            // Right: Headline + description
+            // Right: Headline + description + CTA
             Column(
                 modifier            = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
                     text          = stringResource(R.string.onboarding_card_title),
@@ -70,26 +70,23 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
                     color      = PeakNavyMid,
                     lineHeight = 16.sp,
                 )
+                Spacer(Modifier.height(2.dp))
+                // ── CTA — same width as text column ──────────────────────────
+                Button(
+                    onClick   = onCapture,
+                    modifier  = Modifier.fillMaxWidth().height(44.dp),
+                    shape     = RoundedCornerShape(12.dp),
+                    colors    = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                ) {
+                    Text(
+                        text       = stringResource(R.string.onboarding_card_btn),
+                        fontSize   = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = Color.White,
+                    )
+                }
             }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        // ── CTA button ────────────────────────────────────────────────────────
-        Button(
-            onClick   = onCapture,
-            modifier  = Modifier.fillMaxWidth().height(52.dp),
-            shape     = RoundedCornerShape(14.dp),
-            colors    = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-        ) {
-            Text(
-                text       = stringResource(R.string.onboarding_card_btn),
-                fontSize   = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color      = Color.White,
-            )
-        }
     }
 }
 
