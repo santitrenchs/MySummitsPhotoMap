@@ -888,6 +888,8 @@ private val PlusIcon: ImageVector by lazy {
 @Composable
 fun FriendsScreen(
     onOpenCordada: (String) -> Unit = {},
+    autoOpenInvite: Boolean = false,
+    onAutoOpenInviteConsumed: () -> Unit = {},
     friendsVm: FriendsViewModel = viewModel(),
     cordadasVm: CordadasViewModel = viewModel(),
 ) {
@@ -897,6 +899,14 @@ fun FriendsScreen(
     var showCreateSheet by remember { mutableStateOf(false) }
     var showInviteFriendSheet by remember { mutableStateOf(false) }
     var showActionSheet by remember { mutableStateOf(false) }
+
+    // Auto-open invite sheet when triggered from another screen (e.g. SoloRankingSection CTA)
+    LaunchedEffect(autoOpenInvite) {
+        if (autoOpenInvite) {
+            showInviteFriendSheet = true
+            onAutoOpenInviteConsumed()
+        }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val genericError = stringResource(R.string.friends_generic_error)

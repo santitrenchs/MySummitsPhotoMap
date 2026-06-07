@@ -110,6 +110,7 @@ fun MainScaffold(navController: NavController) {
 
     // New ascent sheet — peak pre-fill from Atlas "Capturar" button
     var showNewAscent         by remember { mutableStateOf(false) }
+    var autoOpenFriendInvite  by remember { mutableStateOf(false) }
     var newAscentPeakId       by remember { mutableStateOf<String?>(null) }
     var newAscentPeakName     by remember { mutableStateOf<String?>(null) }
     var logbookRefreshTrigger  by remember { mutableIntStateOf(0) }
@@ -275,10 +276,11 @@ fun MainScaffold(navController: NavController) {
                         }
                     },
                     onNavigateToFriends = {
+                        autoOpenFriendInvite = true
                         tabNavController.navigate(Screen.Friends.route) {
                             popUpTo(Screen.Home.route) { saveState = true }
                             launchSingleTop = true
-                            restoreState    = true
+                            restoreState    = false
                         }
                     },
                     onCaptureFirstSummit = { showNewAscent = true },
@@ -332,9 +334,11 @@ fun MainScaffold(navController: NavController) {
             }
             composable(Screen.Friends.route) {
                 FriendsScreen(
-                    onOpenCordada = { id ->
+                    onOpenCordada            = { id ->
                         navController.navigate(Screen.CordadaDetail.createRoute(id))
                     },
+                    autoOpenInvite           = autoOpenFriendInvite,
+                    onAutoOpenInviteConsumed = { autoOpenFriendInvite = false },
                 )
             }
             composable(Screen.Cards.route) {
