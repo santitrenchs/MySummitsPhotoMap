@@ -134,21 +134,21 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 5.dp),
+                    .padding(horizontal = 7.dp, vertical = 4.dp),
                 verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 // Avatar
                 Box(
                     modifier         = Modifier
-                        .size(18.dp)
+                        .size(16.dp)
                         .clip(CircleShape)
                         .background(AvatarColor),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text       = "LM",
-                        fontSize   = 6.sp,
+                        fontSize   = 5.sp,
                         fontWeight = FontWeight.Bold,
                         color      = Color.White,
                     )
@@ -157,16 +157,16 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                 // Name + date — strict single lines, ellipsis on overflow
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text     = stringResource(R.string.onboarding_card_user),
-                        fontSize = 7.sp,
+                        text       = stringResource(R.string.onboarding_card_user),
+                        fontSize   = 6.sp,
                         fontWeight = FontWeight.Bold,
-                        color    = UserNameColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        color      = UserNameColor,
+                        maxLines   = 1,
+                        overflow   = TextOverflow.Ellipsis,
                     )
                     Text(
                         text     = stringResource(R.string.onboarding_card_date),
-                        fontSize = 6.sp,
+                        fontSize = 5.sp,
                         color    = DateColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -222,21 +222,22 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                 ) {
                     Text(
                         text       = stringResource(R.string.onboarding_card_peak),
-                        fontSize   = 11.sp,
+                        fontSize   = 9.sp,
                         fontWeight = FontWeight.Bold,
                         color      = PeakNameColor,
-                        lineHeight = 13.sp,
+                        lineHeight = 11.sp,
                     )
                     Row(
                         verticalAlignment     = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(1.dp),
                     ) {
-                        Text("📍", fontSize = 6.sp)
+                        Text("📍", fontSize = 5.sp)
                         Text(
                             text     = stringResource(R.string.onboarding_card_coords),
-                            fontSize = 6.sp,
+                            fontSize = 5.sp,
                             color    = CoordsColor,
                             maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -252,12 +253,12 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                 CardStatCell(label = "RAREZA", modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(1.dp),
                     ) {
-                        Text("✿", fontSize = 7.sp, color = RarityColor)
+                        Text("✿", fontSize = 5.5.sp, color = RarityColor)
                         Text(
                             text       = stringResource(R.string.onboarding_card_rarity),
-                            fontSize   = 7.sp,
+                            fontSize   = 5.5.sp,
                             fontWeight = FontWeight.Bold,
                             color      = RarityColor,
                             maxLines   = 1,
@@ -268,7 +269,7 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                 CardStatCell(label = "ALTITUD", modifier = Modifier.weight(1f)) {
                     Text(
                         text       = stringResource(R.string.onboarding_card_altitude),
-                        fontSize   = 7.sp,
+                        fontSize   = 5.5.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color      = AltitudeColor,
                     )
@@ -276,7 +277,7 @@ private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
                 CardStatCell(label = "EP", modifier = Modifier.weight(1f)) {
                     Text(
                         text       = "+120",
-                        fontSize   = 7.sp,
+                        fontSize   = 5.5.sp,
                         fontWeight = FontWeight.Bold,
                         color      = RewardColor,
                     )
@@ -301,10 +302,10 @@ private fun CardStatCell(
     ) {
         Text(
             text          = label,
-            fontSize      = 5.5.sp,
+            fontSize      = 4.5.sp,
             fontWeight    = FontWeight.Bold,
             color         = StatLabelColor,
-            letterSpacing = 0.4.sp,
+            letterSpacing = 0.3.sp,
             maxLines      = 1,
             overflow      = TextOverflow.Ellipsis,
         )
