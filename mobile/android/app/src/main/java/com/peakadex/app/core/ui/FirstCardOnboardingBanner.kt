@@ -87,7 +87,8 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
                     )
                 }
             }
-    }
+        }   // end Row
+    }       // end Column / FirstCardOnboardingBanner
 }
 
 // ── Mont Blanc card — uses pre-rendered PNG asset for pixel-perfect proportions ─
