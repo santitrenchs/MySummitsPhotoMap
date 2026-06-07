@@ -49,7 +49,7 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
             modifier              = Modifier.fillMaxWidth(),
         ) {
             // Left: Mont Blanc card mockup — fixed width so it stays compact
-            MontBlancCardMockup(modifier = Modifier.width(172.dp))
+            MontBlancCardMockup(modifier = Modifier.width(143.dp))
 
             // Right: Headline + description + CTA
             Column(
