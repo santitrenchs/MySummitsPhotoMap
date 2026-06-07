@@ -97,14 +97,17 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
 
 @Composable
 private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
+    // shadow() applied directly to the Image clips it to the card shape,
+    // matching the PNG's own rounded corners and producing a clean drop shadow.
     Image(
         painter            = painterResource(R.drawable.onboarding_card_montblanc),
         contentDescription = null,
         contentScale       = ContentScale.Fit,
-        modifier           = modifier.graphicsLayer {
-            shadowElevation    = 18.dp.toPx()
-            ambientShadowColor = Color(0x1E0D2538)
-            spotShadowColor    = Color(0x460D2538)
-        },
+        modifier           = modifier.shadow(
+            elevation    = 10.dp,
+            shape        = RoundedCornerShape(22.dp),
+            spotColor    = Color(0x460D2538),
+            ambientColor = Color(0x1E0D2538),
+        ),
     )
 }
