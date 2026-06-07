@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -97,22 +98,14 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
 
 @Composable
 private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
-    // Wrap in a Box so the shadow is clipped to the card shape, not the full PNG rectangle.
-    Box(
-        modifier = modifier
-            .shadow(
-                elevation    = 10.dp,
-                shape        = RoundedCornerShape(20.dp),
-                spotColor    = Color(0x3D0D2538),
-                ambientColor = Color(0x1A0D2538),
-            )
-            .clip(RoundedCornerShape(20.dp)),
-    ) {
-        Image(
-            painter            = painterResource(R.drawable.onboarding_card_montblanc),
-            contentDescription = null,
-            contentScale       = ContentScale.Fit,
-            modifier           = Modifier.fillMaxWidth(),
-        )
-    }
+    Image(
+        painter            = painterResource(R.drawable.onboarding_card_montblanc),
+        contentDescription = null,
+        contentScale       = ContentScale.Fit,
+        modifier           = modifier.graphicsLayer {
+            shadowElevation    = 18.dp.toPx()
+            ambientShadowColor = android.graphics.Color.argb(30, 13, 37, 56)
+            spotShadowColor    = android.graphics.Color.argb(70, 13, 37, 56)
+        },
+    )
 }
