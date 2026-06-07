@@ -244,7 +244,9 @@ fun AtlasScreen(
 
     // ── Atlas onboarding sheet — shown once until user checks "don't show" ────
     val prefs = remember { context.getSharedPreferences("peakadex_prefs", android.content.Context.MODE_PRIVATE) }
-    var showOnboarding by remember { mutableStateOf(!prefs.getBoolean("map_onboarding_seen", false)) }
+    val onboardingSeen = remember { prefs.getBoolean("map_onboarding_seen", false) }
+    var showOnboarding by rememberSaveable { mutableStateOf(!onboardingSeen) }
+    android.util.Log.d("AtlasOnboarding", "showOnboarding=$showOnboarding onboardingSeen=$onboardingSeen")
 
     // ── Location permission + geolocate ──────────────────────────────────────
     val locationPermLauncher = rememberLauncherForActivityResult(
