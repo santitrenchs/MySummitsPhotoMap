@@ -49,7 +49,7 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
             modifier              = Modifier.fillMaxWidth(),
         ) {
             // Left: Mont Blanc card mockup — fixed width so it stays compact
-            MontBlancCardMockup(modifier = Modifier.width(130.dp))
+            MontBlancCardMockup(modifier = Modifier.width(143.dp))
 
             // Right: Headline + description
             Column(
@@ -97,13 +97,22 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
 
 @Composable
 private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
-    // The PNG already contains the card's white background and rounded corners.
-    // No extra shadow — it would apply to the rectangular PNG bounds and cause
-    // a white-card artefact below the image.
-    Image(
-        painter            = painterResource(R.drawable.onboarding_card_montblanc),
-        contentDescription = null,
-        contentScale       = ContentScale.Fit,
-        modifier           = modifier,
-    )
+    // Wrap in a Box so the shadow is clipped to the card shape, not the full PNG rectangle.
+    Box(
+        modifier = modifier
+            .shadow(
+                elevation    = 10.dp,
+                shape        = RoundedCornerShape(20.dp),
+                spotColor    = Color(0x3D0D2538),
+                ambientColor = Color(0x1A0D2538),
+            )
+            .clip(RoundedCornerShape(20.dp)),
+    ) {
+        Image(
+            painter            = painterResource(R.drawable.onboarding_card_montblanc),
+            contentDescription = null,
+            contentScale       = ContentScale.Fit,
+            modifier           = Modifier.fillMaxWidth(),
+        )
+    }
 }
