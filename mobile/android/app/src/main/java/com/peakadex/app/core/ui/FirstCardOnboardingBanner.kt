@@ -19,8 +19,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.peakadex.app.core.ui.theme.PeakNavyDark
-import com.peakadex.app.core.ui.theme.PeakNavyMid
 import com.peakadex.app.R
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakNavyDark
@@ -60,17 +58,17 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
             ) {
                 Text(
                     text          = stringResource(R.string.onboarding_card_title),
-                    fontSize      = 22.sp,
+                    fontSize      = 17.sp,
                     fontWeight    = FontWeight.ExtraBold,
                     color         = PeakNavyDark,
-                    lineHeight    = 26.sp,
-                    letterSpacing = (-0.3).sp,
+                    lineHeight    = 21.sp,
+                    letterSpacing = (-0.2).sp,
                 )
                 Text(
                     text       = stringResource(R.string.onboarding_card_desc),
-                    fontSize   = 13.sp,
+                    fontSize   = 12.sp,
                     color      = PeakNavyMid,
-                    lineHeight = 18.sp,
+                    lineHeight = 16.sp,
                 )
             }
         }
@@ -99,16 +97,13 @@ fun FirstCardOnboardingBanner(onCapture: () -> Unit) {
 
 @Composable
 private fun MontBlancCardMockup(modifier: Modifier = Modifier) {
+    // The PNG already contains the card's white background and rounded corners.
+    // No extra shadow — it would apply to the rectangular PNG bounds and cause
+    // a white-card artefact below the image.
     Image(
         painter            = painterResource(R.drawable.onboarding_card_montblanc),
         contentDescription = null,
         contentScale       = ContentScale.Fit,
-        modifier           = modifier
-            .shadow(
-                elevation    = 12.dp,
-                shape        = RoundedCornerShape(18.dp),
-                spotColor    = Color(0x240D2538),
-                ambientColor = Color(0x0F0D2538),
-            ),
+        modifier           = modifier,
     )
 }
