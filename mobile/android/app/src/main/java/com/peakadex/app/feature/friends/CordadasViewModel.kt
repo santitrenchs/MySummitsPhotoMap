@@ -215,28 +215,17 @@ class CordadasViewModel : ViewModel() {
     }
 
     fun leaveCordada(cordadaId: String, myUserId: String, onSuccess: () -> Unit = {}) {
-        android.util.Log.d("CordadasVM", "leaveCordada START — cordadaId=$cordadaId myUserId='$myUserId'")
-        // Optimistic removal
-        _state.update { s ->
-            android.util.Log.d("CordadasVM", "leaveCordada optimistic — cordadas before=${s.cordadas.size}")
-            s.copy(
-                cordadas       = s.cordadas.filter { it.id != cordadaId },
-                selectedDetail = null,
-            )
-        }
         viewModelScope.launch {
             try {
-                android.util.Log.d("CordadasVM", "leaveCordada calling API — cordadaId='$cordadaId' myUserId='$myUserId' (lengths: ${cordadaId.length}/${myUserId.length})")
                 api.removeCordadaMember(cordadaId, myUserId)
-                android.util.Log.d("CordadasVM", "leaveCordada API OK — calling onSuccess + load")
+                // Navigate back ONLY on success. FriendsScreen's LifecycleResumeEffect
+                // will call load() when it resumes, refreshing the list from the server.
                 onSuccess()
-                load()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                android.util.Log.e("CordadasVM", "leaveCordada API FAILED: ${e.javaClass.simpleName} — ${e.message}", e)
-                load()
-                onSuccess()
+                android.util.Log.e("CordadasVM", "leaveCordada failed: ${e.javaClass.simpleName} — ${e.message}")
+                _state.update { it.copy(error = "Error al salir de la cordada") }
             }
         }
     }

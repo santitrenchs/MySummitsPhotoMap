@@ -926,11 +926,13 @@ fun FriendsScreen(
     }
 
     // Refresh the cordadas list when returning from the full-screen detail
-    // (a member may have left, been expelled, or the cordada deleted). Skips
-    // the very first resume to avoid a redundant load right after init.
-    var firstResume by remember { mutableStateOf(true) }
+    // Reload on every resume — covers returning from CordadaDetail (outer nav) and
+    // switching back from another tab. The ViewModel's init already loads on first
+    // creation, so the extra call here is a fast no-op in most cases (Retrofit
+    // doesn't block the UI). This is the most reliable way to keep the list fresh
+    // after leave / expel / delete without cross-VM signalling.
     LifecycleResumeEffect(Unit) {
-        if (firstResume) firstResume = false else cordadasVm.load()
+        cordadasVm.load()
         onPauseOrDispose { }
     }
 

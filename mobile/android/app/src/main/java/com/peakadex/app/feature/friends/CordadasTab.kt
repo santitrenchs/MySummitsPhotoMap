@@ -1528,10 +1528,7 @@ fun CordadaDetailRoute(
             onInviteQueryChange = vm::onInviteQueryChange,
             onInvite            = { vm.inviteUser(detail.id, it) },
             onExpel             = { vm.removeMember(detail.id, it) },
-            onLeave             = {
-                android.util.Log.d("CordadasTab", "onLeave tapped — cordadaId=${detail.id} currentUserId='$currentUserId'")
-                vm.leaveCordada(detail.id, currentUserId, onBack)
-            },
+            onLeave             = { vm.leaveCordada(detail.id, currentUserId, onBack) },
             onDelete            = { vm.deleteCordada(detail.id); onBack() },
             onEditImage         = { vm.updateCordadaAvatar(detail.id, it) },
             onBack              = onBack,
