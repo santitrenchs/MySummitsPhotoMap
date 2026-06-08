@@ -113,10 +113,16 @@ fun MapOnboardingSheet(
             }
         },
     ) {
+        // M3 standard modal bottom sheet: content stays within safe area.
+        // fillMaxHeight(0.82f) prevents the sheet from covering the status bar
+        // when the user drags it to the top. statusBarsPadding() adds extra
+        // protection so content never starts behind the status bar.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight(0.82f)
                 .verticalScroll(rememberScrollState())
+                .statusBarsPadding()
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 20.dp),
