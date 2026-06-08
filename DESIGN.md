@@ -414,7 +414,7 @@ container: textAlign center · padding 80px 0
 | 4 | MonthlyChartSection | `totalAscents >= 1` AND `monthlyStats` not empty | ✅ | ✅ |
 | 5 | RarityChartSection | `totalAscents >= 1` | ✅ | ✅ |
 | 6 | LeaderboardCard | `leaderboard.size > 1` — title **"Tu cordada"** | ✅ | ✅ |
-| 7 | NoFriendsCta | `totalFriends == 0` | ✅ | ✅ |
+| 7 | NoFriendsCta (web) / SoloRankingSection (Android) | `totalFriends == 0` | ✅ | ✅ |
 | 8 | RecentAscentsRow | `recentAscents` not empty — title **"Tus últimas cimas"** | ✅ | ✅ |
 
 **Motivation banner (🏆 / ⚠️ / 🎯): removed from web (2026-05-30). Never render it on Android or iOS.**
@@ -622,7 +622,9 @@ text = entry.levelIdx >= 1 ? LEVEL_DEFS[entry.levelIdx - 1].name : "—"
 
 ---
 
-### 7 — NoFriendsCta
+### 7 — NoFriendsCta (web) / SoloRankingSection (Android)
+
+**Web — NoFriendsCta:**
 
 ```
 background: linear-gradient(135deg, #EFF6FF → #F0F9FF)
@@ -636,6 +638,10 @@ alignment:  center
 - Title: `"El camino se disfruta más acompañado."` — 15sp bold `#111827`
 - Subtitle: `"Encuentra tu cordada, revive cada ascensión y creced juntos en la montaña."` — 13sp `#6B7280`
 - CTA: `"Invitar amigos"` — bg `#0369A1`, white text, `8dp` radius. Tap → navigate to friends/invite screen.
+
+**Android — SoloRankingSection:**
+
+Shown when `totalFriends == 0`. Displays the user at rank #1 with their EP score (0 if new), flanked by 3 ghost avatar circles with dashed borders connected by dotted lines. Aspirational copy: `"Tu cordada está vacía. Invita a tus primeros compañeros para compartir cimas y competir juntos."` Green CTA `"Invitar amigos"` → opens the Friends/Cordada tab with `InviteFriendSheet` pre-opened.
 
 ---
 
@@ -1273,6 +1279,8 @@ The bottom nav bar hides on downward scroll and reappears on upward scroll. Appl
 **File:** `feature/splash/SplashScreen.kt`
 
 > Not to be confused with the OS Splash Screen (the one with the app icon, ~200ms, handled by `Theme.Peakadex.Splash`). This screen is shown while the app resolves auth state (typically 500–1000ms).
+
+**OS-level splash (`themes.xml`):** `Theme.Peakadex.Splash` now uses `windowSplashScreenBackground=#FFFFFF` + `windowSplashScreenAnimatedIcon=ic_launcher_foreground`. Previously it was dark blue `#0D2538` with no icon. Both levels are now white for a seamless OS splash → auth gate → login/home transition.
 
 **Design:** full white screen, `PeakadexLogo(height = 44.dp)` centered.
 

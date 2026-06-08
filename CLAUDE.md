@@ -56,7 +56,7 @@ The gamification dashboard. Entry point of the app (root `/` redirects here when
 4. **MonthlyChartSection** — "Últimos 6 meses", shown when `totalAscents >= 1` and data non-empty
 5. **RarityChartSection** — "Cimas por rareza", shown when `totalAscents >= 1`
 6. **LeaderboardCard** — "Tu cordada", shown when `leaderboard.size > 1`
-7. **NoFriendsCta** — shown when `totalFriends == 0`
+7. **NoFriendsCta** — shown when `totalFriends == 0` (web only); **SoloRankingSection** — shown when `totalFriends == 0` (Android only)
 8. **RecentAscentsRow** — "Tus últimas cimas", shown when `recentAscents` non-empty
 
 **Web hero layout** (`components/home/HomeClient.tsx`): horizontal row — avatar (56px circle) + name in bold white + `· AchievedLevelName` at 55% opacity (right of name) + CS pill + EP pill. Below: horizontal divider. Below: 3-metric row (ascensiones / cimas / alt. máx). Below: solid-black progress strip with green gradient bar and label `"{uniquePeaks} / {total} cimas · para {NextLevelName}"` (or alt-req variant). The **Progression section** (level cards) and the **motivation banner** have been removed from web — they remain on Android/iOS only.
@@ -1765,8 +1765,9 @@ Must extend `AndroidViewModel`, not `ViewModel`, to access `LocaleManager` via `
 
 **Language change logic:**
 - API ≥ 33 (`TIRAMISU`): `LocaleManager.setApplicationLocales(LocaleList.forLanguageTags(locale))` → Activity recreates automatically. No snackbar shown.
-- API < 33: saves to server only + shows "Idioma guardado" snackbar. App language does not change at runtime.
+- API < 33: `AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(locale))` + sets `localeToApply` state → `LaunchedEffect(state.localeToApply)` in `SettingsScreen` calls `(context as? Activity)?.recreate()` to apply immediately.
 - `languageSaved = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU`
+- **`MainActivity` must extend `AppCompatActivity`** (not `ComponentActivity`) — required for `AppCompatDelegate.setApplicationLocales()` to work on API < 33. `themes.xml` parent is `Theme.AppCompat.Light.NoActionBar`. Dependency: `androidx.appcompat:appcompat:1.7.0` in `gradle/libs.versions.toml`.
 
 **Each privacy/notification toggle** fires an immediate `PATCH /api/v1/settings` — no "Save" button.
 
@@ -1849,6 +1850,7 @@ Files fixed: `app/api/v1/photos/[id]/persons/route.ts`, `app/api/face-detections
 - **`Image` not `Icon` for flags**: `Icon` applies Material3 tint, destroying flag colors.
 - **`BorderStroke` import**: `import androidx.compose.foundation.BorderStroke` — needed for the `OutlinedButton` border.
 - **`languageSaved` flag only true on API < 33**: on API ≥ 33 `LocaleManager` recreates the Activity; showing a snackbar is unnecessary and would never appear.
+- **`AppCompatActivity` required for per-app locale on API < 33**: `ComponentActivity` + `LocaleManager` (API 33+ only) silently fails on Android 8.1. Use `AppCompatDelegate.setApplicationLocales()` + `AppCompatActivity` + `Theme.AppCompat` parent for all API levels. The explicit `Activity.recreate()` call in the composable is also required — the delegate alone does not recreate the Activity on API < 33.
 - **`person.userId == null` in tag loop**: skip silently — only registered+linked users can be tagged via API. A 400 from the server is expected for unlinked persons and should not surface as an error to the user.
 
 ---
@@ -2123,6 +2125,8 @@ private fun PeakFilterChip(peakName: String, onDismiss: () -> Unit) {
 
 Rendered conditionally: `if (filters.peakId != null) PeakFilterChip(peakName = filters.peakName ?: filters.peakId ?: "", ...)`.
 
+**Empty states**: Cards (LogbookScreen) empty states show simple centered text (`logbook_friends_empty` / `logbook_mine_empty`). `FirstCardOnboardingBanner` is **not** shown in LogbookScreen — it is reserved for HomeScreen and ProfileScreen CimasTab. The `onCaptureFirstSummit` parameter is not present on `LogbookScreen`.
+
 ---
 
 ### Known gotchas (Fase 6)
@@ -2234,6 +2238,35 @@ fun SplashScreen(isAuthenticated: Boolean, onReady: (authenticated: Boolean) -> 
 - `MIN_SHOW_MS` reduced from 1500ms to 1000ms — no animation to watch, so shorter wait is fine
 - White background creates a seamless transition: OS splash (white + icon) → this screen (white + wordmark) → app
 - Logo at 44dp — slightly larger than the top bar (32dp) to breathe in full-screen context
+- **OS-level splash (`themes.xml`)**: `Theme.Peakadex.Splash` now uses `windowSplashScreenBackground=#FFFFFF` + `windowSplashScreenAnimatedIcon=ic_launcher_foreground`. Previously it was dark blue `#0D2538` with no icon, causing a jarring color transition. Both the OS splash and this Compose screen are now white for a seamless start.
+
+---
+
+### FirstCardOnboardingBanner — Android
+
+**File:** `core/ui/FirstCardOnboardingBanner.kt`
+
+Shown when the user has no ascents yet, as a prompt to log their first climb.
+
+- **Shown in**: Stats (HomeScreen) when `totalAscents == 0`; Bitácora (ProfileScreen CimasTab) when peaks list is empty with no active filter.
+- **NOT shown in**: Cards (LogbookScreen) — that screen uses a simple centered text message instead.
+- **Layout**: white card with shadow, 24dp radius. Row: `MontBlancCardMockup` (143dp wide image from `drawable/onboarding_ecrins.png` — a partially tilted card PNG with shadow baked in) + text column (title 17sp extrabold, description 12sp, half-width CTA button "Capturar" 44dp height, `PeakGreenCTA`, 12dp radius).
+- **i18n strings**: `onboarding_card_title`, `onboarding_card_desc`, `onboarding_card_btn` ("Capturar" / "Capture" / "Capturar" / "Capturer" / "Erfassen").
+- Tapping the CTA opens the new ascent sheet via the `onCaptureFirstSummit` callback.
+
+---
+
+### MapOnboardingSheet — Android Atlas
+
+**File:** `feature/atlas/MapOnboardingSheet.kt`
+
+Shown the first time a user opens the Atlas tab. Persisted via `SharedPreferences` key `"map_onboarding_seen"`.
+
+- M3 `ModalBottomSheet` with `skipPartiallyExpanded = false`, `fillMaxHeight(0.82f)` + `statusBarsPadding()` to stay within the app area (not full-screen).
+- **Accent bar**: `Brush.horizontalGradient([#0369A1, #38BDF8, #818CF8])` — 4dp height rendered in the dragHandle.
+- **Content**: title + subtitle + "NIVELES DE RAREZA" divider + 3×3 rarity grid (chunked `Row`s, avoids nested scroll) + CTA "Explorar el mapa" (blue `#0369A1`) + "No volver a mostrar" checkbox.
+- Each `RarityCell`: colored bg/border per rarity ID, `✿` symbol, rarity name, altitude range label.
+- **i18n keys**: `map_onboarding_title`, `map_onboarding_sub`, `map_onboarding_rarities`, `map_onboarding_cta`, `map_onboarding_dont_show` (all 5 locales).
 
 ---
 
@@ -2500,6 +2533,26 @@ item {
 
 ---
 
+## Android Core Utilities
+
+### `UiText` — `core/ui/UiText.kt`
+
+Sealed class bridging ViewModels (which have no `Context` access) with the UI layer (`stringResource`).
+
+```kotlin
+sealed class UiText {
+    data class StringRes(val id: Int) : UiText()   // NOTE: @StringRes annotation omitted — name clash
+    data class Dynamic(val value: String) : UiText()
+
+    @Composable fun asString(): String
+    fun asString(context: Context): String
+}
+```
+
+**Gotcha**: adding `@StringRes` annotation to the `StringRes` data class causes a "Illegal annotation class" compile error due to the name clash between the class name and the annotation. Do not add it.
+
+---
+
 ## Cordadas — Climbing Groups (Android + v1 API, updated 2026-06-04)
 
 Cordadas are named climbing groups (think "teams"/"squads"). A user can belong to many cordadas. Each cordada has one **OWNER** and N **MEMBER**s. Membership is invite-based (no auto-join). The feature shipped on Android first; web UI is pending.
@@ -2607,7 +2660,7 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 **Row buttons:** all accept/reject/add/invite actions use the shared **`RowActionButton`** (≥40dp): **Aceptar** = `FilledTonalButton` **tonal green** (`#DCFCE7`/`#16A34A`, deliberately not solid so it doesn't compete with the FAB); **Rechazar** = `OutlinedButton`. The hand-rolled `SmallBtn`/`FriendBtn` (<40dp) were removed.
 
-**Cordada DETAIL = full-screen route (`Screen.CordadaDetail = "cordada/{id}"`, `CordadaDetailRoute`)** on the **outer** navController — **not** a sheet/overlay. As a drill-down it **loses `MainTopBar` + bottom nav** (correct Material). It has **one quiet `TopAppBar`**: back arrow LEFT, **empty title**, overflow `⋮` RIGHT for destructive actions. The cordada name lives in the cover hero when there is a real photo, or in a compact identity header when there is not; never duplicate it in the app bar. `BackHandler` returns to the list. `CordadaDetailRoute` owns its own `CordadasViewModel`, loads by id (`openDetail(id)`); `onLeave`/`onDelete` call `onBack()`. `FriendsScreen` reloads cordadas on **resume** (`LifecycleResumeEffect`, skipping the first) so membership changes show on return.
+**Cordada DETAIL = full-screen route (`Screen.CordadaDetail = "cordada/{id}"`, `CordadaDetailRoute`)** on the **outer** navController — **not** a sheet/overlay. As a drill-down it **loses `MainTopBar` + bottom nav** (correct Material). It has **one quiet `TopAppBar`**: back arrow LEFT, **empty title**, overflow `⋮` RIGHT for destructive actions. The cordada name lives in the cover hero when there is a real photo, or in a compact identity header when there is not; never duplicate it in the app bar. `BackHandler` returns to the list. `CordadaDetailRoute` owns its own `CordadasViewModel`, loads by id (`openDetail(id)`); `onLeave`/`onDelete` call `onBack()`. `FriendsScreen` reloads cordadas on **every resume** (`LifecycleResumeEffect`, **no firstResume skip**) so membership changes always show on return from the outer-nav detail route.
 
 **Email on invite:** `inviteToCordada()` (server) sends `sendCordadaInviteEmail(to, inviterName, cordadaName, locale)` — all 5 locales, best-effort, gated on the recipient's `emailNotifications`.
 
@@ -2645,14 +2698,15 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 - Create CTA is full-width 48dp green. It is disabled until name is non-blank; during creation inputs are disabled and the button shows a spinner.
 - `createCordada(..., onSuccess)` sets `isCreating`, disables inputs while creating, uploads avatar best-effort, and navigates to the new detail on success.
 
-> **i18n**: all `friends_*` and `cordadas_*` strings used by these screens are **fully translated in all 5 locales** (verified 2026-06-03); back-button contentDescription uses `R.string.action_back`. `nav_tab_cordada` = "Cordada" in every locale (brand term, intentionally untranslated). Do not hardcode user-visible strings in `feature/friends`.
+> **i18n**: all `friends_*` and `cordadas_*` strings used by these screens are **fully translated in all 5 locales** (verified 2026-06-03); back-button contentDescription uses `R.string.action_back`. `nav_tab_cordada` per locale: **es** "Cordada" · **ca** "Cordada" · **en** "Rope Team" · **fr** "Cordée" · **de** "Seilschaft". Do not hardcode user-visible strings in `feature/friends`.
 
 `CordadasViewModel` notes:
 - `load()` calls `getCordadas()` → fills `cordadas` + `pendingInvites`.
 - `onInviteQueryChange` debounces 350ms, then `searchUsers(query)`, then **excludes current members** by `userId`.
 - `inviteUser` tracks `inviteSentIds` so the row shows "Invitado" without a reload.
 - `respondToInvite` optimistically removes the invite from `pendingInvites`; calls `load()` only on ACCEPTED.
-- Optimistic mutation on `removeMember`; `leaveCordada`/`deleteCordada` clear `selectedDetail` + `load()`.
+- Optimistic mutation on `removeMember`; `deleteCordada` clears `selectedDetail` + `load()`.
+- **`leaveCordada(cordadaId, myUserId, onSuccess)`**: calls `api.removeCordadaMember` then invokes `onSuccess()` **only on success**. On failure: sets `error` state, does NOT navigate. `currentUserId` for the call is derived from `detail.members.firstOrNull { it.isCurrentUser }?.userId` (not from `authSession.currentUser` which can be null on API <33).
 
 `CordadaDetailScreen` current visual contract:
 - Quiet top app bar: back icon only, no title. The hero/header owns the cordada name.
@@ -2737,3 +2791,5 @@ Important details:
 - **Friend rows are not tappable** — no friend detail/stats sheet (removed). Don't reintroduce one; tapping a friend does nothing but the `⋮` menu.
 - **Badge refreshes on tab change, not real-time** — push (FCM) is not implemented. The cordada-invite email + tab badge are the only proactive signals today.
 - **Accept reloads** — `accept()` and `respondToInvite("ACCEPTED")` both call `load()` after the optimistic update so stats render correctly; don't drop the reload.
+- **`LifecycleResumeEffect` must NOT skip the first resume for Cordadas**: the `firstResume` guard was removed from `FriendsScreen`. When returning from `CordadaDetailRoute` (outer nav), `FriendsScreen`'s `LifecycleResumeEffect` must fire and call `cordadasVm.load()` unconditionally to refresh the list. With the guard, the first resume after a leave/expel was silently skipped.
+- **`leaveCordada` must not call `onSuccess` on failure**: previously it called `onSuccess()` even on API error, closing the detail and showing stale state. Always gate `onSuccess()` in the `try` block, with `error` state set in the `catch`.
