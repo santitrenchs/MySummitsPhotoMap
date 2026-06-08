@@ -3,9 +3,8 @@ package com.peakadex.app.feature.atlas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -78,7 +77,7 @@ fun MapOnboardingSheet(
     onDismiss: () -> Unit,
     onDontShow: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var dontShow by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
@@ -117,6 +116,7 @@ fun MapOnboardingSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 20.dp),
@@ -159,17 +159,25 @@ fun MapOnboardingSheet(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── 3-column rarity grid ─────────────────────────────────────────
-            LazyVerticalGrid(
-                columns             = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement   = Arrangement.spacedBy(8.dp),
-                modifier            = Modifier.fillMaxWidth(),
-                // Fixed height so the grid doesn't conflict with ModalBottomSheet scroll
-                userScrollEnabled   = false,
-            ) {
-                items(RARITY_PALETTE) { rarity ->
-                    RarityCell(rarity = rarity, idx = RARITY_PALETTE.indexOf(rarity))
+            // ── 3-column rarity grid (3 fixed rows — avoids nested scroll conflict) ──
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                RARITY_PALETTE.chunked(3).forEachIndexed { rowIdx, rowRarities ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier              = Modifier.fillMaxWidth(),
+                    ) {
+                        rowRarities.forEachIndexed { colIdx, rarity ->
+                            RarityCell(
+                                rarity   = rarity,
+                                idx      = rowIdx * 3 + colIdx,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        // Fill empty slots in last row if needed
+                        repeat(3 - rowRarities.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
                 }
             }
 
@@ -223,9 +231,9 @@ fun MapOnboardingSheet(
 }
 
 @Composable
-private fun RarityCell(rarity: RarityInfo, idx: Int) {
+private fun RarityCell(rarity: RarityInfo, idx: Int, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(10.dp))
             .background(rarityBg(rarity.id))
             .border(1.5.dp, rarityBorder(rarity.id), RoundedCornerShape(10.dp))
