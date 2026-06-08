@@ -405,4 +405,6 @@
     <string name="map_onboarding_rarities">Rarity tiers</string>
     <string name="map_onboarding_cta">Explore the map</string>
     <string name="map_onboarding_dont_show">Don\'t show again</string>
+    <string name="logbook_friends_empty">Your friends haven\'t logged any summits yet.\nKeep climbing and share your ascents.</string>
+    <string name="logbook_mine_empty">You haven\'t logged any ascents yet.</string>
 </resources>

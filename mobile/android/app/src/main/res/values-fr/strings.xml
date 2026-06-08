@@ -405,4 +405,6 @@
     <string name="map_onboarding_rarities">Niveaux de rareté</string>
     <string name="map_onboarding_cta">Explorer la carte</string>
     <string name="map_onboarding_dont_show">Ne plus afficher</string>
+    <string name="logbook_friends_empty">Tes amis n\'ont pas encore enregistré de sommet.\nContinue à grimper et partage tes ascensions.</string>
+    <string name="logbook_mine_empty">Tu n\'as encore aucune ascension enregistrée.</string>
 </resources>

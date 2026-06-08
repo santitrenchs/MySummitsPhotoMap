@@ -74,7 +74,6 @@ import com.peakadex.app.core.model.NearbyPeak
 import com.peakadex.app.core.model.Peak
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.peakadex.app.core.ui.FirstCardOnboardingBanner
 import com.peakadex.app.core.ui.SkeletonBlock
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
@@ -271,7 +270,6 @@ internal val PencilIcon: ImageVector by lazy {
 @Composable
 fun LogbookScreen(
     onAscentClick: (String) -> Unit,
-    onCaptureFirstSummit: () -> Unit = {},
     initialPeakId:       String? = null,
     initialPeakName:     String? = null,
     onPeakIdConsumed:    () -> Unit = {},
@@ -414,9 +412,9 @@ fun LogbookScreen(
                     filteredAscents.isEmpty() && (filters.peakId != null || filters.rarityId != null) ->
                         LogbookNoResultsState()
                     filteredAscents.isEmpty() && filters.viewFilter == ViewFilter.Friends ->
-                        LogbookFriendsEmptyState(onCaptureFirstSummit = onCaptureFirstSummit)
+                        LogbookFriendsEmptyState()
                     filteredAscents.isEmpty() ->
-                        LogbookEmptyState(onCaptureFirstSummit = onCaptureFirstSummit)
+                        LogbookEmptyState()
                     else ->
                         LogbookList(
                             ascents             = filteredAscents,
@@ -1154,30 +1152,34 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
 // ── States ─────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LogbookFriendsEmptyState(onCaptureFirstSummit: () -> Unit = {}) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
+private fun LogbookFriendsEmptyState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
     ) {
-        Spacer(Modifier.height(24.dp))
-        FirstCardOnboardingBanner(onCapture = onCaptureFirstSummit)
-        Spacer(Modifier.height(24.dp))
+        Text(
+            text      = stringResource(R.string.logbook_friends_empty),
+            fontSize  = 14.sp,
+            color     = Color(0xFF9CA3AF),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier  = Modifier.padding(horizontal = 32.dp),
+        )
     }
 }
 
 @Composable
-private fun LogbookEmptyState(onCaptureFirstSummit: () -> Unit = {}) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
+private fun LogbookEmptyState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
     ) {
-        Spacer(Modifier.height(24.dp))
-        FirstCardOnboardingBanner(onCapture = onCaptureFirstSummit)
-        Spacer(Modifier.height(24.dp))
+        Text(
+            text      = stringResource(R.string.logbook_mine_empty),
+            fontSize  = 14.sp,
+            color     = Color(0xFF9CA3AF),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier  = Modifier.padding(horizontal = 32.dp),
+        )
     }
 }
 

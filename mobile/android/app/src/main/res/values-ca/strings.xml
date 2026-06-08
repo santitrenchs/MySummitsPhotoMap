@@ -405,4 +405,6 @@
     <string name="map_onboarding_rarities">Nivells de raresa</string>
     <string name="map_onboarding_cta">Explorar el mapa</string>
     <string name="map_onboarding_dont_show">No tornar a mostrar</string>
+    <string name="logbook_friends_empty">Els teus amics encara no han pujat cap cim.\nContinua escalant i comparteix les teves ascensions.</string>
+    <string name="logbook_mine_empty">Encara no tens cap ascensió registrada.</string>
 </resources>

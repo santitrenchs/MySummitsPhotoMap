@@ -347,7 +347,6 @@ fun MainScaffold(navController: NavController) {
                     onAscentClick            = { ascentId ->
                         navController.navigate(Screen.AscentDetail.createRoute(ascentId))
                     },
-                    onCaptureFirstSummit     = { showNewAscent = true },
                     initialPeakId       = pendingPeakId,
                     initialPeakName     = pendingPeakName,
                     onPeakIdConsumed    = { pendingPeakId = null; pendingPeakName = null },

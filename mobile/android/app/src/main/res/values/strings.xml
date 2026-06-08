@@ -410,4 +410,6 @@
     <string name="map_onboarding_rarities">Niveles de rareza</string>
     <string name="map_onboarding_cta">Explorar el mapa</string>
     <string name="map_onboarding_dont_show">No volver a mostrar</string>
+    <string name="logbook_friends_empty">Tus amigos aún no han subido ninguna cima.\nSigue escalando y comparte tus ascensiones.</string>
+    <string name="logbook_mine_empty">Aún no tienes ninguna ascensión registrada.</string>
 </resources>
