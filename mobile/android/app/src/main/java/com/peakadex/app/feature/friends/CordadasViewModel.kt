@@ -215,9 +215,10 @@ class CordadasViewModel : ViewModel() {
     }
 
     fun leaveCordada(cordadaId: String, myUserId: String, onSuccess: () -> Unit = {}) {
-        // Optimistic removal — remove from list immediately so the user
-        // doesn't see the cordada after navigating back.
+        android.util.Log.d("CordadasVM", "leaveCordada START — cordadaId=$cordadaId myUserId='$myUserId'")
+        // Optimistic removal
         _state.update { s ->
+            android.util.Log.d("CordadasVM", "leaveCordada optimistic — cordadas before=${s.cordadas.size}")
             s.copy(
                 cordadas       = s.cordadas.filter { it.id != cordadaId },
                 selectedDetail = null,
@@ -225,16 +226,17 @@ class CordadasViewModel : ViewModel() {
         }
         viewModelScope.launch {
             try {
+                android.util.Log.d("CordadasVM", "leaveCordada calling API…")
                 api.removeCordadaMember(cordadaId, myUserId)
+                android.util.Log.d("CordadasVM", "leaveCordada API OK — calling onSuccess + load")
                 onSuccess()
-                load()   // sync with server after success
+                load()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                android.util.Log.e("CordadasVM", "leaveCordada failed: ${e.message}", e)
-                // Restore by reloading the real list from server
+                android.util.Log.e("CordadasVM", "leaveCordada API FAILED: ${e.javaClass.simpleName} — ${e.message}", e)
                 load()
-                onSuccess()  // still navigate back — let the reloaded list reflect truth
+                onSuccess()
             }
         }
     }
