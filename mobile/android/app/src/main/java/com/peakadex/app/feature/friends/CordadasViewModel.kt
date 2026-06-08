@@ -214,13 +214,28 @@ class CordadasViewModel : ViewModel() {
         }
     }
 
-    fun leaveCordada(cordadaId: String, myUserId: String) {
+    fun leaveCordada(cordadaId: String, myUserId: String, onSuccess: () -> Unit = {}) {
+        // Optimistic removal — remove from list immediately so the user
+        // doesn't see the cordada after navigating back.
+        _state.update { s ->
+            s.copy(
+                cordadas       = s.cordadas.filter { it.id != cordadaId },
+                selectedDetail = null,
+            )
+        }
         viewModelScope.launch {
             try {
                 api.removeCordadaMember(cordadaId, myUserId)
-                _state.update { it.copy(selectedDetail = null) }
+                onSuccess()
+                load()   // sync with server after success
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                android.util.Log.e("CordadasVM", "leaveCordada failed: ${e.message}", e)
+                // Restore by reloading the real list from server
                 load()
-            } catch (_: Exception) {}
+                onSuccess()  // still navigate back — let the reloaded list reflect truth
+            }
         }
     }
 
