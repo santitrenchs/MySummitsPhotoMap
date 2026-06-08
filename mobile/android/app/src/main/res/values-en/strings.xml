@@ -118,7 +118,7 @@
     <string name="home_onboarding_title">🏔️ Log your first ascent</string>
     <string name="onboarding_card_title">Your first card awaits</string>
     <string name="onboarding_card_desc">Capture a summit and unlock your first collectible mountain card.</string>
-    <string name="onboarding_card_btn">Capture my first summit</string>
+    <string name="onboarding_card_btn">Capture</string>
     <string name="onboarding_card_peak">Mont Blanc</string>
     <string name="onboarding_card_user">Luc Moreau</string>
     <string name="onboarding_card_date">22 Jul 2023</string>
