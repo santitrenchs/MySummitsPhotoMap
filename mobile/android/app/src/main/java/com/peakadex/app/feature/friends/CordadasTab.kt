@@ -1502,11 +1502,16 @@ fun CordadaDetailRoute(
     vm: CordadasViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
-    val currentUserId = AppContainer.authSession.currentUser.value?.id ?: ""
 
     LaunchedEffect(cordadaId) { vm.openDetail(cordadaId) }
 
     val detail = state.selectedDetail
+
+    // Derive currentUserId from the cordada member list (more reliable than authSession
+    // which may be null on first load). Fall back to authSession as last resort.
+    val currentUserId = detail?.members?.firstOrNull { it.isCurrentUser }?.userId
+        ?: AppContainer.authSession.currentUser.value?.id
+        ?: ""
     if (detail == null) {
         Surface(Modifier.fillMaxSize(), color = PeakBackground) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
