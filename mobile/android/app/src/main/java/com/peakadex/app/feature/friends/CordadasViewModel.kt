@@ -226,7 +226,7 @@ class CordadasViewModel : ViewModel() {
         }
         viewModelScope.launch {
             try {
-                android.util.Log.d("CordadasVM", "leaveCordada calling API…")
+                android.util.Log.d("CordadasVM", "leaveCordada calling API — cordadaId='$cordadaId' myUserId='$myUserId' (lengths: ${cordadaId.length}/${myUserId.length})")
                 api.removeCordadaMember(cordadaId, myUserId)
                 android.util.Log.d("CordadasVM", "leaveCordada API OK — calling onSuccess + load")
                 onSuccess()
