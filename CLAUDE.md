@@ -1659,7 +1659,8 @@ This fires on initial composition (when navigating from Atlas) and is unaffected
 | `Map<String, String?>` in `@Body` | Use typed `@Serializable data class` |
 | `createAscent` returns bare `Ascent` | Wrap in `AscentResponse(val ascent: Ascent)`, call `.ascent` |
 | `uploadPhoto` returns bare `Photo` | Wrap in `PhotoResponse(val photo: Photo)`, call `.photo` |
-| `getPeak` returns bare `Peak` | Server `GET /api/v1/peaks/{id}` returns `{ peak }` → wrap in `PeakResponse(val peak: Peak)`, call `.peak`. If deserialized as bare `Peak` it throws `MissingFieldException` (id/name/altitudeM have no defaults); swallowed by `runCatching` in `onCropDone`, leaving `selectedPeak` null so Atlas-preselected peak can't be saved until manually re-searched. |
+| `getPeak` returns bare `Peak` | Server `GET /api/v1/peaks/{id}` returns `{ peak }` → wrap in `PeakResponse(val peak: Peak)`, call `.peak`. If deserialized as bare `Peak` it throws `MissingFieldException` (id/name/altitudeM have no defaults). |
+| Atlas-preselected peak can't be saved (Save disabled) | `selectedPeak` must NOT depend on the `getPeak` network call. `setInitialPeak` selects a **minimal `Peak(id, name, altitudeM=0)`** immediately (submit only needs `peak.id`), so the form is valid even offline / if `getPeak` fails. `onCropDone` enriches it via `getPeak` best-effort, applying only if `selectedPeak?.id` still matches. Previously `selectedPeak` was set solely inside `onCropDone`'s `runCatching { getPeak }` — any failure (404/timeout/parse) silently left it null and Save stayed greyed until the user manually re-searched the peak. |
 | `Peak` missing `lat`/`lon` in response | Add `= 0.0` defaults to both fields |
 | `CancellationException` swallowed | Add `catch (e: CancellationException) { throw e }` first |
 | Scroll to index 0 after creation | Use `filteredAscents.indexOfFirst { it.id == highlightId }` |
