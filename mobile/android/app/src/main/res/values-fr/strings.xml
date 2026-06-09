@@ -76,6 +76,12 @@
     <!-- ── Carnet / Cartes ───────────────────────────────────────────────────── -->
     <string name="logbook_filter_mine">Mes Cartes</string>
     <string name="logbook_filter_friends">Ma Cordée</string>
+    <string name="logbook_search_hint">Rechercher des sommets…</string>
+    <string name="logbook_filters_title">Filtres</string>
+    <string name="logbook_filters_clear">Tout effacer</string>
+    <string name="logbook_filters_section_view">VUE</string>
+    <string name="logbook_filters_section_rarity">RARETÉ</string>
+    <string name="logbook_filters_see_cards">Voir %d cartes</string>
     <string name="logbook_stat_rarity">RARETÉ</string>
     <string name="logbook_stat_altitude">ALTITUDE</string>
     <string name="logbook_stat_ep">EP</string>

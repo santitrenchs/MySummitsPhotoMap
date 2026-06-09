@@ -79,6 +79,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -393,6 +395,11 @@ private fun AscentFormStep(
     var showDatePicker by remember { mutableStateOf(false) }
     var showDiscard    by remember { mutableStateOf(false) }
 
+    // Captured INSIDE the ModalBottomSheet window — Material3 renders sheet content
+    // in a separate window, so the host's FocusManager would clear the wrong window.
+    val focusManager       = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     val formattedDate = remember(state.date) {
         runCatching {
             LocalDate.parse(state.date).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
@@ -487,7 +494,13 @@ private fun AscentFormStep(
                 )
             } else {
                 TextButton(
-                    onClick  = onSubmit,
+                    onClick  = {
+                        // End the active TextInputSession in THIS (sheet) window so the
+                        // keyboard cannot re-show itself over the capture-reveal overlay.
+                        focusManager.clearFocus(force = true)
+                        keyboardController?.hide()
+                        onSubmit()
+                    },
                     modifier = Modifier.align(Alignment.CenterEnd),
                     enabled  = state.selectedPeak != null && !state.isLoading,
                 ) {

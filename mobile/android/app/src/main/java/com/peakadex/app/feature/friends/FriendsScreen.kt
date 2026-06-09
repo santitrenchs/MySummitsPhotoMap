@@ -251,24 +251,6 @@ internal val CrownIcon: ImageVector by lazy {
     }.build()
 }
 
-private val SearchIconVec: ImageVector by lazy {
-    ImageVector.Builder("Search", 20.dp, 20.dp, 24f, 24f).apply {
-        path(
-            stroke          = androidx.compose.ui.graphics.SolidColor(FriendsTextMuted),
-            strokeLineWidth = 2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-        ) {
-            moveTo(21f, 21f); lineTo(16.65f, 16.65f)
-            moveTo(19f, 11f)
-            curveTo(19f, 15.418f, 15.418f, 19f, 11f, 19f)
-            curveTo(6.582f, 19f, 3f, 15.418f, 3f, 11f)
-            curveTo(3f, 6.582f, 6.582f, 3f, 11f, 3f)
-            curveTo(15.418f, 3f, 19f, 6.582f, 19f, 11f)
-            close()
-        }
-    }.build()
-}
-
 // ── Avatar ─────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -328,36 +310,12 @@ private fun SearchBar(
     onQueryChange: (String) -> Unit,
     placeholder: String,
 ) {
-    Row(
-        modifier         = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF3F4F6))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector        = SearchIconVec,
-            contentDescription = null,
-            tint               = Color.Unspecified,
-            modifier           = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(8.dp))
-        BasicTextField(
-            value         = query,
-            onValueChange = onQueryChange,
-            singleLine    = true,
-            textStyle     = LocalTextStyle.current.copy(fontSize = 16.sp, color = FriendsTextPrimary),
-            cursorBrush   = SolidColor(PeakBlueActive),
-            modifier      = Modifier.weight(1f),
-            decorationBox = { inner ->
-                if (query.isEmpty()) {
-                    Text(placeholder, fontSize = 16.sp, color = FriendsTextMuted)
-                }
-                inner()
-            },
-        )
-    }
+    com.peakadex.app.core.ui.PeakSearchField(
+        value         = query,
+        onValueChange = onQueryChange,
+        placeholder   = placeholder,
+        modifier      = Modifier.fillMaxWidth(),
+    )
 }
 
 // ── Rows ───────────────────────────────────────────────────────────────────────

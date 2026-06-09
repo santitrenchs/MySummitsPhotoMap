@@ -23,6 +23,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -218,6 +220,7 @@ private fun gridPointFor(lat: Double, lon: Double, grid: PeakTileGrid): GridPoin
 }
 
 // ── Custom icons ───────────────────────────────────────────────────────────────
+// Search + filter icons now live in core/ui/PeakSearchComponents.kt (shared).
 
 private val CloseSmallIcon: ImageVector by lazy {
     ImageVector.Builder("CloseSmall", 16.dp, 16.dp, 16f, 16f).apply {
@@ -364,20 +367,24 @@ fun LogbookScreen(
             }
         }
     }
-    // Always show filter bar when the active filter changes
-    LaunchedEffect(filters.viewFilter) { isFilterBarVisible = true }
+    // Always show filter bar when filters change (so user sees their active state)
+    LaunchedEffect(filters.isDirty) { isFilterBarVisible = true }
+
+    var showFiltersPanel by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().nestedScroll(filterScrollConnection)) {
 
-        // ── Quick filter: Mis Cards | Mi Cordada ──────────────────────────────
+        // ── Search + filters button bar ───────────────────────────────────────
         AnimatedVisibility(
             visible = isFilterBarVisible,
             enter   = slideInVertically(animationSpec = tween(200), initialOffsetY = { -it }),
             exit    = slideOutVertically(animationSpec = tween(200), targetOffsetY = { -it }),
         ) {
             QuickFilterBar(
-                viewFilter         = filters.viewFilter,
-                onViewFilterChange = vm::setViewFilter,
+                filters        = filters,
+                filteredCount  = filteredAscents.size,
+                onSearchChange = vm::setSearch,
+                onOpenFilters  = { showFiltersPanel = true },
             )
         }
 
@@ -389,8 +396,10 @@ fun LogbookScreen(
             )
         }
 
-        // ── Rarity filter chip — only when navigating from Home charts ─────
-        if (filters.rarityId != null) {
+        // ── Rarity filter chip — shown when set from Home charts ──────────
+        // (when rarityId is set from the filter panel there's no separate chip;
+        //  the filters button itself turns blue to indicate active state)
+        if (filters.rarityId != null && filters.peakId == null) {
             val rarityInfo = RARITY_PALETTE.find { it.id == filters.rarityId }
             if (rarityInfo != null) {
                 RarityFilterChip(
@@ -409,7 +418,7 @@ fun LogbookScreen(
                 modifier     = Modifier.fillMaxSize(),
             ) {
                 when {
-                    filteredAscents.isEmpty() && (filters.peakId != null || filters.rarityId != null) ->
+                    filteredAscents.isEmpty() && (filters.peakId != null || filters.rarityId != null || filters.mythic || filters.search.isNotBlank()) ->
                         LogbookNoResultsState()
                     filteredAscents.isEmpty() && filters.viewFilter == ViewFilter.Friends ->
                         LogbookFriendsEmptyState()
@@ -428,46 +437,254 @@ fun LogbookScreen(
             }
         }
     }
+
+    // ── Filters panel ─────────────────────────────────────────────────────────
+    if (showFiltersPanel) {
+        LogbookFiltersPanel(
+            filters        = filters,
+            filteredCount  = filteredAscents.size,
+            onViewFilterChange = vm::setViewFilter,
+            onRarityChange     = vm::setRarityId,
+            onMythicChange     = vm::setMythic,
+            onClearAll         = vm::clearFilters,
+            onDismiss          = { showFiltersPanel = false },
+        )
+    }
 }
 
-// ── Quick filter bar — SecondaryTabRow (M3) ───────────────────────────────────
+// ── Quick filter bar — search + filters button ────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QuickFilterBar(
-    viewFilter: ViewFilter,
-    onViewFilterChange: (ViewFilter) -> Unit,
+    filters: LogbookFilterState,
+    filteredCount: Int,
+    onSearchChange: (String) -> Unit,
+    onOpenFilters: () -> Unit,
 ) {
-    val selectedIndex = if (viewFilter == ViewFilter.Mine) 0 else 1
-    SecondaryTabRow(
-        selectedTabIndex = selectedIndex,
-        containerColor   = Color.White,
-        contentColor     = PeakBlueActive,
-        modifier         = Modifier.fillMaxWidth(),
+    val hasActiveFilters = filters.isDirty
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White),
     ) {
-        Tab(
-            selected = selectedIndex == 0,
-            onClick  = { onViewFilterChange(ViewFilter.Mine) },
-            icon = {
-                Icon(
-                    imageVector        = SoloPersonIcon,
-                    contentDescription = stringResource(R.string.logbook_filter_mine),
-                    tint               = if (selectedIndex == 0) PeakBlueActive else PeakMuted,
-                    modifier           = Modifier.size(24.dp),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            com.peakadex.app.core.ui.PeakSearchField(
+                value         = filters.search,
+                onValueChange = onSearchChange,
+                placeholder   = stringResource(R.string.logbook_search_hint),
+                modifier      = Modifier.weight(1f),
+            )
+            com.peakadex.app.core.ui.PeakFilterButton(
+                label     = stringResource(R.string.logbook_filters_title),
+                active    = hasActiveFilters,
+                showBadge = hasActiveFilters,
+                onClick   = onOpenFilters,
+            )
+        }
+        HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.06f))
+    }
+}
+
+// ── Filters panel (ModalBottomSheet) ─────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun LogbookFiltersPanel(
+    filters: LogbookFilterState,
+    filteredCount: Int,
+    onViewFilterChange: (ViewFilter) -> Unit,
+    onRarityChange: (String?) -> Unit,
+    onMythicChange: (Boolean) -> Unit,
+    onClearAll: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState       = sheetState,
+        containerColor   = Color.White,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(bottom = 20.dp),
+        ) {
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text       = stringResource(R.string.logbook_filters_title),
+                    fontSize   = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = Color(0xFF111827),
+                    modifier   = Modifier.weight(1f),
                 )
-            },
-        )
-        Tab(
-            selected = selectedIndex == 1,
-            onClick  = { onViewFilterChange(ViewFilter.Friends) },
-            icon = {
-                Icon(
-                    imageVector        = CordadaIcon,
-                    contentDescription = stringResource(R.string.logbook_filter_friends),
-                    tint               = if (selectedIndex == 1) PeakBlueActive else PeakMuted,
-                    modifier           = Modifier.size(24.dp),
+                if (filters.isDirty) {
+                    TextButton(onClick = onClearAll) {
+                        Text(
+                            text     = stringResource(R.string.logbook_filters_clear),
+                            fontSize = 14.sp,
+                            color    = PeakBlueActive,
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(color = Color(0xFFF3F4F6))
+            Spacer(Modifier.height(16.dp))
+
+            // ── VISTA ──────────────────────────────────────────────────────────
+            Text(
+                text     = stringResource(R.string.logbook_filters_section_view),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.08.em,
+                color    = PeakMuted,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterToggleChip(
+                    label    = stringResource(R.string.logbook_filter_mine),
+                    selected = filters.viewFilter == ViewFilter.Mine,
+                    onClick  = { onViewFilterChange(ViewFilter.Mine) },
                 )
-            },
+                FilterToggleChip(
+                    label    = stringResource(R.string.logbook_filter_friends),
+                    selected = filters.viewFilter == ViewFilter.Friends,
+                    onClick  = { onViewFilterChange(ViewFilter.Friends) },
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // ── RAREZA ─────────────────────────────────────────────────────────
+            Text(
+                text     = stringResource(R.string.logbook_filters_section_rarity),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.08.em,
+                color    = PeakMuted,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            FlowRow(
+                modifier            = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement   = Arrangement.spacedBy(8.dp),
+            ) {
+                RARITY_PALETTE.forEach { rarity ->
+                    val isSelected = !filters.mythic && filters.rarityId == rarity.id
+                    RarityToggleChip(
+                        rarity   = rarity,
+                        selected = isSelected,
+                        onClick  = {
+                            if (isSelected) onRarityChange(null)
+                            else { onMythicChange(false); onRarityChange(rarity.id) }
+                        },
+                    )
+                }
+                // Mythic chip
+                val mythicSelected = filters.mythic
+                FilterToggleChip(
+                    label    = "⭐ Mítico",
+                    selected = mythicSelected,
+                    selectedBg     = Color(0xFFFFFBEB),
+                    selectedBorder = Color(0xFFFDE68A),
+                    selectedText   = Color(0xFF92400E),
+                    onClick  = {
+                        if (mythicSelected) onMythicChange(false)
+                        else { onRarityChange(null); onMythicChange(true) }
+                    },
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── CTA ────────────────────────────────────────────────────────────
+            Button(
+                onClick  = onDismiss,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .height(50.dp),
+                shape  = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
+            ) {
+                Text(
+                    text       = stringResource(R.string.logbook_filters_see_cards, filteredCount),
+                    fontSize   = 15.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color      = Color.White,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterToggleChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    selectedBg: Color     = Color(0xFFEFF6FF),
+    selectedBorder: Color = Color(0xFF7DD3FC),
+    selectedText: Color   = Color(0xFF0369A1),
+) {
+    val bg     = if (selected) selectedBg     else Color(0xFFF1F5F9)
+    val border = if (selected) selectedBorder else Color.Transparent
+    val text   = if (selected) selectedText   else Color(0xFF374151)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(100.dp))
+            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onClick() }
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = text)
+    }
+}
+
+@Composable
+private fun RarityToggleChip(
+    rarity: RarityInfo,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val bg     = if (selected) rarity.color.copy(alpha = 0.13f) else Color(0xFFF1F5F9)
+    val border = if (selected) rarity.color.copy(alpha = 0.45f) else Color.Transparent
+    val text   = if (selected) rarity.color else Color(0xFF374151)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(100.dp))
+            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onClick() }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text       = "✿ ${rarity.label}",
+            fontSize   = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color      = text,
         )
     }
 }

@@ -1042,87 +1042,20 @@ private fun SearchBarOverlay(
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Search pill
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .shadow(4.dp, RoundedCornerShape(28.dp))
-                .background(androidx.compose.ui.graphics.Color.White, RoundedCornerShape(28.dp))
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector        = SearchIcon,
-                contentDescription = null,
-                tint               = PeakSubtle,
-                modifier           = Modifier.size(20.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            OutlinedTextField(
-                value         = query,
-                onValueChange = onQuery,
-                placeholder   = {
-                    Text(stringResource(R.string.atlas_search_placeholder),
-                        fontSize = 14.sp, color = PeakSubtle)
-                },
-                singleLine = true,
-                modifier   = Modifier.weight(1f),
-                colors     = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
-                    focusedBorderColor   = androidx.compose.ui.graphics.Color.Transparent,
-                ),
-            )
-            if (isActive) {
-                IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        imageVector        = CloseIcon,
-                        contentDescription = stringResource(R.string.atlas_action_close),
-                        tint               = PeakMuted,
-                        modifier           = Modifier.size(18.dp),
-                    )
-                }
-            }
-        }
-
-        // Filtros button
-        val filtersActive = filtersOpen || hasActiveFilters
-        Box {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .shadow(4.dp, RoundedCornerShape(28.dp))
-                    .background(
-                        if (filtersActive) PeakSlate else androidx.compose.ui.graphics.Color.White,
-                        RoundedCornerShape(28.dp),
-                    )
-                    .clickable(onClick = onToggleFilters)
-                    .padding(horizontal = 16.dp),
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(
-                    imageVector        = FiltersIcon,
-                    contentDescription = stringResource(R.string.atlas_btn_filters),
-                    tint               = if (filtersActive) androidx.compose.ui.graphics.Color.White else PeakSlate,
-                    modifier           = Modifier.size(16.dp),
-                )
-                Text(
-                    text       = stringResource(R.string.atlas_btn_filters),
-                    fontSize   = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = if (filtersActive) androidx.compose.ui.graphics.Color.White else PeakSlate,
-                )
-            }
-            if (hasActiveFilters && !filtersOpen) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .align(Alignment.TopEnd)
-                        .offset(x = 2.dp, y = (-2).dp)
-                        .background(PeakBlueActive, CircleShape),
-                )
-            }
-        }
+        com.peakadex.app.core.ui.PeakSearchField(
+            value         = query,
+            onValueChange = onQuery,
+            placeholder   = stringResource(R.string.atlas_search_placeholder),
+            modifier      = Modifier.weight(1f),
+            showClear     = isActive,
+            onClear       = onDismiss,
+        )
+        com.peakadex.app.core.ui.PeakFilterButton(
+            label     = stringResource(R.string.atlas_btn_filters),
+            active    = filtersOpen || hasActiveFilters,
+            showBadge = hasActiveFilters && !filtersOpen,
+            onClick   = onToggleFilters,
+        )
     }
 }
 
@@ -2398,21 +2331,6 @@ private val TrailsIcon: ImageVector by lazy {
             strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round,
         ) { moveTo(3f, 20f); lineTo(8f, 12f); lineTo(13f, 16f); lineTo(18f, 8f); lineTo(22f, 11f) }
-    }.build()
-}
-
-// Filters (3 decreasing-width lines) icon
-private val FiltersIcon: ImageVector by lazy {
-    ImageVector.Builder("Filters", 24.dp, 24.dp, 24f, 24f).apply {
-        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
-            strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
-        ) { moveTo(4f, 6f);  lineTo(20f, 6f)  }
-        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
-            strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
-        ) { moveTo(7f, 12f); lineTo(17f, 12f) }
-        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
-            strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
-        ) { moveTo(10f, 18f); lineTo(14f, 18f) }
     }.build()
 }
 

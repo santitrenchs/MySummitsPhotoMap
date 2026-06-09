@@ -567,29 +567,10 @@ private fun CimasTab(
 
         // Search field
         item(key = "search") {
-            OutlinedTextField(
-                value         = query,
-                onValueChange = onQuery,
-                placeholder   = { Text(stringResource(R.string.profile_search_placeholder), fontSize = 14.sp, color = PeakSubtle) },
-                singleLine    = true,
-                leadingIcon   = {
-                    Icon(
-                        imageVector        = SearchIcon,
-                        contentDescription = null,
-                        tint               = PeakSubtle,
-                        modifier           = Modifier.size(18.dp),
-                    )
-                },
-                trailingIcon = if (query.isNotEmpty()) ({
-                    IconButton(onClick = { onQuery("") }) {
-                        Icon(
-                            imageVector        = CloseIcon,
-                            contentDescription = stringResource(R.string.action_clear),
-                            tint               = PeakSubtle,
-                            modifier           = Modifier.size(16.dp),
-                        )
-                    }
-                }) else null,
+            com.peakadex.app.core.ui.PeakSearchField(
+                value           = query,
+                onValueChange   = onQuery,
+                placeholder     = stringResource(R.string.profile_search_placeholder),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
                     onSearch = {
@@ -599,14 +580,6 @@ private fun CimasTab(
                         }
                     },
                 ),
-                shape  = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = PeakBlueActive,
-                    unfocusedBorderColor = PeakBorderLight,
-                    focusedContainerColor   = Color.White,
-                    unfocusedContainerColor = Color.White,
-                ),
-                textStyle = TextStyle(fontSize = 14.sp, color = PeakNavyDark),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),

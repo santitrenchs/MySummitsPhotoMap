@@ -1348,6 +1348,31 @@ The global create-FAB lives in `MainScaffold` and is gated to `Logbook`/`Cards` 
 
 ---
 
+## Search fields & filter buttons — app-wide shared components (Android, 2026-06-09)
+
+**RULE (mandatory): every search input and every filter button in the Android app MUST use the shared components in `core/ui/PeakSearchComponents.kt`. Never hand-roll a new `OutlinedTextField` / `BasicTextField` search bar or a custom filter button per screen.** If you add a new filter or a new search field anywhere, reuse `PeakSearchField` / `PeakFilterButton`. If they lack a capability you need, **extend the shared component with a new optional parameter** — do not fork the styling locally.
+
+**Why:** before unification there were 3 different search-bar styles and 2 different filter-button styles (different heights 38/44/56dp, two grays, pill vs 12dp, shadow vs flat, text 14/15/16sp). The shared components are the single source of truth.
+
+**`PeakSearchField`** — unified search input:
+- **Material 3 aligned:** pill `RoundedCornerShape(24.dp)`, filled **white** surface, subtle **2dp** elevation (readable both floating over the Atlas map and inline on white screens).
+- **Height 48dp** — Material minimum touch target.
+- **Text + placeholder are 16sp** — this is the **iOS-gotcha compliance point** (inputs < 16px trigger iOS Safari auto-zoom; we keep 16sp everywhere so the same spec ports to web/iOS). **Never drop below 16sp.**
+- Leading search icon 18dp (`PeakMuted`), cursor `PeakBlueActive`, placeholder `PeakSubtle`, text `PeakTextHeadline`.
+- Clear button shown when non-empty (override via `showClear` / `onClear`).
+- Flexible params: `keyboardOptions`, `keyboardActions`, `enabled`, `modifier` (outer Row — for `weight`/`fillMaxWidth`/`bringIntoViewRequester`), `textFieldModifier` (inner `BasicTextField` — for `focusRequester`/`onFocusChanged`).
+
+**`PeakFilterButton`** — unified filter button:
+- Same pill shape / 48dp height / 2dp elevation. Funnel `FiltersIcon` (16dp) + label (14sp Bold).
+- Active appearance (`active = filtersOpen || hasActiveFilters`) → **`PeakSlate`** bg + white content. Inactive → white bg + `PeakSlate` content.
+- Blue dot badge via `showBadge = hasActiveFilters && !filtersOpen` (`PeakBlueActive`).
+
+**Current consumers (all migrated 2026-06-09):** Atlas (search + filter), Cards/Logbook (search + filter), Friends (search), Cordadas invite sheet (search), Cordadas member picker (search, uses `textFieldModifier` for `focusRequester`), Profile Cimas tab (search). The per-screen `SearchIcon`/`FiltersIcon`/`SearchIconVec`/`SearchIconSmall` private icons were deleted — the icons now live inside `PeakSearchComponents.kt`.
+
+**Out of scope (not search/filter — keep their own styling):** the New-Ascent peak picker / route / notes / tag inputs (form autocomplete), invitation email field, Login email/password, and Settings account/password fields. These are form/auth inputs, not search bars.
+
+---
+
 ## Cordadas + Amigos — Unified Social Screen (Android, updated 2026-06-04)
 
 > **Authoritative cross-platform spec.** This is the reference for rebuilding the Amigos + Cordadas section on **web** and **iOS**. The Android implementation in `mobile/android/.../feature/friends/` is the reference. Follow the navigation, layout, behaviours, Material patterns and data contracts below exactly. See `CLAUDE.md → "Cordadas — Climbing Groups"` for the data model + API and the deeper rationale of every fix.

@@ -1659,8 +1659,6 @@ This fires on initial composition (when navigating from Atlas) and is unaffected
 | `Map<String, String?>` in `@Body` | Use typed `@Serializable data class` |
 | `createAscent` returns bare `Ascent` | Wrap in `AscentResponse(val ascent: Ascent)`, call `.ascent` |
 | `uploadPhoto` returns bare `Photo` | Wrap in `PhotoResponse(val photo: Photo)`, call `.photo` |
-| `getPeak` returns bare `Peak` | Server `GET /api/v1/peaks/{id}` returns `{ peak }` → wrap in `PeakResponse(val peak: Peak)`, call `.peak`. If deserialized as bare `Peak` it throws `MissingFieldException` (id/name/altitudeM have no defaults). |
-| Atlas-preselected peak can't be saved (Save disabled) | `selectedPeak` must NOT depend on the `getPeak` network call. `setInitialPeak` selects a **minimal `Peak(id, name, altitudeM=0)`** immediately (submit only needs `peak.id`), so the form is valid even offline / if `getPeak` fails. `onCropDone` enriches it via `getPeak` best-effort, applying only if `selectedPeak?.id` still matches. Previously `selectedPeak` was set solely inside `onCropDone`'s `runCatching { getPeak }` — any failure (404/timeout/parse) silently left it null and Save stayed greyed until the user manually re-searched the peak. |
 | `Peak` missing `lat`/`lon` in response | Add `= 0.0` defaults to both fields |
 | `CancellationException` swallowed | Add `catch (e: CancellationException) { throw e }` first |
 | Scroll to index 0 after creation | Use `filteredAscents.indexOfFirst { it.id == highlightId }` |
@@ -2055,11 +2053,19 @@ onAscentClick = { ascentId, isOwn ->
 
 ---
 
-### Cards screen — simplified filter (SecondaryTabRow)
+### Search fields & filter buttons — shared components (Android, 2026-06-09)
 
-Removed: search bar, filter button, active chips row, full filter bottom sheet.
+**MANDATORY RULE: every search input and every filter button in the Android app uses the shared components in `core/ui/PeakSearchComponents.kt` — `PeakSearchField` and `PeakFilterButton`. Never hand-roll a per-screen `OutlinedTextField`/`BasicTextField` search bar or a custom filter button.** If you add a new filter or search field anywhere, reuse these. If they lack a capability, **extend the shared component with a new optional param** — do not fork the styling locally.
 
-Filter: `SecondaryTabRow` (M3) with two `Tab` items — replaces the previous `SingleChoiceSegmentedButtonRow` (was ~60dp, new tabs are 48dp flat, no padding).
+- `PeakSearchField`: pill (24dp radius), white fill + 2dp elevation, **48dp** height, **16sp** text + placeholder (iOS-gotcha: never < 16sp), leading lupa, clear button. Params: `keyboardOptions`, `keyboardActions`, `enabled`, `showClear`/`onClear`, `modifier` (outer Row), `textFieldModifier` (inner `BasicTextField`, for `focusRequester`/`onFocusChanged`).
+- `PeakFilterButton`: same pill/48dp/elevation, funnel icon + 14sp Bold label. `active` → `PeakSlate` bg; `showBadge` → blue `PeakBlueActive` dot.
+- Consumers (all migrated): Atlas, Cards/Logbook, Friends, Cordadas invite + member picker, Profile Cimas. Per-screen search/filter icons were deleted (icons live inside the shared file).
+- Out of scope (form/auth inputs, keep own styling): New-Ascent peak picker/route/notes/tags, invitation email, Login, Settings.
+- Full spec: `DESIGN.md → "Search fields & filter buttons — app-wide shared components"`.
+
+### Cards screen — filter (search + filters button via shared components)
+
+Cards uses `PeakSearchField` (local name-search via `vm.setSearch`) + `PeakFilterButton` (opens `LogbookFiltersPanel` ModalBottomSheet with **Vista** Mías/Mi Cordada + **Rareza** pills + Mítico + CTA "Ver N cartas"). This replaced the earlier two-tab `SecondaryTabRow` (which itself replaced `SingleChoiceSegmentedButtonRow`). The view-filter values are unchanged:
 
 | Tab index | Label | Filter | Sort |
 |---|---|---|---|
@@ -2069,43 +2075,29 @@ Filter: `SecondaryTabRow` (M3) with two `Tab` items — replaces the previous `S
 **"Mi Cordada" never shows own cards** — `ViewFilter.Friends` filters `isOwn == false`.
 
 ```kotlin
-@OptIn(ExperimentalMaterial3Api::class)
+// QuickFilterBar = PeakSearchField + PeakFilterButton (shared components).
+// The view filter (Mine/Friends) now lives inside LogbookFiltersPanel, NOT as tabs.
 @Composable
-private fun QuickFilterBar(viewFilter: ViewFilter, onViewFilterChange: (ViewFilter) -> Unit) {
-    val selectedIndex = if (viewFilter == ViewFilter.Mine) 0 else 1
-    SecondaryTabRow(
-        selectedTabIndex = selectedIndex,
-        containerColor   = Color.White,
-        contentColor     = PeakBlueActive,
-        modifier         = Modifier.fillMaxWidth(),
-    ) {
-        Tab(
-            selected = selectedIndex == 0,
-            onClick  = { onViewFilterChange(ViewFilter.Mine) },
-            text     = {
-                Text(
-                    stringResource(R.string.logbook_filter_mine),
-                    fontSize   = 13.sp,
-                    fontWeight = if (selectedIndex == 0) FontWeight.SemiBold else FontWeight.Normal,
-                    color      = if (selectedIndex == 0) PeakBlueActive else PeakMuted,
-                )
-            },
-        )
-        Tab(
-            selected = selectedIndex == 1,
-            onClick  = { onViewFilterChange(ViewFilter.Friends) },
-            text     = {
-                Text(
-                    stringResource(R.string.logbook_filter_friends),
-                    fontSize   = 13.sp,
-                    fontWeight = if (selectedIndex == 1) FontWeight.SemiBold else FontWeight.Normal,
-                    color      = if (selectedIndex == 1) PeakBlueActive else PeakMuted,
-                )
-            },
-        )
+private fun QuickFilterBar(
+    filters: LogbookFilterState,
+    filteredCount: Int,
+    onSearchChange: (String) -> Unit,
+    onOpenFilters: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().background(Color.White)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PeakSearchField(filters.search, onSearchChange,
+                stringResource(R.string.logbook_search_hint), Modifier.weight(1f))
+            PeakFilterButton(stringResource(R.string.logbook_filters_title),
+                active = filters.isDirty, showBadge = filters.isDirty, onClick = onOpenFilters)
+        }
+        HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.06f))
     }
 }
 ```
+
+**`LogbookFiltersPanel`** (ModalBottomSheet, opened by the filters button): **VISTA** (`FilterToggleChip` Mías/Mi Cordada → `vm.setViewFilter`), **RAREZA** (`FlowRow` of `RarityToggleChip` from `RARITY_PALETTE` → `vm.setRarityId`, + Mítico → `vm.setMythic`), header "Limpiar todo" (when `isDirty` → `vm.clearFilters`), CTA "Ver N cartas" (closes panel). `filters.isDirty` includes `search.isNotBlank()`.
 
 **Peak filter chip** — shown only when navigating from Atlas (or Cimas tab):
 

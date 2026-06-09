@@ -22,7 +22,7 @@ data class LogbookFilterState(
 ) {
     val isDirty: Boolean
         // Friends is the default — only other views count as dirty
-        get() = viewFilter != ViewFilter.Friends || rarityId != null || mythic || timeRange != TimeRange.All || sort != SortOrder.DateDesc || peakId != null
+        get() = viewFilter != ViewFilter.Friends || rarityId != null || mythic || timeRange != TimeRange.All || sort != SortOrder.DateDesc || peakId != null || search.isNotBlank()
 }
 
 fun getRarityIdForAltitude(altitudeM: Int): String = when {

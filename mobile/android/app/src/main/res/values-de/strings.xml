@@ -76,6 +76,12 @@
     <!-- ── Logbuch / Karten ──────────────────────────────────────────────────── -->
     <string name="logbook_filter_mine">Meine Karten</string>
     <string name="logbook_filter_friends">Meine Seilschaft</string>
+    <string name="logbook_search_hint">Gipfel suchen…</string>
+    <string name="logbook_filters_title">Filter</string>
+    <string name="logbook_filters_clear">Alle löschen</string>
+    <string name="logbook_filters_section_view">ANSICHT</string>
+    <string name="logbook_filters_section_rarity">SELTENHEIT</string>
+    <string name="logbook_filters_see_cards">%d Karten anzeigen</string>
     <string name="logbook_stat_rarity">SELTENHEIT</string>
     <string name="logbook_stat_altitude">HÖHE</string>
     <string name="logbook_stat_ep">EP</string>

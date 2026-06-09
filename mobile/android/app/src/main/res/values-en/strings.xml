@@ -76,6 +76,12 @@
     <!-- ── Logbook / Cards ──────────────────────────────────────────────────── -->
     <string name="logbook_filter_mine">My Cards</string>
     <string name="logbook_filter_friends">My Rope Team</string>
+    <string name="logbook_search_hint">Search summits…</string>
+    <string name="logbook_filters_title">Filters</string>
+    <string name="logbook_filters_clear">Clear all</string>
+    <string name="logbook_filters_section_view">VIEW</string>
+    <string name="logbook_filters_section_rarity">RARITY</string>
+    <string name="logbook_filters_see_cards">See %d cards</string>
     <string name="logbook_stat_rarity">RARITY</string>
     <string name="logbook_stat_altitude">ALTITUDE</string>
     <string name="logbook_stat_ep">EP</string>

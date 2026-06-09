@@ -459,23 +459,6 @@ private val PhotoImageIcon: ImageVector by lazy {
     }.build()
 }
 
-private val SearchIconSmall: ImageVector by lazy {
-    ImageVector.Builder("Search", 18.dp, 18.dp, 24f, 24f).apply {
-        path(
-            stroke          = SolidColor(Color(0xFF9CA3AF)),
-            strokeLineWidth = 2f,
-            strokeLineCap   = StrokeCap.Round,
-        ) {
-            moveTo(21f, 21f); lineTo(16.65f, 16.65f)
-            moveTo(19f, 11f)
-            curveTo(19f, 15.418f, 15.418f, 19f, 11f, 19f)
-            curveTo(6.582f, 19f, 3f, 15.418f, 3f, 11f)
-            curveTo(3f, 6.582f, 6.582f, 3f, 11f, 3f)
-            curveTo(15.418f, 3f, 19f, 6.582f, 19f, 11f)
-            close()
-        }
-    }.build()
-}
 
 // ── Shared sheet shell ─────────────────────────────────────────────────────────
 
@@ -911,51 +894,32 @@ fun CreateCordadaSheet(
                         )
                     }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF3F4F6))
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(SearchIconSmall, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        BasicTextField(
-                            value = memberQuery,
-                            onValueChange = { value ->
-                                memberQuery = value
-                                scope.launch {
-                                    delay(120)
-                                    membersBlockBringIntoView.bringIntoView()
+                    com.peakadex.app.core.ui.PeakSearchField(
+                        value = memberQuery,
+                        onValueChange = { value ->
+                            memberQuery = value
+                            scope.launch {
+                                delay(120)
+                                membersBlockBringIntoView.bringIntoView()
+                            }
+                        },
+                        placeholder     = stringResource(R.string.cordadas_invite_search),
+                        enabled         = !isCreating,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                        modifier        = Modifier.fillMaxWidth(),
+                        textFieldModifier = Modifier
+                            .focusRequester(membersFocusRequester)
+                            .onFocusChanged {
+                                memberSearchFocused = it.isFocused
+                                if (it.isFocused) {
+                                    scope.launch {
+                                        delay(250)
+                                        membersBlockBringIntoView.bringIntoView()
+                                    }
                                 }
                             },
-                            singleLine = true,
-                            enabled = !isCreating,
-                            textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, color = Color(0xFF111827)),
-                            cursorBrush = SolidColor(PeakBlueActive),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = { focusManager.clearFocus() },
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .focusRequester(membersFocusRequester)
-                                .onFocusChanged {
-                                    memberSearchFocused = it.isFocused
-                                    if (it.isFocused) {
-                                        scope.launch {
-                                            delay(250)
-                                            membersBlockBringIntoView.bringIntoView()
-                                        }
-                                    }
-                                },
-                            decorationBox = { inner ->
-                                if (memberQuery.isEmpty()) Text(stringResource(R.string.cordadas_invite_search), fontSize = 16.sp, color = Color(0xFF9CA3AF))
-                                inner()
-                            },
-                        )
-                    }
+                    )
 
                     if (showMemberSuggestions && !memberSearchFocused) {
                         MemberSuggestionList(
@@ -1037,43 +1001,24 @@ private fun InviteSheet(
                 modifier   = Modifier.padding(bottom = 12.dp),
             )
             // Search bar
-            Row(
-                modifier         = Modifier
+            com.peakadex.app.core.ui.PeakSearchField(
+                value           = query,
+                onValueChange   = onQueryChange,
+                placeholder     = stringResource(R.string.cordadas_invite_search),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                modifier        = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF3F4F6))
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(SearchIconSmall, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                BasicTextField(
-                    value         = query,
-                    onValueChange = onQueryChange,
-                    singleLine    = true,
-                    textStyle     = LocalTextStyle.current.copy(fontSize = 16.sp, color = Color(0xFF111827)),
-                    cursorBrush   = SolidColor(PeakBlueActive),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = { focusManager.clearFocus() },
-                    ),
-                    modifier      = Modifier
-                        .weight(1f)
-                        .bringIntoViewRequester(searchBringIntoView)
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                scope.launch {
-                                    delay(250)
-                                    searchBringIntoView.bringIntoView()
-                                }
+                    .bringIntoViewRequester(searchBringIntoView)
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            scope.launch {
+                                delay(250)
+                                searchBringIntoView.bringIntoView()
                             }
-                        },
-                    decorationBox = { inner ->
-                        if (query.isEmpty()) Text(stringResource(R.string.cordadas_invite_search), fontSize = 16.sp, color = Color(0xFF9CA3AF))
-                        inner()
+                        }
                     },
-                )
-            }
+            )
             Spacer(Modifier.height(8.dp))
             // Results
             if (isSearching) {
