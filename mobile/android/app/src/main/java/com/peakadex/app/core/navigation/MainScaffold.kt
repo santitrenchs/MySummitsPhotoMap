@@ -40,6 +40,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.peakadex.app.AppContainer
+import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.PeakadexLogo
@@ -161,9 +162,10 @@ fun MainScaffold(navController: NavController) {
         }
     }
 
-    // Always show the bar when switching tabs
+    // Always show the bar when switching tabs + log the screen view
     LaunchedEffect(currentRoute) {
         isBottomBarVisible = true
+        Telemetry.logScreen(currentRoute)
     }
 
     // Outer Box so captureReveal can overlay the full screen (including top/bottom bars)

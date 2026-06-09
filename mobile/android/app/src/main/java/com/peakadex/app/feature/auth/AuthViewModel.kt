@@ -14,6 +14,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.peakadex.app.AppContainer
 import com.peakadex.app.BuildConfig
 import com.peakadex.app.R
+import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.model.RegisterRequest
 import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +53,7 @@ class AuthViewModel : ViewModel() {
                     mapOf("email" to email.trim(), "password" to password)
                 )
                 AppContainer.authSession.login(response.token, response.user)
+                Telemetry.logEvent(Telemetry.Event.LOGIN, mapOf(Telemetry.PARAM_METHOD to "password"))
                 _uiState.value = AuthUiState.Success
             } catch (e: HttpException) {
                 Log.e(TAG, "login HTTP ${e.code()}")
@@ -105,6 +107,7 @@ class AuthViewModel : ViewModel() {
                     )
                 )
                 AppContainer.authSession.login(response.token, response.user)
+                Telemetry.logEvent(Telemetry.Event.SIGN_UP, mapOf(Telemetry.PARAM_METHOD to "password"))
                 _uiState.value = AuthUiState.Success
             } catch (e: HttpException) {
                 _uiState.value = AuthUiState.Error(
@@ -145,6 +148,7 @@ class AuthViewModel : ViewModel() {
 
                 val response = AppContainer.apiService.loginWithGoogle(mapOf("idToken" to idToken))
                 AppContainer.authSession.login(response.token, response.user)
+                Telemetry.logEvent(Telemetry.Event.LOGIN, mapOf(Telemetry.PARAM_METHOD to "google"))
                 _uiState.value = AuthUiState.Success
 
             } catch (_: GetCredentialCancellationException) {

@@ -61,6 +61,18 @@
 # AGP handles most Compose rules; keep ViewModel subclasses for nav
 -keep class * extends androidx.lifecycle.ViewModel { *; }
 
+# --------------- Firebase (Analytics + Crashlytics) ---------
+# R8 full mode (default on AGP 9) strips the no-arg constructors of Firebase
+# ComponentRegistrar implementations, which crashes the app at launch with
+# "FirebaseCrashlytics component is not present". Keep the registrars + their
+# constructors so the Firebase component discovery can instantiate them.
+-keep class * implements com.google.firebase.components.ComponentRegistrar {
+    <init>();
+}
+-keepnames class com.google.firebase.components.ComponentRegistrar
+-keep class com.google.firebase.crashlytics.** { *; }
+-dontwarn com.google.firebase.**
+
 # --------------- Crash / debugging helpers ------------------
 # Keep original exception class names so crash reports are readable
 -keepnames class * extends java.lang.Exception

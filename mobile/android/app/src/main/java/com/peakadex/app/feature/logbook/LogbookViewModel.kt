@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
 import com.peakadex.app.R
+import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.CancellationException
@@ -119,6 +120,7 @@ class LogbookViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 api.shareAscent(id)
+                Telemetry.logEvent(Telemetry.Event.ASCENT_SHARED, mapOf("ascent_id" to id))
                 Log.d(TAG, "Ascent $id marked as public for sharing")
             } catch (e: Exception) {
                 Log.d(TAG, "shareAscent non-critical failure: ${e.message}")

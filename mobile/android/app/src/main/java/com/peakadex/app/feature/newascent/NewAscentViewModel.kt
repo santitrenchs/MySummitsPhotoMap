@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
 import com.peakadex.app.R
+import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.model.CreateAscentRequest
@@ -243,6 +244,16 @@ class NewAscentViewModel : ViewModel() {
                 else null
 
                 _state.update { it.copy(isLoading = false) }
+                Telemetry.logEvent(
+                    Telemetry.Event.ASCENT_CREATED,
+                    mapOf(
+                        "peak_id" to ascent.peak.id,
+                        "rarity_id" to ascent.peak.rarityId,
+                        "altitude_m" to ascent.peak.altitudeM,
+                        "is_mythic" to ascent.peak.isMythic,
+                        "has_people_tagged" to s.selectedPersons.isNotEmpty(),
+                    ),
+                )
                 // Attach the just-uploaded photo so the capture-reveal card shows it
                 // (createAscent returns the ascent BEFORE the photo upload, so its
                 // photos list is empty otherwise).
