@@ -152,7 +152,7 @@ class NewAscentViewModel : ViewModel() {
         if (s.initialPeakId != null && s.selectedPeak == null) {
             viewModelScope.launch {
                 runCatching {
-                    val peak = api.getPeak(s.initialPeakId)
+                    val peak = api.getPeak(s.initialPeakId).peak
                     _state.update { it.copy(selectedPeak = peak, peakQuery = peak.name, isPeakDropdownOpen = false) }
                 }
             }

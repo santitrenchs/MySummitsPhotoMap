@@ -1659,6 +1659,7 @@ This fires on initial composition (when navigating from Atlas) and is unaffected
 | `Map<String, String?>` in `@Body` | Use typed `@Serializable data class` |
 | `createAscent` returns bare `Ascent` | Wrap in `AscentResponse(val ascent: Ascent)`, call `.ascent` |
 | `uploadPhoto` returns bare `Photo` | Wrap in `PhotoResponse(val photo: Photo)`, call `.photo` |
+| `getPeak` returns bare `Peak` | Server `GET /api/v1/peaks/{id}` returns `{ peak }` → wrap in `PeakResponse(val peak: Peak)`, call `.peak`. If deserialized as bare `Peak` it throws `MissingFieldException` (id/name/altitudeM have no defaults); swallowed by `runCatching` in `onCropDone`, leaving `selectedPeak` null so Atlas-preselected peak can't be saved until manually re-searched. |
 | `Peak` missing `lat`/`lon` in response | Add `= 0.0` defaults to both fields |
 | `CancellationException` swallowed | Add `catch (e: CancellationException) { throw e }` first |
 | Scroll to index 0 after creation | Use `filteredAscents.indexOfFirst { it.id == highlightId }` |

@@ -403,6 +403,13 @@ data class PhotoResponse(
     val photo: Photo,
 )
 
+// MARK: - Single peak response ({ "peak": {...} })
+
+@Serializable
+data class PeakResponse(
+    val peak: Peak,
+)
+
 // MARK: - Atlas / map models
 
 // Response from GET /api/v1/map/ascents

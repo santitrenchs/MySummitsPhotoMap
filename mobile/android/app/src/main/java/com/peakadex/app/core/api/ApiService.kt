@@ -123,7 +123,7 @@ interface ApiService {
     ): PeaksResponse
 
     @GET("peaks/{id}")
-    suspend fun getPeak(@Path("id") id: String): Peak
+    suspend fun getPeak(@Path("id") id: String): PeakResponse
 
     @GET("peaks/{id}/elevation")
     suspend fun getPeakElevation(@Path("id") id: String): ElevationResponse
