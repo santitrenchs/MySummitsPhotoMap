@@ -81,6 +81,10 @@ class NewAscentViewModel : ViewModel() {
             initialPeakId   = peakId,
             initialPeakName = peakName,
             peakQuery       = peakName,
+            // Select immediately with a minimal Peak so the form is valid (submit only
+            // needs peak.id). onCropDone enriches it via getPeak as best-effort — but the
+            // save button must never depend on that network call succeeding.
+            selectedPeak    = Peak(id = peakId, name = peakName, altitudeM = 0),
         ) }
     }
 
@@ -147,13 +151,20 @@ class NewAscentViewModel : ViewModel() {
             val persons = runCatching { api.getPersons() }.getOrDefault(emptyList<Person>())
             _state.update { it.copy(allPersons = persons) }
         }
-        // Resolve pre-selected peak (from Atlas)
+        // Enrich the pre-selected peak (from Atlas) with full data — best-effort.
+        // selectedPeak is already set to a minimal Peak in setInitialPeak, so the form
+        // is valid even if this network call fails. Only apply if the user hasn't
+        // changed the peak in the meantime.
         val s = _state.value
-        if (s.initialPeakId != null && s.selectedPeak == null) {
+        if (s.initialPeakId != null) {
             viewModelScope.launch {
                 runCatching {
                     val peak = api.getPeak(s.initialPeakId).peak
-                    _state.update { it.copy(selectedPeak = peak, peakQuery = peak.name, isPeakDropdownOpen = false) }
+                    _state.update { st ->
+                        if (st.selectedPeak?.id == peak.id)
+                            st.copy(selectedPeak = peak, peakQuery = peak.name, isPeakDropdownOpen = false)
+                        else st
+                    }
                 }
             }
         }
