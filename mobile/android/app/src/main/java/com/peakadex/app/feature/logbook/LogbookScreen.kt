@@ -52,6 +52,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -1358,7 +1359,28 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                     Spacer(Modifier.height(4.dp))
                 }
                 if (!ascent.description.isNullOrBlank()) {
-                    Text(ascent.description, fontSize = 13.sp, color = PeakMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 19.sp)
+                    // Blockquote — rarity-coloured vertical bar + the user's message.
+                    // The message is capped at 100 chars on input (3 lines), so it always
+                    // renders in full; ellipsis is only a defensive fallback for legacy data.
+                    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                        Box(
+                            modifier = Modifier
+                                .width(3.dp)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(rarity.color),
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            ascent.description,
+                            fontSize   = 13.sp,
+                            color      = PeakMuted,
+                            fontStyle  = FontStyle.Italic,
+                            maxLines   = 3,
+                            overflow   = TextOverflow.Ellipsis,
+                            lineHeight = 18.sp,
+                        )
+                    }
                 }
             }
             // Any remaining height → white space (no explicit Spacer needed; Column clips to totalH)

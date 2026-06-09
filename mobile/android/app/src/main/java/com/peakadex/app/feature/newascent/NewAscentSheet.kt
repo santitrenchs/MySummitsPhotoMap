@@ -86,6 +86,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -112,6 +113,12 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+
+/**
+ * Max length of the ascent message ("cita") shown as a blockquote on the back of the card.
+ * Capped so the 3-line quote always renders in full (no ellipsis) on every screen size.
+ */
+private const val NOTES_MAX_CHARS = 100
 
 // ── Sheet entry point ──────────────────────────────────────────────────────────
 
@@ -633,14 +640,23 @@ private fun AscentFormStep(
                     FormLabel(stringResource(R.string.new_ascent_field_notes))
                     OutlinedTextField(
                         value           = state.notes,
-                        onValueChange   = { if (it.length <= 2000) vm.onNotesChange(it) },
+                        onValueChange   = { if (it.length <= NOTES_MAX_CHARS) vm.onNotesChange(it) },
                         modifier        = Modifier.fillMaxWidth(),
                         placeholder     = { Text(stringResource(R.string.new_ascent_notes_placeholder), color = PeakSubtle) },
                         minLines        = 3,
-                        maxLines        = 6,
+                        maxLines        = 3,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                         shape           = RoundedCornerShape(8.dp),
                         colors          = inputColors(),
+                        supportingText  = {
+                            Text(
+                                "${state.notes.length}/$NOTES_MAX_CHARS",
+                                modifier  = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.End,
+                                fontSize  = 11.sp,
+                                color     = PeakSubtle,
+                            )
+                        },
                     )
                 }
             }
