@@ -1278,9 +1278,9 @@ private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) 
 
 // ── Card back ──────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
-    val bylineName  = ascent.user?.name ?: stringResource(R.string.logbook_you)
 
     // BoxWithConstraints lets us compute heights in dp so the map is exactly 65% of the
     // total card height while keeping the card the same size as before.
@@ -1337,26 +1337,38 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                 }
             }
 
-            // Footer — persons + description. Remaining height is white space.
+            // Footer — cordada pills + description quote. Remaining height is white space.
             Column(modifier = Modifier.padding(horizontal = 3.dp)) {
-                val personsText = when {
-                    ascent.persons.isEmpty() -> null
-                    ascent.persons.size == 1 -> "con ${ascent.persons[0].name}"
-                    else -> buildString {
-                        append("con ")
-                        ascent.persons.dropLast(1).forEachIndexed { i, p -> if (i > 0) append(", "); append(p.name) }
-                        append(" y ${ascent.persons.last().name}")
+                // Cordada — one pill per tagged user (shows their username), above the quote.
+                if (ascent.persons.isNotEmpty()) {
+                    FlowRow(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement   = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            stringResource(R.string.card_cordada_label),
+                            fontSize   = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier   = Modifier.align(Alignment.CenterVertically),
+                        )
+                        ascent.persons.forEach { person ->
+                            Text(
+                                person.name,
+                                fontSize   = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color      = PeakOnSurface,
+                                maxLines   = 1,
+                                overflow   = TextOverflow.Ellipsis,
+                                modifier   = Modifier
+                                    .clip(RoundedCornerShape(percent = 50))
+                                    .background(rarity.color.copy(alpha = 0.12f))
+                                    .padding(horizontal = 9.dp, vertical = 3.dp),
+                            )
+                        }
                     }
-                }
-                if (personsText != null) {
-                    Text(
-                        buildAnnotatedString {
-                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)) { append(bylineName) }
-                            append(" $personsText")
-                        },
-                        fontSize = 13.sp, color = PeakOnSurface, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(8.dp))
                 }
                 if (!ascent.description.isNullOrBlank()) {
                     // Blockquote — rarity-coloured vertical bar + the user's message.

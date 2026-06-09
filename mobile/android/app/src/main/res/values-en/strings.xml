@@ -86,6 +86,7 @@
     <string name="logbook_stat_altitude">ALTITUDE</string>
     <string name="logbook_stat_ep">EP</string>
     <string name="logbook_stats_title">PEAKADEX STATS</string>
+    <string name="card_cordada_label">Rope team:</string>
     <string name="logbook_stat_ascents">ASCENTS</string>
     <string name="logbook_stat_climbers">CLIMBERS</string>
     <string name="logbook_empty_friends_title">No friends activity</string>
