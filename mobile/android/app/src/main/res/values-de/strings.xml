@@ -414,6 +414,8 @@
     <string name="map_onboarding_rarities">Seltenheitsstufen</string>
     <string name="map_onboarding_cta">Karte erkunden</string>
     <string name="map_onboarding_dont_show">Nicht mehr anzeigen</string>
-    <string name="cards_friends_empty">Deine Freunde haben noch keine Gipfel erfasst.\nWeiter klettern und Aufstiege teilen.</string>
+    <string name="cards_friends_empty">Deine Freunde haben noch keine Gipfel erfasst.</string>
+    <string name="cards_friends_empty_subtitle">Weiter klettern und Aufstiege teilen.</string>
     <string name="cards_mine_empty">Du hast noch keine Aufstiege erfasst.</string>
+    <string name="cards_mine_empty_subtitle">Erfasse deinen ersten Gipfel, um zu starten.</string>
 </resources>

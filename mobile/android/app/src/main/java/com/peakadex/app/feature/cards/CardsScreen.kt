@@ -70,6 +70,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.runtime.snapshotFlow
 import coil3.compose.AsyncImage
 import com.peakadex.app.R
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.Ascent
@@ -1406,32 +1407,72 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
 
 @Composable
 private fun CardsFriendsEmptyState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
+    Column(
+        modifier            = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Box(
+            modifier         = Modifier.size(72.dp).clip(CircleShape).background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter            = painterResource(R.drawable.ic_tab_friends),
+                contentDescription = null,
+                tint               = PeakBlueActive,
+                modifier           = Modifier.size(34.dp),
+            )
+        }
+        Spacer(Modifier.height(10.dp))
         Text(
-            text      = stringResource(R.string.cards_friends_empty),
-            fontSize  = 14.sp,
+            text       = stringResource(R.string.cards_friends_empty),
+            fontSize   = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            color      = Color(0xFF111827),
+            textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text      = stringResource(R.string.cards_friends_empty_subtitle),
+            fontSize  = 13.sp,
             color     = Color(0xFF9CA3AF),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier  = Modifier.padding(horizontal = 32.dp),
         )
     }
 }
 
 @Composable
 private fun CardsEmptyState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
+    Column(
+        modifier            = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Box(
+            modifier         = Modifier.size(72.dp).clip(CircleShape).background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter            = painterResource(R.drawable.ic_tab_cards),
+                contentDescription = null,
+                tint               = PeakBlueActive,
+                modifier           = Modifier.size(34.dp),
+            )
+        }
+        Spacer(Modifier.height(10.dp))
         Text(
-            text      = stringResource(R.string.cards_mine_empty),
-            fontSize  = 14.sp,
+            text       = stringResource(R.string.cards_mine_empty),
+            fontSize   = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            color      = Color(0xFF111827),
+            textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text      = stringResource(R.string.cards_mine_empty_subtitle),
+            fontSize  = 13.sp,
             color     = Color(0xFF9CA3AF),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier  = Modifier.padding(horizontal = 32.dp),
         )
     }
 }

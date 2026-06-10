@@ -414,6 +414,8 @@
     <string name="map_onboarding_rarities">Nivells de raresa</string>
     <string name="map_onboarding_cta">Explorar el mapa</string>
     <string name="map_onboarding_dont_show">No tornar a mostrar</string>
-    <string name="cards_friends_empty">Els teus amics encara no han pujat cap cim.\nContinua escalant i comparteix les teves ascensions.</string>
+    <string name="cards_friends_empty">Els teus amics encara no han pujat cap cim.</string>
+    <string name="cards_friends_empty_subtitle">Continua escalant i comparteix les teves ascensions.</string>
     <string name="cards_mine_empty">Encara no tens cap ascensió registrada.</string>
+    <string name="cards_mine_empty_subtitle">Captura el teu primer cim per començar.</string>
 </resources>
