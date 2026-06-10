@@ -86,7 +86,7 @@
     <string name="logbook_stat_altitude">HÖHE</string>
     <string name="logbook_stat_ep">EP</string>
     <string name="logbook_stats_title">PEAKADEX STATISTIKEN</string>
-    <string name="card_cordada_label">Seilschaft:</string>
+    <string name="card_cordada_label">Deine Seilschaft:</string>
     <string name="logbook_stat_ascents">BESTEIGUNGEN</string>
     <string name="logbook_stat_climbers">BERGSTEIGER</string>
     <string name="logbook_empty_friends_title">Keine Aktivität von Freunden</string>
