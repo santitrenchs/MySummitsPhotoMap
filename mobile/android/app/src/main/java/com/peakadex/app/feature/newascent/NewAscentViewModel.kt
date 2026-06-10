@@ -130,7 +130,8 @@ class NewAscentViewModel : ViewModel() {
         )
         // Load the full person catalogue for the tag picker (best-effort).
         viewModelScope.launch {
-            val all = runCatching { api.getPersons() }.getOrDefault(emptyList<Person>())
+            val all = runCatching { api.getPersons().persons }.getOrDefault(emptyList())
+                .map { it.copy(userId = it.userId ?: it.id) }
             _state.update { it.copy(allPersons = all) }
         }
     }
@@ -193,9 +194,11 @@ class NewAscentViewModel : ViewModel() {
 
     fun onCropDone(cropped: Bitmap) {
         _state.update { it.copy(croppedBitmap = cropped, step = NewAscentStep.FORM) }
-        // Load persons for tagging (best-effort)
+        // Load persons for tagging (best-effort). The endpoint returns users whose
+        // `id` IS the userId, so copy it into `userId` (used by the tagging calls).
         viewModelScope.launch {
-            val persons = runCatching { api.getPersons() }.getOrDefault(emptyList<Person>())
+            val persons = runCatching { api.getPersons().persons }.getOrDefault(emptyList())
+                .map { it.copy(userId = it.userId ?: it.id) }
             _state.update { it.copy(allPersons = persons) }
         }
         // Enrich the pre-selected peak (from Atlas) with full data — best-effort.

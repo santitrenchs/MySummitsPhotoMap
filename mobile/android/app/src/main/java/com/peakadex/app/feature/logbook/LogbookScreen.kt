@@ -230,35 +230,37 @@ private val CloseSmallIcon: ImageVector by lazy {
     }.build()
 }
 
-// Share icon — 3 nodes connected by lines (matches web AscentCard)
+// Share icon — 3 nodes connected by lines (matches web AscentCard).
+// NOTE: paths must use a concrete colour (Color.Black). With Color.Unspecified the
+// vector draws nothing, so the Icon `tint` has no pixels to recolour → invisible.
 internal val ShareNetworkIcon: ImageVector by lazy {
     ImageVector.Builder("ShareNetwork", 20.dp, 20.dp, 20f, 20f).apply {
-        // Top-right circle (cx=16, cy=4, r=2) → fill
-        path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
+        // Top-right circle (cx=16, cy=4, r=2)
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.4f, fill = null) {
             moveTo(18f, 4f); arcTo(2f, 2f, 0f, false, true, 14f, 4f); arcTo(2f, 2f, 0f, false, true, 18f, 4f); close()
         }
         // Left circle (cx=4, cy=10, r=2)
-        path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.4f, fill = null) {
             moveTo(6f, 10f); arcTo(2f, 2f, 0f, false, true, 2f, 10f); arcTo(2f, 2f, 0f, false, true, 6f, 10f); close()
         }
         // Bottom-right circle (cx=16, cy=16, r=2)
-        path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.4f, fill = null) {
             moveTo(18f, 16f); arcTo(2f, 2f, 0f, false, true, 14f, 16f); arcTo(2f, 2f, 0f, false, true, 18f, 16f); close()
         }
         // Connecting lines
-        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
             moveTo(6f, 9f); lineTo(14f, 5f)
         }
-        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
             moveTo(6f, 11f); lineTo(14f, 15f)
         }
     }.build()
 }
 
-// Pencil / edit icon (matches web AscentCard)
+// Pencil / edit icon (matches web AscentCard). Concrete colour so the tint applies.
 internal val PencilIcon: ImageVector by lazy {
     ImageVector.Builder("Pencil", 20.dp, 20.dp, 20f, 20f).apply {
-        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f,
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f,
             strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round, fill = null) {
             moveTo(14.5f, 2.5f)
             arcToRelative(2.121f, 2.121f, 0f, false, true, 3f, 3f)

@@ -166,6 +166,14 @@ data class PersonSummary(
     val avatarUrl: String? = null,
 )
 
+// GET /api/v1/persons returns { persons: [...] } where each entry is a user
+// (id = userId, plus name/username/avatarUrl). The wrapper must be modelled or
+// the List<Person> deserialization fails silently → empty tag suggestions.
+@Serializable
+data class PersonsResponse(
+    val persons: List<Person> = emptyList(),
+)
+
 // MARK: - Friendship
 
 @Serializable

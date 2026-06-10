@@ -172,7 +172,7 @@ interface ApiService {
     suspend fun getUserStats(@Path("id") id: String): UserStatsResponse
 
     @GET("persons")
-    suspend fun getPersons(): List<Person>
+    suspend fun getPersons(): PersonsResponse
 
     // MARK: - Cordadas
     @GET("cordadas")
