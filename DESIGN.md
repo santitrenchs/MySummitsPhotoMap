@@ -731,7 +731,8 @@ The card flips on tap (Y-axis rotation, 700 ms). Front shows the photo; back sho
 
 | Layer | Spec |
 |-------|------|
-| Header row | Avatar 32dp circle (+ unseen dot top-right if isUnseen) · user name 13sp bold · date 11sp muted |
+| Header row | Avatar 32dp circle (+ unseen dot top-right if isUnseen) · user name 13sp bold · date 11sp muted · **(own cards only) share + edit icons** top-right |
+| Share + edit icons (own cards only — `ascent.isOwn`) | two 28dp `IconButton`s, 16dp/15dp glyphs, tint `PeakSubtle` (grey `#9CA3AF`, matches web). **Share** = 3-node network icon → marks public + opens OS share sheet. **Edit** = pencil → opens the edit sheet. ⚠️ Inline `ImageVector` glyphs **must use a concrete base colour** (`Color.Black`) — `Color.Unspecified` draws no pixels so the tint has nothing to recolour → invisible. |
 | Photo | `4:5` aspect ratio · 18dp radius · ContentScale.Crop · placeholder 🏔️ 52sp |
 | Gradient overlay | bottom 55% of photo: transparent → `rgba(7,18,31,0.42)` → `rgba(7,18,31,0.82)` |
 | Peak name | 24sp extrabold white, letterSpacing −0.035em, 1 line ellipsis |
@@ -751,8 +752,12 @@ The card flips on tap (Y-axis rotation, 700 ms). Front shows the photo; back sho
 | Altitude | 28sp black white, letterSpacing −0.04em |
 | Rarity progress bar | 4dp tall · `rgba(255,255,255,0.25)` track · rarity.color fill · width = `altitudeM / 8849` |
 | Stats row (2 cells) | **ASCENSIONES** `—` · **ALPINISTAS** `—` (placeholder until future endpoint) |
-| Persons byline | `{name} con {persons…}` · 13sp · 2-line clamp |
-| Description | 13sp muted · 2-line clamp |
+| Cordada pills | label **"Tu Cordada:"** (localized possessive) + one rounded pill per tagged user (their **username**) · pill bg = `rarity.color` @ 12% · 11sp · `FlowRow` · shown above the quote · only when `persons` non-empty |
+| Description quote | **blockquote**: 3dp left vertical bar in `rarity.color` (rounded 2dp, height = text) + 10dp gap + message text · 13sp *italic* muted · lineHeight 18sp · **maxLines 3** |
+
+> **Card-back message ("cita") — 100-char cap.** The message is capped at **100 characters** on input (`NOTES_MAX_CHARS` in `NewAscentViewModel.kt`, shared by create + edit) so the 3-line quote always renders in full (no ellipsis) on every screen size. The ellipsis on the `Text` is only a defensive fallback for legacy data >100 chars. The create/edit notes field shows an `n/100` counter and is 3 lines.
+
+> **Cordada pills detail.** `ascent.persons` already carries the username (`API builds persons as { id = userId, name = username ?? name }`), so the pill text is `person.name`. The label is `card_cordada_label` — localized **with possessive** in all 5 locales: es "Tu Cordada:" · ca "La teva Cordada:" · en "Your rope team:" · fr "Ta cordée:" · de "Deine Seilschaft:". Only registered+linked tagged users appear (unlinked face tags are not returned).
 
 #### Back-side mini-map + nearby peaks
 

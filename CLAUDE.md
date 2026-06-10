@@ -189,7 +189,8 @@ A combined social + personal climb log. Shows **friends' ascents by default** (s
   - **iOS (planned)**: `UIActivityViewController` with the URL + call `POST /api/v1/ascents/{id}/share` first.
 - **Edit flow:**
   - **Web**: dispatches `CustomEvent("open-ascent-modal", { detail: { editAscent: {...} } })` — opens the edit modal in-place. `NavBar.tsx` listens for this event.
-  - **Android / iOS**: navigates to `AscentDetailScreen` / equivalent detail view (full inline edit, no separate edit screen).
+  - **Android**: the pencil on own cards opens the **create sheet (`NewAscentSheet`) in EDIT mode** — full web parity (peak, date, route, notes, tagged people, photo replace). See "Android App — Edit ascent flow" below. (It no longer opens the read-only `AscentDetailScreen`.)
+  - **iOS (planned)**: same — reuse the create sheet in edit mode.
 
 **`Ascent.isPublic` Prisma field:**
 - `isPublic Boolean @default(false)` — controls whether `/ascent/{id}` (OG share page at `app/(share)/ascent/[id]/`) is publicly accessible without authentication.
@@ -1666,6 +1667,46 @@ This fires on initial composition (when navigating from Atlas) and is unaffected
 | `restoreState = true` on Logbook nav | Must be `false` after creation to force fresh ViewModel |
 | `vm.load()` after creation | Use `vm.refresh()` to keep list visible during reload |
 | Ring border on every recompose | Gate with `if (ringAlpha > 0f)` to avoid unnecessary `Modifier.border` |
+| `GET /api/v1/persons` returns `{ persons: [...] }` | `getPersons()` must return a `PersonsResponse` wrapper, not `List<Person>` — else deserialization fails silently → empty tag suggestions |
+| Persons from `/persons` have `id` = userId, no `userId` field | Map `userId = it.userId ?: it.id` after loading so the tagging calls (which use `person.userId`) fire |
+| `PATCH /api/v1/ascents/{id}` returns `{ ascent }` (minimal, no `peak`) | `updateAscent()` returns `Unit` — the body isn't deserializable into the rich `Ascent` model and isn't needed (Cards refreshes separately) |
+| `DELETE .../photos/{id}/persons` takes `userId` in **body** | Use `@HTTP(method="DELETE", hasBody=true)` with `@Body { userId }`, not a path segment |
+| Inline `ImageVector` glyph invisible | Build paths with a concrete colour (`Color.Black`), never `Color.Unspecified` — the latter draws no pixels so the `Icon` tint has nothing to recolour |
+
+---
+
+## Android App — Edit ascent flow (web parity, 2026-06-10)
+
+The pencil icon on a user's **own** card (`ascent.isOwn`) opens the **create sheet in EDIT mode** — full parity with web's edit modal. There is **no separate edit screen**; `AscentDetailScreen` (read-only) is no longer reached from Cards.
+
+**Files:** `feature/newascent/NewAscentSheet.kt` + `NewAscentViewModel.kt`, hosted by `MainScaffold.kt`; trigger from `feature/logbook/LogbookScreen.kt` (`CardFront` pencil).
+
+**Entry:** `LogbookScreen(onEditAscent: (Ascent) -> Unit)` → `MainScaffold` sets `var editAscent by remember { mutableStateOf<Ascent?>(null) }` and renders a second `NewAscentSheet(editAscent = editing, …)`. The global new-ascent sheet and the edit sheet share the same Activity-scoped `NewAscentViewModel` (`viewModel()`), but are mutually exclusive so there is no conflict.
+
+**ViewModel — edit mode:**
+- `NewAscentUiState` gains `editAscentId`, `existingPhotoId`, `existingPhotoUrl`, `originalPersonUserIds`, and `val isEditMode get() = editAscentId != null`.
+- `initForEdit(ascent)`: starts on `FORM`, prefills peak/date(`take(10)`)/route/notes(`take(NOTES_MAX_CHARS)`)/persons + the existing photo. **`ascent.persons[i].id` IS the userId** (API builds persons as `{ id = userId, name = username ?? name }`), so persons are mapped to `Person(id, name, userId = id)`.
+- `submitEdit(onSuccess: (taggingWarning: String?) -> Unit)`:
+  1. `PATCH /api/v1/ascents/{id}` with `peakId`/`date`/`route`/`description`.
+  2. **If a new photo was cropped** (`croppedBitmap != null`): upload it → tag each selected person → delete the old photo.
+  3. **If photo unchanged**: reconcile tags on the existing photo — add `selected − original`, remove `original − selected` (via `addPhotoPerson` / `removePhotoPerson`).
+- `onCropBack()` returns to `FORM` in edit mode (no PICK step before the form).
+
+**Sheet:** `editAscent: Ascent?` param. `LaunchedEffect(Unit)` → `initForEdit` if set else `reset`/`setInitialPeak`. FORM photo preview shows the existing photo (Coil `AsyncImage`) with a **"Change photo"** pill tap target (`new_ascent_change_photo`) that launches the picker → crop → FORM. Header title `new_ascent_edit_title` ("Editar ascensión"). Back/`BackHandler` on FORM closes the sheet in edit mode.
+
+**Post-edit:** `onSuccess` sets `logbookHighlightId = editing.id`, bumps `logbookRefreshTrigger` (Cards → Mine + refresh + scroll + ring) and `atlasRefreshTrigger`. **No capture-reveal** (that's create-only). A `taggingWarning` (blocked by `allowOthersToTag`) is shown via the `MainScaffold` snackbar.
+
+**Share** was already implemented (see "Card actions"); this completed the edit half.
+
+---
+
+## Card back — message quote + Cordada pills (Android, 2026-06-10)
+
+`CardBack` in `LogbookScreen.kt` footer (above the white space):
+- **Cordada pills**: shown when `ascent.persons` is non-empty — a localized possessive label (`card_cordada_label`: es "Tu Cordada:" · ca "La teva Cordada:" · en "Your rope team:" · fr "Ta cordée:" · de "Deine Seilschaft:") + one rounded pill per tagged user showing their **username** (`person.name`, already `username ?? name` from the API), pill bg = `rarity.color` @ 12%, 11sp, `FlowRow` (requires `@OptIn(ExperimentalLayoutApi::class)` on `CardBack`). Replaced the old `"{author} con {persons}"` plain-text line.
+- **Message quote (blockquote)**: 3dp left vertical bar in `rarity.color` (rounded 2dp, `height(IntrinsicSize.Min)` + `fillMaxHeight`) + 10dp gap + the message text, 13sp *italic* `PeakMuted`, lineHeight 18sp, **maxLines 3**.
+
+**100-char cap:** `NOTES_MAX_CHARS = 100` (top-level in `NewAscentViewModel.kt`, shared by create + edit). The notes field caps input at 100 and shows an `n/100` counter (`supportingText`); the field is 3 lines. Because input is capped, the 3-line quote always renders in full — the `TextOverflow.Ellipsis` is only a defensive fallback for legacy data >100 chars.
 
 ---
 
