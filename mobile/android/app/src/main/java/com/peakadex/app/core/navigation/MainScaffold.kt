@@ -116,8 +116,8 @@ fun MainScaffold(navController: NavController) {
     var newAscentPeakName     by remember { mutableStateOf<String?>(null) }
     // Edit-ascent sheet — non-null while editing one of the user's own cards.
     var editAscent            by remember { mutableStateOf<Ascent?>(null) }
-    var logbookRefreshTrigger  by remember { mutableIntStateOf(0) }
-    var logbookHighlightId     by remember { mutableStateOf<String?>(null) }
+    var cardsRefreshTrigger  by remember { mutableIntStateOf(0) }
+    var cardsHighlightId     by remember { mutableStateOf<String?>(null) }
     var atlasRefreshTrigger    by remember { mutableIntStateOf(0) }
     var captureReveal          by remember { mutableStateOf<CaptureRevealState?>(null) }
 
@@ -244,8 +244,8 @@ fun MainScaffold(navController: NavController) {
                 // which fails for past-dated ascents). By the time the user dismisses
                 // the reveal, Cards has settled on Mine + scrolled to the new card —
                 // so removing the overlay never flashes the Friends feed.
-                logbookHighlightId = ascent.id
-                logbookRefreshTrigger++
+                cardsHighlightId = ascent.id
+                cardsRefreshTrigger++
                 atlasRefreshTrigger++
                 tabNavController.navigate(Screen.Cards.route) {
                     popUpTo(Screen.Home.route) { saveState = true }
@@ -272,8 +272,8 @@ fun MainScaffold(navController: NavController) {
             editAscent = editing,
             onSuccess  = { _, taggingWarning ->
                 editAscent          = null
-                logbookHighlightId  = editing.id
-                logbookRefreshTrigger++
+                cardsHighlightId  = editing.id
+                cardsRefreshTrigger++
                 atlasRefreshTrigger++
                 if (taggingWarning != null) {
                     scope.launch { snackbarHostState.showSnackbar(taggingWarning) }
@@ -341,12 +341,12 @@ fun MainScaffold(navController: NavController) {
                         }
                     },
                     onAscentClick = { ascentId, isOwn ->
-                        logbookHighlightId = ascentId
+                        cardsHighlightId = ascentId
                         // Own photos: switch to Mine filter + refresh so CardsScreen
                         // scrolls to and highlights the card automatically.
                         // Tagged photos: keep existing Friends filter; the ring will
                         // appear if the card is already visible in the list.
-                        if (isOwn) logbookRefreshTrigger++
+                        if (isOwn) cardsRefreshTrigger++
                         tabNavController.navigate(Screen.Cards.route) {
                             popUpTo(Screen.Home.route) { saveState = true }
                             launchSingleTop = true
@@ -372,9 +372,9 @@ fun MainScaffold(navController: NavController) {
                     onPeakIdConsumed    = { pendingPeakId = null; pendingPeakName = null },
                     initialRarityId     = pendingRarityId,
                     onRarityIdConsumed  = { pendingRarityId = null },
-                    refreshTrigger      = logbookRefreshTrigger,
-                    highlightId         = logbookHighlightId,
-                    onHighlightConsumed = { logbookHighlightId = null },
+                    refreshTrigger      = cardsRefreshTrigger,
+                    highlightId         = cardsHighlightId,
+                    onHighlightConsumed = { cardsHighlightId = null },
                 )
             }
         }
@@ -394,11 +394,11 @@ fun MainScaffold(navController: NavController) {
                 // multi-second reveal, so re-setting the id makes the ring appear
                 // fresh on the now-visible card.
                 captureReveal = null
-                logbookHighlightId = null
+                cardsHighlightId = null
                 scope.launch {
                     // next frame so the null→id change re-fires the ring effect
                     kotlinx.coroutines.delay(16)
-                    logbookHighlightId = reveal.ascent.id
+                    cardsHighlightId = reveal.ascent.id
                 }
                 if (reveal.taggingWarning != null) {
                     scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }

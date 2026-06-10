@@ -73,7 +73,7 @@ The gamification dashboard. Entry point of the app (root `/` redirects here when
 - **Monthly chart** ("Últimos 6 meses"): stacked bar chart, one column per month. Each individual color segment is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. The month count label and month label below each bar link to the month filter (`?month=YYYY-MM&view=mine`). Empty months are not clickable.
 - **Rarity chart** ("Cimas por rareza"): 9-column bar chart, one per rarity tier. Each **active** bar (count > 0) is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. Inactive bars (count = 0) are not clickable.
   - **Web** (`components/home/HomeClient.tsx`): active bars wrapped in `<Link href="/ascents?rarity=<rarityId>&view=mine">`. Monthly segments wrapped in individual `<Link>` within the bar container.
-  - **Android** (`HomeScreen.kt`): `Modifier.clickable(indication=null)` on each active `Column` / bar segment. Navigates via `onNavigateToCardsWithRarity(rarityId)` callback → `MainScaffold` sets `pendingRarityId` → `LogbookScreen` applies `clearFilters() + setRarityId() + setViewFilter(Mine)`.
+  - **Android** (`HomeScreen.kt`): `Modifier.clickable(indication=null)` on each active `Column` / bar segment. Navigates via `onNavigateToCardsWithRarity(rarityId)` callback → `MainScaffold` sets `pendingRarityId` → `CardsScreen` applies `clearFilters() + setRarityId() + setViewFilter(Mine)`.
   - **Rarity counts**: the rarity chart shows **unique peaks** per rarity (deduped by `peakId` in `home.service.ts`). The monthly chart shows **all ascents** (no dedup). These intentionally differ — clicking a rarity bar in the chart may show more cards in the filtered view (because the filter shows all ascents of that rarity, including repeats).
 - **Recent ascents** ("Tus últimas cimas"): horizontal scroll cards with image overlay
 
@@ -184,7 +184,7 @@ A combined social + personal climb log. Shows **friends' ascents by default** (s
   - **Web — share endpoint**: `POST /api/ascents/{id}/share` + warms OG image cache with `GET /api/og/{ascentId}`. Component: `components/cards/AscentCard.tsx` → `activatePublicShare()`.
   - **Web mobile**: `navigator.share({ url, title: "Peakadex" })` — native OS sheet.
   - **Web desktop**: custom dark popover (`#0D2538` bg, `zIndex: 1100`) with two options: WhatsApp (`wa.me/?text=encodeURIComponent(url)`) + copy link (clipboard API, ✓ feedback after copy).
-  - **Android**: `Intent.ACTION_SEND` + type `"text/plain"` + `Intent.createChooser(intent, null)`. API call via `vm.shareAscent(ascentId)`. File: `LogbookScreen.kt` + `LogbookViewModel.shareAscent()`.
+  - **Android**: `Intent.ACTION_SEND` + type `"text/plain"` + `Intent.createChooser(intent, null)`. API call via `vm.shareAscent(ascentId)`. File: `CardsScreen.kt` + `CardsViewModel.shareAscent()`.
   - **Mobile v1 endpoint**: `POST /api/v1/ascents/{id}/share` (owner-only, sets `isPublic = true`). File: `app/api/v1/ascents/[id]/share/route.ts`.
   - **iOS (planned)**: `UIActivityViewController` with the URL + call `POST /api/v1/ascents/{id}/share` first.
 - **Edit flow:**
@@ -1208,7 +1208,7 @@ A `CircularProgressIndicator` shows while `isLoadingList = true`. When the list 
 ### Navigation contract
 
 `AtlasScreen` receives two lambdas:
-- `onNavigateToLogbook: (peakId: String, peakName: String) -> Unit` — from "Ver capturas" on a climbed peak detail
+- `onNavigateToCards: (peakId: String, peakName: String) -> Unit` — from "Ver capturas" on a climbed peak detail
 - `onNavigateToNewAscent: (peakId: String, peakName: String) -> Unit` — from "Capturar" buttons; navigates to `NewAscentScreen` with pre-selected peak
 
 ---
@@ -1257,8 +1257,8 @@ This section is the **authoritative spec** for the Android new-ascent flow. Ever
 - `core/model/Models.kt` — data classes
 - `core/api/ApiService.kt` — Retrofit interfaces
 - `core/navigation/MainScaffold.kt` — orchestrates trigger state
-- `feature/logbook/LogbookScreen.kt` — receives refresh/highlight, scrolls to new ascent
-- `feature/logbook/LogbookViewModel.kt` — `refresh()` + filter mutation
+- `feature/cards/CardsScreen.kt` — receives refresh/highlight, scrolls to new ascent
+- `feature/cards/CardsViewModel.kt` — `refresh()` + filter mutation
 
 ---
 
@@ -1269,7 +1269,7 @@ PICK  → user taps anywhere to open photo picker
 CROP  → crop 4:5 with CanHub `CropImageView`, rule-of-thirds grid, rotate 90°
 FORM  → peak search, date, route (optional), notes (optional), person tags
          ↓ submit
-onSuccess(ascentId) → close sheet → navigate to Logbook + scroll to + highlight
+onSuccess(ascentId) → close sheet → navigate to Cards + scroll to + highlight
 ```
 
 `NewAscentStep` enum: `PICK`, `CROP`, `FORM`.
@@ -1438,7 +1438,7 @@ In every `suspend fun` that catches `Exception`, always add this **before** the 
 }
 ```
 
-Swallowing `CancellationException` causes a brief error state flash when the ViewModel cancels an in-flight job on navigation (e.g. `vm.refresh()` in `refreshTrigger LaunchedEffect` cancels the previous `load()` job — without this fix, the Logbook briefly shows "Error inesperado" for ~100ms before the success response arrives).
+Swallowing `CancellationException` causes a brief error state flash when the ViewModel cancels an in-flight job on navigation (e.g. `vm.refresh()` in `refreshTrigger LaunchedEffect` cancels the previous `load()` job — without this fix, the Cards screen briefly shows "Error inesperado" for ~100ms before the success response arrives).
 
 ---
 
@@ -1462,7 +1462,7 @@ Swallowing `CancellationException` causes a brief error state flash when the Vie
 
 **Layout balance:** main block (flower+info) is shifted up `offset(y = -104.dp)`; EP block is bottom-anchored — gives a balanced top/bottom composition. Flower-to-text spacing is `Arrangement.spacedBy(4.dp)`.
 
-**Card behind + focus-pull:** the just-created `CardFront` (made `internal` in `LogbookScreen.kt` for cross-feature reuse) is rendered behind, blurred (16dp) under a dark overlay (0.80). On tap (`phase = REVEAL`), a "focus pull" sharpens the card (blur→0) + dissolves the overlay over 750ms, then `onFinished` (after an 800ms beat) removes the overlay.
+**Card behind + focus-pull:** the just-created `CardFront` (made `internal` in `CardsScreen.kt` for cross-feature reuse) is rendered behind, blurred (16dp) under a dark overlay (0.80). On tap (`phase = REVEAL`), a "focus pull" sharpens the card (blur→0) + dissolves the overlay over 750ms, then `onFinished` (after an 800ms beat) removes the overlay.
 
 **Mythic:** `isMythic` adds a gold pulsing `MythicGlow` + `MythicParticles` and tints the EP glow gold.
 
@@ -1472,9 +1472,9 @@ Swallowing `CancellationException` causes a brief error state flash when the Vie
 
 `CaptureRevealState(ascent, rarity, isMythic, taggingWarning)` carries the **full `Ascent`** (+ `isMythic` from `ascent.peak.isMythic`). The reveal sits on top; navigation happens **underneath it during `onSuccess`**, not on dismiss:
 
-- **`onSuccess`** (hidden behind the overlay): set `logbookHighlightId = ascent.id` **before** bumping `logbookRefreshTrigger++`, then `navigate(Cards)`. The highlight id must be set first so `LogbookScreen`'s scroll `LaunchedEffect(refreshTrigger)` finds the new card by id (not index 0, which fails for past-dated ascents). This settles Cards on the **Mine** filter + scrolls to the new card while still hidden.
-- **`onFinished`** (on tap): `captureReveal = null`, then **re-arm** the ring: `logbookHighlightId = null` → next frame → `= ascent.id` (the 2.5s consume timer burns during the multi-second reveal, so re-setting makes the ring appear fresh).
-- **`LogbookScreen`** switches to Mine **synchronously** on first composition via `remember(refreshTrigger){ if (refreshTrigger>0) vm.setViewFilter(ViewFilter.Mine) }` — before the initial load completes — so the Friends/cordada feed never flashes before the switch.
+- **`onSuccess`** (hidden behind the overlay): set `cardsHighlightId = ascent.id` **before** bumping `cardsRefreshTrigger++`, then `navigate(Cards)`. The highlight id must be set first so `CardsScreen`'s scroll `LaunchedEffect(refreshTrigger)` finds the new card by id (not index 0, which fails for past-dated ascents). This settles Cards on the **Mine** filter + scrolls to the new card while still hidden.
+- **`onFinished`** (on tap): `captureReveal = null`, then **re-arm** the ring: `cardsHighlightId = null` → next frame → `= ascent.id` (the 2.5s consume timer burns during the multi-second reveal, so re-setting makes the ring appear fresh).
+- **`CardsScreen`** switches to Mine **synchronously** on first composition via `remember(refreshTrigger){ if (refreshTrigger>0) vm.setViewFilter(ViewFilter.Mine) }` — before the initial load completes — so the Friends/cordada feed never flashes before the switch.
 
 **Why this order matters:** doing the nav/highlight on dismiss (`onFinished`) instead caused (a) a cordada-feed flash when the overlay was removed, and (b) the highlight-consume timer to burn during the reveal so the new card had no ring. Keep nav + highlight in `onSuccess`, re-arm the ring in `onFinished`.
 
@@ -1483,12 +1483,12 @@ Swallowing `CancellationException` causes a brief error state flash when the Vie
 After `onSuccess(ascentId)` fires from `NewAscentSheet`, `MainScaffold` must:
 1. Store the new ascent ID for highlighting
 2. Increment a trigger counter to force a data reload
-3. Navigate to Logbook with `restoreState = false` so a fresh ViewModel is created
+3. Navigate to Cards with `restoreState = false` so a fresh ViewModel is created
 
 ```kotlin
 // MainScaffold.kt — state vars:
-var logbookRefreshTrigger by remember { mutableIntStateOf(0) }
-var logbookHighlightId    by remember { mutableStateOf<String?>(null) }
+var cardsRefreshTrigger by remember { mutableIntStateOf(0) }
+var cardsHighlightId    by remember { mutableStateOf<String?>(null) }
 var atlasRefreshTrigger   by remember { mutableIntStateOf(0) }   // reloads climbedByPeakId after new ascent
 
 // MainScaffold.kt also has: val snackbarHostState = remember { SnackbarHostState() }
@@ -1498,10 +1498,10 @@ var atlasRefreshTrigger   by remember { mutableIntStateOf(0) }   // reloads clim
 // NewAscentSheet onSuccess (signature updated 2026-05-25 to carry taggingWarning):
 onSuccess = { ascentId, taggingWarning ->
     showNewAscent      = false
-    logbookHighlightId = ascentId
-    logbookRefreshTrigger++
+    cardsHighlightId = ascentId
+    cardsRefreshTrigger++
     atlasRefreshTrigger++   // reload Atlas climbedByPeakId so new ascent appears on map
-    tabNavController.navigate(Screen.Logbook.route) {
+    tabNavController.navigate(Screen.Bitacora.route) {
         popUpTo(Screen.Home.route) { saveState = true }
         launchSingleTop = true
         restoreState    = false   // CRITICAL: force fresh ViewModel so LaunchedEffect fires
@@ -1511,13 +1511,13 @@ onSuccess = { ascentId, taggingWarning ->
     }
 },
 
-// LogbookScreen composable:
-composable(Screen.Logbook.route) {
-    LogbookScreen(
+// CardsScreen composable:
+composable(Screen.Bitacora.route) {
+    CardsScreen(
         ...
-        refreshTrigger      = logbookRefreshTrigger,
-        highlightId         = logbookHighlightId,
-        onHighlightConsumed = { logbookHighlightId = null },
+        refreshTrigger      = cardsRefreshTrigger,
+        highlightId         = cardsHighlightId,
+        onHighlightConsumed = { cardsHighlightId = null },
     )
 }
 ```
@@ -1526,7 +1526,7 @@ composable(Screen.Logbook.route) {
 
 ---
 
-### Post-creation UX — LogbookScreen scroll-to-new-ascent
+### Post-creation UX — CardsScreen scroll-to-new-ascent
 
 **Two separate problems to solve:**
 
@@ -1537,7 +1537,7 @@ At the instant the StateFlow changes, `LazyColumn` hasn't been placed in the com
 Server canonical sort: unseen friends first (by altitude desc), then own + seen friends (by date desc). After switching to Mine filter, own ascents preserve this order — the new ascent may be at index 5, 10, or any position.
 
 ```kotlin
-// LogbookScreen.kt — hoist listState so LaunchedEffect can scroll it:
+// CardsScreen.kt — hoist listState so LaunchedEffect can scroll it:
 val listState = rememberLazyListState()
 
 LaunchedEffect(refreshTrigger) {
@@ -1561,7 +1561,7 @@ LaunchedEffect(refreshTrigger) {
 }
 
 // Pass listState down to LazyColumn:
-LogbookList(
+CardsList(
     ...,
     listState           = listState,
     highlightId         = highlightId,
@@ -1569,7 +1569,7 @@ LogbookList(
 )
 ```
 
-**Required imports in LogbookScreen.kt:**
+**Required imports in CardsScreen.kt:**
 ```kotlin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
@@ -1588,7 +1588,7 @@ Web uses `boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)"` for 
 Android equivalent: sky-blue 3dp border that **snaps in instantly** then **fades out over 400ms** after `onHighlightConsumed` sets `isHighlighted = false`.
 
 ```kotlin
-// In LogbookList:
+// In CardsList:
 LaunchedEffect(highlightId) {
     if (highlightId != null) {
         delay(2_500L)
@@ -1617,7 +1617,7 @@ Box(
 ) { ... }
 ```
 
-Color `#0EA5E9` = sky-500. Duration: visible 2500ms (in `LogbookList`), fade 400ms (in `animateFloatAsState`).
+Color `#0EA5E9` = sky-500. Duration: visible 2500ms (in `CardsList`), fade 400ms (in `animateFloatAsState`).
 
 ---
 
@@ -1636,7 +1636,7 @@ Implementation gotcha: the skeleton shimmer/geometry uses `Offset`; keep `import
 
 ---
 
-### Backward compatibility — Atlas → Logbook peak filter
+### Backward compatibility — Atlas → Cards peak filter
 
 The `initialPeakId` path is independent of `refreshTrigger` and is handled by its own `LaunchedEffect`:
 
@@ -1664,7 +1664,7 @@ This fires on initial composition (when navigating from Atlas) and is unaffected
 | `CancellationException` swallowed | Add `catch (e: CancellationException) { throw e }` first |
 | Scroll to index 0 after creation | Use `filteredAscents.indexOfFirst { it.id == highlightId }` |
 | `snapshotFlow { stateFlow }` race | Wait on `listState.layoutInfo.totalItemsCount > 0` instead |
-| `restoreState = true` on Logbook nav | Must be `false` after creation to force fresh ViewModel |
+| `restoreState = true` on Cards nav | Must be `false` after creation to force fresh ViewModel |
 | `vm.load()` after creation | Use `vm.refresh()` to keep list visible during reload |
 | Ring border on every recompose | Gate with `if (ringAlpha > 0f)` to avoid unnecessary `Modifier.border` |
 | `GET /api/v1/persons` returns `{ persons: [...] }` | `getPersons()` must return a `PersonsResponse` wrapper, not `List<Person>` — else deserialization fails silently → empty tag suggestions |
@@ -1679,9 +1679,9 @@ This fires on initial composition (when navigating from Atlas) and is unaffected
 
 The pencil icon on a user's **own** card (`ascent.isOwn`) opens the **create sheet in EDIT mode** — full parity with web's edit modal. There is **no separate edit screen**; `AscentDetailScreen` (read-only) is no longer reached from Cards.
 
-**Files:** `feature/newascent/NewAscentSheet.kt` + `NewAscentViewModel.kt`, hosted by `MainScaffold.kt`; trigger from `feature/logbook/LogbookScreen.kt` (`CardFront` pencil).
+**Files:** `feature/newascent/NewAscentSheet.kt` + `NewAscentViewModel.kt`, hosted by `MainScaffold.kt`; trigger from `feature/cards/CardsScreen.kt` (`CardFront` pencil).
 
-**Entry:** `LogbookScreen(onEditAscent: (Ascent) -> Unit)` → `MainScaffold` sets `var editAscent by remember { mutableStateOf<Ascent?>(null) }` and renders a second `NewAscentSheet(editAscent = editing, …)`. The global new-ascent sheet and the edit sheet share the same Activity-scoped `NewAscentViewModel` (`viewModel()`), but are mutually exclusive so there is no conflict.
+**Entry:** `CardsScreen(onEditAscent: (Ascent) -> Unit)` → `MainScaffold` sets `var editAscent by remember { mutableStateOf<Ascent?>(null) }` and renders a second `NewAscentSheet(editAscent = editing, …)`. The global new-ascent sheet and the edit sheet share the same Activity-scoped `NewAscentViewModel` (`viewModel()`), but are mutually exclusive so there is no conflict.
 
 **ViewModel — edit mode:**
 - `NewAscentUiState` gains `editAscentId`, `existingPhotoId`, `existingPhotoUrl`, `originalPersonUserIds`, and `val isEditMode get() = editAscentId != null`.
@@ -1694,7 +1694,7 @@ The pencil icon on a user's **own** card (`ascent.isOwn`) opens the **create she
 
 **Sheet:** `editAscent: Ascent?` param. `LaunchedEffect(Unit)` → `initForEdit` if set else `reset`/`setInitialPeak`. FORM photo preview shows the existing photo (Coil `AsyncImage`) with a **"Change photo"** pill tap target (`new_ascent_change_photo`) that launches the picker → crop → FORM. Header title `new_ascent_edit_title` ("Editar ascensión"). Back/`BackHandler` on FORM closes the sheet in edit mode.
 
-**Post-edit:** `onSuccess` sets `logbookHighlightId = editing.id`, bumps `logbookRefreshTrigger` (Cards → Mine + refresh + scroll + ring) and `atlasRefreshTrigger`. **No capture-reveal** (that's create-only). A `taggingWarning` (blocked by `allowOthersToTag`) is shown via the `MainScaffold` snackbar.
+**Post-edit:** `onSuccess` sets `cardsHighlightId = editing.id`, bumps `cardsRefreshTrigger` (Cards → Mine + refresh + scroll + ring) and `atlasRefreshTrigger`. **No capture-reveal** (that's create-only). A `taggingWarning` (blocked by `allowOthersToTag`) is shown via the `MainScaffold` snackbar.
 
 **Share** was already implemented (see "Card actions"); this completed the edit half.
 
@@ -1702,7 +1702,7 @@ The pencil icon on a user's **own** card (`ascent.isOwn`) opens the **create she
 
 ## Card back — message quote + Cordada pills (Android, 2026-06-10)
 
-`CardBack` in `LogbookScreen.kt` footer (above the white space):
+`CardBack` in `CardsScreen.kt` footer (above the white space):
 - **Cordada pills**: shown when `ascent.persons` is non-empty — a localized possessive label (`card_cordada_label`: es "Tu Cordada:" · ca "La teva Cordada:" · en "Your rope team:" · fr "Ta cordée:" · de "Deine Seilschaft:") + one rounded pill per tagged user showing their **username** (`person.name`, already `username ?? name` from the API), pill bg = `rarity.color` @ 12%, 11sp, `FlowRow` (requires `@OptIn(ExperimentalLayoutApi::class)` on `CardBack`). Replaced the old `"{author} con {persons}"` plain-text line.
 - **Message quote (blockquote)**: 3dp left vertical bar in `rarity.color` (rounded 2dp, `height(IntrinsicSize.Min)` + `fillMaxHeight`) + 10dp gap + the message text, 13sp *italic* `PeakMuted`, lineHeight 18sp, **maxLines 3**.
 
@@ -1906,14 +1906,14 @@ Files fixed: `app/api/v1/photos/[id]/persons/route.ts`, `app/api/face-detections
 // MainScaffold.kt — tabItems()
 TabItem(Screen.Home,    R.string.nav_tab_home,    R.drawable.ic_tab_home),
 TabItem(Screen.Friends, R.string.nav_tab_cordada, R.drawable.ic_tab_friends),  // Amigos + Cordadas
-TabItem(Screen.Logbook, R.string.nav_tab_logbook, R.drawable.ic_tab_logbook),
+TabItem(Screen.Bitacora, R.string.nav_tab_bitacora, R.drawable.ic_tab_bitacora),
 TabItem(Screen.Map,     R.string.nav_tab_map,     R.drawable.ic_tab_map),
 TabItem(Screen.Cards,   R.string.nav_tab_cards,   R.drawable.ic_tab_cards),
 ```
 
 ### Create-FAB visibility + color (2026-06-02)
 
-The global create-FAB in `MainScaffold` is gated to **`Logbook` + `Cards` only** (`currentRoute == Screen.Logbook.route || currentRoute == Screen.Cards.route`) — both create an ascent. It is **NOT** shown on Stats (dashboard, no create action) or Atlas (creates via the peak detail sheet). Friends renders its own speed-dial FAB inside its nested Scaffold.
+The global create-FAB in `MainScaffold` is gated to **`Bitácora` + `Cards` only** (`currentRoute == Screen.Bitacora.route || currentRoute == Screen.Cards.route`) — both create an ascent. It is **NOT** shown on Stats (dashboard, no create action) or Atlas (creates via the peak detail sheet). Friends renders its own speed-dial FAB inside its nested Scaffold.
 
 **All create-FABs are `PeakGreenCTA` (#2F7A5F)** — never blue. Blue (`PeakBlueActive`) is reserved for active/selected states. Same treatment everywhere: `CircleShape`, bottom-end, white `PlusIcon` 24dp, elevation 4/8dp. See `DESIGN.md → "Floating Action Buttons — app-wide rules"` for the authoritative cross-platform spec. The cordada-detail avatar-edit `SmallFloatingActionButton` is exempt (it's an edit control, not a create action).
 
@@ -2002,22 +2002,22 @@ fun ProfileSummaryScreen(onBack: () -> Unit, onNavigateToSettings: () -> Unit, .
 
 ---
 
-### ProfileScreen (Bitácora tab) — no ProfileHeader
+### BitacoraScreen (Bitácora tab) — no ProfileHeader
 
-`ProfileScreen` (the Bitácora root tab) starts **directly** with `SecondaryTabRow` (Cimas / Fotos / Etiquetado). There is no `ProfileHeader` rendered above the tabs on this screen — the header only appears in `ProfileSummaryScreen`.
+`BitacoraScreen` (the Bitácora root tab, defined in `feature/profile/ProfileScreen.kt`) starts **directly** with `SecondaryTabRow` (Cimas / Fotos / Etiquetado). There is no `ProfileHeader` rendered above the tabs on this screen — the header only appears in `ProfileSummaryScreen`.
 
 ```kotlin
 @Composable
-fun ProfileScreen(
+fun BitacoraScreen(
     onNavigateToSettings: () -> Unit,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     vm: ProfileViewModel = viewModel(),
 )
 ```
 
 **Tab content callbacks:**
-- Tab 0 (Cimas): `PeaksTab` → `onNavigateToLogbook(peak.id, peak.name)` on row tap
+- Tab 0 (Cimas): `PeaksTab` → `onNavigateToCards(peak.id, peak.name)` on row tap
 - Tab 1 (Fotos): `PhotosTab` → `onAscentClick(ascentId, true)` (own photos)
 - Tab 2 (Etiquetado): `PhotosTab(showCreator = true)` → `onAscentClick(ascentId, false)` (others' photos)
 
@@ -2059,11 +2059,11 @@ All three Bitácora tabs navigate to the Cards screen (never to `AscentDetailScr
 
 **Why not AscentDetailScreen for Tags?** The v1 ascent detail endpoint only returns data for ascents owned by the requesting user — calling it with another user's `ascentId` returns 404.
 
-**Cimas tap** → Cards filtered by that peak. Reuses the existing Atlas→Logbook `pendingPeakId`/`pendingPeakName` infrastructure:
+**Cimas tap** → Cards filtered by that peak. Reuses the existing Atlas→Cards `pendingPeakId`/`pendingPeakName` infrastructure:
 
 ```kotlin
-// MainScaffold.kt — Screen.Logbook.route composable
-onNavigateToLogbook = { peakId, peakName ->
+// MainScaffold.kt — Screen.Bitacora.route composable
+onNavigateToCards = { peakId, peakName ->
     pendingPeakId   = peakId
     pendingPeakName = peakName
     tabNavController.navigate(Screen.Cards.route) {
@@ -2078,8 +2078,8 @@ onNavigateToLogbook = { peakId, peakName ->
 
 ```kotlin
 onAscentClick = { ascentId, isOwn ->
-    logbookHighlightId = ascentId
-    if (isOwn) logbookRefreshTrigger++   // triggers setViewFilter(Mine) + refresh + scroll
+    cardsHighlightId = ascentId
+    if (isOwn) cardsRefreshTrigger++   // triggers setViewFilter(Mine) + refresh + scroll
     tabNavController.navigate(Screen.Cards.route) {
         popUpTo(Screen.Home.route) { saveState = true }
         launchSingleTop = true
@@ -2089,8 +2089,8 @@ onAscentClick = { ascentId, isOwn ->
 ```
 
 **Tags tap (others' ascent)** → Cards (Friends filter, best-effort highlight ring — no guaranteed scroll since friends' ascents aren't at top):
-- Same navigation call as above but `isOwn = false` → `logbookRefreshTrigger` is NOT incremented → no Mine filter switch, no refresh.
-- `logbookHighlightId` is still set → ring will show if the ascent happens to be visible.
+- Same navigation call as above but `isOwn = false` → `cardsRefreshTrigger` is NOT incremented → no Mine filter switch, no refresh.
+- `cardsHighlightId` is still set → ring will show if the ascent happens to be visible.
 
 ---
 
@@ -2100,13 +2100,13 @@ onAscentClick = { ascentId, isOwn ->
 
 - `PeakSearchField`: pill (24dp radius), white fill + 2dp elevation, **48dp** height, **16sp** text + placeholder (iOS-gotcha: never < 16sp), leading lupa, clear button. Params: `keyboardOptions`, `keyboardActions`, `enabled`, `showClear`/`onClear`, `modifier` (outer Row), `textFieldModifier` (inner `BasicTextField`, for `focusRequester`/`onFocusChanged`).
 - `PeakFilterButton`: same pill/48dp/elevation, funnel icon + 14sp Bold label. `active` → `PeakSlate` bg; `showBadge` → blue `PeakBlueActive` dot.
-- Consumers (all migrated): Atlas, Cards/Logbook, Friends, Cordadas invite + member picker, Profile Cimas. Per-screen search/filter icons were deleted (icons live inside the shared file).
+- Consumers (all migrated): Atlas, Cards, Friends, Cordadas invite + member picker, Profile Cimas. Per-screen search/filter icons were deleted (icons live inside the shared file).
 - Out of scope (form/auth inputs, keep own styling): New-Ascent peak picker/route/notes/tags, invitation email, Login, Settings.
 - Full spec: `DESIGN.md → "Search fields & filter buttons — app-wide shared components"`.
 
 ### Cards screen — filter (search + filters button via shared components)
 
-Cards uses `PeakSearchField` (local name-search via `vm.setSearch`) + `PeakFilterButton` (opens `LogbookFiltersPanel` ModalBottomSheet with **Vista** Mías/Mi Cordada + **Rareza** pills + Mítico + CTA "Ver N cartas"). This replaced the earlier two-tab `SecondaryTabRow` (which itself replaced `SingleChoiceSegmentedButtonRow`). The view-filter values are unchanged:
+Cards uses `PeakSearchField` (local name-search via `vm.setSearch`) + `PeakFilterButton` (opens `CardsFiltersPanel` ModalBottomSheet with **Vista** Mías/Mi Cordada + **Rareza** pills + Mítico + CTA "Ver N cartas"). This replaced the earlier two-tab `SecondaryTabRow` (which itself replaced `SingleChoiceSegmentedButtonRow`). The view-filter values are unchanged:
 
 | Tab index | Label | Filter | Sort |
 |---|---|---|---|
@@ -2117,10 +2117,10 @@ Cards uses `PeakSearchField` (local name-search via `vm.setSearch`) + `PeakFilte
 
 ```kotlin
 // QuickFilterBar = PeakSearchField + PeakFilterButton (shared components).
-// The view filter (Mine/Friends) now lives inside LogbookFiltersPanel, NOT as tabs.
+// The view filter (Mine/Friends) now lives inside CardsFiltersPanel, NOT as tabs.
 @Composable
 private fun QuickFilterBar(
-    filters: LogbookFilterState,
+    filters: CardsFilterState,
     filteredCount: Int,
     onSearchChange: (String) -> Unit,
     onOpenFilters: () -> Unit,
@@ -2129,8 +2129,8 @@ private fun QuickFilterBar(
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PeakSearchField(filters.search, onSearchChange,
-                stringResource(R.string.logbook_search_hint), Modifier.weight(1f))
-            PeakFilterButton(stringResource(R.string.logbook_filters_title),
+                stringResource(R.string.cards_search_hint), Modifier.weight(1f))
+            PeakFilterButton(stringResource(R.string.cards_filters_title),
                 active = filters.isDirty, showBadge = filters.isDirty, onClick = onOpenFilters)
         }
         HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.06f))
@@ -2138,7 +2138,7 @@ private fun QuickFilterBar(
 }
 ```
 
-**`LogbookFiltersPanel`** (ModalBottomSheet, opened by the filters button): **VISTA** (`FilterToggleChip` Mías/Mi Cordada → `vm.setViewFilter`), **RAREZA** (`FlowRow` of `RarityToggleChip` from `RARITY_PALETTE` → `vm.setRarityId`, + Mítico → `vm.setMythic`), header "Limpiar todo" (when `isDirty` → `vm.clearFilters`), CTA "Ver N cartas" (closes panel). `filters.isDirty` includes `search.isNotBlank()`.
+**`CardsFiltersPanel`** (ModalBottomSheet, opened by the filters button): **VISTA** (`FilterToggleChip` Mías/Mi Cordada → `vm.setViewFilter`), **RAREZA** (`FlowRow` of `RarityToggleChip` from `RARITY_PALETTE` → `vm.setRarityId`, + Mítico → `vm.setMythic`), header "Limpiar todo" (when `isDirty` → `vm.clearFilters`), CTA "Ver N cartas" (closes panel). `filters.isDirty` includes `search.isNotBlank()`.
 
 **Peak filter chip** — shown only when navigating from Atlas (or Cimas tab):
 
@@ -2160,7 +2160,7 @@ private fun PeakFilterChip(peakName: String, onDismiss: () -> Unit) {
 
 Rendered conditionally: `if (filters.peakId != null) PeakFilterChip(peakName = filters.peakName ?: filters.peakId ?: "", ...)`.
 
-**Empty states**: Cards (LogbookScreen) empty states show simple centered text (`logbook_friends_empty` / `logbook_mine_empty`). `FirstCardOnboardingBanner` is **not** shown in LogbookScreen — it is reserved for HomeScreen and ProfileScreen CimasTab. The `onCaptureFirstSummit` parameter is not present on `LogbookScreen`.
+**Empty states**: Cards (CardsScreen) empty states show simple centered text (`cards_friends_empty` / `cards_mine_empty`). `FirstCardOnboardingBanner` is **not** shown in CardsScreen — it is reserved for HomeScreen and BitacoraScreen CimasTab. The `onCaptureFirstSummit` parameter is not present on `CardsScreen`.
 
 ---
 
@@ -2283,8 +2283,8 @@ fun SplashScreen(isAuthenticated: Boolean, onReady: (authenticated: Boolean) -> 
 
 Shown when the user has no ascents yet, as a prompt to log their first climb.
 
-- **Shown in**: Stats (HomeScreen) when `totalAscents == 0`; Bitácora (ProfileScreen CimasTab) when peaks list is empty with no active filter.
-- **NOT shown in**: Cards (LogbookScreen) — that screen uses a simple centered text message instead.
+- **Shown in**: Stats (HomeScreen) when `totalAscents == 0`; Bitácora (BitacoraScreen CimasTab) when peaks list is empty with no active filter.
+- **NOT shown in**: Cards (CardsScreen) — that screen uses a simple centered text message instead.
 - **Layout**: white card with shadow, 24dp radius. Row: `MontBlancCardMockup` (143dp wide image from `drawable/onboarding_ecrins.png` — a partially tilted card PNG with shadow baked in) + text column (title 17sp extrabold, description 12sp, half-width CTA button "Capturar" 44dp height, `PeakGreenCTA`, 12dp radius).
 - **i18n strings**: `onboarding_card_title`, `onboarding_card_desc`, `onboarding_card_btn` ("Capturar" / "Capture" / "Capturar" / "Capturer" / "Erfassen").
 - Tapping the CTA opens the new ascent sheet via the `onCaptureFirstSummit` callback.
