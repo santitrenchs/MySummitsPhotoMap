@@ -57,7 +57,7 @@ import com.peakadex.app.feature.newascent.AscentCaptureReveal
 import com.peakadex.app.feature.newascent.NewAscentSheet
 import com.peakadex.app.feature.friends.FriendsScreen
 import com.peakadex.app.feature.friends.UserAvatar
-import com.peakadex.app.feature.profile.ProfileScreen
+import com.peakadex.app.feature.profile.BitacoraScreen
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 
@@ -328,7 +328,7 @@ fun MainScaffold(navController: NavController) {
                 )
             }
             composable(Screen.Bitacora.route) {
-                ProfileScreen(
+                BitacoraScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                     onCaptureFirstSummit = { showNewAscent = true },
                     onNavigateToCards  = { peakId, peakName ->

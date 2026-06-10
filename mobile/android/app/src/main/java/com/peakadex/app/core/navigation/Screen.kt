@@ -15,7 +15,7 @@ sealed class Screen(val route: String) {
     // Main graph — tabs (5 tabs: Stats · Cordada · Bitácora · Atlas · Cartas)
     data object Home : Screen("home")
     data object Map : Screen("map")
-    data object Bitacora : Screen("bitacora")   // "Bitácora" tab — renders ProfileScreen
+    data object Bitacora : Screen("bitacora")   // "Bitácora" tab — renders BitacoraScreen
     data object Cards : Screen("cards")          // "Cartas" tab — renders CardsScreen
 
     // Detail screens (within tabs)

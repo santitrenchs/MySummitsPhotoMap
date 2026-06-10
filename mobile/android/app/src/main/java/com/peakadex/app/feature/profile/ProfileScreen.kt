@@ -126,7 +126,7 @@ fun ProfileSummaryScreen(
 // ── Full profile: header + 3 tabs (Cimas / Fotos / Etiquetado) — Bitácora tab ─
 
 @Composable
-fun ProfileScreen(
+fun BitacoraScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
