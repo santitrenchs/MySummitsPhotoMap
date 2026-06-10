@@ -148,6 +148,8 @@
 
     <!-- ── New ascent ────────────────────────────────────────────────────────── -->
     <string name="new_ascent_title">Log ascent</string>
+    <string name="new_ascent_edit_title">Edit ascent</string>
+    <string name="new_ascent_change_photo">Change photo</string>
     <string name="new_ascent_add_photo">Add a photo</string>
     <string name="new_ascent_photo_formats">JPEG · PNG · WebP · max. 10 MB</string>
     <string name="new_ascent_select_photo_btn">Select photo</string>

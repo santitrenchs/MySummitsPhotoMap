@@ -114,6 +114,8 @@ fun MainScaffold(navController: NavController) {
     var autoOpenFriendInvite  by remember { mutableStateOf(false) }
     var newAscentPeakId       by remember { mutableStateOf<String?>(null) }
     var newAscentPeakName     by remember { mutableStateOf<String?>(null) }
+    // Edit-ascent sheet — non-null while editing one of the user's own cards.
+    var editAscent            by remember { mutableStateOf<Ascent?>(null) }
     var logbookRefreshTrigger  by remember { mutableIntStateOf(0) }
     var logbookHighlightId     by remember { mutableStateOf<String?>(null) }
     var atlasRefreshTrigger    by remember { mutableIntStateOf(0) }
@@ -261,6 +263,24 @@ fun MainScaffold(navController: NavController) {
             initialPeakName = newAscentPeakName,
         )
     }
+
+    // Edit-ascent sheet (reuses the create form in edit mode). No capture-reveal —
+    // on success just refresh + highlight the edited card in Cards.
+    editAscent?.let { editing ->
+        NewAscentSheet(
+            onDismiss  = { editAscent = null },
+            editAscent = editing,
+            onSuccess  = { _, taggingWarning ->
+                editAscent          = null
+                logbookHighlightId  = editing.id
+                logbookRefreshTrigger++
+                atlasRefreshTrigger++
+                if (taggingWarning != null) {
+                    scope.launch { snackbarHostState.showSnackbar(taggingWarning) }
+                }
+            },
+        )
+    }
         NavHost(
             navController = tabNavController,
             startDestination = Screen.Home.route,
@@ -346,9 +366,7 @@ fun MainScaffold(navController: NavController) {
             }
             composable(Screen.Cards.route) {
                 LogbookScreen(
-                    onAscentClick            = { ascentId ->
-                        navController.navigate(Screen.AscentDetail.createRoute(ascentId))
-                    },
+                    onEditAscent        = { ascent -> editAscent = ascent },
                     initialPeakId       = pendingPeakId,
                     initialPeakName     = pendingPeakName,
                     onPeakIdConsumed    = { pendingPeakId = null; pendingPeakName = null },

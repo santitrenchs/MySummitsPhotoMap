@@ -148,6 +148,8 @@
 
     <!-- ── Neue Besteigung ───────────────────────────────────────────────────── -->
     <string name="new_ascent_title">Besteigung erfassen</string>
+    <string name="new_ascent_edit_title">Besteigung bearbeiten</string>
+    <string name="new_ascent_change_photo">Foto ändern</string>
     <string name="new_ascent_add_photo">Füge ein Foto hinzu</string>
     <string name="new_ascent_photo_formats">JPEG · PNG · WebP · max. 10 MB</string>
     <string name="new_ascent_select_photo_btn">Foto auswählen</string>

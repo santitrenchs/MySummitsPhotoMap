@@ -148,6 +148,8 @@
 
     <!-- ── Nova ascensió ─────────────────────────────────────────────────────── -->
     <string name="new_ascent_title">Registrar ascensió</string>
+    <string name="new_ascent_edit_title">Editar ascensió</string>
+    <string name="new_ascent_change_photo">Canviar foto</string>
     <string name="new_ascent_add_photo">Afegeix una foto</string>
     <string name="new_ascent_photo_formats">JPEG · PNG · WebP · màx. 10 MB</string>
     <string name="new_ascent_select_photo_btn">Seleccionar foto</string>

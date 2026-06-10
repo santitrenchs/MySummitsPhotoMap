@@ -91,6 +91,7 @@ object Telemetry {
         const val SIGN_UP = FirebaseAnalytics.Event.SIGN_UP
         // Custom events.
         const val ASCENT_CREATED = "ascent_created"
+        const val ASCENT_UPDATED = "ascent_updated"
         const val ASCENT_SHARED = "ascent_shared"
         const val CORDADA_CREATED = "cordada_created"
         const val FRIEND_INVITED = "friend_invited"

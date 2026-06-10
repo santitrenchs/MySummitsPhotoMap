@@ -62,11 +62,14 @@ interface ApiService {
     @GET("ascents/{id}")
     suspend fun getAscent(@Path("id") id: String): AscentResponse
 
+    // Returns the raw updated record wrapped in { ascent }, which lacks the nested
+    // peak/photos/persons — not deserializable into our rich Ascent model. We don't
+    // need the body (the Cards list is refreshed separately), so ignore it.
     @PATCH("ascents/{id}")
     suspend fun updateAscent(
         @Path("id") id: String,
         @Body body: Map<String, String?>,
-    ): Ascent
+    )
 
     @DELETE("ascents/{id}")
     suspend fun deleteAscent(@Path("id") id: String)
@@ -94,10 +97,12 @@ interface ApiService {
         @Body body: Map<String, String?>,
     ): PersonSummary
 
-    @DELETE("photos/{photoId}/persons/{personId}")
-    suspend fun deletePhotoPerson(
-        @Path("photoId") photoId: String,
-        @Path("personId") personId: String,
+    // Removes a tagged user from a photo. The v1 route expects { userId } in the
+    // request body (DELETE with body), not a path segment.
+    @HTTP(method = "DELETE", path = "photos/{id}/persons", hasBody = true)
+    suspend fun removePhotoPerson(
+        @Path("id") photoId: String,
+        @Body body: Map<String, String?>,
     )
 
     // MARK: - Peaks

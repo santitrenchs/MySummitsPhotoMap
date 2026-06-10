@@ -34,6 +34,12 @@ import java.time.LocalDate
 
 enum class NewAscentStep { PICK, CROP, FORM }
 
+/**
+ * Max length of the ascent message ("cita"). Capped so the 3-line blockquote on the
+ * back of the card always renders in full. Shared by the create form and edit prefill.
+ */
+const val NOTES_MAX_CHARS = 100
+
 data class NewAscentUiState(
     val step: NewAscentStep = NewAscentStep.PICK,
     // Photo
@@ -53,10 +59,17 @@ data class NewAscentUiState(
     // Prefill peak when opening from Atlas "Capturar"
     val initialPeakId: String? = null,
     val initialPeakName: String? = null,
+    // Edit mode — non-null editAscentId means we PATCH an existing ascent instead of creating.
+    val editAscentId: String? = null,
+    val existingPhotoId: String? = null,
+    val existingPhotoUrl: String? = null,
+    val originalPersonUserIds: List<String> = emptyList(),
     // Async
     val isLoading: Boolean = false,
     val error: UiText? = null,
-)
+) {
+    val isEditMode: Boolean get() = editAscentId != null
+}
 
 class NewAscentViewModel : ViewModel() {
 
@@ -86,6 +99,40 @@ class NewAscentViewModel : ViewModel() {
             // save button must never depend on that network call succeeding.
             selectedPeak    = Peak(id = peakId, name = peakName, altitudeM = 0),
         ) }
+    }
+
+    /**
+     * Opens the sheet in EDIT mode for an existing ascent. Starts directly on the FORM
+     * step pre-filled with the ascent's peak, date, route, notes and tagged people.
+     * The existing photo is shown via [NewAscentUiState.existingPhotoUrl]; replacing it
+     * is optional (sets [NewAscentUiState.croppedBitmap]).
+     *
+     * Note: each `ascent.persons` entry carries the tagged user's id in `.id` (the API
+     * builds persons as `{ id = userId, name = username ?? name }`), so we can use it
+     * directly as the userId for tagging.
+     */
+    fun initForEdit(ascent: Ascent) {
+        peakSearchJob?.cancel()
+        val persons = ascent.persons.map { Person(id = it.id, name = it.name, userId = it.id) }
+        val firstPhoto = ascent.photos.firstOrNull()
+        _state.value = NewAscentUiState(
+            step                  = NewAscentStep.FORM,
+            editAscentId          = ascent.id,
+            selectedPeak          = ascent.peak,
+            peakQuery             = ascent.peak.name,
+            date                  = ascent.date.take(10),
+            route                 = ascent.route ?: "",
+            notes                 = (ascent.description ?: "").take(NOTES_MAX_CHARS),
+            selectedPersons       = persons,
+            originalPersonUserIds = persons.map { it.id },
+            existingPhotoId       = firstPhoto?.id,
+            existingPhotoUrl      = firstPhoto?.url,
+        )
+        // Load the full person catalogue for the tag picker (best-effort).
+        viewModelScope.launch {
+            val all = runCatching { api.getPersons() }.getOrDefault(emptyList<Person>())
+            _state.update { it.copy(allPersons = all) }
+        }
     }
 
     // ── Step 1 — PICK ──────────────────────────────────────────────────────────
@@ -170,7 +217,11 @@ class NewAscentViewModel : ViewModel() {
         }
     }
 
-    fun onCropBack() = _state.update { it.copy(step = NewAscentStep.PICK, originalBitmap = null, error = null) }
+    fun onCropBack() = _state.update {
+        // In edit mode there is no PICK step before the form — return to the form.
+        val target = if (it.isEditMode) NewAscentStep.FORM else NewAscentStep.PICK
+        it.copy(step = target, originalBitmap = null, error = null)
+    }
 
     // ── Step 3 — FORM ──────────────────────────────────────────────────────────
 
@@ -269,6 +320,83 @@ class NewAscentViewModel : ViewModel() {
                 // (createAscent returns the ascent BEFORE the photo upload, so its
                 // photos list is empty otherwise).
                 onSuccess(ascent.copy(photos = listOf(photo)), warning)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(isLoading = false, error = UiText.StringRes(R.string.error_save)) }
+            }
+        }
+    }
+
+    /**
+     * Saves changes to an existing ascent (edit mode). Mirrors the web edit flow:
+     *  1. PATCH metadata (peak, date, route, description).
+     *  2. If a new photo was cropped → upload it, tag people on it, delete the old photo.
+     *  3. If the photo is unchanged → reconcile person tags on the existing photo
+     *     (add newly-selected, remove de-selected).
+     */
+    fun submitEdit(onSuccess: (taggingWarning: String?) -> Unit) {
+        val s = _state.value
+        val ascentId = s.editAscentId ?: return
+        if (s.selectedPeak == null) { _state.update { it.copy(error = UiText.StringRes(R.string.error_select_peak)) }; return }
+
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            try {
+                // 1 — Update metadata
+                api.updateAscent(
+                    ascentId,
+                    mapOf(
+                        "peakId"      to s.selectedPeak.id,
+                        "date"        to s.date,
+                        "route"       to s.route.ifBlank { null },
+                        "description" to s.notes.ifBlank { null },
+                    ),
+                )
+
+                val blockedNames = mutableListOf<String>()
+                val newBitmap = s.croppedBitmap
+
+                if (newBitmap != null) {
+                    // 2 — Replace photo: upload new, tag people, delete the old one
+                    val jpegBytes = withContext(Dispatchers.IO) { compressBitmap(newBitmap) }
+                    val filePart  = MultipartBody.Part.createFormData(
+                        "file", "photo.jpg",
+                        jpegBytes.toRequestBody("image/jpeg".toMediaType()),
+                    )
+                    val photo = api.uploadPhoto(filePart, ascentId.toRequestBody("text/plain".toMediaType())).photo
+                    for (person in s.selectedPersons) {
+                        val uid = person.userId ?: continue
+                        runCatching { api.addPhotoPerson(photo.id, mapOf("userId" to uid)) }
+                            .onFailure { e -> if (e is HttpException && e.code() == 403) blockedNames.add(person.name) }
+                    }
+                    s.existingPhotoId?.let { old -> runCatching { api.deletePhoto(old) } }
+                } else if (s.existingPhotoId != null) {
+                    // 3 — Photo unchanged: reconcile person tags on the existing photo
+                    val photoId      = s.existingPhotoId
+                    val selectedUids = s.selectedPersons.mapNotNull { it.userId }
+                    val toAdd        = selectedUids - s.originalPersonUserIds.toSet()
+                    val toRemove     = s.originalPersonUserIds - selectedUids.toSet()
+                    for (uid in toAdd) {
+                        runCatching { api.addPhotoPerson(photoId, mapOf("userId" to uid)) }
+                            .onFailure { e ->
+                                if (e is HttpException && e.code() == 403) {
+                                    s.selectedPersons.firstOrNull { it.userId == uid }?.let { blockedNames.add(it.name) }
+                                }
+                            }
+                    }
+                    for (uid in toRemove) {
+                        runCatching { api.removePhotoPerson(photoId, mapOf("userId" to uid)) }
+                    }
+                }
+
+                val warning = if (blockedNames.isNotEmpty())
+                    blockedNames.joinToString(", ") + " no permite que le etiqueten"
+                else null
+
+                _state.update { it.copy(isLoading = false) }
+                Telemetry.logEvent(Telemetry.Event.ASCENT_UPDATED, mapOf("ascent_id" to ascentId))
+                onSuccess(warning)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

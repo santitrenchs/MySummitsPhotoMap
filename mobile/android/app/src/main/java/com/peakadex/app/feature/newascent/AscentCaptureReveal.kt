@@ -166,10 +166,10 @@ fun AscentCaptureReveal(
                 .blur(blurRadius),
         ) {
             CardFront(
-                ascent        = ascent,
-                rarity        = rarity,
-                onDetailClick = {},
-                onShareClick  = {},
+                ascent       = ascent,
+                rarity       = rarity,
+                onEditClick  = {},
+                onShareClick = {},
             )
         }
 

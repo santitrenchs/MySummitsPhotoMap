@@ -273,7 +273,7 @@ internal val PencilIcon: ImageVector by lazy {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogbookScreen(
-    onAscentClick: (String) -> Unit,
+    onEditAscent: (Ascent) -> Unit = {},
     initialPeakId:       String? = null,
     initialPeakName:     String? = null,
     onPeakIdConsumed:    () -> Unit = {},
@@ -428,7 +428,7 @@ fun LogbookScreen(
                     else ->
                         LogbookList(
                             ascents             = filteredAscents,
-                            onAscentClick       = onAscentClick,
+                            onEditAscent        = onEditAscent,
                             onShareClick        = onShareClick,
                             listState           = listState,
                             highlightId         = highlightId,
@@ -762,7 +762,7 @@ private fun RarityFilterChip(rarityInfo: RarityInfo, onDismiss: () -> Unit) {
 @Composable
 private fun LogbookList(
     ascents: List<Ascent>,
-    onAscentClick: (String) -> Unit,
+    onEditAscent: (Ascent) -> Unit,
     onShareClick: (String) -> Unit,
     listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
     highlightId: String? = null,
@@ -784,7 +784,7 @@ private fun LogbookList(
         items(ascents, key = { it.id }) { ascent ->
             AscentFlipCard(
                 ascent        = ascent,
-                onDetailClick = { onAscentClick(ascent.id) },
+                onEditClick   = { onEditAscent(ascent) },
                 onShareClick  = { onShareClick(ascent.id) },
                 isHighlighted = ascent.id == highlightId,
             )
@@ -797,8 +797,8 @@ private fun LogbookList(
 @Composable
 private fun AscentFlipCard(
     ascent:       Ascent,
-    onDetailClick: () -> Unit,
-    onShareClick:  () -> Unit,
+    onEditClick:  () -> Unit,
+    onShareClick: () -> Unit,
     isHighlighted: Boolean = false,
 ) {
     var isFlipped by remember { mutableStateOf(false) }
@@ -839,10 +839,10 @@ private fun AscentFlipCard(
         ) {
             if (rotation <= 90f) {
                 CardFront(
-                    ascent        = ascent,
-                    rarity        = rarity,
-                    onDetailClick = onDetailClick,
-                    onShareClick  = onShareClick,
+                    ascent       = ascent,
+                    rarity       = rarity,
+                    onEditClick  = onEditClick,
+                    onShareClick = onShareClick,
                 )
             } else {
                 Box(Modifier.graphicsLayer { rotationY = 180f }) {
@@ -859,8 +859,8 @@ private fun AscentFlipCard(
 internal fun CardFront(
     ascent:       Ascent,
     rarity:       RarityInfo,
-    onDetailClick: () -> Unit,
-    onShareClick:  () -> Unit,
+    onEditClick:  () -> Unit,
+    onShareClick: () -> Unit,
 ) {
     val heroUrl  = ascent.photos.firstOrNull()?.url
     val userName = ascent.user?.name ?: stringResource(R.string.logbook_you)
@@ -910,7 +910,7 @@ internal fun CardFront(
                         )
                     }
                     IconButton(
-                        onClick   = onDetailClick,
+                        onClick   = onEditClick,
                         modifier  = Modifier.size(28.dp),
                     ) {
                         Icon(

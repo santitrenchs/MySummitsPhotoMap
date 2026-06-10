@@ -114,11 +114,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-/**
- * Max length of the ascent message ("cita") shown as a blockquote on the back of the card.
- * Capped so the 3-line quote always renders in full (no ellipsis) on every screen size.
- */
-private const val NOTES_MAX_CHARS = 100
+// NOTES_MAX_CHARS lives in NewAscentViewModel.kt (shared by create + edit).
 
 // ── Sheet entry point ──────────────────────────────────────────────────────────
 
@@ -129,6 +125,7 @@ fun NewAscentSheet(
     onSuccess: (ascent: Ascent, taggingWarning: String?) -> Unit = { _, _ -> },
     initialPeakId: String? = null,
     initialPeakName: String? = null,
+    editAscent: Ascent? = null,
     vm: NewAscentViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -138,9 +135,13 @@ fun NewAscentSheet(
 
     // Reset state on each presentation (ViewModel persists across opens)
     LaunchedEffect(Unit) {
-        vm.reset()
-        if (initialPeakId != null && initialPeakName != null) {
-            vm.setInitialPeak(initialPeakId, initialPeakName)
+        if (editAscent != null) {
+            vm.initForEdit(editAscent)
+        } else {
+            vm.reset()
+            if (initialPeakId != null && initialPeakName != null) {
+                vm.setInitialPeak(initialPeakId, initialPeakName)
+            }
         }
     }
 
@@ -154,7 +155,8 @@ fun NewAscentSheet(
         when (state.step) {
             NewAscentStep.PICK -> scope.launch { sheetState.hide(); onDismiss() }
             NewAscentStep.CROP -> vm.onCropBack()
-            NewAscentStep.FORM -> vm.onFormBack()
+            // In edit mode the form is the first step → back closes the sheet.
+            NewAscentStep.FORM -> if (state.isEditMode) scope.launch { sheetState.hide(); onDismiss() } else vm.onFormBack()
         }
     }
 
@@ -186,7 +188,11 @@ fun NewAscentSheet(
                 state    = state,
                 vm       = vm,
                 onBack   = vm::onFormBack,
-                onSubmit = { vm.submit { ascent, warning -> onSuccess(ascent, warning); onDismiss() } },
+                onSubmit = {
+                    if (state.isEditMode) vm.submitEdit { warning -> editAscent?.let { onSuccess(it, warning) }; onDismiss() }
+                    else vm.submit { ascent, warning -> onSuccess(ascent, warning); onDismiss() }
+                },
+                onReplacePhoto = { photoPicker.launch("image/*") },
                 onClose  = { scope.launch { sheetState.hide(); onDismiss() } },
             )
         }
@@ -397,6 +403,7 @@ private fun AscentFormStep(
     vm: NewAscentViewModel,
     onBack: () -> Unit,
     onSubmit: () -> Unit,
+    onReplacePhoto: () -> Unit,
     onClose: () -> Unit,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
@@ -485,7 +492,7 @@ private fun AscentFormStep(
                 Icon(BackArrowIcon, contentDescription = stringResource(R.string.action_back), tint = PeakNavyDark)
             }
             Text(
-                stringResource(R.string.new_ascent_title),
+                stringResource(if (state.isEditMode) R.string.new_ascent_edit_title else R.string.new_ascent_title),
                 fontWeight = FontWeight.SemiBold,
                 fontSize   = 16.sp,
                 color      = PeakNavyDark,
@@ -529,22 +536,52 @@ private fun AscentFormStep(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
 
-            // Photo preview
-            state.croppedBitmap?.let { bmp ->
+            // Photo preview. In edit mode the existing photo is shown (until replaced)
+            // and the whole frame is tappable to pick + crop a new one.
+            val croppedBmp  = state.croppedBitmap
+            val existingUrl = state.existingPhotoUrl
+            if (croppedBmp != null || existingUrl != null) {
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(4f / 5f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color.Black),
+                            .background(Color.Black)
+                            .then(if (state.isEditMode) Modifier.clickable { onReplacePhoto() } else Modifier),
                     ) {
-                        Image(
-                            bitmap       = bmp.asImageBitmap(),
-                            contentDescription = "Foto",
-                            contentScale = ContentScale.Crop,
-                            modifier     = Modifier.fillMaxSize(),
-                        )
+                        if (croppedBmp != null) {
+                            Image(
+                                bitmap       = croppedBmp.asImageBitmap(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier     = Modifier.fillMaxSize(),
+                            )
+                        } else {
+                            AsyncImage(
+                                model              = existingUrl,
+                                contentDescription = null,
+                                contentScale       = ContentScale.Crop,
+                                modifier           = Modifier.fillMaxSize(),
+                            )
+                        }
+                        if (state.isEditMode) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 12.dp)
+                                    .clip(RoundedCornerShape(percent = 50))
+                                    .background(Color(0xCC000000))
+                                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                            ) {
+                                Text(
+                                    stringResource(R.string.new_ascent_change_photo),
+                                    color      = Color.White,
+                                    fontSize   = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
                     }
                 }
             }
