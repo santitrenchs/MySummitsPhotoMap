@@ -801,16 +801,16 @@ private fun PeakRowCard(
                             color     = rarityColor,
                             darkColor = rarityColorDark,
                         )
+                        Spacer(Modifier.width(10.dp))
                     }
-                    Spacer(Modifier.weight(1f))
                     Text(
                         text       = "${peak.altitudeM} m",
                         fontSize   = 13.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color      = PeakNavyDark,
                         maxLines   = 1,
-                        modifier   = Modifier.width(76.dp),
                     )
+                    Spacer(Modifier.weight(1f))
                     Text(
                         text       = formatDate(peak.lastDate),
                         fontSize   = 12.sp,

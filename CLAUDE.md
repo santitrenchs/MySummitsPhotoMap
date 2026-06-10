@@ -2043,9 +2043,9 @@ The Cimas tab uses compact text-first rows. Do **not** show the peak photo in th
 - Row height: `84.dp`, left rarity strip 4dp full height, row shape `RoundedCornerShape(12.dp)`.
 - Content padding: start 12dp, end 14dp, top 12dp, bottom 16dp.
 - First line: peak name, 14sp bold, `PeakNavyDark`, one-line ellipsis.
-- Second line: rarity pill left, then fixed metadata columns on the right.
+- Second line: rarity pill + altitude grouped on the **left**, last-ascent date pushed to the **right** (`Spacer(weight 1f)` sits after the altitude, not after the pill).
 - Rarity pill: min height 26dp, rounded 100dp, `rarityColor.copy(alpha = 0.13f)`, 9dp rarity dot + 10sp bold label, `lineHeight = 12.sp`, `rarityColorDark`.
-- Altitude: fixed width 76dp, left-aligned, 13sp extra-bold, `PeakNavyDark`.
+- Altitude: immediately right of the rarity pill (10dp gap), wrap-content (no fixed width), 13sp extra-bold, `PeakNavyDark`.
 - Last ascent date: fixed width 78dp, `TextAlign.End`, 12sp semibold, `PeakNavyMid`.
 - Removed from the Cimas row: photo thumbnail, repeat-count pill, first-date column, mountain-range text.
 

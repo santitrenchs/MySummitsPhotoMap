@@ -1064,7 +1064,7 @@ The Cimas tab uses compact text-first rows. Photos are intentionally **not** sho
 ```
 ┌──────────────────────────────────────────────┐
 │  │ Pica d'Estats                             │
-│  │ ● Snow Lotus            3143 m  12 ene '24│
+│  │ ● Snow Lotus  3143 m            12 ene '24│
 └──────────────────────────────────────────────┘
 ```
 
@@ -1074,10 +1074,10 @@ The Cimas tab uses compact text-first rows. Photos are intentionally **not** sho
 | Left strip | 4dp, `rarityColor`, full height |
 | Row content padding | start 12dp, end 14dp, top 12dp, bottom 16dp |
 | Name | 14sp, bold, `PeakNavyDark`, 1 line ellipsis |
-| Second line | rarity pill left; altitude fixed-width column; last ascent date fixed-width and right-aligned |
+| Second line | rarity pill **+ altitude grouped on the left** (10dp gap); last ascent date pushed to the right (`Spacer(weight 1f)` sits after the altitude) |
 | Rarity pill | min height 26dp, rounded 100dp, `rarityColor.copy(alpha = 0.13f)`, dot + label |
 | Rarity label | 10sp bold, `lineHeight = 12.sp`, `rarityColorDark`, 1 line ellipsis |
-| Altitude | 13sp extra-bold, `PeakNavyDark`, width 76dp, left-aligned |
+| Altitude | 13sp extra-bold, `PeakNavyDark`, immediately right of the rarity pill, wrap-content (no fixed width) |
 | Last date | 12sp semibold, `PeakNavyMid`, width 78dp, `TextAlign.End` |
 
 Search behaviour: while typing, the search field must stay visible and focused; results update below it. Do **not** auto-scroll on every keystroke. On IME Search, clear focus and scroll to the first result (`LazyListState.animateScrollToItem(2)`) if any results exist. The list uses `imePadding()` and enough bottom content padding so results remain reachable above the keyboard and bottom nav.
