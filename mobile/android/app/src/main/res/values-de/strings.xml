@@ -5,7 +5,7 @@
     <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_cordada">Seilschaft</string>
     <string name="nav_tab_map">Atlas</string>
-    <string name="nav_tab_logbook">Logbuch</string>
+    <string name="nav_tab_bitacora">Logbuch</string>
     <string name="nav_tab_cards">Karten</string>
     <string name="nav_fab_new_ascent">Neue Besteigung</string>
 

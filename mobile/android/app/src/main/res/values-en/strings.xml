@@ -5,7 +5,7 @@
     <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_cordada">Rope Team</string>
     <string name="nav_tab_map">Atlas</string>
-    <string name="nav_tab_logbook">Logbook</string>
+    <string name="nav_tab_bitacora">Logbook</string>
     <string name="nav_tab_cards">Cards</string>
     <string name="nav_fab_new_ascent">New ascent</string>
 
@@ -73,7 +73,7 @@
     <string name="profile_empty_photos">No photos yet</string>
     <string name="profile_empty_tagged">You haven\'t been tagged in any photo yet</string>
 
-    <!-- ── Logbook / Cards ──────────────────────────────────────────────────── -->
+    <!-- ── Bitácora / Cards ──────────────────────────────────────────────────── -->
     <string name="cards_filter_mine">My Cards</string>
     <string name="cards_filter_friends">My Rope Team</string>
     <string name="cards_search_hint">Search summits…</string>

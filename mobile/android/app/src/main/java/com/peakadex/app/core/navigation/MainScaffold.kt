@@ -74,7 +74,7 @@ private data class CaptureRevealState(
 private fun tabItems() = listOf(
     TabItem(Screen.Home,    stringResource(R.string.nav_tab_home),    R.drawable.ic_tab_home),
     TabItem(Screen.Friends, stringResource(R.string.nav_tab_cordada), R.drawable.ic_tab_friends),
-    TabItem(Screen.Logbook, stringResource(R.string.nav_tab_logbook), R.drawable.ic_tab_logbook),
+    TabItem(Screen.Bitacora, stringResource(R.string.nav_tab_bitacora), R.drawable.ic_tab_bitacora),
     TabItem(Screen.Map,     stringResource(R.string.nav_tab_map),     R.drawable.ic_tab_map),
     TabItem(Screen.Cards,   stringResource(R.string.nav_tab_cards),   R.drawable.ic_tab_cards),
 )
@@ -186,11 +186,11 @@ fun MainScaffold(navController: NavController) {
             )
         },
         // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar).
-        // Only on Logbook (Bitácora) + Cards, where the primary action is "create ascent".
+        // Only on Bitácora + Cards, where the primary action is "create ascent".
         // Stats is a dashboard (no create action); Atlas creates from the peak detail sheet;
         // Friends renders its own green speed-dial FAB. Color = PeakGreenCTA (DESIGN.md: CTA = green).
         floatingActionButton = {
-            if (currentRoute == Screen.Logbook.route || currentRoute == Screen.Cards.route) {
+            if (currentRoute == Screen.Bitacora.route || currentRoute == Screen.Cards.route) {
                 FloatingActionButton(
                     onClick = { newAscentPeakId = null; newAscentPeakName = null; showNewAscent = true },
                     containerColor = PeakGreenCTA,
@@ -327,7 +327,7 @@ fun MainScaffold(navController: NavController) {
                     },
                 )
             }
-            composable(Screen.Logbook.route) {
+            composable(Screen.Bitacora.route) {
                 ProfileScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                     onCaptureFirstSummit = { showNewAscent = true },
