@@ -209,7 +209,7 @@ private const val LYR_SATELLITE           = "satellite-layer"
 @Composable
 fun AtlasScreen(
     atlasRefreshTrigger: Int = 0,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit = { _, _ -> },
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit = { _, _ -> },
     onNavigateToNewAscent: (peakId: String, peakName: String) -> Unit = { _, _ -> },
     vm: AtlasViewModel = viewModel(),
 ) {
@@ -688,7 +688,7 @@ fun AtlasScreen(
             PeakDetailSheet(
                 selected              = selected,
                 rarities              = rarities,
-                onNavigateToLogbook   = onNavigateToLogbook,
+                onNavigateToCards   = onNavigateToCards,
                 onNavigateToNewAscent = onNavigateToNewAscent,
                 onDismiss             = vm::onSelectionDismissed,
             )
@@ -1155,7 +1155,7 @@ private fun SearchResultsList(
 private fun PeakDetailSheet(
     selected: SelectedPeakUi,
     rarities: List<Rarity>,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onNavigateToNewAscent: (peakId: String, peakName: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1301,7 +1301,7 @@ private fun PeakDetailSheet(
                 if (ascent != null) {
                     // Climbed: "Ver capturas" (ghost) + "Capturar" (dark)
                     OutlinedButton(
-                        onClick  = { onDismiss(); onNavigateToLogbook(peak.id, peak.name) },
+                        onClick  = { onDismiss(); onNavigateToCards(peak.id, peak.name) },
                         modifier = Modifier.weight(1f).height(40.dp),
                         shape    = RoundedCornerShape(10.dp),
                         border   = BorderStroke(1.dp, PeakSlate),
@@ -2125,7 +2125,7 @@ private fun RarityPill(
     }
 }
 
-// ── FilterChip helpers — same palette used in LogbookScreen ──────────────────
+// ── FilterChip helpers — same palette used in CardsScreen ──────────────────
 
 @Composable
 private fun atlasFilterChipColors() = FilterChipDefaults.filterChipColors(

@@ -1,4 +1,4 @@
-package com.peakadex.app.feature.logbook
+package com.peakadex.app.feature.cards
 
 import android.graphics.Paint
 import android.graphics.RectF
@@ -274,7 +274,7 @@ internal val PencilIcon: ImageVector by lazy {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogbookScreen(
+fun CardsScreen(
     onEditAscent: (Ascent) -> Unit = {},
     initialPeakId:       String? = null,
     initialPeakName:     String? = null,
@@ -284,7 +284,7 @@ fun LogbookScreen(
     refreshTrigger: Int = 0,
     highlightId: String? = null,
     onHighlightConsumed: () -> Unit = {},
-    vm: LogbookViewModel = viewModel(),
+    vm: CardsViewModel = viewModel(),
 ) {
     // Apply peak filter from Atlas navigation once, then signal consumed so the
     // caller can clear the pending state (prevents re-applying on recomposition).
@@ -413,22 +413,22 @@ fun LogbookScreen(
         }
 
         when (uiState) {
-            is LogbookUiState.Loading -> LogbookLoadingState()
-            is LogbookUiState.Error   -> LogbookErrorState((uiState as LogbookUiState.Error).message.asString()) { vm.load() }
-            is LogbookUiState.Success -> PullToRefreshBox(
+            is CardsUiState.Loading -> CardsLoadingState()
+            is CardsUiState.Error   -> CardsErrorState((uiState as CardsUiState.Error).message.asString()) { vm.load() }
+            is CardsUiState.Success -> PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh    = { vm.refresh() },
                 modifier     = Modifier.fillMaxSize(),
             ) {
                 when {
                     filteredAscents.isEmpty() && (filters.peakId != null || filters.rarityId != null || filters.mythic || filters.search.isNotBlank()) ->
-                        LogbookNoResultsState()
+                        CardsNoResultsState()
                     filteredAscents.isEmpty() && filters.viewFilter == ViewFilter.Friends ->
-                        LogbookFriendsEmptyState()
+                        CardsFriendsEmptyState()
                     filteredAscents.isEmpty() ->
-                        LogbookEmptyState()
+                        CardsEmptyState()
                     else ->
-                        LogbookList(
+                        CardsList(
                             ascents             = filteredAscents,
                             onEditAscent        = onEditAscent,
                             onShareClick        = onShareClick,
@@ -443,7 +443,7 @@ fun LogbookScreen(
 
     // ── Filters panel ─────────────────────────────────────────────────────────
     if (showFiltersPanel) {
-        LogbookFiltersPanel(
+        CardsFiltersPanel(
             filters        = filters,
             filteredCount  = filteredAscents.size,
             onViewFilterChange = vm::setViewFilter,
@@ -459,7 +459,7 @@ fun LogbookScreen(
 
 @Composable
 private fun QuickFilterBar(
-    filters: LogbookFilterState,
+    filters: CardsFilterState,
     filteredCount: Int,
     onSearchChange: (String) -> Unit,
     onOpenFilters: () -> Unit,
@@ -480,11 +480,11 @@ private fun QuickFilterBar(
             com.peakadex.app.core.ui.PeakSearchField(
                 value         = filters.search,
                 onValueChange = onSearchChange,
-                placeholder   = stringResource(R.string.logbook_search_hint),
+                placeholder   = stringResource(R.string.cards_search_hint),
                 modifier      = Modifier.weight(1f),
             )
             com.peakadex.app.core.ui.PeakFilterButton(
-                label     = stringResource(R.string.logbook_filters_title),
+                label     = stringResource(R.string.cards_filters_title),
                 active    = hasActiveFilters,
                 showBadge = hasActiveFilters,
                 onClick   = onOpenFilters,
@@ -498,8 +498,8 @@ private fun QuickFilterBar(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun LogbookFiltersPanel(
-    filters: LogbookFilterState,
+private fun CardsFiltersPanel(
+    filters: CardsFilterState,
     filteredCount: Int,
     onViewFilterChange: (ViewFilter) -> Unit,
     onRarityChange: (String?) -> Unit,
@@ -528,7 +528,7 @@ private fun LogbookFiltersPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text       = stringResource(R.string.logbook_filters_title),
+                    text       = stringResource(R.string.cards_filters_title),
                     fontSize   = 17.sp,
                     fontWeight = FontWeight.SemiBold,
                     color      = Color(0xFF111827),
@@ -537,7 +537,7 @@ private fun LogbookFiltersPanel(
                 if (filters.isDirty) {
                     TextButton(onClick = onClearAll) {
                         Text(
-                            text     = stringResource(R.string.logbook_filters_clear),
+                            text     = stringResource(R.string.cards_filters_clear),
                             fontSize = 14.sp,
                             color    = PeakBlueActive,
                         )
@@ -550,7 +550,7 @@ private fun LogbookFiltersPanel(
 
             // ── VISTA ──────────────────────────────────────────────────────────
             Text(
-                text     = stringResource(R.string.logbook_filters_section_view),
+                text     = stringResource(R.string.cards_filters_section_view),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.08.em,
@@ -563,12 +563,12 @@ private fun LogbookFiltersPanel(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FilterToggleChip(
-                    label    = stringResource(R.string.logbook_filter_mine),
+                    label    = stringResource(R.string.cards_filter_mine),
                     selected = filters.viewFilter == ViewFilter.Mine,
                     onClick  = { onViewFilterChange(ViewFilter.Mine) },
                 )
                 FilterToggleChip(
-                    label    = stringResource(R.string.logbook_filter_friends),
+                    label    = stringResource(R.string.cards_filter_friends),
                     selected = filters.viewFilter == ViewFilter.Friends,
                     onClick  = { onViewFilterChange(ViewFilter.Friends) },
                 )
@@ -578,7 +578,7 @@ private fun LogbookFiltersPanel(
 
             // ── RAREZA ─────────────────────────────────────────────────────────
             Text(
-                text     = stringResource(R.string.logbook_filters_section_rarity),
+                text     = stringResource(R.string.cards_filters_section_rarity),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.08.em,
@@ -630,7 +630,7 @@ private fun LogbookFiltersPanel(
                 colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
             ) {
                 Text(
-                    text       = stringResource(R.string.logbook_filters_see_cards, filteredCount),
+                    text       = stringResource(R.string.cards_filters_see_cards, filteredCount),
                     fontSize   = 15.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color      = Color.White,
@@ -762,7 +762,7 @@ private fun RarityFilterChip(rarityInfo: RarityInfo, onDismiss: () -> Unit) {
 // ── List ───────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LogbookList(
+private fun CardsList(
     ascents: List<Ascent>,
     onEditAscent: (Ascent) -> Unit,
     onShareClick: (String) -> Unit,
@@ -865,7 +865,7 @@ internal fun CardFront(
     onShareClick: () -> Unit,
 ) {
     val heroUrl  = ascent.photos.firstOrNull()?.url
-    val userName = ascent.user?.name ?: stringResource(R.string.logbook_you)
+    val userName = ascent.user?.name ?: stringResource(R.string.cards_you)
     val initials = userName.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
 
     Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
@@ -965,9 +965,9 @@ internal fun CardFront(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StatBandItem(stringResource(R.string.logbook_stat_rarity),   "✿ ${rarity.label}", rarity.color,       Modifier.weight(1f))
-            StatBandItem(stringResource(R.string.logbook_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
-            StatBandItem(stringResource(R.string.logbook_stat_ep),        "+${rarity.ep}",     rarity.color,       Modifier.weight(1f))
+            StatBandItem(stringResource(R.string.cards_stat_rarity),   "✿ ${rarity.label}", rarity.color,       Modifier.weight(1f))
+            StatBandItem(stringResource(R.string.cards_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
+            StatBandItem(stringResource(R.string.cards_stat_ep),        "+${rarity.ep}",     rarity.color,       Modifier.weight(1f))
         }
         Spacer(Modifier.height(3.dp))
     }
@@ -1330,12 +1330,12 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(rarity.color))
                     Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.logbook_stats_title), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.cards_stats_title), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    StatBandItem(stringResource(R.string.logbook_stat_ascents),  ascent.peakStats?.totalAscents?.toString()  ?: "—", PeakOnSurface, Modifier.weight(1f))
-                    StatBandItem(stringResource(R.string.logbook_stat_climbers), ascent.peakStats?.uniqueClimbers?.toString() ?: "—", PeakOnSurface, Modifier.weight(1f))
+                    StatBandItem(stringResource(R.string.cards_stat_ascents),  ascent.peakStats?.totalAscents?.toString()  ?: "—", PeakOnSurface, Modifier.weight(1f))
+                    StatBandItem(stringResource(R.string.cards_stat_climbers), ascent.peakStats?.uniqueClimbers?.toString() ?: "—", PeakOnSurface, Modifier.weight(1f))
                 }
             }
 
@@ -1405,13 +1405,13 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
 // ── States ─────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LogbookFriendsEmptyState() {
+private fun CardsFriendsEmptyState() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text      = stringResource(R.string.logbook_friends_empty),
+            text      = stringResource(R.string.cards_friends_empty),
             fontSize  = 14.sp,
             color     = Color(0xFF9CA3AF),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1421,13 +1421,13 @@ private fun LogbookFriendsEmptyState() {
 }
 
 @Composable
-private fun LogbookEmptyState() {
+private fun CardsEmptyState() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text      = stringResource(R.string.logbook_mine_empty),
+            text      = stringResource(R.string.cards_mine_empty),
             fontSize  = 14.sp,
             color     = Color(0xFF9CA3AF),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1437,22 +1437,22 @@ private fun LogbookEmptyState() {
 }
 
 @Composable
-private fun LogbookNoResultsState() {
+private fun CardsNoResultsState() {
     Column(
         Modifier.fillMaxSize().padding(horizontal = 32.dp),
         verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("✿", fontSize = 48.sp, color = PeakBlueActive)
         Spacer(Modifier.height(14.dp))
-        Text(stringResource(R.string.logbook_empty_search_title), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PeakOnSurface)
+        Text(stringResource(R.string.cards_empty_search_title), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PeakOnSurface)
         Spacer(Modifier.height(4.dp))
-        Text(stringResource(R.string.logbook_empty_search_desc), fontSize = 13.sp, color = PeakSubtle,
+        Text(stringResource(R.string.cards_empty_search_desc), fontSize = 13.sp, color = PeakSubtle,
             lineHeight = 19.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
 @Composable
-private fun LogbookLoadingState() {
+private fun CardsLoadingState() {
     val shimmer = rememberSkeletonBrush("cardsSkeleton")
 
     LazyColumn(
@@ -1552,7 +1552,7 @@ private fun CardSkeleton(brush: Brush) {
 }
 
 @Composable
-private fun LogbookErrorState(message: String, onRetry: () -> Unit) {
+private fun CardsErrorState(message: String, onRetry: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         Text("⚠️", fontSize = 40.sp)
         Spacer(Modifier.height(12.dp))
@@ -1689,7 +1689,7 @@ private val CordadaIcon: ImageVector by lazy {
     }.build()
 }
 
-internal fun formatDate(isoDate: String): String {
+private fun formatDate(isoDate: String): String {
     return try {
         val local = if (isoDate.length > 10) LocalDate.parse(isoDate.substring(0, 10)) else LocalDate.parse(isoDate)
         val day   = local.dayOfMonth

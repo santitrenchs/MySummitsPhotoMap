@@ -1,4 +1,4 @@
-package com.peakadex.app.feature.logbook
+package com.peakadex.app.feature.detail
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

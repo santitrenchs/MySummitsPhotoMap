@@ -43,7 +43,7 @@ import com.peakadex.app.core.ui.theme.PeakTextHeadline
 // ── Shared search + filter components ──────────────────────────────────────────
 //
 // Single source of truth for the search input and the filter button used across
-// Atlas, Cards (Logbook), Friends/Cordadas and Profile. Unified spec:
+// Atlas, Cards, Friends/Cordadas and Profile. Unified spec:
 //   • Material 3 aligned: pill shape, filled white surface, subtle 2dp elevation.
 //   • iOS gotcha compliant: input + placeholder text are 16sp (no auto-zoom).
 //   • 48dp height — Material minimum touch target.

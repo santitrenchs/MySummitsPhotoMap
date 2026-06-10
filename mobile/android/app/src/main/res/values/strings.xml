@@ -74,27 +74,27 @@
     <string name="profile_empty_tagged">Aún no estás etiquetado/a en ninguna foto</string>
 
     <!-- ── Bitácora / Cards ──────────────────────────────────────────────────── -->
-    <string name="logbook_filter_mine">Mis Cards</string>
-    <string name="logbook_filter_friends">Mi Cordada</string>
-    <string name="logbook_search_hint">Buscar cimas…</string>
-    <string name="logbook_filters_title">Filtros</string>
-    <string name="logbook_filters_clear">Limpiar todo</string>
-    <string name="logbook_filters_section_view">VISTA</string>
-    <string name="logbook_filters_section_rarity">RAREZA</string>
-    <string name="logbook_filters_see_cards">Ver %d cartas</string>
-    <string name="logbook_stat_rarity">RAREZA</string>
-    <string name="logbook_stat_altitude">ALTITUD</string>
-    <string name="logbook_stat_ep">EP</string>
-    <string name="logbook_stats_title">ESTADÍSTICAS PEAKADEX</string>
+    <string name="cards_filter_mine">Mis Cards</string>
+    <string name="cards_filter_friends">Mi Cordada</string>
+    <string name="cards_search_hint">Buscar cimas…</string>
+    <string name="cards_filters_title">Filtros</string>
+    <string name="cards_filters_clear">Limpiar todo</string>
+    <string name="cards_filters_section_view">VISTA</string>
+    <string name="cards_filters_section_rarity">RAREZA</string>
+    <string name="cards_filters_see_cards">Ver %d cartas</string>
+    <string name="cards_stat_rarity">RAREZA</string>
+    <string name="cards_stat_altitude">ALTITUD</string>
+    <string name="cards_stat_ep">EP</string>
+    <string name="cards_stats_title">ESTADÍSTICAS PEAKADEX</string>
     <string name="card_cordada_label">Tu Cordada:</string>
-    <string name="logbook_stat_ascents">ASCENSIONES</string>
-    <string name="logbook_stat_climbers">ALPINISTAS</string>
-    <string name="logbook_empty_friends_title">Sin actividad de amigos</string>
-    <string name="logbook_empty_friends_desc">Cuando tus amigos registren cimas aparecerán aquí.\nUsa el filtro para ver tus propias ascensiones.</string>
-    <string name="logbook_empty_mine_title">Tu bitácora está vacía</string>
-    <string name="logbook_empty_mine_desc">Registra tu primera ascensión para empezar.</string>
-    <string name="logbook_empty_search_title">Sin resultados</string>
-    <string name="logbook_empty_search_desc">Prueba a ajustar la búsqueda o los filtros.</string>
+    <string name="cards_stat_ascents">ASCENSIONES</string>
+    <string name="cards_stat_climbers">ALPINISTAS</string>
+    <string name="cards_empty_friends_title">Sin actividad de amigos</string>
+    <string name="cards_empty_friends_desc">Cuando tus amigos registren cimas aparecerán aquí.\nUsa el filtro para ver tus propias ascensiones.</string>
+    <string name="cards_empty_mine_title">Tu bitácora está vacía</string>
+    <string name="cards_empty_mine_desc">Registra tu primera ascensión para empezar.</string>
+    <string name="cards_empty_search_title">Sin resultados</string>
+    <string name="cards_empty_search_desc">Prueba a ajustar la búsqueda o los filtros.</string>
 
     <!-- ── Home ─────────────────────────────────────────────────────────────── -->
     <string name="home_stat_ascents_label">ascensiones</string>
@@ -410,7 +410,7 @@
     <string name="error_select_peak">Selecciona una cima</string>
     <string name="error_photo_required">La foto es obligatoria</string>
     <string name="error_crop_photo">No se pudo recortar la foto</string>
-    <string name="logbook_you">Tú</string>
+    <string name="cards_you">Tú</string>
     <string name="settings_username_format_error">Solo letras, números, puntos y guiones bajos (3–20 caracteres)</string>
 
     <!-- ── Atlas onboarding ───────────────────────────────────────────────────── -->
@@ -419,6 +419,6 @@
     <string name="map_onboarding_rarities">Niveles de rareza</string>
     <string name="map_onboarding_cta">Explorar el mapa</string>
     <string name="map_onboarding_dont_show">No volver a mostrar</string>
-    <string name="logbook_friends_empty">Tus amigos aún no han subido ninguna cima.\nSigue escalando y comparte tus ascensiones.</string>
-    <string name="logbook_mine_empty">Aún no tienes ninguna ascensión registrada.</string>
+    <string name="cards_friends_empty">Tus amigos aún no han subido ninguna cima.\nSigue escalando y comparte tus ascensiones.</string>
+    <string name="cards_mine_empty">Aún no tienes ninguna ascensión registrada.</string>
 </resources>

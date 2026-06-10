@@ -64,7 +64,7 @@ import com.airbnb.lottie.compose.rememberLottieDynamicProperty
 import com.peakadex.app.R
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.ui.RarityInfo
-import com.peakadex.app.feature.logbook.CardFront
+import com.peakadex.app.feature.cards.CardFront
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos

@@ -74,27 +74,27 @@
     <string name="profile_empty_tagged">Du wurdest noch in keinem Foto markiert</string>
 
     <!-- ── Logbuch / Karten ──────────────────────────────────────────────────── -->
-    <string name="logbook_filter_mine">Meine Karten</string>
-    <string name="logbook_filter_friends">Meine Seilschaft</string>
-    <string name="logbook_search_hint">Gipfel suchen…</string>
-    <string name="logbook_filters_title">Filter</string>
-    <string name="logbook_filters_clear">Alle löschen</string>
-    <string name="logbook_filters_section_view">ANSICHT</string>
-    <string name="logbook_filters_section_rarity">SELTENHEIT</string>
-    <string name="logbook_filters_see_cards">%d Karten anzeigen</string>
-    <string name="logbook_stat_rarity">SELTENHEIT</string>
-    <string name="logbook_stat_altitude">HÖHE</string>
-    <string name="logbook_stat_ep">EP</string>
-    <string name="logbook_stats_title">PEAKADEX STATISTIKEN</string>
+    <string name="cards_filter_mine">Meine Karten</string>
+    <string name="cards_filter_friends">Meine Seilschaft</string>
+    <string name="cards_search_hint">Gipfel suchen…</string>
+    <string name="cards_filters_title">Filter</string>
+    <string name="cards_filters_clear">Alle löschen</string>
+    <string name="cards_filters_section_view">ANSICHT</string>
+    <string name="cards_filters_section_rarity">SELTENHEIT</string>
+    <string name="cards_filters_see_cards">%d Karten anzeigen</string>
+    <string name="cards_stat_rarity">SELTENHEIT</string>
+    <string name="cards_stat_altitude">HÖHE</string>
+    <string name="cards_stat_ep">EP</string>
+    <string name="cards_stats_title">PEAKADEX STATISTIKEN</string>
     <string name="card_cordada_label">Deine Seilschaft:</string>
-    <string name="logbook_stat_ascents">BESTEIGUNGEN</string>
-    <string name="logbook_stat_climbers">BERGSTEIGER</string>
-    <string name="logbook_empty_friends_title">Keine Aktivität von Freunden</string>
-    <string name="logbook_empty_friends_desc">Wenn deine Freunde Gipfel eintragen, erscheinen sie hier.\nNutze den Filter, um deine eigenen Besteigungen zu sehen.</string>
-    <string name="logbook_empty_mine_title">Dein Logbuch ist leer</string>
-    <string name="logbook_empty_mine_desc">Trag deine erste Besteigung ein, um loszulegen.</string>
-    <string name="logbook_empty_search_title">Keine Ergebnisse</string>
-    <string name="logbook_empty_search_desc">Passe Suche oder Filter an.</string>
+    <string name="cards_stat_ascents">BESTEIGUNGEN</string>
+    <string name="cards_stat_climbers">BERGSTEIGER</string>
+    <string name="cards_empty_friends_title">Keine Aktivität von Freunden</string>
+    <string name="cards_empty_friends_desc">Wenn deine Freunde Gipfel eintragen, erscheinen sie hier.\nNutze den Filter, um deine eigenen Besteigungen zu sehen.</string>
+    <string name="cards_empty_mine_title">Dein Logbuch ist leer</string>
+    <string name="cards_empty_mine_desc">Trag deine erste Besteigung ein, um loszulegen.</string>
+    <string name="cards_empty_search_title">Keine Ergebnisse</string>
+    <string name="cards_empty_search_desc">Passe Suche oder Filter an.</string>
 
     <!-- ── Startseite ────────────────────────────────────────────────────────── -->
     <string name="home_stat_ascents_label">Besteigungen</string>
@@ -406,7 +406,7 @@
     <string name="error_select_peak">Wähle einen Gipfel</string>
     <string name="error_photo_required">Ein Foto ist erforderlich</string>
     <string name="error_crop_photo">Foto konnte nicht zugeschnitten werden</string>
-    <string name="logbook_you">Du</string>
+    <string name="cards_you">Du</string>
     <string name="settings_username_format_error">Nur Buchstaben, Zahlen, Punkte und Unterstriche (3–20 Zeichen)</string>
     <!-- ── Atlas onboarding ─────────────────────────────────────────────────── -->
     <string name="map_onboarding_title">Sammle die seltenen\nBlumen der Berge</string>
@@ -414,6 +414,6 @@
     <string name="map_onboarding_rarities">Seltenheitsstufen</string>
     <string name="map_onboarding_cta">Karte erkunden</string>
     <string name="map_onboarding_dont_show">Nicht mehr anzeigen</string>
-    <string name="logbook_friends_empty">Deine Freunde haben noch keine Gipfel erfasst.\nWeiter klettern und Aufstiege teilen.</string>
-    <string name="logbook_mine_empty">Du hast noch keine Aufstiege erfasst.</string>
+    <string name="cards_friends_empty">Deine Freunde haben noch keine Gipfel erfasst.\nWeiter klettern und Aufstiege teilen.</string>
+    <string name="cards_mine_empty">Du hast noch keine Aufstiege erfasst.</string>
 </resources>

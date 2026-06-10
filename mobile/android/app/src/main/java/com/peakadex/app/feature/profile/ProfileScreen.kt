@@ -128,7 +128,7 @@ fun ProfileSummaryScreen(
 @Composable
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     onCaptureFirstSummit: () -> Unit = {},
     vm: ProfileViewModel = viewModel(),
@@ -165,7 +165,7 @@ fun ProfileScreen(
                     state                = s,
                     onPeakQuery          = vm::setPeakQuery,
                     onPeakRarityFilter   = vm::setPeakRarityFilter,
-                    onNavigateToLogbook  = onNavigateToLogbook,
+                    onNavigateToCards  = onNavigateToCards,
                     onAscentClick        = onAscentClick,
                     onCaptureFirstSummit = onCaptureFirstSummit,
                 )
@@ -358,7 +358,7 @@ private fun ProfileContent(
     state: ProfileUiState.Success,
     onPeakQuery: (String) -> Unit,
     onPeakRarityFilter: (String?) -> Unit,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     onCaptureFirstSummit: () -> Unit = {},
 ) {
@@ -405,7 +405,7 @@ private fun ProfileContent(
                 onQuery              = onPeakQuery,
                 onCaptureFirstSummit = onCaptureFirstSummit,
                 onRarityFilter      = onPeakRarityFilter,
-                onNavigateToLogbook = onNavigateToLogbook,
+                onNavigateToCards = onNavigateToCards,
             )
             1 -> PhotosTab(
                 photos        = state.data.photos,
@@ -541,7 +541,7 @@ private fun CimasTab(
     rarityFilter: String?,
     onQuery: (String) -> Unit,
     onRarityFilter: (String?) -> Unit,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onCaptureFirstSummit: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
@@ -610,7 +610,7 @@ private fun CimasTab(
                 PeakRowCard(
                     peak      = peak,
                     rarityMap = rarityMap,
-                    onClick   = { onNavigateToLogbook(peak.id, peak.name) },
+                    onClick   = { onNavigateToCards(peak.id, peak.name) },
                     modifier  = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 5.dp),

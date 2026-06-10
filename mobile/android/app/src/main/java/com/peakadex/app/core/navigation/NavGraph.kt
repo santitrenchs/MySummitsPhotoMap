@@ -7,7 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.peakadex.app.AppContainer
 import com.peakadex.app.feature.auth.LoginScreen
 import com.peakadex.app.feature.auth.RegisterScreen
-import com.peakadex.app.feature.logbook.AscentDetailScreen
+import com.peakadex.app.feature.detail.AscentDetailScreen
 import com.peakadex.app.feature.profile.ProfileSummaryScreen
 import com.peakadex.app.feature.friends.CordadaDetailRoute
 import com.peakadex.app.feature.settings.SettingsScreen

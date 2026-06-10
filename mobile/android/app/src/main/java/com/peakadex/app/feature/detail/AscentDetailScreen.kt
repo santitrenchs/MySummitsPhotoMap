@@ -1,4 +1,4 @@
-package com.peakadex.app.feature.logbook
+package com.peakadex.app.feature.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,6 +34,9 @@ import androidx.compose.ui.res.stringResource
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.PersonSummary
 import com.peakadex.app.core.model.Photo
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 // ── Entry point ────────────────────────────────────────────────────────────────
 
@@ -433,4 +436,17 @@ private val BackArrowIcon: ImageVector by lazy {
             strokeLineJoin  = StrokeJoin.Round,
         ) { moveTo(10f, 6f); lineTo(4f, 12f); lineTo(10f, 18f) }
     }.build()
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+private fun formatDate(isoDate: String): String {
+    return try {
+        val local = if (isoDate.length > 10) LocalDate.parse(isoDate.substring(0, 10)) else LocalDate.parse(isoDate)
+        val day   = local.dayOfMonth
+        val month = local.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()).lowercase().trimEnd('.')
+        "$day $month. ${local.year}"
+    } catch (e: Exception) {
+        isoDate.take(10)
+    }
 }

@@ -74,27 +74,27 @@
     <string name="profile_empty_tagged">Encara no t\'han etiquetat en cap foto</string>
 
     <!-- ── Bitàcola / Cartes ─────────────────────────────────────────────────── -->
-    <string name="logbook_filter_mine">Les meves Cartes</string>
-    <string name="logbook_filter_friends">La meva Cordada</string>
-    <string name="logbook_search_hint">Cerca cims…</string>
-    <string name="logbook_filters_title">Filtres</string>
-    <string name="logbook_filters_clear">Netejar tot</string>
-    <string name="logbook_filters_section_view">VISTA</string>
-    <string name="logbook_filters_section_rarity">RARESA</string>
-    <string name="logbook_filters_see_cards">Veure %d cartes</string>
-    <string name="logbook_stat_rarity">RARESA</string>
-    <string name="logbook_stat_altitude">ALTITUD</string>
-    <string name="logbook_stat_ep">EP</string>
-    <string name="logbook_stats_title">ESTADÍSTIQUES PEAKADEX</string>
+    <string name="cards_filter_mine">Les meves Cartes</string>
+    <string name="cards_filter_friends">La meva Cordada</string>
+    <string name="cards_search_hint">Cerca cims…</string>
+    <string name="cards_filters_title">Filtres</string>
+    <string name="cards_filters_clear">Netejar tot</string>
+    <string name="cards_filters_section_view">VISTA</string>
+    <string name="cards_filters_section_rarity">RARESA</string>
+    <string name="cards_filters_see_cards">Veure %d cartes</string>
+    <string name="cards_stat_rarity">RARESA</string>
+    <string name="cards_stat_altitude">ALTITUD</string>
+    <string name="cards_stat_ep">EP</string>
+    <string name="cards_stats_title">ESTADÍSTIQUES PEAKADEX</string>
     <string name="card_cordada_label">La teva Cordada:</string>
-    <string name="logbook_stat_ascents">ASCENSIONS</string>
-    <string name="logbook_stat_climbers">ALPINISTES</string>
-    <string name="logbook_empty_friends_title">Sense activitat d\'amics</string>
-    <string name="logbook_empty_friends_desc">Quan els teus amics registrin cims apareixeran aquí.\nUsa el filtre per veure les teves pròpies ascensions.</string>
-    <string name="logbook_empty_mine_title">La teva bitàcola és buida</string>
-    <string name="logbook_empty_mine_desc">Registra la teva primera ascensió per començar.</string>
-    <string name="logbook_empty_search_title">Sense resultats</string>
-    <string name="logbook_empty_search_desc">Prova a ajustar la cerca o els filtres.</string>
+    <string name="cards_stat_ascents">ASCENSIONS</string>
+    <string name="cards_stat_climbers">ALPINISTES</string>
+    <string name="cards_empty_friends_title">Sense activitat d\'amics</string>
+    <string name="cards_empty_friends_desc">Quan els teus amics registrin cims apareixeran aquí.\nUsa el filtre per veure les teves pròpies ascensions.</string>
+    <string name="cards_empty_mine_title">La teva bitàcola és buida</string>
+    <string name="cards_empty_mine_desc">Registra la teva primera ascensió per començar.</string>
+    <string name="cards_empty_search_title">Sense resultats</string>
+    <string name="cards_empty_search_desc">Prova a ajustar la cerca o els filtres.</string>
 
     <!-- ── Home ─────────────────────────────────────────────────────────────── -->
     <string name="home_stat_ascents_label">ascensions</string>
@@ -406,7 +406,7 @@
     <string name="error_select_peak">Selecciona un cim</string>
     <string name="error_photo_required">La foto és obligatòria</string>
     <string name="error_crop_photo">No s\'ha pogut retallar la foto</string>
-    <string name="logbook_you">Tu</string>
+    <string name="cards_you">Tu</string>
     <string name="settings_username_format_error">Només lletres, números, punts i guions baixos (3–20 caràcters)</string>
     <!-- ── Atlas onboarding ─────────────────────────────────────────────────── -->
     <string name="map_onboarding_title">Captura les rareses\nde la muntanya</string>
@@ -414,6 +414,6 @@
     <string name="map_onboarding_rarities">Nivells de raresa</string>
     <string name="map_onboarding_cta">Explorar el mapa</string>
     <string name="map_onboarding_dont_show">No tornar a mostrar</string>
-    <string name="logbook_friends_empty">Els teus amics encara no han pujat cap cim.\nContinua escalant i comparteix les teves ascensions.</string>
-    <string name="logbook_mine_empty">Encara no tens cap ascensió registrada.</string>
+    <string name="cards_friends_empty">Els teus amics encara no han pujat cap cim.\nContinua escalant i comparteix les teves ascensions.</string>
+    <string name="cards_mine_empty">Encara no tens cap ascensió registrada.</string>
 </resources>

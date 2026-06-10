@@ -74,27 +74,27 @@
     <string name="profile_empty_tagged">You haven\'t been tagged in any photo yet</string>
 
     <!-- ── Logbook / Cards ──────────────────────────────────────────────────── -->
-    <string name="logbook_filter_mine">My Cards</string>
-    <string name="logbook_filter_friends">My Rope Team</string>
-    <string name="logbook_search_hint">Search summits…</string>
-    <string name="logbook_filters_title">Filters</string>
-    <string name="logbook_filters_clear">Clear all</string>
-    <string name="logbook_filters_section_view">VIEW</string>
-    <string name="logbook_filters_section_rarity">RARITY</string>
-    <string name="logbook_filters_see_cards">See %d cards</string>
-    <string name="logbook_stat_rarity">RARITY</string>
-    <string name="logbook_stat_altitude">ALTITUDE</string>
-    <string name="logbook_stat_ep">EP</string>
-    <string name="logbook_stats_title">PEAKADEX STATS</string>
+    <string name="cards_filter_mine">My Cards</string>
+    <string name="cards_filter_friends">My Rope Team</string>
+    <string name="cards_search_hint">Search summits…</string>
+    <string name="cards_filters_title">Filters</string>
+    <string name="cards_filters_clear">Clear all</string>
+    <string name="cards_filters_section_view">VIEW</string>
+    <string name="cards_filters_section_rarity">RARITY</string>
+    <string name="cards_filters_see_cards">See %d cards</string>
+    <string name="cards_stat_rarity">RARITY</string>
+    <string name="cards_stat_altitude">ALTITUDE</string>
+    <string name="cards_stat_ep">EP</string>
+    <string name="cards_stats_title">PEAKADEX STATS</string>
     <string name="card_cordada_label">Your rope team:</string>
-    <string name="logbook_stat_ascents">ASCENTS</string>
-    <string name="logbook_stat_climbers">CLIMBERS</string>
-    <string name="logbook_empty_friends_title">No friends activity</string>
-    <string name="logbook_empty_friends_desc">When your friends log peaks they\'ll appear here.\nUse the filter to see your own ascents.</string>
-    <string name="logbook_empty_mine_title">Your logbook is empty</string>
-    <string name="logbook_empty_mine_desc">Log your first ascent to get started.</string>
-    <string name="logbook_empty_search_title">No results</string>
-    <string name="logbook_empty_search_desc">Try adjusting the search or filters.</string>
+    <string name="cards_stat_ascents">ASCENTS</string>
+    <string name="cards_stat_climbers">CLIMBERS</string>
+    <string name="cards_empty_friends_title">No friends activity</string>
+    <string name="cards_empty_friends_desc">When your friends log peaks they\'ll appear here.\nUse the filter to see your own ascents.</string>
+    <string name="cards_empty_mine_title">Your logbook is empty</string>
+    <string name="cards_empty_mine_desc">Log your first ascent to get started.</string>
+    <string name="cards_empty_search_title">No results</string>
+    <string name="cards_empty_search_desc">Try adjusting the search or filters.</string>
 
     <!-- ── Home ─────────────────────────────────────────────────────────────── -->
     <string name="home_stat_ascents_label">ascents</string>
@@ -406,7 +406,7 @@
     <string name="error_select_peak">Select a peak</string>
     <string name="error_photo_required">A photo is required</string>
     <string name="error_crop_photo">Could not crop the photo</string>
-    <string name="logbook_you">You</string>
+    <string name="cards_you">You</string>
     <string name="settings_username_format_error">Only letters, numbers, dots and underscores (3–20 chars)</string>
     <!-- ── Atlas onboarding ─────────────────────────────────────────────────── -->
     <string name="map_onboarding_title">Collect the mountain\'s\nrarest flowers</string>
@@ -414,6 +414,6 @@
     <string name="map_onboarding_rarities">Rarity tiers</string>
     <string name="map_onboarding_cta">Explore the map</string>
     <string name="map_onboarding_dont_show">Don\'t show again</string>
-    <string name="logbook_friends_empty">Your friends haven\'t logged any summits yet.\nKeep climbing and share your ascents.</string>
-    <string name="logbook_mine_empty">You haven\'t logged any ascents yet.</string>
+    <string name="cards_friends_empty">Your friends haven\'t logged any summits yet.\nKeep climbing and share your ascents.</string>
+    <string name="cards_mine_empty">You haven\'t logged any ascents yet.</string>
 </resources>

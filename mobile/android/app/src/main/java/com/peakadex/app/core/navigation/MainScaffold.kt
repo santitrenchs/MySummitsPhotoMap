@@ -52,7 +52,7 @@ import com.peakadex.app.core.ui.theme.PeakBlueLight
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
-import com.peakadex.app.feature.logbook.LogbookScreen
+import com.peakadex.app.feature.cards.CardsScreen
 import com.peakadex.app.feature.newascent.AscentCaptureReveal
 import com.peakadex.app.feature.newascent.NewAscentSheet
 import com.peakadex.app.feature.friends.FriendsScreen
@@ -311,7 +311,7 @@ fun MainScaffold(navController: NavController) {
             composable(Screen.Map.route) {
                 AtlasScreen(
                     atlasRefreshTrigger = atlasRefreshTrigger,
-                    onNavigateToLogbook = { peakId, peakName ->
+                    onNavigateToCards = { peakId, peakName ->
                         pendingPeakId   = peakId
                         pendingPeakName = peakName
                         tabNavController.navigate(Screen.Cards.route) {
@@ -331,7 +331,7 @@ fun MainScaffold(navController: NavController) {
                 ProfileScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                     onCaptureFirstSummit = { showNewAscent = true },
-                    onNavigateToLogbook  = { peakId, peakName ->
+                    onNavigateToCards  = { peakId, peakName ->
                         pendingPeakId   = peakId
                         pendingPeakName = peakName
                         tabNavController.navigate(Screen.Cards.route) {
@@ -342,7 +342,7 @@ fun MainScaffold(navController: NavController) {
                     },
                     onAscentClick = { ascentId, isOwn ->
                         logbookHighlightId = ascentId
-                        // Own photos: switch to Mine filter + refresh so LogbookScreen
+                        // Own photos: switch to Mine filter + refresh so CardsScreen
                         // scrolls to and highlights the card automatically.
                         // Tagged photos: keep existing Friends filter; the ring will
                         // appear if the card is already visible in the list.
@@ -365,7 +365,7 @@ fun MainScaffold(navController: NavController) {
                 )
             }
             composable(Screen.Cards.route) {
-                LogbookScreen(
+                CardsScreen(
                     onEditAscent        = { ascent -> editAscent = ascent },
                     initialPeakId       = pendingPeakId,
                     initialPeakName     = pendingPeakName,
