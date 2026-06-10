@@ -2160,7 +2160,7 @@ private fun PeakFilterChip(peakName: String, onDismiss: () -> Unit) {
 
 Rendered conditionally: `if (filters.peakId != null) PeakFilterChip(peakName = filters.peakName ?: filters.peakId ?: "", ...)`.
 
-**Empty states**: Cards (CardsScreen) empty states show simple centered text (`cards_friends_empty` / `cards_mine_empty`). `FirstCardOnboardingBanner` is **not** shown in CardsScreen — it is reserved for HomeScreen and BitacoraScreen CimasTab. The `onCaptureFirstSummit` parameter is not present on `CardsScreen`.
+**Empty states**: Cards (CardsScreen) empty states use the **same visual component as the Rope Team (Cordada) empty state** — `RopeTeamIcon` (from `core/ui/SharedIcons.kt`) in a 72dp `#EFF6FF` circle, 15sp SemiBold title, 13sp `#9CA3AF` subtitle, `fillMaxWidth` + `padding(vertical=56dp)` + `spacedBy(10dp)`. Both `CardsFriendsEmptyState` and `CardsEmptyState` use the **same strings** as Cordada: `friends_empty` + `friends_empty_subtitle`. `FirstCardOnboardingBanner` is **not** shown in CardsScreen — it is reserved for HomeScreen and BitacoraScreen CimasTab. The `onCaptureFirstSummit` parameter is not present on `CardsScreen`.
 
 ---
 

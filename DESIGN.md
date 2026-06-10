@@ -849,11 +849,13 @@ Shown below the search bar when `isDirty = true`. Horizontal scroll. Each chip h
 
 ### Empty states
 
-| Condition | Emoji | Title | Subtitle |
-|-----------|-------|-------|---------|
-| Friends view + no data (default on first load) | 👥 52sp | "Sin actividad de amigos" | "Cuando tus amigos registren cimas aparecerán aquí.\nUsa el filtro para ver tus propias ascensiones." |
-| Mine view + no ascents at all | 🏔️ 52sp | "Tu bitácora está vacía" | "Registra tu primera ascensión para empezar." |
-| Any filter combination → 0 results | ✿ 48sp (`#0369A1`) | "Sin resultados" | "Prueba a ajustar la búsqueda o los filtros." |
+**Friends view + Mine view (no data):** identical to the Rope Team (Cordada) empty state — `RopeTeamIcon` in a 72dp `#EFF6FF` circle (`PeakBlueActive` tint, 34dp icon), 15sp SemiBold `#111827` title, 13sp `#9CA3AF` subtitle, `fillMaxWidth` + `padding(vertical=56dp)` + `spacedBy(10dp)`. Both states use the same strings: `friends_empty` + `friends_empty_subtitle`. Icon defined in `core/ui/SharedIcons.kt`.
+
+| Condition | Component | Strings |
+|-----------|-----------|---------|
+| Friends view (Mi Cordada) + no data | `RopeTeamIcon` circle + title + subtitle | `friends_empty` / `friends_empty_subtitle` |
+| Mine view + no ascents | `RopeTeamIcon` circle + title + subtitle | `friends_empty` / `friends_empty_subtitle` |
+| Any filter → 0 results | `CardsNoResultsState`: `✿` 48sp + title + subtitle | `cards_empty_search_title` / `cards_empty_search_desc` |
 
 ---
 
