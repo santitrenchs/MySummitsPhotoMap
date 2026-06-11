@@ -285,6 +285,8 @@
     <string name="atlas_section_sort">SORTIEREN</string>
     <string name="atlas_filter_captured">Bestiegen (%d)</string>
     <string name="atlas_filter_not_captured">Noch nicht</string>
+    <string name="atlas_filter_mythic">⭐ Mythisch</string>
+    <string name="cards_filter_mythic">⭐ Mythisch</string>
     <string name="atlas_sort_distance">Entfernung</string>
     <string name="atlas_sort_relevance">Relevanz</string>
     <string name="atlas_sort_altitude">Höhe</string>

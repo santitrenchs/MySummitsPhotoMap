@@ -606,7 +606,7 @@ private fun CardsFiltersPanel(
                 // Mythic chip
                 val mythicSelected = filters.mythic
                 FilterToggleChip(
-                    label    = "⭐ Mítico",
+                    label    = stringResource(R.string.cards_filter_mythic),
                     selected = mythicSelected,
                     selectedBg     = Color(0xFFFFFBEB),
                     selectedBorder = Color(0xFFFDE68A),

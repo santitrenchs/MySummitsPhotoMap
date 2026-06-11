@@ -285,6 +285,8 @@
     <string name="atlas_section_sort">TRIER</string>
     <string name="atlas_filter_captured">Gravies (%d)</string>
     <string name="atlas_filter_not_captured">Pas encore</string>
+    <string name="atlas_filter_mythic">⭐ Mythique</string>
+    <string name="cards_filter_mythic">⭐ Mythique</string>
     <string name="atlas_sort_distance">Distance</string>
     <string name="atlas_sort_relevance">Pertinence</string>
     <string name="atlas_sort_altitude">Altitude</string>

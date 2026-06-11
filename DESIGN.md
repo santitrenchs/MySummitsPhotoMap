@@ -1141,6 +1141,24 @@ Two separate entry points for selecting a peak, matching web's `flyToPeak(peak)`
 
 **Web:** `peaksCacheRef` in `MapView.tsx` already implements the equivalent pattern correctly. See the pending parity task in CLAUDE.md for the rarity pill count fix needed on web.
 
+### Mythic filter in Atlas FiltersPanel (added 2026-06-11)
+
+The Atlas `FiltersPanel` includes a **⭐ Mythic chip** inside the RAREZA `FlowRow`, after the rarity pills. Behavior mirrors the Cards screen:
+
+- **Mutually exclusive with rarity pills**: activating Mythic deselects all rarity pills; activating any rarity pill deactivates Mythic.
+- `isDirty` and `hasActiveFilters` both include `mythicFilter`.
+- Filtering is client-side on the already-loaded `peaksCache` / `listPeaks` — no extra API call.
+- `filteredCount` in the panel footer accounts for `mythicFilter`.
+
+**Chip style** (same as Cards):
+
+| State | bg | border | text |
+|-------|----|--------|------|
+| Unselected | default chip | `PeakBorderLight` | default |
+| Selected | `#FFFBEB` | `#FDE68A` | `#92400E` |
+
+**i18n key:** `atlas_filter_mythic` — es "⭐ Mítico" · ca "⭐ Mític" · en "⭐ Mythic" · fr "⭐ Mythique" · de "⭐ Mythisch". Cards uses the parallel key `cards_filter_mythic` (same translations). **Never hardcode the label** — always use `stringResource`.
+
 ### Rarity pill counts — context-aware by status filter (fix 2026-06-05)
 
 The count shown on each rarity pill in the filters panel depends on the active status filter:

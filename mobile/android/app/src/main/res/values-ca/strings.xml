@@ -285,6 +285,8 @@
     <string name="atlas_section_sort">ORDENAR</string>
     <string name="atlas_filter_captured">Capturades (%d)</string>
     <string name="atlas_filter_not_captured">Per escalar</string>
+    <string name="atlas_filter_mythic">⭐ Mític</string>
+    <string name="cards_filter_mythic">⭐ Mític</string>
     <string name="atlas_sort_distance">Distància</string>
     <string name="atlas_sort_relevance">Rellevància</string>
     <string name="atlas_sort_altitude">Altitud</string>

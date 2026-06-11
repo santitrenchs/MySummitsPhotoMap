@@ -43,6 +43,7 @@ data class AtlasUiState(
     val isLoadingList: Boolean = false,
     val filter: AtlasFilter = AtlasFilter.ALL,
     val selectedRarityIds: Set<String> = emptySet(), // empty = all rarities
+    val mythicFilter: Boolean = false,
     val sortMode: SortMode = SortMode.DISTANCE,
     val rarities: List<Rarity> = emptyList(),
     val selected: SelectedPeakUi? = null,
@@ -158,7 +159,11 @@ class AtlasViewModel : ViewModel() {
     }
 
     fun onRarityFilterChanged(ids: Set<String>) {
-        _uiState.update { it.copy(selectedRarityIds = ids) }
+        _uiState.update { it.copy(selectedRarityIds = ids, mythicFilter = false) }
+    }
+
+    fun onMythicFilterChanged(enabled: Boolean) {
+        _uiState.update { it.copy(mythicFilter = enabled, selectedRarityIds = emptySet()) }
     }
 
     fun onSortModeChanged(mode: SortMode) {
@@ -293,6 +298,7 @@ class AtlasViewModel : ViewModel() {
             it.copy(
                 filter            = AtlasFilter.ALL,
                 selectedRarityIds = emptySet(),
+                mythicFilter      = false,
                 sortMode          = SortMode.DISTANCE,
             )
         }

@@ -981,6 +981,7 @@ data class AtlasUiState(
     val isLoadingList:      Boolean                  = false,
     val filter:             AtlasFilter              = AtlasFilter.ALL,
     val selectedRarityIds:  Set<String>              = emptySet(),
+    val mythicFilter:       Boolean                  = false,
     val sortMode:           SortMode                 = SortMode.DISTANCE,
     val rarities:           List<Rarity>             = emptyList(),
     val selected:           SelectedPeakUi?          = null,
@@ -1014,6 +1015,8 @@ val lon = centerLon ?: lastBounds?.let { (it.east + it.west) / 2 }
 `onMapIdle()` receives `zoom: Double`, saves bounds in `lastBounds`, merges new peaks into `peaksCache`. Unclimbed only — already-climbed peaks are always available via `climbedByPeakId`.
 
 **`lastBounds` re-fetch:** when switching from CLIMBED filter back to ALL/NOT_YET, `peaksCache` may be empty if no viewport fetches ran. `onFilterChanged` re-calls `onMapIdle(lastBounds)` to repopulate immediately.
+
+**Mythic filter (`mythicFilter: Boolean`, added 2026-06-11):** Filters peaks by `isMythic == true` on both the map sources and the list panel. Mutually exclusive with rarity pills — activating it clears `selectedRarityIds`, and activating a rarity pill clears `mythicFilter`. `onMythicFilterChanged(enabled)` in the ViewModel handles this. `isDirty` and `hasActiveFilters` both include `mythicFilter`. String key `atlas_filter_mythic` (⭐ Mítico / Mític / Mythic / Mythique / Mythisch) — all 5 locales. The chip uses the same amber theme as the Cards screen (`#FFFBEB` bg, `#FDE68A` border, `#92400E` text).
 
 **`onPeakSelected` vs `onPeakSelectedById` (fix 2026-06-05):** Two separate functions to avoid silent failures:
 - `onPeakSelected(peak: Peak)` — called from list and search results where the full `Peak` object is available. Inserts peak into `peaksCache` and sets `selected` immediately. Never fails silently. Mirrors web's `flyToPeak(peak)`.
@@ -1192,8 +1195,8 @@ A `CircularProgressIndicator` shows while `isLoadingList = true`. When the list 
 | `PeaksListPanel` | Full-screen white overlay with `statusBarsPadding()`; spinner while `isLoadingList`; `LazyColumn`; each row has 44dp photo thumbnail (climbed, rarity border) or 9dp blue dot (unclimbed) + name + range/country + altitude + distance from center |
 | `LayersPanel` | `ModalBottomSheet` white; **3-column** `LayerCard` grid (Normal / Terrain / Satélite) + Trails toggle row; active card has blue border + checkmark badge |
 | `LayerCard` | 44dp icon box, checkmark badge on active, `PeakBlueActive` border/text when active |
-| `FiltersPanel` | `ModalBottomSheet` white; header with "Limpiar todo" when dirty; `FlowRow` of `RarityPill`s; `FilterChip` for status (ALL/CLIMBED/NOT_YET) and sort (DISTANCE/RELEVANCE/ALTITUDE); footer "Ver N cimas" green CTA button |
-| `RarityPill` | Toggle pill; colored border + background tint when selected; `✿ label (N)` format |
+| `FiltersPanel` | `ModalBottomSheet` white; header with "Limpiar todo" when dirty; `FlowRow` of `RarityPill`s + **⭐ Mythic chip** (amber theme, mutually exclusive with rarities); `FilterChip` for status (ALL/CLIMBED/NOT_YET) and sort (DISTANCE/RELEVANCE/ALTITUDE); footer "Ver N cimas" green CTA button |
+| `RarityPill` | Toggle pill; colored border + background tint when selected; `✿ label (N)` format. Visually deselected when `mythicFilter = true` |
 
 ---
 
@@ -2138,7 +2141,7 @@ private fun QuickFilterBar(
 }
 ```
 
-**`CardsFiltersPanel`** (ModalBottomSheet, opened by the filters button): **VISTA** (`FilterToggleChip` Mías/Mi Cordada → `vm.setViewFilter`), **RAREZA** (`FlowRow` of `RarityToggleChip` from `RARITY_PALETTE` → `vm.setRarityId`, + Mítico → `vm.setMythic`), header "Limpiar todo" (when `isDirty` → `vm.clearFilters`), CTA "Ver N cartas" (closes panel). `filters.isDirty` includes `search.isNotBlank()`.
+**`CardsFiltersPanel`** (ModalBottomSheet, opened by the filters button): **VISTA** (`FilterToggleChip` Mías/Mi Cordada → `vm.setViewFilter`), **RAREZA** (`FlowRow` of `RarityToggleChip` from `RARITY_PALETTE` → `vm.setRarityId`, + Mítico → `vm.setMythic`), header "Limpiar todo" (when `isDirty` → `vm.clearFilters`), CTA "Ver N cartas" (closes panel). `filters.isDirty` includes `search.isNotBlank()`. The Mythic chip label uses `stringResource(R.string.cards_filter_mythic)` — **never hardcode `"⭐ Mítico"`**; the key exists in all 5 locales.
 
 **Peak filter chip** — shown only when navigating from Atlas (or Cimas tab):
 

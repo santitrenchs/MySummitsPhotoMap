@@ -411,11 +411,12 @@ fun AtlasScreen(
         val filter            = uiState.filter
         val rarities          = uiState.rarities
         val selectedRarityIds = uiState.selectedRarityIds
+        val mythicFilter      = uiState.mythicFilter
 
-        LaunchedEffect(styleReady.value, climbed, viewport, filter, selectedRarityIds, rarities) {
+        LaunchedEffect(styleReady.value, climbed, viewport, filter, selectedRarityIds, mythicFilter, rarities) {
             if (!styleReady.value) return@LaunchedEffect
             val style = mapRef.value?.style ?: return@LaunchedEffect
-            updateMapSources(style, climbed, viewport, filter, selectedRarityIds, rarities)
+            updateMapSources(style, climbed, viewport, filter, selectedRarityIds, mythicFilter, rarities)
         }
 
         // ── Load photo markers async (incremental) ───────────────────────────
@@ -530,6 +531,7 @@ fun AtlasScreen(
         if (showTopBar) {
             val hasActiveFilters = uiState.filter != AtlasFilter.ALL ||
                     uiState.selectedRarityIds.isNotEmpty() ||
+                    uiState.mythicFilter ||
                     uiState.sortMode != SortMode.DISTANCE
             SearchBarOverlay(
                 query            = uiState.searchQuery,
@@ -612,6 +614,7 @@ fun AtlasScreen(
                 filter            = filter,
                 center            = cameraCenter.value,
                 selectedRarityIds = selectedRarityIds,
+                mythicFilter      = mythicFilter,
                 sortMode          = uiState.sortMode,
                 rarities          = rarities,
                 onPeakClick       = { peak ->
@@ -655,6 +658,7 @@ fun AtlasScreen(
         if (filtersOpen) {
             val isDirty = uiState.filter != AtlasFilter.ALL ||
                           uiState.selectedRarityIds.isNotEmpty() ||
+                          uiState.mythicFilter ||
                           uiState.sortMode != SortMode.DISTANCE
             FiltersPanel(
                 rarities              = rarities,
@@ -664,6 +668,8 @@ fun AtlasScreen(
                 onFilterChanged       = vm::onFilterChanged,
                 selectedRarityIds     = selectedRarityIds,
                 onRarityFilterChanged = vm::onRarityFilterChanged,
+                mythicFilter          = mythicFilter,
+                onMythicFilterChanged = vm::onMythicFilterChanged,
                 sortMode              = uiState.sortMode,
                 onSortModeChanged     = vm::onSortModeChanged,
                 isDirty               = isDirty,
@@ -852,6 +858,7 @@ private fun updateMapSources(
     viewport: List<Peak>,
     filter: AtlasFilter,
     selectedRarityIds: Set<String>,
+    mythicFilter: Boolean,
     rarities: List<Rarity>,
 ) {
     val rarityColorMap = rarities.associateBy { it.id }
@@ -859,6 +866,7 @@ private fun updateMapSources(
     val climbedFeatures: List<Feature> = if (filter != AtlasFilter.NOT_YET) {
         climbed.values
             .filter { selectedRarityIds.isEmpty() || it.peak.rarityId in selectedRarityIds }
+            .filter { !mythicFilter || it.peak.isMythic == true }
             .map { ascent ->
                 Feature.fromGeometry(
                     Point.fromLngLat(ascent.peak.longitude, ascent.peak.latitude),
@@ -878,6 +886,7 @@ private fun updateMapSources(
         viewport
             .filter { it.id !in climbed }
             .filter { selectedRarityIds.isEmpty() || it.rarityId in selectedRarityIds }
+            .filter { !mythicFilter || it.isMythic == true }
             .map { peak ->
                 val rarityColor = peak.rarityId?.let { rarityColorMap[it]?.color } ?: UNCLIMBED_COLOR
                 Feature.fromGeometry(
@@ -1531,11 +1540,12 @@ private fun PeaksListPanel(
     filter: AtlasFilter,
     center: LatLng?,
     selectedRarityIds: Set<String>,
+    mythicFilter: Boolean,
     sortMode: SortMode,
     rarities: List<Rarity>,
     onPeakClick: (Peak) -> Unit,
 ) {
-    val items = remember(climbed, listPeaks, filter, center, selectedRarityIds, sortMode, rarities) {
+    val items = remember(climbed, listPeaks, filter, center, selectedRarityIds, mythicFilter, sortMode, rarities) {
         val climbedPeaks = if (filter != AtlasFilter.NOT_YET)
             climbed.values.map { it.peak } else emptyList()
         val unclimbedPeaks = if (filter != AtlasFilter.CLIMBED)
@@ -1543,6 +1553,7 @@ private fun PeaksListPanel(
         val all = (climbedPeaks + unclimbedPeaks)
             .distinctBy { it.id }
             .filter { p -> selectedRarityIds.isEmpty() || p.rarityId in selectedRarityIds }
+            .filter { p -> !mythicFilter || p.isMythic == true }
         val rarityWeights = rarities.associate { it.id to it.scoreWeight }
         val maxAlt = all.maxOfOrNull { it.altitudeM } ?: 1
         when (sortMode) {
@@ -1830,6 +1841,8 @@ private fun FiltersPanel(
     onFilterChanged: (AtlasFilter) -> Unit,
     selectedRarityIds: Set<String>,
     onRarityFilterChanged: (Set<String>) -> Unit,
+    mythicFilter: Boolean,
+    onMythicFilterChanged: (Boolean) -> Unit,
     sortMode: SortMode,
     onSortModeChanged: (SortMode) -> Unit,
     isDirty: Boolean,
@@ -1852,14 +1865,15 @@ private fun FiltersPanel(
     }
 
     // Total visible peaks after all active filters
-    val filteredCount = remember(climbed, viewport, filter, selectedRarityIds) {
+    val filteredCount = remember(climbed, viewport, filter, selectedRarityIds, mythicFilter) {
         val climbedPeaks = if (filter != AtlasFilter.NOT_YET)
             climbed.values.map { it.peak } else emptyList()
         val unclimbedPeaks = if (filter != AtlasFilter.CLIMBED)
             viewport.filter { it.id !in climbed } else emptyList()
         (climbedPeaks + unclimbedPeaks)
             .distinctBy { it.id }
-            .count { p -> selectedRarityIds.isEmpty() || p.rarityId in selectedRarityIds }
+            .filter { p -> selectedRarityIds.isEmpty() || p.rarityId in selectedRarityIds }
+            .count { p -> !mythicFilter || p.isMythic == true }
     }
 
     ModalBottomSheet(
@@ -1939,15 +1953,41 @@ private fun FiltersPanel(
                                 RarityPill(
                                     rarity   = rarity,
                                     count    = rarityTotalCounts[rarity] ?: 0,
-                                    selected = rarity.id in selectedRarityIds,
+                                    selected = !mythicFilter && rarity.id in selectedRarityIds,
                                     onToggle = {
                                         val newSet = selectedRarityIds.toMutableSet()
-                                        if (rarity.id in newSet) newSet.remove(rarity.id)
+                                        if (!mythicFilter && rarity.id in newSet) newSet.remove(rarity.id)
                                         else newSet.add(rarity.id)
+                                        onMythicFilterChanged(false)
                                         onRarityFilterChanged(newSet)
                                     },
                                 )
                             }
+                            // ── Mythic chip ───────────────────────────────────
+                            FilterChip(
+                                selected = mythicFilter,
+                                onClick  = { onMythicFilterChanged(!mythicFilter) },
+                                label    = {
+                                    Text(
+                                        text       = stringResource(R.string.atlas_filter_mythic),
+                                        fontSize   = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = androidx.compose.ui.graphics.Color(0xFFFFFBEB),
+                                    selectedLabelColor     = androidx.compose.ui.graphics.Color(0xFF92400E),
+                                ),
+                                border = if (mythicFilter)
+                                    FilterChipDefaults.filterChipBorder(
+                                        enabled             = true,
+                                        selected            = true,
+                                        selectedBorderColor = androidx.compose.ui.graphics.Color(0xFFFDE68A),
+                                        selectedBorderWidth = 1.dp,
+                                    )
+                                else
+                                    atlasFilterChipBorder(selected = false),
+                            )
                         }
                     }
                 }
