@@ -19,9 +19,9 @@ export type PeakForFilter = {
   firstPhotoUrl: string | null;
 };
 
-export function usePeakFilters(peaks: PeakForFilter[]) {
+export function usePeakFilters(peaks: PeakForFilter[], initialTier: RarityId | null = null) {
   const [query, setQuery] = useState("");
-  const [tier, setTier] = useState<RarityId | null>(null);
+  const [tier, setTier] = useState<RarityId | null>(initialTier);
   const [mythic, setMythic] = useState(false);
   const [range, setRange] = useState<string | null>(null);
   const [sort, setSort] = useState<SortId>("altitude_desc");
