@@ -93,6 +93,12 @@ export const en: Dict = {
   friends_seeMore: "See more ({n} remaining)",
   friends_block: "Block", friends_blocked: "Blocked", friends_unblock: "Unblock",
   friends_blockedSection: "Blocked users", friends_friendsSection: "Friends", friends_addSection: "Add friends",
+  cordadas_createTitle: "New rope team", cordadas_nameLabel: "Name", cordadas_namePlaceholder: "E.g. The Piolets",
+  cordadas_descriptionLabel: "Description", cordadas_descriptionPlaceholder: "Who are you? What mountains do you have in mind?",
+  cordadas_createBtn: "Create rope team", cordadas_creating: "Creating…",
+  cordadas_inviteTitle: "Invite friends", cordadas_allInvited: "All your friends already belong to this rope team.",
+  cordadas_invited: "Invited ✓", cordadas_invite: "Invite",
+  cordadas_photoLabel: "Cover photo", cordadas_changePhoto: "Change photo",
 
 
 

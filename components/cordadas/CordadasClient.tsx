@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
 import { LEVEL_DEFS } from "@/lib/level-utils";
 import type { FriendEntry } from "@/lib/services/friendship.service";
 import type { CordadaSummary, CordadaInvite } from "@/lib/services/cordada.service";
+
+type UserSearchResult = {
+  id: string;
+  name: string;
+  username: string | null;
+  avatarUrl: string | null;
+  levelIdx: number;
+  uniquePeaks: number;
+};
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -202,6 +211,49 @@ export function CordadasClient({
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // User search (add friend)
+  const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const existingFriendIds = new Set(friends.map((f) => f.friend.id));
+  const sentRequestIds = new Set(sentRequests.map((r) => r.userId));
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setSearchResults([]); return; }
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const res = await fetch(`/api/v1/users/search?q=${encodeURIComponent(q)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults((data.users ?? []).filter((u: UserSearchResult) =>
+            !existingFriendIds.has(u.id) && !sentRequestIds.has(u.id)
+          ));
+        }
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  async function sendFriendRequest(userId: string) {
+    setActionLoading(`add-${userId}`);
+    try {
+      await fetch("/api/friendships", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ addresseeId: userId }),
+      });
+      setSentIds((prev) => new Set([...prev, userId]));
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   // Total pending = friend requests + cordada invites
   const totalPending = incomingRequests.length + cordadaInvites.length;
@@ -437,6 +489,59 @@ export function CordadasClient({
                 {i < combined.length - 1 && <InsetRule />}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Add friend search results ─────────────── */}
+      {query.trim().length >= 2 && (
+        <div>
+          <SectionLabel>{t.friends_addSection}</SectionLabel>
+          <div style={{ background: "white" }}>
+            {searchLoading && (
+              <div style={{ padding: "16px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>…</div>
+            )}
+            {!searchLoading && searchResults.length === 0 && (
+              <div style={{ padding: "16px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>
+                {t.friends_noResults}
+              </div>
+            )}
+            {searchResults.map((user, i) => {
+              const isSent = sentIds.has(user.id);
+              const level = user.levelIdx >= 1 ? LEVEL_DEFS[user.levelIdx - 1] : null;
+              return (
+                <div key={user.id}>
+                  <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 12 }}>
+                    <Avatar name={user.name ?? "?"} avatarUrl={user.avatarUrl} size={44} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>
+                        {user.username ? `@${user.username}` : user.name}
+                      </div>
+                      {level && (
+                        <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>
+                          {level.emoji} {t[level.nameKey]} · {user.uniquePeaks} cimas
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => !isSent && sendFriendRequest(user.id)}
+                      disabled={isSent || actionLoading === `add-${user.id}`}
+                      style={{
+                        padding: "7px 14px", borderRadius: 8, border: "none", flexShrink: 0,
+                        cursor: isSent ? "default" : "pointer",
+                        background: isSent ? "#f3f4f6" : "#2F7A5F",
+                        color: isSent ? "#9ca3af" : "white",
+                        fontSize: 13, fontWeight: 600,
+                        opacity: actionLoading === `add-${user.id}` ? 0.6 : 1,
+                      }}
+                    >
+                      {isSent ? t.friends_requestSent : t.friends_add}
+                    </button>
+                  </div>
+                  {i < searchResults.length - 1 && <InsetRule />}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

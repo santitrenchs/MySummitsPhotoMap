@@ -93,6 +93,12 @@ export const de: Dict = {
   friends_seeMore: "Mehr anzeigen ({n} verbleibend)",
   friends_block: "Blockieren", friends_blocked: "Blockiert", friends_unblock: "Entblocken",
   friends_blockedSection: "Blockierte Nutzer", friends_friendsSection: "Freunde", friends_addSection: "Freunde hinzufügen",
+  cordadas_createTitle: "Neue Seilschaft", cordadas_nameLabel: "Name", cordadas_namePlaceholder: "Z. B. Die Piolets",
+  cordadas_descriptionLabel: "Beschreibung", cordadas_descriptionPlaceholder: "Wer seid ihr? Welche Berge habt ihr im Sinn?",
+  cordadas_createBtn: "Seilschaft erstellen", cordadas_creating: "Wird erstellt…",
+  cordadas_inviteTitle: "Freunde einladen", cordadas_allInvited: "Alle deine Freunde gehören bereits dieser Seilschaft an.",
+  cordadas_invited: "Eingeladen ✓", cordadas_invite: "Einladen",
+  cordadas_photoLabel: "Titelfoto", cordadas_changePhoto: "Foto ändern",
 
 
 

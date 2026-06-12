@@ -28,8 +28,20 @@ export async function searchUsers(query: string, currentUserId: string) {
         { name: { contains: trimmed, mode: "insensitive" } },
       ],
     },
-    select: { id: true, name: true, username: true },
+    select: {
+      id: true, name: true, username: true, avatarUrl: true,
+      stats: { select: { levelIdx: true, uniquePeaks: true } },
+    },
     take: 20,
     orderBy: { name: "asc" },
-  });
+  }).then((users) =>
+    users.map((u) => ({
+      id: u.id,
+      name: u.name,
+      username: u.username,
+      avatarUrl: u.avatarUrl,
+      levelIdx: u.stats?.levelIdx ?? 1,
+      uniquePeaks: u.stats?.uniquePeaks ?? 0,
+    }))
+  );
 }

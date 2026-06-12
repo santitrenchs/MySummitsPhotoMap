@@ -93,6 +93,12 @@ export const ca: Dict = {
   friends_seeMore: "Veure'n més ({n} restants)",
   friends_block: "Bloquejar", friends_blocked: "Bloquejat", friends_unblock: "Desbloquejar",
   friends_blockedSection: "Bloquejats", friends_friendsSection: "Amics", friends_addSection: "Afegir amics",
+  cordadas_createTitle: "Nova cordada", cordadas_nameLabel: "Nom", cordadas_namePlaceholder: "Ex. Els Piolets",
+  cordadas_descriptionLabel: "Descripció", cordadas_descriptionPlaceholder: "Qui sou? Quines muntanyes teniu en ment?",
+  cordadas_createBtn: "Crear cordada", cordadas_creating: "Creant…",
+  cordadas_inviteTitle: "Convidar amics", cordadas_allInvited: "Tots els teus amics ja pertanyen a aquesta cordada.",
+  cordadas_invited: "Convidat ✓", cordadas_invite: "Convidar",
+  cordadas_photoLabel: "Foto de portada", cordadas_changePhoto: "Canviar foto",
 
 
 

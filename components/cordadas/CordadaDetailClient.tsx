@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
@@ -228,11 +228,26 @@ export function CordadaDetailClient({
   cordada: CordadaDetail;
   currentUserId: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(cordada.avatarUrl);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function uploadAvatar(file: File) {
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch(`/api/v1/cordadas/${cordada.id}/avatar`, { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        setAvatarUrl(data.avatarUrl);
+      }
+    } catch {}
+  }
 
   const isCurrentUserMember = cordada.members.some((m) => m.userId === currentUserId && !m.isPending);
   const currentMember = cordada.members.find((m) => m.userId === currentUserId);
@@ -293,12 +308,21 @@ export function CordadaDetailClient({
         </Link>
       </div>
 
+      {/* Hidden file input for avatar */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        style={{ display: "none" }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); }}
+      />
+
       {/* ── Hero header ──────────────────────────── */}
-      {cordada.avatarUrl ? (
+      {avatarUrl ? (
         <div style={{ position: "relative", margin: "12px 0 0" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={cordada.avatarUrl}
+            src={avatarUrl}
             alt={cordada.name}
             style={{ width: "100%", height: 180, objectFit: "cover", display: "block" }}
           />
@@ -314,10 +338,40 @@ export function CordadaDetailClient({
               {acceptedMembers.length} {acceptedMembers.length === 1 ? "miembro" : "miembros"}
             </div>
           </div>
+          {amIOwner && (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                position: "absolute", top: 10, right: 10,
+                background: "rgba(0,0,0,0.5)", border: "none", borderRadius: 8,
+                padding: "5px 10px", cursor: "pointer",
+                color: "white", fontSize: 12, fontWeight: 600,
+              }}
+            >
+              {t.cordadas_changePhoto}
+            </button>
+          )}
         </div>
       ) : (
         <div style={{ padding: "16px 16px 0", display: "flex", alignItems: "center", gap: 14 }}>
-          <CordadaAvatar name={cordada.name} avatarUrl={null} size={68} />
+          <div style={{ position: "relative" }}>
+            <CordadaAvatar name={cordada.name} avatarUrl={null} size={68} />
+            {amIOwner && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  position: "absolute", bottom: -4, right: -4,
+                  width: 24, height: 24, borderRadius: "50%",
+                  background: "#2F7A5F", border: "2px solid white",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+            )}
+          </div>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#0D2538", lineHeight: 1.2 }}>
               {cordada.name}

@@ -93,6 +93,12 @@ export const fr: Dict = {
   friends_seeMore: "Voir plus ({n} restants)",
   friends_block: "Bloquer", friends_blocked: "Bloqué", friends_unblock: "Débloquer",
   friends_blockedSection: "Utilisateurs bloqués", friends_friendsSection: "Amis", friends_addSection: "Ajouter des amis",
+  cordadas_createTitle: "Nouvelle cordée", cordadas_nameLabel: "Nom", cordadas_namePlaceholder: "Ex. Les Piolets",
+  cordadas_descriptionLabel: "Description", cordadas_descriptionPlaceholder: "Qui êtes-vous ? Quelles montagnes avez-vous en tête ?",
+  cordadas_createBtn: "Créer la cordée", cordadas_creating: "Création…",
+  cordadas_inviteTitle: "Inviter des amis", cordadas_allInvited: "Tous tes amis font déjà partie de cette cordée.",
+  cordadas_invited: "Invité ✓", cordadas_invite: "Inviter",
+  cordadas_photoLabel: "Photo de couverture", cordadas_changePhoto: "Changer la photo",
 
 
 

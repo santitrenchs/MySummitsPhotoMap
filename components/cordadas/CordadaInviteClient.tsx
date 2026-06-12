@@ -80,7 +80,7 @@ export function CordadaInviteClient({
 
       <div style={{ padding: "16px 16px 8px" }}>
         <h1 style={{ fontSize: 20, fontWeight: 800, color: "#0D2538", margin: 0 }}>
-          Invitar amigos
+          {t.cordadas_inviteTitle}
         </h1>
       </div>
 
@@ -105,7 +105,7 @@ export function CordadaInviteClient({
       {/* Empty */}
       {invitableFriends.length === 0 && (
         <div style={{ textAlign: "center", padding: "48px 24px", color: "#9ca3af", fontSize: 14 }}>
-          Todos tus amigos ya pertenecen a esta cordada.
+          {t.cordadas_allInvited}
         </div>
       )}
 
@@ -140,7 +140,7 @@ export function CordadaInviteClient({
                     opacity: loading === friend.id ? 0.6 : 1,
                   }}
                 >
-                  {isInvited ? "Invitado ✓" : loading === friend.id ? "…" : "Invitar"}
+                  {isInvited ? t.cordadas_invited : loading === friend.id ? "…" : t.cordadas_invite}
                 </button>
               </div>
               {i < filtered.length - 1 && (

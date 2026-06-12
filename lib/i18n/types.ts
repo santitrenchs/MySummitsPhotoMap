@@ -107,6 +107,14 @@ export type Dict = {
   friends_block: string; friends_blocked: string; friends_unblock: string;
   friends_blockedSection: string; friends_friendsSection: string; friends_addSection: string;
 
+  // Cordadas
+  cordadas_createTitle: string; cordadas_nameLabel: string; cordadas_namePlaceholder: string;
+  cordadas_descriptionLabel: string; cordadas_descriptionPlaceholder: string;
+  cordadas_createBtn: string; cordadas_creating: string;
+  cordadas_inviteTitle: string; cordadas_allInvited: string;
+  cordadas_invited: string; cordadas_invite: string;
+  cordadas_photoLabel: string; cordadas_changePhoto: string;
+
   // Settings
   settings_title: string; settings_subtitle: string; settings_language: string;
   settings_account: string; settings_username: string;
