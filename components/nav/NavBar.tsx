@@ -41,16 +41,25 @@ function SpriteIcon({ index, size = 22, active = false }: { index: number; size?
   );
 
   // index 3 — Cards (two portrait cards, back card rotated behind front)
-  return (
+  if (index === 3) return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      {/* back card, rotated -15° around its center */}
       <g transform="rotate(-15, 11, 13)">
         <rect x="4" y="4" width="14" height="18" rx="2" stroke="#0F2233" strokeWidth="1.8" fill="#E2E8F0"/>
       </g>
-      {/* front card */}
       <rect x="7" y="5" width="12" height="16" rx="2" stroke="#0F2233" strokeWidth="2" fill="white"/>
-      {/* mini mountain inside front card */}
       <path d="M9.5 16L12.5 11L14.5 13.5L16.5 11.5L18.5 15.5" stroke="#0F2233" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>
+  );
+
+  // index 4 — Cordadas (two people)
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
+      {/* back person */}
+      <circle cx="15.5" cy="7.5" r="2.8" stroke="#0F2233" strokeWidth="1.7" fill="none"/>
+      <path d="M11 19.5c0-3 2-5 4.5-5s4.5 2 4.5 5" stroke="#0F2233" strokeWidth="1.7" strokeLinecap="round" fill="none"/>
+      {/* front person */}
+      <circle cx="8.5" cy="8" r="3.2" stroke="#0F2233" strokeWidth="2" fill="none"/>
+      <path d="M2 20.5c0-3.5 2.9-6 6.5-6s6.5 2.5 6.5 6" stroke="#0F2233" strokeWidth="2" strokeLinecap="round" fill="none"/>
     </svg>
   );
 }
@@ -406,7 +415,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
                 <span className="sheet-item-icon"><ProfileIcon size={18} /></span>
                 {t.nav_profile}
               </Link>
-              <Link href="/friends" className="sheet-item" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
+              <Link href="/cordadas" className="sheet-item" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
                 <span className="sheet-item-icon" style={{ position: "relative" }}>
                   <FriendsIcon size={18} />
                   {totalPending > 0 && (
@@ -419,7 +428,7 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
                     }}>{totalPending}</span>
                   )}
                 </span>
-                {t.friends_title}
+                {t.nav_cordadas}
                 {totalPending > 0 && (
                   <span style={{
                     marginLeft: "auto", minWidth: 20, height: 20, borderRadius: 10,
@@ -476,17 +485,35 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
             </div>
             <span className="tab-label">{t.nav_home}</span>
           </Link>
-          <Link href="/map" className={`tab-item${tabActive("/map") ? " active" : ""}`} onClick={() => handleTabClick("/map")}>
-            <div className="tab-icon-wrap">
-              <SpriteIcon index={1} size={24} active={tabActive("/map")} />
+          <Link href="/cordadas" className={`tab-item${tabActive("/cordadas") ? " active" : ""}`} onClick={() => handleTabClick("/cordadas")} style={{ position: "relative" }}>
+            <div className="tab-icon-wrap" style={{ position: "relative" }}>
+              <SpriteIcon index={4} size={24} active={tabActive("/cordadas")} />
+              {totalPending > 0 && (
+                <span style={{
+                  position: "absolute", top: -2, right: -4,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: "#ef4444", color: "#fff",
+                  fontSize: 9, fontWeight: 700, lineHeight: "16px",
+                  textAlign: "center", padding: "0 3px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {totalPending > 99 ? "99+" : totalPending}
+                </span>
+              )}
             </div>
-            <span className="tab-label">{t.nav_map}</span>
+            <span className="tab-label">{t.nav_cordadas}</span>
           </Link>
           <Link href="/bitacora" className={`tab-item${tabActive("/bitacora") ? " active" : ""}`} onClick={() => handleTabClick("/bitacora")}>
             <div className="tab-icon-wrap">
               <SpriteIcon index={2} size={24} active={tabActive("/bitacora")} />
             </div>
             <span className="tab-label">{t.nav_bitacora}</span>
+          </Link>
+          <Link href="/map" className={`tab-item${tabActive("/map") ? " active" : ""}`} onClick={() => handleTabClick("/map")}>
+            <div className="tab-icon-wrap">
+              <SpriteIcon index={1} size={24} active={tabActive("/map")} />
+            </div>
+            <span className="tab-label">{t.nav_map}</span>
           </Link>
           <Link href="/ascents" className={`tab-item${tabActive("/ascents") ? " active" : ""}`} onClick={() => handleTabClick("/ascents")}>
             <div className="tab-icon-wrap" style={{ position: "relative" }}>

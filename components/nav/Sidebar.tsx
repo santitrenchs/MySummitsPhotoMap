@@ -42,13 +42,23 @@ function SpriteIcon({ index, size = 20, active = false }: { index: number; size?
   );
 
   // index 3 — Cards
-  return (
+  if (index === 3) return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
       <g transform="rotate(-15, 11, 13)">
         <rect x="4" y="4" width="14" height="18" rx="2" stroke="#0F2233" strokeWidth="1.8" fill="#E2E8F0"/>
       </g>
       <rect x="7" y="5" width="12" height="16" rx="2" stroke="#0F2233" strokeWidth="2" fill="white"/>
       <path d="M9.5 16L12.5 11L14.5 13.5L16.5 11.5L18.5 15.5" stroke="#0F2233" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>
+  );
+
+  // index 4 — Cordadas (two people)
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
+      <circle cx="15.5" cy="7.5" r="2.8" stroke="#0F2233" strokeWidth="1.7" fill="none"/>
+      <path d="M11 19.5c0-3 2-5 4.5-5s4.5 2 4.5 5" stroke="#0F2233" strokeWidth="1.7" strokeLinecap="round" fill="none"/>
+      <circle cx="8.5" cy="8" r="3.2" stroke="#0F2233" strokeWidth="2" fill="none"/>
+      <path d="M2 20.5c0-3.5 2.9-6 6.5-6s6.5 2.5 6.5 6" stroke="#0F2233" strokeWidth="2" strokeLinecap="round" fill="none"/>
     </svg>
   );
 }
@@ -151,6 +161,28 @@ export function Sidebar({
             <span className="azisb-lbl">{t.nav_home}</span>
           </Link>
           <Link
+            href="/cordadas"
+            className={`azisb-item${active("/cordadas") ? " azisb-item--on" : ""}`}
+            data-tip={t.nav_cordadas}
+          >
+            <span className="azisb-ic" style={{ position: "relative" }}>
+              <SpriteIcon index={4} size={28} active={active("/cordadas")} />
+              {badge > 0 && (
+                <span style={{
+                  position: "absolute", top: 0, right: -2,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: "#ef4444", color: "#fff",
+                  fontSize: 9, fontWeight: 700, lineHeight: "16px",
+                  textAlign: "center", padding: "0 3px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {badge > 99 ? "99+" : badge}
+                </span>
+              )}
+            </span>
+            <span className="azisb-lbl">{t.nav_cordadas}</span>
+          </Link>
+          <Link
             href="/map"
             className={`azisb-item${active("/map") ? " azisb-item--on" : ""}`}
             data-tip={t.nav_map}
@@ -241,11 +273,11 @@ export function Sidebar({
                   <SbProfileIcon /> {t.nav_profile}
                 </Link>
                 <Link
-                  href="/friends"
+                  href="/cordadas"
                   className="azisb-umenu-item"
                   onClick={() => setUserMenuOpen(false)}
                 >
-                  <SbFriendsIcon /> {t.friends_title}
+                  <SbFriendsIcon /> {t.nav_cordadas}
                 </Link>
                 <Link
                   href="/settings"

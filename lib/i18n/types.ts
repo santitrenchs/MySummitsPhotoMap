@@ -7,7 +7,7 @@ export type Dict = {
   lang_en: string; lang_es: string; lang_ca: string; lang_fr: string; lang_de: string;
 
   // Nav
-  nav_map: string; nav_ascents: string; nav_bitacora: string;
+  nav_map: string; nav_ascents: string; nav_bitacora: string; nav_cordadas: string;
   nav_settings: string; nav_signOut: string; nav_profile: string;
   nav_comingSoon: string; nav_logAscent: string;
 
