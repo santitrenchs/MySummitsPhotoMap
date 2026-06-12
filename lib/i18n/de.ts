@@ -4,7 +4,7 @@ export const de: Dict = {
   dateLocale: "de-DE",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Logbuch",
+  nav_map: "Atlas", nav_ascents: "Cards",
   nav_settings: "Einstellungen", nav_signOut: "Abmelden", nav_profile: "Profil",
   nav_comingSoon: "Bald", nav_logAscent: "Besteigung eintragen",
 
@@ -64,7 +64,7 @@ export const de: Dict = {
 
   ascents_newAscent: "+ Neue Besteigung", ascents_logTitle: "Besteigung eintragen", ascents_editTitle: "Besteigung bearbeiten",
   ascents_emptyTitle: "Noch keine Besteigungen", ascents_emptySub: "Trage deine erste Besteigung über die Karte oder hier ein",
-  ascents_title: "Besteigungen", ascents_search: "🔍  Gipfel, Routen, Freunde suchen…",
+  ascents_title: "Cards", ascents_search: "🔍  Gipfel, Routen, Freunde suchen…",
   ascents_filters: "Filter", ascents_allYears: "Alle Jahre", ascents_allPeople: "Alle Freunde",
   ascents_withPhoto: "📸 Mit Foto", ascents_clearAll: "Alles löschen",
   ascents_noResults: "Keine Besteigungen gefunden", ascents_noResultsSub: "Filter anpassen und erneut versuchen",

@@ -550,7 +550,7 @@ cropAspect String?           // "4:5" | "1:1"
 |-----|----|----|----|----|-----|
 | Home | **Stats** | **Stats** | **Stats** | **Stats** | **Stats** |
 | Map | **Atlas** | **Atlas** | **Atlas** | **Atlas** | **Atlas** |
-| Ascents | **Bitácora** | **Bitàcola** | **Logbook** | **Carnet** | **Logbuch** |
+| Ascents | **Cards** | **Cards** | **Cards** | **Cards** | **Cards** |
 | New ascent | **+** | **+** | **+** | **+** | **+** |
 
 Note: "Atlas" is intentionally not translated — it's a brand name kept across all locales. The Home tab was renamed from "Peakadex stats" to "Stats" (2026-05-28) for brevity.

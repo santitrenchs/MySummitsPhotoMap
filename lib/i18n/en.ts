@@ -4,7 +4,7 @@ export const en: Dict = {
   dateLocale: "en-GB",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Logbook",
+  nav_map: "Atlas", nav_ascents: "Cards",
   nav_settings: "Settings", nav_signOut: "Sign out", nav_profile: "Profile",
   nav_comingSoon: "Soon", nav_logAscent: "Log new ascent",
 
@@ -64,7 +64,7 @@ export const en: Dict = {
 
   ascents_newAscent: "+ New ascent", ascents_logTitle: "Log ascent", ascents_editTitle: "Edit ascent",
   ascents_emptyTitle: "No ascents yet", ascents_emptySub: "Log your first summit from the map or here",
-  ascents_title: "Ascents", ascents_search: "🔍  Search peaks, routes, friends…",
+  ascents_title: "Cards", ascents_search: "🔍  Search peaks, routes, friends…",
   ascents_filters: "Filters", ascents_allYears: "All years", ascents_allPeople: "All friends",
   ascents_withPhoto: "📸 With photo", ascents_clearAll: "Clear all",
   ascents_noResults: "No ascents found", ascents_noResultsSub: "Try adjusting your filters",

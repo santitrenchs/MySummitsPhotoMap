@@ -4,7 +4,7 @@ export const ca: Dict = {
   dateLocale: "ca-ES",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Bitàcola",
+  nav_map: "Atlas", nav_ascents: "Cards",
   nav_settings: "Configuració", nav_signOut: "Tancar sessió", nav_profile: "Perfil",
   nav_comingSoon: "Aviat", nav_logAscent: "Registrar ascensió",
 
@@ -64,7 +64,7 @@ export const ca: Dict = {
 
   ascents_newAscent: "+ Nova ascensió", ascents_logTitle: "Registrar ascensió", ascents_editTitle: "Editar ascensió",
   ascents_emptyTitle: "Encara sense ascensions", ascents_emptySub: "Registra el teu primer cim des del mapa o aquí",
-  ascents_title: "Ascensions", ascents_search: "🔍  Cerca cims, rutes, amics…",
+  ascents_title: "Cards", ascents_search: "🔍  Cerca cims, rutes, amics…",
   ascents_filters: "Filtres", ascents_allYears: "Tots els anys", ascents_allPeople: "Tots els amics",
   ascents_withPhoto: "📸 Amb foto", ascents_clearAll: "Netejar tot",
   ascents_noResults: "Cap ascensió trobada", ascents_noResultsSub: "Prova d'ajustar els filtres",

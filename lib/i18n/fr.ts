@@ -4,7 +4,7 @@ export const fr: Dict = {
   dateLocale: "fr-FR",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Carnet",
+  nav_map: "Atlas", nav_ascents: "Cards",
   nav_settings: "Paramètres", nav_signOut: "Se déconnecter", nav_profile: "Profil",
   nav_comingSoon: "Bientôt", nav_logAscent: "Enregistrer une ascension",
 
@@ -64,7 +64,7 @@ export const fr: Dict = {
 
   ascents_newAscent: "+ Nouvelle ascension", ascents_logTitle: "Enregistrer une ascension", ascents_editTitle: "Modifier l'ascension",
   ascents_emptyTitle: "Aucune ascension pour l'instant", ascents_emptySub: "Enregistre ton premier sommet depuis la carte ou ici",
-  ascents_title: "Ascensions", ascents_search: "🔍  Chercher sommets, itinéraires, amis…",
+  ascents_title: "Cards", ascents_search: "🔍  Chercher sommets, itinéraires, amis…",
   ascents_filters: "Filtres", ascents_allYears: "Toutes les années", ascents_allPeople: "Tous les amis",
   ascents_withPhoto: "📸 Avec photo", ascents_clearAll: "Tout effacer",
   ascents_noResults: "Aucune ascension trouvée", ascents_noResultsSub: "Essaie d'ajuster les filtres",

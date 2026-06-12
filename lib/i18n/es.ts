@@ -4,7 +4,7 @@ export const es: Dict = {
   dateLocale: "es-ES",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Bitácora",
+  nav_map: "Atlas", nav_ascents: "Cards",
   nav_settings: "Ajustes", nav_signOut: "Cerrar sesión", nav_profile: "Perfil",
   nav_comingSoon: "Pronto", nav_logAscent: "Registrar ascensión",
 
@@ -64,7 +64,7 @@ export const es: Dict = {
 
   ascents_newAscent: "+ Nueva ascensión", ascents_logTitle: "Registrar ascensión", ascents_editTitle: "Editar ascensión",
   ascents_emptyTitle: "Aún sin ascensiones", ascents_emptySub: "Registra tu primera cima desde el mapa o aquí",
-  ascents_title: "Ascensiones", ascents_search: "🔍  Busca cimas, rutas, amigos…",
+  ascents_title: "Cards", ascents_search: "🔍  Busca cimas, rutas, amigos…",
   ascents_filters: "Filtros", ascents_allYears: "Todos los años", ascents_allPeople: "Todos los amigos",
   ascents_withPhoto: "📸 Con foto", ascents_clearAll: "Limpiar todo",
   ascents_noResults: "Sin ascensiones", ascents_noResultsSub: "Prueba a ajustar los filtros",
