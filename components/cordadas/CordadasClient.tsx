@@ -558,12 +558,27 @@ export function CordadasClient({
           }}>
             <TwoUsersIcon />
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: "#374151" }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginTop: 2 }}>
             {t.friends_noFriends}
           </div>
-          <div style={{ fontSize: 13, color: "#9ca3af" }}>
+          <div style={{ fontSize: 13, color: "#9ca3af", maxWidth: 260, lineHeight: 1.5 }}>
             {t.friends_noFriendsSub}
           </div>
+          <Link
+            href="/cordadas/add"
+            style={{
+              marginTop: 8,
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "9px 20px", borderRadius: 10,
+              background: "#2F7A5F", color: "white",
+              fontSize: 14, fontWeight: 600, textDecoration: "none",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            {t.cordadas_createBtn}
+          </Link>
         </div>
       )}
 
