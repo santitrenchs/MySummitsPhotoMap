@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
-import { PeaksCatalogHeader } from "./PeaksCatalogHeader";
 import { PeakFiltersBar } from "./PeakFiltersBar";
 import { PeakFiltersPanel } from "./PeakFiltersPanel";
 import { PeakRowCard } from "./PeakRowCard";
@@ -43,9 +42,6 @@ export function PeaksTabV2({ peaks, initialTier = null }: Props) {
 
   return (
     <div style={{ background: "#F4F7FA", margin: "0 -16px", padding: "0 16px" }}>
-      {/* Catalog header */}
-      <PeaksCatalogHeader peaks={peaks} tier={tier} setTier={setTier} />
-
       {/* Sticky filter bar */}
       <div style={{
         position: "sticky",
