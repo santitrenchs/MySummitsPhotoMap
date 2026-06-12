@@ -56,7 +56,6 @@ function SpriteIcon({ index, size = 20, active = false }: { index: number; size?
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useT } from "@/components/providers/I18nProvider";
-import { ProfileSheet } from "@/components/profile/ProfileSheet";
 
 const EXPANDED_W = 240;
 const COLLAPSED_W = 68;
@@ -89,7 +88,6 @@ export function Sidebar({
   const t = useT();
   const [hovered, setHovered] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [liveFeedCount, setLiveFeedCount] = useState(unseenFeedCount);
   const menuRef = useRef<HTMLDivElement>(null);
   const abbr = getInitials(userName, userEmail);
@@ -232,17 +230,16 @@ export function Sidebar({
             <span className="azisb-lbl">{userName ?? t.nav_profile}</span>
           </button>
 
-          {profileSheetOpen && <ProfileSheet onClose={() => setProfileSheetOpen(false)} />}
-
           {userMenuOpen && (
             <div className="azisb-umenu">
               <div className="azisb-umenu-sec">
-                <button
+                <Link
+                  href="/profile"
                   className="azisb-umenu-item"
-                  onClick={() => { setUserMenuOpen(false); setProfileSheetOpen(true); }}
+                  onClick={() => setUserMenuOpen(false)}
                 >
                   <SbProfileIcon /> {t.nav_profile}
-                </button>
+                </Link>
                 <Link
                   href="/friends"
                   className="azisb-umenu-item"

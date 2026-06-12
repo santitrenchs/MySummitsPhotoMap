@@ -61,7 +61,6 @@ import { signOut } from "next-auth/react";
 import { useT } from "@/components/providers/I18nProvider";
 import { AscentModal } from "@/components/ascents/AscentModal";
 import { NewAscentModalContent, type ModalHeaderConfig, type EditAscent } from "@/components/ascents/NewAscentModalContent";
-import { ProfileSheet } from "@/components/profile/ProfileSheet";
 
 type NavBarProps = {
   userName: string | null;
@@ -92,7 +91,6 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
   const [editAscent, setEditAscent] = useState<EditAscent | null>(null);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const [liveFeedCount, setLiveFeedCount] = useState(unseenFeedCount);
-  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const ini = initials(userName, userEmail);
   const totalPending = pendingFriendRequests;
 
@@ -394,9 +392,6 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         </div>
       </header>
 
-      {/* ── PROFILE SHEET ───────────────────────────────────────────────────── */}
-      {profileSheetOpen && <ProfileSheet onClose={() => setProfileSheetOpen(false)} />}
-
       {/* ── MOBILE BOTTOM SHEET ──────────────────────────────────────────────── */}
       {mobileMenuOpen && (
         <div className="mobile-sheet-backdrop" onClick={() => setMobileMenuOpen(false)}>
@@ -407,10 +402,10 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
               {userEmail && <p className="sheet-email">{userEmail}</p>}
             </div>
             <div className="sheet-section">
-              <button className="sheet-item" onClick={() => { setMobileMenuOpen(false); setProfileSheetOpen(true); }}>
+              <Link href="/profile" className="sheet-item" onClick={() => setMobileMenuOpen(false)}>
                 <span className="sheet-item-icon"><ProfileIcon size={18} /></span>
                 {t.nav_profile}
-              </button>
+              </Link>
               <Link href="/friends" className="sheet-item" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
                 <span className="sheet-item-icon" style={{ position: "relative" }}>
                   <FriendsIcon size={18} />
