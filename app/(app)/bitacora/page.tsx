@@ -15,7 +15,6 @@ export default async function BitacoraPage() {
       peaks={data.peaks}
       photos={data.allPhotos}
       taggedPhotos={data.taggedPhotos}
-      stats={data.stats}
     />
   );
 }

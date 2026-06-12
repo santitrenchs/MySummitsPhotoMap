@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
-import { CimasStatsHeader } from "./CimasStatsHeader";
 import { PeaksTabV2 } from "@/components/profile/PeaksTabV2";
 import { PhotosTabV2 } from "@/components/profile/PhotosTabV2";
 import type { RarityId } from "@/lib/rarity";
@@ -19,26 +18,17 @@ type Photo = {
   creatorName?: string;
 };
 
-type Stats = {
-  totalAscents: number;
-  uniquePeaks: number;
-  maxAltitudeM: number;
-  rarityBreakdown: Record<string, number>;
-};
-
 type Props = {
   peaks: PeakForFilter[];
   photos: Photo[];
   taggedPhotos: Photo[];
-  stats: Stats;
 };
 
 type Tab = "peaks" | "photos" | "tagged";
 
-export function BitacoraClient({ peaks, photos, taggedPhotos, stats }: Props) {
+export function BitacoraClient({ peaks, photos, taggedPhotos }: Props) {
   const t = useT();
   const [tab, setTab] = useState<Tab>("peaks");
-  const [activeRarity, setActiveRarity] = useState<RarityId | null>(null);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "peaks",  label: t.profile_tab_peaks },
@@ -48,18 +38,6 @@ export function BitacoraClient({ peaks, photos, taggedPhotos, stats }: Props) {
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 32 }}>
-      {/* ── Stats header (Cimas tab only) ── */}
-      {tab === "peaks" && (
-        <CimasStatsHeader
-          uniquePeaks={stats.uniquePeaks}
-          totalAscents={stats.totalAscents}
-          maxAltitudeM={stats.maxAltitudeM}
-          rarityBreakdown={stats.rarityBreakdown}
-          activeRarity={activeRarity}
-          onRarityFilter={(r) => setActiveRarity(r)}
-        />
-      )}
-
       {/* ── Tab bar ── */}
       <div style={{
         display: "flex", borderBottom: "1px solid #e5e7eb",
@@ -87,7 +65,7 @@ export function BitacoraClient({ peaks, photos, taggedPhotos, stats }: Props) {
       {/* ── Tab content ── */}
       <div style={{ padding: "0 16px" }}>
         {tab === "peaks" && (
-          <PeaksTabV2 peaks={peaks} initialTier={activeRarity} />
+          <PeaksTabV2 peaks={peaks} />
         )}
         {tab === "photos" && (
           <PhotosTabV2 photos={photos} />
