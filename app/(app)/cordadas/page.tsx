@@ -1,14 +1,41 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { listFriends, listIncomingRequests, listSentRequests } from "@/lib/services/friendship.service";
+import { listMyCordadas, listPendingInvites } from "@/lib/services/cordada.service";
+import { CordadasClient } from "@/components/cordadas/CordadasClient";
 
 export default async function CordadasPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
+  const userId = session.user.id;
+
+  const [friends, incoming, sent, cordadas, cordadaInvites] = await Promise.all([
+    listFriends(userId),
+    listIncomingRequests(userId),
+    listSentRequests(userId),
+    listMyCordadas(userId),
+    listPendingInvites(userId),
+  ]);
+
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "32px 16px" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0D2538", marginBottom: 8 }}>Cordadas</h1>
-      <p style={{ fontSize: 14, color: "#6b7280" }}>Próximamente — gestión de amigos y cordadas.</p>
-    </div>
+    <CordadasClient
+      userId={userId}
+      friends={friends}
+      incomingRequests={incoming.map((r) => ({
+        friendshipId: r.id,
+        userId: r.requesterId,
+        name: r.requester.name ?? "",
+        username: r.requester.username ?? null,
+      }))}
+      sentRequests={sent.map((r) => ({
+        friendshipId: r.id,
+        userId: r.addresseeId,
+        name: r.addressee.name ?? "",
+        username: r.addressee.username ?? null,
+      }))}
+      cordadas={cordadas}
+      cordadaInvites={cordadaInvites}
+    />
   );
 }
