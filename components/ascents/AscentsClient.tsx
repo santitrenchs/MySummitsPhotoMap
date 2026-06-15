@@ -58,8 +58,6 @@ export function AscentsClient({
   ascents,
   allPersons,
   allYears,
-  currentUserEmail,
-  currentUserName,
   currentUserId,
   hasFriends = true,
   hasMore: initialHasMore = false,
@@ -70,8 +68,6 @@ export function AscentsClient({
   ascents: AscentData[];
   allPersons: { id: string; name: string }[];
   allYears: number[];
-  currentUserEmail?: string | null;
-  currentUserName?: string;
   currentUserId?: string;
   hasFriends?: boolean;
   hasMore?: boolean;

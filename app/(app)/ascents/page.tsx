@@ -71,8 +71,6 @@ export default async function AscentsPage({
           ascents={ascents}
           allPersons={allPersons}
           allYears={allYears}
-          currentUserEmail={session.user.email}
-          currentUserName={session.user.name ?? ""}
           currentUserId={session.user.id}
           hasFriends={friendUserIds.length > 0}
           hasMore={hasMore}
