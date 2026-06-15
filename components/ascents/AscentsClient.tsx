@@ -852,7 +852,7 @@ export function AscentsClient({
           <Virtuoso
             ref={virtuosoRef}
             useWindowScroll
-            initialTopMostItemIndex={initialHighlightIndex}
+            {...(initialHighlightIndex ? { initialTopMostItemIndex: initialHighlightIndex } : {})}
             data={filtered}
             endReached={loadMore}
             rangeChanged={handleRangeChanged}
