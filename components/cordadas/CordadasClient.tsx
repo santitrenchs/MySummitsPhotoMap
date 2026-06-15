@@ -212,16 +212,30 @@ export function CordadasClient({
   const [query, setQuery] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // User search (add friend)
+  // Add-friend modal state
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addQuery, setAddQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const addInputRef = useRef<HTMLInputElement>(null);
   const existingFriendIds = new Set(friends.map((f) => f.friend.id));
   const sentRequestIds = new Set(sentRequests.map((r) => r.userId));
 
+  // Focus the add-modal input when it opens
   useEffect(() => {
-    const q = query.trim();
+    if (addModalOpen) {
+      setTimeout(() => addInputRef.current?.focus(), 50);
+    } else {
+      setAddQuery("");
+      setSearchResults([]);
+    }
+  }, [addModalOpen]);
+
+  // Debounced search inside the add-friend modal
+  useEffect(() => {
+    const q = addQuery.trim();
     if (q.length < 2) { setSearchResults([]); return; }
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
     searchDebounce.current = setTimeout(async () => {
@@ -239,17 +253,17 @@ export function CordadasClient({
       }
     }, 300);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [addQuery]);
 
-  async function sendFriendRequest(userId: string) {
-    setActionLoading(`add-${userId}`);
+  async function sendFriendRequest(targetId: string) {
+    setActionLoading(`add-${targetId}`);
     try {
       await fetch("/api/friendships", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ addresseeId: userId }),
+        body: JSON.stringify({ addresseeId: targetId }),
       });
-      setSentIds((prev) => new Set([...prev, userId]));
+      setSentIds((prev) => new Set([...prev, targetId]));
     } finally {
       setActionLoading(null);
     }
@@ -258,7 +272,7 @@ export function CordadasClient({
   // Total pending = friend requests + cordada invites
   const totalPending = incomingRequests.length + cordadaInvites.length;
 
-  // Filter combined list by search query
+  // Filter combined list by search query (local only)
   const q = query.trim().toLowerCase();
   const filteredFriends = q
     ? friends.filter((f) =>
@@ -346,10 +360,14 @@ export function CordadasClient({
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 80 }}>
 
-      {/* ── Search bar ─────────────────────────────── */}
-      <div style={{ padding: "12px 16px 8px", position: "sticky", top: "var(--top-nav-h, 52px)", zIndex: 20, background: "white" }}>
+      {/* ── Header: filter search + Añadir button ──── */}
+      <div style={{
+        padding: "12px 16px 8px",
+        position: "sticky", top: "var(--top-nav-h, 52px)", zIndex: 20, background: "white",
+        display: "flex", alignItems: "center", gap: 8,
+      }}>
         <div style={{
-          display: "flex", alignItems: "center", gap: 10,
+          flex: 1, display: "flex", alignItems: "center", gap: 10,
           background: "#f3f4f6", borderRadius: 12, padding: "0 12px", height: 44,
         }}>
           <SearchIcon />
@@ -371,7 +389,142 @@ export function CordadasClient({
             </button>
           )}
         </div>
+        <button
+          onClick={() => setAddModalOpen(true)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "0 14px", height: 44, borderRadius: 12, border: "none",
+            background: "#2F7A5F", color: "white",
+            fontSize: 14, fontWeight: 600, cursor: "pointer", flexShrink: 0,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          {t.friends_add}
+        </button>
       </div>
+
+      {/* ── Add-friend modal ──────────────────────── */}
+      {addModalOpen && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setAddModalOpen(false); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+          }}
+        >
+          <div style={{
+            width: "100%", maxWidth: 640, background: "white",
+            borderRadius: "16px 16px 0 0",
+            maxHeight: "80vh", display: "flex", flexDirection: "column",
+          }}>
+            {/* Modal header */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "16px 16px 0",
+            }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>
+                {t.friends_addSection}
+              </span>
+              <button
+                onClick={() => setAddModalOpen(false)}
+                style={{
+                  background: "#f3f4f6", border: "none", borderRadius: "50%",
+                  width: 32, height: 32, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 16, color: "#6b7280",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            {/* Search input */}
+            <div style={{ padding: "12px 16px" }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 10,
+                background: "#f3f4f6", borderRadius: 12, padding: "0 12px", height: 44,
+              }}>
+                <SearchIcon />
+                <input
+                  ref={addInputRef}
+                  value={addQuery}
+                  onChange={(e) => setAddQuery(e.target.value)}
+                  placeholder={t.friends_searchPlaceholder}
+                  style={{
+                    flex: 1, background: "none", border: "none", outline: "none",
+                    fontSize: 16, color: "#111827",
+                  }}
+                />
+                {addQuery && (
+                  <button
+                    onClick={() => setAddQuery("")}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#9ca3af" }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+            {/* Results */}
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {addQuery.trim().length < 2 && (
+                <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 13, color: "#9ca3af" }}>
+                  Escribe al menos 2 caracteres para buscar
+                </div>
+              )}
+              {addQuery.trim().length >= 2 && searchLoading && (
+                <div style={{ padding: "16px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>…</div>
+              )}
+              {addQuery.trim().length >= 2 && !searchLoading && searchResults.length === 0 && (
+                <div style={{ padding: "16px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>
+                  {t.friends_noResults}
+                </div>
+              )}
+              {searchResults.map((user, i) => {
+                const isSent = sentIds.has(user.id);
+                const level = user.levelIdx >= 1 ? LEVEL_DEFS[user.levelIdx - 1] : null;
+                return (
+                  <div key={user.id}>
+                    <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 12 }}>
+                      <Avatar name={user.name ?? "?"} avatarUrl={user.avatarUrl} size={44} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>
+                          {user.username ? `@${user.username}` : user.name}
+                        </div>
+                        {level && (
+                          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>
+                            {level.emoji} {t[level.nameKey]} · {user.uniquePeaks} cimas
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => !isSent && sendFriendRequest(user.id)}
+                        disabled={isSent || actionLoading === `add-${user.id}`}
+                        style={{
+                          padding: "7px 14px", borderRadius: 8, border: "none", flexShrink: 0,
+                          cursor: isSent ? "default" : "pointer",
+                          background: isSent ? "#f3f4f6" : "#2F7A5F",
+                          color: isSent ? "#9ca3af" : "white",
+                          fontSize: 13, fontWeight: 600,
+                          opacity: actionLoading === `add-${user.id}` ? 0.6 : 1,
+                        }}
+                      >
+                        {isSent ? t.friends_requestSent : t.friends_add}
+                      </button>
+                    </div>
+                    {i < searchResults.length - 1 && <InsetRule />}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Safe area bottom */}
+            <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
+          </div>
+        </div>
+      )}
 
       {/* ── Pending section ────────────────────────── */}
       {hasPending && !q && (
@@ -493,59 +646,6 @@ export function CordadasClient({
         </div>
       )}
 
-      {/* ── Add friend search results ─────────────── */}
-      {query.trim().length >= 2 && (
-        <div>
-          <SectionLabel>{t.friends_addSection}</SectionLabel>
-          <div style={{ background: "white" }}>
-            {searchLoading && (
-              <div style={{ padding: "16px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>…</div>
-            )}
-            {!searchLoading && searchResults.length === 0 && (
-              <div style={{ padding: "16px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>
-                {t.friends_noResults}
-              </div>
-            )}
-            {searchResults.map((user, i) => {
-              const isSent = sentIds.has(user.id);
-              const level = user.levelIdx >= 1 ? LEVEL_DEFS[user.levelIdx - 1] : null;
-              return (
-                <div key={user.id}>
-                  <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 12 }}>
-                    <Avatar name={user.name ?? "?"} avatarUrl={user.avatarUrl} size={44} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>
-                        {user.username ? `@${user.username}` : user.name}
-                      </div>
-                      {level && (
-                        <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>
-                          {level.emoji} {t[level.nameKey]} · {user.uniquePeaks} cimas
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => !isSent && sendFriendRequest(user.id)}
-                      disabled={isSent || actionLoading === `add-${user.id}`}
-                      style={{
-                        padding: "7px 14px", borderRadius: 8, border: "none", flexShrink: 0,
-                        cursor: isSent ? "default" : "pointer",
-                        background: isSent ? "#f3f4f6" : "#2F7A5F",
-                        color: isSent ? "#9ca3af" : "white",
-                        fontSize: 13, fontWeight: 600,
-                        opacity: actionLoading === `add-${user.id}` ? 0.6 : 1,
-                      }}
-                    >
-                      {isSent ? t.friends_requestSent : t.friends_add}
-                    </button>
-                  </div>
-                  {i < searchResults.length - 1 && <InsetRule />}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* ── Empty state ───────────────────────────── */}
       {isEmpty && (
         <div style={{
@@ -564,21 +664,21 @@ export function CordadasClient({
           <div style={{ fontSize: 13, color: "#9ca3af", maxWidth: 260, lineHeight: 1.5 }}>
             {t.friends_noFriendsSub}
           </div>
-          <Link
-            href="/cordadas/add"
+          <button
+            onClick={() => setAddModalOpen(true)}
             style={{
               marginTop: 8,
               display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "9px 20px", borderRadius: 10,
+              padding: "9px 20px", borderRadius: 10, border: "none",
               background: "#2F7A5F", color: "white",
-              fontSize: 14, fontWeight: 600, textDecoration: "none",
+              fontSize: 14, fontWeight: 600, cursor: "pointer",
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            {t.cordadas_createBtn}
-          </Link>
+            {t.friends_add}
+          </button>
         </div>
       )}
 
@@ -588,23 +688,6 @@ export function CordadasClient({
         </div>
       )}
 
-      {/* ── FAB (+) ───────────────────────────────── */}
-      <Link
-        href="/cordadas/add"
-        style={{
-          position: "fixed", bottom: "calc(env(safe-area-inset-bottom) + 72px)", right: 20,
-          width: 52, height: 52, borderRadius: "50%",
-          background: "#2F7A5F",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 4px 12px rgba(47,122,95,0.4)",
-          textDecoration: "none", zIndex: 50,
-        }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 5V19" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
-          <path d="M5 12H19" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
-        </svg>
-      </Link>
     </div>
   );
 }
