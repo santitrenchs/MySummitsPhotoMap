@@ -81,9 +81,9 @@ export function ShareCard(props: ShareCardData) {
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px" }}>
         {props.ownerAvatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={props.ownerAvatarUrl} alt="" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+          <img src={props.ownerAvatarUrl} alt="" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
         ) : (
-          <InitialsAvatar name={props.ownerName} size={40} />
+          <InitialsAvatar name={props.ownerName} size={32} />
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#0D2538" }}>{props.ownerName}</div>
