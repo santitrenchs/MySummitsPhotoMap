@@ -18,7 +18,7 @@ export type AscentData = {
   description: string | null;
   wikiloc?: string | null;
   createdByUserId: string;
-  peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number; wikiUrl?: string | null; wikiBody?: string | null };
+  peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number };
   firstPhotoId: string | null;
   firstPhotoUrl: string | null;
   firstPhotoOriginalKey?: string | null;

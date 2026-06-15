@@ -46,8 +46,6 @@ export type AscentCardData = {
     mountainRange?: string | null;
     latitude: number;
     longitude: number;
-    wikiUrl?: string | null;
-    wikiBody?: string | null;
   };
   photoUrl: string | null;
   photoId?: string | null;

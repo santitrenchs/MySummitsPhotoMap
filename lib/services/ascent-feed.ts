@@ -35,7 +35,6 @@ type RawAscent = {
   peak: {
     id: string; name: string; altitudeM: number; isMythic: boolean;
     mountainRange: string | null; latitude: number; longitude: number;
-    wikiTexts?: { lang: string; wikiUrl: string; body: string }[];
   };
   photos: {
     id: string; url: string; originalStorageKey: string | null; cropAspect: string | null;
@@ -61,8 +60,6 @@ export function enrichAscent(
       }
     }
   }
-  const wikiTexts = a.peak.wikiTexts ?? [];
-  const wikiText = wikiTexts.find(w => w.lang === locale) ?? wikiTexts.find(w => w.lang === "en") ?? wikiTexts[0] ?? null;
   return {
     id: a.id,
     date: a.date.toISOString(),
@@ -70,7 +67,7 @@ export function enrichAscent(
     description: a.description,
     wikiloc: a.wikiloc,
     createdByUserId: a.createdBy,
-    peak: { ...a.peak, wikiTexts: undefined, wikiUrl: wikiText?.wikiUrl ?? null, wikiBody: wikiText?.body ?? null },
+    peak: a.peak,
     firstPhotoId: firstPhoto?.id ?? null,
     firstPhotoUrl: firstPhoto?.url ?? null,
     firstPhotoOriginalKey: firstPhoto?.originalStorageKey ?? null,
@@ -136,7 +133,7 @@ function buildFilters(opts: {
 }
 
 const ASCENT_INCLUDE = {
-  peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { lang: true, wikiUrl: true, body: true } } } },
+  peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true } },
   photos: PHOTOS_INCLUDE,
   user: { select: { id: true, name: true, avatarUrl: true } },
 } as const;
