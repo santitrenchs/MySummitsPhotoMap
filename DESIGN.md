@@ -752,12 +752,16 @@ The card flips on tap (Y-axis rotation, 700 ms). Front shows the photo; back sho
 | Altitude | 28sp black white, letterSpacing −0.04em |
 | Rarity progress bar | 4dp tall · `rgba(255,255,255,0.25)` track · rarity.color fill · width = `altitudeM / 8849` |
 | Stats row (2 cells) | **ASCENSIONES** `—` · **ALPINISTAS** `—` (placeholder until future endpoint) |
-| Cordada pills | label **"Tu Cordada:"** (localized possessive) + one rounded pill per tagged user (their **username**) · pill bg = `rarity.color` @ 12% · 11sp · `FlowRow` · shown above the quote · only when `persons` non-empty |
+| Cordada pills | label + one rounded pill per member (their **username**) · pill bg = `rarity.color` @ 12% · 11sp · `FlowRow` · shown above the quote. **Own card** (`isOwn`): label **"Tu Cordada:"** (possessive) + only the tagged users (you're implicitly in) — shown only when `persons` non-empty. **Friend's card** (`!isOwn`): label **"Cordada:"** (no possessive) + the **owner prepended** before the tagged users (so all members show) — always shown (owner is always present), so a solo ascent shows "Cordada: {owner}". |
 | Description quote | **blockquote**: 3dp left vertical bar in `rarity.color` (rounded 2dp, height = text) + 10dp gap + message text · 13sp *italic* muted · lineHeight 18sp · **maxLines 3** |
 
 > **Card-back message ("cita") — 100-char cap.** The message is capped at **100 characters** on input (`NOTES_MAX_CHARS` in `NewAscentViewModel.kt`, shared by create + edit) so the 3-line quote always renders in full (no ellipsis) on every screen size. The ellipsis on the `Text` is only a defensive fallback for legacy data >100 chars. The create/edit notes field shows an `n/100` counter and is 3 lines.
 
-> **Cordada pills detail.** `ascent.persons` already carries the username (`API builds persons as { id = userId, name = username ?? name }`), so the pill text is `person.name`. The label is `card_cordada_label` — localized **with possessive** in all 5 locales: es "Tu Cordada:" · ca "La teva Cordada:" · en "Your rope team:" · fr "Ta cordée:" · de "Deine Seilschaft:". Only registered+linked tagged users appear (unlinked face tags are not returned).
+> **Cordada pills detail.** `ascent.persons` already carries the username (`API builds persons as { id = userId, name = username ?? name }`), so the pill text is `person.name`. Two i18n keys: `card_cordada_label` (own card, possessive) — es "Tu Cordada:" · ca "La teva Cordada:" · en "Your rope team:" · fr "Ta cordée:" · de "Deine Seilschaft:"; and `card_cordada_label_other` (friend's card, no possessive) — es "Cordada:" · ca "Cordada:" · en "Rope team:" · fr "Cordée:" · de "Seilschaft:". On a friend's card the owner is prepended (`[owner, ...persons]`, deduped); `persons` already excludes the owner. Rationale: on your own card you're implicitly in the team; on someone else's card you want to see every member, including who climbed it. **Web parity:** `AscentCard.tsx` uses the identical pills + blockquote (it ported the Android style; `variant === "profile"` = own); web grouped cards were removed (one card per ascent).
+
+> **Landscape photos (blur-fill).** Horizontal photos are NOT cropped to 4:5. Crop step detects landscape (image wider than the 4:5 box) and offers a **4:5 ↔ Horizontal** toggle (default landscape for horizontal sources); output is marked `cropAspect = "landscape"`. Everywhere a landscape photo renders (feed card, detail hero, capture-reveal card, share card front, new-ascent preview) it shows a **blurred cover background + the full photo on top** (`object-fit: contain` / `ContentScale.Fit`), instead of cropping a horizontal photo to a center sliver. ⚠️ **Web CSS `url()` must be quoted** (`url("…")`) — Cloudflare image URLs contain commas that break an unquoted `url()` → the blur silently fails. Implemented on web + Android (parity); the only delta is the OG image (server-composited blur-fill).
+
+> **Mythic card treatment.** Mythic peaks (`isMythic`) get, on the **front**: a gold **"MYTHIC"** badge top-left of the photo (`#EAB308` bg, white, 10sp/900, letterSpacing 0.12em); the **reward** cell shows a stacked-stones cairn glyph + **"1 Cairn ·"** before **"+N EP"** (the Cairn Score earned); and a **pulsing gold glow** around the whole card (animated colored shadow `#EAB308`, ~1.8s reverse loop). Web (`AscentCard.tsx`) and Android (`CardsScreen.kt` — `CairnGlyph` Canvas, `RewardStatItem`, infinite-transition shadow) match. The capture-reveal has its own mythic glow/particles (Android).
 
 #### Back-side mini-map + nearby peaks
 
@@ -767,6 +771,20 @@ The card back mini-map renders immediately from the ascent payload:
 - The main peak is the large highlighted marker. Nearby peaks are small muted circles.
 - Nearby peaks may display compact labels when there is room: one line, `Name · altitude m`, small white text with a subtle dark halo. Labels must avoid colliding with the main peak name/altitude overlay and with each other. It is acceptable that not every nearby marker has a label on cramped maps.
 - Nearby peaks are selected by backend relevance, not pure distance: important/high/rare peaks in the local area should win over tiny closer points. Do not re-rank on Android.
+
+---
+
+### Share card — public link page (`/ascent/[id]`)
+
+The public share page (opened from the share link, no auth) renders a **flippable card that mirrors the in-app card**, built by the client component `components/share/ShareCard.tsx` (the page `app/ascent/[id]/page.tsx` stays a server component and passes data + i18n strings).
+
+- **Size/frame = app card**: reuses the `.peak-card` class (radius 28, padding 7, border, shadow + grain texture); `max-width: 496px` (= the app feed card's rendered width: 520 container − 24 padding). Photo frame: inset `6px 10px`, radius `var(--radius-xl)` (20px) + inset hairline. Header reuses `.card-user` / `.pc-avatar` / `.user-name` (13px) / `.user-date` (11px) — identical to the app.
+- **Flip on tap** (same `.flip-card` / `.flip-inner` / `.card-front` / `.card-back` structure as the app).
+- **Front**: photo + overlay + watermark "peak ✿ adex" + peak name + coordinates + stat band **with the Cairn reward styling** (mythic). The owner "Únete a Peakadex" CTA sits in the header (share-page-only). The **comment is NOT on the front** (it's on the back, like the app).
+- **Back** = the app `CardBack` (mini-map + elevation profile + stats + Cordada **showing all members incl. the owner**, since it's "someone else's" card + comment blockquote).
+- Below the card: hint text **"Toca la carta para ver el reverso"** (`share_tapToFlip`, 5 locales).
+- **No public API exposure**: nearby peaks are **disabled** on the share page (`PeakMiniMap disableNearby` → base map + central marker only, no `/api/peaks` fetch); the elevation profile is passed from the cached `peak.elevationProfile` (no fetch). `CardBack` + `PeakMiniMap` gained optional `disableNearby` / `elevationProfile` props (the app path is unchanged). The only visual delta vs the app back: no surrounding nearby-peak markers.
+- The WhatsApp/OG preview image is unaffected (still server-composited by `/api/og/[id]`); the flip is only for users opening the link in a browser.
 
 ---
 
