@@ -642,31 +642,6 @@ export function CordadasClient({
                 {i < combined.length - 1 && <InsetRule />}
               </div>
             ))}
-            {!q && (
-              <>
-                <InsetRule />
-                <Link
-                  href="/cordadas/add"
-                  style={{
-                    display: "flex", alignItems: "center", padding: "12px 16px", gap: 12,
-                    textDecoration: "none", color: "#2F7A5F",
-                  }}
-                >
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                    background: "#f0fdf4", border: "1.5px dashed #86efac",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F7A5F" strokeWidth="2.2" strokeLinecap="round">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </div>
-                  <span style={{ fontSize: 15, fontWeight: 600 }}>
-                    {t.cordadas_createBtn}
-                  </span>
-                </Link>
-              </>
-            )}
           </div>
         </div>
       )}
@@ -704,18 +679,6 @@ export function CordadasClient({
             </svg>
             {t.friends_add}
           </button>
-          <Link
-            href="/cordadas/add"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "9px 20px", borderRadius: 10,
-              background: "white", color: "#2F7A5F",
-              border: "1.5px solid #86efac",
-              fontSize: 14, fontWeight: 600, textDecoration: "none",
-            }}
-          >
-            {t.cordadas_createBtn}
-          </Link>
         </div>
       )}
 
@@ -724,6 +687,30 @@ export function CordadasClient({
           {t.friends_noResults}
         </div>
       )}
+
+      {/* ── Nueva cordada — siempre visible ──────── */}
+      <div style={{ background: "white", marginTop: 8 }}>
+        <Link
+          href="/cordadas/add"
+          style={{
+            display: "flex", alignItems: "center", padding: "12px 16px", gap: 12,
+            textDecoration: "none", color: "#2F7A5F",
+          }}
+        >
+          <div style={{
+            width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+            background: "#f0fdf4", border: "1.5px dashed #86efac",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F7A5F" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </div>
+          <span style={{ fontSize: 15, fontWeight: 600 }}>
+            {t.cordadas_createBtn}
+          </span>
+        </Link>
+      </div>
 
     </div>
   );
