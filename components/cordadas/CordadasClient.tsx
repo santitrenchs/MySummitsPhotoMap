@@ -212,7 +212,8 @@ export function CordadasClient({
   const [query, setQuery] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Add-friend modal state
+  // Choice modal (amigo / cordada) + add-friend modal state
+  const [choiceModalOpen, setChoiceModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addQuery, setAddQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
@@ -390,7 +391,7 @@ export function CordadasClient({
           )}
         </div>
         <button
-          onClick={() => setAddModalOpen(true)}
+          onClick={() => setChoiceModalOpen(true)}
           style={{
             display: "flex", alignItems: "center", gap: 6,
             padding: "0 14px", height: 44, borderRadius: 12, border: "none",
@@ -405,6 +406,96 @@ export function CordadasClient({
           {t.friends_add}
         </button>
       </div>
+
+      {/* ── Choice modal (amigo / cordada) ───────── */}
+      {choiceModalOpen && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setChoiceModalOpen(false); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+          }}
+        >
+          <div style={{
+            width: "100%", maxWidth: 640, background: "white",
+            borderRadius: "16px 16px 0 0", padding: "20px 16px",
+            paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+          }}>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginBottom: 16,
+            }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>Añadir</span>
+              <button
+                onClick={() => setChoiceModalOpen(false)}
+                style={{
+                  background: "#f3f4f6", border: "none", borderRadius: "50%",
+                  width: 32, height: 32, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 16, color: "#6b7280",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {/* Amigo */}
+              <button
+                onClick={() => { setChoiceModalOpen(false); setAddModalOpen(true); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "14px 16px", borderRadius: 14, border: "1.5px solid #e5e7eb",
+                  background: "white", cursor: "pointer", textAlign: "left", width: "100%",
+                }}
+              >
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  background: "#eff6ff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="1.8" strokeLinecap="round">
+                    <circle cx="9" cy="7" r="3" />
+                    <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+                    <path d="M19 8v6M22 11h-6" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>{t.friends_add}</div>
+                  <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>Busca por nombre o usuario</div>
+                </div>
+              </button>
+              {/* Cordada */}
+              <Link
+                href="/cordadas/add"
+                onClick={() => setChoiceModalOpen(false)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "14px 16px", borderRadius: 14, border: "1.5px solid #e5e7eb",
+                  background: "white", textDecoration: "none",
+                }}
+              >
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  background: "#f0fdf4",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2F7A5F" strokeWidth="1.8" strokeLinecap="round">
+                    <circle cx="9" cy="7" r="3" />
+                    <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+                    <circle cx="17" cy="7" r="3" />
+                    <path d="M21 21v-2a4 4 0 0 0-4-4h-1" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>{t.cordadas_createBtn}</div>
+                  <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>Crea un grupo de escalada</div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Add-friend modal ──────────────────────── */}
       {addModalOpen && (
@@ -665,7 +756,7 @@ export function CordadasClient({
             {t.friends_noFriendsSub}
           </div>
           <button
-            onClick={() => setAddModalOpen(true)}
+            onClick={() => setChoiceModalOpen(true)}
             style={{
               marginTop: 8,
               display: "inline-flex", alignItems: "center", gap: 6,
@@ -677,7 +768,7 @@ export function CordadasClient({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            {t.friends_add}
+            Añadir
           </button>
         </div>
       )}
@@ -687,30 +778,6 @@ export function CordadasClient({
           {t.friends_noResults}
         </div>
       )}
-
-      {/* ── Nueva cordada — siempre visible ──────── */}
-      <div style={{ background: "white", marginTop: 8 }}>
-        <Link
-          href="/cordadas/add"
-          style={{
-            display: "flex", alignItems: "center", padding: "12px 16px", gap: 12,
-            textDecoration: "none", color: "#2F7A5F",
-          }}
-        >
-          <div style={{
-            width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-            background: "#f0fdf4", border: "1.5px dashed #86efac",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F7A5F" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </div>
-          <span style={{ fontSize: 15, fontWeight: 600 }}>
-            {t.cordadas_createBtn}
-          </span>
-        </Link>
-      </div>
 
     </div>
   );
