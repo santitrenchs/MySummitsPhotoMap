@@ -20,6 +20,7 @@ const PHOTOS_SELECT = {
   select: {
     id: true,
     url: true,
+    cropAspect: true,
     faceDetections: {
       select: {
         faceTags: {
@@ -92,7 +93,7 @@ export async function listAscents(tenantId: string, userId: string, friendUserId
     route: a.route,
     description: a.description,
     wikiloc: a.wikiloc,
-    photos: a.photos.map((p) => ({ id: p.id, url: p.url })),
+    photos: a.photos.map((p) => ({ id: p.id, url: p.url, cropAspect: p.cropAspect ?? null })),
     persons: buildPersons(a.photos as Parameters<typeof buildPersons>[0]),
     createdAt: a.createdAt.toISOString(),
   });

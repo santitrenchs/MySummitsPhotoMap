@@ -10,6 +10,7 @@ export const PHOTOS_INCLUDE = {
     id: true,
     url: true,
     originalStorageKey: true,
+    cropAspect: true,
     faceDetections: {
       select: {
         faceTags: {
@@ -37,7 +38,7 @@ type RawAscent = {
     wikiTexts?: { lang: string; wikiUrl: string; body: string }[];
   };
   photos: {
-    id: string; url: string; originalStorageKey: string | null;
+    id: string; url: string; originalStorageKey: string | null; cropAspect: string | null;
     faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[];
   }[];
   user: { name?: string | null; avatarUrl?: string | null } | null;
@@ -73,6 +74,7 @@ export function enrichAscent(
     firstPhotoId: firstPhoto?.id ?? null,
     firstPhotoUrl: firstPhoto?.url ?? null,
     firstPhotoOriginalKey: firstPhoto?.originalStorageKey ?? null,
+    firstPhotoCropAspect: firstPhoto?.cropAspect ?? null,
     persons: Array.from(personMap.values()),
     isOwn,
     isUnseen: feedSeens ? feedSeens.length === 0 : false,

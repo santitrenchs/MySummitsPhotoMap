@@ -52,6 +52,7 @@ export type AscentCardData = {
   photoUrl: string | null;
   photoId?: string | null;
   originalStorageKey?: string | null;
+  cropAspect?: string | null;
   persons: { id: string; name: string }[];
   user: { name: string; avatarUrl?: string | null };
   peakStats?: { totalAscents: number; uniqueClimbers: number };
@@ -277,8 +278,29 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           {showMap && isFlipped
             ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={ascent.peak.name} altitudeM={ascent.peak.altitudeM} />
             : ascent.photoUrl
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.nameEn ?? ascent.peak.name} loading="lazy" />
+              ? ascent.cropAspect === "landscape"
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+                    {/* Blurred background fill for landscape photos */}
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      backgroundImage: `url(${imgUrl(ascent.photoUrl, 800)})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      filter: "blur(24px)",
+                      transform: "scale(1.1)",
+                    }} />
+                    {/* Sharp image centered */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imgUrl(ascent.photoUrl, 800)}
+                      alt={ascent.peak.nameEn ?? ascent.peak.name}
+                      loading="lazy"
+                      style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", zIndex: 1 }}
+                    />
+                  </div>
+                // eslint-disable-next-line @next/next/no-img-element
+                : <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.nameEn ?? ascent.peak.name} loading="lazy" />
               : <MountainPlaceholder />
           }
           <div className="image-overlay" />

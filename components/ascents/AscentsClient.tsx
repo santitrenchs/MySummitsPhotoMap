@@ -23,6 +23,7 @@ export type AscentData = {
   firstPhotoId: string | null;
   firstPhotoUrl: string | null;
   firstPhotoOriginalKey?: string | null;
+  firstPhotoCropAspect?: string | null;
   persons: { id: string; name: string; email?: string | null }[];
   isOwn: boolean;
   isUnseen?: boolean;
@@ -891,6 +892,7 @@ export function AscentsClient({
                         photoUrl: a.firstPhotoUrl,
                         photoId: a.firstPhotoId,
                         originalStorageKey: a.firstPhotoOriginalKey,
+                        cropAspect: a.firstPhotoCropAspect,
                         persons: others,
                         user: { name: a.userName, avatarUrl: a.userAvatarUrl },
                         peakStats: a.peakStats,

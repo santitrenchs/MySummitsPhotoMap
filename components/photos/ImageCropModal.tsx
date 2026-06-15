@@ -7,6 +7,14 @@ import { useT } from "@/components/providers/I18nProvider";
 // Output resolution (Instagram standard)
 const OUTPUT_W = 1080;
 
+// Minimum scale to display the image in the crop box.
+// Portrait images must cover the box; landscape images only fit to width (blur fill handles the rest).
+function getMinScale(ew: number, eh: number, cropW: number, cropH: number): number {
+  return (ew * cropH > eh * cropW)
+    ? cropW / ew                          // landscape: fit to width
+    : Math.max(cropW / ew, cropH / eh);   // portrait: must cover crop box
+}
+
 // Max long side for stored original (covers 20×30cm prints at 300 DPI)
 const ORIGINAL_MAX_PX = 3000;
 
@@ -159,7 +167,7 @@ export function ImageCropModal({
     const r = rot ?? rotation;
     const { ew, eh } = effectiveDims(r);
     const { cropW, cropH } = getCropSize();
-    const minS = Math.max(cropW / ew, cropH / eh);
+    const minS = getMinScale(ew, eh, cropW, cropH);
     setScale(minS);
     setOffset({ x: 0, y: 0 });
     setReady(true);
@@ -211,7 +219,7 @@ export function ImageCropModal({
     e.preventDefault();
     const { ew, eh } = effectiveDims(rotation);
     const { cropW, cropH } = getCropSize();
-    const minS = Math.max(cropW / ew, cropH / eh);
+    const minS = getMinScale(ew, eh, cropW, cropH);
     const newScale = Math.max(minS, Math.min(6, scale * (1 - e.deltaY * 0.001)));
     setScale(newScale);
     setOffset((prev) => clamp(prev.x, prev.y, newScale));
@@ -241,7 +249,7 @@ export function ImageCropModal({
     e.preventDefault();
     const { ew, eh } = effectiveDims(rotation);
     const { cropW, cropH } = getCropSize();
-    const minS = Math.max(cropW / ew, cropH / eh);
+    const minS = getMinScale(ew, eh, cropW, cropH);
 
     if (e.touches.length === 1 && drag.current.active) {
       const ox = drag.current.startOX + (e.touches[0].clientX - drag.current.startX);
@@ -290,38 +298,56 @@ export function ImageCropModal({
     onApplyingChange?.(true);
 
     const { cropW, cropH } = getCropSize();
-    const outH = Math.round(OUTPUT_W / ratio);
+    const { ew, eh } = effectiveDims(rotation);
+
+    // Landscape state: image ratio is wider than crop box AND image doesn't fill crop height.
+    // When true, output height is derived from the actual image height at current zoom.
+    const imageHeightPx = eh * scale;
+    const isLandscape = (ew * cropH > eh * cropW) && imageHeightPx < cropH - 1;
+
+    const outW = OUTPUT_W;
+    const outH = isLandscape
+      ? Math.round(OUTPUT_W * imageHeightPx / cropW)  // native landscape proportions at current zoom
+      : Math.round(OUTPUT_W / ratio);
 
     const canvas = document.createElement("canvas");
-    canvas.width = OUTPUT_W;
+    canvas.width = outW;
     canvas.height = outH;
     const ctx = canvas.getContext("2d")!;
 
     // Scale factor: display pixels → output pixels
-    const s = OUTPUT_W / cropW;
+    const s = outW / cropW;
 
-    // Mirror the CSS transform: center → rotate → pan → draw image centered
+    // Mirror the CSS transform: center → rotate → pan → draw image centered.
+    // For landscape, vertical pan is locked (offset.y is always 0 when image doesn't fill cropH).
     ctx.save();
-    ctx.translate(OUTPUT_W / 2, outH / 2);
+    ctx.translate(outW / 2, outH / 2);
     ctx.rotate((rotation * Math.PI) / 180);
-    ctx.translate(offset.x * s, offset.y * s);
+    ctx.translate(offset.x * s, isLandscape ? 0 : offset.y * s);
     const dW = img.naturalWidth * scale * s;
     const dH = img.naturalHeight * scale * s;
     ctx.drawImage(img, -dW / 2, -dH / 2, dW, dH);
     ctx.restore();
 
     // Normalized crop coords in effective (rotated) image space
-    const { ew, eh } = effectiveDims(rotation);
     const srcX = ((ew * scale - cropW) / 2 - offset.x) / scale;
-    const srcY = ((eh * scale - cropH) / 2 - offset.y) / scale;
-    const cropMeta: CropMeta = {
-      x: srcX / ew,
-      y: srcY / eh,
-      w: cropW / scale / ew,
-      h: cropH / scale / eh,
-      aspect: ratio === 1 ? "1:1" : "4:5",
-      rotation,
-    };
+    const cropMeta: CropMeta = isLandscape
+      ? {
+          x: Math.max(0, srcX / ew),
+          y: 0,
+          w: Math.min(1, cropW / scale / ew),
+          h: 1,
+          aspect: "landscape",
+          rotation,
+        }
+      : {
+          x: srcX / ew,
+          y: ((eh * scale - cropH) / 2 - offset.y) / scale / eh,
+          w: cropW / scale / ew,
+          h: cropH / scale / eh,
+          aspect: ratio === 1 ? "1:1" : "4:5",
+          rotation,
+        };
 
     canvas.toBlob((blob) => {
       setApplying(false);
@@ -394,6 +420,26 @@ export function ImageCropModal({
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
+          {/* Blur fill — shows blurred image behind sharp one when photo is landscape */}
+          {src && ready && imgRef.current && (() => {
+            const { ew, eh } = effectiveDims(rotation);
+            const { cropW: cW, cropH: cH } = getCropSize();
+            if (ew * cH <= eh * cW) return null; // portrait: no blur fill needed
+            return (
+              <div
+                style={{
+                  position: "absolute", inset: 0,
+                  backgroundImage: `url(${src})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: `calc(50% + ${offset.x}px) center`,
+                  filter: "blur(20px)",
+                  transform: "scale(1.08)", // prevent blurred edges leaking
+                  pointerEvents: "none",
+                }}
+              />
+            );
+          })()}
+
           {src && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -410,6 +456,7 @@ export function ImageCropModal({
                 transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) rotate(${rotation}deg)`,
                 maxWidth: "none",
                 userSelect: "none", pointerEvents: "none",
+                zIndex: 1,
               }}
             />
           )}
@@ -418,7 +465,7 @@ export function ImageCropModal({
           {embedded && ready && imgRef.current && (() => {
             const { cropW: cW, cropH: cH } = getCropSize();
             const { ew, eh } = effectiveDims(rotation);
-            const minS = Math.max(cW / ew, cH / eh);
+            const minS = getMinScale(ew, eh, cW, cH);
             const maxS = minS * 4;
             return (
               <div style={{
@@ -526,7 +573,7 @@ export function ImageCropModal({
           {ready && imgRef.current && (() => {
             const { cropW: cW, cropH: cH } = getCropSize();
             const { ew, eh } = effectiveDims(rotation);
-            const minS = Math.max(cW / ew, cH / eh);
+            const minS = getMinScale(ew, eh, cW, cH);
             const maxS = minS * 4;
             return (
               <div style={{ display: "flex", alignItems: "center", gap: 10, width: "min(360px, 90vw)" }}>
