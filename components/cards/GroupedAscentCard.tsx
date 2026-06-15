@@ -315,13 +315,31 @@ export function GroupedAscentCard({
                       }}
                     >
                       {a.firstPhotoUrl
-                        // eslint-disable-next-line @next/next/no-img-element
-                        ? <img
-                            src={imgUrl(a.firstPhotoUrl, 800)}
-                            alt={a.peak.name}
-                            loading="lazy"
-                            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
-                          />
+                        ? a.firstPhotoCropAspect === "landscape"
+                          ? <>
+                              {/* Blur fill for landscape photos */}
+                              <div style={{
+                                position: "absolute", inset: 0,
+                                backgroundImage: `url(${imgUrl(a.firstPhotoUrl, 800)})`,
+                                backgroundSize: "cover", backgroundPosition: "center",
+                                filter: "blur(24px)", transform: "scale(1.1)",
+                                pointerEvents: "none",
+                              }} />
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={imgUrl(a.firstPhotoUrl, 800)}
+                                alt={a.peak.name}
+                                loading="lazy"
+                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none", zIndex: 1 }}
+                              />
+                            </>
+                          // eslint-disable-next-line @next/next/no-img-element
+                          : <img
+                              src={imgUrl(a.firstPhotoUrl, 800)}
+                              alt={a.peak.name}
+                              loading="lazy"
+                              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
+                            />
                         : <MountainPlaceholder />
                       }
                       <div className="image-overlay" />
