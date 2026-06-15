@@ -298,7 +298,7 @@ export type Dict = {
   home_rarityChartTitle: string;
   // Peakadex capture cards
   card_capturedSummit: string; card_capturedMythicSummit: string;
-  card_peakCapture: string; card_mythic: string;
+  card_peakCapture: string; card_mythic: string; card_cordada_label: string;
   card_rarity: string; card_altitude: string; card_reward: string;
   share_joinCta: string;
   card_share: string; card_shareCopied: string; card_shareError: string; card_shareCopyLink: string;

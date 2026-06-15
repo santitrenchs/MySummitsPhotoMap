@@ -316,7 +316,7 @@ export const en: Dict = {
   auth_backToLogin: "Back to sign in",
 
   card_capturedSummit: "captured a summit", card_capturedMythicSummit: "captured a mythic summit",
-  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
+  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC", card_cordada_label: "Your rope team:",
   card_rarity: "Rarity", card_altitude: "Altitude", card_reward: "Reward",
   share_joinCta: "Join Peakadex →",
   card_share: "Share", card_shareCopied: "Copied!", card_shareError: "Error sharing", card_shareCopyLink: "Copy link",

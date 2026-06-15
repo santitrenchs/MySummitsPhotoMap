@@ -159,23 +159,33 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
       peakStats={ascent.peakStats}
       mythicLabel={t.card_mythic}
       footer={
-        <footer className="capture-note">
-          <p className="note-byline">
-            <strong>{ascent.user.name}</strong>
-            {ascent.persons.length > 0 && (
-              <>
-                {" "}{t.detail_with.toLowerCase()}{" "}
-                {ascent.persons.map((p, i) => (
-                  <span key={p.id}>
-                    {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
-                    <strong>{p.name}</strong>
-                  </span>
-                ))}
-              </>
-            )}
-          </p>
+        <footer className="capture-note" style={{ borderTop: "none" }}>
+          {/* Cordada — one pill per tagged user (rarity-tinted), matches Android CardBack */}
+          {ascent.persons.length > 0 && (
+            <div style={{
+              display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6,
+              marginBottom: ascent.description ? 8 : 0,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280" }}>{t.card_cordada_label}</span>
+              {ascent.persons.map((p) => (
+                <span key={p.id} style={{
+                  fontSize: 11, fontWeight: 600, color: "#111827",
+                  background: RARITY_COLOR[rarity] + "1F",
+                  borderRadius: "var(--radius-full)", padding: "3px 9px",
+                  maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>{p.name}</span>
+              ))}
+            </div>
+          )}
+          {/* Message blockquote — rarity-coloured left bar + italic text, 3-line clamp */}
           {ascent.description && (
-            <p className="note-text">{ascent.description}</p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ width: 3, alignSelf: "stretch", borderRadius: 2, background: RARITY_COLOR[rarity], flexShrink: 0 }} />
+              <p style={{
+                margin: 0, fontSize: 13, fontStyle: "italic", color: "#6B7280", lineHeight: 1.4,
+                display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+              }}>{ascent.description}</p>
+            </div>
           )}
         </footer>
       }
