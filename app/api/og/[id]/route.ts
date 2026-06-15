@@ -304,7 +304,7 @@ export async function GET(
     const composited = await sharp(photo).composite(compositeInputs).png().toBuffer();
     const WA_MAX_BYTES = 280 * 1024;
     let jpg = await sharp(composited).jpeg({ quality: 86, mozjpeg: true }).toBuffer();
-    for (const q of [76, 66, 56]) {
+    for (const q of [76, 66, 56, 46, 38]) {
       if (jpg.length <= WA_MAX_BYTES) break;
       jpg = await sharp(composited).jpeg({ quality: q, mozjpeg: true }).toBuffer();
     }
