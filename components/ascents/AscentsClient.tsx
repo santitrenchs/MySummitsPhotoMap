@@ -220,6 +220,19 @@ export function AscentsClient({
     return Array.from(map.values());
   }, [filtered]);
 
+  // Position the list at the highlighted card on the FIRST paint. A post-mount
+  // virtuosoRef.scrollToIndex races with Virtuoso's measurement under
+  // useWindowScroll and silently lands at the top ("the first of mine").
+  // initialTopMostItemIndex is applied by Virtuoso before paint, from the
+  // SSR-provided groups (which already include the injected highlight ascent).
+  const initialHighlightIndex = useMemo(() => {
+    if (!highlightId) return undefined;
+    const idx = groups.findIndex((g) => g.some((a) => a.id === highlightId));
+    return idx >= 0 ? { index: idx, align: "center" as const } : undefined;
+    // Compute ONCE at mount — deliberately empty deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Cleanup mark-as-seen timers on unmount
   useEffect(() => {
     return () => {
@@ -857,6 +870,7 @@ export function AscentsClient({
           <Virtuoso
             ref={virtuosoRef}
             useWindowScroll
+            initialTopMostItemIndex={initialHighlightIndex}
             data={groups}
             endReached={loadMore}
             rangeChanged={handleRangeChanged}
