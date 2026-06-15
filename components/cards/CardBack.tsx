@@ -2,6 +2,7 @@
 
 import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
 import { ElevationProfile } from "@/components/cards/ElevationProfile";
+import type { ElevationProfile as ElevationProfileData } from "@/lib/services/elevation.service";
 import { type RarityId, RARITY_COLORS } from "@/lib/rarity";
 
 // ─── CardBack ────────────────────────────────────────────────────────────────
@@ -43,7 +44,11 @@ type Props = {
   footer?: React.ReactNode;
   /** i18n key for "Mítico" badge — only needed when isMythic */
   mythicLabel?: string;
-};
+  /** Skip nearby-peaks fetch (public share page where /api/peaks isn't accessible). */
+  disableNearby?: boolean;
+  /** Pre-loaded elevation profile — passed to ElevationProfile to skip its fetch. */
+  elevationProfile?: ElevationProfileData | null;
+}
 
 export function CardBack({
   peak,
@@ -54,6 +59,8 @@ export function CardBack({
   peakStats,
   footer,
   mythicLabel = "Mítico",
+  disableNearby = false,
+  elevationProfile,
 }: Props) {
   const latStr = `${Math.abs(peak.latitude).toFixed(4)}°${peak.latitude >= 0 ? "N" : "S"}`;
   const lngStr = `${Math.abs(peak.longitude).toFixed(4)}°${peak.longitude >= 0 ? "E" : "W"}`;
@@ -69,6 +76,7 @@ export function CardBack({
             peakId={peak.id}
             peakName={peak.name}
             altitudeM={peak.altitudeM}
+            disableNearby={disableNearby}
           />
         )}
         <div className="back-map-gradient" />
@@ -89,6 +97,7 @@ export function CardBack({
               peakId={peak.id}
               altitudeM={peak.altitudeM}
               rarityColor={rarityColor}
+              profile={elevationProfile}
             />
           </div>
         )}

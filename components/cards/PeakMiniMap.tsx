@@ -88,12 +88,16 @@ export function PeakMiniMap({
   lng,
   peakId,
   altitudeM,
+  disableNearby = false,
 }: {
   lat: number;
   lng: number;
   peakId: string;
   peakName: string;
   altitudeM: number;
+  /** Skip the nearby-peaks fetch/markers entirely (e.g. public share page where
+   *  /api/peaks is not accessible). Base map + central peak marker still render. */
+  disableNearby?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -169,6 +173,7 @@ export function PeakMiniMap({
       map.resize();
       map.once("idle", () => map.resize());
 
+      if (disableNearby) return; // public share page: no /api/peaks fetch
       const cached = nearbyCache.get(peakId);
       if (cached) {
         // Prefetch already finished — render immediately.

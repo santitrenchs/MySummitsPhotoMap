@@ -2,9 +2,10 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { getPublicAscent } from "@/lib/services/public-ascent.service";
-import { getRarityId, RARITY_COLORS, RARITY_LABELS, RARITY_EP } from "@/lib/rarity";
+import { getRarityId, RARITY_LABELS } from "@/lib/rarity";
 import { PeakadexLogo } from "@/components/brand/Logo";
-import Link from "next/link";
+import { ShareCard } from "@/components/share/ShareCard";
+import type { ElevationProfile as ElevationProfileData } from "@/lib/services/elevation.service";
 import { getT, isValidLocale } from "@/lib/i18n";
 
 const APP_URL =
@@ -84,33 +85,6 @@ function formatDate(iso: string, locale: string) {
   });
 }
 
-function InitialsAvatar({ name, size = 40 }: { name: string; size?: number }) {
-  const parts = name.trim().split(" ");
-  const initials =
-    parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : (name[0]?.toUpperCase() ?? "?");
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)",
-        color: "white",
-        fontSize: size * 0.38,
-        fontWeight: 700,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      {initials}
-    </div>
-  );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function PublicAscentPage({
@@ -127,11 +101,6 @@ export default async function PublicAscentPage({
 
   const ascent = await getPublicAscent(id);
   if (!ascent) notFound();
-
-  const rarity = getRarityId(ascent.peak.altitudeM);
-  const rarityColor = RARITY_COLORS[ascent.peak.rarityId ?? rarity] ?? RARITY_COLORS[rarity];
-  const rarityLabel = RARITY_LABELS[rarity];
-  const rarityEp = RARITY_EP[rarity];
 
   return (
     <div
@@ -150,262 +119,42 @@ export default async function PublicAscentPage({
         <PeakadexLogo height={32} iconScale={0.9} />
       </div>
 
-      {/* Card — reuses the app's .peak-card look: radius 28, padding 7, border,
-          shadow + grain texture. position:relative anchors the grain ::after. */}
-      <div
-        className="peak-card"
-        style={{
-          position: "relative",
-          width: "100%",
-          // App card renders at 496px (520 page container − 24px padding); match it.
-          maxWidth: 496,
+      {/* Flippable card — front (photo + stats) / back (map + stats + Cordada) */}
+      <ShareCard
+        ascentId={ascent.id}
+        dateStr={formatDate(ascent.date, t.dateLocale)}
+        route={ascent.route}
+        description={ascent.description}
+        peak={{
+          id: ascent.peak.id,
+          name: ascent.peak.name,
+          altitudeM: ascent.peak.altitudeM,
+          mountainRange: ascent.peak.mountainRange,
+          isMythic: ascent.peak.isMythic,
+          rarityId: ascent.peak.rarityId,
+          latitude: ascent.peak.latitude,
+          longitude: ascent.peak.longitude,
+          elevationProfile: (ascent.peak.elevationProfile as ElevationProfileData | null) ?? null,
         }}
-      >
-        {/* User header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "14px 16px",
-          }}
-        >
-          {ascent.user.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={ascent.user.avatarUrl}
-              alt=""
-              style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-            />
-          ) : (
-            <InitialsAvatar name={ascent.user.name} size={40} />
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#0D2538" }}>
-              {ascent.user.name}
-            </div>
-            <div style={{ fontSize: 12, color: "#5A6E84" }}>{formatDate(ascent.date, t.dateLocale)}</div>
-          </div>
-          <Link
-            href={`${APP_URL}/register`}
-            style={{
-              flexShrink: 0,
-              padding: "7px 14px",
-              background: "#2F7A5F",
-              color: "#fff",
-              borderRadius: "var(--radius-full)",
-              fontSize: 12,
-              fontWeight: 700,
-              textDecoration: "none",
-              letterSpacing: "0.01em",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {t.share_joinCta}
-          </Link>
-        </div>
-
-        {/* Photo */}
-        <div style={{ padding: "6px 10px" }}>
-        <div style={{ position: "relative", aspectRatio: "4/5", background: "#e2e8f0", overflow: "hidden", borderRadius: "var(--radius-xl)", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.10)" }}>
-          {ascent.photoUrl ? (
-            ascent.photoCropAspect === "landscape" ? (
-              <>
-                {/* Blurred background fill for landscape photos */}
-                <div style={{
-                  position: "absolute", inset: 0,
-                  backgroundImage: `url("${ascent.photoUrl}")`,
-                  backgroundSize: "cover", backgroundPosition: "center",
-                  filter: "blur(24px)", transform: "scale(1.1)",
-                }} />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={ascent.photoUrl}
-                  alt={ascent.peak.name}
-                  style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: 1 }}
-                />
-              </>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={ascent.photoUrl}
-                alt={ascent.peak.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              />
-            )
-          ) : (
-            <div style={{ width: "100%", height: "100%", background: "linear-gradient(180deg, #bfdbfe 0%, #dbeafe 100%)" }} />
-          )}
-
-          {/* Gradient overlay */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 55%)",
-            }}
-          />
-
-          {/* Mythic badge */}
-          {ascent.peak.isMythic && (
-            <div
-              style={{
-                position: "absolute",
-                top: 12,
-                right: 12,
-                background: "rgba(255,215,0,0.95)",
-                color: "#7c4900",
-                fontSize: 10,
-                fontWeight: 800,
-                padding: "3px 8px",
-                borderRadius: "var(--radius-full)",
-                letterSpacing: "0.08em",
-              }}
-            >
-              MYTHIC
-            </div>
-          )}
-
-          {/* Peakadex watermark — top-left, matches OG image style */}
-          <div
-            style={{
-              position: "absolute",
-              top: 12,
-              left: 12,
-              display: "flex",
-              alignItems: "center",
-              gap: 0,
-              opacity: 0.80,
-              pointerEvents: "none",
-              filter: "drop-shadow(0px 1px 6px rgba(0,0,0,0.7))",
-              fontFamily: "var(--font-manrope), 'Manrope', sans-serif",
-              fontSize: 18,
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
-              lineHeight: 1,
-              whiteSpace: "nowrap",
-            }}
-          >
-            <span style={{ color: "#fff", marginRight: 5 }}>peak</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo-icon.svg"
-              width={22}
-              height={22}
-              alt=""
-              style={{
-                display: "block",
-                flexShrink: 0,
-                filter: "brightness(0) invert(1)",
-                transform: "translateY(1px)",
-              }}
-            />
-            <span style={{ color: "#fff", marginLeft: 5 }}>adex</span>
-          </div>
-
-          {/* Peak info overlay */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              padding: "16px",
-            }}
-          >
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.2, letterSpacing: "-0.3px" }}>
-              {ascent.peak.name}
-            </div>
-            {ascent.route && (
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>
-                {ascent.route}
-              </div>
-            )}
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>
-              {`${Math.abs(ascent.peak.latitude).toFixed(4)}°${ascent.peak.latitude >= 0 ? "N" : "S"}`}
-              {" · "}
-              {`${Math.abs(ascent.peak.longitude).toFixed(4)}°${ascent.peak.longitude >= 0 ? "E" : "W"}`}
-            </div>
-          </div>
-        </div>
-        </div>
-
-        {/* Stats band */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 8,
-            padding: "0 12px 12px",
-          }}
-        >
-          {/* Rarity */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: "var(--radius-md)", padding: "8px 6px" }}>
-            <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
-              {t.card_rarity}
-            </div>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                background: rarityColor + "20",
-                borderRadius: "var(--radius-full)",
-                padding: "3px 8px",
-              }}
-            >
-              <span style={{ color: rarityColor, fontSize: 10 }}>✿</span>
-              <span style={{ color: rarityColor, fontSize: 11, fontWeight: 700 }}>{rarityLabel}</span>
-            </div>
-          </div>
-
-          {/* Altitude */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: "var(--radius-md)", padding: "8px 6px" }}>
-            <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
-              {t.card_altitude}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538" }}>
-              {ascent.peak.altitudeM.toLocaleString("en")} m
-            </div>
-          </div>
-
-          {/* Reward */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#F8FAFC", borderRadius: "var(--radius-md)", padding: "8px 6px" }}>
-            <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em" }}>
-              {t.card_reward}
-            </div>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                background: "#fef3c7",
-                borderRadius: "var(--radius-full)",
-                padding: "3px 8px",
-              }}
-            >
-              <span style={{ color: "#d97706", fontSize: 12, fontWeight: 700 }}>+{rarityEp} EP</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Description */}
-        {ascent.description && (
-          <div
-            style={{
-              padding: "12px 16px",
-              fontSize: 13,
-              color: "#374151",
-              lineHeight: 1.6,
-            }}
-          >
-            {ascent.description}
-          </div>
-        )}
-
-        {/* Bottom padding */}
-        <div style={{ paddingBottom: 20 }} />
-      </div>
+        photoUrl={ascent.photoUrl}
+        ownerName={ascent.user.name}
+        ownerAvatarUrl={ascent.user.avatarUrl}
+        persons={ascent.persons}
+        peakStats={ascent.peakStats}
+        isLandscape={ascent.photoCropAspect === "landscape"}
+        locale={t.dateLocale}
+        registerUrl={`${APP_URL}/register`}
+        labels={{
+          rarity: t.card_rarity,
+          altitude: t.card_altitude,
+          reward: t.card_reward,
+          mythic: t.card_mythic,
+          joinCta: t.share_joinCta,
+          cordada: t.card_cordada_label_other,
+          tapToFlip: t.share_tapToFlip,
+          cairn: "1 Cairn",
+        }}
+      />
 
       {/* Footer */}
       <div style={{ marginTop: 24, fontSize: 11, color: "#94A3B8" }}>
