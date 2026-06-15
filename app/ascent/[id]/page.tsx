@@ -150,15 +150,14 @@ export default async function PublicAscentPage({
         <PeakadexLogo height={32} iconScale={0.9} />
       </div>
 
-      {/* Card */}
+      {/* Card — reuses the app's .peak-card look: radius 28, padding 7, border,
+          shadow + grain texture. position:relative anchors the grain ::after. */}
       <div
+        className="peak-card"
         style={{
+          position: "relative",
           width: "100%",
-          maxWidth: 400,
-          background: "#fff",
-          borderRadius: "var(--radius-xl)",
-          overflow: "hidden",
-          boxShadow: "0 8px 40px rgba(13,37,56,0.13), 0 1px 4px rgba(13,37,56,0.06)",
+          maxWidth: 520,
         }}
       >
         {/* User header */}
@@ -206,8 +205,8 @@ export default async function PublicAscentPage({
         </div>
 
         {/* Photo */}
-        <div style={{ padding: "0 12px 12px" }}>
-        <div style={{ position: "relative", aspectRatio: "4/5", background: "#e2e8f0", overflow: "hidden", borderRadius: "var(--radius-lg)" }}>
+        <div style={{ padding: "6px 10px" }}>
+        <div style={{ position: "relative", aspectRatio: "4/5", background: "#e2e8f0", overflow: "hidden", borderRadius: "var(--radius-xl)", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.10)" }}>
           {ascent.photoUrl ? (
             ascent.photoCropAspect === "landscape" ? (
               <>
