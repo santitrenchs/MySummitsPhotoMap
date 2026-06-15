@@ -55,31 +55,12 @@ model Peak {
 
   rarity    Rarity?        @relation(fields: [rarityId], references: [id])
   ascents   Ascent[]
-  wikiTexts PeakWikiText[]
 
   @@index([rarityId])
   @@index([country])
   @@index([altitudeM])
   @@index([latitude, longitude])
   @@map("peaks")
-}
-
-model PeakWikiText {
-  id         String   @id @default(uuid())
-  peakId     String
-  lang       String
-  title      String
-  body       String
-  wikiUrl    String
-  confidence Float
-  status     String
-  fetchedAt  DateTime @default(now())
-
-  peak Peak @relation(fields: [peakId], references: [id], onDelete: Cascade)
-
-  @@unique([peakId, lang])
-  @@index([peakId])
-  @@map("peak_wiki_descriptions")
 }
 
 // ─────────────────────────────────────────────────────────
