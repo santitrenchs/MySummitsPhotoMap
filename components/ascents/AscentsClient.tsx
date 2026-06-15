@@ -85,6 +85,13 @@ export function AscentsClient({
   // from causing the other stream's items to be skipped (see ascent-feed.ts comments).
   const [beforeOwn, setBeforeOwn] = useState<string | null>(initialBeforeOwn);
   const [beforeFriends, setBeforeFriends] = useState<string | null>(initialBeforeFriends);
+  // Full-reload (view/filter change) in flight — drives a loading state instead of
+  // showing the stale "0 results" + empty state of the previous view's data.
+  const [isRefetching, setIsRefetching] = useState(false);
+  // Per-(filter signature) cache so switching back to an already-loaded view/filter
+  // is instant (no network). Seeded with the SSR page and warmed in the background.
+  type FeedCacheEntry = { ascents: AscentData[]; beforeOwn: string | null; beforeFriends: string | null; hasMore: boolean };
+  const feedCacheRef = useRef<Map<string, FeedCacheEntry>>(new Map());
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -229,10 +236,11 @@ export function AscentsClient({
   // Build URL params from current filter state. Sent to server on every fetch (initial + loadMore +
   // filter-triggered refetch). Server applies these as WHERE clauses so pagination only returns
   // items that match — no more endless auto-retry just to find one matching ascent.
-  const buildFilterParams = useCallback(() => {
+  const buildFilterParams = useCallback((viewOverride?: ViewChip) => {
+    const v = viewOverride ?? viewChip;
     const p = new URLSearchParams();
-    if (viewChip !== "friends") p.set("view", viewChip);
-    if (viewChip === "person" && selectedPersonId) p.set("personId", selectedPersonId);
+    if (v !== "friends") p.set("view", v);
+    if (v === "person" && selectedPersonId) p.set("personId", selectedPersonId);
     if (peakFilter) p.set("peakId", peakFilter);
     if (monthFilter) p.set("month", monthFilter);
     if (rarity) p.set("rarity", rarity);
@@ -247,7 +255,7 @@ export function AscentsClient({
 
   // Load more from server when Virtuoso reaches the end — APPENDS to localAscents
   const loadMore = useCallback(() => {
-    if (!hasMore || isFetchingMore) return;
+    if (!hasMore || isFetchingMore || isRefetching) return;
     const seq = ++fetchSeqRef.current;
     setIsFetchingMore(true);
     const oldIds = new Set(localAscents.map((a) => a.id));
@@ -270,19 +278,31 @@ export function AscentsClient({
       .finally(() => {
         if (fetchSeqRef.current === seq) setIsFetchingMore(false);
       });
-  }, [hasMore, isFetchingMore, localAscents, beforeOwn, beforeFriends, buildFilterParams]);
+  }, [hasMore, isFetchingMore, isRefetching, localAscents, beforeOwn, beforeFriends, buildFilterParams]);
 
   // Refetch from scratch when a server-affecting filter changes — REPLACES localAscents
   const isInitialFilterMount = useRef(true);
   useEffect(() => {
+    const key = buildFilterParams().toString();
     if (isInitialFilterMount.current) {
       isInitialFilterMount.current = false;
+      // Seed the cache with the SSR page so returning to this view/filter is instant.
+      feedCacheRef.current.set(key, { ascents: localAscents, beforeOwn, beforeFriends, hasMore });
+      return;
+    }
+    // Cache hit → restore instantly, no network, no loading flash.
+    const cached = feedCacheRef.current.get(key);
+    if (cached) {
+      setLocalAscents(cached.ascents);
+      setHasMore(cached.hasMore);
+      setBeforeOwn(cached.beforeOwn);
+      setBeforeFriends(cached.beforeFriends);
+      setIsRefetching(false);
       return;
     }
     const seq = ++fetchSeqRef.current;
-    const params = buildFilterParams();
-    setIsFetchingMore(true);
-    fetch(`/api/ascents/feed?${params.toString()}`)
+    setIsRefetching(true);
+    fetch(`/api/ascents/feed?${key}`)
       .then((r) => r.json())
       .then((data: { ascents: AscentData[]; hasMore: boolean; nextBeforeOwn: string | null; nextBeforeFriends: string | null }) => {
         if (fetchSeqRef.current !== seq) return; // stale — a newer fetch superseded us
@@ -290,13 +310,30 @@ export function AscentsClient({
         setHasMore(data.hasMore);
         setBeforeOwn(data.nextBeforeOwn);
         setBeforeFriends(data.nextBeforeFriends);
+        feedCacheRef.current.set(key, { ascents: data.ascents, beforeOwn: data.nextBeforeOwn, beforeFriends: data.nextBeforeFriends, hasMore: data.hasMore });
       })
       .catch(() => {})
       .finally(() => {
-        if (fetchSeqRef.current === seq) setIsFetchingMore(false);
+        if (fetchSeqRef.current === seq) setIsRefetching(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange]);
+
+  // Warm the opposite primary view (mine↔friends) in the background on mount so
+  // the first toggle is instant. Only when no other server filters are active.
+  useEffect(() => {
+    if (selectedPersonId || peakFilter || monthFilter || rarity || mythicFilter || timeRange !== "all") return;
+    const other: ViewChip = viewChip === "mine" ? "friends" : "mine";
+    const key = buildFilterParams(other).toString();
+    if (feedCacheRef.current.has(key)) return;
+    fetch(`/api/ascents/feed?${key}`)
+      .then((r) => r.json())
+      .then((data: { ascents: AscentData[]; hasMore: boolean; nextBeforeOwn: string | null; nextBeforeFriends: string | null }) => {
+        feedCacheRef.current.set(key, { ascents: data.ascents, beforeOwn: data.nextBeforeOwn, beforeFriends: data.nextBeforeFriends, hasMore: data.hasMore });
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-fetch more when client-side filters reduce the result set below the viewport-fill threshold.
   // Without this, with restrictive filters (e.g. by person) the rendered list can stay so short that
@@ -304,11 +341,11 @@ export function AscentsClient({
   // user thinking there are no more items even though the server still has data.
   const MIN_GROUPS_TO_FILL = 15;
   useEffect(() => {
-    if (!hasMore || isFetchingMore) return;
+    if (!hasMore || isFetchingMore || isRefetching) return;
     if (filtered.length < MIN_GROUPS_TO_FILL) {
       loadMore();
     }
-  }, [filtered.length, hasMore, isFetchingMore, loadMore]);
+  }, [filtered.length, hasMore, isFetchingMore, isRefetching, loadMore]);
 
   // Mark unseen friend ascents as seen after 1s in the rendered range
   const handleRangeChanged = useCallback(
@@ -807,19 +844,29 @@ export function AscentsClient({
             onClick={() => setFiltersOpen(false)}
             style={{ borderRadius: 14, fontFamily: "inherit", boxShadow: "0 4px 14px rgba(3,105,161,0.32)", gap: 6 }}
           >
-            <span style={{ fontSize: 15, fontWeight: 800 }}>
-              {i(t.filter_results, { n: filtered.length })}
-            </span>
-            <span style={{ opacity: 0.45, fontSize: 14 }}>·</span>
-            <span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>
-              {i(t.filter_uniquePeaks, { n: uniquePeaks })}
-            </span>
+            {isRefetching ? (
+              <span style={{ fontSize: 15, fontWeight: 800 }}>…</span>
+            ) : (
+              <>
+                <span style={{ fontSize: 15, fontWeight: 800 }}>
+                  {i(t.filter_results, { n: filtered.length })}
+                </span>
+                <span style={{ opacity: 0.45, fontSize: 14 }}>·</span>
+                <span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>
+                  {i(t.filter_uniquePeaks, { n: uniquePeaks })}
+                </span>
+              </>
+            )}
           </Button>
         </div>
       </div>
 
       {/* ── Feed ──────────────────────────────────────────────────────── */}
-      {filtered.length === 0 ? (
+      {isRefetching ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "80px 0", marginTop: 8 }}>
+          <div style={{ width: 28, height: 28, border: "3px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+        </div>
+      ) : filtered.length === 0 ? (
         viewChip === "friends" && !hasFriends ? (
           <div style={{
             background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
