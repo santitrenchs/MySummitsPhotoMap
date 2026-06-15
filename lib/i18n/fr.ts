@@ -229,7 +229,7 @@ export const fr: Dict = {
 
 
 
-  nav_home: "Peakadex stats",
+  nav_home: "Stats",
   home_greeting: "Bonjour, {name} 👋",
   home_statSummits: "Sommets", home_statPhotos: "Photos",
   home_statRegions: "Régions", home_statFriends: "Amis",

@@ -229,7 +229,7 @@ export const ca: Dict = {
 
 
 
-  nav_home: "Peakadex stats",
+  nav_home: "Stats",
   home_greeting: "Hola, {name} 👋",
   home_statSummits: "Cims", home_statPhotos: "Fotos",
   home_statRegions: "Regions", home_statFriends: "Amics",

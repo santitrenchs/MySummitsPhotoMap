@@ -227,7 +227,7 @@ export const es: Dict = {
   profile_catalog_ascents: "ascensiones",
   profile_catalog_highest: "Más alta",
 
-  nav_home: "Peakadex stats",
+  nav_home: "Stats",
   home_greeting: "Hola, {name} 👋",
   home_statSummits: "Cimas", home_statPhotos: "Fotos",
   home_statRegions: "Regiones", home_statFriends: "Amigos",
