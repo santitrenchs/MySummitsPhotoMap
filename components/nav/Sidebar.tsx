@@ -273,13 +273,6 @@ export function Sidebar({
                   <SbProfileIcon /> {t.nav_profile}
                 </Link>
                 <Link
-                  href="/cordadas"
-                  className="azisb-umenu-item"
-                  onClick={() => setUserMenuOpen(false)}
-                >
-                  <SbFriendsIcon /> {t.nav_cordadas}
-                </Link>
-                <Link
                   href="/settings"
                   className="azisb-umenu-item"
                   onClick={() => setUserMenuOpen(false)}

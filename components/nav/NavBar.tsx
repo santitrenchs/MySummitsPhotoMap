@@ -415,29 +415,6 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
                 <span className="sheet-item-icon"><ProfileIcon size={18} /></span>
                 {t.nav_profile}
               </Link>
-              <Link href="/cordadas" className="sheet-item" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
-                <span className="sheet-item-icon" style={{ position: "relative" }}>
-                  <FriendsIcon size={18} />
-                  {totalPending > 0 && (
-                    <span style={{
-                      position: "absolute", top: -4, right: -4,
-                      minWidth: 14, height: 14, borderRadius: 7,
-                      background: "#ef4444", color: "white",
-                      fontSize: 9, fontWeight: 700, lineHeight: "14px",
-                      textAlign: "center", padding: "0 3px",
-                    }}>{totalPending}</span>
-                  )}
-                </span>
-                {t.nav_cordadas}
-                {totalPending > 0 && (
-                  <span style={{
-                    marginLeft: "auto", minWidth: 20, height: 20, borderRadius: 10,
-                    background: "#ef4444", color: "white",
-                    fontSize: 11, fontWeight: 700, lineHeight: "20px",
-                    textAlign: "center", padding: "0 5px",
-                  }}>{totalPending}</span>
-                )}
-              </Link>
               <Link href="/settings" className="sheet-item" onClick={() => setMobileMenuOpen(false)}>
                 <span className="sheet-item-icon"><SettingsIcon size={18} /></span>
                 {t.nav_settings}
