@@ -155,6 +155,8 @@
     <string name="new_ascent_select_photo_btn">Foto auswählen</string>
     <string name="new_ascent_rotate_btn">  90° drehen</string>
     <string name="new_ascent_next_btn">Weiter</string>
+    <string name="new_ascent_crop_portrait">4:5</string>
+    <string name="new_ascent_crop_landscape">Querformat</string>
     <string name="new_ascent_save_btn">Speichern</string>
     <string name="new_ascent_discard_title">Besteigung verwerfen?</string>
     <string name="new_ascent_discard_message">Foto und eingegebene Daten gehen verloren.</string>

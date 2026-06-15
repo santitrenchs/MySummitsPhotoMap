@@ -45,6 +45,7 @@ data class NewAscentUiState(
     // Photo
     val originalBitmap: Bitmap? = null,   // EXIF-corrected, scaled ≤ 2000px
     val croppedBitmap: Bitmap? = null,    // crop output, ready to upload
+    val cropAspect: String = "4:5",       // "4:5" | "landscape" — drives blur-fill display
     // Form
     val peakQuery: String = "",
     val peakResults: List<Peak> = emptyList(),
@@ -63,6 +64,7 @@ data class NewAscentUiState(
     val editAscentId: String? = null,
     val existingPhotoId: String? = null,
     val existingPhotoUrl: String? = null,
+    val existingPhotoCropAspect: String? = null,
     val originalPersonUserIds: List<String> = emptyList(),
     // Async
     val isLoading: Boolean = false,
@@ -127,6 +129,7 @@ class NewAscentViewModel : ViewModel() {
             originalPersonUserIds = persons.map { it.id },
             existingPhotoId       = firstPhoto?.id,
             existingPhotoUrl      = firstPhoto?.url,
+            existingPhotoCropAspect = firstPhoto?.cropAspect,
         )
         // Load the full person catalogue for the tag picker (best-effort).
         viewModelScope.launch {
@@ -192,8 +195,8 @@ class NewAscentViewModel : ViewModel() {
 
     // ── Step 2 — CROP ──────────────────────────────────────────────────────────
 
-    fun onCropDone(cropped: Bitmap) {
-        _state.update { it.copy(croppedBitmap = cropped, step = NewAscentStep.FORM) }
+    fun onCropDone(cropped: Bitmap, cropAspect: String = "4:5") {
+        _state.update { it.copy(croppedBitmap = cropped, cropAspect = cropAspect, step = NewAscentStep.FORM) }
         // Load persons for tagging (best-effort). The endpoint returns users whose
         // `id` IS the userId, so copy it into `userId` (used by the tagging calls).
         viewModelScope.launch {
@@ -289,7 +292,8 @@ class NewAscentViewModel : ViewModel() {
                     jpegBytes.toRequestBody("image/jpeg".toMediaType()),
                 )
                 val ascentIdBody = ascent.id.toRequestBody("text/plain".toMediaType())
-                val photo = api.uploadPhoto(filePart, ascentIdBody).photo
+                val cropAspectBody = s.cropAspect.toRequestBody("text/plain".toMediaType())
+                val photo = api.uploadPhoto(filePart, ascentIdBody, cropAspectBody).photo
 
                 // 3 — Tag persons (best-effort; collect names blocked by allowOthersToTag)
                 val blockedNames = mutableListOf<String>()
@@ -367,7 +371,8 @@ class NewAscentViewModel : ViewModel() {
                         "file", "photo.jpg",
                         jpegBytes.toRequestBody("image/jpeg".toMediaType()),
                     )
-                    val photo = api.uploadPhoto(filePart, ascentId.toRequestBody("text/plain".toMediaType())).photo
+                    val cropAspectBody = s.cropAspect.toRequestBody("text/plain".toMediaType())
+                    val photo = api.uploadPhoto(filePart, ascentId.toRequestBody("text/plain".toMediaType()), cropAspectBody).photo
                     for (person in s.selectedPersons) {
                         val uid = person.userId ?: continue
                         runCatching { api.addPhotoPerson(photo.id, mapOf("userId" to uid)) }

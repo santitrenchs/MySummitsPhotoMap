@@ -30,6 +30,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
@@ -866,6 +867,7 @@ internal fun CardFront(
     onShareClick: () -> Unit,
 ) {
     val heroUrl  = ascent.photos.firstOrNull()?.url
+    val heroLandscape = ascent.photos.firstOrNull()?.cropAspect == "landscape"
     val userName = ascent.user?.name ?: stringResource(R.string.cards_you)
     val initials = userName.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
 
@@ -935,7 +937,15 @@ internal fun CardFront(
                 .clip(RoundedCornerShape(18.dp)).background(Color(0xFFF1F5F9)),
         ) {
             if (heroUrl != null) {
-                AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                if (heroLandscape) {
+                    // Landscape: blurred cover background + full photo contained on top
+                    AsyncImage(model = heroUrl, contentDescription = null, contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().blur(24.dp))
+                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize())
+                } else {
+                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                }
             } else {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("🏔️", fontSize = 52.sp) }
             }

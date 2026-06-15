@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -132,12 +133,28 @@ private fun HeroImage(photo: Photo?, peakName: String, altitudeM: Int) {
             .background(Color(0xFF1C2D3F)),
     ) {
         if (photo != null) {
-            AsyncImage(
-                model              = photo.url,
-                contentDescription = peakName,
-                contentScale       = ContentScale.Crop,
-                modifier           = Modifier.fillMaxSize(),
-            )
+            if (photo.cropAspect == "landscape") {
+                // Landscape: blurred cover background + full photo contained on top
+                AsyncImage(
+                    model              = photo.url,
+                    contentDescription = null,
+                    contentScale       = ContentScale.Crop,
+                    modifier           = Modifier.fillMaxSize().blur(28.dp),
+                )
+                AsyncImage(
+                    model              = photo.url,
+                    contentDescription = peakName,
+                    contentScale       = ContentScale.Fit,
+                    modifier           = Modifier.fillMaxSize(),
+                )
+            } else {
+                AsyncImage(
+                    model              = photo.url,
+                    contentDescription = peakName,
+                    contentScale       = ContentScale.Crop,
+                    modifier           = Modifier.fillMaxSize(),
+                )
+            }
         } else {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("🏔️", fontSize = 64.sp)

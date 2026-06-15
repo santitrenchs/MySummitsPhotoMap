@@ -83,6 +83,7 @@ interface ApiService {
     suspend fun uploadPhoto(
         @Part file: MultipartBody.Part,
         @Part("ascentId") ascentId: RequestBody,
+        @Part("cropAspect") cropAspect: RequestBody? = null,
     ): PhotoResponse
 
     @DELETE("photos/{id}")

@@ -155,6 +155,8 @@
     <string name="new_ascent_select_photo_btn">Select photo</string>
     <string name="new_ascent_rotate_btn">  Rotate 90°</string>
     <string name="new_ascent_next_btn">Next</string>
+    <string name="new_ascent_crop_portrait">4:5</string>
+    <string name="new_ascent_crop_landscape">Landscape</string>
     <string name="new_ascent_save_btn">Save</string>
     <string name="new_ascent_discard_title">Discard ascent?</string>
     <string name="new_ascent_discard_message">You\'ll lose the photo and all entered data.</string>

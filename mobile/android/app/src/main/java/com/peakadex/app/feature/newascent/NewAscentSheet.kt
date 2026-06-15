@@ -64,6 +64,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -278,11 +279,22 @@ private fun PhotoPickStep(
 private fun PhotoCropStep(
     bitmap: Bitmap,
     onBack: () -> Unit,
-    onDone: (Bitmap) -> Unit,
+    onDone: (Bitmap, String) -> Unit,
 ) {
     var cropImageView by remember { mutableStateOf<CropImageView?>(null) }
     var cropError by remember { mutableStateOf<String?>(null) }
     val cropErrorMsg = stringResource(R.string.error_crop_photo)
+
+    // Landscape support (mirrors web): horizontal photos default to a full-width
+    // landscape crop (blur-fill on display) instead of being forced into 4:5.
+    val isLandscapeCapable = bitmap.width > bitmap.height
+    var landscapeMode by remember(bitmap) { mutableStateOf(isLandscapeCapable) }
+
+    LaunchedEffect(cropImageView, landscapeMode, bitmap) {
+        val v = cropImageView ?: return@LaunchedEffect
+        if (landscapeMode) v.setAspectRatio(bitmap.width, bitmap.height)
+        else v.setAspectRatio(4, 5)
+    }
 
     Column(
         modifier = Modifier
@@ -308,8 +320,8 @@ private fun PhotoCropStep(
                             guidelines = CropImageView.Guidelines.ON,
                             scaleType = CropImageView.ScaleType.FIT_CENTER,
                             fixAspectRatio = true,
-                            aspectRatioX = 4,
-                            aspectRatioY = 5,
+                            aspectRatioX = if (isLandscapeCapable) bitmap.width else 4,
+                            aspectRatioY = if (isLandscapeCapable) bitmap.height else 5,
                             autoZoomEnabled = true,
                             multiTouchEnabled = true,
                             centerMoveEnabled = true,
@@ -352,6 +364,21 @@ private fun PhotoCropStep(
                 Text(it, color = Color(0xFFEF4444), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp))
             }
 
+            // Aspect toggle — only for horizontal photos
+            if (isLandscapeCapable) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                ) {
+                    CropAspectChip(stringResource(R.string.new_ascent_crop_portrait), !landscapeMode) {
+                        cropError = null; landscapeMode = false
+                    }
+                    CropAspectChip(stringResource(R.string.new_ascent_crop_landscape), landscapeMode) {
+                        cropError = null; landscapeMode = true
+                    }
+                }
+            }
+
             Row(
                 modifier             = Modifier.fillMaxWidth(),
                 verticalAlignment    = Alignment.CenterVertically,
@@ -371,14 +398,16 @@ private fun PhotoCropStep(
 
                 Button(
                     onClick = {
-                        val cropped = cropImageView?.getCroppedImage(
-                            1080,
-                            1350,
-                            CropImageView.RequestSizeOptions.RESIZE_FIT,
-                        )
+                        // Landscape: fit within 1080 wide, preserving the horizontal
+                        // proportions. Portrait/square: 1080×1350 (4:5).
+                        val cropped = if (landscapeMode) {
+                            cropImageView?.getCroppedImage(1080, 1080, CropImageView.RequestSizeOptions.RESIZE_FIT)
+                        } else {
+                            cropImageView?.getCroppedImage(1080, 1350, CropImageView.RequestSizeOptions.RESIZE_FIT)
+                        }
                         if (cropped != null) {
                             cropError = null
-                            onDone(cropped)
+                            onDone(cropped, if (landscapeMode) "landscape" else "4:5")
                         } else {
                             cropError = cropErrorMsg
                         }
@@ -392,6 +421,23 @@ private fun PhotoCropStep(
             }
         }
     }
+}
+
+@Composable
+private fun CropAspectChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        text       = label,
+        color      = if (selected) Color.Black else Color.White,
+        fontSize   = 13.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier   = Modifier
+            .background(
+                color = if (selected) Color.White else Color(0x33FFFFFF),
+                shape = RoundedCornerShape(20.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 7.dp),
+    )
 }
 
 // ── Step 3: Form ───────────────────────────────────────────────────────────────
@@ -551,12 +597,21 @@ private fun AscentFormStep(
                             .then(if (state.isEditMode) Modifier.clickable { onReplacePhoto() } else Modifier),
                     ) {
                         if (croppedBmp != null) {
-                            Image(
-                                bitmap       = croppedBmp.asImageBitmap(),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier     = Modifier.fillMaxSize(),
-                            )
+                            val img = croppedBmp.asImageBitmap()
+                            if (state.cropAspect == "landscape") {
+                                Image(bitmap = img, contentDescription = null, contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize().blur(24.dp))
+                                Image(bitmap = img, contentDescription = null, contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize())
+                            } else {
+                                Image(bitmap = img, contentDescription = null, contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize())
+                            }
+                        } else if (state.existingPhotoCropAspect == "landscape") {
+                            AsyncImage(model = existingUrl, contentDescription = null, contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().blur(24.dp))
+                            AsyncImage(model = existingUrl, contentDescription = null, contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize())
                         } else {
                             AsyncImage(
                                 model              = existingUrl,

@@ -155,6 +155,8 @@
     <string name="new_ascent_select_photo_btn">Seleccionar foto</string>
     <string name="new_ascent_rotate_btn">  Girar 90°</string>
     <string name="new_ascent_next_btn">Siguiente</string>
+    <string name="new_ascent_crop_portrait">4:5</string>
+    <string name="new_ascent_crop_landscape">Horizontal</string>
     <string name="new_ascent_save_btn">Guardar</string>
     <string name="new_ascent_discard_title">¿Descartar ascensión?</string>
     <string name="new_ascent_discard_message">Perderás la foto y los datos introducidos.</string>
