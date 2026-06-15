@@ -77,17 +77,17 @@ export function ShareCard(props: ShareCardData) {
 
   const front = (
     <>
-      {/* User header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px" }}>
+      {/* User header — reuses the app's .card-user / .user-name / .user-date styles */}
+      <header className="card-user">
         {props.ownerAvatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={props.ownerAvatarUrl} alt="" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+          <img src={props.ownerAvatarUrl} alt="" className="pc-avatar" style={{ objectFit: "cover" }} />
         ) : (
           <InitialsAvatar name={props.ownerName} size={32} />
         )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#0D2538" }}>{props.ownerName}</div>
-          <div style={{ fontSize: 12, color: "#5A6E84" }}>{props.dateStr}</div>
+        <div className="user-copy">
+          <div className="user-name">{props.ownerName}</div>
+          <div className="user-date">{props.dateStr}</div>
         </div>
         <Link
           href={props.registerUrl}
@@ -100,7 +100,7 @@ export function ShareCard(props: ShareCardData) {
         >
           {labels.joinCta}
         </Link>
-      </div>
+      </header>
 
       {/* Photo */}
       <div style={{ padding: "6px 10px" }}>
