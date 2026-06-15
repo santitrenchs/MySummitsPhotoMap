@@ -184,10 +184,25 @@ export async function GET(
       return jpegResponse(jpg, 60);
     }
 
-    // Resize to target dimensions as a raw buffer for compositing
-    const photo = await sharp(photoBuffer)
-      .resize(W, H, { fit: "cover", position: "centre" })
-      .toBuffer({ resolveWithObject: false });
+    // Resize to target dimensions as a buffer for compositing.
+    // Landscape photos: blurred cover background + the full photo contained on
+    // top (object-fit: contain) — mirrors the in-app card blur-fill so the OG
+    // image isn't a heavily-cropped/upscaled sliver of a horizontal photo.
+    let photo: Buffer;
+    if (ascent.photoCropAspect === "landscape") {
+      const [bg, fg] = await Promise.all([
+        sharp(photoBuffer).resize(W, H, { fit: "cover", position: "centre" }).blur(40).modulate({ brightness: 0.82 }).toBuffer(),
+        sharp(photoBuffer).resize(W, H, { fit: "inside" }).toBuffer(),
+      ]);
+      const fgMeta = await sharp(fg).metadata();
+      const top = Math.round((H - (fgMeta.height ?? H)) / 2);
+      const left = Math.round((W - (fgMeta.width ?? W)) / 2);
+      photo = await sharp(bg).composite([{ input: fg, top, left }]).png().toBuffer();
+    } else {
+      photo = await sharp(photoBuffer)
+        .resize(W, H, { fit: "cover", position: "centre" })
+        .toBuffer({ resolveWithObject: false });
+    }
 
     // ── Logo watermark ─────────────────────────────────────────────────────
     // Layout (left→right): "peak"  [real logo icon]  "adex"
@@ -282,10 +297,17 @@ export async function GET(
       }
     }
 
-    const jpg = await sharp(photo)
-      .composite(compositeInputs)
-      .jpeg({ quality: 88, mozjpeg: true })
-      .toBuffer();
+    // Composite once, then encode JPEG under a WhatsApp-safe size budget.
+    // WhatsApp's crawler (facebookexternalhit) silently DROPS og:images above
+    // ~300 KB → the link shows no image preview. Step quality down until the
+    // JPEG fits comfortably under that limit.
+    const composited = await sharp(photo).composite(compositeInputs).png().toBuffer();
+    const WA_MAX_BYTES = 280 * 1024;
+    let jpg = await sharp(composited).jpeg({ quality: 86, mozjpeg: true }).toBuffer();
+    for (const q of [76, 66, 56]) {
+      if (jpg.length <= WA_MAX_BYTES) break;
+      jpg = await sharp(composited).jpeg({ quality: q, mozjpeg: true }).toBuffer();
+    }
 
     // Cache for subsequent requests (WhatsApp may scrape multiple times)
     setCached(id, jpg);

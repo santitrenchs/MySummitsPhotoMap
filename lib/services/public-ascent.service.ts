@@ -15,6 +15,7 @@ export type PublicAscentData = {
     longitude: number;
   };
   photoUrl: string | null;
+  photoCropAspect: string | null;
   user: { name: string; avatarUrl: string | null };
 };
 
@@ -41,7 +42,7 @@ export async function getPublicAscent(id: string): Promise<PublicAscentData | nu
       photos: {
         take: 1,
         orderBy: { createdAt: "asc" },
-        select: { url: true },
+        select: { url: true, cropAspect: true },
       },
       user: {
         select: { name: true, avatarUrl: true },
@@ -58,6 +59,7 @@ export async function getPublicAscent(id: string): Promise<PublicAscentData | nu
     description: ascent.description,
     peak: ascent.peak,
     photoUrl: ascent.photos[0]?.url ?? null,
+    photoCropAspect: ascent.photos[0]?.cropAspect ?? null,
     user: ascent.user,
   };
 }

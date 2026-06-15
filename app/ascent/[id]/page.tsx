@@ -59,6 +59,7 @@ export async function generateMetadata({
           url: ogImage,
           width: 1080,
           height: 1350,
+          type: "image/jpeg",
           alt: title,
         },
       ],
@@ -208,12 +209,30 @@ export default async function PublicAscentPage({
         <div style={{ padding: "0 12px 12px" }}>
         <div style={{ position: "relative", aspectRatio: "4/5", background: "#e2e8f0", overflow: "hidden", borderRadius: "var(--radius-lg)" }}>
           {ascent.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={ascent.photoUrl}
-              alt={ascent.peak.name}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            />
+            ascent.photoCropAspect === "landscape" ? (
+              <>
+                {/* Blurred background fill for landscape photos */}
+                <div style={{
+                  position: "absolute", inset: 0,
+                  backgroundImage: `url("${ascent.photoUrl}")`,
+                  backgroundSize: "cover", backgroundPosition: "center",
+                  filter: "blur(24px)", transform: "scale(1.1)",
+                }} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={ascent.photoUrl}
+                  alt={ascent.peak.name}
+                  style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: 1 }}
+                />
+              </>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={ascent.photoUrl}
+                alt={ascent.peak.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
+            )
           ) : (
             <div style={{ width: "100%", height: "100%", background: "linear-gradient(180deg, #bfdbfe 0%, #dbeafe 100%)" }} />
           )}
