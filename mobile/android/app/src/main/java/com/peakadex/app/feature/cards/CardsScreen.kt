@@ -337,17 +337,24 @@ fun CardsScreen(
         if (refreshTrigger > 0) {
             vm.setViewFilter(ViewFilter.Mine)
             vm.refresh()
-            // Wait until the LazyColumn is laid out — animateScrollToItem is a no-op
-            // if called before the list has performed its first layout pass.
+            // Wait until the REFRESHED list actually contains the new ascent, then
+            // until the LazyColumn is laid out. Waiting only on totalItemsCount > 0
+            // matched the stale (pre-refresh) list, so indexOfFirst missed the new
+            // id and we scrolled to index 0 ("the first of mine"). Observe the VM's
+            // StateFlow so we see fresh data, not the captured stale `filteredAscents`.
             withTimeoutOrNull(10_000L) {
+                if (highlightId != null) {
+                    vm.filteredAscents.filter { list -> list.any { it.id == highlightId } }.first()
+                }
                 snapshotFlow { listState.layoutInfo.totalItemsCount }
                     .filter { it > 0 }
                     .first()
-            } ?: return@LaunchedEffect  // network error — give up silently
+                true
+            } ?: return@LaunchedEffect  // network error / not found — give up silently
 
             // Scroll to the exact position of the new ascent (not necessarily index 0,
             // since the server's canonical sort may place it after unseen friends etc.)
-            val targetIdx = filteredAscents.indexOfFirst { it.id == highlightId }
+            val targetIdx = vm.filteredAscents.value.indexOfFirst { it.id == highlightId }
                 .takeIf { it >= 0 } ?: 0
             listState.animateScrollToItem(targetIdx)
         }
