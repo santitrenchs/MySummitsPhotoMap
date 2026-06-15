@@ -6,7 +6,6 @@ import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { AscentCard } from "@/components/cards/AscentCard";
-import { GroupedAscentCard } from "@/components/cards/GroupedAscentCard";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
@@ -209,25 +208,14 @@ export function AscentsClient({
     });
   }, [localAscents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, currentUserId]);
 
-  const groups = useMemo(() => {
-    const map = new Map<string, AscentData[]>();
-    for (const a of filtered) {
-      const day = new Date(a.date).toISOString().substring(0, 10);
-      const key = `${a.peak.id}__${day}`;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(a);
-    }
-    return Array.from(map.values());
-  }, [filtered]);
-
   // Position the list at the highlighted card on the FIRST paint. A post-mount
   // virtuosoRef.scrollToIndex races with Virtuoso's measurement under
   // useWindowScroll and silently lands at the top ("the first of mine").
   // initialTopMostItemIndex is applied by Virtuoso before paint, from the
-  // SSR-provided groups (which already include the injected highlight ascent).
+  // SSR-provided list (which already includes the injected highlight ascent).
   const initialHighlightIndex = useMemo(() => {
     if (!highlightId) return undefined;
-    const idx = groups.findIndex((g) => g.some((a) => a.id === highlightId));
+    const idx = filtered.findIndex((a) => a.id === highlightId);
     return idx >= 0 ? { index: idx, align: "center" as const } : undefined;
     // Compute ONCE at mount — deliberately empty deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -321,10 +309,10 @@ export function AscentsClient({
   const MIN_GROUPS_TO_FILL = 15;
   useEffect(() => {
     if (!hasMore || isFetchingMore) return;
-    if (groups.length < MIN_GROUPS_TO_FILL) {
+    if (filtered.length < MIN_GROUPS_TO_FILL) {
       loadMore();
     }
-  }, [groups.length, hasMore, isFetchingMore, loadMore]);
+  }, [filtered.length, hasMore, isFetchingMore, loadMore]);
 
   // Mark unseen friend ascents as seen after 1s in the rendered range
   const handleRangeChanged = useCallback(
@@ -341,35 +329,33 @@ export function AscentsClient({
         }).catch(() => {});
       };
       for (let i = startIndex; i <= endIndex; i++) {
-        const group = groups[i];
-        if (!group) continue;
-        const unseenIds = group.filter((a) => a.isUnseen).map((a) => a.id);
-        if (unseenIds.length === 0) continue;
-        const key = unseenIds.join(",");
+        const a = filtered[i];
+        if (!a || !a.isUnseen) continue;
+        const key = a.id;
         if (cardTimersRef.current.has(key)) continue;
         cardTimersRef.current.set(
           key,
           setTimeout(() => {
             cardTimersRef.current.delete(key);
-            for (const id of unseenIds) pendingSeenRef.current.add(id);
+            pendingSeenRef.current.add(a.id);
             if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
             flushTimerRef.current = setTimeout(flush, 1000);
           }, 1000)
         );
       }
     },
-    [groups]
+    [filtered]
   );
 
-  // Scroll to highlighted ascent when present in groups
+  // Scroll to highlighted ascent when present in the list
   useEffect(() => {
     if (!highlightId) return;
-    const idx = groups.findIndex((g) => g.some((a) => a.id === highlightId));
+    const idx = filtered.findIndex((a) => a.id === highlightId);
     if (idx < 0) return;
     virtuosoRef.current?.scrollToIndex({ index: idx, align: "center", behavior: "smooth" });
     const timer = setTimeout(() => setHighlightId(null), 2500);
     return () => clearTimeout(timer);
-  }, [highlightId, groups]);
+  }, [highlightId, filtered]);
 
   // Scroll to top when the filter SET changes — NOT on data updates (which also re-derive `filtered`).
   // Depend on the raw filter inputs so pagination/localAscents updates don't trigger a scroll reset.
@@ -871,60 +857,42 @@ export function AscentsClient({
             ref={virtuosoRef}
             useWindowScroll
             initialTopMostItemIndex={initialHighlightIndex}
-            data={groups}
+            data={filtered}
             endReached={loadMore}
             rangeChanged={handleRangeChanged}
             increaseViewportBy={{ top: 200, bottom: 800 }}
-            computeItemKey={(_index, group) => {
-              if (group.length === 1) return group[0].id;
-              return `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
-            }}
-            itemContent={(index, group) => {
-              if (group.length === 1) {
-                const a = group[0];
-                const others = a.persons.filter((p) => p.id !== a.createdByUserId);
-                return (
-                  <div
-                    id={`ascent-${a.id}`}
-                    style={{
-                      paddingBottom: 24,
-                      borderRadius: "var(--radius-lg)",
-                      transition: "box-shadow 0.4s ease, outline 0.4s ease",
-                      ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
-                    }}
-                  >
-                    <AscentCard
-                      variant={a.isOwn ? "profile" : "social"}
-                      locale={t.dateLocale}
-                      animationIndex={index}
-                      ascent={{
-                        id: a.id,
-                        date: a.date,
-                        route: a.route,
-                        description: a.description,
-                        wikiloc: a.wikiloc,
-                        peak: a.peak,
-                        photoUrl: a.firstPhotoUrl,
-                        photoId: a.firstPhotoId,
-                        originalStorageKey: a.firstPhotoOriginalKey,
-                        cropAspect: a.firstPhotoCropAspect,
-                        persons: others,
-                        user: { name: a.userName, avatarUrl: a.userAvatarUrl },
-                        peakStats: a.peakStats,
-                      }}
-                    />
-                  </div>
-                );
-              }
-              const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
+            computeItemKey={(_index, a) => a.id}
+            itemContent={(index, a) => {
+              const others = a.persons.filter((p) => p.id !== a.createdByUserId);
               return (
-                <div id={`group-${groupKey}`} style={{ paddingBottom: 24 }}>
-                  <GroupedAscentCard
-                    ascents={group}
-                    currentUserEmail={currentUserEmail}
-                    currentUserName={currentUserName}
+                <div
+                  id={`ascent-${a.id}`}
+                  style={{
+                    paddingBottom: 24,
+                    borderRadius: "var(--radius-lg)",
+                    transition: "box-shadow 0.4s ease, outline 0.4s ease",
+                    ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
+                  }}
+                >
+                  <AscentCard
+                    variant={a.isOwn ? "profile" : "social"}
+                    locale={t.dateLocale}
                     animationIndex={index}
-                    peakStats={group[0].peakStats}
+                    ascent={{
+                      id: a.id,
+                      date: a.date,
+                      route: a.route,
+                      description: a.description,
+                      wikiloc: a.wikiloc,
+                      peak: a.peak,
+                      photoUrl: a.firstPhotoUrl,
+                      photoId: a.firstPhotoId,
+                      originalStorageKey: a.firstPhotoOriginalKey,
+                      cropAspect: a.firstPhotoCropAspect,
+                      persons: others,
+                      user: { name: a.userName, avatarUrl: a.userAvatarUrl },
+                      peakStats: a.peakStats,
+                    }}
                   />
                 </div>
               );

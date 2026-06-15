@@ -6,10 +6,9 @@ import { type RarityId, RARITY_COLORS } from "@/lib/rarity";
 
 // ─── CardBack ────────────────────────────────────────────────────────────────
 //
-// Shared back-face for AscentCard and GroupedAscentCard.
-// Both back faces are identical except:
-//   • peakName — single card passes nameEn ?? name; grouped passes name only
-//   • footer   — single card has a capture-note byline; grouped has none on the back
+// Back-face for AscentCard: map hero + Peakadex stats + optional footer
+// (Cordada pills + message blockquote). The caller passes the display name
+// (nameEn ?? name) and the footer node.
 //
 // Usage:
 //   <CardBack
