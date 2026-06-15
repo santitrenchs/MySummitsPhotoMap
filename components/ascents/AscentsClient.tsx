@@ -861,35 +861,37 @@ export function AscentsClient({
             itemContent={(index, a) => {
               const others = a.persons.filter((p) => p.id !== a.createdByUserId);
               return (
-                <div
-                  id={`ascent-${a.id}`}
-                  style={{
-                    paddingBottom: 24,
-                    borderRadius: "var(--radius-lg)",
-                    transition: "box-shadow 0.4s ease, outline 0.4s ease",
-                    ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
-                  }}
-                >
-                  <AscentCard
-                    variant={a.isOwn ? "profile" : "social"}
-                    locale={t.dateLocale}
-                    animationIndex={index}
-                    ascent={{
-                      id: a.id,
-                      date: a.date,
-                      route: a.route,
-                      description: a.description,
-                      wikiloc: a.wikiloc,
-                      peak: a.peak,
-                      photoUrl: a.firstPhotoUrl,
-                      photoId: a.firstPhotoId,
-                      originalStorageKey: a.firstPhotoOriginalKey,
-                      cropAspect: a.firstPhotoCropAspect,
-                      persons: others,
-                      user: { name: a.userName, avatarUrl: a.userAvatarUrl },
-                      peakStats: a.peakStats,
+                <div id={`ascent-${a.id}`} style={{ paddingBottom: 24 }}>
+                  {/* Highlight ring wraps ONLY the card (radius matches .peak-card = 28px)
+                      so it hugs the card and isn't enlarged by the bottom padding. */}
+                  <div
+                    style={{
+                      borderRadius: 28,
+                      transition: "box-shadow 0.4s ease",
+                      ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
                     }}
-                  />
+                  >
+                    <AscentCard
+                      variant={a.isOwn ? "profile" : "social"}
+                      locale={t.dateLocale}
+                      animationIndex={index}
+                      ascent={{
+                        id: a.id,
+                        date: a.date,
+                        route: a.route,
+                        description: a.description,
+                        wikiloc: a.wikiloc,
+                        peak: a.peak,
+                        photoUrl: a.firstPhotoUrl,
+                        photoId: a.firstPhotoId,
+                        originalStorageKey: a.firstPhotoOriginalKey,
+                        cropAspect: a.firstPhotoCropAspect,
+                        persons: others,
+                        user: { name: a.userName, avatarUrl: a.userAvatarUrl },
+                        peakStats: a.peakStats,
+                      }}
+                    />
+                  </div>
                 </div>
               );
             }}
