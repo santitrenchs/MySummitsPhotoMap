@@ -289,6 +289,8 @@
     <string name="atlas_filter_not_captured">Pas encore</string>
     <string name="atlas_filter_mythic">⭐ Mythique</string>
     <string name="cards_filter_mythic">⭐ Mythique</string>
+    <string name="card_mythic">MYTHIC</string>
+    <string name="cards_card_cairn">1 Cairn</string>
     <string name="atlas_sort_distance">Distance</string>
     <string name="atlas_sort_relevance">Pertinence</string>
     <string name="atlas_sort_altitude">Altitude</string>

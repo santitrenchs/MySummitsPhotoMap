@@ -6,7 +6,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -821,11 +826,25 @@ private fun AscentFlipCard(
     val density = LocalDensity.current.density
     val rarity  = rarityForAltitude(ascent.peak.altitudeM)
 
+    // Mythic glow: pulsing gold shadow (mirrors web .peak-card.mythic box-shadow).
+    val isMythic = ascent.peak.isMythic == true
+    val mythicTransition = rememberInfiniteTransition(label = "mythic")
+    val mythicPulse by mythicTransition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Reverse),
+        label = "mythicPulse",
+    )
+    val glowColor = Color(0xFFEAB308).copy(alpha = 0.32f + mythicPulse * 0.42f)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp), clip = false,
-                ambientColor = Color(0x1A0D2538), spotColor = Color(0x1A0D2538))
+            .shadow(
+                elevation = if (isMythic) (10f + mythicPulse * 12f).dp else 8.dp,
+                shape = RoundedCornerShape(28.dp), clip = false,
+                ambientColor = if (isMythic) glowColor else Color(0x1A0D2538),
+                spotColor    = if (isMythic) glowColor else Color(0x1A0D2538),
+            )
             .then(
                 if (ringAlpha > 0f) Modifier.border(
                     width = 3.dp,
@@ -868,6 +887,7 @@ internal fun CardFront(
 ) {
     val heroUrl  = ascent.photos.firstOrNull()?.url
     val heroLandscape = ascent.photos.firstOrNull()?.cropAspect == "landscape"
+    val isMythic = ascent.peak.isMythic == true
     val userName = ascent.user?.name ?: stringResource(R.string.cards_you)
     val initials = userName.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
 
@@ -955,6 +975,24 @@ internal fun CardFront(
                     .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.3f to Color(0x6B07121F), 1f to Color(0xD107121F)))),
             )
 
+            // Mythic badge — top-left, mirrors web .mythic-badge
+            if (isMythic) {
+                Text(
+                    text       = stringResource(R.string.card_mythic),
+                    color      = Color.White,
+                    fontSize   = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.12.em,
+                    modifier   = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(12.dp)
+                        .shadow(8.dp, RoundedCornerShape(percent = 50), clip = false,
+                            ambientColor = Color(0x59EAB308), spotColor = Color(0x59EAB308))
+                        .background(Color(0xF2EAB308), RoundedCornerShape(percent = 50))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+
             Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 12.dp, vertical = 12.dp)) {
                 Text(ascent.peak.name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
                     letterSpacing = (-0.035).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -978,9 +1016,49 @@ internal fun CardFront(
         ) {
             StatBandItem(stringResource(R.string.cards_stat_rarity),   "✿ ${rarity.label}", rarity.color,       Modifier.weight(1f))
             StatBandItem(stringResource(R.string.cards_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
-            StatBandItem(stringResource(R.string.cards_stat_ep),        "+${rarity.ep}",     rarity.color,       Modifier.weight(1f))
+            RewardStatItem(isMythic = isMythic, ep = rarity.ep, color = rarity.color, modifier = Modifier.weight(1f))
         }
         Spacer(Modifier.height(3.dp))
+    }
+}
+
+// Reward cell — shows "🪨 1 Cairn · +N EP" for mythic peaks, else "+N EP".
+// Mirrors web AscentCard reward pill (Cairn score before EP for mythic).
+@Composable
+internal fun RewardStatItem(isMythic: Boolean, ep: Int, color: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(stringResource(R.string.cards_stat_ep), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
+        Spacer(Modifier.height(2.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            if (isMythic) {
+                CairnGlyph(Color(0xFFF59E0B), Modifier.size(11.dp))
+                Text(stringResource(R.string.cards_card_cairn) + " ·", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    color = Color(0xFFF59E0B), maxLines = 1)
+            }
+            Text("+$ep", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+// Cairn glyph — four stacked stones (mirrors web reward SVG: ellipses at
+// cy=17/12/7.5/4 with rx=6/4.5/3/1.8 in a 20×20 box).
+@Composable
+private fun CairnGlyph(color: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        val w = size.width; val h = size.height
+        fun stone(cyF: Float, rxF: Float, ryF: Float) {
+            val rx = w * rxF; val ry = h * ryF
+            drawOval(color = color,
+                topLeft = Offset(w / 2f - rx, h * cyF - ry),
+                size = androidx.compose.ui.geometry.Size(rx * 2f, ry * 2f))
+        }
+        stone(0.85f, 0.30f, 0.125f)   // cy17 rx6 ry2.5
+        stone(0.60f, 0.225f, 0.10f)   // cy12 rx4.5 ry2
+        stone(0.375f, 0.15f, 0.09f)   // cy7.5 rx3 ry1.8
+        stone(0.20f, 0.09f, 0.065f)   // cy4 rx1.8 ry1.3
     }
 }
 
