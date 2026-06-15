@@ -146,6 +146,14 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
   const rarity = getRarity(ascent.peak.altitudeM);
   const isMythic = ascent.peak.isMythic ?? false;
 
+  // Cordada members on the card back.
+  // Own card ("profile"): just the tagged people — you're implicitly in the team.
+  // Friend card ("social"): prepend the owner so you see ALL members; always shown.
+  const isOwnCard = variant === "profile";
+  const cordadaMembers = isOwnCard
+    ? ascent.persons.map((p) => ({ key: p.id, name: p.name }))
+    : [{ key: "__owner__", name: ascent.user.name }, ...ascent.persons.map((p) => ({ key: p.id, name: p.name }))];
+
   const dateStr = new Date(ascent.date).toLocaleDateString(locale, {
     day: "numeric", month: "short", year: "numeric",
   });
@@ -160,20 +168,23 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
       mythicLabel={t.card_mythic}
       footer={
         <footer className="capture-note" style={{ borderTop: "none" }}>
-          {/* Cordada — one pill per tagged user (rarity-tinted), matches Android CardBack */}
-          {ascent.persons.length > 0 && (
+          {/* Cordada — one pill per member (rarity-tinted), matches Android CardBack.
+              Friend cards prepend the owner and always show; own cards only when tagged. */}
+          {cordadaMembers.length > 0 && (
             <div style={{
               display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6,
               marginBottom: ascent.description ? 8 : 0,
             }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280" }}>{t.card_cordada_label}</span>
-              {ascent.persons.map((p) => (
-                <span key={p.id} style={{
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280" }}>
+                {isOwnCard ? t.card_cordada_label : t.card_cordada_label_other}
+              </span>
+              {cordadaMembers.map((m) => (
+                <span key={m.key} style={{
                   fontSize: 11, fontWeight: 600, color: "#111827",
                   background: RARITY_COLOR[rarity] + "1F",
                   borderRadius: "var(--radius-full)", padding: "3px 9px",
                   maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                }}>{p.name}</span>
+                }}>{m.name}</span>
               ))}
             </div>
           )}

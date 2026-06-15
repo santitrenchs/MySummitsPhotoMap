@@ -87,6 +87,7 @@
     <string name="cards_stat_ep">EP</string>
     <string name="cards_stats_title">STATS PEAKADEX</string>
     <string name="card_cordada_label">Ta cordée:</string>
+    <string name="card_cordada_label_other">Cordée:</string>
     <string name="cards_stat_ascents">ASCENSIONS</string>
     <string name="cards_stat_climbers">ALPINISTES</string>
     <string name="cards_empty_friends_title">Aucune activité d\'amis</string>

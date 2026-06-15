@@ -87,6 +87,7 @@
     <string name="cards_stat_ep">EP</string>
     <string name="cards_stats_title">PEAKADEX STATS</string>
     <string name="card_cordada_label">Your rope team:</string>
+    <string name="card_cordada_label_other">Rope team:</string>
     <string name="cards_stat_ascents">ASCENTS</string>
     <string name="cards_stat_climbers">CLIMBERS</string>
     <string name="cards_empty_friends_title">No friends activity</string>

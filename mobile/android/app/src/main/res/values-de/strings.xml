@@ -87,6 +87,7 @@
     <string name="cards_stat_ep">EP</string>
     <string name="cards_stats_title">PEAKADEX STATISTIKEN</string>
     <string name="card_cordada_label">Deine Seilschaft:</string>
+    <string name="card_cordada_label_other">Seilschaft:</string>
     <string name="cards_stat_ascents">BESTEIGUNGEN</string>
     <string name="cards_stat_climbers">BERGSTEIGER</string>
     <string name="cards_empty_friends_title">Keine Aktivität von Freunden</string>

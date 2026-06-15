@@ -87,6 +87,7 @@
     <string name="cards_stat_ep">EP</string>
     <string name="cards_stats_title">ESTADÍSTIQUES PEAKADEX</string>
     <string name="card_cordada_label">La teva Cordada:</string>
+    <string name="card_cordada_label_other">Cordada:</string>
     <string name="cards_stat_ascents">ASCENSIONS</string>
     <string name="cards_stat_climbers">ALPINISTES</string>
     <string name="cards_empty_friends_title">Sense activitat d\'amics</string>

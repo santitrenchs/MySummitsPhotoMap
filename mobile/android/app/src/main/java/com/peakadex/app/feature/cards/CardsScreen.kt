@@ -1437,23 +1437,31 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
 
             // Footer — cordada pills + description quote. Remaining height is white space.
             Column(modifier = Modifier.padding(horizontal = 3.dp)) {
-                // Cordada — one pill per tagged user (shows their username), above the quote.
-                if (ascent.persons.isNotEmpty()) {
+                // Cordada — one pill per member, above the quote.
+                // Own card: just tagged people (you're implicitly in the team).
+                // Friend card: prepend the owner so all members show; always shown.
+                val cordadaMembers = if (ascent.isOwn) {
+                    ascent.persons.map { it.name }
+                } else {
+                    (listOfNotNull(ascent.user?.name?.takeIf { it.isNotBlank() }) +
+                        ascent.persons.map { it.name }).distinct()
+                }
+                if (cordadaMembers.isNotEmpty()) {
                     FlowRow(
                         modifier              = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement   = Arrangement.spacedBy(6.dp),
                     ) {
                         Text(
-                            stringResource(R.string.card_cordada_label),
+                            stringResource(if (ascent.isOwn) R.string.card_cordada_label else R.string.card_cordada_label_other),
                             fontSize   = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color      = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier   = Modifier.align(Alignment.CenterVertically),
                         )
-                        ascent.persons.forEach { person ->
+                        cordadaMembers.forEach { name ->
                             Text(
-                                person.name,
+                                name,
                                 fontSize   = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color      = PeakOnSurface,
