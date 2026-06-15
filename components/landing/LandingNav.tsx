@@ -79,8 +79,12 @@ export default function LandingNav() {
 
   const selectLocale = (lang: typeof LANGS[number]) => {
     setLangOpen(false);
-    // Set cookie before navigating so the middleware doesn't auto-redirect away from "/"
+    // Set cookie before navigating so the middleware doesn't auto-redirect away from "/".
+    // These are legitimate browser side-effects in an event handler (not render);
+    // the react-hooks/immutability rule false-flags document/window property writes.
+    // eslint-disable-next-line react-hooks/immutability
     document.cookie = `pdx_locale=${lang.value}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+    // eslint-disable-next-line react-hooks/immutability
     window.location.href = lang.href;
   };
 
