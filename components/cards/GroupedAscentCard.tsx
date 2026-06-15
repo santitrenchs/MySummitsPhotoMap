@@ -320,7 +320,7 @@ export function GroupedAscentCard({
                               {/* Blur fill for landscape photos */}
                               <div style={{
                                 position: "absolute", inset: 0,
-                                backgroundImage: `url(${imgUrl(a.firstPhotoUrl, 800)})`,
+                                backgroundImage: `url("${imgUrl(a.firstPhotoUrl, 800)}")`,
                                 backgroundSize: "cover", backgroundPosition: "center",
                                 filter: "blur(24px)", transform: "scale(1.1)",
                                 pointerEvents: "none",

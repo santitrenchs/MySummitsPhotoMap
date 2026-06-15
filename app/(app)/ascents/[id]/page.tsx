@@ -27,7 +27,7 @@ export default async function AscentDetailPage({
         orderBy: { createdAt: "asc" },
         take: 1,
         select: {
-          id: true, url: true, originalStorageKey: true, cropRotation: true,
+          id: true, url: true, originalStorageKey: true, cropRotation: true, cropAspect: true,
           faceDetections: {
             select: {
               faceTags: {
@@ -88,7 +88,7 @@ export default async function AscentDetailPage({
       description={ascent.description}
       wikiloc={ascent.wikiloc}
       userName={currentUserName}
-      heroPhoto={heroPhoto ? { id: heroPhoto.id, url: heroPhoto.url, originalStorageKey: heroPhoto.originalStorageKey, cropRotation: heroPhoto.cropRotation } : null}
+      heroPhoto={heroPhoto ? { id: heroPhoto.id, url: heroPhoto.url, originalStorageKey: heroPhoto.originalStorageKey, cropRotation: heroPhoto.cropRotation, cropAspect: heroPhoto.cropAspect } : null}
       persons={persons}
     />
   );

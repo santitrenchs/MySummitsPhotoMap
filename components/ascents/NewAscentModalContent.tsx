@@ -508,7 +508,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                 {/* Blur fill for landscape */}
                 <div style={{
                   position: "absolute", inset: 0,
-                  backgroundImage: `url(${preview})`,
+                  backgroundImage: `url("${preview}")`,
                   backgroundSize: "cover", backgroundPosition: "center",
                   filter: "blur(24px)", transform: "scale(1.1)",
                 }} />
@@ -550,7 +550,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
             <div style={{ marginBottom: 20, position: "relative", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
               {previewIsLandscape ? (
                 <div style={{ position: "relative", width: "100%", maxHeight: 200, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${preview})`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(20px)", transform: "scale(1.1)" }} />
+                  <div style={{ position: "absolute", inset: 0, backgroundImage: `url("${preview}")`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(20px)", transform: "scale(1.1)" }} />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={preview} alt="" style={{ position: "relative", width: "100%", maxHeight: 200, objectFit: "contain", display: "block", zIndex: 1 }} />
                 </div>

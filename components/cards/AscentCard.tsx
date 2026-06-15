@@ -285,7 +285,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                     {/* Blurred background fill for landscape photos */}
                     <div style={{
                       position: "absolute", inset: 0,
-                      backgroundImage: `url(${imgUrl(ascent.photoUrl, 800)})`,
+                      backgroundImage: `url("${imgUrl(ascent.photoUrl, 800)}")`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                       filter: "blur(24px)",
