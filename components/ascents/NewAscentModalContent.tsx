@@ -490,7 +490,8 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   if (modalStep === "form") {
     const preview = isEditMode ? (editPhotoUrl ?? null) : (readyItems[0]?.preview ?? null);
     const previewIsLandscape = isEditMode
-      ? (editAscent?.cropAspect === "landscape")
+      // A pending re-crop wins over the original aspect (user may have changed it)
+      ? (pendingPhoto ? pendingPhoto.cropMeta.aspect === "landscape" : editAscent?.cropAspect === "landscape")
       : (readyItems[0]?.cropMeta?.aspect === "landscape");
     return (
       <>
