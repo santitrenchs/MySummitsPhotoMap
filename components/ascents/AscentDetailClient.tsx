@@ -606,6 +606,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
                   <textarea
                     value={descDraft}
                     onChange={(e) => setDescDraft(e.target.value)}
+                    maxLength={100}
                     onBlur={saveDescriptionOnBlur}
                     onKeyDown={(e) => {
                       if (e.key === "Escape") {
@@ -632,6 +633,9 @@ export function AscentDetailClient(props: AscentDetailProps) {
                       <span style={{ fontSize: 11, color: "#9ca3af" }}>{t.saving}</span>
                     </div>
                   )}
+                  <div style={{ textAlign: "right", fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
+                    {descDraft.length}/100
+                  </div>
                 </div>
               ) : (
                 <button

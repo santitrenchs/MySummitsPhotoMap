@@ -79,6 +79,11 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const [personSearch, setPersonSearch] = useState("");
   const [personResults, setPersonResults] = useState<Person[]>([]);
   const personSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Notes/comment cap — matches Android NOTES_MAX_CHARS (Android is canonical for the comment).
+  const NOTES_MAX_CHARS = 100;
+  const [descLen, setDescLen] = useState(() =>
+    isEditMode ? (editAscent?.description ?? "").slice(0, NOTES_MAX_CHARS).length : 0
+  );
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(editAscent?.photoUrl ?? null);
   const [editPhotoId, setEditPhotoId] = useState<string | null>(editAscent?.photoId ?? null);
   const [editOrigKey, setEditOrigKey] = useState<string | null>(editAscent?.originalStorageKey ?? null);
@@ -624,11 +629,15 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               </label>
               <textarea
                 id="modal-description" name="description" rows={3}
-                defaultValue={isEditMode ? (editAscent!.description ?? "") : undefined}
+                defaultValue={isEditMode ? (editAscent!.description ?? "").slice(0, NOTES_MAX_CHARS) : undefined}
                 placeholder={t.field_notesPlaceholder}
-                maxLength={2000}
+                maxLength={NOTES_MAX_CHARS}
+                onChange={(e) => setDescLen(e.target.value.length)}
                 style={{ ...inputStyle, resize: "vertical" }}
               />
+              <div style={{ textAlign: "right", fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
+                {descLen}/{NOTES_MAX_CHARS}
+              </div>
             </div>
 
             {/* Personas */}
