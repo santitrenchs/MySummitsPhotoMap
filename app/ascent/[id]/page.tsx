@@ -157,7 +157,8 @@ export default async function PublicAscentPage({
         style={{
           position: "relative",
           width: "100%",
-          maxWidth: 520,
+          // App card renders at 496px (520 page container − 24px padding); match it.
+          maxWidth: 496,
         }}
       >
         {/* User header */}
