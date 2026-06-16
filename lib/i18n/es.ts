@@ -98,7 +98,7 @@ export const es: Dict = {
   cordadas_createBtn: "Crear cordada", cordadas_creating: "Creando…",
   cordadas_inviteTitle: "Invitar amigos", cordadas_allInvited: "Todos tus amigos ya pertenecen a esta cordada.",
   cordadas_invited: "Invitado ✓", cordadas_invite: "Invitar",
-  cordadas_photoLabel: "Foto de portada", cordadas_changePhoto: "Cambiar foto",
+  cordadas_photoLabel: "Foto de portada", cordadas_changePhoto: "Cambiar foto", cordadas_founder: "Fundador",
 
 
 

@@ -98,7 +98,7 @@ export const fr: Dict = {
   cordadas_createBtn: "Créer la cordée", cordadas_creating: "Création…",
   cordadas_inviteTitle: "Inviter des amis", cordadas_allInvited: "Tous tes amis font déjà partie de cette cordée.",
   cordadas_invited: "Invité ✓", cordadas_invite: "Inviter",
-  cordadas_photoLabel: "Photo de couverture", cordadas_changePhoto: "Changer la photo",
+  cordadas_photoLabel: "Photo de couverture", cordadas_changePhoto: "Changer la photo", cordadas_founder: "Fondateur",
 
 
 

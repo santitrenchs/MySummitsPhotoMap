@@ -98,7 +98,7 @@ export const ca: Dict = {
   cordadas_createBtn: "Crear cordada", cordadas_creating: "Creant…",
   cordadas_inviteTitle: "Convidar amics", cordadas_allInvited: "Tots els teus amics ja pertanyen a aquesta cordada.",
   cordadas_invited: "Convidat ✓", cordadas_invite: "Convidar",
-  cordadas_photoLabel: "Foto de portada", cordadas_changePhoto: "Canviar foto",
+  cordadas_photoLabel: "Foto de portada", cordadas_changePhoto: "Canviar foto", cordadas_founder: "Fundador",
 
 
 

@@ -68,19 +68,33 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Rank medal ─────────────────────────────────────────────────────────────────
+// ── CairnIcon ──────────────────────────────────────────────────────────────────
+
+function CairnIcon() {
+  return (
+    <svg width="11" height="10" viewBox="0 0 11 10" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M0.55 10 L10.45 10 L9.02 7.2 L1.98 7.2 Z" fill="#F59E0B" />
+      <path d="M1.98 6.8 L9.02 6.8 L7.7 4 L3.3 4 Z" fill="#F59E0B" />
+      <path d="M3.3 3.6 L7.7 3.6 L6.38 0.4 L4.62 0.4 Z" fill="#F59E0B" />
+    </svg>
+  );
+}
+
+// ── Rank badge ─────────────────────────────────────────────────────────────────
 
 function RankBadge({ rank }: { rank: number }) {
-  const medals: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
-  if (medals[rank]) {
-    return <span style={{ fontSize: 18 }}>{medals[rank]}</span>;
-  }
+  const colors: Record<number, { bg: string; color: string }> = {
+    1: { bg: "#FDE68A", color: "#D97706" },
+    2: { bg: "#E5E7EB", color: "#6B7280" },
+    3: { bg: "#F8D9B8", color: "#B45309" },
+  };
+  const c = colors[rank];
   return (
     <div style={{
-      width: 28, height: 28, borderRadius: "50%",
-      background: "#f3f4f6",
+      width: 30, height: 44, borderRadius: c ? 10 : 0,
+      background: c ? c.bg : "transparent",
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 12, fontWeight: 700, color: "#9ca3af", flexShrink: 0,
+      fontSize: 15, fontWeight: 700, color: c ? c.color : "#111827", flexShrink: 0,
     }}>
       {rank}
     </div>
@@ -110,44 +124,32 @@ function MemberRow({
 
   return (
     <div style={{
-      display: "flex", alignItems: "center", padding: "12px 16px", gap: 12,
-      background: isCurrentUser ? "#f0fdf4" : "white",
+      display: "flex", alignItems: "center", padding: "8px 16px", gap: 10,
+      background: isCurrentUser ? "#F0F9FF" : "white",
       position: "relative",
     }}>
       {/* Rank */}
-      <div style={{ width: 28, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+      <div style={{ width: 30, display: "flex", justifyContent: "center", flexShrink: 0 }}>
         {member.isPending
           ? <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>—</span>
           : <RankBadge rank={rank} />}
       </div>
 
       {/* Avatar */}
-      <Avatar name={member.name} avatarUrl={member.avatarUrl} size={42} />
+      <Avatar name={member.name} avatarUrl={member.avatarUrl} size={52} />
 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Line 1: name + "Tú" + badges */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <span style={{
-            fontSize: 15, fontWeight: 600, color: "#111827",
+            fontSize: 14, fontWeight: 700, color: "#111827",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {member.name}
           </span>
           {isCurrentUser && (
-            <span style={{
-              fontSize: 10, fontWeight: 600, background: "#eff6ff", color: "#0369a1",
-              borderRadius: 20, padding: "1px 7px", whiteSpace: "nowrap",
-            }}>
-              Tú
-            </span>
-          )}
-          {member.isOwner && (
-            <span style={{
-              fontSize: 10, fontWeight: 600, background: "#fef9c3", color: "#854d0e",
-              borderRadius: 20, padding: "1px 7px", whiteSpace: "nowrap",
-            }}>
-              Admin
-            </span>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Tú</span>
           )}
           {member.isPending && (
             <span style={{
@@ -158,16 +160,33 @@ function MemberRow({
             </span>
           )}
         </div>
-        {!member.isPending && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-            {level && (
-              <span style={{ fontSize: 11, color: "#6b7280" }}>
-                {level.emoji} {t[level.nameKey]}
-              </span>
-            )}
-            <span style={{ fontSize: 11, color: "#9ca3af" }}>
-              {member.uniquePeaks} cimas · {member.totalEp} EP
+        {/* Line 2: level · Fundador */}
+        {!member.isPending && level && (
+          <div style={{ display: "flex", alignItems: "center", marginTop: 1 }}>
+            <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500 }}>
+              {t[level.nameKey]}
             </span>
+            {member.isOwner && (
+              <>
+                <span style={{ fontSize: 12, color: "#9ca3af", margin: "0 4px" }}>·</span>
+                <span style={{ fontSize: 12, color: "#059669", fontWeight: 600 }}>
+                  {t.cordadas_founder}
+                </span>
+              </>
+            )}
+          </div>
+        )}
+        {/* Line 3: N cimas · [cairn] N · N EP */}
+        {!member.isPending && (
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}>
+            <span style={{ fontSize: 12, color: "#374151", fontWeight: 600 }}>{member.uniquePeaks}</span>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>cimas</span>
+            <span style={{ fontSize: 12, color: "#9ca3af", margin: "0 2px" }}>·</span>
+            <CairnIcon />
+            <span style={{ fontSize: 12, color: "#F59E0B", fontWeight: 600 }}>{member.totalCairns}</span>
+            <span style={{ fontSize: 12, color: "#9ca3af", margin: "0 2px" }}>·</span>
+            <span style={{ fontSize: 12, color: "#374151", fontWeight: 600 }}>{member.totalEp}</span>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>EP</span>
           </div>
         )}
       </div>

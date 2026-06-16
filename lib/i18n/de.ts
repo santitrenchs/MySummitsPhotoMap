@@ -98,7 +98,7 @@ export const de: Dict = {
   cordadas_createBtn: "Seilschaft erstellen", cordadas_creating: "Wird erstellt…",
   cordadas_inviteTitle: "Freunde einladen", cordadas_allInvited: "Alle deine Freunde gehören bereits dieser Seilschaft an.",
   cordadas_invited: "Eingeladen ✓", cordadas_invite: "Einladen",
-  cordadas_photoLabel: "Titelfoto", cordadas_changePhoto: "Foto ändern",
+  cordadas_photoLabel: "Titelfoto", cordadas_changePhoto: "Foto ändern", cordadas_founder: "Gründer",
 
 
 

@@ -98,7 +98,7 @@ export const en: Dict = {
   cordadas_createBtn: "Create rope team", cordadas_creating: "Creating…",
   cordadas_inviteTitle: "Invite friends", cordadas_allInvited: "All your friends already belong to this rope team.",
   cordadas_invited: "Invited ✓", cordadas_invite: "Invite",
-  cordadas_photoLabel: "Cover photo", cordadas_changePhoto: "Change photo",
+  cordadas_photoLabel: "Cover photo", cordadas_changePhoto: "Change photo", cordadas_founder: "Founder",
 
 
 

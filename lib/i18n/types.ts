@@ -113,7 +113,7 @@ export type Dict = {
   cordadas_createBtn: string; cordadas_creating: string;
   cordadas_inviteTitle: string; cordadas_allInvited: string;
   cordadas_invited: string; cordadas_invite: string;
-  cordadas_photoLabel: string; cordadas_changePhoto: string;
+  cordadas_photoLabel: string; cordadas_changePhoto: string; cordadas_founder: string;
 
   // Settings
   settings_title: string; settings_subtitle: string; settings_language: string;
