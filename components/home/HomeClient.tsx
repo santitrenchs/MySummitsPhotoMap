@@ -17,6 +17,53 @@ function initials(name: string): string {
   return name[0]?.toUpperCase() ?? "?";
 }
 
+function LeaderboardAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+  const bg = ["#e0f2fe","#fce7f3","#d1fae5","#ede9fe","#fef9c3"][
+    name.charCodeAt(0) % 5
+  ];
+  return (
+    <div style={{
+      width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
+      background: avatarUrl ? undefined : bg,
+      overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 15, fontWeight: 700, color: "#374151",
+    }}>
+      {avatarUrl
+        ? <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : initials(name)}
+    </div>
+  );
+}
+
+function LeaderboardRankBadge({ rank }: { rank: number }) {
+  const colors: Record<number, { bg: string; color: string }> = {
+    1: { bg: "#FDE68A", color: "#D97706" },
+    2: { bg: "#E5E7EB", color: "#6B7280" },
+    3: { bg: "#F8D9B8", color: "#B45309" },
+  };
+  const c = colors[rank];
+  return (
+    <div style={{
+      width: 30, height: 44, borderRadius: c ? 10 : 0, flexShrink: 0,
+      background: c ? c.bg : "transparent",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 15, fontWeight: 700, color: c ? c.color : "#111827",
+    }}>
+      {rank}
+    </div>
+  );
+}
+
+function LeaderboardCairnIcon() {
+  return (
+    <svg width="11" height="10" viewBox="0 0 11 10" fill="none" style={{ flexShrink: 0 }}>
+      <rect x="3" y="7" width="5" height="2.5" rx="1" fill="#F59E0B"/>
+      <rect x="2.5" y="4.5" width="6" height="2.5" rx="1" fill="#FBBF24"/>
+      <rect x="3.5" y="2" width="4" height="2.5" rx="1" fill="#FCD34D"/>
+    </svg>
+  );
+}
+
 // ─── Monthly chart ────────────────────────────────────────────────────────────
 
 function MonthlyChart({ data, locale }: { data: MonthlyBar[]; locale: string }) {
@@ -369,85 +416,84 @@ export function HomeClient({ data, locale, t }: {
       )}
 
       {/* ── Leaderboard ─────────────────────────────────────────────────── */}
-      {leaderboard.length > 1 && (
-        <section style={{ padding: "20px 16px 0" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 12px" }}>
-            {t.home_ranking}
-          </h2>
-          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-            {/* Column headers */}
-            <div style={{ display: "flex", alignItems: "center", padding: "10px 16px 4px 38px", borderBottom: "1px solid #f3f4f6" }}>
-              <div style={{ flex: 1 }} />
-              {(["Cimas", "CS", "EP"] as const).map((col) => (
-                <div key={col} style={{ width: col === "EP" ? 44 : 52, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>{col}</div>
-              ))}
-            </div>
+      {leaderboard.length > 1 && (() => {
+        const top5 = leaderboard.slice(0, 5);
+        const meIdx = leaderboard.findIndex((e) => e.isCurrentUser);
+        const meInTop5 = meIdx >= 0 && meIdx < 5;
+        const meEntryData = meIdx >= 0 ? leaderboard[meIdx] : null;
+        const showEllipsis = !meInTop5 && meEntryData !== null;
 
-            {leaderboard.slice(0, 5).map((entry, idx) => {
-              const rank = idx + 1;
-              const isMe = entry.isCurrentUser;
-              const levelName = entry.levelIdx >= 1
-                ? (t[LEVEL_DEFS[entry.levelIdx - 1]?.nameKey] as string ?? "—")
-                : "—";
-              const isLast = idx === Math.min(leaderboard.length, 5) - 1;
-
-              if (isMe) {
-                return (
-                  <div key={entry.userId} style={{
-                    display: "flex", alignItems: "center",
-                    background: "linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%)",
-                    borderBottom: isLast ? "none" : "1px solid #dbeafe",
-                    borderLeft: "3px solid #0369a1",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", flex: 1, padding: "14px 16px 12px 13px", gap: 10 }}>
-                      <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0369a1", flexShrink: 0 }}>{rank}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {entry.name} <span style={{ fontWeight: 400, color: "#64748b", fontSize: 12 }}>({t.home_youAre})</span>
-                        </p>
-                        <span style={{ display: "inline-block", marginTop: 2, fontSize: 10, fontWeight: 700, color: "#374151", background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px" }}>{levelName}</span>
-                      </div>
-                      <div style={{ width: 52, textAlign: "center" }}>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ascentCount}</div>
-                      </div>
-                      <div style={{ width: 52, textAlign: "center" }}>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</div>
-                      </div>
-                      <div style={{ width: 44, textAlign: "center" }}>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "#0369a1", lineHeight: 1 }}>{entry.ep}</div>
-                      </div>
-                    </div>
+        function LeaderboardRow({ entry, rank, isLast }: { entry: typeof leaderboard[0]; rank: number; isLast: boolean }) {
+          const isMe = entry.isCurrentUser;
+          const lvName = entry.levelIdx >= 1
+            ? (t[LEVEL_DEFS[entry.levelIdx - 1]?.nameKey] as string ?? "—")
+            : "—";
+          const valueColor = isMe ? "#0369a1" : "#374151";
+          return (
+            <div style={{
+              display: "flex", alignItems: "center",
+              borderBottom: isLast ? "none" : `1px solid ${isMe ? "#dbeafe" : "#f3f4f6"}`,
+              background: isMe ? "#F0F9FF" : "white",
+              borderLeft: isMe ? "3px solid #0369a1" : "none",
+              paddingLeft: isMe ? 0 : 0,
+            }}>
+              {isMe && <div style={{ width: 3, alignSelf: "stretch", background: "#0369a1", flexShrink: 0 }} />}
+              <div style={{ display: "flex", alignItems: "center", flex: 1, padding: "8px 16px 8px", gap: 10 }}>
+                <LeaderboardRankBadge rank={rank} />
+                <LeaderboardAvatar name={entry.name} avatarUrl={entry.avatarUrl} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {entry.name}
+                    </span>
+                    {isMe && <span style={{ fontSize: 12, color: "#6b7280" }}>({t.home_youAre})</span>}
                   </div>
-                );
-              }
-
-              return (
-                <div key={entry.userId} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "12px 16px",
-                  background: "white",
-                  borderBottom: isLast ? "none" : "1px solid #f3f4f6",
-                }}>
-                  <div style={{ width: 22, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#d1d5db", flexShrink: 0 }}>{rank}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{entry.name}</p>
-                    <span style={{ display: "inline-block", marginTop: 1, fontSize: 10, fontWeight: 700, color: "#374151", background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px" }}>{levelName}</span>
-                  </div>
-                  <div style={{ width: 52, textAlign: "center" }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ascentCount}</div>
-                  </div>
-                  <div style={{ width: 52, textAlign: "center" }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</div>
-                  </div>
-                  <div style={{ width: 44, textAlign: "center" }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#374151", lineHeight: 1 }}>{entry.ep}</div>
-                  </div>
+                  <span style={{ display: "inline-block", marginTop: 2, fontSize: 10, fontWeight: 700, color: "#374151", background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px" }}>{lvName}</span>
                 </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+                <div style={{ width: 52, textAlign: "center", fontSize: 15, fontWeight: 800, color: valueColor, lineHeight: 1 }}>{entry.ascentCount}</div>
+                <div style={{ width: 52, display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+                  <LeaderboardCairnIcon />
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</span>
+                </div>
+                <div style={{ width: 44, textAlign: "center", fontSize: 15, fontWeight: 800, color: valueColor, lineHeight: 1 }}>{entry.ep}</div>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <section style={{ padding: "20px 16px 0" }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: "0 0 12px" }}>
+              {t.home_ranking}
+            </h2>
+            <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+              {/* Column headers — offset to align with metric cols */}
+              <div style={{ display: "flex", alignItems: "center", padding: "10px 16px 4px 119px", borderBottom: "1px solid #f3f4f6" }}>
+                <div style={{ flex: 1 }} />
+                <div style={{ width: 52, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>Cimas</div>
+                <div style={{ width: 52, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>CS</div>
+                <div style={{ width: 44, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>EP</div>
+              </div>
+              {top5.map((entry, idx) => (
+                <LeaderboardRow
+                  key={entry.userId}
+                  entry={entry}
+                  rank={idx + 1}
+                  isLast={idx === top5.length - 1 && !showEllipsis}
+                />
+              ))}
+              {showEllipsis && (
+                <div style={{ padding: "6px 16px 6px 119px", borderBottom: "1px solid #f3f4f6" }}>
+                  <span style={{ fontSize: 13, color: "#9ca3af" }}>· · ·</span>
+                </div>
+              )}
+              {showEllipsis && meEntryData && (
+                <LeaderboardRow entry={meEntryData} rank={meIdx + 1} isLast={true} />
+              )}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* ── No friends CTA ──────────────────────────────────────────────── */}
       {stats.friendsCount === 0 && (
