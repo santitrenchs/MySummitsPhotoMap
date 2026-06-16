@@ -23,7 +23,7 @@ function LeaderboardAvatar({ name, avatarUrl }: { name: string; avatarUrl: strin
   ];
   return (
     <div style={{
-      width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
+      width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
       background: avatarUrl ? undefined : bg,
       overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: 15, fontWeight: 700, color: "#374151",
@@ -448,7 +448,7 @@ export function HomeClient({ data, locale, t }: {
                     </span>
                     {isMe && <span style={{ fontSize: 12, color: "#6b7280" }}>({t.home_youAre})</span>}
                   </div>
-                  <span style={{ display: "inline-block", marginTop: 2, fontSize: 10, fontWeight: 700, color: "#374151", background: "#f3f4f6", borderRadius: "var(--radius-sm)", padding: "1px 6px" }}>{lvName}</span>
+                  <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500 }}>{lvName}</span>
                 </div>
                 <div style={{ width: 52, textAlign: "center", fontSize: 15, fontWeight: 800, color: valueColor, lineHeight: 1 }}>{entry.ascentCount}</div>
                 <div style={{ width: 52, display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
@@ -468,7 +468,7 @@ export function HomeClient({ data, locale, t }: {
             </h2>
             <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
               {/* Column headers — offset to align with metric cols */}
-              <div style={{ display: "flex", alignItems: "center", padding: "10px 16px 4px 119px", borderBottom: "1px solid #f3f4f6" }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "10px 16px 4px 127px", borderBottom: "1px solid #f3f4f6" }}>
                 <div style={{ flex: 1 }} />
                 <div style={{ width: 52, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>Cimas</div>
                 <div style={{ width: 52, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>CS</div>
