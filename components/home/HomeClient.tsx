@@ -364,57 +364,6 @@ export function HomeClient({ data, locale, t }: {
         </div>
       )}
 
-      {/* ── Monthly chart ───────────────────────────────────────────────── */}
-      {stats.totalAscents >= 1 && data.monthlyStats.length > 0 && (
-        <section style={{ padding: "16px 16px 0" }}>
-          <div style={{
-            background: "white", border: "1px solid #e5e7eb",
-            borderRadius: "var(--radius-lg)", padding: "16px 16px 12px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-          }}>
-            {(() => {
-              const periodMeters  = data.monthlyStats.reduce((s, m) => s + m.metersAscended, 0);
-              const periodSummits = data.monthlyStats.reduce((s, m) => s + m.summits, 0);
-              return (
-                <div style={{ marginBottom: 16 }}>
-                  <h2 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: "#111827" }}>
-                    {t.home_chartTitle}
-                  </h2>
-                  <div style={{ display: "flex", gap: 16 }}>
-                    <span style={{ fontSize: 13, color: "#6b7280" }}>
-                      <span style={{ fontWeight: 700, color: "#0369a1" }}>{periodSummits}</span>
-                      {" "}{t.home_statSummits.toLowerCase()}
-                    </span>
-                    {periodMeters > 0 && (
-                      <span style={{ fontSize: 13, color: "#6b7280" }}>
-                        <span style={{ fontWeight: 700, color: "#111827" }}>
-                          {periodMeters.toLocaleString(locale)}
-                        </span>
-                        {" m "}
-                        {t.home_chartMeters}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-            <MonthlyChart data={data.monthlyStats} locale={locale} />
-          </div>
-        </section>
-      )}
-
-      {/* ── Rarity chart ────────────────────────────────────────────────── */}
-      {stats.totalAscents >= 1 && (
-        <section style={{ padding: "16px 16px 0" }}>
-          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", padding: "16px 16px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-            <h2 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#111827" }}>
-              {t.home_rarityChartTitle}
-            </h2>
-            <RarityChart breakdown={stats.rarityBreakdown} />
-          </div>
-        </section>
-      )}
-
       {/* ── Leaderboard ─────────────────────────────────────────────────── */}
       {leaderboard.length > 1 && (() => {
         const top5 = leaderboard.slice(0, 5);
@@ -491,6 +440,57 @@ export function HomeClient({ data, locale, t }: {
           </section>
         );
       })()}
+
+      {/* ── Monthly chart ───────────────────────────────────────────────── */}
+      {stats.totalAscents >= 1 && data.monthlyStats.length > 0 && (
+        <section style={{ padding: "16px 16px 0" }}>
+          <div style={{
+            background: "white", border: "1px solid #e5e7eb",
+            borderRadius: "var(--radius-lg)", padding: "16px 16px 12px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}>
+            {(() => {
+              const periodMeters  = data.monthlyStats.reduce((s, m) => s + m.metersAscended, 0);
+              const periodSummits = data.monthlyStats.reduce((s, m) => s + m.summits, 0);
+              return (
+                <div style={{ marginBottom: 16 }}>
+                  <h2 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: "#111827" }}>
+                    {t.home_chartTitle}
+                  </h2>
+                  <div style={{ display: "flex", gap: 16 }}>
+                    <span style={{ fontSize: 13, color: "#6b7280" }}>
+                      <span style={{ fontWeight: 700, color: "#0369a1" }}>{periodSummits}</span>
+                      {" "}{t.home_statSummits.toLowerCase()}
+                    </span>
+                    {periodMeters > 0 && (
+                      <span style={{ fontSize: 13, color: "#6b7280" }}>
+                        <span style={{ fontWeight: 700, color: "#111827" }}>
+                          {periodMeters.toLocaleString(locale)}
+                        </span>
+                        {" m "}
+                        {t.home_chartMeters}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+            <MonthlyChart data={data.monthlyStats} locale={locale} />
+          </div>
+        </section>
+      )}
+
+      {/* ── Rarity chart ────────────────────────────────────────────────── */}
+      {stats.totalAscents >= 1 && (
+        <section style={{ padding: "16px 16px 0" }}>
+          <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", padding: "16px 16px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <h2 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#111827" }}>
+              {t.home_rarityChartTitle}
+            </h2>
+            <RarityChart breakdown={stats.rarityBreakdown} />
+          </div>
+        </section>
+      )}
 
       {/* ── No friends CTA ──────────────────────────────────────────────── */}
       {stats.friendsCount === 0 && (
