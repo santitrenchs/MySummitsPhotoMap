@@ -681,156 +681,191 @@ export function CordadasClient({
         </div>
       )}
 
-      {/* ── Create-cordada modal ─────────────────────── */}
+      {/* ── Create-cordada modal (floating, same pattern as AscentModal) ──────── */}
       {createCordadaOpen && (
-        <div
-          onClick={(e) => { if (e.target === e.currentTarget) closeCordadaModal(); }}
-          style={{
-            position: "fixed", inset: 0, zIndex: 200,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex", alignItems: "flex-end", justifyContent: "center",
-          }}
-        >
-          <div className="cordadas-sheet-panel" style={{
-            width: "100%", maxWidth: 640, background: "white",
-            borderRadius: "16px 16px 0 0",
-            maxHeight: "90vh", display: "flex", flexDirection: "column",
-          }}>
-            {/* Header */}
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "16px 16px 0",
-            }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>
-                {t.cordadas_createTitle}
-              </span>
-              <button
-                onClick={closeCordadaModal}
-                style={{
-                  background: "#f3f4f6", border: "none", borderRadius: "50%",
-                  width: 32, height: 32, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 16, color: "#6b7280",
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Scrollable form */}
-            <form onSubmit={handleCreateCordada} style={{ overflowY: "auto", flex: 1, padding: "16px" }}>
-              {/* Cover photo */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>
-                  {t.cordadas_photoLabel} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
-                </div>
-                <div
-                  onClick={() => cordadaFileInputRef.current?.click()}
+        <>
+          <style>{`
+            .create-cordada-backdrop {
+              position: fixed;
+              inset: 0;
+              background: rgba(0,0,0,0.65);
+              z-index: 500;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              animation: ccFadeIn 0.2s ease;
+            }
+            @keyframes ccFadeIn { from { opacity: 0; } to { opacity: 1; } }
+            .create-cordada-container {
+              position: relative;
+              background: white;
+              border-radius: 12px;
+              width: min(520px, 92vw);
+              max-height: min(700px, 92svh);
+              display: flex;
+              flex-direction: column;
+              overflow: hidden;
+              animation: ccSlideIn 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+            }
+            @keyframes ccSlideIn {
+              from { opacity: 0; transform: scale(0.96) translateY(8px); }
+              to   { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            @media (max-width: 639px) {
+              .create-cordada-backdrop { align-items: flex-end; }
+              .create-cordada-container {
+                width: 100%;
+                max-height: 92svh;
+                border-radius: 16px 16px 0 0;
+                padding-bottom: env(safe-area-inset-bottom);
+                animation: ccSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+              }
+              @keyframes ccSlideUp {
+                from { transform: translateY(100%); }
+                to   { transform: translateY(0); }
+              }
+            }
+          `}</style>
+          <div className="create-cordada-backdrop" onClick={closeCordadaModal}>
+            <div className="create-cordada-container" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                position: "relative", height: 52, flexShrink: 0,
+                borderBottom: "1px solid #e5e7eb", padding: "0 16px",
+              }}>
+                <button
+                  onClick={closeCordadaModal}
                   style={{
-                    width: "100%", aspectRatio: "3/2", borderRadius: 12, cursor: "pointer",
-                    border: cordadaPhotoPreview ? "none" : "2px dashed #d1d5db",
-                    background: cordadaPhotoPreview ? "none" : "#f9fafb",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    overflow: "hidden", position: "relative",
+                    position: "absolute", left: 12,
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: 4, color: "#111827", display: "flex", alignItems: "center",
+                    borderRadius: 6,
+                  }}
+                  aria-label="Cerrar"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>
+                  {t.cordadas_createTitle}
+                </span>
+              </div>
+
+              {/* Scrollable form */}
+              <form onSubmit={handleCreateCordada} style={{ overflowY: "auto", flex: 1, padding: "20px 20px 24px" }}>
+                {/* Cover photo */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>
+                    {t.cordadas_photoLabel} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
+                  </div>
+                  <div
+                    onClick={() => cordadaFileInputRef.current?.click()}
+                    style={{
+                      width: "100%", aspectRatio: "3/2", borderRadius: 12, cursor: "pointer",
+                      border: cordadaPhotoPreview ? "none" : "2px dashed #d1d5db",
+                      background: cordadaPhotoPreview ? "none" : "#f9fafb",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      overflow: "hidden", position: "relative",
+                    }}
+                  >
+                    {cordadaPhotoPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={cordadaPhotoPreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ textAlign: "center", color: "#9ca3af" }}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin: "0 auto 8px", display: "block" }}>
+                          <rect x="3" y="3" width="18" height="18" rx="3" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <path d="M21 15l-5-5L5 21" />
+                        </svg>
+                        <div style={{ fontSize: 13 }}>Añadir foto</div>
+                      </div>
+                    )}
+                    {cordadaPhotoPreview && (
+                      <div style={{
+                        position: "absolute", bottom: 8, right: 8,
+                        background: "rgba(0,0,0,0.55)", borderRadius: 8, padding: "4px 10px",
+                        color: "white", fontSize: 12, fontWeight: 600,
+                      }}>
+                        {t.cordadas_changePhoto}
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={cordadaFileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleCordadaFileChange}
+                    style={{ display: "none" }}
+                  />
+                </div>
+
+                {/* Name */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                    {t.cordadas_nameLabel} *
+                  </label>
+                  <input
+                    value={cordadaName}
+                    onChange={(e) => setCordadaName(e.target.value)}
+                    maxLength={60}
+                    placeholder={t.cordadas_namePlaceholder}
+                    required
+                    style={{
+                      width: "100%", boxSizing: "border-box",
+                      border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "10px 12px",
+                      fontSize: 15, color: "#111827", outline: "none", fontFamily: "inherit",
+                    }}
+                  />
+                </div>
+
+                {/* Description */}
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                    {t.cordadas_descriptionLabel} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
+                  </label>
+                  <textarea
+                    value={cordadaDescription}
+                    onChange={(e) => setCordadaDescription(e.target.value)}
+                    maxLength={200}
+                    rows={3}
+                    placeholder={t.cordadas_descriptionPlaceholder}
+                    style={{
+                      width: "100%", boxSizing: "border-box",
+                      border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "10px 12px",
+                      fontSize: 15, color: "#111827", outline: "none", resize: "none",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                </div>
+
+                {cordadaError && (
+                  <div style={{
+                    background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8,
+                    padding: "10px 12px", marginBottom: 14, fontSize: 13, color: "#dc2626",
+                  }}>
+                    {cordadaError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={cordadaLoading || !cordadaName.trim()}
+                  style={{
+                    width: "100%", height: 50, borderRadius: 12, border: "none",
+                    background: cordadaLoading || !cordadaName.trim() ? "#9ca3af" : "#2F7A5F",
+                    color: "white", fontSize: 15, fontWeight: 700,
+                    cursor: cordadaLoading || !cordadaName.trim() ? "default" : "pointer",
                   }}
                 >
-                  {cordadaPhotoPreview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={cordadaPhotoPreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <div style={{ textAlign: "center", color: "#9ca3af" }}>
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin: "0 auto 8px", display: "block" }}>
-                        <rect x="3" y="3" width="18" height="18" rx="3" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <path d="M21 15l-5-5L5 21" />
-                      </svg>
-                      <div style={{ fontSize: 13 }}>Añadir foto</div>
-                    </div>
-                  )}
-                  {cordadaPhotoPreview && (
-                    <div style={{
-                      position: "absolute", bottom: 8, right: 8,
-                      background: "rgba(0,0,0,0.55)", borderRadius: 8, padding: "4px 10px",
-                      color: "white", fontSize: 12, fontWeight: 600,
-                    }}>
-                      {t.cordadas_changePhoto}
-                    </div>
-                  )}
-                </div>
-                <input
-                  ref={cordadaFileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleCordadaFileChange}
-                  style={{ display: "none" }}
-                />
-              </div>
-
-              {/* Name */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                  {t.cordadas_nameLabel} *
-                </label>
-                <input
-                  value={cordadaName}
-                  onChange={(e) => setCordadaName(e.target.value)}
-                  maxLength={60}
-                  placeholder={t.cordadas_namePlaceholder}
-                  required
-                  style={{
-                    width: "100%", boxSizing: "border-box",
-                    border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "10px 12px",
-                    fontSize: 15, color: "#111827", outline: "none", fontFamily: "inherit",
-                  }}
-                />
-              </div>
-
-              {/* Description */}
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                  {t.cordadas_descriptionLabel} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
-                </label>
-                <textarea
-                  value={cordadaDescription}
-                  onChange={(e) => setCordadaDescription(e.target.value)}
-                  maxLength={200}
-                  rows={3}
-                  placeholder={t.cordadas_descriptionPlaceholder}
-                  style={{
-                    width: "100%", boxSizing: "border-box",
-                    border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "10px 12px",
-                    fontSize: 15, color: "#111827", outline: "none", resize: "none",
-                    fontFamily: "inherit",
-                  }}
-                />
-              </div>
-
-              {cordadaError && (
-                <div style={{
-                  background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8,
-                  padding: "10px 12px", marginBottom: 14, fontSize: 13, color: "#dc2626",
-                }}>
-                  {cordadaError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={cordadaLoading || !cordadaName.trim()}
-                style={{
-                  width: "100%", height: 50, borderRadius: 12, border: "none",
-                  background: cordadaLoading || !cordadaName.trim() ? "#9ca3af" : "#2F7A5F",
-                  color: "white", fontSize: 15, fontWeight: 700,
-                  cursor: cordadaLoading || !cordadaName.trim() ? "default" : "pointer",
-                  marginBottom: 8,
-                }}
-              >
-                {cordadaLoading ? t.cordadas_creating : t.cordadas_createBtn}
-              </button>
-            </form>
-            <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
+                  {cordadaLoading ? t.cordadas_creating : t.cordadas_createBtn}
+                </button>
+              </form>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* ── Pending section ────────────────────────── */}
