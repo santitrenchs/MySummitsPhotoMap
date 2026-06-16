@@ -428,34 +428,38 @@ export function HomeClient({ data, locale, t }: {
           const lvName = entry.levelIdx >= 1
             ? (t[LEVEL_DEFS[entry.levelIdx - 1]?.nameKey] as string ?? "—")
             : "—";
-          const valueColor = isMe ? "#0369a1" : "#374151";
           return (
             <div style={{
               display: "flex", alignItems: "center",
               borderBottom: isLast ? "none" : `1px solid ${isMe ? "#dbeafe" : "#f3f4f6"}`,
               background: isMe ? "#F0F9FF" : "white",
-              borderLeft: isMe ? "3px solid #0369a1" : "none",
-              paddingLeft: isMe ? 0 : 0,
             }}>
               {isMe && <div style={{ width: 3, alignSelf: "stretch", background: "#0369a1", flexShrink: 0 }} />}
-              <div style={{ display: "flex", alignItems: "center", flex: 1, padding: "8px 16px 8px", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", flex: 1, padding: "8px 16px", gap: 10 }}>
                 <LeaderboardRankBadge rank={rank} />
                 <LeaderboardAvatar name={entry.name} avatarUrl={entry.avatarUrl} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                  {/* Line 1: name + (tú) */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {entry.name}
                     </span>
-                    {isMe && <span style={{ fontSize: 12, color: "#6b7280" }}>({t.home_youAre})</span>}
+                    {isMe && <span style={{ fontSize: 12, color: "#6b7280", flexShrink: 0 }}>({t.home_youAre})</span>}
                   </div>
+                  {/* Line 2: level */}
                   <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500 }}>{lvName}</span>
+                  {/* Line 3: metrics inline */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}>
+                    <span style={{ fontSize: 12, color: "#374151", fontWeight: 600 }}>{entry.ascentCount}</span>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>cimas</span>
+                    <span style={{ fontSize: 12, color: "#9ca3af", margin: "0 2px" }}>·</span>
+                    <LeaderboardCairnIcon />
+                    <span style={{ fontSize: 12, color: "#F59E0B", fontWeight: 600 }}>{entry.CS}</span>
+                    <span style={{ fontSize: 12, color: "#9ca3af", margin: "0 2px" }}>·</span>
+                    <span style={{ fontSize: 12, color: "#374151", fontWeight: 600 }}>{entry.ep}</span>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>EP</span>
+                  </div>
                 </div>
-                <div style={{ width: 52, textAlign: "center", fontSize: 15, fontWeight: 800, color: valueColor, lineHeight: 1 }}>{entry.ascentCount}</div>
-                <div style={{ width: 52, display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
-                  <LeaderboardCairnIcon />
-                  <span style={{ fontSize: 15, fontWeight: 800, color: "#d97706", lineHeight: 1 }}>{entry.CS}</span>
-                </div>
-                <div style={{ width: 44, textAlign: "center", fontSize: 15, fontWeight: 800, color: valueColor, lineHeight: 1 }}>{entry.ep}</div>
               </div>
             </div>
           );
@@ -467,13 +471,6 @@ export function HomeClient({ data, locale, t }: {
               {t.home_ranking}
             </h2>
             <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "var(--radius-lg)", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-              {/* Column headers — offset to align with metric cols */}
-              <div style={{ display: "flex", alignItems: "center", padding: "10px 16px 4px 127px", borderBottom: "1px solid #f3f4f6" }}>
-                <div style={{ flex: 1 }} />
-                <div style={{ width: 52, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>Cimas</div>
-                <div style={{ width: 52, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>CS</div>
-                <div style={{ width: 44, textAlign: "center", fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>EP</div>
-              </div>
               {top5.map((entry, idx) => (
                 <LeaderboardRow
                   key={entry.userId}
@@ -483,7 +480,7 @@ export function HomeClient({ data, locale, t }: {
                 />
               ))}
               {showEllipsis && (
-                <div style={{ padding: "6px 16px 6px 119px", borderBottom: "1px solid #f3f4f6" }}>
+                <div style={{ padding: "6px 16px 6px 72px", borderBottom: "1px solid #f3f4f6" }}>
                   <span style={{ fontSize: 13, color: "#9ca3af" }}>· · ·</span>
                 </div>
               )}
