@@ -411,9 +411,9 @@ container: textAlign center · padding 80px 0
 | 1 | HeroHeader | Always | ✅ | ✅ |
 | 2 | OnboardingBanner | `totalAscents == 0` | ✅ | ✅ |
 | 3 | ProgressionSection | Always | ❌ removed 2026-05-30 | ✅ |
-| 4 | MonthlyChartSection | `totalAscents >= 1` AND `monthlyStats` not empty | ✅ | ✅ |
-| 5 | RarityChartSection | `totalAscents >= 1` | ✅ | ✅ |
-| 6 | LeaderboardCard | `leaderboard.size > 1` — title **"Tu cordada"** | ✅ | ✅ |
+| 4 | LeaderboardCard | `leaderboard.size > 1` — title **"Tu cordada"** (moved before charts 2026-06-16) | ✅ | ✅ |
+| 5 | MonthlyChartSection | `totalAscents >= 1` AND `monthlyStats` not empty | ✅ | ✅ |
+| 6 | RarityChartSection | `totalAscents >= 1` | ✅ | ✅ |
 | 7 | NoFriendsCta (web) / SoloRankingSection (Android) | `totalFriends == 0` | ✅ | ✅ |
 | 8 | RecentAscentsRow | `recentAscents` not empty — title **"Tus últimas cimas"** | ✅ | ✅ |
 
@@ -530,7 +530,7 @@ Row with `IntrinsicSize.Min` height. `12dp` rounded corners.
 
 ---
 
-### 4 — MonthlyChartSection
+### 5 — MonthlyChartSection
 
 Shared `ChartCard` wrapper (white surface, 1dp `outlineVariant` border, 16dp radius, 16dp padding). Title: `"Últimos 6 meses"`. Subtitle row: total summits in blue + total meters ascended in dark gray.
 
@@ -549,7 +549,7 @@ Empty month bar: solid `#E5E7EB` fill. **Not tappable** (no summits to filter).
 
 ---
 
-### 5 — RarityChartSection
+### 6 — RarityChartSection
 
 Same `ChartCard` wrapper. Title: `"Cimas por rareza"`.
 
@@ -568,57 +568,60 @@ Same `ChartCard` wrapper. Title: `"Cimas por rareza"`.
 
 ---
 
-### 6 — LeaderboardCard
+### 4 — LeaderboardCard
 
-Container: `16dp` horizontal padding, `16dp` rounded corners, 1dp `outlineVariant` border, white surface.
+Container: `16dp` horizontal padding, `16dp` rounded corners, 1dp `outlineVariant` border, white surface. **Moved before MonthlyChart/RarityChart on web (2026-06-16)** — same JSX position as Android.
 
-**Column header row** (inside the card, above the divider):
-- Padding start `19dp` (16 outer + 3 for the left border slot of the current user row), end `16dp`, vertical `10dp/4dp`
-- `22dp` spacer (rank column) + `weight(1f)` spacer (name) + `"Cimas"` w:52dp + `"Cairns"` w:52dp + `"EP"` w:44dp
-- Header text: 10sp semibold `#94A3B8`, centered
+**No column headers** — metrics are shown inline within each row (redesigned 2026-06-16). The previous column-aligned header row was removed because fixed offsets broke at different viewport widths and when the "Tú" row added its 3px left border.
 
-`HorizontalDivider` between headers and rows.
+`HorizontalDivider` after the card title row.
 
-#### Current user row
+#### Row structure — inline 3-line layout (web + Android parity)
 
-`IntrinsicSize.Min` row. Background: horizontal gradient `#EFF6FF → #F0F9FF`.
+Each row is: **RankBadge** (30×44px) + **Avatar** (52px circle) + **Text column** (3 lines), with the "Tú" row having a `3px` left blue border strip and `#F0F9FF` background.
 
-Left blue border strip: `3dp` wide, full height, `#0369A1`.
+**Line 1** — name + `(tú)` marker:
+- Name: 14sp bold `#111827`, single line ellipsis
+- `(tú)` inline: 12sp `#9ca3af` — NOT a colored badge
 
-Inner padding: start 16dp, end 16dp, top 16dp, bottom 14dp.
+**Line 2** — level:
+- Level name: 12sp regular `#6b7280`, fontWeight 500. Resolved as `entry.levelIdx >= 1 ? LEVEL_DEFS[entry.levelIdx - 1].name : "—"` — **never use `% LEVEL_DEFS.length`**
 
-- **Rank**: 22dp wide, 13sp bold `#0369A1`
-- **Name column** (`weight(1f)`):
-  - Row: name text (14sp bold `#0F172A`, ellipsis) + `" (tú)"` (12sp `#64748B`)
-  - Below: level pill (see below)
-- **Cimas**: `#0369A1`
-- **Cairns**: `#D97706` (amber — always amber, regardless of user)
-- **EP**: `#0369A1`
+**Line 3** — inline metrics (all in one flex row, gap 4px):
+- `{ascentCount}` — 12sp bold `#374151` + `"cimas"` label 12sp `#6b7280`
+- `·` separator 12sp `#9ca3af`
+- CairnIcon (11×10px amber SVG, 3-layer cairn) + `{CS}` 12sp bold `#F59E0B`
+- `·` separator
+- `{ep}` 12sp bold `#374151` + `"EP"` label 12sp `#6b7280`
 
-#### Other user rows
+#### RankBadge
 
-Padding: `horizontal 16dp, vertical 12dp`.
+Rectangular badge, `30×44px`, `borderRadius: 10` for top-3, transparent bg + no radius for rank ≥4:
 
-- **Rank**: 22dp wide, 13sp bold `#D1D5DB` (light gray — no medals)
-- **Name column** (`weight(1f)`):
-  - Name: 13sp semibold `#111827`
-  - Below: level pill
-- **Cimas**: `#374151`
-- **Cairns**: `#D97706`
-- **EP**: `#374151`
+| Rank | bg | text color |
+|------|-----|-----------|
+| 1 | `#FDE68A` | `#D97706` |
+| 2 | `#E5E7EB` | `#6B7280` |
+| 3 | `#F8D9B8` | `#B45309` |
+| ≥4 | transparent | `#111827` |
 
-#### Level pill (inside leaderboard rows)
+Rank number: 14sp extrabold, centered.
 
-```
-bg: #F3F4F6, text: #374151, 10sp bold, 4dp radius, padding 6dp×2dp
-text = entry.levelIdx >= 1 ? LEVEL_DEFS[entry.levelIdx - 1].name : "—"
-```
+#### Avatar
+
+52px circle. Initials fallback colored by the first character of the name (consistent hue function). If `avatarUrl` available: crop-fill.
+
+#### CairnIcon
+
+Inline SVG, 11×10px, amber colors (`#F59E0B` / `#D97706`). Three-layer cairn shape. Never use emoji for this.
+
+#### Ellipsis row
+
+When the current user is not in the top 5 displayed rows, an ellipsis row (`· · ·`, 14sp `#9ca3af`, centered) is inserted after the visible top rows, followed by the current user's own row. This matches Android's `CordadaDetailScreen` pattern exactly.
+
+#### Level text
 
 `entry.levelIdx` = number of completed levels from `user_stats` (0 = none, 1 = Scout done, …, 6 = Zenith done). **Never use `% LEVEL_DEFS.length`** — it maps `levelIdx=0` to Zenith incorrectly.
-
-#### Metric column
-
-`14sp extrabold`, centered, column width as above. No label below the number (labels are in the header row).
 
 ---
 
@@ -1731,6 +1734,14 @@ Fix: inject a `<style>` block at the top of the `CordadasClient` return and appl
 ```
 
 Apply this class to: the action choice modal (Añadir amigo / Nueva cordada) and the add-friend panel. Any future fixed panels in `CordadasClient` must also carry this class.
+
+### Buscar amigos modal — invite-by-email always visible (2026-06-16)
+
+In `CordadasClient.tsx`, the "¿No está en Peakadex todavía?" invite-by-email block is rendered **always** after the search results, not gated on `searchResults.length === 0`.
+
+- The "Sin resultados" empty-state message is still gated on `searchResults.length === 0` (shown only when search returns nothing).
+- The invite-by-email dashed card **renders unconditionally** below the results list.
+- This allows users to invite a non-registered contact even when the search also returns existing users to add.
 
 ### i18n keys added (2026-06-16)
 

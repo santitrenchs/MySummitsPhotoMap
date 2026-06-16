@@ -53,9 +53,9 @@ The gamification dashboard. Entry point of the app (root `/` redirects here when
 1. **HeroHeader** — always shown
 2. **OnboardingBanner** — only when `totalAscents == 0`
 3. **ProgressionSection** — level cards (Android/iOS only; removed from web as of 2026-05-30)
-4. **MonthlyChartSection** — "Últimos 6 meses", shown when `totalAscents >= 1` and data non-empty
-5. **RarityChartSection** — "Cimas por rareza", shown when `totalAscents >= 1`
-6. **LeaderboardCard** — "Tu cordada", shown when `leaderboard.size > 1`
+4. **LeaderboardCard** — "Tu cordada", shown when `leaderboard.size > 1` (moved before charts 2026-06-16)
+5. **MonthlyChartSection** — "Últimos 6 meses", shown when `totalAscents >= 1` and data non-empty
+6. **RarityChartSection** — "Cimas por rareza", shown when `totalAscents >= 1`
 7. **NoFriendsCta** — shown when `totalFriends == 0` (web only); **SoloRankingSection** — shown when `totalFriends == 0` (Android only)
 8. **RecentAscentsRow** — "Tus últimas cimas", shown when `recentAscents` non-empty
 
