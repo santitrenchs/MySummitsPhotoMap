@@ -1634,3 +1634,106 @@ Sheets use the shared `CordadaModalSheet` wrapper around Material 3 `ModalBottom
 
 - **Push notifications (FCM)** for cordada invites / friend requests — pending (only the tab badge + email exist today).
 - The tab badge refreshes on tab change, **not** in real time.
+
+---
+
+## Cordadas — Web UI spec (2026-06-16)
+
+The web cordada detail (`/cordadas/[id]`) and invite page (`/cordadas/[id]/invite`) follow the same visual language as the Android spec above. All design decisions are driven by Android; web must match.
+
+### Back navigation
+
+Web has no OS back button. Use an **overlay circular `←` button** directly on the hero — the same pattern established by `AscentDetailClient.tsx`:
+
+| Context | Style |
+|---|---|
+| Photo hero exists | `position: absolute; top: 10; left: 10` — 32px circle, `rgba(0,0,0,0.45)` bg, `backdropFilter: blur(6px)`, white `←` |
+| No photo (compact header) | 32px circle, `#f3f4f6` bg, `border: 1px solid #e5e7eb`, `#374151` text, inline in identity row before the avatar |
+
+**Never use a text link** (e.g. `< Cordadas`). That pattern belongs to Android's native back-stack; it reads as a breadcrumb on web, not as navigation.
+
+### Ranking rows
+
+`MemberRow` in `CordadaDetailClient.tsx` matches Android's `CordadaDetailScreen` ranking row spec:
+
+**`RankBadge`** — rectangular, `30×44px`, `borderRadius: 10` for top-3, transparent for rank ≥4:
+
+| Rank | bg | color |
+|---|---|---|
+| 1 | `#FDE68A` | `#D97706` |
+| 2 | `#E5E7EB` | `#6B7280` |
+| 3 | `#F8D9B8` | `#B45309` |
+| ≥4 | transparent | `#111827` |
+
+**Row anatomy** (avatar 52px, `gap: 12`, full row `padding: 10px 12px`):
+- **Background**: `#F0F9FF` (sky-50, blue) for the current user's row; `white` for others.
+- **Line 1**: name (bold) + inline `(Tú)` in `#9ca3af` for current user — NOT a colored badge.
+- **Line 2**: level name (no emoji) · green `#16A34A` "Fundador" (`cordadas_founder` i18n key) for the owner.
+- **Line 3**: N cimas · `CairnIcon` · N · N EP — using the inline amber SVG cairn, never an emoji.
+
+**`CairnIcon`** SVG (11×10px, amber `#F59E0B`):
+```tsx
+function CairnIcon() {
+  return (
+    <svg width="11" height="10" viewBox="0 0 11 10" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M0.55 10 L10.45 10 L9.02 7.2 L1.98 7.2 Z" fill="#F59E0B" />
+      <path d="M1.98 6.8 L9.02 6.8 L7.7 4 L3.3 4 Z" fill="#F59E0B" />
+      <path d="M3.3 3.6 L7.7 3.6 L6.38 0.4 L4.62 0.4 Z" fill="#F59E0B" />
+    </svg>
+  );
+}
+```
+
+### Owner actions — ⋮ overflow menu
+
+**Delete cordada is not a footer button.** It lives in a `⋮` overflow menu justified to the right of the avatar/member bar, matching how iOS/web apps handle rare destructive owner actions (Gmail, Spotify):
+
+- `⋮` button (32px, rounded, `#6b7280`) opens a small dropdown positioned `absolute; right: 0; top: 100%`.
+- Dropdown contains one item: trash icon + "Eliminar cordada" in `#ef4444`.
+- A `position: fixed; inset: 0; zIndex: 40` click-away overlay closes the dropdown without action.
+- Clicking the item opens a `ConfirmSheet` for double-check before DELETE.
+
+**"Salir de la cordada"** footer button remains — shown only to non-owner members. The owner never sees this option (must delete instead).
+
+### Pending invite rows
+
+A dedicated `PendingInviteRow` component (not `MemberRow`):
+
+```
+[Avatar 40px] [Name bold / "Invitación enviada" #9ca3af]  [Cancelar outlined button]
+```
+
+- "Cancelar" button: `border: 1.5px solid #2F7A5F`, `color: #2F7A5F`, no fill, `borderRadius: 8`.
+- Clicking opens a `ConfirmSheet` (not a direct DELETE) — same double-check UX as Android.
+- On confirm: DELETE → dismiss modal → show toast "Invitación cancelada".
+
+**Toast** (2500ms, `position: fixed; bottom: 32; left: 50%; transform: translateX(-50%); zIndex: 300`) uses a `useRef` timer to avoid dismissing a fresh toast when rapidly triggered.
+
+### Invite page hero
+
+`/cordadas/[id]/invite` shares the same hero as the detail:
+
+- **With photo**: 180px full-width cover + bottom gradient scrim + overlay `←` (links back to `/cordadas/${cordadaId}`, not to `/cordadas`) + name (22sp extra-bold white) + member count anchored bottom-left.
+- **Without photo**: compact identity header — `←` + `CordadaAvatar` 68px + name + member count.
+- Divider below hero, then invite title + search + friend rows (name only, no username prefix; level without emoji; "Invitar" / "Invitado" outlined-style button).
+- Server component (`page.tsx`) passes `cordadaAvatarUrl: cordada.avatarUrl ?? null` and `memberCount: cordada.members.filter(m => !m.isPending).length`.
+
+### Web list — modal sidebar offset
+
+`position: fixed` modal panels in `CordadasClient.tsx` are positioned relative to the viewport, which starts at x=0 regardless of the 68px sidebar `margin-left` applied to `.azi-main`. Without adjustment, modals appear shifted left on desktop.
+
+Fix: inject a `<style>` block at the top of the `CordadasClient` return and apply `.cordadas-sheet-panel` to every fixed modal panel:
+
+```css
+@media (min-width: 640px) {
+  .cordadas-sheet-panel { margin-left: 68px; }
+}
+```
+
+Apply this class to: the action choice modal (Añadir amigo / Nueva cordada) and the add-friend panel. Any future fixed panels in `CordadasClient` must also carry this class.
+
+### i18n keys added (2026-06-16)
+
+| Key | es | ca | en | fr | de |
+|---|---|---|---|---|---|
+| `cordadas_founder` | Fundador | Fundador | Founder | Fondateur | Gründer |

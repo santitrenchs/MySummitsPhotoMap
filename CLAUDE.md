@@ -2849,3 +2849,97 @@ Important details:
 - **Accept reloads** — `accept()` and `respondToInvite("ACCEPTED")` both call `load()` after the optimistic update so stats render correctly; don't drop the reload.
 - **`LifecycleResumeEffect` must NOT skip the first resume for Cordadas**: the `firstResume` guard was removed from `FriendsScreen`. When returning from `CordadaDetailRoute` (outer nav), `FriendsScreen`'s `LifecycleResumeEffect` must fire and call `cordadasVm.load()` unconditionally to refresh the list. With the guard, the first resume after a leave/expel was silently skipped.
 - **`leaveCordada` must not call `onSuccess` on failure**: previously it called `onSuccess()` even on API error, closing the detail and showing stale state. Always gate `onSuccess()` in the `try` block, with `error` state set in the `catch`.
+
+---
+
+## Cordadas — Web UI (updated 2026-06-16)
+
+The web cordada detail (`app/(app)/cordadas/[id]/page.tsx` + `components/cordadas/CordadaDetailClient.tsx`) and invite page (`app/(app)/cordadas/[id]/invite/page.tsx` + `components/cordadas/CordadaInviteClient.tsx`) ship with full Android parity. The web list (`/cordadas`) is in `CordadasClient.tsx`.
+
+### Back navigation — overlay ← button
+
+Web does not have a native back button. The established web pattern (also used in `AscentDetailClient`) is an **overlay circular ← button** placed directly on the hero:
+
+- **With photo hero**: `position: absolute; top: 10; left: 10` — 32px circle, `background: rgba(0,0,0,0.45)`, `backdropFilter: blur(6px)`, white `←` arrow, `Link href="/cordadas"` (detail) or `Link href="/cordadas/${cordadaId}"` (invite page).
+- **Without photo** (compact identity header): gray circle button — 32px, `background: #f3f4f6`, `border: 1px solid #e5e7eb`, `color: #374151`, same `←` arrow. Positioned inline in the identity header row, before the avatar.
+
+**Never use a `< Cordadas` text link** for navigation back — that is an Android pattern and does not fit web UX.
+
+### Cordada detail — ranking rows (Android parity)
+
+`MemberRow` matches Android's spec exactly:
+
+- **`RankBadge`**: rectangular colored badge `30×44px`, `borderRadius: 10` for top-3, transparent for rank ≥4.
+  - Rank 1: `bg #FDE68A`, `color #D97706`
+  - Rank 2: `bg #E5E7EB`, `color #6B7280`
+  - Rank 3: `bg #F8D9B8`, `color #B45309`
+  - Rank ≥4: transparent bg, `#111827` text
+- **Avatar**: 52px (not 42px).
+- **"Tú" indicator**: inline gray text `(Tú)` after the name — NOT a colored badge. Row background `#F0F9FF` (blue, not green).
+- **3 text lines**:
+  - Line 1: member name (bold)
+  - Line 2: level name WITHOUT emoji · "Fundador" in green `#16A34A` for owner
+  - Line 3: N cimas · `CairnIcon` N · N EP
+- **`CairnIcon`**: inline SVG (3-layer cairn in `#F59E0B` amber, 11×10px). Never use emoji for this.
+- **Leaderboard sort**: `uniquePeaks` desc then `totalEp` desc. Stats from `user_stats` (pre-computed).
+
+**i18n key added**: `cordadas_founder` — es "Fundador" · ca "Fundador" · en "Founder" · fr "Fondateur" · de "Gründer". Add to `lib/i18n/types.ts` + all 5 locale files.
+
+### Cordada detail — owner actions (⋮ overflow)
+
+**Delete cordada is NOT a large footer button**. It lives in a `⋮` overflow menu in the avatar bar row (justified right, same row as member avatars + dashed `+` invite slot):
+
+- `⋮` button opens a small dropdown (positioned `absolute; right: 0; top: 100%`).
+- Dropdown has one item: "🗑 Eliminar cordada" in `#ef4444` red.
+- Clicking opens the existing `ConfirmSheet` for confirmation before DELETE.
+- Background overlay (`position: fixed; inset: 0; zIndex: 40`) closes the dropdown on click outside.
+
+**"Salir de la cordada"** remains as a footer button — only for non-owner members. The owner never sees this button.
+
+### Cordada detail — pending invite rows
+
+Pending invites use a dedicated `PendingInviteRow` component (NOT `MemberRow`):
+- Avatar 40px, name (bold 14px), subtitle "Invitación enviada" (`#9ca3af`).
+- **"Cancelar" button**: outlined style — `border: 1.5px solid #2F7A5F`, `color: #2F7A5F`, no fill.
+- Clicking "Cancelar" opens a `ConfirmSheet` first (NOT a direct action) — matches the Android double-check UX.
+- On confirmed cancel: DELETE `/api/v1/cordadas/{id}/members/{targetUserId}` → dismisses modal → shows toast "Invitación cancelada" (2500ms).
+
+**Toast pattern** (same as `AscentDetailClient`):
+```tsx
+const [toast, setToast] = useState<string | null>(null);
+const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+function showToast(msg: string) {
+  if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  setToast(msg);
+  toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+}
+// Render: position: fixed, bottom: 32, left: 50%, transform: translateX(-50%), zIndex: 300
+```
+
+### Invite page — hero parity with detail
+
+`/cordadas/[id]/invite` shares the same hero structure as the detail page:
+- **With photo**: 180px full-width cover, bottom scrim gradient, overlay `←` button (back to `/cordadas/${cordadaId}`), name (22sp extra-bold white) + member count anchored bottom-left.
+- **Without photo**: compact identity header with `←` button + `CordadaAvatar` (68px initials circle) + name + member count.
+- Divider below the hero, then invite title + search + friend list.
+- Friend names shown as `friend.name` (not `@username`). Level shown without emoji.
+- `page.tsx` passes `cordadaAvatarUrl: cordada.avatarUrl ?? null` and `memberCount: cordada.members.filter(m => !m.isPending).length`.
+
+### Web cordadas list — modal alignment fix
+
+`position: fixed` modal panels on `/cordadas` (`CordadasClient.tsx`) are offset from the viewport by the sidebar's `margin-left: 68px` on desktop. Fix: apply a CSS class `.cordadas-sheet-panel` to both the choice modal and the add-friend modal, with:
+```css
+@media (min-width: 640px) {
+  .cordadas-sheet-panel { margin-left: 68px; }
+}
+```
+Inject via a `<style>` tag at the top of the `CordadasClient` return. This aligns modals with the content area rather than the raw viewport edge.
+
+### Gotchas (web cordadas)
+
+- **`cordadas_founder` must be in `types.ts`**: adding to locale files without the key in `lib/i18n/types.ts` → TypeScript `Property 'cordadas_founder' does not exist on type 'Dict'` compile error.
+- **`PendingInviteRow` not `MemberRow`**: pending invites have no rank, no stats, no expel action. A dedicated component avoids cluttering `MemberRow` with conditional branches.
+- **Cancel invite = ConfirmSheet first**: never call DELETE directly on the Cancelar button click — Android uses a double-check and web must match.
+- **Toast needs useRef timer**: without clearing the previous timer, rapidly triggering a toast can leave the previous `setTimeout` running and dismiss the new toast prematurely.
+- **Hero ← on invite page goes to `/cordadas/${cordadaId}`**, not `/cordadas` — the user came from the detail page, not the list.
+- **`position: fixed` modals ignore sidebar `margin-left`**: always use the `.cordadas-sheet-panel` class trick for any future fixed panels in `CordadasClient`.
