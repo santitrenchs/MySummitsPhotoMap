@@ -341,6 +341,11 @@ export function CordadasClient({
     }
   }
 
+  async function removeFriend(friendshipId: string) {
+    await fetch(`/api/friendships/${friendshipId}`, { method: "DELETE" });
+    startTransition(() => router.refresh());
+  }
+
   // Combined alphabetical list: friends + cordadas interleaved
   type ListItem =
     | { type: "friend"; data: FriendEntry }
@@ -727,7 +732,7 @@ export function CordadasClient({
             {combined.map((item, i) => (
               <div key={item.type === "friend" ? item.data.id : item.data.id}>
                 {item.type === "friend"
-                  ? <FriendRow entry={item.data} />
+                  ? <FriendRow entry={item.data} onRemove={() => removeFriend(item.data.id)} />
                   : <CordadaRow cordada={item.data} />
                 }
                 {i < combined.length - 1 && <InsetRule />}
@@ -785,24 +790,142 @@ export function CordadasClient({
 
 // ── FriendRow ──────────────────────────────────────────────────────────────────
 
-function FriendRow({ entry }: { entry: FriendEntry }) {
+function FriendRow({ entry, onRemove }: { entry: FriendEntry; onRemove: () => void }) {
+  const t = useT();
   const { friend } = entry;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const level = friend.levelIdx >= 1 ? LEVEL_DEFS[friend.levelIdx - 1] : null;
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
   return (
-    <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 12 }}>
-      <Avatar name={friend.name ?? "?"} avatarUrl={friend.avatarUrl} size={44} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 15, fontWeight: 600, color: "#111827",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
-          {friend.username ? `@${friend.username}` : friend.name}
+    <>
+      {/* Confirm remove dialog */}
+      {confirmOpen && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setConfirmOpen(false); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 300,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "0 24px",
+          }}
+        >
+          <div style={{
+            background: "white", borderRadius: 16, padding: "24px 20px",
+            width: "100%", maxWidth: 320, textAlign: "center",
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+              {t.friends_remove}
+            </div>
+            <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 20, lineHeight: 1.5 }}>
+              ¿Eliminar a {friend.name} de tus amigos?
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setConfirmOpen(false)}
+                style={{
+                  flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid #e5e7eb",
+                  background: "white", fontSize: 14, fontWeight: 600, color: "#6b7280", cursor: "pointer",
+                }}
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={() => { setConfirmOpen(false); onRemove(); }}
+                style={{
+                  flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
+                  background: "#fef2f2", fontSize: 14, fontWeight: 600, color: "#ef4444", cursor: "pointer",
+                }}
+              >
+                {t.friends_remove}
+              </button>
+            </div>
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-          <LevelPill levelIdx={friend.levelIdx} />
-          <span style={{ fontSize: 12, color: "#9ca3af" }}>{friend.uniquePeaks} cimas</span>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", padding: "8px 16px", gap: 12 }}>
+        <Avatar name={friend.name ?? "?"} avatarUrl={friend.avatarUrl} size={48} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 14, fontWeight: 700, color: "#111827",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {friend.name}
+          </div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 0,
+            marginTop: 2, fontSize: 12, flexWrap: "wrap",
+          }}>
+            {level && (
+              <span style={{ color: "#6b7280", fontWeight: 500 }}>{level.emoji} {t[level.nameKey]}</span>
+            )}
+            <span style={{ color: "#d1d5db", margin: "0 5px" }}>·</span>
+            <span style={{ color: "#374151", fontWeight: 600 }}>{friend.uniquePeaks}</span>
+            <span style={{ color: "#6b7280" }}>&nbsp;cimas</span>
+            <span style={{ color: "#d1d5db", margin: "0 5px" }}>·</span>
+            <CairnIcon />
+            <span style={{ color: "#f59e0b", fontWeight: 600, marginLeft: 3 }}>{friend.totalCairns}</span>
+            <span style={{ color: "#d1d5db", margin: "0 5px" }}>·</span>
+            <span style={{ color: "#374151", fontWeight: 600 }}>{friend.totalEp}</span>
+            <span style={{ color: "#6b7280" }}>&nbsp;EP</span>
+          </div>
+        </div>
+        <div ref={menuRef} style={{ position: "relative", flexShrink: 0 }}>
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            style={{
+              width: 40, height: 40, borderRadius: 8, border: "none",
+              background: menuOpen ? "#f3f4f6" : "transparent",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#9ca3af", fontSize: 20,
+            }}
+          >
+            ⋮
+          </button>
+          {menuOpen && (
+            <div style={{
+              position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 20,
+              background: "white", border: "1px solid #e5e7eb", borderRadius: 12,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 160, overflow: "hidden",
+            }}>
+              <button
+                onClick={() => { setMenuOpen(false); setConfirmOpen(true); }}
+                style={{
+                  display: "block", width: "100%", padding: "12px 16px",
+                  textAlign: "left", border: "none", background: "white",
+                  fontSize: 13, fontWeight: 600, color: "#ef4444", cursor: "pointer",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#fef2f2")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+              >
+                {t.friends_remove}
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </>
+  );
+}
+
+function CairnIcon() {
+  return (
+    <svg width="11" height="10" viewBox="0 0 11 10" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M0.55 10 L10.45 10 L9.02 7.2 L1.98 7.2 Z" fill="#F59E0B" />
+      <path d="M1.98 6.8 L9.02 6.8 L7.7 4 L3.3 4 Z" fill="#F59E0B" />
+      <path d="M3.3 3.6 L7.7 3.6 L6.38 0.4 L4.62 0.4 Z" fill="#F59E0B" />
+    </svg>
   );
 }
 
