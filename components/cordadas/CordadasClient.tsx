@@ -227,6 +227,8 @@ export function CordadasClient({
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteState, setInviteState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const addInputRef = useRef<HTMLInputElement>(null);
   const existingFriendIds = new Set(friends.map((f) => f.friend.id));
@@ -240,11 +242,17 @@ export function CordadasClient({
       setAddQuery("");
       setSearchResults([]);
     }
+    if (!addModalOpen) {
+      setInviteEmail("");
+      setInviteState("idle");
+    }
   }, [addModalOpen]);
 
   // Debounced search inside the add-friend modal
   useEffect(() => {
     const q = addQuery.trim();
+    setInviteState("idle");
+    setInviteEmail("");
     if (q.length < 2) { setSearchResults([]); return; }
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
     searchDebounce.current = setTimeout(async () => {
@@ -275,6 +283,21 @@ export function CordadasClient({
       setSentIds((prev) => new Set([...prev, targetId]));
     } finally {
       setActionLoading(null);
+    }
+  }
+
+  async function sendInvitation(email: string) {
+    setInviteState("sending");
+    try {
+      const res = await fetch("/api/v1/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error();
+      setInviteState("sent");
+    } catch {
+      setInviteState("error");
     }
   }
 
@@ -634,8 +657,62 @@ export function CordadasClient({
                 <div style={{ padding: "16px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>…</div>
               )}
               {addQuery.trim().length >= 2 && !searchLoading && searchResults.length === 0 && (
-                <div style={{ padding: "16px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>
-                  {t.friends_noResults}
+                <div style={{ padding: "16px 16px 8px" }}>
+                  <div style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", marginBottom: 16 }}>
+                    {t.friends_noResults}
+                  </div>
+                  {/* Invite block */}
+                  <div style={{
+                    border: "1.5px dashed #d1d5db", borderRadius: 12,
+                    padding: "16px", background: "#fafafa",
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>
+                      ¿No está en Peakadex todavía?
+                    </div>
+                    <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 12 }}>
+                      Envíale una invitación por email para que se una.
+                    </div>
+                    {inviteState === "sent" ? (
+                      <div style={{
+                        background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8,
+                        padding: "10px 12px", fontSize: 13, color: "#16a34a", textAlign: "center",
+                      }}>
+                        ✓ Invitación enviada
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => { setInviteEmail(e.target.value); setInviteState("idle"); }}
+                          placeholder="email@ejemplo.com"
+                          style={{
+                            flex: 1, border: "1.5px solid #e5e7eb", borderRadius: 8,
+                            padding: "8px 10px", fontSize: 14, outline: "none",
+                            fontFamily: "inherit", color: "#111827",
+                            ...(inviteState === "error" ? { borderColor: "#fca5a5" } : {}),
+                          }}
+                        />
+                        <button
+                          onClick={() => inviteEmail.trim() && sendInvitation(inviteEmail.trim())}
+                          disabled={!inviteEmail.trim() || inviteState === "sending"}
+                          style={{
+                            padding: "8px 14px", borderRadius: 8, border: "none",
+                            background: !inviteEmail.trim() || inviteState === "sending" ? "#e5e7eb" : "#2F7A5F",
+                            color: !inviteEmail.trim() || inviteState === "sending" ? "#9ca3af" : "white",
+                            fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink: 0,
+                          }}
+                        >
+                          {inviteState === "sending" ? "…" : "Invitar"}
+                        </button>
+                      </div>
+                    )}
+                    {inviteState === "error" && (
+                      <div style={{ fontSize: 12, color: "#dc2626", marginTop: 6 }}>
+                        No se pudo enviar. Comprueba el email.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               {searchResults.map((user, i) => {
