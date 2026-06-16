@@ -253,6 +253,7 @@ export function CordadaDetailClient({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [ownerMenuOpen, setOwnerMenuOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(cordada.avatarUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -415,7 +416,7 @@ export function CordadaDetailClient({
         </div>
       )}
 
-      {/* ── Member avatar stack + invite button ──── */}
+      {/* ── Member avatar stack + invite button + ⋮ menu ──── */}
       <div style={{ padding: "16px 16px 0", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ display: "flex" }}>
           {acceptedMembers.slice(0, 5).map((m, i) => (
@@ -439,6 +440,49 @@ export function CordadaDetailClient({
             </svg>
             Invitar
           </Link>
+        )}
+        {/* ⋮ owner menu — push to right */}
+        {amIOwner && (
+          <div style={{ marginLeft: "auto", position: "relative" }}>
+            <button
+              onClick={() => setOwnerMenuOpen((o) => !o)}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                width: 36, height: 36, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 20, color: "#6b7280",
+              }}
+            >
+              ⋮
+            </button>
+            {ownerMenuOpen && (
+              <>
+                <div
+                  onClick={() => setOwnerMenuOpen(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 40 }}
+                />
+                <div style={{
+                  position: "absolute", right: 0, top: "100%", zIndex: 50,
+                  background: "white", borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+                  border: "1px solid #f3f4f6", minWidth: 180, overflow: "hidden",
+                }}>
+                  <button
+                    onClick={() => { setOwnerMenuOpen(false); setShowDeleteConfirm(true); }}
+                    style={{
+                      width: "100%", padding: "12px 16px", background: "none", border: "none",
+                      cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 500,
+                      color: "#ef4444", display: "flex", alignItems: "center", gap: 8,
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                    </svg>
+                    Eliminar cordada
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
 
@@ -498,20 +542,9 @@ export function CordadaDetailClient({
         </>
       )}
 
-      {/* ── Danger actions ───────────────────────── */}
-      <div style={{ padding: "24px 16px 0" }}>
-        {amIOwner ? (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            style={{
-              width: "100%", padding: "12px", borderRadius: 10,
-              background: "none", border: "1px solid #fee2e2", cursor: "pointer",
-              fontSize: 14, fontWeight: 600, color: "#ef4444",
-            }}
-          >
-            Eliminar cordada
-          </button>
-        ) : isCurrentUserMember ? (
+      {/* ── Leave action (members only, not owner) ── */}
+      {!amIOwner && isCurrentUserMember && (
+        <div style={{ padding: "24px 16px 0" }}>
           <button
             onClick={() => setShowLeaveConfirm(true)}
             style={{
@@ -522,8 +555,8 @@ export function CordadaDetailClient({
           >
             Salir de la cordada
           </button>
-        ) : null}
-      </div>
+        </div>
+      )}
 
       {/* ── Delete confirm sheet ─────────────────── */}
       {showDeleteConfirm && (
