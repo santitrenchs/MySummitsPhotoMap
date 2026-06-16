@@ -292,22 +292,6 @@ export function CordadaDetailClient({
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 80 }}>
 
-      {/* ── Back nav ─────────────────────────────── */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "12px 16px 0",
-      }}>
-        <Link href="/cordadas" style={{
-          display: "flex", alignItems: "center", gap: 6,
-          color: "#0369a1", textDecoration: "none", fontSize: 14, fontWeight: 500,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-          Cordadas
-        </Link>
-      </div>
-
       {/* Hidden file input for avatar */}
       <input
         ref={fileInputRef}
@@ -330,6 +314,17 @@ export function CordadaDetailClient({
             position: "absolute", inset: 0,
             background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)",
           }} />
+          {/* ← Back button */}
+          <Link
+            href="/cordadas"
+            style={{
+              position: "absolute", top: 10, left: 10,
+              width: 32, height: 32, borderRadius: "50%",
+              background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "white", textDecoration: "none", fontSize: 18, lineHeight: 1,
+            }}
+          >←</Link>
           <div style={{ position: "absolute", bottom: 14, left: 16, right: 16 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: "white", lineHeight: 1.2 }}>
               {cordada.name}
@@ -354,6 +349,15 @@ export function CordadaDetailClient({
         </div>
       ) : (
         <div style={{ padding: "16px 16px 0", display: "flex", alignItems: "center", gap: 14 }}>
+          <Link
+            href="/cordadas"
+            style={{
+              width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+              background: "#f3f4f6", border: "1px solid #e5e7eb",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#374151", textDecoration: "none", fontSize: 18, lineHeight: 1,
+            }}
+          >←</Link>
           <div style={{ position: "relative" }}>
             <CordadaAvatar name={cordada.name} avatarUrl={null} size={68} />
             {amIOwner && (
