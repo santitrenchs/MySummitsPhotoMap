@@ -27,15 +27,21 @@ function detectLocale(acceptLang: string): SupportedLocale {
   return "en";
 }
 
-function withPathname(pathname: string): NextResponse {
+const STAGING_HOSTS = ["mysummitsphotomap-staging.up.railway.app"];
+
+function withPathname(pathname: string, host?: string): NextResponse {
   const res = NextResponse.next();
   res.headers.set("x-pathname", pathname);
+  if (host && STAGING_HOSTS.some((h) => host.includes(h))) {
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
   return res;
 }
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const { pathname } = req.nextUrl;
+  const host = req.headers.get("host") ?? "";
 
   // ── Locale-prefixed auth routes (/en/login, /fr/register, etc.) ───────────
   // Strip the locale prefix, persist the locale cookie, redirect to the bare route.
@@ -63,7 +69,7 @@ export default auth((req) => {
   // Accept-terms is only for authenticated users; unauthenticated ones get sent to login
   if (pathname === "/accept-terms") {
     if (!isLoggedIn) return NextResponse.redirect(new URL("/login", req.nextUrl));
-    return withPathname(pathname);
+    return withPathname(pathname, host);
   }
   // Public ascent share pages — accessible without auth
   const isPublicAscentPage =
@@ -85,7 +91,7 @@ export default auth((req) => {
   const isAdmin = !!req.auth?.user?.isAdmin;
 
   // Always allow NextAuth internal API routes, health check, public stats, and mobile API v1
-  if (isAuthApi || isPublicApi || isV1Api || pathname === "/api/health") return withPathname(pathname);
+  if (isAuthApi || isPublicApi || isV1Api || pathname === "/api/health") return withPathname(pathname, host);
 
   // ── Backoffice (/admin/* and /api/admin/*) ────────────────────
   if (isAdminLogin) {
@@ -93,7 +99,7 @@ export default auth((req) => {
     if (isLoggedIn && isAdmin) {
       return NextResponse.redirect(new URL("/admin/users", req.nextUrl));
     }
-    return withPathname(pathname);
+    return withPathname(pathname, host);
   }
 
   if (isAdminApiRoute) {
@@ -107,7 +113,7 @@ export default auth((req) => {
     if (!isLoggedIn || !isAdmin) {
       return NextResponse.redirect(new URL("/admin/login", req.nextUrl));
     }
-    return withPathname(pathname);
+    return withPathname(pathname, host);
   }
 
   // ── Main app ───────────────────────────────────────────────
@@ -140,13 +146,13 @@ export default auth((req) => {
         return NextResponse.redirect(new URL(`/${detected}`, req.nextUrl));
       }
       // Spanish — always refresh the cookie so auth pages pick up the right locale
-      const res = withPathname(pathname);
+      const res = withPathname(pathname, host);
       res.cookies.set(LOCALE_COOKIE, "es", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
       return res;
     } else {
       // /en, /fr, /de, /ca — always overwrite cookie with current locale
       const chosenLocale = pathname.slice(1) as SupportedLocale;
-      const res = withPathname(pathname);
+      const res = withPathname(pathname, host);
       res.cookies.set(LOCALE_COOKIE, chosenLocale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
       return res;
     }
@@ -157,7 +163,7 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
 
-  return withPathname(pathname);
+  return withPathname(pathname, host);
 });
 
 export const config = {
