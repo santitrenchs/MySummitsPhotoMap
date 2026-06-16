@@ -1091,13 +1091,14 @@ internal fun RarityStatItem(label: String, rarityLabel: String, color: Color, sc
         Row(
             modifier = Modifier
                 .graphicsLayer { scaleX = scale; scaleY = scale }
+                .wrapContentWidth(unbounded = true)
                 .background(color.copy(alpha = 0.125f), RoundedCornerShape(100))
                 .padding(horizontal = 10.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Text("✿", fontSize = 11.sp, color = color, lineHeight = 11.sp)
-            Text(rarityLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(rarityLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, softWrap = false)
         }
     }
 }
@@ -1125,6 +1126,9 @@ internal fun RewardStatItem(
             // product is whichever is active.
             modifier = Modifier
                 .graphicsLayer { val s = epScale * cairnScale; scaleX = s; scaleY = s }
+                // Like web (nowrap pill): size to content and overflow the cell instead
+                // of truncating "+N EP" when the cairn is also shown.
+                .wrapContentWidth(unbounded = true)
                 .background(Color(0xFFFEF3C7), RoundedCornerShape(100))
                 .padding(horizontal = 10.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -1133,9 +1137,9 @@ internal fun RewardStatItem(
             if (isMythic && showCairn) {
                 CairnGlyph(Color(0xFFF59E0B), Modifier.size(12.dp))
                 Text(stringResource(R.string.cards_card_cairn) + " ·", fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                    color = Color(0xFFF59E0B), maxLines = 1)
+                    color = Color(0xFFF59E0B), maxLines = 1, softWrap = false)
             }
-            Text("+$ep EP", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("+$ep EP", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706), maxLines = 1, softWrap = false)
         }
     }
 }
