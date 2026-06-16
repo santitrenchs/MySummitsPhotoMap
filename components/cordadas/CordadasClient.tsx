@@ -868,7 +868,7 @@ function FriendRow({ entry, onRemove }: { entry: FriendEntry; onRemove: () => vo
             marginTop: 2, fontSize: 12, flexWrap: "wrap",
           }}>
             {level && (
-              <span style={{ color: "#6b7280", fontWeight: 500 }}>{level.emoji} {t[level.nameKey]}</span>
+              <span style={{ color: "#6b7280", fontWeight: 500 }}>{t[level.nameKey]}</span>
             )}
             <span style={{ color: "#d1d5db", margin: "0 5px" }}>·</span>
             <span style={{ color: "#374151", fontWeight: 600 }}>{friend.uniquePeaks}</span>
