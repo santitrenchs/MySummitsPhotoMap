@@ -80,6 +80,47 @@ function CairnIcon() {
   );
 }
 
+// ── Pending invite row ─────────────────────────────────────────────────────────
+
+function PendingInviteRow({
+  member,
+  onCancel,
+  cancelling,
+}: {
+  member: CordadaMemberRanking;
+  onCancel: () => void;
+  cancelling: boolean;
+}) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", padding: "8px 16px", gap: 10,
+      background: "white",
+    }}>
+      <Avatar name={member.name} avatarUrl={member.avatarUrl} size={40} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {member.name}
+        </div>
+        <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>
+          Invitación enviada
+        </div>
+      </div>
+      <button
+        onClick={onCancel}
+        disabled={cancelling}
+        style={{
+          padding: "7px 16px", borderRadius: 8, cursor: cancelling ? "default" : "pointer",
+          background: "none", border: "1.5px solid #2F7A5F",
+          fontSize: 13, fontWeight: 600, color: "#2F7A5F",
+          opacity: cancelling ? 0.5 : 1, whiteSpace: "nowrap",
+        }}
+      >
+        {cancelling ? "…" : "Cancelar"}
+      </button>
+    </div>
+  );
+}
+
 // ── Rank badge ─────────────────────────────────────────────────────────────────
 
 function RankBadge({ rank }: { rank: number }) {
@@ -525,16 +566,13 @@ export function CordadaDetailClient({
           <div style={{ background: "white" }}>
             {pendingMembers.map((member, i) => (
               <div key={member.userId}>
-                <MemberRow
+                <PendingInviteRow
                   member={member}
-                  rank={acceptedMembers.length + i + 1}
-                  isCurrentUser={false}
-                  canExpel={true}
-                  onExpel={() => expelMember(member.userId)}
-                  expelling={actionLoading === `expel-${member.userId}`}
+                  onCancel={() => expelMember(member.userId)}
+                  cancelling={actionLoading === `expel-${member.userId}`}
                 />
                 {i < pendingMembers.length - 1 && (
-                  <div style={{ height: 1, background: "#f3f4f6", marginLeft: 88 }} />
+                  <div style={{ height: 1, background: "#f3f4f6", marginLeft: 66 }} />
                 )}
               </div>
             ))}
