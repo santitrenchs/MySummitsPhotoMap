@@ -365,6 +365,11 @@ export function CordadasClient({
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 80 }}>
+      <style>{`
+        @media (min-width: 640px) {
+          .cordadas-sheet-panel { margin-left: 68px; }
+        }
+      `}</style>
 
       {/* ── Header: filter search + Añadir button ──── */}
       <div style={{
@@ -422,7 +427,7 @@ export function CordadasClient({
             display: "flex", alignItems: "flex-end", justifyContent: "center",
           }}
         >
-          <div style={{
+          <div className="cordadas-sheet-panel" style={{
             width: "100%", maxWidth: 640, background: "white",
             borderRadius: "16px 16px 0 0", padding: "20px 16px",
             paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
@@ -512,7 +517,7 @@ export function CordadasClient({
             display: "flex", alignItems: "flex-end", justifyContent: "center",
           }}
         >
-          <div style={{
+          <div className="cordadas-sheet-panel" style={{
             width: "100%", maxWidth: 640, background: "white",
             borderRadius: "16px 16px 0 0",
             maxHeight: "80vh", display: "flex", flexDirection: "column",
