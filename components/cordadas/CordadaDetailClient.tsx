@@ -294,7 +294,16 @@ export function CordadaDetailClient({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [cancelInviteTarget, setCancelInviteTarget] = useState<string | null>(null);
   const [ownerMenuOpen, setOwnerMenuOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function showToast(msg: string) {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast(msg);
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+  }
   const [avatarUrl, setAvatarUrl] = useState(cordada.avatarUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -323,6 +332,20 @@ export function CordadaDetailClient({
     try {
       await fetch(`/api/v1/cordadas/${cordada.id}/members/${targetUserId}`, { method: "DELETE" });
       startTransition(() => router.refresh());
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function cancelInvite(targetUserId: string) {
+    setActionLoading(`expel-${targetUserId}`);
+    try {
+      const res = await fetch(`/api/v1/cordadas/${cordada.id}/members/${targetUserId}`, { method: "DELETE" });
+      if (res.ok) {
+        setCancelInviteTarget(null);
+        showToast("Invitación cancelada");
+        startTransition(() => router.refresh());
+      }
     } finally {
       setActionLoading(null);
     }
@@ -568,7 +591,7 @@ export function CordadaDetailClient({
               <div key={member.userId}>
                 <PendingInviteRow
                   member={member}
-                  onCancel={() => expelMember(member.userId)}
+                  onCancel={() => setCancelInviteTarget(member.userId)}
                   cancelling={actionLoading === `expel-${member.userId}`}
                 />
                 {i < pendingMembers.length - 1 && (
@@ -593,6 +616,33 @@ export function CordadaDetailClient({
           >
             Salir de la cordada
           </button>
+        </div>
+      )}
+
+      {/* ── Cancel invite confirm sheet ──────────── */}
+      {cancelInviteTarget && (
+        <ConfirmSheet
+          title="¿Cancelar invitación?"
+          body="Se cancelará la invitación enviada. Podrás volver a invitar a esta persona más adelante."
+          confirmLabel="Cancelar invitación"
+          confirmDanger={false}
+          loading={actionLoading === `expel-${cancelInviteTarget}`}
+          onConfirm={() => cancelInvite(cancelInviteTarget)}
+          onCancel={() => setCancelInviteTarget(null)}
+        />
+      )}
+
+      {/* ── Toast ────────────────────────────────── */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
+          zIndex: 300, background: "#111827", color: "white",
+          borderRadius: 24, padding: "10px 20px",
+          fontSize: 13, fontWeight: 600,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+          pointerEvents: "none", whiteSpace: "nowrap",
+        }}>
+          {toast}
         </div>
       )}
 
