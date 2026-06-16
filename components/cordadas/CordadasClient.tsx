@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
@@ -212,9 +212,17 @@ export function CordadasClient({
   const [query, setQuery] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Choice modal (amigo / cordada) + add-friend modal state
+  // Choice modal (amigo / cordada) + add-friend modal + create-cordada modal state
   const [choiceModalOpen, setChoiceModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [createCordadaOpen, setCreateCordadaOpen] = useState(false);
+  const [cordadaName, setCordadaName] = useState("");
+  const [cordadaDescription, setCordadaDescription] = useState("");
+  const [cordadaPhotoFile, setCordadaPhotoFile] = useState<File | null>(null);
+  const [cordadaPhotoPreview, setCordadaPhotoPreview] = useState<string | null>(null);
+  const [cordadaLoading, setCordadaLoading] = useState(false);
+  const [cordadaError, setCordadaError] = useState<string | null>(null);
+  const cordadaFileInputRef = useRef<HTMLInputElement>(null);
   const [addQuery, setAddQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -269,6 +277,53 @@ export function CordadasClient({
       setActionLoading(null);
     }
   }
+
+  function handleCordadaFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCordadaPhotoFile(file);
+    setCordadaPhotoPreview(URL.createObjectURL(file));
+  }
+
+  function closeCordadaModal() {
+    setCreateCordadaOpen(false);
+    setCordadaName("");
+    setCordadaDescription("");
+    setCordadaPhotoFile(null);
+    setCordadaPhotoPreview(null);
+    setCordadaError(null);
+  }
+
+  const handleCreateCordada = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = cordadaName.trim();
+    if (!trimmed) return;
+    setCordadaLoading(true);
+    setCordadaError(null);
+    try {
+      const res = await fetch("/api/v1/cordadas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed, description: cordadaDescription.trim() || undefined }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Error al crear la cordada");
+      }
+      const { cordada } = await res.json();
+      if (cordadaPhotoFile) {
+        const fd = new FormData();
+        fd.append("file", cordadaPhotoFile);
+        await fetch(`/api/v1/cordadas/${cordada.id}/avatar`, { method: "POST", body: fd }).catch(() => {});
+      }
+      closeCordadaModal();
+      router.push(`/cordadas/${cordada.id}`);
+    } catch (err) {
+      setCordadaError(err instanceof Error ? err.message : "Error inesperado");
+      setCordadaLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cordadaName, cordadaDescription, cordadaPhotoFile]);
 
   // Total pending = friend requests + cordada invites
   const totalPending = incomingRequests.length + cordadaInvites.length;
@@ -476,13 +531,12 @@ export function CordadasClient({
                 </div>
               </button>
               {/* Cordada */}
-              <Link
-                href="/cordadas/add"
-                onClick={() => setChoiceModalOpen(false)}
+              <button
+                onClick={() => { setChoiceModalOpen(false); setCreateCordadaOpen(true); }}
                 style={{
                   display: "flex", alignItems: "center", gap: 14,
                   padding: "14px 16px", borderRadius: 14, border: "1.5px solid #e5e7eb",
-                  background: "white", textDecoration: "none",
+                  background: "white", cursor: "pointer", textAlign: "left", width: "100%",
                 }}
               >
                 <div style={{
@@ -501,7 +555,7 @@ export function CordadasClient({
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>{t.cordadas_createBtn}</div>
                   <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 1 }}>Crea un grupo de escalada</div>
                 </div>
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -622,6 +676,158 @@ export function CordadasClient({
               })}
             </div>
             {/* Safe area bottom */}
+            <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
+          </div>
+        </div>
+      )}
+
+      {/* ── Create-cordada modal ─────────────────────── */}
+      {createCordadaOpen && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) closeCordadaModal(); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+          }}
+        >
+          <div className="cordadas-sheet-panel" style={{
+            width: "100%", maxWidth: 640, background: "white",
+            borderRadius: "16px 16px 0 0",
+            maxHeight: "90vh", display: "flex", flexDirection: "column",
+          }}>
+            {/* Header */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "16px 16px 0",
+            }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>
+                {t.cordadas_createTitle}
+              </span>
+              <button
+                onClick={closeCordadaModal}
+                style={{
+                  background: "#f3f4f6", border: "none", borderRadius: "50%",
+                  width: 32, height: 32, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 16, color: "#6b7280",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable form */}
+            <form onSubmit={handleCreateCordada} style={{ overflowY: "auto", flex: 1, padding: "16px" }}>
+              {/* Cover photo */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>
+                  {t.cordadas_photoLabel} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
+                </div>
+                <div
+                  onClick={() => cordadaFileInputRef.current?.click()}
+                  style={{
+                    width: "100%", aspectRatio: "3/2", borderRadius: 12, cursor: "pointer",
+                    border: cordadaPhotoPreview ? "none" : "2px dashed #d1d5db",
+                    background: cordadaPhotoPreview ? "none" : "#f9fafb",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    overflow: "hidden", position: "relative",
+                  }}
+                >
+                  {cordadaPhotoPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={cordadaPhotoPreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ textAlign: "center", color: "#9ca3af" }}>
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin: "0 auto 8px", display: "block" }}>
+                        <rect x="3" y="3" width="18" height="18" rx="3" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                      </svg>
+                      <div style={{ fontSize: 13 }}>Añadir foto</div>
+                    </div>
+                  )}
+                  {cordadaPhotoPreview && (
+                    <div style={{
+                      position: "absolute", bottom: 8, right: 8,
+                      background: "rgba(0,0,0,0.55)", borderRadius: 8, padding: "4px 10px",
+                      color: "white", fontSize: 12, fontWeight: 600,
+                    }}>
+                      {t.cordadas_changePhoto}
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={cordadaFileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleCordadaFileChange}
+                  style={{ display: "none" }}
+                />
+              </div>
+
+              {/* Name */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                  {t.cordadas_nameLabel} *
+                </label>
+                <input
+                  value={cordadaName}
+                  onChange={(e) => setCordadaName(e.target.value)}
+                  maxLength={60}
+                  placeholder={t.cordadas_namePlaceholder}
+                  required
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "10px 12px",
+                    fontSize: 15, color: "#111827", outline: "none", fontFamily: "inherit",
+                  }}
+                />
+              </div>
+
+              {/* Description */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                  {t.cordadas_descriptionLabel} <span style={{ fontWeight: 400, color: "#9ca3af" }}>({t.optional})</span>
+                </label>
+                <textarea
+                  value={cordadaDescription}
+                  onChange={(e) => setCordadaDescription(e.target.value)}
+                  maxLength={200}
+                  rows={3}
+                  placeholder={t.cordadas_descriptionPlaceholder}
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "10px 12px",
+                    fontSize: 15, color: "#111827", outline: "none", resize: "none",
+                    fontFamily: "inherit",
+                  }}
+                />
+              </div>
+
+              {cordadaError && (
+                <div style={{
+                  background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8,
+                  padding: "10px 12px", marginBottom: 14, fontSize: 13, color: "#dc2626",
+                }}>
+                  {cordadaError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={cordadaLoading || !cordadaName.trim()}
+                style={{
+                  width: "100%", height: 50, borderRadius: 12, border: "none",
+                  background: cordadaLoading || !cordadaName.trim() ? "#9ca3af" : "#2F7A5F",
+                  color: "white", fontSize: 15, fontWeight: 700,
+                  cursor: cordadaLoading || !cordadaName.trim() ? "default" : "pointer",
+                  marginBottom: 8,
+                }}
+              >
+                {cordadaLoading ? t.cordadas_creating : t.cordadas_createBtn}
+              </button>
+            </form>
             <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
           </div>
         </div>
