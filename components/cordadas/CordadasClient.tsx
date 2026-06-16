@@ -754,7 +754,8 @@ export function CordadasClient({
               </div>
 
               {/* Scrollable form */}
-              <form onSubmit={handleCreateCordada} style={{ overflowY: "auto", flex: 1, padding: "20px 20px 24px" }}>
+              <form onSubmit={handleCreateCordada} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+              <div style={{ overflowY: "auto", flex: 1, padding: "20px 20px 0" }}>
                 {/* Cover photo */}
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>
@@ -849,19 +850,25 @@ export function CordadasClient({
                     {cordadaError}
                   </div>
                 )}
+                </div>
 
-                <button
-                  type="submit"
-                  disabled={cordadaLoading || !cordadaName.trim()}
-                  style={{
-                    width: "100%", height: 50, borderRadius: 12, border: "none",
-                    background: cordadaLoading || !cordadaName.trim() ? "#9ca3af" : "#2F7A5F",
-                    color: "white", fontSize: 15, fontWeight: 700,
-                    cursor: cordadaLoading || !cordadaName.trim() ? "default" : "pointer",
-                  }}
-                >
-                  {cordadaLoading ? t.cordadas_creating : t.cordadas_createBtn}
-                </button>
+                {/* Sticky footer — always visible */}
+                <div style={{
+                  padding: "12px 20px 20px", borderTop: "1px solid #f3f4f6", flexShrink: 0,
+                }}>
+                  <button
+                    type="submit"
+                    disabled={cordadaLoading || !cordadaName.trim()}
+                    style={{
+                      width: "100%", height: 50, borderRadius: 12, border: "none",
+                      background: cordadaLoading || !cordadaName.trim() ? "#9ca3af" : "#2F7A5F",
+                      color: "white", fontSize: 15, fontWeight: 700,
+                      cursor: cordadaLoading || !cordadaName.trim() ? "default" : "pointer",
+                    }}
+                  >
+                    {cordadaLoading ? t.cordadas_creating : t.cordadas_createBtn}
+                  </button>
+                </div>
               </form>
             </div>
           </div>
