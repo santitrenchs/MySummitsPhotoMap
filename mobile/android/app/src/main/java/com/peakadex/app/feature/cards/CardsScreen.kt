@@ -290,6 +290,10 @@ fun CardsScreen(
     onRarityIdConsumed:  () -> Unit = {},
     refreshTrigger: Int = 0,
     highlightId: String? = null,
+    // Scroll-only target: used to scroll to a card WITHOUT arming its ring yet
+    // (the capture-reveal owns the ring timing, arming it on the final tap).
+    // Falls back to highlightId when not set.
+    scrollToId: String? = null,
     onHighlightConsumed: () -> Unit = {},
     vm: CardsViewModel = viewModel(),
 ) {
@@ -342,9 +346,10 @@ fun CardsScreen(
             // matched the stale (pre-refresh) list, so indexOfFirst missed the new
             // id and we scrolled to index 0 ("the first of mine"). Observe the VM's
             // StateFlow so we see fresh data, not the captured stale `filteredAscents`.
+            val scrollTarget = scrollToId ?: highlightId
             withTimeoutOrNull(10_000L) {
-                if (highlightId != null) {
-                    vm.filteredAscents.filter { list -> list.any { it.id == highlightId } }.first()
+                if (scrollTarget != null) {
+                    vm.filteredAscents.filter { list -> list.any { it.id == scrollTarget } }.first()
                 }
                 snapshotFlow { listState.layoutInfo.totalItemsCount }
                     .filter { it > 0 }
@@ -352,11 +357,13 @@ fun CardsScreen(
                 true
             } ?: return@LaunchedEffect  // network error / not found — give up silently
 
-            // Scroll to the exact position of the new ascent (not necessarily index 0,
-            // since the server's canonical sort may place it after unseen friends etc.)
-            val targetIdx = vm.filteredAscents.value.indexOfFirst { it.id == highlightId }
+            // Scroll instantly (not animated) so the feed is already settled behind
+            // the capture-reveal overlay — no visible scroll motion under the card.
+            // Not necessarily index 0: the canonical sort may place it after unseen
+            // friends, and past-dated own ascents aren't first either.
+            val targetIdx = vm.filteredAscents.value.indexOfFirst { it.id == scrollTarget }
                 .takeIf { it >= 0 } ?: 0
-            listState.animateScrollToItem(targetIdx)
+            listState.scrollToItem(targetIdx)
         }
     }
 
@@ -885,13 +892,30 @@ private fun AscentFlipCard(
 
 // ── Card front ─────────────────────────────────────────────────────────────────
 
+// Drives the capture-reveal animation when CardFront is shown inside
+// AscentCaptureReveal. It is null on every normal feed render — the card looks
+// and behaves exactly as before unless a reveal state is supplied.
+internal data class CardRevealState(
+    val photoBlur:    Dp = 0.dp,                          // blur applied only to the hero photo
+    val photoCover:   Float = 0f,                         // light-gray cover hiding photo + name during build (0..1)
+    val rarityScale:  Float = 1f,                         // scale of the rarity cell value (big → 1 highlight)
+    val epDisplay:    Int? = null,                        // null → show rarity.ep (final value)
+    val epScale:      Float = 1f,                         // scale of the EP number (big while rolling → 1)
+    val showCairn:    Boolean = true,                     // mythic: whether the cairn is shown (revealed at the mythic beat)
+    val cairnScale:   Float = 1f,                         // scale of the cairn (big → 1 on the mythic beat)
+    val photoOverlay: (@Composable BoxScope.() -> Unit)? = null, // mountaineer + flower scene, inside the photo
+)
+
 @Composable
 internal fun CardFront(
     ascent:       Ascent,
     rarity:       RarityInfo,
     onEditClick:  () -> Unit,
     onShareClick: () -> Unit,
+    reveal:       CardRevealState? = null,
 ) {
+    val photoBlur  = reveal?.photoBlur ?: 0.dp
+    val photoCover = reveal?.photoCover ?: 0f
     val heroUrl  = ascent.photos.firstOrNull()?.url
     val heroLandscape = ascent.photos.firstOrNull()?.cropAspect == "landscape"
     val isMythic = ascent.peak.isMythic == true
@@ -967,11 +991,11 @@ internal fun CardFront(
                 if (heroLandscape) {
                     // Landscape: blurred cover background + full photo contained on top
                     AsyncImage(model = heroUrl, contentDescription = null, contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().blur(24.dp))
+                        modifier = Modifier.fillMaxSize().blur(24.dp + photoBlur))
                     AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize())
+                        modifier = Modifier.fillMaxSize().blur(photoBlur))
                 } else {
-                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().blur(photoBlur))
                 }
             } else {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("🏔️", fontSize = 52.sp) }
@@ -1000,19 +1024,29 @@ internal fun CardFront(
                 )
             }
 
-            Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 12.dp, vertical = 12.dp)) {
-                Text(ascent.peak.name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
-                    letterSpacing = (-0.035).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // Name + altitude match the card back (CardBack) exactly so they don't
+            // visibly change when the card flips. Route is front-only, below.
+            Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 14.dp, vertical = 14.dp)) {
+                Text(ascent.peak.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
+                    letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black,
+                    color = Color.White, letterSpacing = (-0.04).em)
                 if (!ascent.route.isNullOrBlank()) {
                     Spacer(Modifier.height(2.dp))
                     Text(ascent.route, fontSize = 13.sp, color = Color(0xCCFFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    listOfNotNull(ascent.peak.mountainRange, "${ascent.peak.altitudeM} m").joinToString(" · "),
-                    fontSize = 10.sp, color = Color(0x99FFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
             }
+
+            // Capture-reveal: light-gray cover that hides the photo AND the peak name
+            // during the build (the name reappears as it dissolves on the final tap).
+            // Sits above the gradient/name, below the mountaineer + flower scene.
+            if (photoCover > 0f) {
+                Box(Modifier.fillMaxSize().background(Color(0xFFEAEEF3).copy(alpha = photoCover)))
+            }
+
+            // Capture-reveal scene (mountaineer + flower) — on top of the cover.
+            // Null on normal feed renders.
+            reveal?.photoOverlay?.invoke(this)
         }
 
         Spacer(Modifier.height(6.dp))
@@ -1021,9 +1055,22 @@ internal fun CardFront(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StatBandItem(stringResource(R.string.cards_stat_rarity),   "✿ ${rarity.label}", rarity.color,       Modifier.weight(1f))
+            RarityStatItem(
+                label       = stringResource(R.string.cards_stat_rarity),
+                rarityLabel = rarity.label,
+                color       = rarity.color,
+                scale       = reveal?.rarityScale ?: 1f,
+                modifier    = Modifier.weight(1f),
+            )
             StatBandItem(stringResource(R.string.cards_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
-            RewardStatItem(isMythic = isMythic, ep = rarity.ep, color = rarity.color, modifier = Modifier.weight(1f))
+            RewardStatItem(
+                isMythic   = isMythic,
+                ep         = reveal?.epDisplay ?: rarity.ep,
+                epScale    = reveal?.epScale ?: 1f,
+                showCairn  = reveal?.showCairn ?: true,
+                cairnScale = reveal?.cairnScale ?: 1f,
+                modifier   = Modifier.weight(1f),
+            )
         }
         Spacer(Modifier.height(3.dp))
     }
@@ -1031,21 +1078,64 @@ internal fun CardFront(
 
 // Reward cell — shows "🪨 1 Cairn · +N EP" for mythic peaks, else "+N EP".
 // Mirrors web AscentCard reward pill (Cairn score before EP for mythic).
+// Rarity cell — mirrors web: a rounded pill tinted with the rarity colour (~12%)
+// wrapping "✿ Label". `scale` drives the capture-reveal highlight pop.
 @Composable
-internal fun RewardStatItem(isMythic: Boolean, ep: Int, color: Color, modifier: Modifier = Modifier) {
+internal fun RarityStatItem(label: String, rarityLabel: String, color: Color, scale: Float = 1f, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 8.dp, vertical = 6.dp),
+        modifier = modifier.background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(stringResource(R.string.cards_stat_ep), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
+        Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
         Spacer(Modifier.height(2.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            if (isMythic) {
-                CairnGlyph(Color(0xFFF59E0B), Modifier.size(11.dp))
-                Text(stringResource(R.string.cards_card_cairn) + " ·", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+        Row(
+            modifier = Modifier
+                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .background(color.copy(alpha = 0.125f), RoundedCornerShape(100))
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text("✿", fontSize = 11.sp, color = color, lineHeight = 11.sp)
+            Text(rarityLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+// Reward cell — mirrors web: an amber pill, "+N EP" in amber (#d97706), and for
+// mythic peaks a cairn glyph + "1 Cairn ·" (#f59e0b) before it.
+@Composable
+internal fun RewardStatItem(
+    isMythic: Boolean,
+    ep: Int,
+    epScale: Float = 1f,
+    showCairn: Boolean = true,
+    cairnScale: Float = 1f,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(stringResource(R.string.cards_stat_reward), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
+        Spacer(Modifier.height(2.dp))
+        Row(
+            // Scale the whole pill (not just the inner text). epScale drives the EP
+            // roll; cairnScale the mythic-beat pop — never both >1 at once, so the
+            // product is whichever is active.
+            modifier = Modifier
+                .graphicsLayer { val s = epScale * cairnScale; scaleX = s; scaleY = s }
+                .background(Color(0xFFFEF3C7), RoundedCornerShape(100))
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            if (isMythic && showCairn) {
+                CairnGlyph(Color(0xFFF59E0B), Modifier.size(12.dp))
+                Text(stringResource(R.string.cards_card_cairn) + " ·", fontSize = 13.sp, fontWeight = FontWeight.Bold,
                     color = Color(0xFFF59E0B), maxLines = 1)
             }
-            Text("+$ep", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("+$ep EP", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -1070,14 +1160,17 @@ private fun CairnGlyph(color: Color, modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun StatBandItem(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+internal fun StatBandItem(label: String, value: String, color: Color, modifier: Modifier = Modifier, valueScale: Float = 1f) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 8.dp, vertical = 6.dp),
+        // background-with-shape (not clip) so the value can scale up beyond the cell
+        // during the capture-reveal (rarity highlight) without being clipped.
+        modifier = modifier.background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
         Spacer(Modifier.height(2.dp))
-        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.graphicsLayer { scaleX = valueScale; scaleY = valueScale })
     }
 }
 

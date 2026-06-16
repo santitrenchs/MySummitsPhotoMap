@@ -85,6 +85,7 @@
     <string name="cards_stat_rarity">RARESA</string>
     <string name="cards_stat_altitude">ALTITUD</string>
     <string name="cards_stat_ep">EP</string>
+    <string name="cards_stat_reward">RECOMPENSA</string>
     <string name="cards_stats_title">ESTADÍSTIQUES PEAKADEX</string>
     <string name="card_cordada_label">La teva Cordada:</string>
     <string name="card_cordada_label_other">Cordada:</string>
@@ -174,6 +175,7 @@
     <string name="capture_reveal_title">Raresa \"%1$s\" capturada</string>
     <string name="capture_reveal_subtitle">Nova flor afegida a les teves cards</string>
     <string name="capture_reveal_unlocked">Carta desbloquejada</string>
+    <string name="capture_reveal_captured">Cim capturat!</string>
     <string name="capture_reveal_rarity_line">Raresa: %1$s</string>
     <string name="capture_reveal_ep">+ %1$d EP</string>
     <string name="capture_reveal_subtitle_mythic">Cim mític capturat!</string>

@@ -85,6 +85,7 @@
     <string name="cards_stat_rarity">SELTENHEIT</string>
     <string name="cards_stat_altitude">HÖHE</string>
     <string name="cards_stat_ep">EP</string>
+    <string name="cards_stat_reward">BELOHNUNG</string>
     <string name="cards_stats_title">PEAKADEX STATISTIKEN</string>
     <string name="card_cordada_label">Deine Seilschaft:</string>
     <string name="card_cordada_label_other">Seilschaft:</string>
@@ -174,6 +175,7 @@
     <string name="capture_reveal_title">Seltenheit \"%1$s\" erfasst</string>
     <string name="capture_reveal_subtitle">Neue Blume zu deinen Cards hinzugefügt</string>
     <string name="capture_reveal_unlocked">Karte freigeschaltet</string>
+    <string name="capture_reveal_captured">Gipfel erfasst!</string>
     <string name="capture_reveal_rarity_line">Seltenheit: %1$s</string>
     <string name="capture_reveal_ep">+ %1$d EP</string>
     <string name="capture_reveal_subtitle_mythic">Mythischer Gipfel erfasst!</string>

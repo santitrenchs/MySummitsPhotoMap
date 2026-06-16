@@ -85,6 +85,7 @@
     <string name="cards_stat_rarity">RARETÉ</string>
     <string name="cards_stat_altitude">ALTITUDE</string>
     <string name="cards_stat_ep">EP</string>
+    <string name="cards_stat_reward">RÉCOMPENSE</string>
     <string name="cards_stats_title">STATS PEAKADEX</string>
     <string name="card_cordada_label">Ta cordée:</string>
     <string name="card_cordada_label_other">Cordée:</string>
@@ -174,6 +175,7 @@
     <string name="capture_reveal_title">Rareté \"%1$s\" capturée</string>
     <string name="capture_reveal_subtitle">Nouvelle fleur ajoutée à tes cards</string>
     <string name="capture_reveal_unlocked">Carte débloquée</string>
+    <string name="capture_reveal_captured">Sommet capturé !</string>
     <string name="capture_reveal_rarity_line">Rareté : %1$s</string>
     <string name="capture_reveal_ep">+ %1$d EP</string>
     <string name="capture_reveal_subtitle_mythic">Sommet mythique capturé!</string>

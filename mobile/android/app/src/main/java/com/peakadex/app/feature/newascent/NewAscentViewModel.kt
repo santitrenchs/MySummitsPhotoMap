@@ -325,8 +325,14 @@ class NewAscentViewModel : ViewModel() {
                 )
                 // Attach the just-uploaded photo so the capture-reveal card shows it
                 // (createAscent returns the ascent BEFORE the photo upload, so its
-                // photos list is empty otherwise).
-                onSuccess(ascent.copy(photos = listOf(photo)), warning)
+                // photos list is empty otherwise). Also backfill isMythic/rarityId
+                // from the selected peak — the create response omits them, which would
+                // make the reveal treat a mythic summit as non-mythic.
+                val mergedPeak = ascent.peak.copy(
+                    isMythic = ascent.peak.isMythic ?: s.selectedPeak.isMythic,
+                    rarityId = ascent.peak.rarityId ?: s.selectedPeak.rarityId,
+                )
+                onSuccess(ascent.copy(peak = mergedPeak, photos = listOf(photo)), warning)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

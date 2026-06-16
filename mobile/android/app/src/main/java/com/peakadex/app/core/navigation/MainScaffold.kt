@@ -43,6 +43,7 @@ import com.peakadex.app.AppContainer
 import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.User
+import com.peakadex.app.core.model.UserSummary
 import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.RarityInfo
 import com.peakadex.app.core.ui.rarityForAltitude
@@ -118,6 +119,10 @@ fun MainScaffold(navController: NavController) {
     var editAscent            by remember { mutableStateOf<Ascent?>(null) }
     var cardsRefreshTrigger  by remember { mutableIntStateOf(0) }
     var cardsHighlightId     by remember { mutableStateOf<String?>(null) }
+    // Scroll-only target for the capture-reveal: Cards scrolls to the new card
+    // WITHOUT showing its ring while the reveal overlay is up. The ring is armed
+    // (via cardsHighlightId) only on the reveal's final tap.
+    var cardsScrollId        by remember { mutableStateOf<String?>(null) }
     var atlasRefreshTrigger    by remember { mutableIntStateOf(0) }
     var captureReveal          by remember { mutableStateOf<CaptureRevealState?>(null) }
 
@@ -238,13 +243,15 @@ fun MainScaffold(navController: NavController) {
             onDismiss       = { showNewAscent = false },
             onSuccess       = { ascent, taggingWarning ->
                 showNewAscent      = false
-                // Navigate to Cards + switch to Mine NOW, while it's hidden behind
-                // the reveal overlay. highlightId must be set BEFORE the refresh so
-                // the scroll LaunchedEffect can find the new card by id (not index 0,
-                // which fails for past-dated ascents). By the time the user dismisses
-                // the reveal, Cards has settled on Mine + scrolled to the new card —
-                // so removing the overlay never flashes the Friends feed.
-                cardsHighlightId = ascent.id
+                // Navigate to Cards + switch to Mine NOW, while it's behind the
+                // reveal overlay. We set cardsScrollId (NOT the ring) so the feed
+                // scrolls to the new card by id (not index 0, which fails for
+                // past-dated ascents) and settles instantly, but its ring stays off
+                // until the reveal's final tap. By the time the user dismisses the
+                // reveal, Cards is on Mine + scrolled to the new card — so removing
+                // the overlay never flashes the Friends feed nor a premature ring.
+                cardsScrollId    = ascent.id
+                cardsHighlightId = null
                 cardsRefreshTrigger++
                 atlasRefreshTrigger++
                 tabNavController.navigate(Screen.Cards.route) {
@@ -252,10 +259,20 @@ fun MainScaffold(navController: NavController) {
                     launchSingleTop = true
                     restoreState    = false
                 }
+                // The create response has no `user`, so the reveal card would fall
+                // back to "You". Attach the current user (name + avatar) so the
+                // reveal header matches the real feed card exactly.
+                val me = user
+                val revealAscent = if (ascent.user == null && me != null) {
+                    ascent.copy(
+                        user  = UserSummary(id = me.id, name = me.name, username = me.username, avatarUrl = me.avatarUrl),
+                        isOwn = true,
+                    )
+                } else ascent
                 captureReveal = CaptureRevealState(
-                    ascent         = ascent,
-                    rarity         = rarityForAltitude(ascent.peak.altitudeM),
-                    isMythic       = ascent.peak.isMythic == true,
+                    ascent         = revealAscent,
+                    rarity         = rarityForAltitude(revealAscent.peak.altitudeM),
+                    isMythic       = revealAscent.peak.isMythic == true,
                     taggingWarning = taggingWarning,
                 )
             },
@@ -374,6 +391,7 @@ fun MainScaffold(navController: NavController) {
                     onRarityIdConsumed  = { pendingRarityId = null },
                     refreshTrigger      = cardsRefreshTrigger,
                     highlightId         = cardsHighlightId,
+                    scrollToId          = cardsScrollId,
                     onHighlightConsumed = { cardsHighlightId = null },
                 )
             }
@@ -388,12 +406,12 @@ fun MainScaffold(navController: NavController) {
             rarity   = reveal.rarity,
             isMythic = reveal.isMythic,
             onFinished = {
-                // Cards is already on Mine + scrolled to the new card (set up in
-                // onSuccess, behind the overlay). Drop the overlay and RE-ARM the
-                // highlight ring — the 2.5s consume timer likely burned during the
-                // multi-second reveal, so re-setting the id makes the ring appear
-                // fresh on the now-visible card.
+                // Cards is already on Mine + scrolled to the new card (via
+                // cardsScrollId in onSuccess), but its ring was held off. Drop the
+                // overlay and ARM the ring now so it appears fresh on the card the
+                // reveal hands off to.
                 captureReveal = null
+                cardsScrollId = null
                 cardsHighlightId = null
                 scope.launch {
                     // next frame so the null→id change re-fires the ring effect

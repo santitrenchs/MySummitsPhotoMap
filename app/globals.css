@@ -394,20 +394,32 @@
   bottom: 16px;
 }
 
+/* Name + altitude match the card back (.back-map-name / .back-map-alt) exactly so
+   they don't visibly change when the card flips. The route is front-only, below. */
 .peak-name {
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   color: white;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.45);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.peak-alt {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
 .peak-route {
-  margin-top: 5px;
+  margin-top: 4px;
   font-size: 13px;
   font-weight: 600;
   color: rgba(255,255,255,0.86);

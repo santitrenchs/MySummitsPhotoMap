@@ -327,14 +327,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
           <div className="peak-info">
             <div className="peak-name">{ascent.peak.nameEn ?? ascent.peak.name}</div>
+            <div className="peak-alt">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
-            <div className="peak-meta">
-              <span>
-                {ascent.peak.mountainRange
-                  ? ascent.peak.mountainRange
-                  : `${ascent.peak.altitudeM.toLocaleString(locale)} m`}
-              </span>
-            </div>
           </div>
         </div>
         <div className="stat-band">
