@@ -25,10 +25,14 @@ export default async function CordadaInvitePage({
   const memberIds = new Set(cordada.members.map((m) => m.userId));
   const invitableFriends = friends.filter((f) => !memberIds.has(f.friend.id));
 
+  const acceptedCount = cordada.members.filter((m) => !m.isPending).length;
+
   return (
     <CordadaInviteClient
       cordadaId={id}
       cordadaName={cordada.name}
+      cordadaAvatarUrl={cordada.avatarUrl ?? null}
+      memberCount={acceptedCount}
       invitableFriends={invitableFriends}
     />
   );
