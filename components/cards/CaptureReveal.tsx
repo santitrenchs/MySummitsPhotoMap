@@ -96,6 +96,10 @@ export function CaptureReveal({ ascent, locale, onFinished }: Props) {
   const coverAlpha = phase === "build" ? 1 : 0;
   const photoBlur = phase === "build" ? 16 : 0;
   const fxAlpha = phase === "build" ? 1 : 0;
+  // The backdrop stays opaque the whole time: the focus-pull reveals the real photo
+  // IN the centered card over white, then we hard-navigate. If the backdrop faded,
+  // the page behind would show through (the "two overlapping cards" + jump).
+  const backdropAlpha = 1;
 
   // ── Scene (rendered inside the photo area via AscentCard's reveal.sceneOverlay) ──
   const scene = (
@@ -126,9 +130,9 @@ export function CaptureReveal({ ascent, locale, onFinished }: Props) {
         </div>
       </div>
 
-      {/* Peak name + altitude — near the profile, in rarity color */}
+      {/* Peak name + altitude — above the profile (which is ~90px tall), in rarity color */}
       <div style={{
-        position: "absolute", left: 0, right: 0, bottom: 56, textAlign: "center",
+        position: "absolute", left: 0, right: 0, bottom: 104, textAlign: "center",
         opacity: infoAppear, transition: "opacity 350ms ease",
       }}>
         <div style={{ fontSize: 22, fontWeight: 900, color, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
@@ -164,8 +168,8 @@ export function CaptureReveal({ ascent, locale, onFinished }: Props) {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1200 }}>
-      {/* Opaque white backdrop — hides the page; dissolves on reveal */}
-      <div style={{ position: "absolute", inset: 0, background: "#fff", opacity: coverAlpha, transition: "opacity 750ms ease" }} />
+      {/* Opaque white backdrop — stays opaque so the page behind never shows. */}
+      <div style={{ position: "absolute", inset: 0, background: "#fff", opacity: backdropAlpha }} />
 
       {/* The real card, centered */}
       <div style={{
