@@ -6,6 +6,13 @@ import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { AscentCard } from "@/components/cards/AscentCard";
+import dynamic from "next/dynamic";
+
+// Capture-reveal plays in place of the just-created card (uses Lottie → client only).
+const CaptureReveal = dynamic(
+  () => import("@/components/cards/CaptureReveal").then((m) => m.CaptureReveal),
+  { ssr: false },
+);
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
@@ -157,6 +164,18 @@ export function AscentsClient({
 
   // Highlight + scroll to newly created ascent from ?highlight= URL param
   const [highlightId, setHighlightId] = useState<string | null>(() => searchParams.get("highlight"));
+
+  // Capture-reveal: when arriving with ?reveal=1 (right after creating), the
+  // highlighted card plays the cinematic reveal in place, then settles to normal.
+  const [revealActive, setRevealActive] = useState<boolean>(() => searchParams.get("reveal") === "1");
+  useEffect(() => {
+    // Strip ?reveal=1 from the URL so a refresh doesn't replay the animation.
+    if (revealActive) {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("reveal");
+      window.history.replaceState(null, "", u.toString());
+    }
+  }, [revealActive]);
 
   // Lock body scroll when sheet open
   useEffect(() => {
@@ -907,6 +926,24 @@ export function AscentsClient({
             computeItemKey={(_index, a) => a.id}
             itemContent={(index, a) => {
               const others = a.persons.filter((p) => p.id !== a.createdByUserId);
+              const cardData = {
+                id: a.id,
+                date: a.date,
+                route: a.route,
+                description: a.description,
+                wikiloc: a.wikiloc,
+                peak: a.peak,
+                photoUrl: a.firstPhotoUrl,
+                photoId: a.firstPhotoId,
+                originalStorageKey: a.firstPhotoOriginalKey,
+                cropAspect: a.firstPhotoCropAspect,
+                persons: others,
+                user: { name: a.userName, avatarUrl: a.userAvatarUrl },
+                peakStats: a.peakStats,
+              };
+              // The just-created card plays the reveal in place; the ring appears
+              // once it finishes (so it doesn't show during the build).
+              const isRevealing = revealActive && highlightId === a.id;
               return (
                 <div id={`ascent-${a.id}`} style={{ paddingBottom: 24 }}>
                   {/* Highlight ring wraps ONLY the card (radius matches .peak-card = 28px)
@@ -915,29 +952,24 @@ export function AscentsClient({
                     style={{
                       borderRadius: 28,
                       transition: "box-shadow 0.4s ease",
-                      ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
+                      ...(highlightId === a.id && !isRevealing ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
                     }}
                   >
-                    <AscentCard
-                      variant={a.isOwn ? "profile" : "social"}
-                      locale={t.dateLocale}
-                      animationIndex={index}
-                      ascent={{
-                        id: a.id,
-                        date: a.date,
-                        route: a.route,
-                        description: a.description,
-                        wikiloc: a.wikiloc,
-                        peak: a.peak,
-                        photoUrl: a.firstPhotoUrl,
-                        photoId: a.firstPhotoId,
-                        originalStorageKey: a.firstPhotoOriginalKey,
-                        cropAspect: a.firstPhotoCropAspect,
-                        persons: others,
-                        user: { name: a.userName, avatarUrl: a.userAvatarUrl },
-                        peakStats: a.peakStats,
-                      }}
-                    />
+                    {isRevealing ? (
+                      <CaptureReveal
+                        ascent={cardData}
+                        locale={t.dateLocale}
+                        variant={a.isOwn ? "profile" : "social"}
+                        onFinished={() => setRevealActive(false)}
+                      />
+                    ) : (
+                      <AscentCard
+                        variant={a.isOwn ? "profile" : "social"}
+                        locale={t.dateLocale}
+                        animationIndex={index}
+                        ascent={cardData}
+                      />
+                    )}
                   </div>
                 </div>
               );

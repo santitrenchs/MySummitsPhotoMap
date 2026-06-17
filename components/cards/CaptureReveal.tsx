@@ -29,17 +29,17 @@ function darken(hex: string, f: number): string {
 type Props = {
   ascent: AscentCardData;
   locale: string;
+  variant?: "social" | "profile";
   onFinished: () => void;
 };
 
-export function CaptureReveal({ ascent, locale, onFinished }: Props) {
+export function CaptureReveal({ ascent, locale, variant = "profile", onFinished }: Props) {
   const t = useT();
   const rarity = getRarityId(ascent.peak.altitudeM);
   const color = RARITY_COLORS[rarity];
   const ep = RARITY_EP[rarity];
   const isMythic = ascent.peak.isMythic ?? false;
 
-  const [entered, setEntered] = useState(false);
   const [phase, setPhase] = useState<"build" | "reveal">("build");
   const [infoAppear, setInfoAppear] = useState(0);
   const [rarityScale, setRarityScale] = useState(1);
@@ -51,8 +51,6 @@ export function CaptureReveal({ ascent, locale, onFinished }: Props) {
   onFinishedRef.current = onFinished;
 
   useEffect(() => {
-    requestAnimationFrame(() => setEntered(true));
-
     const timers: ReturnType<typeof setTimeout>[] = [];
     let raf = 0;
     const at = (fn: () => void, ms: number) => { timers.push(setTimeout(fn, ms)); };
@@ -96,10 +94,6 @@ export function CaptureReveal({ ascent, locale, onFinished }: Props) {
   const coverAlpha = phase === "build" ? 1 : 0;
   const photoBlur = phase === "build" ? 16 : 0;
   const fxAlpha = phase === "build" ? 1 : 0;
-  // The backdrop stays opaque the whole time: the focus-pull reveals the real photo
-  // IN the centered card over white, then we hard-navigate. If the backdrop faded,
-  // the page behind would show through (the "two overlapping cards" + jump).
-  const backdropAlpha = 1;
 
   // ── Scene (rendered inside the photo area via AscentCard's reveal.sceneOverlay) ──
   const scene = (
@@ -166,31 +160,14 @@ export function CaptureReveal({ ascent, locale, onFinished }: Props) {
     </div>
   );
 
+  // Rendered IN the feed, in place of the just-created card — so the reveal plays
+  // exactly over the real card and dissolves into it (no full-screen overlay).
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 1200 }}>
-      {/* Opaque white backdrop — stays opaque so the page behind never shows. */}
-      <div style={{ position: "absolute", inset: 0, background: "#fff", opacity: backdropAlpha }} />
-
-      {/* The real card, centered */}
-      <div style={{
-        position: "absolute", inset: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "0 20px", pointerEvents: "none",
-      }}>
-        <div style={{
-          width: "100%", maxWidth: 460,
-          opacity: entered ? 1 : 0,
-          transform: `scale(${entered ? 1 : 0.9})`,
-          transition: "transform 440ms cubic-bezier(.34,1.56,.64,1), opacity 240ms ease",
-        }}>
-          <AscentCard
-            variant="profile"
-            ascent={ascent}
-            locale={locale}
-            reveal={{ photoBlur, coverAlpha, epDisplay: epCount, epScale, rarityScale, sceneOverlay: scene }}
-          />
-        </div>
-      </div>
-    </div>
+    <AscentCard
+      variant={variant}
+      ascent={ascent}
+      locale={locale}
+      reveal={{ photoBlur, coverAlpha, epDisplay: epCount, epScale, rarityScale, sceneOverlay: scene }}
+    />
   );
 }
