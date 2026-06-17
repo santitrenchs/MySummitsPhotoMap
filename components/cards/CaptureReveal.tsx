@@ -110,8 +110,8 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
         position: "absolute", inset: 0,
         display: "flex", flexDirection: "column", alignItems: "center",
       }}>
-        <div style={{ height: "4%" }} />
-        <div style={{ position: "relative", width: "80%", aspectRatio: "1 / 1" }}>
+        <div style={{ height: "7%" }} />
+        <div style={{ position: "relative", width: "60%", aspectRatio: "1 / 1" }}>
           <RevealFlower color={color} style={{ position: "absolute", inset: 0 }} />
           {isMythic && (
             <div style={{ position: "absolute", inset: 0, opacity: mythicBeat ? 1 : 0, transition: "opacity 900ms ease" }}>
@@ -139,14 +139,14 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
         <div style={{ fontSize: 22, fontWeight: 900, color, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
           {ascent.peak.nameEn ?? ascent.peak.name}
         </div>
-        <div style={{ fontSize: 28, fontWeight: 900, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1 }}>
+        <div style={{ fontSize: 28, fontWeight: 900, color, letterSpacing: "-0.04em", lineHeight: 1 }}>
           {ascent.peak.altitudeM.toLocaleString(locale)} m
         </div>
       </div>
 
       {/* Elevation profile — rarity-tinted, flush to the bottom */}
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, opacity: infoAppear, transition: "opacity 350ms ease" }}>
-        <ElevationProfile peakId={ascent.peak.id} altitudeM={ascent.peak.altitudeM} rarityColor={color} lineColor={color} />
+        <ElevationProfile peakId={ascent.peak.id} altitudeM={ascent.peak.altitudeM} rarityColor={color} />
       </div>
 
       {/* MYTHIC pill — top-left, pops in on the beat */}
