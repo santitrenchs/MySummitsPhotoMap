@@ -56,6 +56,17 @@ export type AscentCardData = {
   peakStats?: { totalAscents: number; uniqueClimbers: number };
 };
 
+// Drives the capture-reveal animation when AscentCard is shown inside CaptureReveal.
+// null on every normal feed render — the card looks/behaves exactly as before.
+export type AscentCardReveal = {
+  photoBlur: number;      // px, blur applied to the hero photo
+  coverAlpha: number;     // 0..1, light-gray cover hiding photo + name during build
+  epDisplay: number;      // EP value shown in the reward cell (rolling)
+  epScale: number;        // reward pill scale (big → 1)
+  rarityScale: number;    // rarity pill scale (big → 1 highlight)
+  sceneOverlay?: React.ReactNode;  // flower + headline + name + altitude + profile, inside the photo
+};
+
 type Props = {
   variant: "social" | "profile";
   ascent: AscentCardData;
@@ -63,6 +74,7 @@ type Props = {
   onDelete?: (id: string) => void;
   isDeleting?: boolean;
   animationIndex?: number;
+  reveal?: AscentCardReveal;
 };
 
 // ─── Rarity aliases (lib/rarity.ts is the source of truth) ───────────────────
@@ -132,7 +144,7 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 
 // ─── AscentCard ───────────────────────────────────────────────────────────────
 
-export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Props) {
+export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal }: Props) {
   const t = useT();
   const [isFlipped, setIsFlipped] = useState(false);
   const [sharePopover, setSharePopover] = useState<string | null>(null); // URL string when open
@@ -300,7 +312,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             : ascent.photoUrl
               ? ascent.cropAspect === "landscape"
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+                ? <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", filter: reveal ? `blur(${reveal.photoBlur}px)` : undefined, transition: reveal ? "filter 750ms ease" : undefined }}>
                     {/* Blurred background fill for landscape photos */}
                     <div style={{
                       position: "absolute", inset: 0,
@@ -320,7 +332,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                     />
                   </div>
                 // eslint-disable-next-line @next/next/no-img-element
-                : <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.nameEn ?? ascent.peak.name} loading="lazy" />
+                : <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.nameEn ?? ascent.peak.name} loading="lazy" style={reveal ? { filter: `blur(${reveal.photoBlur}px)` } : undefined} />
               : <MountainPlaceholder />
           }
           <div className="image-overlay" />
@@ -330,6 +342,16 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
             <div className="peak-alt">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
           </div>
+          {/* Capture-reveal: light-gray cover (hides photo + name during build) + scene
+              (flower + headline + name + altitude + profile), on top of everything. */}
+          {reveal && (
+            <>
+              <div style={{ position: "absolute", inset: 0, background: "#EAEEF3", opacity: reveal.coverAlpha, transition: "opacity 750ms ease", zIndex: 3 }} />
+              {reveal.sceneOverlay && (
+                <div style={{ position: "absolute", inset: 0, zIndex: 4 }}>{reveal.sceneOverlay}</div>
+              )}
+            </>
+          )}
         </div>
         <div className="stat-band">
           <div className="stat-item" style={{ textAlign: "center" }}>
@@ -339,6 +361,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 display: "inline-flex", alignItems: "center", gap: 5,
                 background: RARITY_COLOR[rarity] + "20",
                 borderRadius: "var(--radius-full)", padding: "4px 10px",
+                transform: reveal ? `scale(${reveal.rarityScale})` : undefined,
+                transition: reveal ? "transform 300ms cubic-bezier(.34,1.56,.64,1)" : undefined,
               }}>
                 <span style={{ color: RARITY_COLOR[rarity], fontSize: 11, lineHeight: 1 }}>✿</span>
                 <span style={{ color: RARITY_COLOR[rarity], fontSize: 11, fontWeight: 700 }}>{RARITY_LABEL[rarity]}</span>
@@ -356,8 +380,10 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 display: "inline-flex", alignItems: "center", gap: 5,
                 background: "#fef3c7", borderRadius: "var(--radius-full)", padding: "4px 10px",
                 whiteSpace: "nowrap",
+                transform: reveal ? `scale(${reveal.epScale})` : undefined,
+                transition: reveal ? "transform 300ms cubic-bezier(.34,1.56,.64,1)" : undefined,
               }}>
-                <span style={{ color: "#d97706", fontSize: 13, fontWeight: 700 }}>+{RARITY_EP[rarity]} EP</span>
+                <span style={{ color: "#d97706", fontSize: 13, fontWeight: 700 }}>+{reveal ? reveal.epDisplay : RARITY_EP[rarity]} EP</span>
               </div>
             </div>
           </div>

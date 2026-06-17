@@ -27,6 +27,8 @@
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^2.4.3",
     "exifr": "^7.1.3",
+    "lottie-colorify": "^0.8.0",
+    "lottie-react": "^2.4.1",
     "maplibre-gl": "^4.7.1",
     "next": "^16.2.3",
     "next-auth": "^5.0.0-beta.25",

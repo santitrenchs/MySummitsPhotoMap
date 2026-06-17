@@ -18,6 +18,7 @@ type Peak = {
   mountainRange: string | null;
   latitude: number;
   longitude: number;
+  isMythic?: boolean;
 };
 
 export type ModalHeaderConfig = {
@@ -48,12 +49,27 @@ type Props = {
   defaultPeakId?: string;
   defaultPeakName?: string;
   editAscent?: EditAscent;
+  // Fired after a successful CREATE (not edit) with the new card's data, so the host
+  // can play the capture-reveal. If absent, falls back to navigating to the feed.
+  onCreated?: (data: RevealCardData) => void;
+};
+
+// Subset of AscentCardData the modal can build client-side (the host adds `user`).
+export type RevealCardData = {
+  id: string;
+  date: string;
+  route: string | null;
+  description: string | null;
+  peak: { id: string; name: string; nameEn: string | null; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number };
+  photoUrl: string | null;
+  cropAspect: string | null;
+  persons: { id: string; name: string }[];
 };
 
 type ModalStep = "pick" | "crop" | "form";
 type Person = { id: string; name: string; username: string | null };
 
-export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, defaultPeakName, editAscent }: Props) {
+export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, defaultPeakName, editAscent, onCreated }: Props) {
   const [isMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
   const router = useRouter();
   const t = useT();
@@ -438,6 +454,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     const ascent = await ascentRes.json();
 
     // Step 2 — upload photos + face tags
+    let firstPhotoUrl: string | null = null;
     for (let i = 0; i < readyItems.length; i++) {
       const item = readyItems[i];
       const fd = new FormData();
@@ -452,8 +469,9 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         setLoading(false);
         router.refresh(); onClose(); return;
       }
+      const photo = await photoRes.json();
+      if (i === 0) firstPhotoUrl = photo.url ?? null;
       if (selectedPersons.length > 0) {
-        const photo = await photoRes.json();
         await fetch(`/api/photos/${photo.id}/faces`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -468,6 +486,28 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       }
     }
 
+    // Hand off to the capture-reveal (host plays it, then navigates to the feed).
+    // Fallback: navigate directly if no host handler is wired.
+    const selPeak = peaks.find((p) => p.id === form.get("peakId"));
+    const firstAspect = readyItems[0]?.cropMeta?.aspect ?? null;
+    if (onCreated && selPeak) {
+      onCreated({
+        id: ascent.id,
+        date: String(form.get("date") ?? ""),
+        route: (form.get("route") as string) || null,
+        description: (form.get("description") as string) || null,
+        peak: {
+          id: selPeak.id, name: selPeak.name, nameEn: selPeak.nameEn,
+          altitudeM: selPeak.altitudeM, isMythic: selPeak.isMythic ?? false,
+          mountainRange: selPeak.mountainRange, latitude: selPeak.latitude, longitude: selPeak.longitude,
+        },
+        photoUrl: firstPhotoUrl,
+        cropAspect: firstAspect === "landscape" ? "landscape" : null,
+        persons: selectedPersons.map((p) => ({ id: p.id, name: p.name })),
+      });
+      onClose();
+      return;
+    }
     window.location.href = `/ascents?highlight=${ascent.id}`;
   }
 

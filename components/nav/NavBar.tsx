@@ -67,7 +67,15 @@ function SpriteIcon({ index, size = 22, active = false }: { index: number; size?
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { useT } from "@/components/providers/I18nProvider";
+import { useT, useI18n } from "@/components/providers/I18nProvider";
+import dynamic from "next/dynamic";
+import type { AscentCardData } from "@/components/cards/AscentCard";
+import type { RevealCardData } from "@/components/ascents/NewAscentModalContent";
+
+const CaptureReveal = dynamic(
+  () => import("@/components/cards/CaptureReveal").then((m) => m.CaptureReveal),
+  { ssr: false },
+);
 import { AscentModal } from "@/components/ascents/AscentModal";
 import { NewAscentModalContent, type ModalHeaderConfig, type EditAscent } from "@/components/ascents/NewAscentModalContent";
 
@@ -92,6 +100,8 @@ function initials(name: string | null, email: string | null): string {
 export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendRequests = 0, unseenFeedCount = 0 }: NavBarProps) {
   const pathname = usePathname();
   const t = useT();
+  const { locale } = useI18n();
+  const [captureReveal, setCaptureReveal] = useState<AscentCardData | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ascentModalOpen, setAscentModalOpen] = useState(false);
   const [modalHeader, setModalHeader] = useState<ModalHeaderConfig>({ title: "Nueva ascensión", size: "photo" });
@@ -449,9 +459,25 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
             defaultPeakId={defaultPeakId}
             defaultPeakName={defaultPeakName}
             editAscent={editAscent ?? undefined}
+            onCreated={(data: RevealCardData) => {
+              // Play the capture-reveal (host adds the user for the card header).
+              setCaptureReveal({
+                ...data,
+                user: { name: userName ?? "", avatarUrl: userAvatarUrl ?? null },
+                persons: data.persons,
+              });
+            }}
           />
         )}
       </AscentModal>
+
+      {captureReveal && (
+        <CaptureReveal
+          ascent={captureReveal}
+          locale={locale}
+          onFinished={() => { window.location.href = `/ascents?highlight=${captureReveal.id}`; }}
+        />
+      )}
 
       {/* ── MOBILE BOTTOM TAB BAR ────────────────────────────────────────────── */}
       <nav className="bottom-tab-bar" aria-label="Main navigation">
