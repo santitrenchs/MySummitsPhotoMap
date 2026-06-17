@@ -181,20 +181,6 @@ export function AscentsClient({
   // animation so the CaptureReveal → AscentCard swap doesn't replay cardFadeUp.
   const [settledRevealId, setSettledRevealId] = useState<string | null>(null);
 
-  // TEMP TRACE — diagnose Chrome-only reveal failure. The `build` marker confirms
-  // whether the browser is running the new bundle (vs a stale cached one).
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log("[reveal-debug]", {
-      build: "TRACE-1",
-      href: window.location.href,
-      revealIdProp: revealId ?? null,
-      revealCardId,
-      ascentsLen: ascents.length,
-      revealInAscents: ascents.some((a) => a.id === revealId),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   useEffect(() => {
     // Strip ?reveal=1 so a refresh doesn't replay the animation. State is already
     // set from the prop — this only cleans the URL.
@@ -993,20 +979,22 @@ export function AscentsClient({
                     }}
                   >
                     {isRevealing ? (
-                      <CaptureReveal
-                        ascent={cardData}
-                        locale={t.dateLocale}
-                        variant={a.isOwn ? "profile" : "social"}
-                        onFinished={() => {
-                          // End the reveal. Do NOT show the highlight ring afterwards —
-                          // the cinematic reveal already drew all attention to the card,
-                          // so the extra ring (+ its box-shadow transition) just produces
-                          // a jarring shift on settle. Clear highlightId so no ring flashes.
-                          setRevealCardId(null);
-                          setHighlightId(null);
-                          setSettledRevealId(a.id);
-                        }}
-                      />
+                      <div className="capture-reveal-shell">
+                        <CaptureReveal
+                          ascent={cardData}
+                          locale={t.dateLocale}
+                          variant={a.isOwn ? "profile" : "social"}
+                          onFinished={() => {
+                            // End the reveal. Do NOT show the highlight ring afterwards —
+                            // the cinematic reveal already drew all attention to the card,
+                            // so the extra ring (+ its box-shadow transition) just produces
+                            // a jarring shift on settle. Clear highlightId so no ring flashes.
+                            setRevealCardId(null);
+                            setHighlightId(null);
+                            setSettledRevealId(a.id);
+                          }}
+                        />
+                      </div>
                     ) : (
                       <AscentCard
                         variant={a.isOwn ? "profile" : "social"}
