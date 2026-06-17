@@ -121,7 +121,7 @@ export function ShareCard(props: ShareCardData) {
           )}
 
           {/* Gradient overlay */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 55%)" }} />
+          <div style={{ position: "absolute", inset: 0, zIndex: 2, background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 55%)" }} />
 
           {/* Mythic badge */}
           {peak.isMythic && (
@@ -139,7 +139,7 @@ export function ShareCard(props: ShareCardData) {
           </div>
 
           {/* Peak info */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 16 }}>
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 16, zIndex: 3 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.2, letterSpacing: "-0.3px" }}>{peak.name}</div>
             {props.route && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{props.route}</div>}
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>

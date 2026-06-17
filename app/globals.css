@@ -376,6 +376,7 @@
   position: absolute;
   inset: auto 0 0 0;
   height: 48%;
+  z-index: 2;
   background: linear-gradient(
     to top,
     rgba(7, 18, 31, 0.82) 0%,
@@ -389,6 +390,7 @@
   position: absolute;
   top: 12px;
   left: 12px;
+  z-index: 3;
   background: rgba(234, 179, 8, 0.95);
   color: white;
   font-size: 10px;
@@ -404,6 +406,7 @@
   left: 14px;
   right: 14px;
   bottom: 16px;
+  z-index: 3;
 }
 
 /* Name + altitude match the card back (.back-map-name / .back-map-alt) exactly so
