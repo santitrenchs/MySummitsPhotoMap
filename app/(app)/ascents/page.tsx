@@ -31,6 +31,9 @@ export default async function AscentsPage({
   // Read URL params for initial server-side filtering (matches what AscentsClient will hydrate)
   const getStr = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : undefined);
   const highlight = getStr("highlight");
+  // Capture-reveal target, read server-side (reliable) instead of via useSearchParams
+  // under <Suspense> on the client (flaky on first render → reveal silently skipped).
+  const revealId = getStr("reveal") === "1" ? highlight : undefined;
   const viewParam = getStr("view");
   const initialView: View = highlight ? "mine" : (viewParam && VIEWS.has(viewParam as View) ? viewParam as View : "friends");
   const rarityParam = getStr("rarity");
@@ -77,6 +80,7 @@ export default async function AscentsPage({
           initialBeforeOwn={nextBeforeOwn}
           initialBeforeFriends={nextBeforeFriends}
           friendUserIds={friendUserIds}
+          revealId={revealId}
         />
       </Suspense>
     </div>

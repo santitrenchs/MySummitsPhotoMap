@@ -68,6 +68,7 @@ export function AscentsClient({
   initialBeforeOwn = null,
   initialBeforeFriends = null,
   friendUserIds = [],
+  revealId,
 }: {
   ascents: AscentData[];
   allPersons: { id: string; name: string }[];
@@ -78,6 +79,7 @@ export function AscentsClient({
   initialBeforeOwn?: string | null;
   initialBeforeFriends?: string | null;
   friendUserIds?: string[];
+  revealId?: string;
 }) {
   const t = useT();
   const searchParams = useSearchParams();
@@ -167,19 +169,17 @@ export function AscentsClient({
   // NOTE: this is intentionally separate from `highlightId` — the ring auto-clears
   // after 2.5s, which would otherwise cut the (longer) reveal short. It is cleared
   // only by the reveal's own onFinished.
-  // Initialize SYNCHRONOUSLY (not in an effect) so the very first paint already
-  // renders CaptureReveal in place of the just-created card. A post-mount effect
-  // here used to flip a normal AscentCard → CaptureReveal AFTER first paint, which
-  // made Virtuoso re-measure the item (combined with initialTopMostItemIndex) and
-  // briefly collapse it to 0×0 — visible as the card "disappearing" for ~1.5s on
-  // feeds with many cards. searchParams is available on first render (same pattern
-  // as highlightId above), and SSR sees the same ?reveal=1 URL, so no hydration gap.
-  const [revealCardId, setRevealCardId] = useState<string | null>(() =>
-    searchParams.get("reveal") === "1" ? searchParams.get("highlight") : null
-  );
+  // Initialize from the SERVER-provided prop (read server-side from ?reveal=1), NOT
+  // from useSearchParams: this component is inside <Suspense>, where useSearchParams
+  // is unreliable on the first client render → revealCardId came back null, the
+  // reveal was silently skipped, and initialTopMostItemIndex then scrolled to the
+  // highlight index (the "jumps to another card, no reveal" bug). The prop is
+  // deterministic (SSR === client) so the first paint already renders CaptureReveal
+  // in place — no swap, no Virtuoso re-measure/collapse.
+  const [revealCardId, setRevealCardId] = useState<string | null>(revealId ?? null);
   useEffect(() => {
     // Strip ?reveal=1 so a refresh doesn't replay the animation. State is already
-    // set synchronously above — this only cleans the URL.
+    // set from the prop — this only cleans the URL.
     const p = new URLSearchParams(window.location.search);
     if (p.get("reveal") === "1") {
       const u = new URL(window.location.href);
