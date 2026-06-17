@@ -164,15 +164,23 @@ export function AscentsClient({
 
   // Capture-reveal: when arriving with ?reveal=1 (right after creating), the
   // highlighted card plays the cinematic reveal in place, then settles to normal.
-  const [revealActive, setRevealActive] = useState<boolean>(() => searchParams.get("reveal") === "1");
+  // NOTE: this is intentionally separate from `highlightId` — the ring auto-clears
+  // after 2.5s, which would otherwise cut the (longer) reveal short. It is cleared
+  // only by the reveal's own onFinished.
+  const [revealCardId, setRevealCardId] = useState<string | null>(null);
   useEffect(() => {
-    // Strip ?reveal=1 from the URL so a refresh doesn't replay the animation.
-    if (revealActive) {
+    // Read the flag from window.location on the client (more reliable than
+    // useSearchParams on the first render under Suspense), set the reveal target,
+    // and strip ?reveal=1 so a refresh doesn't replay the animation.
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("reveal") === "1") {
+      const id = p.get("highlight");
+      if (id) setRevealCardId(id);
       const u = new URL(window.location.href);
       u.searchParams.delete("reveal");
       window.history.replaceState(null, "", u.toString());
     }
-  }, [revealActive]);
+  }, []);
 
   // Lock body scroll when sheet open
   useEffect(() => {
@@ -301,7 +309,7 @@ export function AscentsClient({
   useEffect(() => {
     // While the capture-reveal is playing, never refetch/replace the list — that
     // would swap the list for the loading spinner and unmount the revealing card.
-    if (revealActive) return;
+    if (revealCardId) return;
     const key = buildFilterParams().toString();
     if (isInitialFilterMount.current) {
       isInitialFilterMount.current = false;
@@ -336,7 +344,7 @@ export function AscentsClient({
         if (fetchSeqRef.current === seq) setIsRefetching(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange, revealActive]);
+  }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange, revealCardId]);
 
   // Warm the opposite primary view (mine↔friends) in the background on mount so
   // the first toggle is instant. Only when no other server filters are active.
@@ -943,7 +951,7 @@ export function AscentsClient({
               };
               // The just-created card plays the reveal in place; the ring appears
               // once it finishes (so it doesn't show during the build).
-              const isRevealing = revealActive && highlightId === a.id;
+              const isRevealing = revealCardId === a.id;
               return (
                 <div id={`ascent-${a.id}`} style={{ paddingBottom: 24 }}>
                   {/* Highlight ring wraps ONLY the card (radius matches .peak-card = 28px)
@@ -960,7 +968,12 @@ export function AscentsClient({
                         ascent={cardData}
                         locale={t.dateLocale}
                         variant={a.isOwn ? "profile" : "social"}
-                        onFinished={() => setRevealActive(false)}
+                        onFinished={() => {
+                          // End the reveal and re-arm the ring on the now-settled card
+                          // (highlightId may have auto-cleared during the long reveal).
+                          setRevealCardId(null);
+                          setHighlightId(a.id);
+                        }}
                       />
                     ) : (
                       <AscentCard
