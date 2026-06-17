@@ -168,6 +168,9 @@ export function AscentsClient({
   // after 2.5s, which would otherwise cut the (longer) reveal short. It is cleared
   // only by the reveal's own onFinished.
   const [revealCardId, setRevealCardId] = useState<string | null>(null);
+  // The card that just finished revealing — its plain AscentCard skips the entrance
+  // fade so the swap from CaptureReveal is seamless (no "reload" flash).
+  const [settledRevealId, setSettledRevealId] = useState<string | null>(null);
   useEffect(() => {
     // Read the flag from window.location on the client (more reliable than
     // useSearchParams on the first render under Suspense), set the reveal target,
@@ -971,6 +974,9 @@ export function AscentsClient({
                         onFinished={() => {
                           // End the reveal and re-arm the ring on the now-settled card
                           // (highlightId may have auto-cleared during the long reveal).
+                          // settledRevealId makes the swapped-in card skip its entrance
+                          // fade so the handoff is seamless.
+                          setSettledRevealId(a.id);
                           setRevealCardId(null);
                           setHighlightId(a.id);
                         }}
@@ -981,6 +987,7 @@ export function AscentsClient({
                         locale={t.dateLocale}
                         animationIndex={index}
                         ascent={cardData}
+                        disableEntrance={settledRevealId === a.id}
                       />
                     )}
                   </div>
