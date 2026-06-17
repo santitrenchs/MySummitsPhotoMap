@@ -980,10 +980,12 @@ export function AscentsClient({
                         locale={t.dateLocale}
                         variant={a.isOwn ? "profile" : "social"}
                         onFinished={() => {
-                          // End the reveal and re-arm the ring on the now-settled card
-                          // (highlightId may have auto-cleared during the long reveal).
+                          // End the reveal. Do NOT show the highlight ring afterwards —
+                          // the cinematic reveal already drew all attention to the card,
+                          // so the extra ring (+ its box-shadow transition) just produces
+                          // a jarring shift on settle. Clear highlightId so no ring flashes.
                           setRevealCardId(null);
-                          setHighlightId(a.id);
+                          setHighlightId(null);
                         }}
                       />
                     ) : (
