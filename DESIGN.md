@@ -764,7 +764,7 @@ The card flips on tap (Y-axis rotation, 700 ms). Front shows the photo; back sho
 
 > **Landscape photos (blur-fill).** Horizontal photos are NOT cropped to 4:5. Crop step detects landscape (image wider than the 4:5 box) and offers a **4:5 ↔ Horizontal** toggle (default landscape for horizontal sources); output is marked `cropAspect = "landscape"`. Everywhere a landscape photo renders (feed card, detail hero, capture-reveal card, share card front, new-ascent preview) it shows a **blurred cover background + the full photo on top** (`object-fit: contain` / `ContentScale.Fit`), instead of cropping a horizontal photo to a center sliver. ⚠️ **Web CSS `url()` must be quoted** (`url("…")`) — Cloudflare image URLs contain commas that break an unquoted `url()` → the blur silently fails. Implemented on web + Android (parity); the only delta is the OG image (server-composited blur-fill).
 
-> **Mythic card treatment.** Mythic peaks (`isMythic`) get, on the **front**: a gold **"MYTHIC"** badge top-left of the photo (`#EAB308` bg, white, 10sp/900, letterSpacing 0.12em); the **reward** cell shows a stacked-stones cairn glyph + **"1 Cairn ·"** before **"+N EP"** (the Cairn Score earned); and a **pulsing gold glow** around the whole card (animated colored shadow `#EAB308`, ~1.8s reverse loop). Web (`AscentCard.tsx`) and Android (`CardsScreen.kt` — `CairnGlyph` Canvas, `RewardStatItem`, infinite-transition shadow) match. The capture-reveal has its own mythic glow/particles (Android).
+> **Mythic card treatment.** Mythic peaks (`isMythic`) get, on the **front**: a gold **"MYTHIC"** badge top-left of the photo (`#EAB308` bg, white, 10sp/900, letterSpacing 0.12em) and a **pulsing gold glow** around the whole card (animated colored shadow `#EAB308`, ~1.8s reverse loop). Web (`AscentCard.tsx`) and Android (`CardsScreen.kt`, infinite-transition shadow) match. The capture-reveal has its own mythic glow/particles (Android). **The Cairn was removed from the reward** (2026-06-17): the reward cell is now just **"+N EP"** in an amber pill on every card; `CairnGlyph` and the `cards_card_cairn` string are gone.
 
 #### Back-side mini-map + nearby peaks
 
@@ -783,7 +783,7 @@ The public share page (opened from the share link, no auth) renders a **flippabl
 
 - **Size/frame = app card**: reuses the `.peak-card` class (radius 28, padding 7, border, shadow + grain texture); `max-width: 496px` (= the app feed card's rendered width: 520 container − 24 padding). Photo frame: inset `6px 10px`, radius `var(--radius-xl)` (20px) + inset hairline. Header reuses `.card-user` / `.pc-avatar` / `.user-name` (13px) / `.user-date` (11px) — identical to the app.
 - **Flip on tap** (same `.flip-card` / `.flip-inner` / `.card-front` / `.card-back` structure as the app).
-- **Front**: photo + overlay + watermark "peak ✿ adex" + peak name + coordinates + stat band **with the Cairn reward styling** (mythic). The owner "Únete a Peakadex" CTA sits in the header (share-page-only). The **comment is NOT on the front** (it's on the back, like the app).
+- **Front**: photo + overlay + watermark "peak ✿ adex" + peak name + coordinates + stat band with the **"+N EP" reward** (amber pill, no Cairn). The owner "Únete a Peakadex" CTA sits in the header (share-page-only). The **comment is NOT on the front** (it's on the back, like the app).
 - **Back** = the app `CardBack` (mini-map + elevation profile + stats + Cordada **showing all members incl. the owner**, since it's "someone else's" card + comment blockquote).
 - Below the card: hint text **"Toca la carta para ver el reverso"** (`share_tapToFlip`, 5 locales).
 - **No public API exposure**: nearby peaks are **disabled** on the share page (`PeakMiniMap disableNearby` → base map + central marker only, no `/api/peaks` fetch); the elevation profile is passed from the cached `peak.elevationProfile` (no fetch). `CardBack` + `PeakMiniMap` gained optional `disableNearby` / `elevationProfile` props (the app path is unchanged). The only visual delta vs the app back: no surrounding nearby-peak markers.
@@ -1224,62 +1224,60 @@ The list panel is **decoupled from the map zoom**. When the user taps "Lista":
 
 ---
 
-## Capture Reveal — post-creation animation (Android)
+## Capture Reveal — post-creation animation (Android, redesigned 2026-06-17)
 
-Full-screen cinematic overlay shown right after an ascent is created, before landing on the new card. Implemented with **Lottie** (`feature/newascent/AscentCaptureReveal.kt`). Authoritative cross-platform spec for web/iOS.
+Full-screen cinematic overlay after an ascent is created; it **auto-dissolves** to the new card (no tap). Implemented with **Lottie** (`feature/newascent/AscentCaptureReveal.kt`). Authoritative cross-platform spec for web/iOS.
 
-### Visual composition (top → bottom)
+### Concept — it IS the real card
+
+The card the user just earned (`CardFront`) sits **centered over the feed**. Two cover layers hide its content and dissolve on reveal:
+- an **opaque white backdrop** over the screen (hides the feed settling to Mine + scrolling to the new card behind);
+- a **light-gray cover `#EAEEF3`** over the photo area, ABOVE the gradient + peak name (so the name is hidden during the build). The reveal "scene" plays on this gray.
+
+No dark scrim, no separate navy background — it reads as the actual card being unveiled.
+
+### Visual composition (the scene, top → bottom)
 
 ```
-            🌼  (Lottie flower, tinted to rarity)
+            🌼   daisy (Lottie, petals tinted to rarity)
+       PEAK CAPTURED!   ← epic: uppercase, Black, rarity-tinted glow, size ∝ flower
 
-         Carta desbloqueada      ← gold #F5C842, 13sp Black, letter-spaced
-          PEAK NAME (UPPERCASE)  ← 30sp ExtraBold white
-       [ ✿ Rarity ]  [ 0000 m ]  ← two translucent pills, centered
+                        (gap)
 
-                 ⋮               (large gap)
-
-              + N EP             ← white 20sp, rarity glow + sparkles (bottom-anchored)
+           Peak name    ← 22sp Black, rarity color
+            0000 m      ← 28sp Black, rarity color
+      ▁▂▃▅▃▂▁ profile   ← rarity-tinted elevation profile, flush to bottom
 ```
 
-The whole **card the user just earned** sits behind everything, blurred, under a dark scrim. Background is dark navy `#0A1628`.
+`MYTHIC` pill (mythic only) appears top-left.
 
-### Flower
+### Flower (daisy)
 
-- Asset: `res/raw/flower_bloom.json` (a free "flower growing" Lottie, 2s, ~15KB).
-- **Tinting is per-rarity at runtime** — only the petals + center are recolored; stem and leaves stay their natural green. Petals = `rarity.color`, center = `rarity.color × 0.6` (darker). Never tint the whole flower (no `"**"` wildcard) — the stem/leaves must read as a real plant.
-- Grows once (speed 0.85 → ~2.35s), then stays **alive**: subtle breathing (scale ±3.5%, 2.6s) + sway (±1.5°, 3.4s), pivoting near the stem base. A soft white radial halo sits behind it (spotlight) so petals/stem/leaves all pop against the photo.
+- Asset: `res/raw/flower_bloom.json` — a **daisy** (center disc + 5 petals; stem/leaves disabled in the file), 1080×1080, 25fps/75f, **Spanish node names**.
+- **Per-rarity tint at runtime** (`rememberLottieDynamicProperties`): petals = `rarity.color` via wildcard `("**","Grupo 2","Relleno 1")`; center disc = a **darker shade** (`× 0.55`) via fill `("flor","Grupo 1","Relleno 1")` + stroke `("flor","Grupo 1","Trazo 1")`. Black petal outlines stay. On the mythic beat the petals animate to **gold** (`#FFD700`), center to darker gold.
+- Blooms once (speed 0.85), then breathing (±3.5%) + sway (±1.5°). `flowerDp = maxHeight × 0.65`, centered. The daisy art lives in the **top third of its frame**, so the headline is pulled up (`offset y = -0.40 × flowerDp`) to hug it.
 
-### Rarity color palette (flower + pills + glow)
-
-The flower petals, rarity pill, and EP glow all use the rarity's vivid `color` (see "Rarity colors" / "Rarity definitions" sections). Each rarity therefore reveals as a different-colored flower — daisy = green, gentian = navy, edelweiss = violet, etc.
-
-### Copy & type
+### Type & color
 
 | Element | Text | Style |
 |---|---|---|
-| Label | "Carta desbloqueada" | gold `#F5C842`, 13sp Black, 0.18em tracking |
-| Peak name | `peak.name` UPPERCASE | 30sp ExtraBold, white |
-| Rarity pill | `✿ {label}` | translucent pill, rarity color (bg 20%, border 55%) |
-| Altitude pill | `{altitudeM} m` | same pill, white accent |
-| EP | `+ {ep} EP` | white, 20sp Black, rolls 0→N then bounces |
+| Headline | `capture_reveal_captured` UPPERCASE (es "¡Cima capturada!" / en "Peak captured!") | Black, `fontSize ∝ flower`, rarity-tinted `Shadow` glow |
+| Peak name | `peak.name` | 22sp Black, `-0.04em`, **rarity color** |
+| Altitude | `{altitudeM} m` | 28sp Black, `-0.04em`, **rarity color** |
+| Profile | elevation polyline | `ElevationProfileCanvas` (reused from `CardBack`, `lineColor` = rarity), flush to image bottom |
 
-Pills share one `RevealPill(accent, leading, label)` — rounded-100 chip, `accent×0.20` bg, `accent×0.55` border, 16/7 padding.
+### Timeline (fully automatic — no taps)
 
-### Timeline (automatic, no taps until the end)
+1. Card enters (scale-in + fade). Flower blooms.
+2. `infoAppear` (spring) pops in **PEAK CAPTURED!** + name + altitude + profile.
+3. **+700ms after bloom**: the **RARITY stat-band cell** pops big→small (`rarityScale` 2.1→1, held ~1.4s) — sequenced after the headline so it's noticed.
+4. **+2.3s after bloom**: the **EP cell** rolls `0→N` (1.3s); the whole amber reward pill scales big (1.9)→1 with a pop.
+5. **Mythic beat** (~400ms after EP): petals→gold, **MYTHIC pill** pops big→small top-left, gold glow + particle burst.
+6. **Auto-reveal**: ~**2s** after the sequence ends (mythic waits ~2.2s extra for its beat) the focus-pull runs by itself — photo blur 16→0, both covers dissolve, scene fades — then it hands off to the feed.
 
-1. Flower blooms (~2.35s).
-2. **+1.5s**: info block (label + peak name + both pills) fades in **together** (single group, slide-up).
-3. **bloom-done + 1.2s beat**: EP counter rolls `0 → N` (900ms) then a spring **bounce**; behind it a rarity-colored glow pulses and a one-shot **sparkle burst** (12 dots, bright white cores + colored halos) radiates out and fully fades — Duolingo-style celebration.
-4. **On tap** anywhere: "focus pull" — the blurred card sharpens (blur 16→0) and the dark scrim + overlay dissolve over 750ms, as if the user discovers the card; then it navigates to the new card.
+### Reward — no Cairn
 
-### EP celebration is bottom-anchored
-
-EP is a separate block anchored to the bottom (`BottomCenter` + nav-bar padding + 18dp) so it never collides with two-line peak names. The main block (flower + info) is shifted up to balance the composition.
-
-### Mythic
-
-For mythic peaks the glow + sparkles + EP glow turn **gold** and an extra pulsing gold halo + particle burst plays around the flower.
+The reward shows only **"+N EP"** (amber pill). The Cairn was removed everywhere (always 1 on mythic). Mythic is conveyed by the gold petals + MYTHIC pill + glow, not a cairn count.
 
 ---
 
