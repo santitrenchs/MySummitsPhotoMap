@@ -167,20 +167,31 @@ export function AscentsClient({
   // NOTE: this is intentionally separate from `highlightId` — the ring auto-clears
   // after 2.5s, which would otherwise cut the (longer) reveal short. It is cleared
   // only by the reveal's own onFinished.
-  const [revealCardId, setRevealCardId] = useState<string | null>(null);
+  // Initialize SYNCHRONOUSLY (not in an effect) so the very first paint already
+  // renders CaptureReveal in place of the just-created card. A post-mount effect
+  // here used to flip a normal AscentCard → CaptureReveal AFTER first paint, which
+  // made Virtuoso re-measure the item (combined with initialTopMostItemIndex) and
+  // briefly collapse it to 0×0 — visible as the card "disappearing" for ~1.5s on
+  // feeds with many cards. searchParams is available on first render (same pattern
+  // as highlightId above), and SSR sees the same ?reveal=1 URL, so no hydration gap.
+  const [revealCardId, setRevealCardId] = useState<string | null>(() =>
+    searchParams.get("reveal") === "1" ? searchParams.get("highlight") : null
+  );
   useEffect(() => {
-    // Read the flag from window.location on the client (more reliable than
-    // useSearchParams on the first render under Suspense), set the reveal target,
-    // and strip ?reveal=1 so a refresh doesn't replay the animation.
+    // Strip ?reveal=1 so a refresh doesn't replay the animation. State is already
+    // set synchronously above — this only cleans the URL.
     const p = new URLSearchParams(window.location.search);
     if (p.get("reveal") === "1") {
-      const id = p.get("highlight");
-      if (id) setRevealCardId(id);
       const u = new URL(window.location.href);
       u.searchParams.delete("reveal");
       window.history.replaceState(null, "", u.toString());
     }
   }, []);
+  // Captured once at first render: when the page opens straight into a reveal we
+  // must NOT also drive Virtuoso's initialTopMostItemIndex — the new card is at the
+  // top of "mine", and positioning it triggers the collapse race. Frozen via useRef
+  // so it doesn't flip to true after onFinished clears revealCardId.
+  const skipInitialScroll = useRef(revealCardId !== null).current;
 
   // Lock body scroll when sheet open
   useEffect(() => {
@@ -926,7 +937,7 @@ export function AscentsClient({
           <Virtuoso
             ref={virtuosoRef}
             useWindowScroll
-            {...(initialHighlightIndex ? { initialTopMostItemIndex: initialHighlightIndex } : {})}
+            {...(initialHighlightIndex && !skipInitialScroll ? { initialTopMostItemIndex: initialHighlightIndex } : {})}
             data={filtered}
             endReached={loadMore}
             rangeChanged={handleRangeChanged}
