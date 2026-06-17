@@ -124,6 +124,7 @@ import java.time.format.FormatStyle
 fun NewAscentSheet(
     onDismiss: () -> Unit,
     onSuccess: (ascent: Ascent, taggingWarning: String?) -> Unit = { _, _ -> },
+    onDeleted: () -> Unit = {},
     initialPeakId: String? = null,
     initialPeakName: String? = null,
     editAscent: Ascent? = null,
@@ -195,6 +196,7 @@ fun NewAscentSheet(
                 },
                 onReplacePhoto = { photoPicker.launch("image/*") },
                 onClose  = { scope.launch { sheetState.hide(); onDismiss() } },
+                onDelete = { vm.deleteAscent { onDeleted() } },
             )
         }
     }
@@ -451,9 +453,26 @@ private fun AscentFormStep(
     onSubmit: () -> Unit,
     onReplacePhoto: () -> Unit,
     onClose: () -> Unit,
+    onDelete: () -> Unit = {},
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showDiscard    by remember { mutableStateOf(false) }
+    var showDatePicker   by remember { mutableStateOf(false) }
+    var showDiscard      by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // ── Delete confirmation (double-check before deleting the ascent) ──────────
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title   = { Text(stringResource(R.string.new_ascent_delete)) },
+            text    = { Text(stringResource(R.string.new_ascent_delete_confirm)) },
+            confirmButton = {
+                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) {
+                    Text(stringResource(R.string.action_delete), color = Color(0xFFDC2626))
+                }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
 
     // Captured INSIDE the ModalBottomSheet window — Material3 renders sheet content
     // in a separate window, so the host's FocusManager would clear the wrong window.
@@ -819,6 +838,22 @@ private fun AscentFormStep(
                             fontSize = 13.sp,
                             color    = Color(0xFFDC2626),
                         )
+                    }
+                }
+            }
+
+            // Delete ascent — edit mode only, with a double-check dialog (mirrors web).
+            if (state.isEditMode) {
+                item {
+                    Column {
+                        HorizontalDivider(color = PeakBorderLight, modifier = Modifier.padding(vertical = 8.dp))
+                        TextButton(
+                            onClick  = { showDeleteConfirm = true },
+                            enabled  = !state.isLoading,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(stringResource(R.string.new_ascent_delete), color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
             }

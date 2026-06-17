@@ -901,9 +901,7 @@ internal data class CardRevealState(
     val rarityScale:  Float = 1f,                         // scale of the rarity cell value (big → 1 highlight)
     val epDisplay:    Int? = null,                        // null → show rarity.ep (final value)
     val epScale:      Float = 1f,                         // scale of the EP number (big while rolling → 1)
-    val showCairn:    Boolean = true,                     // mythic: whether the cairn is shown (revealed at the mythic beat)
-    val cairnScale:   Float = 1f,                         // scale of the cairn (big → 1 on the mythic beat)
-    val photoOverlay: (@Composable BoxScope.() -> Unit)? = null, // mountaineer + flower scene, inside the photo
+    val photoOverlay: (@Composable BoxScope.() -> Unit)? = null, // flower scene, inside the photo
 )
 
 @Composable
@@ -1038,14 +1036,14 @@ internal fun CardFront(
             }
 
             // Capture-reveal: light-gray cover that hides the photo AND the peak name
-            // during the build (the name reappears as it dissolves on the final tap).
-            // Sits above the gradient/name, below the mountaineer + flower scene.
+            // during the build (they reappear as it dissolves on auto-reveal). Sits
+            // above the gradient/name, below the flower scene.
             if (photoCover > 0f) {
                 Box(Modifier.fillMaxSize().background(Color(0xFFEAEEF3).copy(alpha = photoCover)))
             }
 
-            // Capture-reveal scene (mountaineer + flower) — on top of the cover.
-            // Null on normal feed renders.
+            // Capture-reveal scene (flower + headline + name + profile) on top of the
+            // cover. Null on normal feed renders.
             reveal?.photoOverlay?.invoke(this)
         }
 
@@ -1064,12 +1062,9 @@ internal fun CardFront(
             )
             StatBandItem(stringResource(R.string.cards_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
             RewardStatItem(
-                isMythic   = isMythic,
-                ep         = reveal?.epDisplay ?: rarity.ep,
-                epScale    = reveal?.epScale ?: 1f,
-                showCairn  = reveal?.showCairn ?: true,
-                cairnScale = reveal?.cairnScale ?: 1f,
-                modifier   = Modifier.weight(1f),
+                ep       = reveal?.epDisplay ?: rarity.ep,
+                epScale  = reveal?.epScale ?: 1f,
+                modifier = Modifier.weight(1f),
             )
         }
         Spacer(Modifier.height(3.dp))
@@ -1103,15 +1098,12 @@ internal fun RarityStatItem(label: String, rarityLabel: String, color: Color, sc
     }
 }
 
-// Reward cell — mirrors web: an amber pill, "+N EP" in amber (#d97706), and for
-// mythic peaks a cairn glyph + "1 Cairn ·" (#f59e0b) before it.
+// Reward cell — amber pill with "+N EP" (#d97706). The Cairn was removed (it was
+// always 1 on mythic, so it added no info and made the pill overflow).
 @Composable
 internal fun RewardStatItem(
-    isMythic: Boolean,
     ep: Int,
     epScale: Float = 1f,
-    showCairn: Boolean = true,
-    cairnScale: Float = 1f,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -1121,60 +1113,27 @@ internal fun RewardStatItem(
         Text(stringResource(R.string.cards_stat_reward), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
         Spacer(Modifier.height(2.dp))
         Row(
-            // Scale the whole pill (not just the inner text). epScale drives the EP
-            // roll; cairnScale the mythic-beat pop — never both >1 at once, so the
-            // product is whichever is active.
             modifier = Modifier
-                .graphicsLayer { val s = epScale * cairnScale; scaleX = s; scaleY = s }
-                // Like web (nowrap pill): size to content and overflow the cell instead
-                // of truncating "+N EP" when the cairn is also shown.
+                .graphicsLayer { scaleX = epScale; scaleY = epScale }
                 .wrapContentWidth(unbounded = true)
                 .background(Color(0xFFFEF3C7), RoundedCornerShape(100))
                 .padding(horizontal = 10.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            if (isMythic && showCairn) {
-                CairnGlyph(Color(0xFFF59E0B), Modifier.size(12.dp))
-                Text(stringResource(R.string.cards_card_cairn) + " ·", fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                    color = Color(0xFFF59E0B), maxLines = 1, softWrap = false)
-            }
             Text("+$ep EP", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706), maxLines = 1, softWrap = false)
         }
     }
 }
 
-// Cairn glyph — four stacked stones (mirrors web reward SVG: ellipses at
-// cy=17/12/7.5/4 with rx=6/4.5/3/1.8 in a 20×20 box).
 @Composable
-private fun CairnGlyph(color: Color, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val w = size.width; val h = size.height
-        fun stone(cyF: Float, rxF: Float, ryF: Float) {
-            val rx = w * rxF; val ry = h * ryF
-            drawOval(color = color,
-                topLeft = Offset(w / 2f - rx, h * cyF - ry),
-                size = androidx.compose.ui.geometry.Size(rx * 2f, ry * 2f))
-        }
-        stone(0.85f, 0.30f, 0.125f)   // cy17 rx6 ry2.5
-        stone(0.60f, 0.225f, 0.10f)   // cy12 rx4.5 ry2
-        stone(0.375f, 0.15f, 0.09f)   // cy7.5 rx3 ry1.8
-        stone(0.20f, 0.09f, 0.065f)   // cy4 rx1.8 ry1.3
-    }
-}
-
-@Composable
-internal fun StatBandItem(label: String, value: String, color: Color, modifier: Modifier = Modifier, valueScale: Float = 1f) {
+internal fun StatBandItem(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
     Column(
-        // background-with-shape (not clip) so the value can scale up beyond the cell
-        // during the capture-reveal (rarity highlight) without being clipped.
         modifier = modifier.background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
         Spacer(Modifier.height(2.dp))
-        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.graphicsLayer { scaleX = valueScale; scaleY = valueScale })
+        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -1381,11 +1340,12 @@ private fun fitTextToWidth(text: String, paint: Paint, maxWidth: Float): String 
 // ── Elevation profile ──────────────────────────────────────────────────────────
 
 @Composable
-private fun ElevationProfileCanvas(
+internal fun ElevationProfileCanvas(
     peakId: String,
     profile: com.peakadex.app.core.model.ElevationProfileData?,
     altitudeM: Int,
     modifier: Modifier = Modifier,
+    lineColor: Color = Color.White,
 ) {
     // Start with whatever the API response gave us (may be null if not included).
     var resolvedProfile by remember(peakId) { mutableStateOf(profile) }
@@ -1407,7 +1367,7 @@ private fun ElevationProfileCanvas(
 
     if (pts == null) {
         // Show an altitude bar as fallback while loading (or if fetch failed).
-        ElevationFallbackBar(altitudeM = altitudeM, modifier = modifier)
+        ElevationFallbackBar(altitudeM = altitudeM, modifier = modifier, lineColor = lineColor)
         return
     }
 
@@ -1431,7 +1391,7 @@ private fun ElevationProfileCanvas(
             lineTo(toX(pts.size - 1), h)
             close()
         }
-        drawPath(areaPath, color = Color.White.copy(alpha = 0.20f))
+        drawPath(areaPath, color = lineColor.copy(alpha = 0.20f))
 
         // Line
         val linePath = Path().apply {
@@ -1440,21 +1400,21 @@ private fun ElevationProfileCanvas(
                 else        lineTo(toX(i), toY(p.elevation))
             }
         }
-        drawPath(linePath, color = Color.White,
+        drawPath(linePath, color = lineColor,
             style = Stroke(width = 1.5.dp.toPx(), join = StrokeJoin.Round))
     }
 }
 
 // Simple altitude bar shown while the profile is loading or when fetch fails.
 @Composable
-private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) {
+private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier, lineColor: Color = Color.White) {
     val pct = (altitudeM / 8849f).coerceIn(0f, 1f)
     Canvas(modifier = modifier) {
         val barH  = 4.dp.toPx()
         val y     = (size.height - barH) / 2
         // Track
         drawRoundRect(
-            color        = Color.White.copy(alpha = 0.20f),
+            color        = lineColor.copy(alpha = 0.20f),
             topLeft      = androidx.compose.ui.geometry.Offset(0f, y),
             size         = androidx.compose.ui.geometry.Size(size.width, barH),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),
@@ -1462,7 +1422,7 @@ private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) 
         // Fill
         if (pct > 0f) {
             drawRoundRect(
-                color        = Color.White.copy(alpha = 0.65f),
+                color        = lineColor.copy(alpha = 0.65f),
                 topLeft      = androidx.compose.ui.geometry.Offset(0f, y),
                 size         = androidx.compose.ui.geometry.Size(size.width * pct, barH),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),

@@ -84,7 +84,6 @@
     <string name="cards_filters_see_cards">Ver %d cartas</string>
     <string name="cards_stat_rarity">RAREZA</string>
     <string name="cards_stat_altitude">ALTITUD</string>
-    <string name="cards_stat_ep">EP</string>
     <string name="cards_stat_reward">RECOMPENSA</string>
     <string name="cards_stats_title">ESTADÍSTICAS PEAKADEX</string>
     <string name="card_cordada_label">Tu Cordada:</string>
@@ -151,6 +150,8 @@
     <!-- ── Nueva ascensión ───────────────────────────────────────────────────── -->
     <string name="new_ascent_title">Registrar ascensión</string>
     <string name="new_ascent_edit_title">Editar ascensión</string>
+    <string name="new_ascent_delete">Eliminar ascensión</string>
+    <string name="new_ascent_delete_confirm">¿Eliminar esta ascensión? Esta acción no se puede deshacer.</string>
     <string name="new_ascent_change_photo">Cambiar foto</string>
     <string name="new_ascent_add_photo">Añade una foto</string>
     <string name="new_ascent_photo_formats">JPEG · PNG · WebP · máx. 10 MB</string>
@@ -172,14 +173,7 @@
     <string name="new_ascent_route_placeholder">Nombre de la ruta...</string>
     <string name="new_ascent_notes_placeholder">Añade una descripción, condiciones...</string>
     <string name="new_ascent_tag_placeholder">Buscar persona...</string>
-    <string name="capture_reveal_title">Rareza \"%1$s\" capturada</string>
-    <string name="capture_reveal_subtitle">Nueva flor añadida a tus cards</string>
-    <string name="capture_reveal_continue">Toca para continuar</string>
-    <string name="capture_reveal_unlocked">Carta desbloqueada</string>
     <string name="capture_reveal_captured">¡Cima capturada!</string>
-    <string name="capture_reveal_rarity_line">Rareza: %1$s</string>
-    <string name="capture_reveal_ep">+ %1$d EP</string>
-    <string name="capture_reveal_subtitle_mythic">¡Cima mítica capturada!</string>
 
     <!-- ── Ajustes ───────────────────────────────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -293,7 +287,6 @@
     <string name="atlas_filter_mythic">⭐ Mítico</string>
     <string name="cards_filter_mythic">⭐ Mítico</string>
     <string name="card_mythic">MYTHIC</string>
-    <string name="cards_card_cairn">1 Cairn</string>
     <string name="atlas_sort_distance">Distancia</string>
     <string name="atlas_sort_relevance">Relevancia</string>
     <string name="atlas_sort_altitude">Altitud</string>

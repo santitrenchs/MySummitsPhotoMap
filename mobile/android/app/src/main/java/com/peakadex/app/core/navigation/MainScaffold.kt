@@ -296,6 +296,14 @@ fun MainScaffold(navController: NavController) {
                     scope.launch { snackbarHostState.showSnackbar(taggingWarning) }
                 }
             },
+            onDeleted  = {
+                // Close the sheet + reload Cards (drops the deleted card) and Atlas.
+                editAscent        = null
+                cardsHighlightId  = null
+                cardsScrollId     = null
+                cardsRefreshTrigger++
+                atlasRefreshTrigger++
+            },
         )
     }
         NavHost(

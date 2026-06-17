@@ -164,17 +164,6 @@ export function ShareCard(props: ShareCardData) {
         </StatCell>
         <StatCell label={labels.reward}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#fef3c7", borderRadius: "var(--radius-full)", padding: "3px 8px", whiteSpace: "nowrap" }}>
-            {peak.isMythic && (
-              <>
-                <svg width="12" height="12" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
-                  <ellipse cx="10" cy="17" rx="6" ry="2.5" />
-                  <ellipse cx="10" cy="12" rx="4.5" ry="2" />
-                  <ellipse cx="10" cy="7.5" rx="3" ry="1.8" />
-                  <ellipse cx="10" cy="4" rx="1.8" ry="1.3" />
-                </svg>
-                <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 700 }}>{labels.cairn} ·</span>
-              </>
-            )}
             <span style={{ color: "#d97706", fontSize: 13, fontWeight: 700 }}>+{rarityEp} EP</span>
           </div>
         </StatCell>

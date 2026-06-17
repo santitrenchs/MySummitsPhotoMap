@@ -348,6 +348,23 @@ class NewAscentViewModel : ViewModel() {
      *  3. If the photo is unchanged → reconcile person tags on the existing photo
      *     (add newly-selected, remove de-selected).
      */
+    /** Deletes the ascent being edited (edit mode only). Calls [onDeleted] on success. */
+    fun deleteAscent(onDeleted: () -> Unit) {
+        val ascentId = _state.value.editAscentId ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            try {
+                api.deleteAscent(ascentId)
+                _state.update { it.copy(isLoading = false) }
+                onDeleted()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(isLoading = false, error = UiText.Dynamic("Error al eliminar: ${e.localizedMessage}")) }
+            }
+        }
+    }
+
     fun submitEdit(onSuccess: (taggingWarning: String?) -> Unit) {
         val s = _state.value
         val ascentId = s.editAscentId ?: return

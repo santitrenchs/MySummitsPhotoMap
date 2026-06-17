@@ -84,7 +84,6 @@
     <string name="cards_filters_see_cards">See %d cards</string>
     <string name="cards_stat_rarity">RARITY</string>
     <string name="cards_stat_altitude">ALTITUDE</string>
-    <string name="cards_stat_ep">EP</string>
     <string name="cards_stat_reward">REWARD</string>
     <string name="cards_stats_title">PEAKADEX STATS</string>
     <string name="card_cordada_label">Your rope team:</string>
@@ -151,6 +150,8 @@
     <!-- ── New ascent ────────────────────────────────────────────────────────── -->
     <string name="new_ascent_title">Log ascent</string>
     <string name="new_ascent_edit_title">Edit ascent</string>
+    <string name="new_ascent_delete">Delete ascent</string>
+    <string name="new_ascent_delete_confirm">Delete this ascent? This action cannot be undone.</string>
     <string name="new_ascent_change_photo">Change photo</string>
     <string name="new_ascent_add_photo">Add a photo</string>
     <string name="new_ascent_photo_formats">JPEG · PNG · WebP · max. 10 MB</string>
@@ -172,14 +173,7 @@
     <string name="new_ascent_route_placeholder">Route name...</string>
     <string name="new_ascent_notes_placeholder">Add a description, conditions...</string>
     <string name="new_ascent_tag_placeholder">Search person...</string>
-    <string name="capture_reveal_title">Rarity \"%1$s\" captured</string>
-    <string name="capture_reveal_subtitle">New flower added to your cards</string>
-    <string name="capture_reveal_unlocked">Card unlocked</string>
     <string name="capture_reveal_captured">Peak captured!</string>
-    <string name="capture_reveal_rarity_line">Rarity: %1$s</string>
-    <string name="capture_reveal_ep">+ %1$d EP</string>
-    <string name="capture_reveal_subtitle_mythic">Mythic summit captured!</string>
-    <string name="capture_reveal_continue">Tap to continue</string>
 
     <!-- ── Settings ─────────────────────────────────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -293,7 +287,6 @@
     <string name="atlas_filter_mythic">⭐ Mythic</string>
     <string name="cards_filter_mythic">⭐ Mythic</string>
     <string name="card_mythic">MYTHIC</string>
-    <string name="cards_card_cairn">1 Cairn</string>
     <string name="atlas_sort_distance">Distance</string>
     <string name="atlas_sort_relevance">Relevance</string>
     <string name="atlas_sort_altitude">Altitude</string>

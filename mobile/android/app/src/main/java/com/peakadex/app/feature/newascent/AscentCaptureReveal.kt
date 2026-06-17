@@ -14,16 +14,15 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -43,30 +42,33 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.airbnb.lottie.compose.rememberLottieDynamicProperties
 import com.airbnb.lottie.compose.rememberLottieDynamicProperty
 import com.peakadex.app.R
 import com.peakadex.app.core.model.Ascent
-import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.RarityInfo
 import com.peakadex.app.feature.cards.CardFront
 import com.peakadex.app.feature.cards.CardRevealState
+import com.peakadex.app.feature.cards.ElevationProfileCanvas
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
@@ -74,13 +76,13 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 // ── Timeline (ms) — card-grounded cinematic reveal ──────────────────────────────
-// The real card floats over the live feed (no full-screen scrim). Only the photo
-// is blurred. A flower blooms inside the photo, then the EP counter rolls up in
-// the card's own stat band. On tap, the photo "focus-pulls" sharp and the flower
-// dissolves, leaving the finished card.
+// The real card floats over the feed under an opaque cover. Sequence: flower blooms
+// → "PEAK CAPTURED!" + peak name appear → rarity cell pops → EP rolls up → (mythic)
+// gold petals + MYTHIC pill. ~2s after it finishes the cover/scene dissolve
+// (focus-pull) to the real card automatically, then hand off to the feed.
 private const val GROW_SPEED  = 0.85f   // flower bloom speed (file is 2s → ~2.35s)
-private const val T_EP        = 2100L   // EP starts this long after the bloom (lets the rarity pop breathe)
-private const val EP_COUNT_MS = 900L    // EP roll-up duration
+private const val T_EP        = 2300L   // EP starts this long after the bloom (lets the rarity pop breathe)
+private const val EP_COUNT_MS = 1300L   // EP roll-up duration
 private const val PHOTO_BLUR  = 16      // dp — photo blur during BUILD
 
 private enum class RevealPhase { BUILD, REVEAL }
@@ -119,9 +121,10 @@ fun AscentCaptureReveal(
     val rarityScale = remember { Animatable(1f) }
     LaunchedEffect(bloomDone) {
         if (bloomDone) {
+            delay(700)                                   // let "PEAK CAPTURED!" land first
             view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             rarityScale.animateTo(2.1f, tween(durationMillis = 300, easing = EaseOutBack))
-            delay(950)                                   // hold big so it's clearly noticed
+            delay(1400)                                  // hold big a bit longer so it's clearly noticed
             rarityScale.animateTo(1.14f, tween(180))
             rarityScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 320f))
         }
@@ -151,31 +154,26 @@ fun AscentCaptureReveal(
         }
     }
 
-    // Mythic beat — fires AFTER the EP lands (only for mythic). Petals turn gold,
-    // the MYTHIC pill appears top-left, and the cairn grows in next to the EP.
+    // Mythic beat — fires AFTER the EP lands (only for mythic): petals turn gold,
+    // the MYTHIC pill pops in top-left, plus a gold glow + particle burst.
     var mythicBeat by remember { mutableStateOf(false) }
-    val cairnScale = remember { Animatable(1f) }
+    val pillScale  = remember { Animatable(1f) }   // MYTHIC pill big → small pop
     LaunchedEffect(epDone) {
         if (epDone && isMythic && !mythicBeat) {
-            delay(300)
+            delay(400)
             mythicBeat = true
             view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-            cairnScale.snapTo(1.9f)
-            cairnScale.animateTo(1.12f, tween(160))
-            cairnScale.animateTo(1f, spring(dampingRatio = 0.42f, stiffness = 340f))
+            // Pill pops big → settle (slower, more noticeable).
+            pillScale.snapTo(1.7f)
+            pillScale.animateTo(1.14f, tween(280))
+            pillScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 220f))
         }
     }
-    // Petal color: rarity → gold on the mythic beat.
+    // Petal color: rarity → gold on the mythic beat (slower tint).
     val petalColor by androidx.compose.animation.animateColorAsState(
         targetValue   = if (mythicBeat) Color(0xFFFFD700) else rarity.color,
-        animationSpec = tween(durationMillis = 600),
+        animationSpec = tween(durationMillis = 1000),
         label         = "petal_color",
-    )
-    // MYTHIC pill appearance (scale + fade) on the beat.
-    val pillAppear by animateFloatAsState(
-        targetValue   = if (mythicBeat) 1f else 0f,
-        animationSpec = tween(durationMillis = 320),
-        label         = "pill_appear",
     )
 
     // Focus-pull on tap: photo blur 16 → 0 and the dark scrim dissolves.
@@ -204,29 +202,42 @@ fun AscentCaptureReveal(
         animationSpec = tween(durationMillis = 450),
         label         = "fx_alpha",
     )
+    // Info (Peak captured + name + altitude + profile) springs in after the bloom.
+    val infoAppear by animateFloatAsState(
+        targetValue   = if (bloomDone) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 260f),
+        label         = "info_appear",
+    )
+
+    // Reveal: dissolve the cover/scene to show the real card, then hand off to the feed.
+    val doReveal: () -> Unit = {
+        if (phase == RevealPhase.BUILD) {
+            phase = RevealPhase.REVEAL
+            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            scope.launch {
+                // If reveal is triggered before the EP finished rolling, fast-forward it.
+                if (!epDone) {
+                    epStarted = true
+                    epCount.animateTo(rarity.ep.toFloat(), tween(160))
+                    epDone = true
+                }
+                delay(800)   // let the focus-pull play before handing off to the feed
+                onFinished()
+            }
+        }
+    }
+
+    // Auto-reveal 1s after the whole sequence finishes (mythic waits for its beat).
+    LaunchedEffect(epDone) {
+        if (epDone) {
+            if (isMythic) delay(2200)   // mythic beat: gold tint + pill + particles
+            delay(2000)                 // 2s after the action ends
+            doReveal()
+        }
+    }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .clickable(
-                enabled           = phase == RevealPhase.BUILD,
-                indication        = null,
-                interactionSource = remember { MutableInteractionSource() },
-            ) {
-                phase = RevealPhase.REVEAL
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                scope.launch {
-                    // If the user taps before the EP finished rolling, fast-forward
-                    // it so the reward number always lands.
-                    if (!epDone) {
-                        epStarted = true
-                        epCount.animateTo(rarity.ep.toFloat(), tween(160))
-                        epDone = true
-                    }
-                    delay(800)   // let the focus-pull play before handing off to the feed
-                    onFinished()
-                }
-            },
+        modifier = modifier.fillMaxSize(),
     ) {
         // Opaque backdrop hiding the still-settling feed; dissolves on tap.
         if (backdropAlpha > 0f) {
@@ -259,75 +270,99 @@ fun AscentCaptureReveal(
                     rarityScale = rarityScale.value,
                     epDisplay   = epCount.value.roundToInt(),
                     epScale    = epScale.value,
-                    showCairn  = mythicBeat,            // cairn appears at the mythic beat
-                    cairnScale = cairnScale.value,
                     photoOverlay = {
                         BoxWithConstraints(Modifier.fillMaxSize()) {
-                            // Raise the whole scene ~10% to leave room for the headline.
-                            val raise = maxHeight * 0.10f
+                            val flowerDp = maxHeight * 0.65f
+                            val epicSize = (flowerDp.value * 0.105f).sp
 
-                            // Mountaineer — bottom-left, fit by height, raised 10%.
-                            // 15% smaller than before (same bottom anchor → more top room).
-                            MountaineerLottie(
-                                modifier = Modifier
-                                    .align(Alignment.BottomStart)
-                                    .padding(start = 6.dp)
-                                    .offset(y = -raise)
-                                    .fillMaxHeight(0.73f)
-                                    .aspectRatio(884f / 1796f)
-                                    .alpha(fxAlpha),
-                            )
-                            // Flower — to the RIGHT of the mountaineer, growing up to
-                            // ~his waist. Petals turn gold on the mythic beat.
-                            BloomLottie(
-                                rarity     = rarity,
-                                replayKey  = ascent.id,
-                                petalColor = petalColor,
-                                onBloomed  = { bloomDone = true },
-                                modifier   = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(end = 2.dp)
-                                    .offset(y = -raise)
-                                    .fillMaxHeight(0.39f)
-                                    .aspectRatio(1f)
-                                    .alpha(fxAlpha),
-                            )
-                            // Mythic glow + particles behind the flower — only on the beat.
-                            if (isMythic && mythicBeat) {
+                            // Upper group: flower + "PEAK CAPTURED!" right beneath it
+                            // (small gap so the headline hugs the flower). The peak name
+                            // sits lower, near the profile, so they breathe apart.
+                            Column(
+                                modifier            = Modifier
+                                    .align(Alignment.Center)
+                                    .fillMaxWidth()
+                                    .offset(y = -(maxHeight * 0.05f)),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
                                 Box(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .offset(y = -raise)
-                                        .fillMaxHeight(0.39f)
-                                        .aspectRatio(1f)
-                                        .alpha(fxAlpha),
-                                ) { MythicGlow(Modifier.fillMaxSize()) }
+                                    modifier         = Modifier.size(flowerDp).alpha(fxAlpha),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (isMythic && mythicBeat) MythicGlow(Modifier.fillMaxSize())
+                                    BloomLottie(
+                                        rarity     = rarity,
+                                        replayKey  = ascent.id,
+                                        petalColor = petalColor,
+                                        onBloomed  = { bloomDone = true },
+                                        modifier   = Modifier.fillMaxSize(),
+                                    )
+                                }
+                                // The daisy art sits in the top third of its frame (the
+                                // lower part is the hidden stem area), so the flower Box
+                                // has a large empty bottom. Pull the headline up into that
+                                // empty space so it hugs the actual flower.
+                                Text(
+                                    text          = stringResource(R.string.capture_reveal_captured).uppercase(),
+                                    color         = Color(0xFF111827),
+                                    fontSize      = epicSize,
+                                    fontWeight    = FontWeight.Black,
+                                    letterSpacing = 0.08.em,
+                                    textAlign     = TextAlign.Center,
+                                    style         = TextStyle(shadow = Shadow(color = rarity.color.copy(alpha = 0.4f), blurRadius = 16f)),
+                                    modifier      = Modifier
+                                        .offset(y = -(flowerDp * 0.40f))
+                                        .alpha((infoAppear * fxAlpha).coerceIn(0f, 1f)),
+                                )
+                            }
+
+                            // Peak name + altitude — lower, close to the elevation profile.
+                            // Same size as the front card, dark so they read on the gray cover.
+                            Column(
+                                modifier            = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 52.dp)
+                                    .alpha((infoAppear * fxAlpha).coerceIn(0f, 1f)),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(ascent.peak.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = rarity.color,
+                                    letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+                                Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black, color = rarity.color,
+                                    letterSpacing = (-0.04).em, textAlign = TextAlign.Center)
+                            }
+
+                            // Mythic particles burst from the flower — only on the beat.
+                            if (isMythic && mythicBeat) {
                                 MythicParticles(
                                     replayKey = ascent.id,
                                     modifier  = Modifier.fillMaxSize().alpha(fxAlpha),
                                 )
                             }
 
-                            // Peakadex wordmark (same as the top bar) — branding moment
-                            // below the scene. The rarity is highlighted via its cell pop.
-                            BrandHeadline(
-                                visible  = bloomDone,
-                                fade     = fxAlpha,
-                                modifier = Modifier
+                            // Elevation profile — rarity-tinted, flush to the bottom of the image.
+                            ElevationProfileCanvas(
+                                peakId    = ascent.peak.id,
+                                profile   = ascent.peak.elevationProfile,
+                                altitudeM = ascent.peak.altitudeM,
+                                lineColor = rarity.color,
+                                modifier  = Modifier
                                     .align(Alignment.BottomCenter)
-                                    .padding(bottom = 26.dp),
+                                    .fillMaxWidth()
+                                    .height(40.dp)
+                                    .alpha((infoAppear * fxAlpha).coerceIn(0f, 1f)),
                             )
 
-                            // MYTHIC pill — top-left, matches the card badge; appears on the beat.
-                            if (isMythic) {
+                            // MYTHIC pill — top-left, matches the card badge; pops big →
+                            // small on the beat (like the cairn / EP).
+                            if (isMythic && mythicBeat) {
                                 MythicPill(
                                     modifier = Modifier
                                         .align(Alignment.TopStart)
                                         .padding(12.dp)
                                         .graphicsLayer {
-                                            val s = 0.6f + 0.4f * pillAppear
-                                            scaleX = s; scaleY = s
-                                            alpha  = pillAppear * fxAlpha
+                                            scaleX = pillScale.value; scaleY = pillScale.value
+                                            transformOrigin = TransformOrigin(0f, 0f)
+                                            alpha  = fxAlpha
                                         },
                                 )
                             }
@@ -373,8 +408,8 @@ private fun MythicParticles(replayKey: String, modifier: Modifier = Modifier) {
     LaunchedEffect(replayKey) {
         particles.forEachIndexed { i, anim ->
             launch {
-                delay(i * 90L)
-                anim.animateTo(targetValue = 1f, animationSpec = tween(durationMillis = 750))
+                delay(i * 120L)
+                anim.animateTo(targetValue = 1f, animationSpec = tween(durationMillis = 1100))
             }
         }
     }
@@ -402,29 +437,6 @@ private fun MythicParticles(replayKey: String, modifier: Modifier = Modifier) {
     }
 }
 
-// Branding moment — the Peakadex wordmark (same as the top bar) springs in once
-// the flower finishes blooming, and fades out with the rest of the scene on reveal.
-@Composable
-private fun BrandHeadline(
-    visible:  Boolean,
-    fade:     Float,
-    modifier: Modifier = Modifier,
-) {
-    val appear by animateFloatAsState(
-        targetValue   = if (visible) 1f else 0f,
-        animationSpec = spring(dampingRatio = 0.55f, stiffness = 260f),
-        label         = "brand_appear",
-    )
-    PeakadexLogo(
-        height   = 32.dp,
-        modifier = modifier.graphicsLayer {
-            val s = 0.82f + 0.18f * appear
-            scaleX = s; scaleY = s
-            alpha  = (appear * fade).coerceIn(0f, 1f)
-        },
-    )
-}
-
 // MYTHIC pill — mirrors the card's gold mythic badge. Shown over the cover at the
 // mythic beat (the real card badge sits underneath and matches it after reveal).
 @Composable
@@ -441,24 +453,6 @@ private fun MythicPill(modifier: Modifier = Modifier) {
             .background(Color(0xF2EAB308), RoundedCornerShape(percent = 50))
             .padding(horizontal = 10.dp, vertical = 6.dp),
     )
-}
-
-// ── Mountaineer (idle loop) ────────────────────────────────────────────────────
-// Plays its idle loop forever behind/beside the blooming flower. No tinting —
-// keeps its own colors. Default styles only (plain Lottie JSON).
-
-@Composable
-private fun MountaineerLottie(modifier: Modifier = Modifier) {
-    val composition = rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.mountaineer)).value
-    val progress by animateLottieCompositionAsState(
-        composition   = composition,
-        iterations    = LottieConstants.IterateForever,
-        speed         = 1f,
-        restartOnPlay = false,
-    )
-    if (composition != null) {
-        LottieAnimation(composition = composition, progress = { progress }, modifier = modifier)
-    }
 }
 
 // ── Lottie bloom animation ─────────────────────────────────────────────────────
@@ -507,23 +501,31 @@ private fun BloomLottie(
     val aliveScale = if (bloomed) breathe else 1f
     val aliveSway  = if (bloomed) sway   else 0f
 
-    // Tint only petals (Group 8) + center (Group 7); stem/leaves stay natural.
-    // petalColor animates to gold on the mythic beat.
+    // Daisy tinting (Spanish node names): petals = rarity colour, center = a darker
+    // shade of it (kept distinct). Petal black outlines stay. petalColor animates to
+    // gold on the mythic beat; the center follows in a darker gold.
     val centerColor = petalColor.copy(
-        red   = (petalColor.red   * 0.6f).coerceIn(0f, 1f),
-        green = (petalColor.green * 0.6f).coerceIn(0f, 1f),
-        blue  = (petalColor.blue  * 0.6f).coerceIn(0f, 1f),
+        red   = (petalColor.red   * 0.55f).coerceIn(0f, 1f),
+        green = (petalColor.green * 0.55f).coerceIn(0f, 1f),
+        blue  = (petalColor.blue  * 0.55f).coerceIn(0f, 1f),
     )
     val dynamicProperties = rememberLottieDynamicProperties(
+        // Petals — only layers with a "Grupo 2" (the petal shape) match.
         rememberLottieDynamicProperty(
             property = LottieProperty.COLOR,
             value    = petalColor.toArgb(),
-            keyPath  = arrayOf("Pre-comp 1", "Layer 2", "Group 8", "Fill 1"),
+            keyPath  = arrayOf("**", "Grupo 2", "Relleno 1"),
         ),
+        // Center disc — fill + stroke, darker shade.
         rememberLottieDynamicProperty(
             property = LottieProperty.COLOR,
             value    = centerColor.toArgb(),
-            keyPath  = arrayOf("Pre-comp 1", "Layer 2", "Group 7", "Fill 1"),
+            keyPath  = arrayOf("flor", "Grupo 1", "Relleno 1"),
+        ),
+        rememberLottieDynamicProperty(
+            property = LottieProperty.STROKE_COLOR,
+            value    = centerColor.toArgb(),
+            keyPath  = arrayOf("flor", "Grupo 1", "Trazo 1"),
         ),
     )
 
