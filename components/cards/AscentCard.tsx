@@ -75,9 +75,6 @@ type Props = {
   isDeleting?: boolean;
   animationIndex?: number;
   reveal?: AscentCardReveal;
-  // Skip the card-front entrance fade (used when a card swaps in right after the
-  // capture-reveal settles, so it doesn't re-animate / "reload").
-  disableEntrance?: boolean;
 };
 
 // ─── Rarity aliases (lib/rarity.ts is the source of truth) ───────────────────
@@ -147,7 +144,7 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 
 // ─── AscentCard ───────────────────────────────────────────────────────────────
 
-export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal, disableEntrance }: Props) {
+export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal }: Props) {
   const t = useT();
   const [isFlipped, setIsFlipped] = useState(false);
   const [sharePopover, setSharePopover] = useState<string | null>(null); // URL string when open
@@ -406,7 +403,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
           // @ts-expect-error CSS custom property
           style={{ "--card-i": Math.min(animationIndex, 8) }}
         >
-          <div className="card-face card-front" style={(reveal || disableEntrance) ? { animation: "none" } : undefined}>{buildFace(false)}</div>
+          <div className="card-face card-front">{buildFace(false)}</div>
           <div className="card-face card-back">{buildBack()}</div>
         </article>
       </div>
