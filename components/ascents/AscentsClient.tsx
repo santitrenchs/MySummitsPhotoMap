@@ -6,13 +6,10 @@ import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { AscentCard } from "@/components/cards/AscentCard";
-import dynamic from "next/dynamic";
-
-// Capture-reveal plays in place of the just-created card (uses Lottie → client only).
-const CaptureReveal = dynamic(
-  () => import("@/components/cards/CaptureReveal").then((m) => m.CaptureReveal),
-  { ssr: false },
-);
+// Capture-reveal plays in place of the just-created card. Imported normally (its
+// only client-only piece — the Lottie flower — is dynamically loaded inside it),
+// so the feed card stays SSR-stable and doesn't flicker/disappear.
+import { CaptureReveal } from "@/components/cards/CaptureReveal";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
@@ -302,6 +299,9 @@ export function AscentsClient({
   // Refetch from scratch when a server-affecting filter changes — REPLACES localAscents
   const isInitialFilterMount = useRef(true);
   useEffect(() => {
+    // While the capture-reveal is playing, never refetch/replace the list — that
+    // would swap the list for the loading spinner and unmount the revealing card.
+    if (revealActive) return;
     const key = buildFilterParams().toString();
     if (isInitialFilterMount.current) {
       isInitialFilterMount.current = false;
@@ -336,7 +336,7 @@ export function AscentsClient({
         if (fetchSeqRef.current === seq) setIsRefetching(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange]);
+  }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange, revealActive]);
 
   // Warm the opposite primary view (mine↔friends) in the background on mount so
   // the first toggle is instant. Only when no other server filters are active.

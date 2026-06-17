@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useT } from "@/components/providers/I18nProvider";
 import { AscentCard, type AscentCardData } from "@/components/cards/AscentCard";
-import { RevealFlower } from "@/components/cards/RevealFlower";
 import { ElevationProfile } from "@/components/cards/ElevationProfile";
+
+// Only the Lottie flower is client-only — keeping the ssr:false boundary here (not
+// on the whole card) lets the feed card render normally on SSR (no empty slot / flicker).
+const RevealFlower = dynamic(
+  () => import("@/components/cards/RevealFlower").then((m) => m.RevealFlower),
+  { ssr: false },
+);
 import { getRarityId, RARITY_COLORS, RARITY_EP } from "@/lib/rarity";
 
 // ── Timeline (ms), mirrors Android AscentCaptureReveal ───────────────────────────
