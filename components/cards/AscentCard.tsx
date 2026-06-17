@@ -75,6 +75,9 @@ type Props = {
   isDeleting?: boolean;
   animationIndex?: number;
   reveal?: AscentCardReveal;
+  /** Skip the entrance animation — used on the card that just finished its reveal,
+      so the CaptureReveal → AscentCard swap doesn't replay cardFadeUp (jump). */
+  disableEntrance?: boolean;
 };
 
 // ─── Rarity aliases (lib/rarity.ts is the source of truth) ───────────────────
@@ -144,7 +147,7 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 
 // ─── AscentCard ───────────────────────────────────────────────────────────────
 
-export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal }: Props) {
+export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal, disableEntrance }: Props) {
   const t = useT();
   const [isFlipped, setIsFlipped] = useState(false);
   const [sharePopover, setSharePopover] = useState<string | null>(null); // URL string when open
@@ -403,7 +406,15 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
           // @ts-expect-error CSS custom property
           style={{ "--card-i": Math.min(animationIndex, 8) }}
         >
-          <div className="card-face card-front">{buildFace(false)}</div>
+          {/* Skip the cardFadeUp entrance when this card replaces a just-finished
+              reveal (or is itself the reveal) — otherwise the swap CaptureReveal →
+              AscentCard re-runs the slide-in and the card visibly jumps on settle. */}
+          <div
+            className="card-face card-front"
+            style={reveal || disableEntrance ? { animation: "none" } : undefined}
+          >
+            {buildFace(false)}
+          </div>
           <div className="card-face card-back">{buildBack()}</div>
         </article>
       </div>

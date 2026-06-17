@@ -177,6 +177,9 @@ export function AscentsClient({
   // deterministic (SSR === client) so the first paint already renders CaptureReveal
   // in place — no swap, no Virtuoso re-measure/collapse.
   const [revealCardId, setRevealCardId] = useState<string | null>(revealId ?? null);
+  // The card whose reveal just finished — its plain AscentCard skips the entrance
+  // animation so the CaptureReveal → AscentCard swap doesn't replay cardFadeUp.
+  const [settledRevealId, setSettledRevealId] = useState<string | null>(null);
   useEffect(() => {
     // Strip ?reveal=1 so a refresh doesn't replay the animation. State is already
     // set from the prop — this only cleans the URL.
@@ -986,6 +989,7 @@ export function AscentsClient({
                           // a jarring shift on settle. Clear highlightId so no ring flashes.
                           setRevealCardId(null);
                           setHighlightId(null);
+                          setSettledRevealId(a.id);
                         }}
                       />
                     ) : (
@@ -994,6 +998,7 @@ export function AscentsClient({
                         locale={t.dateLocale}
                         animationIndex={index}
                         ascent={cardData}
+                        disableEntrance={settledRevealId === a.id}
                       />
                     )}
                   </div>
