@@ -143,6 +143,8 @@ const ASCENT_INCLUDE_WITH_SEEN = (userId: string) => ({
   feedSeens: { where: { userId }, select: { seenAt: true } },
 }) as const;
 
+const PUBLISHED_ASCENT_FILTER = { photos: { some: {} } } as const;
+
 export async function fetchFeedPage({
   userId,
   tenantId,
@@ -197,6 +199,7 @@ export async function fetchFeedPage({
   // baseFilters (timeRange/month) and the per-stream cursor (beforeOwn/beforeFriends).
   const ownConditions: Record<string, unknown>[] = [
     { tenantId, createdBy: userId },
+    PUBLISHED_ASCENT_FILTER,
     ...baseFilters,
   ];
   if (beforeOwn) ownConditions.push({ date: { lt: beforeOwn } });
@@ -204,6 +207,7 @@ export async function fetchFeedPage({
 
   const friendsConditions: Record<string, unknown>[] = [
     { createdBy: { in: friendUserIds } },
+    PUBLISHED_ASCENT_FILTER,
     ...baseFilters,
   ];
   if (beforeFriends) friendsConditions.push({ date: { lt: beforeFriends } });
@@ -239,6 +243,7 @@ export async function fetchFeedPage({
       ? prisma.ascent.findFirst({
           where: {
             id: highlightId,
+            ...PUBLISHED_ASCENT_FILTER,
             OR: [
               { tenantId, createdBy: userId },
               { createdBy: { in: friendUserIds } },

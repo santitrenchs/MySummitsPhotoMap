@@ -157,6 +157,15 @@ export function NewAscentForm({
     }
 
     const ascent = await ascentRes.json();
+    const rollbackCreatedAscent = async () => {
+      await fetch(`/api/ascents/${ascent.id}`, { method: "DELETE" }).catch(() => {});
+    };
+    const failCreateFlow = async (message: string) => {
+      await rollbackCreatedAscent();
+      setError(message);
+      setLoading(false);
+      setStatus(null);
+    };
 
     // Step 2 — upload photos + save face tags
     if (readyItems.length > 0) {
@@ -166,22 +175,29 @@ export function NewAscentForm({
         const fd = new FormData();
         fd.append("file", item.blob, "photo.jpg");
         fd.append("ascentId", ascent.id);
-        const originalBlob = await resizeForStorage(item.originalFile);
+        let originalBlob: Blob;
+        try {
+          originalBlob = await resizeForStorage(item.originalFile);
+        } catch {
+          await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+          return;
+        }
         fd.append("originalFile", originalBlob, "original.jpg");
         fd.append("cropMeta", JSON.stringify(item.cropMeta));
         const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
         if (!photoRes.ok) {
-          setError(fmt(t.newAscent_photoFailed, { i: i + 1 }));
-          setLoading(false);
-          setStatus(null);
-          window.location.href = `/ascents?highlight=${ascent.id}`;
+          await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+          return;
+        }
+        const photo = await photoRes.json().catch(() => null);
+        if (!photo?.id) {
+          await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
           return;
         }
         // Save face detections + tags in one shot
         if (item.faces.length > 0) {
-          const photo = await photoRes.json();
           setStatus(fmt(t.newAscent_savingTags, { i: i + 1 }));
-          await fetch(`/api/photos/${photo.id}/faces`, {
+          const facesRes = await fetch(`/api/photos/${photo.id}/faces`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -192,6 +208,10 @@ export function NewAscentForm({
               })),
             }),
           });
+          if (!facesRes.ok) {
+            await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+            return;
+          }
         }
       }
     }

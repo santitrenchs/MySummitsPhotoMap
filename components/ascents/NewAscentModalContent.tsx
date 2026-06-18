@@ -437,6 +437,14 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     }
 
     const ascent = await ascentRes.json();
+    const rollbackCreatedAscent = async () => {
+      await fetch(`/api/ascents/${ascent.id}`, { method: "DELETE" }).catch(() => {});
+    };
+    const failCreateFlow = async (message: string) => {
+      await rollbackCreatedAscent();
+      setError(message);
+      setLoading(false);
+    };
 
     // Step 2 — upload photos + face tags
     for (let i = 0; i < readyItems.length; i++) {
@@ -444,18 +452,27 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       const fd = new FormData();
       fd.append("file", item.blob, "photo.jpg");
       fd.append("ascentId", ascent.id);
-      const originalBlob = await resizeForStorage(item.originalFile);
+      let originalBlob: Blob;
+      try {
+        originalBlob = await resizeForStorage(item.originalFile);
+      } catch {
+        await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+        return;
+      }
       fd.append("originalFile", originalBlob, "original.jpg");
       fd.append("cropMeta", JSON.stringify(item.cropMeta));
       const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
       if (!photoRes.ok) {
-        setError(fmt(t.newAscent_photoFailed, { i: i + 1 }));
-        setLoading(false);
-        router.refresh(); onClose(); return;
+        await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+        return;
+      }
+      const photo = await photoRes.json().catch(() => null);
+      if (!photo?.id) {
+        await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+        return;
       }
       if (selectedPersons.length > 0) {
-        const photo = await photoRes.json();
-        await fetch(`/api/photos/${photo.id}/faces`, {
+        const facesRes = await fetch(`/api/photos/${photo.id}/faces`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -466,6 +483,10 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
             })),
           }),
         });
+        if (!facesRes.ok) {
+          await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+          return;
+        }
       }
     }
 
