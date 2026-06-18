@@ -212,7 +212,11 @@ export function CaptureRevealOverlay({ ascent, locale, values }: OverlayProps) {
   const isMythic = ascent.peak.isMythic ?? false;
 
   return (
-    <div style={{ position: "absolute", inset: 0, opacity: values.fxAlpha, transition: "opacity 450ms ease" }}>
+    <div
+      data-testid="capture-reveal-overlay"
+      data-reveal-status={values.status}
+      style={{ position: "absolute", inset: 0, opacity: values.fxAlpha, transition: "opacity 450ms ease" }}
+    >
       {/* Flower + "PEAK CAPTURED!" — upper group */}
       <div style={{
         position: "absolute", inset: 0,

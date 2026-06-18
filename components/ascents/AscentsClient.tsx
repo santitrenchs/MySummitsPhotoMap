@@ -97,7 +97,11 @@ function AscentCardSlot({
     : undefined;
 
   return (
-    <div ref={hostRef}>
+    <div
+      ref={hostRef}
+      data-testid={isRevealing ? "reveal-card-slot" : "ascent-card-slot"}
+      data-reveal-status={isRevealing ? revealValues.status : undefined}
+    >
       <AscentCard
         variant={variant}
         locale={locale}
