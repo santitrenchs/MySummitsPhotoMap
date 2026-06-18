@@ -171,6 +171,12 @@ export function AscentsClient({
   // Full-reload (view/filter change) in flight — drives a loading state instead of
   // showing the stale "0 results" + empty state of the previous view's data.
   const [isRefetching, setIsRefetching] = useState(false);
+  type FilterSummary = { totalAscents: number; uniquePeaks: number };
+  const [filterSummary, setFilterSummary] = useState<FilterSummary | null>(null);
+  const [filterSummaryKey, setFilterSummaryKey] = useState("");
+  const [isFilterSummaryLoading, setIsFilterSummaryLoading] = useState(false);
+  const filterSummaryCacheRef = useRef<Map<string, FilterSummary>>(new Map());
+  const filterSummarySeqRef = useRef(0);
   // Per-(filter signature) cache so switching back to an already-loaded view/filter
   // is instant (no network). Seeded with the SSR page and warmed in the background.
   type FeedCacheEntry = { ascents: AscentData[]; beforeOwn: string | null; beforeFriends: string | null; hasMore: boolean };
@@ -367,6 +373,40 @@ export function AscentsClient({
     if (timeRange !== "all") p.set("timeRange", timeRange);
     return p;
   }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange]);
+  const currentFilterSummaryKey = useMemo(() => buildFilterParams().toString(), [buildFilterParams]);
+
+  useEffect(() => {
+    const hasClientSearch = search.trim().length > 0;
+    if (!filtersOpen || hasClientSearch) {
+      setIsFilterSummaryLoading(false);
+      return;
+    }
+
+    const cached = filterSummaryCacheRef.current.get(currentFilterSummaryKey);
+    if (cached) {
+      setFilterSummary(cached);
+      setFilterSummaryKey(currentFilterSummaryKey);
+      setIsFilterSummaryLoading(false);
+      return;
+    }
+
+    const seq = ++filterSummarySeqRef.current;
+    setFilterSummary(null);
+    setFilterSummaryKey(currentFilterSummaryKey);
+    setIsFilterSummaryLoading(true);
+    fetch(`/api/ascents/feed/summary?${currentFilterSummaryKey}`)
+      .then((r) => r.json())
+      .then((data: FilterSummary) => {
+        if (filterSummarySeqRef.current !== seq) return;
+        filterSummaryCacheRef.current.set(currentFilterSummaryKey, data);
+        setFilterSummaryKey(currentFilterSummaryKey);
+        setFilterSummary(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (filterSummarySeqRef.current === seq) setIsFilterSummaryLoading(false);
+      });
+  }, [currentFilterSummaryKey, filtersOpen, search]);
 
   // Fetch sequence: prevents stale responses from contaminating localAscents when the user changes
   // a filter while a previous loadMore is in flight (and only the latest fetch clears isFetchingMore).
@@ -546,6 +586,10 @@ export function AscentsClient({
     () => new Set(filtered.map((a) => a.peak.id)).size,
     [filtered]
   );
+  const canUseFilterSummary = search.trim().length === 0 && filterSummaryKey === currentFilterSummaryKey && filterSummary !== null;
+  const filterCtaTotalAscents = canUseFilterSummary ? filterSummary.totalAscents : filtered.length;
+  const filterCtaUniquePeaks = canUseFilterSummary ? filterSummary.uniquePeaks : uniquePeaks;
+  const isFilterCtaLoading = search.trim().length === 0 && isFilterSummaryLoading && !filterSummary;
 
   const isDirty =
     viewChip !== "friends" || rarity !== null || mythicFilter || timeRange !== "all" ||
@@ -985,16 +1029,16 @@ export function AscentsClient({
             onClick={() => setFiltersOpen(false)}
             style={{ borderRadius: 14, fontFamily: "inherit", boxShadow: "0 4px 14px rgba(3,105,161,0.32)", gap: 6 }}
           >
-            {isRefetching ? (
+            {isRefetching || isFilterCtaLoading ? (
               <span style={{ fontSize: 15, fontWeight: 800 }}>…</span>
             ) : (
               <>
                 <span style={{ fontSize: 15, fontWeight: 800 }}>
-                  {i(t.filter_results, { n: filtered.length })}
+                  {i(t.filter_results, { n: filterCtaTotalAscents })}
                 </span>
                 <span style={{ opacity: 0.45, fontSize: 14 }}>·</span>
                 <span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>
-                  {i(t.filter_uniquePeaks, { n: uniquePeaks })}
+                  {i(t.filter_uniquePeaks, { n: filterCtaUniquePeaks })}
                 </span>
               </>
             )}

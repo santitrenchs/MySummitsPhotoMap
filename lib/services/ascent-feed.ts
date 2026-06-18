@@ -316,3 +316,91 @@ export async function fetchFeedPage({
 
   return { ascents, hasMore, nextBeforeOwn, nextBeforeFriends };
 }
+
+export async function fetchFeedSummary({
+  userId,
+  tenantId,
+  friendUserIds,
+  view,
+  personId,
+  peakId,
+  month,
+  rarity,
+  mythic,
+  timeRange,
+}: {
+  userId: string;
+  tenantId: string;
+  friendUserIds: string[];
+  view?: View;
+  personId?: string;
+  peakId?: string;
+  month?: string;
+  rarity?: Rarity;
+  mythic?: boolean;
+  timeRange?: TimeRange;
+}) {
+  const db = await getTenantConnection(tenantId);
+  const baseFilters = buildFilters({ peakId, month, rarity, mythic, timeRange });
+
+  const runOwn = view !== "friends" && view !== "with-me";
+  const runFriends = view !== "mine" && friendUserIds.length > 0;
+
+  const personTagPredicate = personId
+    ? { photos: { some: { faceDetections: { some: { faceTags: { some: { userId: personId } } } } } } }
+    : null;
+
+  const withMeTagPredicate = view === "with-me"
+    ? { photos: { some: { faceDetections: { some: { faceTags: { some: { userId } } } } } } }
+    : null;
+
+  const ownConditions: Record<string, unknown>[] = [
+    { tenantId, createdBy: userId },
+    PUBLISHED_ASCENT_FILTER,
+    ...baseFilters,
+  ];
+  if (view === "person" && personTagPredicate) ownConditions.push(personTagPredicate);
+
+  const friendsConditions: Record<string, unknown>[] = [
+    { createdBy: { in: friendUserIds } },
+    PUBLISHED_ASCENT_FILTER,
+    ...baseFilters,
+  ];
+  if (view === "with-me" && withMeTagPredicate) friendsConditions.push(withMeTagPredicate);
+  if (view === "person" && personId) {
+    friendsConditions.push({
+      OR: [
+        { createdBy: personId },
+        ...(personTagPredicate ? [personTagPredicate] : []),
+      ],
+    });
+  }
+
+  const [ownCount, ownPeaks, friendsCount, friendPeaks] = await Promise.all([
+    runOwn
+      ? db.ascent.count({ where: { AND: ownConditions } })
+      : Promise.resolve(0),
+    runOwn
+      ? db.ascent.findMany({
+          where: { AND: ownConditions },
+          select: { peakId: true },
+          distinct: ["peakId"],
+        })
+      : Promise.resolve([]),
+    runFriends
+      ? prisma.ascent.count({ where: { AND: friendsConditions } })
+      : Promise.resolve(0),
+    runFriends
+      ? prisma.ascent.findMany({
+          where: { AND: friendsConditions },
+          select: { peakId: true },
+          distinct: ["peakId"],
+        })
+      : Promise.resolve([]),
+  ]);
+
+  return {
+    totalAscents: ownCount + friendsCount,
+    uniquePeaks: new Set([...ownPeaks, ...friendPeaks].map((a) => a.peakId)).size,
+  };
+}
