@@ -38,7 +38,7 @@ test.describe("Create ascent flow", () => {
     await expect(page).toHaveURL(/\/ascents/);
   });
 
-  test("capture reveal keeps one stable card and settles without feed jump", async ({ page }) => {
+  test("capture reveal keeps one stable card and settles without feed jump @capture-reveal", async ({ page }) => {
     await page.goto("/ascents/new");
 
     const testImage = path.join(__dirname, "fixtures", "test-photo.jpg");
