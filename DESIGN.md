@@ -1279,6 +1279,23 @@ No dark scrim, no separate navy background — it reads as the actual card being
 
 The reward shows only **"+N EP"** (amber pill). The Cairn was removed everywhere (always 1 on mythic). Mythic is conveyed by the gold petals + MYTHIC pill + glow, not a cairn count.
 
+### Web implementation note — pinned reveal card, not virtualized
+
+On web, the reveal must feel like the real card being unveiled in the feed, but the reveal target **must not live inside the virtualized Virtuoso list while the animation runs**.
+
+Final web architecture (2026-06-18):
+- Creation redirects to `/ascents?highlight={id}&reveal=1`.
+- The server page reads `reveal=1` and passes `revealId` into `AscentsClient`; do not depend on client-only search params for first render.
+- `AscentsClient` renders the reveal ascent as a **pinned real `AscentCard` above Virtuoso**.
+- The same ascent is temporarily removed from the Virtuoso data (`feedAscents`) so the DOM has exactly one `#ascent-{id}`.
+- The reveal animation is an overlay inside that real card (`AscentCardReveal.sceneOverlay`), not a separate full-screen card and not a replacement for the card.
+- When the overlay settles, the final card remains pinned in the same position. Do not immediately reinsert it into Virtuoso; that creates a visible jump.
+- Changing filters/search/sort clears the pin and returns the feed to its normal virtualized order.
+
+Rationale: with `react-virtuoso` + `useWindowScroll`, Chrome can correct estimated item measurements after first paint. Earlier approaches that used `initialTopMostItemIndex` for the reveal appeared correct, then jumped to another card while the reveal continued lower in the feed. Pinning the reveal card outside the virtual list removes it from Virtuoso measurement/offset correction entirely, making Chrome, Safari, and mobile behavior stable.
+
+Accessibility: respect `prefers-reduced-motion` by settling the reveal quickly, and keep decorative reveal overlay content `aria-hidden`.
+
 ---
 
 ## Cards Screen — View filter (Android, 2026-05-29)

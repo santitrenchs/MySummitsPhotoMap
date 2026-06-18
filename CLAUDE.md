@@ -229,6 +229,38 @@ A combined social + personal climb log. Shows **friends' ascents by default** (s
 
 `AscentsClient` SSR-loads only the active view's stream, so switching Mi equipo ↔ Mis Cimas used to flash "0 cartas" + the empty state until a refetch landed. Fix: (1) an `isRefetching` flag drives a **spinner in the feed + "…" on the filter CTA** during a full reload (instead of the stale 0/empty); (2) a **per-(filter-signature) client cache** (`feedCacheRef`) seeded with the SSR page — cache hits restore instantly with no network; (3) the **opposite primary view is prefetched in the background on mount**, so the common toggle is instant. `loadMore`/autofill pause while refetching. ⚠️ Virtuoso gotcha: pass `initialTopMostItemIndex` **only when there's a real highlight index** — passing `undefined` with `useWindowScroll` leaves the list unrendered (blank feed). The highlight ring wraps only the card (radius 28, no bottom padding) so it hugs it.
 
+#### Capture Reveal — web implementation, Chrome-safe architecture (2026-06-18)
+
+The Android capture-reveal was ported to web (`components/cards/CaptureReveal.tsx`): after creating an ascent, `NewAscentModalContent` does `window.location.href = /ascents?highlight={id}&reveal=1` (full reload). The just-created card plays the cinematic reveal **as a real card experience**, not a full-screen fake overlay. The user explicitly rejected a full-screen reveal that hides the feed/card context.
+
+**Final architecture (source of truth on `develop`):**
+- `app/(app)/ascents/page.tsx` reads `?reveal=1` server-side and passes `revealId` into `AscentsClient`. Do **not** rely on client `useSearchParams()` for this value: `AscentsClient` is under `<Suspense>`, and the first client render was flaky when the reveal state came only from search params.
+- `AscentsClient` keeps the actual `AscentCard` mounted through `AscentCardSlot`. The reveal is an overlay inside the card via the `reveal` prop (`photoBlur`, `coverAlpha`, `sceneOverlay`, `epDisplay`, `epScale`, `rarityScale`). The card itself is not swapped out for a special reveal component.
+- `useCaptureReveal()` is a small state machine (`idle → mounting → playing → settling → done/failed`). It waits for stable `.peak-card` + `.image-frame` layout before starting the timeline, has a timeout/fail-safe, and respects `prefers-reduced-motion` by settling almost immediately.
+- `CaptureRevealOverlay` renders the Lottie daisy (`RevealFlower`, `ssr:false`), headline, peak name/altitude, mythic beat, and `ElevationProfile`. It is `aria-hidden` so screen readers do not read decorative animation content.
+- When the reveal finishes, `revealCardId` and `highlightId` are cleared and `settledRevealId` disables the normal card entrance animation. Do **not** show the highlight ring after reveal: the ring/box-shadow transition caused a visible final jump.
+
+**Critical Virtuoso rule: reveal cards are pinned outside the virtual feed.**
+
+The web feed uses `react-virtuoso` with `useWindowScroll`. Chrome proved sensitive to Virtuoso measurement corrections:
+- Early attempts that rendered the reveal item inside Virtuoso could collapse the card to ~0 in Chrome while Safari looked fine.
+- Re-enabling `initialTopMostItemIndex` for the reveal made the first paint look correct, then Virtuoso recalculated real item heights and the viewport jumped to another card while the reveal continued lower in the feed.
+
+The robust fix is:
+- `pinnedRevealId` is initialized from `revealId`.
+- `pinnedRevealAscent` renders **above Virtuoso** as a normal `AscentCardSlot`.
+- `feedAscents` excludes that same ascent while it is pinned, so there is no duplicate DOM node with the same `ascent-{id}`.
+- The pinned card remains pinned after the overlay settles, so the final card is visible in exactly the same place. Do **not** immediately reinsert it into Virtuoso on `onFinished`; that would reintroduce the jump.
+- If the user changes filters/search/sort, the pin is cleared and the feed returns to its natural virtualized order.
+- `initialTopMostItemIndex` is still allowed for normal non-reveal highlights, but **not** for `reveal=1`.
+
+**Why this is the stable browser-compatible solution:** the reveal card no longer participates in Virtuoso's initial measurement, estimated offset, range correction, or `useWindowScroll` anchoring. Chrome/Safari differences in measurement timing cannot move or collapse the reveal card because it is outside the virtualized list during the cinematic.
+
+**Tests / regression guard:**
+- `e2e/ascents.spec.ts` has `@capture-reveal` tests asserting the pinned reveal card is visible, unique (`#ascent-{id}` count = 1), remains in viewport, and the scroll does not move during the first second.
+- `playwright.reveal.config.ts` runs the reveal tests in desktop Chrome, desktop WebKit/Safari, and mobile Chrome.
+- Run with `npm run test:e2e:reveal` when e2e credentials/server are available; `npm run test:e2e:reveal -- --list` verifies the matrix without executing the flow.
+
 ### Social
 An activity feed showing **friends' recent ascents only**. No algorithmic content, no strangers. Pure friends-only feed designed to spark motivation through seeing what your circle has been doing.
 
