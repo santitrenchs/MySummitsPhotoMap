@@ -39,6 +39,25 @@ type ViewChip = "mine" | "friends" | "person" | "with-me";
 type TimeRange = "all" | "month" | "year";
 type Sort = "date-desc" | "elev-desc";
 
+function toAscentCardData(a: AscentData): AscentCardData {
+  const others = a.persons.filter((p) => p.id !== a.createdByUserId);
+  return {
+    id: a.id,
+    date: a.date,
+    route: a.route,
+    description: a.description,
+    wikiloc: a.wikiloc,
+    peak: a.peak,
+    photoUrl: a.firstPhotoUrl,
+    photoId: a.firstPhotoId,
+    originalStorageKey: a.firstPhotoOriginalKey,
+    cropAspect: a.firstPhotoCropAspect,
+    persons: others,
+    user: { name: a.userName, avatarUrl: a.userAvatarUrl },
+    peakStats: a.peakStats,
+  };
+}
+
 function getRarity(altitudeM: number): Rarity {
   for (let i = RARITIES.length - 1; i >= 0; i--) {
     if (altitudeM >= RARITIES[i].minAlt) return RARITIES[i].id;
@@ -235,6 +254,7 @@ export function AscentsClient({
   // deterministic (SSR === client) so the first paint already renders the card
   // with its reveal overlay in place — no target swap, no late reveal mount.
   const [revealCardId, setRevealCardId] = useState<string | null>(revealId ?? null);
+  const [pinnedRevealId, setPinnedRevealId] = useState<string | null>(revealId ?? null);
   // The card whose reveal just finished skips the entrance animation so the
   // persistent card doesn't replay cardFadeUp while settling.
   const [settledRevealId, setSettledRevealId] = useState<string | null>(null);
@@ -249,8 +269,6 @@ export function AscentsClient({
       window.history.replaceState(null, "", u.toString());
     }
   }, []);
-  const didRevealVisibilityFallback = useRef(false);
-
   // Lock body scroll when sheet open
   useEffect(() => {
     if (filtersOpen) {
@@ -304,14 +322,22 @@ export function AscentsClient({
     });
   }, [localAscents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, currentUserId]);
 
-  // Position the list at the target card on the FIRST paint. Reveal uses the same
-  // path now that the actual AscentCard is persistent and only the overlay animates.
-  // The fallback effect below is instant and reveal-only, so we avoid the old
-  // smooth-scroll "tour through the feed" without changing normal highlights.
-  const initialTargetIndex = useMemo(() => {
-    const targetId = revealCardId ?? highlightId;
-    if (!targetId) return undefined;
-    const idx = filtered.findIndex((a) => a.id === targetId);
+  const pinnedRevealAscent = useMemo(() => {
+    if (!pinnedRevealId) return null;
+    return filtered.find((a) => a.id === pinnedRevealId) ?? localAscents.find((a) => a.id === pinnedRevealId) ?? null;
+  }, [filtered, localAscents, pinnedRevealId]);
+
+  const feedAscents = useMemo(() => {
+    if (!pinnedRevealId) return filtered;
+    return filtered.filter((a) => a.id !== pinnedRevealId);
+  }, [filtered, pinnedRevealId]);
+
+  // Position normal highlights on the first paint. Capture reveal is intentionally
+  // excluded: its target card is rendered outside Virtuoso while the reveal settles,
+  // avoiding useWindowScroll measurement corrections that can jump to another card.
+  const initialHighlightIndex = useMemo(() => {
+    if (revealId || !highlightId) return undefined;
+    const idx = filtered.findIndex((a) => a.id === highlightId);
     return idx >= 0 ? { index: idx, align: "center" as const } : undefined;
     // Compute ONCE at mount — deliberately empty deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -458,7 +484,7 @@ export function AscentsClient({
         }).catch(() => {});
       };
       for (let i = startIndex; i <= endIndex; i++) {
-        const a = filtered[i];
+        const a = feedAscents[i];
         if (!a || !a.isUnseen) continue;
         const key = a.id;
         if (cardTimersRef.current.has(key)) continue;
@@ -473,7 +499,7 @@ export function AscentsClient({
         );
       }
     },
-    [filtered]
+    [feedAscents]
   );
 
   // Scroll to highlighted ascent when present in the list
@@ -487,39 +513,6 @@ export function AscentsClient({
     return () => clearTimeout(timer);
   }, [highlightId, filtered, revealCardId]);
 
-  // Reveal should begin where the target card already is. If Virtuoso ignores the
-  // initial index for any runtime reason, do one non-animated correction instead
-  // of showing the user a smooth feed scroll before the cinematic starts.
-  useEffect(() => {
-    if (!revealCardId || didRevealVisibilityFallback.current) return;
-    const idx = filtered.findIndex((a) => a.id === revealCardId);
-    if (idx < 0) return;
-
-    const isTargetVisible = () => {
-      const el = document.getElementById(`ascent-${revealCardId}`);
-      if (!el) return false;
-      const rect = el.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      return rect.top < viewportHeight * 0.88 && rect.bottom > viewportHeight * 0.12;
-    };
-
-    const correctIfNeeded = () => {
-      if (isTargetVisible()) return;
-      didRevealVisibilityFallback.current = true;
-      virtuosoRef.current?.scrollToIndex({ index: idx, align: "center", behavior: "auto" });
-    };
-
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(correctIfNeeded);
-    });
-
-    return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
-    };
-  }, [filtered, revealCardId]);
-
   // Scroll to top when the filter SET changes — NOT on data updates (which also re-derive `filtered`).
   // Depend on the raw filter inputs so pagination/localAscents updates don't trigger a scroll reset.
   const isInitialMount = useRef(true);
@@ -530,6 +523,24 @@ export function AscentsClient({
     }
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, peakFilter, search]);
+
+  const isInitialPinnedFilterMount = useRef(true);
+  useEffect(() => {
+    if (isInitialPinnedFilterMount.current) {
+      isInitialPinnedFilterMount.current = false;
+      return;
+    }
+    if (pinnedRevealId) setPinnedRevealId(null);
+  }, [viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, peakFilter, search, pinnedRevealId]);
+
+  const finishReveal = useCallback((id: string) => {
+    // End the overlay but keep the just-created card pinned as the final card.
+    // Re-inserting it into Virtuoso immediately would create the same visual jump
+    // we are avoiding during the reveal.
+    setRevealCardId(null);
+    setHighlightId(null);
+    setSettledRevealId(id);
+  }, []);
 
   const uniquePeaks = useMemo(
     () => new Set(filtered.map((a) => a.peak.id)).size,
@@ -996,7 +1007,7 @@ export function AscentsClient({
         <div style={{ display: "flex", justifyContent: "center", padding: "80px 0", marginTop: 8 }}>
           <div style={{ width: 28, height: 28, border: "3px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : !pinnedRevealAscent && filtered.length === 0 ? (
         viewChip === "friends" && !hasFriends ? (
           <div style={{
             background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
@@ -1026,76 +1037,67 @@ export function AscentsClient({
         )
       ) : (
         <div style={{ marginTop: 8 }}>
-          <Virtuoso
-            ref={virtuosoRef}
-            useWindowScroll
-            {...(initialTargetIndex ? { initialTopMostItemIndex: initialTargetIndex } : {})}
-            data={filtered}
-            endReached={loadMore}
-            rangeChanged={handleRangeChanged}
-            increaseViewportBy={{ top: 200, bottom: 800 }}
-            computeItemKey={(_index, a) => a.id}
-            itemContent={(index, a) => {
-              const others = a.persons.filter((p) => p.id !== a.createdByUserId);
-              const cardData = {
-                id: a.id,
-                date: a.date,
-                route: a.route,
-                description: a.description,
-                wikiloc: a.wikiloc,
-                peak: a.peak,
-                photoUrl: a.firstPhotoUrl,
-                photoId: a.firstPhotoId,
-                originalStorageKey: a.firstPhotoOriginalKey,
-                cropAspect: a.firstPhotoCropAspect,
-                persons: others,
-                user: { name: a.userName, avatarUrl: a.userAvatarUrl },
-                peakStats: a.peakStats,
-              };
-              // The just-created card plays the reveal in place; the ring appears
-              // once it finishes (so it doesn't show during the build).
-              const isRevealing = revealCardId === a.id;
-              return (
-                <div id={`ascent-${a.id}`} style={{ paddingBottom: 24 }}>
-                  {/* Highlight ring wraps ONLY the card (radius matches .peak-card = 28px)
-                      so it hugs the card and isn't enlarged by the bottom padding. */}
-                  <div
-                    style={{
-                      borderRadius: 28,
-                      transition: "box-shadow 0.4s ease",
-                      ...(highlightId === a.id && !isRevealing ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
-                    }}
-                  >
-                    <AscentCardSlot
-                      ascent={cardData}
-                      locale={t.dateLocale}
-                      variant={a.isOwn ? "profile" : "social"}
-                      animationIndex={index}
-                      isRevealing={isRevealing}
-                      disableEntrance={settledRevealId === a.id}
-                      onRevealFinished={() => {
-                        // End the reveal. Do NOT show the highlight ring afterwards —
-                        // the cinematic reveal already drew all attention to the card,
-                        // so the extra ring (+ its box-shadow transition) just produces
-                        // a jarring shift on settle. Clear highlightId so no ring flashes.
-                        setRevealCardId(null);
-                        setHighlightId(null);
-                        setSettledRevealId(a.id);
+          {pinnedRevealAscent && (
+            <div id={`ascent-${pinnedRevealAscent.id}`} data-testid="pinned-reveal-ascent" style={{ paddingBottom: 24 }}>
+              <AscentCardSlot
+                ascent={toAscentCardData(pinnedRevealAscent)}
+                locale={t.dateLocale}
+                variant={pinnedRevealAscent.isOwn ? "profile" : "social"}
+                animationIndex={0}
+                isRevealing={revealCardId === pinnedRevealAscent.id}
+                disableEntrance={settledRevealId === pinnedRevealAscent.id}
+                onRevealFinished={() => finishReveal(pinnedRevealAscent.id)}
+              />
+            </div>
+          )}
+          {feedAscents.length > 0 && (
+            <Virtuoso
+              ref={virtuosoRef}
+              useWindowScroll
+              {...(initialHighlightIndex ? { initialTopMostItemIndex: initialHighlightIndex } : {})}
+              data={feedAscents}
+              endReached={loadMore}
+              rangeChanged={handleRangeChanged}
+              increaseViewportBy={{ top: 200, bottom: 800 }}
+              computeItemKey={(_index, a) => a.id}
+              itemContent={(index, a) => {
+                // The just-created card plays the reveal in place; the ring appears
+                // once it finishes (so it doesn't show during the build).
+                const isRevealing = revealCardId === a.id;
+                return (
+                  <div id={`ascent-${a.id}`} style={{ paddingBottom: 24 }}>
+                    {/* Highlight ring wraps ONLY the card (radius matches .peak-card = 28px)
+                        so it hugs the card and isn't enlarged by the bottom padding. */}
+                    <div
+                      style={{
+                        borderRadius: 28,
+                        transition: "box-shadow 0.4s ease",
+                        ...(highlightId === a.id && !isRevealing ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
                       }}
-                    />
+                    >
+                      <AscentCardSlot
+                        ascent={toAscentCardData(a)}
+                        locale={t.dateLocale}
+                        variant={a.isOwn ? "profile" : "social"}
+                        animationIndex={index}
+                        isRevealing={isRevealing}
+                        disableEntrance={settledRevealId === a.id}
+                        onRevealFinished={() => finishReveal(a.id)}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            }}
-            components={{
-              Footer: () =>
-                isFetchingMore ? (
-                  <div style={{ height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ width: 24, height: 24, border: "2.5px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-                  </div>
-                ) : null,
-            }}
-          />
+                );
+              }}
+              components={{
+                Footer: () =>
+                  isFetchingMore ? (
+                    <div style={{ height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ width: 24, height: 24, border: "2.5px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                    </div>
+                  ) : null,
+              }}
+            />
+          )}
         </div>
       )}
 

@@ -63,6 +63,8 @@ test.describe("Create ascent flow", () => {
     const overlay = item.getByTestId("capture-reveal-overlay");
 
     await expect(item).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("pinned-reveal-ascent")).toBeVisible();
+    await expect(page.locator(`[id="ascent-${highlightId}"]`)).toHaveCount(1);
     await expect(item).toBeInViewport({ timeout: 1_500 });
     await expect(card).toHaveCount(1);
     await expect(overlay).toBeVisible({ timeout: 5_000 });
