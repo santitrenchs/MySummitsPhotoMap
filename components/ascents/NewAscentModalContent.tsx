@@ -73,7 +73,13 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [suggestedDate, setSuggestedDate] = useState<string | null>(null);
   const [suggestedPeakId, setSuggestedPeakId] = useState<string | null>(null);
-  const [pendingPhoto, setPendingPhoto] = useState<{ blob: Blob; preview: string; cropMeta: CropMeta; originalFile?: File } | null>(null);
+  const [pendingPhoto, setPendingPhoto] = useState<{
+    blob: Blob;
+    preview: string;
+    cropMeta: CropMeta;
+    originalFile?: File;
+    reuseOriginalPhotoId?: string | null;
+  } | null>(null);
   const [selectedPersons, setSelectedPersons] = useState<Person[]>(
     editAscent?.persons.map((p) => ({ id: p.id, name: p.name, username: null })) ?? []
   );
@@ -89,6 +95,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const [editPhotoId, setEditPhotoId] = useState<string | null>(editAscent?.photoId ?? null);
   const [editOrigKey, setEditOrigKey] = useState<string | null>(editAscent?.originalStorageKey ?? null);
   const isEditPhotoReplaceRef = useRef(false);
+  const editPhotoReuseOriginalIdRef = useRef<string | null>(null);
   const submitInFlightRef = useRef(false);
 
   const cropApplyRef = useRef<(() => void) | null>(null);
@@ -112,6 +119,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     setCropApplying(false);
     if (isEditMode) {
       isEditPhotoReplaceRef.current = false;
+      editPhotoReuseOriginalIdRef.current = null;
       setModalStep("form");
       return;
     }
@@ -245,7 +253,9 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     setCropQueue((q) => q.slice(1));
     if (isEditPhotoReplaceRef.current) {
       isEditPhotoReplaceRef.current = false;
-      setPendingPhoto({ blob, preview, cropMeta, originalFile });
+      const reuseOriginalPhotoId = editPhotoReuseOriginalIdRef.current;
+      editPhotoReuseOriginalIdRef.current = null;
+      setPendingPhoto({ blob, preview, cropMeta, originalFile, reuseOriginalPhotoId });
       setEditPhotoUrl(preview);
       setCropApplying(false);
       setModalStep("form");
@@ -262,7 +272,27 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
 
   function handleCropCancel() { goToPick(); }
 
-  async function handleEditPhotoClick() {
+  function openEditPhotoFilePicker() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/jpeg,image/png,image/webp,image/heic,image/heif";
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (!f) return;
+      if (f.size > MAX_PHOTO_BYTES) {
+        setError(t.photo_tooLarge);
+        return;
+      }
+      setError(null);
+      isEditPhotoReplaceRef.current = true;
+      editPhotoReuseOriginalIdRef.current = null;
+      setCropQueue([f]);
+      setModalStep("crop");
+    };
+    input.click();
+  }
+
+  async function handleEditReCropClick() {
     if (editOrigKey && editPhotoId) {
       // Fetch resized original for re-crop
       try {
@@ -271,24 +301,14 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
           const blob = await res.blob();
           const file = new File([blob], "original.jpg", { type: "image/jpeg" });
           isEditPhotoReplaceRef.current = true;
+          editPhotoReuseOriginalIdRef.current = editPhotoId;
           setCropQueue([file]);
           setModalStep("crop");
           return;
         }
       } catch { /* fall through to file picker */ }
     }
-    // No original or fetch failed — open file picker
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = () => {
-      const f = input.files?.[0];
-      if (!f) return;
-      isEditPhotoReplaceRef.current = true;
-      setCropQueue([f]);
-      setModalStep("crop");
-    };
-    input.click();
+    openEditPhotoFilePicker();
   }
 
   async function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -350,9 +370,9 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       fd.append("file", pendingPhoto.blob, "photo.jpg");
       fd.append("ascentId", editAscent.id);
       fd.append("cropMeta", JSON.stringify(pendingPhoto.cropMeta));
-      if (editOrigKey && editPhotoId) {
+      if (pendingPhoto.reuseOriginalPhotoId) {
         // Re-crop: reuse the existing original stored in R2
-        fd.append("reuseOriginalPhotoId", editPhotoId);
+        fd.append("reuseOriginalPhotoId", pendingPhoto.reuseOriginalPhotoId);
       } else if (pendingPhoto.originalFile) {
         // New file from picker: upload original for future re-crops
         let originalBlob: Blob;
@@ -393,7 +413,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       // Delete old photo — always delete if one existed; keep original R2 file only
       // when re-cropping (the new photo already references the same original key)
       if (editAscent.photoId) {
-        const deleteUrl = editOrigKey
+        const deleteUrl = pendingPhoto.reuseOriginalPhotoId
           ? `/api/photos/${editAscent.photoId}?keepOriginal=1`
           : `/api/photos/${editAscent.photoId}`;
         await fetch(deleteUrl, { method: "DELETE" }).catch(() => {});
@@ -569,6 +589,50 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       // A pending re-crop wins over the original aspect (user may have changed it)
       ? (pendingPhoto ? pendingPhoto.cropMeta.aspect === "landscape" : editAscent?.cropAspect === "landscape")
       : (readyItems[0]?.cropMeta?.aspect === "landscape");
+    const canReCropEditPhoto = isEditMode && !!editOrigKey && !!editPhotoId;
+    const renderEditPhotoActions = (compact = false) => isEditMode ? (
+      <div style={{
+        position: "absolute",
+        bottom: compact ? 8 : 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "calc(100% - 24px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexWrap: "wrap",
+        gap: 8,
+        zIndex: 2,
+      }}>
+        {canReCropEditPhoto && (
+          <button
+            type="button"
+            onClick={handleEditReCropClick}
+            style={{
+              background: "rgba(0,0,0,0.6)", color: "white", border: "none",
+              borderRadius: "var(--radius-full)", padding: compact ? "6px 12px" : "8px 16px",
+              fontSize: compact ? 12 : 13, fontWeight: 600,
+              cursor: "pointer", backdropFilter: "blur(4px)",
+            }}
+          >
+            {t.detail_reCrop}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={openEditPhotoFilePicker}
+          style={{
+            background: "rgba(0,0,0,0.72)", color: "white", border: "none",
+            borderRadius: "var(--radius-full)", padding: compact ? "6px 12px" : "8px 16px",
+            fontSize: compact ? 12 : 13, fontWeight: 600,
+            cursor: "pointer", backdropFilter: "blur(4px)",
+          }}
+        >
+          {t.detail_changePhoto}
+        </button>
+      </div>
+    ) : null;
+
     return (
       <>
       <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
@@ -600,20 +664,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             ))}
-            {isEditMode && (
-              <button
-                type="button"
-                onClick={handleEditPhotoClick}
-                style={{
-                  position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
-                  background: "rgba(0,0,0,0.6)", color: "white", border: "none",
-                  borderRadius: "var(--radius-full)", padding: "8px 18px", fontSize: 13, fontWeight: 600,
-                  cursor: "pointer", backdropFilter: "blur(4px)",
-                }}
-              >
-                ✏️ {t.detail_editPhoto}
-              </button>
-            )}
+            {renderEditPhotoActions()}
           </div>
         )}
 
@@ -635,20 +686,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={preview} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: "var(--radius-md)", display: "block" }} />
               )}
-              {isEditMode && (
-                <button
-                  type="button"
-                  onClick={handleEditPhotoClick}
-                  style={{
-                    position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
-                    background: "rgba(0,0,0,0.6)", color: "white", border: "none",
-                    borderRadius: "var(--radius-full)", padding: "6px 14px", fontSize: 12, fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  ✏️ {t.detail_editPhoto}
-                </button>
-              )}
+              {renderEditPhotoActions(true)}
             </div>
           )}
 
