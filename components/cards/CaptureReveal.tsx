@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useT } from "@/components/providers/I18nProvider";
-import { AscentCard, type AscentCardData } from "@/components/cards/AscentCard";
+import { type AscentCardData } from "@/components/cards/AscentCard";
 import { ElevationProfile } from "@/components/cards/ElevationProfile";
 
 // Only the Lottie flower is client-only — keeping the ssr:false boundary here (not
@@ -25,25 +25,31 @@ const MYTHIC_EXTRA = 2200; // let the mythic beat play before auto-reveal
 const HOLD = 2000;       // wait after the sequence before auto-reveal
 const REVEAL_MS = 800;   // focus-pull before handing off
 
-function darken(hex: string, f: number): string {
-  const h = hex.replace("#", "");
-  const r = Math.round(parseInt(h.slice(0, 2), 16) * f);
-  const g = Math.round(parseInt(h.slice(2, 4), 16) * f);
-  const b = Math.round(parseInt(h.slice(4, 6), 16) * f);
-  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
-}
+export type CaptureRevealValues = {
+  photoBlur: number;
+  coverAlpha: number;
+  epDisplay: number;
+  epScale: number;
+  rarityScale: number;
+  fxAlpha: number;
+  infoAppear: number;
+  mythicBeat: boolean;
+};
 
-type Props = {
+type UseCaptureRevealProps = {
+  enabled: boolean;
   ascent: AscentCardData;
-  locale: string;
-  variant?: "social" | "profile";
   onFinished: () => void;
 };
 
-export function CaptureReveal({ ascent, locale, variant = "profile", onFinished }: Props) {
-  const t = useT();
+type OverlayProps = {
+  ascent: AscentCardData;
+  locale: string;
+  values: CaptureRevealValues;
+};
+
+export function useCaptureReveal({ enabled, ascent, onFinished }: UseCaptureRevealProps): CaptureRevealValues {
   const rarity = getRarityId(ascent.peak.altitudeM);
-  const color = RARITY_COLORS[rarity];
   const ep = RARITY_EP[rarity];
   const isMythic = ascent.peak.isMythic ?? false;
 
@@ -58,6 +64,17 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
   onFinishedRef.current = onFinished;
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    setPhase("build");
+    setInfoAppear(0);
+    setRarityScale(1);
+    setEpCount(0);
+    setEpScale(1);
+    setMythicBeat(false);
+
     const timers: ReturnType<typeof setTimeout>[] = [];
     let raf = 0;
     const at = (fn: () => void, ms: number) => { timers.push(setTimeout(fn, ms)); };
@@ -95,16 +112,32 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
     }, revealAt);
 
     return () => { timers.forEach(clearTimeout); cancelAnimationFrame(raf); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled, ep, isMythic]);
 
   const coverAlpha = phase === "build" ? 1 : 0;
   const photoBlur = phase === "build" ? 16 : 0;
   const fxAlpha = phase === "build" ? 1 : 0;
 
-  // ── Scene (rendered inside the photo area via AscentCard's reveal.sceneOverlay) ──
-  const scene = (
-    <div style={{ position: "absolute", inset: 0, opacity: fxAlpha, transition: "opacity 450ms ease" }}>
+  return {
+    photoBlur,
+    coverAlpha,
+    epDisplay: epCount,
+    epScale,
+    rarityScale,
+    fxAlpha,
+    infoAppear,
+    mythicBeat,
+  };
+}
+
+export function CaptureRevealOverlay({ ascent, locale, values }: OverlayProps) {
+  const t = useT();
+  const rarity = getRarityId(ascent.peak.altitudeM);
+  const color = RARITY_COLORS[rarity];
+  const isMythic = ascent.peak.isMythic ?? false;
+
+  return (
+    <div style={{ position: "absolute", inset: 0, opacity: values.fxAlpha, transition: "opacity 450ms ease" }}>
       {/* Flower + "PEAK CAPTURED!" — upper group */}
       <div style={{
         position: "absolute", inset: 0,
@@ -114,7 +147,7 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
         <div style={{ position: "relative", width: "80%", aspectRatio: "1 / 1" }}>
           <RevealFlower color={color} style={{ position: "absolute", inset: 0 }} />
           {isMythic && (
-            <div style={{ position: "absolute", inset: 0, opacity: mythicBeat ? 1 : 0, transition: "opacity 900ms ease" }}>
+            <div style={{ position: "absolute", inset: 0, opacity: values.mythicBeat ? 1 : 0, transition: "opacity 900ms ease" }}>
               <RevealFlower color="#FFD700" style={{ position: "absolute", inset: 0 }} />
             </div>
           )}
@@ -122,8 +155,8 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
         {/* Pulled up into the daisy's empty lower frame so it hugs the flower */}
         <div style={{
           marginTop: "-20%",
-          opacity: infoAppear, transition: "opacity 350ms ease, transform 350ms cubic-bezier(.34,1.56,.64,1)",
-          transform: `scale(${infoAppear ? 1 : 0.85})`,
+          opacity: values.infoAppear, transition: "opacity 350ms ease, transform 350ms cubic-bezier(.34,1.56,.64,1)",
+          transform: `scale(${values.infoAppear ? 1 : 0.85})`,
           fontSize: 22, fontWeight: 900, letterSpacing: "0.06em", color: "#111827",
           textShadow: `0 2px 16px ${color}66`, textTransform: "uppercase", textAlign: "center",
         }}>
@@ -134,7 +167,7 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
       {/* Peak name + altitude — above the profile (which is ~90px tall), in rarity color */}
       <div style={{
         position: "absolute", left: 0, right: 0, bottom: 104, textAlign: "center",
-        opacity: infoAppear, transition: "opacity 350ms ease",
+        opacity: values.infoAppear, transition: "opacity 350ms ease",
       }}>
         <div style={{ fontSize: 22, fontWeight: 900, color, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
           {ascent.peak.nameEn ?? ascent.peak.name}
@@ -145,7 +178,7 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
       </div>
 
       {/* Elevation profile — rarity-tinted, flush to the bottom */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, opacity: infoAppear, transition: "opacity 350ms ease" }}>
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, opacity: values.infoAppear, transition: "opacity 350ms ease" }}>
         <ElevationProfile peakId={ascent.peak.id} altitudeM={ascent.peak.altitudeM} rarityColor={color} lineColor={color} />
       </div>
 
@@ -156,8 +189,8 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
           background: "#EAB308", color: "#fff", fontSize: 10, fontWeight: 900, letterSpacing: "0.12em",
           padding: "6px 10px", borderRadius: "var(--radius-full)",
           boxShadow: "0 4px 16px rgba(234,179,8,0.45)",
-          opacity: mythicBeat ? 1 : 0,
-          transform: `scale(${mythicBeat ? 1 : 0.6})`,
+          opacity: values.mythicBeat ? 1 : 0,
+          transform: `scale(${values.mythicBeat ? 1 : 0.6})`,
           transformOrigin: "top left",
           transition: "opacity 250ms ease, transform 300ms cubic-bezier(.34,1.56,.64,1)",
         }}>
@@ -165,16 +198,5 @@ export function CaptureReveal({ ascent, locale, variant = "profile", onFinished 
         </div>
       )}
     </div>
-  );
-
-  // Rendered IN the feed, in place of the just-created card — so the reveal plays
-  // exactly over the real card and dissolves into it (no full-screen overlay).
-  return (
-    <AscentCard
-      variant={variant}
-      ascent={ascent}
-      locale={locale}
-      reveal={{ photoBlur, coverAlpha, epDisplay: epCount, epScale, rarityScale, sceneOverlay: scene }}
-    />
   );
 }

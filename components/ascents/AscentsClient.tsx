@@ -5,11 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
-import { AscentCard } from "@/components/cards/AscentCard";
-// Capture-reveal plays in place of the just-created card. Imported normally (its
-// only client-only piece — the Lottie flower — is dynamically loaded inside it),
-// so the feed card stays SSR-stable and doesn't flicker/disappear.
-import { CaptureReveal } from "@/components/cards/CaptureReveal";
+import { AscentCard, type AscentCardData, type AscentCardReveal } from "@/components/cards/AscentCard";
+// Capture-reveal is now an overlay on top of the real card. The card itself stays
+// mounted, so Virtuoso measures one stable item and the settle has no visible swap.
+import { CaptureRevealOverlay, useCaptureReveal } from "@/components/cards/CaptureReveal";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
@@ -55,6 +54,57 @@ const RARITY_COLORS: Record<Rarity, { bg: string; border: string; text: string; 
 
 const RARITY_LABELS: Record<Rarity, string> =
   Object.fromEntries(RARITIES.map((r) => [r.id, r.label])) as Record<Rarity, string>;
+
+function AscentCardSlot({
+  ascent,
+  locale,
+  variant,
+  animationIndex,
+  isRevealing,
+  disableEntrance,
+  onRevealFinished,
+}: {
+  ascent: AscentCardData;
+  locale: string;
+  variant: "social" | "profile";
+  animationIndex: number;
+  isRevealing: boolean;
+  disableEntrance: boolean;
+  onRevealFinished: () => void;
+}) {
+  const revealValues = useCaptureReveal({
+    enabled: isRevealing,
+    ascent,
+    onFinished: onRevealFinished,
+  });
+  const reveal: AscentCardReveal | undefined = isRevealing
+    ? {
+        photoBlur: revealValues.photoBlur,
+        coverAlpha: revealValues.coverAlpha,
+        epDisplay: revealValues.epDisplay,
+        epScale: revealValues.epScale,
+        rarityScale: revealValues.rarityScale,
+        sceneOverlay: (
+          <CaptureRevealOverlay
+            ascent={ascent}
+            locale={locale}
+            values={revealValues}
+          />
+        ),
+      }
+    : undefined;
+
+  return (
+    <AscentCard
+      variant={variant}
+      locale={locale}
+      animationIndex={animationIndex}
+      ascent={ascent}
+      reveal={reveal}
+      disableEntrance={isRevealing || disableEntrance}
+    />
+  );
+}
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -174,11 +224,11 @@ export function AscentsClient({
   // is unreliable on the first client render → revealCardId came back null, the
   // reveal was silently skipped, and initialTopMostItemIndex then scrolled to the
   // highlight index (the "jumps to another card, no reveal" bug). The prop is
-  // deterministic (SSR === client) so the first paint already renders CaptureReveal
-  // in place — no swap, no Virtuoso re-measure/collapse.
+  // deterministic (SSR === client) so the first paint already renders the card
+  // with its reveal overlay in place — no target swap, no late reveal mount.
   const [revealCardId, setRevealCardId] = useState<string | null>(revealId ?? null);
-  // The card whose reveal just finished — its plain AscentCard skips the entrance
-  // animation so the CaptureReveal → AscentCard swap doesn't replay cardFadeUp.
+  // The card whose reveal just finished skips the entrance animation so the
+  // persistent card doesn't replay cardFadeUp while settling.
   const [settledRevealId, setSettledRevealId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -978,32 +1028,23 @@ export function AscentsClient({
                       ...(highlightId === a.id && !isRevealing ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
                     }}
                   >
-                    {isRevealing ? (
-                      <div className="capture-reveal-shell">
-                        <CaptureReveal
-                          ascent={cardData}
-                          locale={t.dateLocale}
-                          variant={a.isOwn ? "profile" : "social"}
-                          onFinished={() => {
-                            // End the reveal. Do NOT show the highlight ring afterwards —
-                            // the cinematic reveal already drew all attention to the card,
-                            // so the extra ring (+ its box-shadow transition) just produces
-                            // a jarring shift on settle. Clear highlightId so no ring flashes.
-                            setRevealCardId(null);
-                            setHighlightId(null);
-                            setSettledRevealId(a.id);
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <AscentCard
-                        variant={a.isOwn ? "profile" : "social"}
-                        locale={t.dateLocale}
-                        animationIndex={index}
-                        ascent={cardData}
-                        disableEntrance={settledRevealId === a.id}
-                      />
-                    )}
+                    <AscentCardSlot
+                      ascent={cardData}
+                      locale={t.dateLocale}
+                      variant={a.isOwn ? "profile" : "social"}
+                      animationIndex={index}
+                      isRevealing={isRevealing}
+                      disableEntrance={settledRevealId === a.id}
+                      onRevealFinished={() => {
+                        // End the reveal. Do NOT show the highlight ring afterwards —
+                        // the cinematic reveal already drew all attention to the card,
+                        // so the extra ring (+ its box-shadow transition) just produces
+                        // a jarring shift on settle. Clear highlightId so no ring flashes.
+                        setRevealCardId(null);
+                        setHighlightId(null);
+                        setSettledRevealId(a.id);
+                      }}
+                    />
                   </div>
                 </div>
               );

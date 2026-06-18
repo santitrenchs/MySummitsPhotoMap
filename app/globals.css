@@ -226,17 +226,6 @@
     0 20px 50px rgba(13, 37, 56, 0.10);
 }
 
-/* Stable first layout for the capture reveal inside Virtuoso. Chrome can measure
-   the virtualized item before async/absolute reveal content contributes size. */
-.capture-reveal-shell {
-  width: 100%;
-  min-height: clamp(560px, calc((100vw - 44px) * 1.42), 720px);
-}
-
-.capture-reveal-shell .peak-card {
-  min-height: inherit;
-}
-
 /* Grain texture */
 .peak-card::after {
   content: "";

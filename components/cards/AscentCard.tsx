@@ -56,7 +56,7 @@ export type AscentCardData = {
   peakStats?: { totalAscents: number; uniqueClimbers: number };
 };
 
-// Drives the capture-reveal animation when AscentCard is shown inside CaptureReveal.
+// Drives the capture-reveal overlay while the real AscentCard stays mounted.
 // null on every normal feed render — the card looks/behaves exactly as before.
 export type AscentCardReveal = {
   photoBlur: number;      // px, blur applied to the hero photo
@@ -75,8 +75,7 @@ type Props = {
   isDeleting?: boolean;
   animationIndex?: number;
   reveal?: AscentCardReveal;
-  /** Skip the entrance animation — used on the card that just finished its reveal,
-      so the CaptureReveal → AscentCard swap doesn't replay cardFadeUp (jump). */
+  /** Skip the entrance animation while/after reveal so the measured feed item stays still. */
   disableEntrance?: boolean;
 };
 
@@ -349,9 +348,9 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
               (flower + headline + name + altitude + profile), on top of everything. */}
           {reveal && (
             <>
-              <div style={{ position: "absolute", inset: 0, background: "#EAEEF3", opacity: reveal.coverAlpha, transition: "opacity 750ms ease", zIndex: 3 }} />
+              <div style={{ position: "absolute", inset: 0, background: "#EAEEF3", opacity: reveal.coverAlpha, transition: "opacity 750ms ease", zIndex: 8 }} />
               {reveal.sceneOverlay && (
-                <div style={{ position: "absolute", inset: 0, zIndex: 4 }}>{reveal.sceneOverlay}</div>
+                <div style={{ position: "absolute", inset: 0, zIndex: 9 }}>{reveal.sceneOverlay}</div>
               )}
             </>
           )}
@@ -406,9 +405,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
           // @ts-expect-error CSS custom property
           style={{ "--card-i": Math.min(animationIndex, 8) }}
         >
-          {/* Skip the cardFadeUp entrance when this card replaces a just-finished
-              reveal (or is itself the reveal) — otherwise the swap CaptureReveal →
-              AscentCard re-runs the slide-in and the card visibly jumps on settle. */}
+          {/* Skip cardFadeUp while/after reveal so the persistent card settles without
+              replaying its entrance animation. */}
           <div
             className="card-face card-front"
             style={reveal || disableEntrance ? { animation: "none" } : undefined}
