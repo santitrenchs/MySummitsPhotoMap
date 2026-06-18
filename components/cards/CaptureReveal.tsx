@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import dynamic from "next/dynamic";
 import { useT } from "@/components/providers/I18nProvider";
 import { type AscentCardData } from "@/components/cards/AscentCard";
@@ -24,6 +24,11 @@ const T_MYTHIC = 400;    // mythic beat, after EP lands
 const MYTHIC_EXTRA = 2200; // let the mythic beat play before auto-reveal
 const HOLD = 2000;       // wait after the sequence before auto-reveal
 const REVEAL_MS = 800;   // focus-pull before handing off
+const PREPARE_TIMEOUT_MS = 1200;
+const IMAGE_SOFT_TIMEOUT_MS = 450;
+const FAIL_SETTLE_MS = 220;
+
+export type CaptureRevealStatus = "idle" | "mounting" | "playing" | "settling" | "done" | "failed";
 
 export type CaptureRevealValues = {
   photoBlur: number;
@@ -34,11 +39,13 @@ export type CaptureRevealValues = {
   fxAlpha: number;
   infoAppear: number;
   mythicBeat: boolean;
+  status: CaptureRevealStatus;
 };
 
 type UseCaptureRevealProps = {
   enabled: boolean;
   ascent: AscentCardData;
+  hostRef: RefObject<HTMLElement | null>;
   onFinished: () => void;
 };
 
@@ -48,11 +55,32 @@ type OverlayProps = {
   values: CaptureRevealValues;
 };
 
-export function useCaptureReveal({ enabled, ascent, onFinished }: UseCaptureRevealProps): CaptureRevealValues {
+function hasStableRevealLayout(host: HTMLElement | null, startedAt: number): boolean {
+  if (!host) return false;
+  const card = host.querySelector<HTMLElement>(".peak-card");
+  const frame = host.querySelector<HTMLElement>(".image-frame");
+  if (!card || !frame) return false;
+
+  const cardRect = card.getBoundingClientRect();
+  const frameRect = frame.getBoundingClientRect();
+  const layoutReady =
+    cardRect.width > 100 &&
+    cardRect.height > 260 &&
+    frameRect.width > 100 &&
+    frameRect.height > 160;
+  if (!layoutReady) return false;
+
+  const img = frame.querySelector<HTMLImageElement>("img");
+  const imageReady = !img || (img.complete && img.naturalWidth > 0);
+  return imageReady || performance.now() - startedAt > IMAGE_SOFT_TIMEOUT_MS;
+}
+
+export function useCaptureReveal({ enabled, ascent, hostRef, onFinished }: UseCaptureRevealProps): CaptureRevealValues {
   const rarity = getRarityId(ascent.peak.altitudeM);
   const ep = RARITY_EP[rarity];
   const isMythic = ascent.peak.isMythic ?? false;
 
+  const [status, setStatus] = useState<CaptureRevealStatus>("idle");
   const [phase, setPhase] = useState<"build" | "reveal">("build");
   const [infoAppear, setInfoAppear] = useState(0);
   const [rarityScale, setRarityScale] = useState(1);
@@ -65,10 +93,13 @@ export function useCaptureReveal({ enabled, ascent, onFinished }: UseCaptureReve
 
   useEffect(() => {
     if (!enabled) {
+      setStatus("idle");
       return;
     }
 
+    let cancelled = false;
     setPhase("build");
+    setStatus("mounting");
     setInfoAppear(0);
     setRarityScale(1);
     setEpCount(0);
@@ -79,44 +110,87 @@ export function useCaptureReveal({ enabled, ascent, onFinished }: UseCaptureReve
     let raf = 0;
     const at = (fn: () => void, ms: number) => { timers.push(setTimeout(fn, ms)); };
 
-    at(() => setInfoAppear(1), BLOOM);
+    const finishSafely = () => {
+      if (cancelled) return;
+      setStatus("done");
+      onFinishedRef.current();
+    };
 
-    // Rarity pop (after the headline lands)
-    at(() => setRarityScale(2.1), BLOOM + T_RARITY);
-    at(() => setRarityScale(1), BLOOM + T_RARITY + RARITY_HOLD);
-
-    // EP roll-up
-    at(() => {
-      setEpScale(1.9);
-      const start = performance.now();
-      const tick = (now: number) => {
-        const p = Math.min(1, (now - start) / EP_MS);
-        setEpCount(Math.round(p * ep));
-        if (p < 1) raf = requestAnimationFrame(tick);
-        else setEpScale(1);
-      };
-      raf = requestAnimationFrame(tick);
-    }, BLOOM + T_EP);
-
-    const epEnd = BLOOM + T_EP + EP_MS;
-    let revealAt: number;
-    if (isMythic) {
-      at(() => setMythicBeat(true), epEnd + T_MYTHIC);
-      revealAt = epEnd + T_MYTHIC + MYTHIC_EXTRA + HOLD;
-    } else {
-      revealAt = epEnd + HOLD;
-    }
-    at(() => {
+    const failSafely = () => {
+      if (cancelled) return;
+      setStatus("failed");
       setPhase("reveal");
-      at(() => onFinishedRef.current(), REVEAL_MS);
-    }, revealAt);
+      setInfoAppear(0);
+      setRarityScale(1);
+      setEpScale(1);
+      setEpCount(ep);
+      setMythicBeat(false);
+      at(finishSafely, FAIL_SETTLE_MS);
+    };
 
-    return () => { timers.forEach(clearTimeout); cancelAnimationFrame(raf); };
-  }, [enabled, ep, isMythic]);
+    const startTimeline = () => {
+      if (cancelled) return;
+      setStatus("playing");
+      at(() => setInfoAppear(1), BLOOM);
 
-  const coverAlpha = phase === "build" ? 1 : 0;
-  const photoBlur = phase === "build" ? 16 : 0;
-  const fxAlpha = phase === "build" ? 1 : 0;
+      // Rarity pop (after the headline lands)
+      at(() => setRarityScale(2.1), BLOOM + T_RARITY);
+      at(() => setRarityScale(1), BLOOM + T_RARITY + RARITY_HOLD);
+
+      // EP roll-up
+      at(() => {
+        setEpScale(1.9);
+        const start = performance.now();
+        const tick = (now: number) => {
+          const p = Math.min(1, (now - start) / EP_MS);
+          setEpCount(Math.round(p * ep));
+          if (p < 1) raf = requestAnimationFrame(tick);
+          else setEpScale(1);
+        };
+        raf = requestAnimationFrame(tick);
+      }, BLOOM + T_EP);
+
+      const epEnd = BLOOM + T_EP + EP_MS;
+      let revealAt: number;
+      if (isMythic) {
+        at(() => setMythicBeat(true), epEnd + T_MYTHIC);
+        revealAt = epEnd + T_MYTHIC + MYTHIC_EXTRA + HOLD;
+      } else {
+        revealAt = epEnd + HOLD;
+      }
+      at(() => {
+        setStatus("settling");
+        setPhase("reveal");
+        at(finishSafely, REVEAL_MS);
+      }, revealAt);
+    };
+
+    const startedAt = performance.now();
+    const waitForReady = () => {
+      if (cancelled) return;
+      if (hasStableRevealLayout(hostRef.current, startedAt)) {
+        startTimeline();
+        return;
+      }
+      if (performance.now() - startedAt > PREPARE_TIMEOUT_MS) {
+        failSafely();
+        return;
+      }
+      raf = requestAnimationFrame(waitForReady);
+    };
+    raf = requestAnimationFrame(waitForReady);
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+      cancelAnimationFrame(raf);
+    };
+  }, [enabled, ep, hostRef, isMythic]);
+
+  const isFailedOrDone = status === "failed" || status === "done" || status === "idle";
+  const coverAlpha = isFailedOrDone ? 0 : phase === "build" ? 1 : 0;
+  const photoBlur = isFailedOrDone ? 0 : phase === "build" ? 16 : 0;
+  const fxAlpha = status === "playing" && phase === "build" ? 1 : 0;
 
   return {
     photoBlur,
@@ -127,6 +201,7 @@ export function useCaptureReveal({ enabled, ascent, onFinished }: UseCaptureReve
     fxAlpha,
     infoAppear,
     mythicBeat,
+    status,
   };
 }
 

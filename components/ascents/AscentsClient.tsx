@@ -72,9 +72,11 @@ function AscentCardSlot({
   disableEntrance: boolean;
   onRevealFinished: () => void;
 }) {
+  const hostRef = useRef<HTMLDivElement>(null);
   const revealValues = useCaptureReveal({
     enabled: isRevealing,
     ascent,
+    hostRef,
     onFinished: onRevealFinished,
   });
   const reveal: AscentCardReveal | undefined = isRevealing
@@ -95,14 +97,16 @@ function AscentCardSlot({
     : undefined;
 
   return (
-    <AscentCard
-      variant={variant}
-      locale={locale}
-      animationIndex={animationIndex}
-      ascent={ascent}
-      reveal={reveal}
-      disableEntrance={isRevealing || disableEntrance}
-    />
+    <div ref={hostRef}>
+      <AscentCard
+        variant={variant}
+        locale={locale}
+        animationIndex={animationIndex}
+        ascent={ascent}
+        reveal={reveal}
+        disableEntrance={isRevealing || disableEntrance}
+      />
+    </div>
   );
 }
 
