@@ -249,11 +249,7 @@ export function AscentsClient({
       window.history.replaceState(null, "", u.toString());
     }
   }, []);
-  // Captured once at first render: when the page opens straight into a reveal we
-  // must NOT also drive Virtuoso's initialTopMostItemIndex — the new card is at the
-  // top of "mine", and positioning it triggers the collapse race. Frozen via useRef
-  // so it doesn't flip to true after onFinished clears revealCardId.
-  const skipInitialScroll = useRef(revealCardId !== null).current;
+  const didRevealVisibilityFallback = useRef(false);
 
   // Lock body scroll when sheet open
   useEffect(() => {
@@ -308,14 +304,14 @@ export function AscentsClient({
     });
   }, [localAscents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, currentUserId]);
 
-  // Position the list at the highlighted card on the FIRST paint. A post-mount
-  // virtuosoRef.scrollToIndex races with Virtuoso's measurement under
-  // useWindowScroll and silently lands at the top ("the first of mine").
-  // initialTopMostItemIndex is applied by Virtuoso before paint, from the
-  // SSR-provided list (which already includes the injected highlight ascent).
-  const initialHighlightIndex = useMemo(() => {
-    if (!highlightId) return undefined;
-    const idx = filtered.findIndex((a) => a.id === highlightId);
+  // Position the list at the target card on the FIRST paint. Reveal uses the same
+  // path now that the actual AscentCard is persistent and only the overlay animates.
+  // The fallback effect below is instant and reveal-only, so we avoid the old
+  // smooth-scroll "tour through the feed" without changing normal highlights.
+  const initialTargetIndex = useMemo(() => {
+    const targetId = revealCardId ?? highlightId;
+    if (!targetId) return undefined;
+    const idx = filtered.findIndex((a) => a.id === targetId);
     return idx >= 0 ? { index: idx, align: "center" as const } : undefined;
     // Compute ONCE at mount — deliberately empty deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -483,12 +479,46 @@ export function AscentsClient({
   // Scroll to highlighted ascent when present in the list
   useEffect(() => {
     if (!highlightId) return;
+    if (revealCardId) return;
     const idx = filtered.findIndex((a) => a.id === highlightId);
     if (idx < 0) return;
     virtuosoRef.current?.scrollToIndex({ index: idx, align: "center", behavior: "smooth" });
     const timer = setTimeout(() => setHighlightId(null), 2500);
     return () => clearTimeout(timer);
-  }, [highlightId, filtered]);
+  }, [highlightId, filtered, revealCardId]);
+
+  // Reveal should begin where the target card already is. If Virtuoso ignores the
+  // initial index for any runtime reason, do one non-animated correction instead
+  // of showing the user a smooth feed scroll before the cinematic starts.
+  useEffect(() => {
+    if (!revealCardId || didRevealVisibilityFallback.current) return;
+    const idx = filtered.findIndex((a) => a.id === revealCardId);
+    if (idx < 0) return;
+
+    const isTargetVisible = () => {
+      const el = document.getElementById(`ascent-${revealCardId}`);
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      return rect.top < viewportHeight * 0.88 && rect.bottom > viewportHeight * 0.12;
+    };
+
+    const correctIfNeeded = () => {
+      if (isTargetVisible()) return;
+      didRevealVisibilityFallback.current = true;
+      virtuosoRef.current?.scrollToIndex({ index: idx, align: "center", behavior: "auto" });
+    };
+
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(correctIfNeeded);
+    });
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [filtered, revealCardId]);
 
   // Scroll to top when the filter SET changes — NOT on data updates (which also re-derive `filtered`).
   // Depend on the raw filter inputs so pagination/localAscents updates don't trigger a scroll reset.
@@ -999,7 +1029,7 @@ export function AscentsClient({
           <Virtuoso
             ref={virtuosoRef}
             useWindowScroll
-            {...(initialHighlightIndex && !skipInitialScroll ? { initialTopMostItemIndex: initialHighlightIndex } : {})}
+            {...(initialTargetIndex ? { initialTopMostItemIndex: initialTargetIndex } : {})}
             data={filtered}
             endReached={loadMore}
             rangeChanged={handleRangeChanged}

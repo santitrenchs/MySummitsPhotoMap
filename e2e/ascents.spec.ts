@@ -63,6 +63,7 @@ test.describe("Create ascent flow", () => {
     const overlay = item.getByTestId("capture-reveal-overlay");
 
     await expect(item).toBeVisible({ timeout: 15_000 });
+    await expect(item).toBeInViewport({ timeout: 1_500 });
     await expect(card).toHaveCount(1);
     await expect(overlay).toBeVisible({ timeout: 5_000 });
     await expect(overlay).toHaveAttribute("data-reveal-status", /mounting|playing|settling/);
@@ -74,6 +75,9 @@ test.describe("Create ascent flow", () => {
     const beforeScrollY = await page.evaluate(() => window.scrollY);
     expect(beforeBox.width).toBeGreaterThan(100);
     expect(beforeBox.height).toBeGreaterThan(260);
+    await page.waitForTimeout(1_000);
+    const scrollYAfterFirstSecond = await page.evaluate(() => window.scrollY);
+    expect(Math.abs(scrollYAfterFirstSecond - beforeScrollY)).toBeLessThanOrEqual(8);
 
     await expect(overlay).toBeHidden({ timeout: 18_000 });
     await expect(card).toHaveCount(1);
