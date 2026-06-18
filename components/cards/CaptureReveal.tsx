@@ -27,6 +27,7 @@ const REVEAL_MS = 800;   // focus-pull before handing off
 const PREPARE_TIMEOUT_MS = 1200;
 const IMAGE_SOFT_TIMEOUT_MS = 450;
 const FAIL_SETTLE_MS = 220;
+const REDUCED_MOTION_SETTLE_MS = 80;
 
 export type CaptureRevealStatus = "idle" | "mounting" | "playing" | "settling" | "done" | "failed";
 
@@ -73,6 +74,10 @@ function hasStableRevealLayout(host: HTMLElement | null, startedAt: number): boo
   const img = frame.querySelector<HTMLImageElement>("img");
   const imageReady = !img || (img.complete && img.naturalWidth > 0);
   return imageReady || performance.now() - startedAt > IMAGE_SOFT_TIMEOUT_MS;
+}
+
+function prefersReducedRevealMotion(): boolean {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 }
 
 export function useCaptureReveal({ enabled, ascent, hostRef, onFinished }: UseCaptureRevealProps): CaptureRevealValues {
@@ -127,6 +132,26 @@ export function useCaptureReveal({ enabled, ascent, hostRef, onFinished }: UseCa
       setMythicBeat(false);
       at(finishSafely, FAIL_SETTLE_MS);
     };
+
+    const settleReducedMotion = () => {
+      setStatus("settling");
+      setPhase("reveal");
+      setInfoAppear(0);
+      setRarityScale(1);
+      setEpScale(1);
+      setEpCount(ep);
+      setMythicBeat(false);
+      at(finishSafely, REDUCED_MOTION_SETTLE_MS);
+    };
+
+    if (prefersReducedRevealMotion()) {
+      settleReducedMotion();
+      return () => {
+        cancelled = true;
+        timers.forEach(clearTimeout);
+        cancelAnimationFrame(raf);
+      };
+    }
 
     const startTimeline = () => {
       if (cancelled) return;
@@ -213,6 +238,7 @@ export function CaptureRevealOverlay({ ascent, locale, values }: OverlayProps) {
 
   return (
     <div
+      aria-hidden="true"
       data-testid="capture-reveal-overlay"
       data-reveal-status={values.status}
       style={{ position: "absolute", inset: 0, opacity: values.fxAlpha, transition: "opacity 450ms ease" }}
