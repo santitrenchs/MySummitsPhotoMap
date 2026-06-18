@@ -393,7 +393,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     if (!editAscent) return;
     setLoading(true);
     await fetch(`/api/ascents/${editAscent.id}`, { method: "DELETE" });
-    window.location.href = "/ascents";
+    window.location.href = "/ascents?view=mine";
   }
 
   // ── Submit ───────────────────────────────────────────────────────────────

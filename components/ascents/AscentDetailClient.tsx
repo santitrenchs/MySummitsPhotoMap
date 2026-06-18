@@ -148,7 +148,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
     setDeleting(true);
     try {
       await fetch(`/api/ascents/${id}`, { method: "DELETE" });
-      router.push("/ascents");
+      router.push("/ascents?view=mine");
     } finally {
       setDeleting(false);
     }
