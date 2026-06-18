@@ -791,6 +791,30 @@ The public share page (opened from the share link, no auth) renders a **flippabl
 
 ---
 
+### Web edit-ascent modal — photo actions
+
+The web edit modal must keep photo editing visually clear and separate from creation:
+
+- The modal opens directly on the edit form. It must not show the create-mode photo picker (`PickStep`) while editing.
+- The photo preview overlays compact pill buttons at the bottom center.
+- If the current photo has an `originalStorageKey`, show **Re-encuadrar** (`detail_reCrop`) and **Cambiar foto** (`detail_changePhoto`).
+- If the current photo has no stored original, show only **Cambiar foto**.
+- **Re-encuadrar** reuses the stored original and is for crop adjustment only.
+- **Cambiar foto** opens the file picker for a new image and then the cropper.
+- In edit mode, the cropper back arrow returns to the edit form, not to the create picker.
+- Selecting a replacement image in edit mode must not apply EXIF date/GPS suggestions or change the visible date/peak automatically.
+- Keep the buttons short in every locale; they sit over the photo preview and must fit on narrow mobile screens.
+
+Visual style:
+
+```
+container: position absolute · bottom 8/16 · left 50% · translateX(-50%)
+layout: flex row · wrap · gap 8 · justify center
+button: pill · rgba(0,0,0,0.60-0.72) · white text · 12-13px semi-bold
+```
+
+---
+
 ### Filter bottom sheet — sections
 
 Four sections, always in this order:

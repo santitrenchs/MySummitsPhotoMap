@@ -190,6 +190,7 @@ A combined social + personal climb log. Shows **friends' ascents by default** (s
 - **Edit flow:**
   - **Web**: dispatches `CustomEvent("open-ascent-modal", { detail: { editAscent: {...} } })` — opens the edit modal in-place. `NavBar.tsx` listens for this event.
     - Deleting an own ascent from the edit modal or the ascent detail must return to `/ascents?view=mine`, never bare `/ascents` (bare `/ascents` defaults to friends/"Mi equipo").
+    - Photo editing in the web modal has two explicit actions: **Re-encuadrar / Re-crop** (reuse existing original via `reuseOriginalPhotoId`) and **Cambiar foto / Change photo** (open file picker for a real replacement). Never route edit photo replacement through the create-mode `PickStep`.
   - **Android**: the pencil on own cards opens the **create sheet (`NewAscentSheet`) in EDIT mode** — full web parity (peak, date, route, notes, tagged people, photo replace). See "Android App — Edit ascent flow" below. (It no longer opens the read-only `AscentDetailScreen`.)
   - **iOS (planned)**: same — reuse the create sheet in edit mode.
 
@@ -585,9 +586,12 @@ cropAspect String?           // "4:5" | "1:1"
 - `app/api/photos/[id]/original/route.ts` — serves the original via proxy (private, 1h cache)
 - `app/api/photos/[id]/route.ts` — DELETE accepts `?keepOriginal=1` to preserve original during re-crop
 
-**Re-crop flow** (`AscentDetailClient`):
-- "Editar foto" button: if `photo.originalStorageKey` exists → fetches original + existing face tags → opens `ImageCropModal` → re-crop → new display JPEG uploaded, original reused via `reuseOriginalPhotoId`, old photo deleted with `?keepOriginal=1`
-- If no `originalStorageKey` (legacy photo) → opens file picker for full replacement
+**Re-crop / replace flow**:
+- `AscentDetailClient`: the detail-page "Editar foto" flow may auto-pick re-crop when an original exists, or file picker for legacy photos.
+- `NewAscentModalContent` edit modal (web cards): the UI must expose two separate actions over the preview:
+  - `detail_reCrop` ("Re-encuadrar" / "Re-crop"): fetch existing original, opens `ImageCropModal`, uploads a new display JPEG with `reuseOriginalPhotoId`, then deletes old photo with `?keepOriginal=1`.
+  - `detail_changePhoto` ("Cambiar foto" / "Change photo"): opens file picker, uploads `file` + new `originalFile` + `cropMeta`, then deletes the old photo normally.
+- Edit photo replacement must never enter the create-mode `PickStep`; that step extracts EXIF date/GPS and can contaminate edit state.
 - Re-crop uses fresh face detection (no initialFaces merge) — crop coordinates changed
 
 **face-api / TF.js backend:**
@@ -714,13 +718,24 @@ This section is the authoritative specification for the create and edit ascent f
 ### State machine
 
 ```
-CREATE mode:  pick → crop → form → (submit) → /ascents?highlight={id}
-EDIT mode:    form  (starts here directly)    → (submit) → router.refresh() + onClose()
+CREATE mode:  pick → crop → form → (submit) → /ascents?highlight={id}&reveal=1
+EDIT mode:    form  (starts here directly) → crop → form → (submit) → router.refresh() + onClose()
 ```
 
-- **`pick`**: PickStep. User selects ≥1 image. Validates size ≤ 10 MB. Triggers EXIF extraction for date + GPS peak suggestion (skipped if `defaultPeakId` is present).
-- **`crop`**: ImageCropModal for each queued file. Ratios: 1:1 or 4:5. Supports 90° rotation. Produces `{ blob, cropMeta, originalFile }` per photo. In edit mode re-crop fetches the original via `GET /api/photos/{id}/original`.
+- **`pick`**: PickStep. User selects ≥1 image. Validates size ≤ 10 MB. Triggers EXIF extraction for date + GPS peak suggestion (skipped if `defaultPeakId` is present). **Create mode only.** Edit mode must never render `PickStep`; it starts and returns to `form`.
+- **`crop`**: ImageCropModal for each queued file. Ratios: 1:1 or 4:5. Supports 90° rotation. Produces `{ blob, cropMeta, originalFile }` per photo. In edit mode, `Re-encuadrar` fetches the original via `GET /api/photos/{id}/original`; `Cambiar foto` opens a file picker directly and marks the pending photo as a true replacement.
 - **`form`**: Fields: peak (required), date (required, default today or EXIF date), route (optional, max 500), notes (optional, max 2000), persons (optional), wikiloc (edit mode only, optional).
+
+### Web edit photo UX contract (2026-06-18)
+
+`NewAscentModalContent` deliberately separates **create photo selection** from **edit photo replacement**:
+- Create mode: `PickStep` → EXIF date/GPS suggestion → crop → form → `POST /api/ascents`.
+- Edit mode: form preview shows **Re-encuadrar** when `originalStorageKey` exists and always shows **Cambiar foto**. Both go directly to `ImageCropModal`, then back to the edit form.
+- The back arrow from crop in edit mode must return to the edit form, not to `PickStep`.
+- EXIF extraction (`extractImageMeta`) must run only in create mode. A replacement image in edit mode must never change the existing ascent date or peak automatically.
+- `handleSubmit` (create) must bail out if `editAscent` exists. `handleEditSubmit` must use the existing `editAscent.id`.
+- `submitInFlightRef` blocks double submit for both create and edit.
+- If new photo upload or face-save fails in edit mode, do not delete the old photo. If face-save fails after a new photo row was created, delete that new photo best-effort and keep the old one.
 
 ### Validation rules (enforced before any API call)
 
@@ -743,8 +758,9 @@ EDIT mode:    form  (starts here directly)    → (submit) → router.refresh() 
 
 1. `PATCH /api/ascents/{id}` — updates peakId, date, route, description, wikiloc
 2. **If new photo pending**: `POST /api/photos/upload` → `POST /api/photos/{id}/faces` → delete old photo
-   - If old photo had `originalStorageKey`: delete with `?keepOriginal=1`, pass `reuseOriginalPhotoId`
-   - If old photo had no `originalStorageKey` (legacy): delete normally
+   - If action was **Re-encuadrar**: pass `reuseOriginalPhotoId` and delete old photo with `?keepOriginal=1`
+   - If action was **Cambiar foto**: upload a new `originalFile` and delete old photo normally
+   - If upload/faces fail: keep the old photo; never delete it before the new photo is fully usable
 3. **If no new photo**: `POST /api/photos/{existingPhotoId}/faces` to update person tags in place
 4. On success: `router.refresh()` + `onClose()` (no full reload — modal closes, list refreshes in background)
 
@@ -771,13 +787,15 @@ document.dispatchEvent(new CustomEvent("open-ascent-modal", {
 ### i18n
 
 All visible strings use `t.*` keys — no hardcoded text in any language. Keys used:
-`ascents_logTitle`, `ascents_editTitle`, `field_peak`, `field_selectPeak`, `field_date`, `field_route`, `field_routePlaceholder`, `field_notes`, `field_notesPlaceholder`, `tag_tagPeople`, `tag_searchOrType`, `optional`, `crop_title`, `crop_next`, `newAscent_save`, `newAscent_saveChanges`, `newAscent_delete`, `newAscent_discardTitle`, `newAscent_discardMessage`, `newAscent_discard`, `newAscent_clickOrDrag`, `newAscent_maxSize`, `newAscent_selectFiles`, `photo_tooLarge`, `newAscent_photoFailed`, `ascents_delete_title`, `ascents_delete_body`, `delete`, `deleting`, `cancel`, `detail_editPhoto`, `edit_failedToSave`, `peak_notFound`, `peak_moreResults`.
+`ascents_logTitle`, `ascents_editTitle`, `field_peak`, `field_selectPeak`, `field_date`, `field_route`, `field_routePlaceholder`, `field_notes`, `field_notesPlaceholder`, `tag_tagPeople`, `tag_searchOrType`, `optional`, `crop_title`, `crop_next`, `newAscent_save`, `newAscent_saveChanges`, `newAscent_delete`, `newAscent_discardTitle`, `newAscent_discardMessage`, `newAscent_discard`, `newAscent_clickOrDrag`, `newAscent_maxSize`, `newAscent_selectFiles`, `photo_tooLarge`, `newAscent_photoFailed`, `ascents_delete_title`, `ascents_delete_body`, `delete`, `deleting`, `cancel`, `detail_editPhoto`, `detail_reCrop`, `detail_changePhoto`, `edit_failedToSave`, `peak_notFound`, `peak_moreResults`.
 
 `newAscent_save` and `newAscent_saveChanges` are intentionally short in every locale (`Guardar` / `Desar` / `Save` / `Enregistrer` / `Speichern`) because they render as the compact top-right modal action and longer strings overlap on small screens.
 
 ### What must NOT change without updating this contract
 
 - The `pick → crop → form` step order in create mode
+- The edit photo flow staying `form → crop → form` (never `PickStep`; never EXIF suggestions)
+- The two explicit edit photo actions: `detail_reCrop` reuses original, `detail_changePhoto` replaces with a new file
 - Photo being required in both create and edit mode
 - The `userCleared` guard in PeakPicker (prevents wiping `defaultPeakId` during async load)
 - The `open-ascent-modal` custom event signature (`{ peakId, peakName }`)
