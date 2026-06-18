@@ -189,6 +189,7 @@ A combined social + personal climb log. Shows **friends' ascents by default** (s
   - **iOS (planned)**: `UIActivityViewController` with the URL + call `POST /api/v1/ascents/{id}/share` first.
 - **Edit flow:**
   - **Web**: dispatches `CustomEvent("open-ascent-modal", { detail: { editAscent: {...} } })` — opens the edit modal in-place. `NavBar.tsx` listens for this event.
+    - Deleting an own ascent from the edit modal or the ascent detail must return to `/ascents?view=mine`, never bare `/ascents` (bare `/ascents` defaults to friends/"Mi equipo").
   - **Android**: the pencil on own cards opens the **create sheet (`NewAscentSheet`) in EDIT mode** — full web parity (peak, date, route, notes, tagged people, photo replace). See "Android App — Edit ascent flow" below. (It no longer opens the read-only `AscentDetailScreen`.)
   - **iOS (planned)**: same — reuse the create sheet in edit mode.
 
@@ -228,6 +229,8 @@ A combined social + personal climb log. Shows **friends' ascents by default** (s
 #### Ascents feed filter — instant switching + loading state (web, 2026-06-15)
 
 `AscentsClient` SSR-loads only the active view's stream, so switching Mi equipo ↔ Mis Cimas used to flash "0 cartas" + the empty state until a refetch landed. Fix: (1) an `isRefetching` flag drives a **spinner in the feed + "…" on the filter CTA** during a full reload (instead of the stale 0/empty); (2) a **per-(filter-signature) client cache** (`feedCacheRef`) seeded with the SSR page — cache hits restore instantly with no network; (3) the **opposite primary view is prefetched in the background on mount**, so the common toggle is instant. `loadMore`/autofill pause while refetching. ⚠️ Virtuoso gotcha: pass `initialTopMostItemIndex` **only when there's a real highlight index** — passing `undefined` with `useWindowScroll` leaves the list unrendered (blank feed). The highlight ring wraps only the card (radius 28, no bottom padding) so it hugs it.
+
+**Filter CTA counts (web, 2026-06-18):** the bottom-sheet CTA must show **server totals**, not `filtered.length`, because the feed is paginated (`PAGE_SIZE`) and only keeps the currently loaded cards in memory. `GET /api/ascents/feed/summary` returns `{ totalAscents, uniquePeaks }` using the same filter params as `/api/ascents/feed` but without loading photos/cards or changing pagination. `AscentsClient` caches summaries by filter signature and uses them only for the CTA text. Do **not** increase `PAGE_SIZE` or load all cards to fix counts. Search is still client-side, so while search text is non-empty the CTA falls back to the local filtered count until search is moved server-side.
 
 #### Capture Reveal — web implementation, Chrome-safe architecture (2026-06-18)
 
@@ -769,6 +772,8 @@ document.dispatchEvent(new CustomEvent("open-ascent-modal", {
 
 All visible strings use `t.*` keys — no hardcoded text in any language. Keys used:
 `ascents_logTitle`, `ascents_editTitle`, `field_peak`, `field_selectPeak`, `field_date`, `field_route`, `field_routePlaceholder`, `field_notes`, `field_notesPlaceholder`, `tag_tagPeople`, `tag_searchOrType`, `optional`, `crop_title`, `crop_next`, `newAscent_save`, `newAscent_saveChanges`, `newAscent_delete`, `newAscent_discardTitle`, `newAscent_discardMessage`, `newAscent_discard`, `newAscent_clickOrDrag`, `newAscent_maxSize`, `newAscent_selectFiles`, `photo_tooLarge`, `newAscent_photoFailed`, `ascents_delete_title`, `ascents_delete_body`, `delete`, `deleting`, `cancel`, `detail_editPhoto`, `edit_failedToSave`, `peak_notFound`, `peak_moreResults`.
+
+`newAscent_save` and `newAscent_saveChanges` are intentionally short in every locale (`Guardar` / `Desar` / `Save` / `Enregistrer` / `Speichern`) because they render as the compact top-right modal action and longer strings overlap on small screens.
 
 ### What must NOT change without updating this contract
 

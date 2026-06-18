@@ -814,6 +814,8 @@ Nine rarity chips (✿ emoji only — no label) + one Mythic chip (⭐ Mythic, a
 
 This makes every rarity visually distinct before the user taps it. Daisy = green, Heather = cyan, Gentian = dark blue, Tundra = teal, Edelweiss = purple, Draba = pink, Saxifrage = orange, Cinquefoil = yellow, Snow Lotus = slate.
 
+**CTA count source (web):** the bottom CTA must display server summary counts (`totalAscents` + `uniquePeaks`) from `/api/ascents/feed/summary`, not the number of cards currently loaded by the virtualized feed. The feed remains paginated for performance; never load all cards just to calculate this label. When local search text is active, web may fall back to local loaded-count until search is server-side.
+
 **Mythic chip:**
 
 | State | bg | border |
