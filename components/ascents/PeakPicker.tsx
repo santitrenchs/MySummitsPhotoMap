@@ -2,56 +2,83 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useT } from "@/components/providers/I18nProvider";
-import { i as fmt } from "@/lib/i18n";
 
 type Peak = {
   id: string;
   name: string;
-  nameEn: string | null;
+  nameEn?: string | null;
   altitudeM: number;
-  mountainRange: string | null;
+  mountainRange?: string | null;
 };
 
 export function PeakPicker({
-  peaks,
+  initialPeak = null,
   defaultPeakId,
   defaultPeakName,
   name,
   placeholder,
   suggested = false,
+  onSelect,
 }: {
-  peaks: Peak[];
+  // Full peak object to seed the field (edit mode current peak, or GPS suggestion).
+  // Replaces the old `peaks` array — the catalog is too large to load client-side,
+  // so search is done server-side via /api/peaks?q=.
+  initialPeak?: Peak | null;
   defaultPeakId?: string;
   defaultPeakName?: string;
   name: string;
   placeholder?: string;
   suggested?: boolean;
+  onSelect?: (peak: Peak | null) => void;
 }) {
   const t = useT();
-  const defaultPeak = peaks.find((p) => p.id === defaultPeakId) ?? null;
-  const [selected, setSelected] = useState<Peak | null>(defaultPeak);
-  // Use defaultPeakName as initial query so the name appears immediately even before
-  // the peaks array loads from the API.
-  const [query, setQuery] = useState(defaultPeak?.name ?? defaultPeakName ?? "");
+  const [selected, setSelected] = useState<Peak | null>(initialPeak);
+  const [query, setQuery] = useState(initialPeak?.name ?? defaultPeakName ?? "");
   const [open, setOpen] = useState(false);
-  const [showChip, setShowChip] = useState(suggested && !!defaultPeak);
+  const [showChip, setShowChip] = useState(suggested && !!initialPeak);
   // Track whether the user has explicitly cleared the field so we don't fall back to
-  // defaultPeakId in the hidden input while peaks are still loading.
+  // defaultPeakId in the hidden input.
   const [userCleared, setUserCleared] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+
+  // Server-side search results
+  const [results, setResults] = useState<Peak[]>([]);
+  const [searching, setSearching] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Sync selection when peaks load after initial render (e.g. edit mode where defaultPeakId
-  // is provided but the peaks array arrives asynchronously)
+  // Seed the field if the initial peak arrives after first render (e.g. GPS suggestion).
   useEffect(() => {
-    if (!defaultPeakId || selected) return;
-    const found = peaks.find((p) => p.id === defaultPeakId);
-    if (found) {
-      setSelected(found);
-      setQuery(found.name);
-    }
-  }, [peaks, defaultPeakId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!initialPeak) return;
+    setSelected(initialPeak);
+    setQuery(initialPeak.name);
+    setShowChip(suggested);
+    setUserCleared(false);
+  }, [initialPeak]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounced server-side search. The peak catalog has hundreds of thousands of rows,
+  // so we never load it all — we query /api/peaks?q= as the user types.
+  useEffect(() => {
+    const q = query.trim();
+    // Don't search when the query just mirrors the selected peak's name.
+    if (selected && q === selected.name) { setResults([]); setSearching(false); return; }
+    if (q.length < 2) { setResults([]); setSearching(false); return; }
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    setSearching(true);
+    searchTimer.current = setTimeout(() => {
+      fetch(`/api/peaks?q=${encodeURIComponent(q)}`)
+        .then((r) => r.json())
+        .then((d) => {
+          const list: Peak[] = Array.isArray(d) ? d : Array.isArray(d?.peaks) ? d.peaks : [];
+          setResults(list);
+        })
+        .catch(() => setResults([]))
+        .finally(() => setSearching(false));
+    }, 250);
+    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+  }, [query, selected]);
 
   // Scroll active item into view when navigating with keyboard
   useEffect(() => {
@@ -64,7 +91,6 @@ export function PeakPicker({
     function onMouseDown(e: MouseEvent) {
       if (!containerRef.current?.contains(e.target as Node)) {
         setOpen(false);
-        // Only clear the query if nothing is selected AND no defaultPeakId is pending load
         if (!selected && !defaultPeakId) setQuery("");
       }
     }
@@ -72,25 +98,15 @@ export function PeakPicker({
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [selected, defaultPeakId]);
 
-  const filtered =
-    query.trim().length === 0
-      ? peaks
-      : peaks.filter(
-          (p) => {
-            const q = query.toLowerCase();
-            return (
-              p.name.toLowerCase().includes(q) ||
-              (p.nameEn?.toLowerCase().includes(q) ?? false) ||
-              (p.mountainRange?.toLowerCase().includes(q) ?? false)
-            );
-          }
-        );
+  const visible = results.slice(0, 60);
 
   function handleSelect(peak: Peak) {
     setSelected(peak);
     setUserCleared(false);
     setQuery(peak.name);
     setOpen(false);
+    setResults([]);
+    onSelect?.(peak);
   }
 
   function dismissChip() {
@@ -98,11 +114,12 @@ export function PeakPicker({
     setSelected(null);
     setUserCleared(true);
     setQuery("");
+    onSelect?.(null);
   }
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
-      {/* Fall back to defaultPeakId while peaks are still loading and user hasn't cleared */}
+      {/* Fall back to defaultPeakId while nothing is selected and the user hasn't cleared */}
       <input type="hidden" name={name} value={selected?.id ?? (!userCleared && defaultPeakId ? defaultPeakId : "")} />
 
       {/* Suggestion chip */}
@@ -153,10 +170,10 @@ export function PeakPicker({
               setQuery(e.target.value);
               setActiveIndex(-1);
               setOpen(true);
+              onSelect?.(null);
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={(e) => {
-              const visible = filtered.slice(0, 60);
               if (e.key === "ArrowDown") {
                 e.preventDefault();
                 setActiveIndex((i) => Math.min(i + 1, visible.length - 1));
@@ -180,45 +197,42 @@ export function PeakPicker({
               background: "white",
             }}
           />
-          {open && (
+          {open && query.trim().length >= 2 && (
             <div ref={listRef} style={{
               position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
               background: "white", border: "1px solid #d1d5db",
               borderRadius: "var(--radius-md)", maxHeight: 240, overflowY: "auto",
               zIndex: 50, boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
             }}>
-              {filtered.length === 0 ? (
+              {searching && visible.length === 0 ? (
+                <div style={{ padding: "10px 12px", fontSize: 13, color: "#9ca3af" }}>
+                  …
+                </div>
+              ) : visible.length === 0 ? (
                 <div style={{ padding: "10px 12px", fontSize: 13, color: "#9ca3af" }}>
                   {t.peak_notFound}
                 </div>
               ) : (
-                <>
-                  {filtered.slice(0, 60).map((peak, idx) => (
-                    <div
-                      key={peak.id}
-                      onMouseDown={(e) => { e.preventDefault(); handleSelect(peak); }}
-                      onMouseEnter={() => setActiveIndex(idx)}
-                      onMouseLeave={() => setActiveIndex(-1)}
-                      style={{
-                        padding: "9px 12px", cursor: "pointer",
-                        background: idx === activeIndex ? "#f0f9ff" : selected?.id === peak.id ? "#f0f9ff" : "transparent",
-                        borderBottom: "1px solid #f3f4f6",
-                      }}
-                    >
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                        {peak.name}
-                      </div>
-                      <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>
-                        {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
-                      </div>
+                visible.map((peak, idx) => (
+                  <div
+                    key={peak.id}
+                    onMouseDown={(e) => { e.preventDefault(); handleSelect(peak); }}
+                    onMouseEnter={() => setActiveIndex(idx)}
+                    onMouseLeave={() => setActiveIndex(-1)}
+                    style={{
+                      padding: "9px 12px", cursor: "pointer",
+                      background: idx === activeIndex ? "#f0f9ff" : selected?.id === peak.id ? "#f0f9ff" : "transparent",
+                      borderBottom: "1px solid #f3f4f6",
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
+                      {peak.name}
                     </div>
-                  ))}
-                  {filtered.length > 60 && (
-                    <div style={{ padding: "8px 12px", fontSize: 11, color: "#9ca3af", textAlign: "center" }}>
-                      {fmt(t.peak_moreResults, { n: filtered.length - 60 })}
+                    <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>
+                      {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
                     </div>
-                  )}
-                </>
+                  </div>
+                ))
               )}
             </div>
           )}

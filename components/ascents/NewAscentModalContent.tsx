@@ -60,10 +60,11 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const t = useT();
   const isEditMode = !!editAscent;
 
-  const [peaks, setPeaks] = useState<Peak[]>([]);
-  useEffect(() => {
-    fetch("/api/peaks").then((r) => r.json()).then(setPeaks).catch(() => {});
-  }, []);
+  // The peak catalog is far too large to load client-side (hundreds of thousands of
+  // rows). The picker searches server-side via /api/peaks?q=. We only track the
+  // currently selected peak (lifted from PeakPicker) and the GPS-suggested one.
+  const [selectedPeak, setSelectedPeak] = useState<{ id: string; name: string; altitudeM: number } | null>(null);
+  const [suggestedPeak, setSuggestedPeak] = useState<Peak | null>(null);
 
   const [modalStep, setModalStep] = useState<ModalStep>(isEditMode ? "form" : "pick");
   const [error, setError] = useState<string | null>(null);
@@ -225,11 +226,17 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
 
     if (!isEditMode) {
       const first = arr[0];
-      extractImageMeta(first).then(({ date, lat, lng }) => {
+      extractImageMeta(first).then(async ({ date, lat, lng }) => {
         if (date) setSuggestedDate(date);
         if (!defaultPeakId && lat !== null && lng !== null) {
-          const found = nearestPeak(lat, lng, peaks);
-          if (found) setSuggestedPeakId(found.id);
+          try {
+            // Fetch only nearby peaks (small bbox) and pick the closest — never the whole catalog.
+            const d = 0.25; // ~25 km
+            const res = await fetch(`/api/peaks?north=${lat + d}&south=${lat - d}&east=${lng + d}&west=${lng - d}`);
+            const nearby = await res.json();
+            const found = nearestPeak(lat, lng, Array.isArray(nearby) ? nearby : []);
+            if (found) { setSuggestedPeakId(found.id); setSuggestedPeak(found as Peak); }
+          } catch { /* GPS suggestion is best-effort */ }
         }
       });
     }
@@ -439,8 +446,8 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         photoOriginalKey: newPhotoOriginalKey ?? (newPhotoId ? null : editAscent.originalStorageKey),
         photoCropAspect: pendingPhoto ? (pendingPhoto.cropMeta.aspect ?? null) : (editAscent.cropAspect ?? null),
         peakId: newPeakId,
-        peakName: peaks.find((p) => p.id === newPeakId)?.name ?? editAscent.peakName,
-        peakAltitudeM: peaks.find((p) => p.id === newPeakId)?.altitudeM ?? null,
+        peakName: selectedPeak?.id === newPeakId ? selectedPeak.name : editAscent.peakName,
+        peakAltitudeM: selectedPeak?.id === newPeakId ? selectedPeak.altitudeM : null,
       },
     }));
 
@@ -699,12 +706,21 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
             <div>
               <label style={labelStyle}>{t.field_peak} *</label>
               <PeakPicker
-                peaks={peaks}
+                initialPeak={
+                  isEditMode
+                    ? { id: editAscent!.peakId, name: editAscent!.peakName, altitudeM: 0 }
+                    : suggestedPeak
+                      ? { id: suggestedPeak.id, name: suggestedPeak.name, altitudeM: suggestedPeak.altitudeM }
+                      : defaultPeakId && defaultPeakName
+                        ? { id: defaultPeakId, name: defaultPeakName, altitudeM: 0 }
+                        : null
+                }
                 defaultPeakId={isEditMode ? editAscent!.peakId : (defaultPeakId ?? suggestedPeakId ?? undefined)}
                 defaultPeakName={isEditMode ? editAscent!.peakName : (defaultPeakName ?? undefined)}
                 name="peakId"
                 placeholder={t.field_selectPeak}
                 suggested={!isEditMode && !defaultPeakId && !!suggestedPeakId}
+                onSelect={setSelectedPeak}
               />
             </div>
 
