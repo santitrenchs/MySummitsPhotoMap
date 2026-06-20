@@ -6,34 +6,48 @@ import { prisma } from "@/lib/db/client";
 
 type NominatimResult = {
   display_name: string;
+  name?: string;
   lat: string;
   lon: string;
   class: string;
+  type: string;
 };
 
 type GeocodedPlace = { name: string; lat: number; lon: number };
 
 const PLACE_CLASSES = new Set(["place", "boundary"]);
+// Mountain huts / refuges as tagged in OSM. `tourism=alpine_hut` and
+// `tourism=wilderness_hut` are the canonical refuge tags; `amenity=shelter` covers
+// some staffed/unstaffed mountain shelters too.
+const REFUGE_TOURISM_TYPES = new Set(["alpine_hut", "wilderness_hut", "chalet"]);
+function isRefuge(r: NominatimResult): boolean {
+  return (
+    (r.class === "tourism" && REFUGE_TOURISM_TYPES.has(r.type)) ||
+    (r.class === "amenity" && r.type === "shelter")
+  );
+}
 
-async function geocodePlaces(q: string): Promise<GeocodedPlace[]> {
+async function geocode(q: string): Promise<{ places: GeocodedPlace[]; refugios: GeocodedPlace[] }> {
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&accept-language=ca,es,en`;
+    // limit=12 so refuges (lower OSM importance) still surface alongside towns.
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=12&accept-language=ca,es,en`;
     const res = await fetch(url, {
       headers: { "User-Agent": "Peakadex/1.0 (noreply@peakadex.com)" },
       signal: AbortSignal.timeout(3000),
     });
-    if (!res.ok) return [];
+    if (!res.ok) return { places: [], refugios: [] };
     const data: NominatimResult[] = await res.json();
-    return data
-      .filter((r) => PLACE_CLASSES.has(r.class))
-      .slice(0, 5)
-      .map((r) => ({
-        name: r.display_name,
-        lat: parseFloat(r.lat),
-        lon: parseFloat(r.lon),
-      }));
+    const toPlace = (r: NominatimResult): GeocodedPlace => ({
+      // Refuges: show just the leading name segment (display_name is verbose).
+      name: isRefuge(r) ? r.display_name.split(",")[0].trim() : r.display_name,
+      lat: parseFloat(r.lat),
+      lon: parseFloat(r.lon),
+    });
+    const places = data.filter((r) => PLACE_CLASSES.has(r.class)).slice(0, 5).map(toPlace);
+    const refugios = data.filter(isRefuge).slice(0, 5).map(toPlace);
+    return { places, refugios };
   } catch {
-    return [];
+    return { places: [], refugios: [] };
   }
 }
 
@@ -65,7 +79,7 @@ export async function GET(request: Request) {
 
   if (q.length >= 2) {
     // Text search — run DB + Nominatim in parallel, return { peaks, places }
-    const [peaks, places] = await Promise.all([
+    const [peaks, geo] = await Promise.all([
       prisma.peak.findMany({
         where: {
           OR: [
@@ -90,9 +104,9 @@ export async function GET(request: Request) {
           rarity: { select: { id: true, name: true, emoji: true, order: true } },
         },
       }),
-      geocodePlaces(q),
+      geocode(q),
     ]);
-    return NextResponse.json({ peaks, places });
+    return NextResponse.json({ peaks, places: geo.places, refugios: geo.refugios });
   }
 
   if (!isNaN(north) && !isNaN(south) && !isNaN(east) && !isNaN(west)) {

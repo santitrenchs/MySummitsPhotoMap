@@ -33,6 +33,8 @@ interface Props {
   searchResults: MapPeak[];
   placeResults?: GeocodedPlace[];
   onSelectPlace?: (place: GeocodedPlace) => void;
+  refugioResults?: GeocodedPlace[];
+  onSelectRefugio?: (refugio: GeocodedPlace) => void;
   hideSearchInput?: boolean;
   hideFilters?: boolean;
   asMobileList?: boolean;
@@ -63,6 +65,7 @@ export default function MapPeaksSidebar({
   selectedPeakId, onSelectPeak,
   searchQuery, onSearchChange, searchResults,
   placeResults = [], onSelectPlace,
+  refugioResults = [], onSelectRefugio,
   hideSearchInput = false, hideFilters = false, asMobileList = false,
   sort: sortProp, onSortChange,
   asSheet = false, onClose,
@@ -394,7 +397,7 @@ export default function MapPeaksSidebar({
       {/* List */}
       <div ref={listRef} style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
         {searchQuery.trim().length >= 2 ? (
-          searchResults.length === 0 && placeResults.length === 0 ? (
+          searchResults.length === 0 && placeResults.length === 0 && refugioResults.length === 0 ? (
             <div style={{ padding: "32px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
               Sin resultados
             </div>
@@ -478,6 +481,32 @@ export default function MapPeaksSidebar({
                       <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>📍</span>
                       <p style={{ margin: 0, fontSize: 13, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {place.name}
+                      </p>
+                    </button>
+                  ))}
+                </>
+              )}
+              {refugioResults.length > 0 && (
+                <>
+                  <div style={{ padding: "6px 14px 4px", fontSize: 10, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase", borderTop: "1px solid #f3f4f6" }}>
+                    Refugios
+                  </div>
+                  {refugioResults.map((refugio, i) => (
+                    <button
+                      key={i}
+                      onMouseDown={() => { onSelectRefugio?.(refugio); onSearchChange(""); }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10,
+                        width: "100%", padding: "10px 14px",
+                        background: "none", border: "none",
+                        borderBottom: "1px solid #f3f4f6",
+                        borderLeft: "3px solid #b45309",
+                        cursor: "pointer", textAlign: "left",
+                      }}
+                    >
+                      <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>🏠</span>
+                      <p style={{ margin: 0, fontSize: 13, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {refugio.name}
                       </p>
                     </button>
                   ))}
