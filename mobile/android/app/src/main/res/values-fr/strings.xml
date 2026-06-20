@@ -258,6 +258,8 @@
     <string name="atlas_layers_satellite">Satellite</string>
     <string name="atlas_layers_section">CALQUES</string>
     <string name="atlas_layers_trails">Sentiers</string>
+    <string name="atlas_layers_huts">Refuges</string>
+    <string name="atlas_layers_parks">Parcs</string>
 
     <!-- ── Atlas — détail du sommet ──────────────────────────────────────────── -->
     <string name="atlas_peak_unclimbed">Pas encore gravi</string>

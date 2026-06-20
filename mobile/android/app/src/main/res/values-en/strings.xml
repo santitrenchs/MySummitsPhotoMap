@@ -258,6 +258,8 @@
     <string name="atlas_layers_satellite">Satellite</string>
     <string name="atlas_layers_section">LAYERS</string>
     <string name="atlas_layers_trails">Trails</string>
+    <string name="atlas_layers_huts">Huts</string>
+    <string name="atlas_layers_parks">Parks</string>
 
     <!-- ── Atlas — peak detail ───────────────────────────────────────────────── -->
     <string name="atlas_peak_unclimbed">Not yet climbed</string>

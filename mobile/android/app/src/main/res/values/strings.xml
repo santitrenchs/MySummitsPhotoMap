@@ -258,6 +258,8 @@
     <string name="atlas_layers_satellite">Satélite</string>
     <string name="atlas_layers_section">CAPAS</string>
     <string name="atlas_layers_trails">Senderos</string>
+    <string name="atlas_layers_huts">Refugios</string>
+    <string name="atlas_layers_parks">Parques</string>
 
     <!-- ── Atlas — detalle de cima ───────────────────────────────────────────── -->
     <string name="atlas_peak_unclimbed">Aún sin escalar</string>

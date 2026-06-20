@@ -126,6 +126,8 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapLibreMapOptions
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.style.expressions.Expression.any
+import org.maplibre.android.style.expressions.Expression.eq
 import org.maplibre.android.style.expressions.Expression.get
 import org.maplibre.android.style.expressions.Expression.has
 import org.maplibre.android.style.expressions.Expression.literal
@@ -135,10 +137,18 @@ import org.maplibre.android.style.expressions.Expression.stop
 import org.maplibre.android.style.expressions.Expression.toNumber
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.FillLayer
 import org.maplibre.android.style.layers.HillshadeLayer
+import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property.NONE
 import org.maplibre.android.style.layers.Property.VISIBLE
+import org.maplibre.android.style.layers.PropertyFactory.fillColor
+import org.maplibre.android.style.layers.PropertyFactory.fillOpacity
 import org.maplibre.android.style.layers.PropertyFactory.hillshadeExaggeration
+import org.maplibre.android.style.layers.PropertyFactory.lineColor
+import org.maplibre.android.style.layers.PropertyFactory.lineDasharray
+import org.maplibre.android.style.layers.PropertyFactory.lineOpacity
+import org.maplibre.android.style.layers.PropertyFactory.lineWidth
 import org.maplibre.android.style.layers.PropertyFactory.hillshadeHighlightColor
 import org.maplibre.android.style.layers.PropertyFactory.hillshadeShadowColor
 import org.maplibre.android.style.layers.PropertyFactory.rasterOpacity
@@ -167,6 +177,7 @@ import org.maplibre.android.style.sources.GeoJsonOptions
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.android.style.sources.RasterSource
 import org.maplibre.android.style.sources.TileSet
+import org.maplibre.android.style.sources.VectorSource
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -197,6 +208,12 @@ private const val SRC_TERRAIN_DEM         = "terrain-dem"
 private const val SRC_TRAILS              = "trails-source"
 private const val LYR_HILLSHADE           = "hillshade-layer"
 private const val LYR_TRAILS              = "trails-layer"
+
+private const val SRC_OFM                 = "ofm-source"          // OpenFreeMap vector tiles
+private const val LYR_HUTS_DOTS           = "huts-dots-layer"
+private const val LYR_HUTS_LABELS         = "huts-labels-layer"
+private const val LYR_PARKS_FILL          = "parks-fill-layer"
+private const val LYR_PARKS_OUTLINE       = "parks-outline-layer"
 
 private const val SRC_SELECTED            = "selected-source"
 private const val LYR_SELECTED_GLOW       = "selected-glow-layer"
@@ -236,6 +253,8 @@ fun AtlasScreen(
     var terrain3d  by rememberSaveable { mutableStateOf(false) }
     var mapType    by rememberSaveable { mutableStateOf(MapType.NORMAL) }
     var trails     by rememberSaveable { mutableStateOf(false) }
+    var huts       by rememberSaveable { mutableStateOf(false) }
+    var parks      by rememberSaveable { mutableStateOf(false) }
     // remember: estado transitorio, resetear en rotación es correcto
     var layersOpen    by remember { mutableStateOf(false) }
     var filtersOpen   by remember { mutableStateOf(false) }
@@ -313,7 +332,9 @@ fun AtlasScreen(
                         """.trimIndent()
 
                         val tileSet = TileSet("2.2.0",
-                            "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png")
+                            "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+                            "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+                            "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png")
                         tileSet.setMaxZoom(19f)
                         tileSet.setMinZoom(0f)
                         val basemapSource = RasterSource("carto-basemap", tileSet, 256)
@@ -450,6 +471,22 @@ fun AtlasScreen(
             if (!styleReady.value) return@LaunchedEffect
             mapRef.value?.style?.getLayer(LYR_TRAILS)
                 ?.setProperties(visibility(if (trails) VISIBLE else NONE))
+        }
+
+        // ── Toggle refugios (huts) overlay ────────────────────────────────────
+        LaunchedEffect(styleReady.value, huts) {
+            if (!styleReady.value) return@LaunchedEffect
+            val style = mapRef.value?.style ?: return@LaunchedEffect
+            style.getLayer(LYR_HUTS_DOTS)?.setProperties(visibility(if (huts) VISIBLE else NONE))
+            style.getLayer(LYR_HUTS_LABELS)?.setProperties(visibility(if (huts) VISIBLE else NONE))
+        }
+
+        // ── Toggle parques (parks) overlay ────────────────────────────────────
+        LaunchedEffect(styleReady.value, parks) {
+            if (!styleReady.value) return@LaunchedEffect
+            val style = mapRef.value?.style ?: return@LaunchedEffect
+            style.getLayer(LYR_PARKS_FILL)?.setProperties(visibility(if (parks) VISIBLE else NONE))
+            style.getLayer(LYR_PARKS_OUTLINE)?.setProperties(visibility(if (parks) VISIBLE else NONE))
         }
 
         // ── 3D camera tilt ────────────────────────────────────────────────────
@@ -591,7 +628,7 @@ fun AtlasScreen(
             MapControlsColumn(
                 showTopBar     = showTopBar,
                 onToggleTopBar = { showTopBar = !showTopBar },
-                hasActiveLayers= mapType != MapType.NORMAL || trails,
+                hasActiveLayers= mapType != MapType.NORMAL || trails || huts || parks,
                 layersOpen     = layersOpen,
                 onToggleLayers = { layersOpen = !layersOpen },
                 terrain3d      = terrain3d,
@@ -650,6 +687,10 @@ fun AtlasScreen(
                 onMapType = { mapType = it },
                 trails    = trails,
                 onTrails  = { trails = it },
+                huts      = huts,
+                onHuts    = { huts = it },
+                parks     = parks,
+                onParks   = { parks = it },
                 onDismiss = { layersOpen = false },
             )
         }
@@ -721,6 +762,11 @@ private fun setupSources(style: org.maplibre.android.maps.Style) {
     trailsTileSet.setMaxZoom(17f)
     style.addSource(RasterSource(SRC_TRAILS, trailsTileSet, 256))
 
+    // OpenFreeMap vector tiles — used for refugios (alpine huts) and parques (parks)
+    style.addSource(
+        VectorSource(SRC_OFM, "https://tiles.openfreemap.org/planet")
+    )
+
     // Peak data sources
     style.addSource(GeoJsonSource(SRC_CLIMBED, FeatureCollection.fromFeatures(emptyList<Feature>())))
     style.addSource(GeoJsonSource(SRC_SELECTED, FeatureCollection.fromFeatures(emptyList<Feature>())))
@@ -765,6 +811,89 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 rasterOpacity(0.75f),
                 visibility(NONE),
             ),
+    )
+
+    // National parks / nature reserves fill — initially hidden
+    style.addLayer(
+        FillLayer(LYR_PARKS_FILL, SRC_OFM)
+            .withSourceLayer("landuse")
+            .withFilter(
+                any(
+                    eq(get("class"), literal("national_park")),
+                    eq(get("class"), literal("nature_reserve")),
+                    eq(get("class"), literal("protected_area")),
+                )
+            )
+            .withProperties(
+                fillColor("#22c55e"),
+                fillOpacity(0.07f),
+                visibility(NONE),
+            )
+            .also { it.setMinZoom(4.0f) },
+    )
+    // National parks outline — initially hidden
+    style.addLayer(
+        LineLayer(LYR_PARKS_OUTLINE, SRC_OFM)
+            .withSourceLayer("landuse")
+            .withFilter(
+                any(
+                    eq(get("class"), literal("national_park")),
+                    eq(get("class"), literal("nature_reserve")),
+                    eq(get("class"), literal("protected_area")),
+                )
+            )
+            .withProperties(
+                lineColor("#16a34a"),
+                lineOpacity(0.45f),
+                lineWidth(1.5f),
+                lineDasharray(arrayOf(3f, 2f)),
+                visibility(NONE),
+            )
+            .also { it.setMinZoom(4.0f) },
+    )
+    // Alpine hut / wilderness hut dots — initially hidden
+    style.addLayer(
+        CircleLayer(LYR_HUTS_DOTS, SRC_OFM)
+            .withSourceLayer("poi")
+            .withFilter(
+                any(
+                    eq(get("subclass"), literal("alpine_hut")),
+                    eq(get("subclass"), literal("wilderness_hut")),
+                )
+            )
+            .withProperties(
+                circleRadius(5f),
+                circleColor("#f59e0b"),
+                circleOpacity(0.9f),
+                circleStrokeWidth(1.5f),
+                circleStrokeColor("#FFFFFF"),
+                visibility(NONE),
+            )
+            .also { it.setMinZoom(9.0f) },
+    )
+    // Alpine hut labels — initially hidden
+    style.addLayer(
+        SymbolLayer(LYR_HUTS_LABELS, SRC_OFM)
+            .withSourceLayer("poi")
+            .withFilter(
+                any(
+                    eq(get("subclass"), literal("alpine_hut")),
+                    eq(get("subclass"), literal("wilderness_hut")),
+                )
+            )
+            .withProperties(
+                textField("{name}"),
+                textSize(11f),
+                textOffset(arrayOf(0f, 1.2f)),
+                textAnchor("top"),
+                textColor("#92400e"),
+                textHaloColor("rgba(255,255,255,1.0)"),
+                textHaloWidth(1.5f),
+                textIgnorePlacement(false),
+                textAllowOverlap(false),
+                visibility(NONE),
+            )
+            .also { it.setMinZoom(12.0f) },
     )
 
     // Clustered groups of unclimbed peaks
@@ -1701,6 +1830,10 @@ private fun LayersPanel(
     onMapType: (MapType) -> Unit,
     trails: Boolean,
     onTrails: (Boolean) -> Unit,
+    huts: Boolean,
+    onHuts: (Boolean) -> Unit,
+    parks: Boolean,
+    onParks: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -1764,7 +1897,20 @@ private fun LayersPanel(
                         icon     = TrailsIcon,
                         modifier = Modifier.weight(1f),
                     )
-                    Spacer(Modifier.weight(1f))
+                    LayerCard(
+                        label    = stringResource(R.string.atlas_layers_huts),
+                        active   = huts,
+                        onClick  = { onHuts(!huts) },
+                        icon     = HutsIcon,
+                        modifier = Modifier.weight(1f),
+                    )
+                    LayerCard(
+                        label    = stringResource(R.string.atlas_layers_parks),
+                        active   = parks,
+                        onClick  = { onParks(!parks) },
+                        icon     = ParksIcon,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -2371,6 +2517,46 @@ private val TrailsIcon: ImageVector by lazy {
             strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round,
         ) { moveTo(3f, 20f); lineTo(8f, 12f); lineTo(13f, 16f); lineTo(18f, 8f); lineTo(22f, 11f) }
+    }.build()
+}
+
+// Alpine hut icon — house silhouette with a triangle roof
+private val HutsIcon: ImageVector by lazy {
+    ImageVector.Builder("Huts", 24.dp, 24.dp, 24f, 24f).apply {
+        // Roof triangle
+        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
+            strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        ) { moveTo(3f, 11f); lineTo(12f, 3f); lineTo(21f, 11f) }
+        // House body
+        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
+            strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        ) { moveTo(5f, 11f); lineTo(5f, 21f); lineTo(19f, 21f); lineTo(19f, 11f) }
+        // Door
+        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
+            strokeLineWidth = 1.5f, strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        ) { moveTo(10f, 21f); lineTo(10f, 15f); lineTo(14f, 15f); lineTo(14f, 21f) }
+    }.build()
+}
+
+// Park icon — leaf / tree shape
+private val ParksIcon: ImageVector by lazy {
+    ImageVector.Builder("Parks", 24.dp, 24.dp, 24f, 24f).apply {
+        // Tree canopy circle (filled green)
+        path(fill = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B))) {
+            // Simplified tree: triangle canopy
+            moveTo(12f, 3f); lineTo(20f, 15f); lineTo(4f, 15f); close()
+        }
+        // Trunk
+        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
+            strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
+        ) { moveTo(12f, 15f); lineTo(12f, 21f) }
+        // Ground line
+        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
+            strokeLineWidth = 1.5f, strokeLineCap = StrokeCap.Round,
+        ) { moveTo(9f, 21f); lineTo(15f, 21f) }
     }.build()
 }
 

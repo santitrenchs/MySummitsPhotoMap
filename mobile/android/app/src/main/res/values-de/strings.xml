@@ -258,6 +258,8 @@
     <string name="atlas_layers_satellite">Satellit</string>
     <string name="atlas_layers_section">EBENEN</string>
     <string name="atlas_layers_trails">Wege</string>
+    <string name="atlas_layers_huts">Hütten</string>
+    <string name="atlas_layers_parks">Parks</string>
 
     <!-- ── Atlas — Gipfeldetail ───────────────────────────────────────────────── -->
     <string name="atlas_peak_unclimbed">Noch nicht bestiegen</string>
