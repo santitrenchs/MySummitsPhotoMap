@@ -312,7 +312,11 @@ export function NewAscentForm({
       <div>
         <label style={labelStyle}>{t.field_peak} *</label>
         <PeakPicker
-          peaks={peaks}
+          initialPeak={(() => {
+            const id = defaultPeakId ?? suggestedPeakId;
+            const p = id ? peaks.find((x) => x.id === id) : null;
+            return p ? { id: p.id, name: p.name, altitudeM: p.altitudeM } : null;
+          })()}
           defaultPeakId={defaultPeakId ?? suggestedPeakId ?? undefined}
           name="peakId"
           placeholder={t.field_selectPeak}
