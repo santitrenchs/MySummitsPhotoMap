@@ -981,7 +981,7 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
 
 // ── Update GeoJSON sources ────────────────────────────────────────────────────
 
-private fun updateMapSources(
+private suspend fun updateMapSources(
     style: org.maplibre.android.maps.Style,
     climbed: Map<String, MapAscent>,
     viewport: List<Peak>,
@@ -990,44 +990,51 @@ private fun updateMapSources(
     mythicFilter: Boolean,
     rarities: List<Rarity>,
 ) {
-    val rarityColorMap = rarities.associateBy { it.id }
+    // Build Feature objects off the Main thread — GeoJSON object construction is
+    // CPU-bound (string/property allocation) and blocks the UI at 500+ peaks.
+    val (climbedFeatures, unclimbedFeatures) = withContext(kotlinx.coroutines.Dispatchers.Default) {
+        val rarityColorMap = rarities.associateBy { it.id }
 
-    val climbedFeatures: List<Feature> = if (filter != AtlasFilter.NOT_YET) {
-        climbed.values
-            .filter { selectedRarityIds.isEmpty() || it.peak.rarityId in selectedRarityIds }
-            .filter { !mythicFilter || it.peak.isMythic == true }
-            .map { ascent ->
-                Feature.fromGeometry(
-                    Point.fromLngLat(ascent.peak.longitude, ascent.peak.latitude),
-                ).apply {
-                    addStringProperty("id",        ascent.peakId)
-                    addStringProperty("name",      ascent.peak.name)
-                    addNumberProperty("altitudeM", ascent.peak.altitudeM)
-                    addStringProperty("iconImage", "peak-photo-${ascent.peakId}")
+        val climbed_f: List<Feature> = if (filter != AtlasFilter.NOT_YET) {
+            climbed.values
+                .filter { selectedRarityIds.isEmpty() || it.peak.rarityId in selectedRarityIds }
+                .filter { !mythicFilter || it.peak.isMythic == true }
+                .map { ascent ->
+                    Feature.fromGeometry(
+                        Point.fromLngLat(ascent.peak.longitude, ascent.peak.latitude),
+                    ).apply {
+                        addStringProperty("id",        ascent.peakId)
+                        addStringProperty("name",      ascent.peak.name)
+                        addNumberProperty("altitudeM", ascent.peak.altitudeM)
+                        addStringProperty("iconImage", "peak-photo-${ascent.peakId}")
+                    }
                 }
-            }
-    } else emptyList()
+        } else emptyList()
 
+        val unclimbed_f: List<Feature> = if (filter != AtlasFilter.CLIMBED) {
+            viewport
+                .filter { it.id !in climbed }
+                .filter { selectedRarityIds.isEmpty() || it.rarityId in selectedRarityIds }
+                .filter { !mythicFilter || it.isMythic == true }
+                .map { peak ->
+                    val rarityColor = peak.rarityId?.let { rarityColorMap[it]?.color } ?: UNCLIMBED_COLOR
+                    Feature.fromGeometry(
+                        Point.fromLngLat(peak.longitude, peak.latitude),
+                    ).apply {
+                        addStringProperty("id",          peak.id)
+                        addStringProperty("name",        peak.name)
+                        addNumberProperty("altitudeM",   peak.altitudeM)
+                        addStringProperty("rarityColor", rarityColor)
+                    }
+                }
+        } else emptyList()
+
+        climbed_f to unclimbed_f
+    }
+
+    // setGeoJson and layer visibility must run on Main thread (MapLibre GL requirement).
     style.getSourceAs<GeoJsonSource>(SRC_CLIMBED)
         ?.setGeoJson(FeatureCollection.fromFeatures(climbedFeatures))
-
-    val unclimbedFeatures: List<Feature> = if (filter != AtlasFilter.CLIMBED) {
-        viewport
-            .filter { it.id !in climbed }
-            .filter { selectedRarityIds.isEmpty() || it.rarityId in selectedRarityIds }
-            .filter { !mythicFilter || it.isMythic == true }
-            .map { peak ->
-                val rarityColor = peak.rarityId?.let { rarityColorMap[it]?.color } ?: UNCLIMBED_COLOR
-                Feature.fromGeometry(
-                    Point.fromLngLat(peak.longitude, peak.latitude),
-                ).apply {
-                    addStringProperty("id",          peak.id)
-                    addStringProperty("name",        peak.name)
-                    addNumberProperty("altitudeM",   peak.altitudeM)
-                    addStringProperty("rarityColor", rarityColor)
-                }
-            }
-    } else emptyList()
 
     style.getSourceAs<GeoJsonSource>(SRC_UNCLIMBED)
         ?.setGeoJson(FeatureCollection.fromFeatures(unclimbedFeatures))
