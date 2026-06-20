@@ -1,6 +1,7 @@
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { prisma } from "@/lib/db/client";
 import { getRarityId, type RarityId } from "@/lib/rarity";
+import { peakDisplayName } from "@/lib/peak-name";
 
 export async function getProfileData(tenantId: string, userId: string) {
   const user = await prisma.user.findUnique({
@@ -23,7 +24,7 @@ export async function getProfileData(tenantId: string, userId: string) {
       include: {
         peak: {
           select: {
-            id: true, name: true, altitudeM: true,
+            id: true, name: true, nameEn: true, altitudeM: true,
             mountainRange: true, country: true, rarityId: true, isMythic: true,
           },
         },
@@ -41,7 +42,7 @@ export async function getProfileData(tenantId: string, userId: string) {
                 ascent: {
                   select: {
                     id: true, date: true, createdBy: true,
-                    peak: { select: { name: true, altitudeM: true, rarityId: true } },
+                    peak: { select: { name: true, nameEn: true, altitudeM: true, rarityId: true } },
                     user: { select: { name: true, username: true } },
                   },
                 },
@@ -69,7 +70,7 @@ export async function getProfileData(tenantId: string, userId: string) {
     const rarityId = (pk.rarityId as RarityId | null) ?? getRarityId(pk.altitudeM);
     if (!peakMap.has(pk.id)) {
       peakMap.set(pk.id, {
-        id: pk.id, name: pk.name, altitudeM: pk.altitudeM,
+        id: pk.id, name: peakDisplayName(pk), altitudeM: pk.altitudeM,
         mountainRange: pk.mountainRange, country: pk.country ?? null,
         rarityId, isMythic: pk.isMythic ?? false,
         count: 0,
@@ -94,7 +95,7 @@ export async function getProfileData(tenantId: string, userId: string) {
     const rarityId = (a.peak.rarityId as RarityId | null) ?? getRarityId(a.peak.altitudeM);
     return a.photos.map((p) => ({
       id: p.id, url: p.url, ascentId: a.id,
-      peakName: a.peak.name, altitudeM: a.peak.altitudeM,
+      peakName: peakDisplayName(a.peak), altitudeM: a.peak.altitudeM,
       rarityId,
       date: a.date,
     }));
@@ -115,7 +116,7 @@ export async function getProfileData(tenantId: string, userId: string) {
       const rarityId = (photo.ascent.peak.rarityId as RarityId | null) ?? getRarityId(photo.ascent.peak.altitudeM);
       taggedPhotosMap.set(photo.id, {
         id: photo.id, url: photo.url, ascentId: photo.ascentId,
-        peakName: photo.ascent.peak.name, altitudeM: photo.ascent.peak.altitudeM,
+        peakName: peakDisplayName(photo.ascent.peak), altitudeM: photo.ascent.peak.altitudeM,
         rarityId,
         date: photo.ascent.date,
         creatorName: photo.ascent.user?.username ?? photo.ascent.user?.name ?? "",
@@ -130,7 +131,7 @@ export async function getProfileData(tenantId: string, userId: string) {
     ascents: ascents.map((a) => ({
       id: a.id,
       date: a.date,
-      peakName: a.peak.name,
+      peakName: peakDisplayName(a.peak),
       altitudeM: a.peak.altitudeM,
       mountainRange: a.peak.mountainRange,
       firstPhoto: a.photos[0] ?? null,

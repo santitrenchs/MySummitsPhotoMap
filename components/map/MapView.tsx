@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import { RARITY_COLORS, RARITIES, RARITY_SCORE_WEIGHTS, RARITY_ID_MATCH_EXPR } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
+import { peakDisplayParts } from "@/lib/peak-name";
 import { useT } from "@/components/providers/I18nProvider";
 import { createPortal } from "react-dom";
 import MapControls from "./MapControls";
@@ -1301,6 +1302,7 @@ export default function MapView({
                         const isClimbed = ascentByPeakId.current.has(peak.id);
                         const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
                         const reEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
+                        const { primary: peakLabel, original: peakOriginal } = peakDisplayParts(peak);
                         return (
                           <button
                             key={peak.id}
@@ -1318,15 +1320,15 @@ export default function MapView({
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
                                 <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                  {peak.name}
+                                  {peakLabel}
                                 </p>
                                 <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
                                   {peak.altitudeM} m
                                 </span>
                               </div>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
-                                <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                                  {peak.mountainRange ?? ""}
+                                <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                  {peakOriginal ?? peak.mountainRange ?? ""}
                                 </p>
                                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                                   {isClimbed && (
@@ -1657,6 +1659,7 @@ export default function MapView({
             const { peak, ascent } = selected;
             const rarityColor = RARITY_COLORS[peak.rarityId ?? ""] ?? "#6b7280";
             const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
+            const { primary: peakLabel, original: peakOriginal } = peakDisplayParts(peak);
             const OFFSET = 22;
             const topBarH = isMobile && topBarVisible ? MOBILE_TOP_BAR_H : 0;
             const POPUP_MAX_H = 340; // generous estimate for popup with photo + buttons
@@ -1699,8 +1702,15 @@ export default function MapView({
                 {/* Header */}
                 <div style={{ padding: "12px 14px 8px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: "#111827", lineHeight: 1.2, flex: 1 }}>
-                      {peak.name}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: "#111827", lineHeight: 1.2 }}>
+                        {peakLabel}
+                      </div>
+                      {peakOriginal && (
+                        <div style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.2, marginTop: 1 }}>
+                          {peakOriginal}
+                        </div>
+                      )}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#6b7280", whiteSpace: "nowrap" }}>
                       {peak.altitudeM} m
@@ -1756,7 +1766,7 @@ export default function MapView({
                       <Button
                         variant="dark"
                         size="sm"
-                        onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peak.name } }))}
+                        onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peakLabel } }))}
                         style={{ flex: 1, borderRadius: 10 }}
                       >
                         Capturar
@@ -1766,7 +1776,7 @@ export default function MapView({
                     <Button
                       variant="dark"
                       size="sm"
-                      onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peak.name } }))}
+                      onClick={() => document.dispatchEvent(new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peakLabel } }))}
                       style={{ flex: 1, borderRadius: 10 }}
                     >
                       + Capturar

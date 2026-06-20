@@ -5,6 +5,7 @@ import { useT } from "@/components/providers/I18nProvider";
 import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap";
 import { CardBack } from "@/components/cards/CardBack";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
+import { peakDisplayName } from "@/lib/peak-name";
 import { imgUrl } from "@/lib/storage/image-url";
 
 const APP_URL =
@@ -161,6 +162,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
   // Cordada members on the card back.
   // Own card ("profile"): just the tagged people — you're implicitly in the team.
   // Friend card ("social"): prepend the owner so you see ALL members; always shown.
+  const peakName = peakDisplayName(ascent.peak);
   const isOwnCard = variant === "profile";
   const cordadaMembers = isOwnCard
     ? ascent.persons.map((p) => ({ key: p.id, name: p.name }))
@@ -172,7 +174,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
   const buildBack = () => (
     <CardBack
       peak={ascent.peak}
-      peakName={ascent.peak.nameEn ?? ascent.peak.name}
+      peakName={peakName}
       rarity={rarity}
       isFlipped={isFlipped}
       locale={locale}
@@ -273,7 +275,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
                     editAscent: {
                       id: ascent.id,
                       peakId: ascent.peak.id,
-                      peakName: ascent.peak.name,
+                      peakName,
                       date: ascent.date.slice(0, 10),
                       route: ascent.route ?? null,
                       description: ascent.description ?? null,
@@ -310,7 +312,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
       <section className="capture-frame">
         <div className="image-frame">
           {showMap && isFlipped
-            ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={ascent.peak.name} altitudeM={ascent.peak.altitudeM} />
+            ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={peakName} altitudeM={ascent.peak.altitudeM} />
             : ascent.photoUrl
               ? ascent.cropAspect === "landscape"
                 // eslint-disable-next-line @next/next/no-img-element
@@ -328,19 +330,19 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imgUrl(ascent.photoUrl, 800)}
-                      alt={ascent.peak.nameEn ?? ascent.peak.name}
+                      alt={peakName}
                       loading="lazy"
                       style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", zIndex: 1 }}
                     />
                   </div>
                 // eslint-disable-next-line @next/next/no-img-element
-                : <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.nameEn ?? ascent.peak.name} loading="lazy" style={reveal ? { filter: `blur(${reveal.photoBlur}px)` } : undefined} />
+                : <img src={imgUrl(ascent.photoUrl, 800)} alt={peakName} loading="lazy" style={reveal ? { filter: `blur(${reveal.photoBlur}px)` } : undefined} />
               : <MountainPlaceholder />
           }
           <div className="image-overlay" />
           {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
           <div className="peak-info">
-            <div className="peak-name">{ascent.peak.nameEn ?? ascent.peak.name}</div>
+            <div className="peak-name">{peakName}</div>
             <div className="peak-alt">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
           </div>
