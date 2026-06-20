@@ -281,6 +281,7 @@
     <string name="atlas_btn_filters">Filtros</string>
     <string name="atlas_clear_filters">Limpiar todo</string>
     <string name="atlas_section_places">LUGARES</string>
+    <string name="atlas_section_refugios">REFUGIOS</string>
     <string name="atlas_section_rarity">RAREZA</string>
     <string name="atlas_section_status">ESTADO</string>
     <string name="atlas_section_sort">ORDENAR</string>

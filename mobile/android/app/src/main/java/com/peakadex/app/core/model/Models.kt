@@ -310,7 +310,7 @@ data class LeaderboardEntry(
     val avatarUrl: String? = null,
     @SerialName("ascentCount") val totalAscents: Int,
     val isCurrentUser: Boolean,
-    val cairns: Int = 0,
+    @SerialName("CS") val cairns: Int = 0,
     val ep: Int = 0,
     val levelIdx: Int = 1,
 )
@@ -451,6 +451,7 @@ data class GeocodedPlace(
 data class PeaksResponse(
     val peaks: List<Peak>,
     val places: List<GeocodedPlace> = emptyList(),
+    val refugios: List<GeocodedPlace> = emptyList(),
 )
 
 // MARK: - Profile
