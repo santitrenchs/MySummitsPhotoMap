@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/client";
 import { getRarityId } from "@/lib/rarity";
 import type { RarityId } from "@/lib/rarity";
+import { peakDisplayName } from "@/lib/peak-name";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
       where: { createdBy: userId },
       orderBy: { date: "desc" },
       include: {
-        peak: { select: { name: true, altitudeM: true, mountainRange: true } },
+        peak: { select: { name: true, nameEn: true, altitudeM: true, mountainRange: true } },
         photos: { take: 1, orderBy: { createdAt: "asc" }, select: { url: true } },
       },
     }),
@@ -228,7 +229,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   const recentAscents: RecentAscent[] = myAscents.slice(0, 5).map((a) => ({
     id: a.id,
     date: a.date.toISOString(),
-    peakName: a.peak.name,
+    peakName: peakDisplayName(a.peak),
     altitudeM: a.peak.altitudeM,
     mountainRange: a.peak.mountainRange,
     photoUrl: a.photos[0]?.url ?? null,
@@ -242,7 +243,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
       orderBy: { date: "desc" },
       take: 5,
       include: {
-        peak: { select: { name: true, altitudeM: true } },
+        peak: { select: { name: true, nameEn: true, altitudeM: true } },
         photos: { take: 1, orderBy: { createdAt: "asc" }, select: { url: true } },
         user: { select: { name: true, avatarUrl: true } },
       },
@@ -252,7 +253,7 @@ export async function getHomeData(userId: string): Promise<HomeData> {
         ascentId: r.id,
         userName: r.user.name,
         userAvatarUrl: r.user.avatarUrl,
-        peakName: r.peak.name,
+        peakName: peakDisplayName(r.peak),
         altitudeM: r.peak.altitudeM,
         date: r.date.toISOString(),
         photoUrl: r.photos[0]?.url ?? null,
