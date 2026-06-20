@@ -15,7 +15,7 @@ interface ApiService {
     suspend fun loginWithGoogle(@Body body: Map<String, String>): AuthResponse
 
     @POST("auth/register")
-    suspend fun register(@Body body: Map<String, String?>): AuthResponse
+    suspend fun register(@Body body: RegisterRequest): AuthResponse
 
     @POST("auth/forgot-password")
     suspend fun forgotPassword(@Body body: Map<String, String>)
@@ -62,11 +62,14 @@ interface ApiService {
     @GET("ascents/{id}")
     suspend fun getAscent(@Path("id") id: String): AscentResponse
 
+    // Returns the raw updated record wrapped in { ascent }, which lacks the nested
+    // peak/photos/persons — not deserializable into our rich Ascent model. We don't
+    // need the body (the Cards list is refreshed separately), so ignore it.
     @PATCH("ascents/{id}")
     suspend fun updateAscent(
         @Path("id") id: String,
         @Body body: Map<String, String?>,
-    ): Ascent
+    )
 
     @DELETE("ascents/{id}")
     suspend fun deleteAscent(@Path("id") id: String)
@@ -80,6 +83,7 @@ interface ApiService {
     suspend fun uploadPhoto(
         @Part file: MultipartBody.Part,
         @Part("ascentId") ascentId: RequestBody,
+        @Part("cropAspect") cropAspect: RequestBody? = null,
     ): PhotoResponse
 
     @DELETE("photos/{id}")
@@ -94,10 +98,12 @@ interface ApiService {
         @Body body: Map<String, String?>,
     ): PersonSummary
 
-    @DELETE("photos/{photoId}/persons/{personId}")
-    suspend fun deletePhotoPerson(
-        @Path("photoId") photoId: String,
-        @Path("personId") personId: String,
+    // Removes a tagged user from a photo. The v1 route expects { userId } in the
+    // request body (DELETE with body), not a path segment.
+    @HTTP(method = "DELETE", path = "photos/{id}/persons", hasBody = true)
+    suspend fun removePhotoPerson(
+        @Path("id") photoId: String,
+        @Body body: Map<String, String?>,
     )
 
     // MARK: - Peaks
@@ -123,7 +129,7 @@ interface ApiService {
     ): PeaksResponse
 
     @GET("peaks/{id}")
-    suspend fun getPeak(@Path("id") id: String): Peak
+    suspend fun getPeak(@Path("id") id: String): PeakResponse
 
     @GET("peaks/{id}/elevation")
     suspend fun getPeakElevation(@Path("id") id: String): ElevationResponse
@@ -167,7 +173,7 @@ interface ApiService {
     suspend fun getUserStats(@Path("id") id: String): UserStatsResponse
 
     @GET("persons")
-    suspend fun getPersons(): List<Person>
+    suspend fun getPersons(): PersonsResponse
 
     // MARK: - Cordadas
     @GET("cordadas")

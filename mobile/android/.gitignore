@@ -1,0 +1,17 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+
+# Firebase google-services.json is intentionally committed:
+# it contains no secrets (client config only, like GOOGLE_WEB_CLIENT_ID),
+# and committing it keeps every build environment working without manual steps.

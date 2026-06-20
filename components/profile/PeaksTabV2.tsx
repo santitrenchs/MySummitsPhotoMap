@@ -8,12 +8,14 @@ import { PeakFiltersPanel } from "./PeakFiltersPanel";
 import { PeakRowCard } from "./PeakRowCard";
 import { usePeakFilters } from "./usePeakFilters";
 import type { PeakForFilter } from "./usePeakFilters";
+import type { RarityId } from "@/lib/rarity";
 
 type Props = {
   peaks: PeakForFilter[];
+  initialTier?: RarityId | null;
 };
 
-export function PeaksTabV2({ peaks }: Props) {
+export function PeaksTabV2({ peaks, initialTier = null }: Props) {
   const t = useT();
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -27,7 +29,7 @@ export function PeaksTabV2({ peaks }: Props) {
     ranges,
     hasActiveFilters,
     clearAll,
-  } = usePeakFilters(peaks);
+  } = usePeakFilters(peaks, initialTier);
 
   const activeFilterCount = [tier !== null, mythic, range !== null, sort !== "altitude_desc"].filter(Boolean).length;
 
@@ -41,7 +43,7 @@ export function PeaksTabV2({ peaks }: Props) {
 
   return (
     <div style={{ background: "#F4F7FA", margin: "0 -16px", padding: "0 16px" }}>
-      {/* Catalog header */}
+      {/* KPIs + rarity bar */}
       <PeaksCatalogHeader peaks={peaks} tier={tier} setTier={setTier} />
 
       {/* Sticky filter bar */}

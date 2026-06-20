@@ -4,7 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.R
 import com.peakadex.app.core.model.HomeData
+import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +19,7 @@ private const val TAG = "HomeViewModel"
 sealed class HomeUiState {
     data object Loading : HomeUiState()
     data class  Success(val data: HomeData) : HomeUiState()
-    data class  Error(val message: String)  : HomeUiState()
+    data class  Error(val message: UiText)  : HomeUiState()
 }
 
 class HomeViewModel : ViewModel() {
@@ -54,13 +56,13 @@ class HomeViewModel : ViewModel() {
             _uiState.value = HomeUiState.Success(data)
         } catch (e: HttpException) {
             Log.e(TAG, "getHome HTTP ${e.code()}")
-            _uiState.value = HomeUiState.Error("Error del servidor (${e.code()})")
+            _uiState.value = HomeUiState.Error(UiText.Dynamic("Error ${e.code()}"))
         } catch (e: IOException) {
             Log.e(TAG, "getHome network error", e)
-            _uiState.value = HomeUiState.Error("Sin conexión. Comprueba tu red.")
+            _uiState.value = HomeUiState.Error(UiText.StringRes(R.string.error_no_connection))
         } catch (e: Exception) {
             Log.e(TAG, "getHome unexpected error", e)
-            _uiState.value = HomeUiState.Error("Error inesperado")
+            _uiState.value = HomeUiState.Error(UiText.StringRes(R.string.error_unexpected))
         }
     }
 }

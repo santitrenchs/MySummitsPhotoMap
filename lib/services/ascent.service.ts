@@ -1,5 +1,6 @@
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { prisma } from "@/lib/db/client";
+import { deleteFromR2 } from "@/lib/storage/r2";
 import { ensureElevationProfileForPeak } from "@/lib/services/elevation.service";
 import { ensureNearbyPeaksForPeak } from "@/lib/services/nearby-peaks.service";
 
@@ -20,6 +21,7 @@ const PHOTOS_SELECT = {
   select: {
     id: true,
     url: true,
+    cropAspect: true,
     faceDetections: {
       select: {
         faceTags: {
@@ -92,7 +94,7 @@ export async function listAscents(tenantId: string, userId: string, friendUserId
     route: a.route,
     description: a.description,
     wikiloc: a.wikiloc,
-    photos: a.photos.map((p) => ({ id: p.id, url: p.url })),
+    photos: a.photos.map((p) => ({ id: p.id, url: p.url, cropAspect: p.cropAspect ?? null })),
     persons: buildPersons(a.photos as Parameters<typeof buildPersons>[0]),
     createdAt: a.createdAt.toISOString(),
   });
@@ -219,7 +221,20 @@ export async function deleteAscent(tenantId: string, ascentId: string, userId: s
   const db = await getTenantConnection(tenantId);
   const existing = await db.ascent.findFirst({
     where: { id: ascentId, tenantId, createdBy: userId },
+    include: { photos: { select: { storageKey: true, originalStorageKey: true } } },
   });
   if (!existing) return null;
-  return db.ascent.delete({ where: { id: ascentId } });
+
+  const deleted = await db.ascent.delete({ where: { id: ascentId } });
+
+  // Best-effort cleanup of the R2 objects (display + resized original). Never block
+  // the delete on storage errors — the DB rows are already gone via cascade.
+  const keys = existing.photos.flatMap((p) =>
+    [p.storageKey, p.originalStorageKey].filter((k): k is string => !!k),
+  );
+  if (keys.length > 0) {
+    await Promise.allSettled(keys.map((k) => deleteFromR2(k)));
+  }
+
+  return deleted;
 }

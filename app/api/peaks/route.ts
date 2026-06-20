@@ -107,6 +107,11 @@ export async function GET(request: Request) {
       longitude: { gte: lng - radius, lte: lng + radius },
     };
     take = 600;
+  } else {
+    // No search query, no viewport, no radius → never return the whole catalog.
+    // The full peak table is hundreds of thousands of rows (~100 MB); a bare
+    // /api/peaks would time out and break callers. Require an explicit filter.
+    return NextResponse.json([]);
   }
 
   // Viewport / radius query — plain array (unchanged shape)

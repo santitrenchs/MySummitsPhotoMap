@@ -4,7 +4,7 @@ export const en: Dict = {
   dateLocale: "en-GB",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Logbook",
+  nav_map: "Atlas", nav_ascents: "Cards", nav_bitacora: "Logbook", nav_cordadas: "Rope Team",
   nav_settings: "Settings", nav_signOut: "Sign out", nav_profile: "Profile",
   nav_comingSoon: "Soon", nav_logAscent: "Log new ascent",
 
@@ -38,8 +38,8 @@ export const en: Dict = {
   newAscent_savingAscent: "Saving ascent…",
   newAscent_uploadingPhoto: "Uploading photo {i} of {n}…",
   newAscent_savingTags: "Saving tags for photo {i}…",
-  newAscent_save: "Save changes",
-  newAscent_saveChanges: "Save changes", newAscent_delete: "Delete ascent",
+  newAscent_save: "Save",
+  newAscent_saveChanges: "Save", newAscent_delete: "Delete ascent",
   newAscent_saveWithPhotos: "Save + {n} photo(s)",
   newAscent_photoFailed: "Ascent saved but photo {i} failed to upload.",
   newAscent_tagged: "{n} tagged",
@@ -52,7 +52,7 @@ export const en: Dict = {
   detail_with: "With", detail_photos: "Photos · {n}", detail_addPhotos: "Add photos",
   detail_location: "Location", detail_routeWikiloc: "Route · Wikiloc",
   detail_openWikiloc: "Open in Wikiloc ↗",
-  detail_editPhoto: "Edit photo", detail_tagPeople: "Tag people", detail_reCrop: "Re-crop",
+  detail_editPhoto: "Edit photo", detail_tagPeople: "Tag people", detail_reCrop: "Re-crop", detail_changePhoto: "Change photo",
   detail_viewOnMap: "🗺  View on map", detail_addPhoto: "Add photo",
   detail_addWikiloc: "Add Wikiloc route", detail_and: "and",
   date_today: "Today", date_selectYear: "Select year",
@@ -64,7 +64,7 @@ export const en: Dict = {
 
   ascents_newAscent: "+ New ascent", ascents_logTitle: "Log ascent", ascents_editTitle: "Edit ascent",
   ascents_emptyTitle: "No ascents yet", ascents_emptySub: "Log your first summit from the map or here",
-  ascents_title: "Ascents", ascents_search: "🔍  Search peaks, routes, friends…",
+  ascents_title: "Cards", ascents_search: "🔍  Search peaks, routes, friends…",
   ascents_filters: "Filters", ascents_allYears: "All years", ascents_allPeople: "All friends",
   ascents_withPhoto: "📸 With photo", ascents_clearAll: "Clear all",
   ascents_noResults: "No ascents found", ascents_noResultsSub: "Try adjusting your filters",
@@ -86,13 +86,19 @@ export const en: Dict = {
   friends_add: "Add", friends_requestSent: "Sent", friends_alreadyFriends: "Friends",
   friends_accept: "Accept", friends_reject: "Reject", friends_remove: "Remove friend",
   friends_cancel: "Cancel request", friends_pendingSection: "Requests ({n})",
-  friends_noPending: "No pending requests", friends_noFriends: "No friends yet on Peakadex",
-  friends_noFriendsSub: "Search for your mountain companions above",
+  friends_noPending: "No pending requests", friends_noFriends: "No friends yet on Peakadex.",
+  friends_noFriendsSub: "Invite your rope team or create a group to get started.",
   friends_noResults: "No users found", friends_since: "Friends since",
   friends_filterResults: "{n} result{n,plural,=1{}other{s}}",
   friends_seeMore: "See more ({n} remaining)",
   friends_block: "Block", friends_blocked: "Blocked", friends_unblock: "Unblock",
   friends_blockedSection: "Blocked users", friends_friendsSection: "Friends", friends_addSection: "Add friends",
+  cordadas_createTitle: "New rope team", cordadas_nameLabel: "Name", cordadas_namePlaceholder: "E.g. The Piolets",
+  cordadas_descriptionLabel: "Description", cordadas_descriptionPlaceholder: "Who are you? What mountains do you have in mind?",
+  cordadas_createBtn: "Create rope team", cordadas_creating: "Creating…",
+  cordadas_inviteTitle: "Invite friends", cordadas_allInvited: "All your friends already belong to this rope team.",
+  cordadas_invited: "Invited ✓", cordadas_invite: "Invite",
+  cordadas_photoLabel: "Cover photo", cordadas_changePhoto: "Change photo", cordadas_founder: "Founder",
 
 
 
@@ -223,7 +229,7 @@ export const en: Dict = {
 
 
 
-  nav_home: "Peakadex stats",
+  nav_home: "Stats",
   home_greeting: "Welcome back, {name} 👋",
   home_statSummits: "Summits", home_statPhotos: "Photos",
   home_statRegions: "Regions", home_statFriends: "Friends",
@@ -310,8 +316,9 @@ export const en: Dict = {
   auth_backToLogin: "Back to sign in",
 
   card_capturedSummit: "captured a summit", card_capturedMythicSummit: "captured a mythic summit",
-  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
+  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC", card_cordada_label: "Your rope team:", card_cordada_label_other: "Rope team:", share_tapToFlip: "Tap the card to see the back",
   card_rarity: "Rarity", card_altitude: "Altitude", card_reward: "Reward",
+  capture_reveal_captured: "Peak captured!",
   share_joinCta: "Join Peakadex →",
   card_share: "Share", card_shareCopied: "Copied!", card_shareError: "Error sharing", card_shareCopyLink: "Copy link",
   card_shareTitle: "Share this summit", card_shareWhatsapp: "Send to friends", card_shareInstagramStory: "Instagram Story", card_shareDownload: "Download image",

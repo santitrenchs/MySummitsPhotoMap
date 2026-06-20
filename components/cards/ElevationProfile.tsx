@@ -9,9 +9,12 @@ type Props = {
   rarityColor: string;
   /** Pre-loaded profile (e.g. from v1 API). Skips the fetch if provided. */
   profile?: ElevationProfileData | null;
+  /** Stroke/fill/label colour. Defaults to white (for the dark card-back map);
+   *  the capture-reveal passes the rarity colour (over the light-gray cover). */
+  lineColor?: string;
 };
 
-export function ElevationProfile({ peakId, altitudeM, rarityColor, profile: initialProfile }: Props) {
+export function ElevationProfile({ peakId, altitudeM, rarityColor, profile: initialProfile, lineColor = "white" }: Props) {
   const [profile, setProfile] = useState<ElevationProfileData | null>(initialProfile ?? null);
   const [loading, setLoading] = useState(!initialProfile);
 
@@ -37,7 +40,7 @@ export function ElevationProfile({ peakId, altitudeM, rarityColor, profile: init
     return <ElevationFallbackBar altitudeM={altitudeM} rarityColor={rarityColor} />;
   }
 
-  return <ElevationSVG profile={profile} rarityColor={rarityColor} altitudeM={altitudeM} />;
+  return <ElevationSVG profile={profile} rarityColor={rarityColor} altitudeM={altitudeM} lineColor={lineColor} />;
 }
 
 // ─── SVG rendering ────────────────────────────────────────────────────────────
@@ -51,10 +54,12 @@ function ElevationSVG({
   profile,
   rarityColor,
   altitudeM,
+  lineColor = "white",
 }: {
   profile: ElevationProfileData;
   rarityColor: string;
   altitudeM: number;
+  lineColor?: string;
 }) {
   const { points, minElevation, maxElevation, summitIndex } = profile;
   const range = maxElevation - minElevation || 1;
@@ -74,7 +79,7 @@ function ElevationSVG({
 
   const summitX = toX(summitIndex);
   const summitY = toY(points[summitIndex]?.elevation ?? altitudeM);
-  const gradId = `ep-${peakId(rarityColor)}`;
+  const gradId = `ep-${peakId(rarityColor)}-${peakId(lineColor)}`;
 
   return (
     <div style={{ width: "100%" }}>
@@ -85,8 +90,8 @@ function ElevationSVG({
       >
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="white" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="white" stopOpacity="0.04" />
+            <stop offset="0%" stopColor={lineColor} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={lineColor} stopOpacity="0.04" />
           </linearGradient>
         </defs>
 
@@ -94,13 +99,13 @@ function ElevationSVG({
         <path d={areaPath} fill={`url(#${gradId})`} />
 
         {/* Line */}
-        <path d={linePath} fill="none" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinejoin="round" />
 
         {/* Distance labels */}
-        <text x={PAD_X} y={H - 1} fontSize="7" fill="rgba(255,255,255,0.45)" style={{ fontFamily: "system-ui, sans-serif" }}>
+        <text x={PAD_X} y={H - 1} fontSize="7" fill={lineColor} fillOpacity="0.45" style={{ fontFamily: "system-ui, sans-serif" }}>
           −8 km
         </text>
-        <text x={W - PAD_X} y={H - 1} fontSize="7" fill="rgba(255,255,255,0.45)" textAnchor="end" style={{ fontFamily: "system-ui, sans-serif" }}>
+        <text x={W - PAD_X} y={H - 1} fontSize="7" fill={lineColor} fillOpacity="0.45" textAnchor="end" style={{ fontFamily: "system-ui, sans-serif" }}>
           +8 km
         </text>
       </svg>

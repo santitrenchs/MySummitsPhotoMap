@@ -18,6 +18,7 @@ type Peak = {
   mountainRange: string | null;
   latitude: number;
   longitude: number;
+  isMythic?: boolean;
 };
 
 export type ModalHeaderConfig = {
@@ -38,6 +39,7 @@ export type EditAscent = {
   photoUrl: string | null;
   photoId: string | null;
   originalStorageKey: string | null;
+  cropAspect?: string | null;
   persons: { id: string; name: string }[];
 };
 
@@ -58,10 +60,11 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const t = useT();
   const isEditMode = !!editAscent;
 
-  const [peaks, setPeaks] = useState<Peak[]>([]);
-  useEffect(() => {
-    fetch("/api/peaks").then((r) => r.json()).then(setPeaks).catch(() => {});
-  }, []);
+  // The peak catalog is far too large to load client-side (hundreds of thousands of
+  // rows). The picker searches server-side via /api/peaks?q=. We only track the
+  // currently selected peak (lifted from PeakPicker) and the GPS-suggested one.
+  const [selectedPeak, setSelectedPeak] = useState<{ id: string; name: string; altitudeM: number } | null>(null);
+  const [suggestedPeak, setSuggestedPeak] = useState<Peak | null>(null);
 
   const [modalStep, setModalStep] = useState<ModalStep>(isEditMode ? "form" : "pick");
   const [error, setError] = useState<string | null>(null);
@@ -71,17 +74,30 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [suggestedDate, setSuggestedDate] = useState<string | null>(null);
   const [suggestedPeakId, setSuggestedPeakId] = useState<string | null>(null);
-  const [pendingPhoto, setPendingPhoto] = useState<{ blob: Blob; preview: string; cropMeta: CropMeta; originalFile?: File } | null>(null);
+  const [pendingPhoto, setPendingPhoto] = useState<{
+    blob: Blob;
+    preview: string;
+    cropMeta: CropMeta;
+    originalFile?: File;
+    reuseOriginalPhotoId?: string | null;
+  } | null>(null);
   const [selectedPersons, setSelectedPersons] = useState<Person[]>(
     editAscent?.persons.map((p) => ({ id: p.id, name: p.name, username: null })) ?? []
   );
   const [personSearch, setPersonSearch] = useState("");
   const [personResults, setPersonResults] = useState<Person[]>([]);
   const personSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Notes/comment cap — matches Android NOTES_MAX_CHARS (Android is canonical for the comment).
+  const NOTES_MAX_CHARS = 100;
+  const [descLen, setDescLen] = useState(() =>
+    isEditMode ? (editAscent?.description ?? "").slice(0, NOTES_MAX_CHARS).length : 0
+  );
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(editAscent?.photoUrl ?? null);
   const [editPhotoId, setEditPhotoId] = useState<string | null>(editAscent?.photoId ?? null);
   const [editOrigKey, setEditOrigKey] = useState<string | null>(editAscent?.originalStorageKey ?? null);
   const isEditPhotoReplaceRef = useRef(false);
+  const editPhotoReuseOriginalIdRef = useRef<string | null>(null);
+  const submitInFlightRef = useRef(false);
 
   const cropApplyRef = useRef<(() => void) | null>(null);
 
@@ -101,8 +117,15 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
 
   const goToPick = useCallback(() => {
     setCropQueue([]);
+    setCropApplying(false);
+    if (isEditMode) {
+      isEditPhotoReplaceRef.current = false;
+      editPhotoReuseOriginalIdRef.current = null;
+      setModalStep("form");
+      return;
+    }
     setModalStep("pick");
-  }, []);
+  }, [isEditMode]);
 
   useEffect(() => {
     if (modalStep === "pick") {
@@ -190,6 +213,9 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   // ── File handling ────────────────────────────────────────────────────────
 
   function handlePickFiles(files: FileList) {
+    if (isEditMode) {
+      isEditPhotoReplaceRef.current = true;
+    }
     const arr = Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, 1);
     const oversized = arr.find((f) => f.size > MAX_PHOTO_BYTES);
     if (oversized) { setError(t.photo_tooLarge); return; }
@@ -198,14 +224,22 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     setCropQueue(arr);
     setModalStep("crop");
 
-    const first = arr[0];
-    extractImageMeta(first).then(({ date, lat, lng }) => {
-      if (date) setSuggestedDate(date);
-      if (!defaultPeakId && lat !== null && lng !== null) {
-        const found = nearestPeak(lat, lng, peaks);
-        if (found) setSuggestedPeakId(found.id);
-      }
-    });
+    if (!isEditMode) {
+      const first = arr[0];
+      extractImageMeta(first).then(async ({ date, lat, lng }) => {
+        if (date) setSuggestedDate(date);
+        if (!defaultPeakId && lat !== null && lng !== null) {
+          try {
+            // Fetch only nearby peaks (small bbox) and pick the closest — never the whole catalog.
+            const d = 0.25; // ~25 km
+            const res = await fetch(`/api/peaks?north=${lat + d}&south=${lat - d}&east=${lng + d}&west=${lng - d}`);
+            const nearby = await res.json();
+            const found = nearestPeak(lat, lng, Array.isArray(nearby) ? nearby : []);
+            if (found) { setSuggestedPeakId(found.id); setSuggestedPeak(found as Peak); }
+          } catch { /* GPS suggestion is best-effort */ }
+        }
+      });
+    }
   }
 
   // Debounced person search for form step
@@ -226,7 +260,9 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     setCropQueue((q) => q.slice(1));
     if (isEditPhotoReplaceRef.current) {
       isEditPhotoReplaceRef.current = false;
-      setPendingPhoto({ blob, preview, cropMeta, originalFile });
+      const reuseOriginalPhotoId = editPhotoReuseOriginalIdRef.current;
+      editPhotoReuseOriginalIdRef.current = null;
+      setPendingPhoto({ blob, preview, cropMeta, originalFile, reuseOriginalPhotoId });
       setEditPhotoUrl(preview);
       setCropApplying(false);
       setModalStep("form");
@@ -243,7 +279,27 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
 
   function handleCropCancel() { goToPick(); }
 
-  async function handleEditPhotoClick() {
+  function openEditPhotoFilePicker() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/jpeg,image/png,image/webp,image/heic,image/heif";
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (!f) return;
+      if (f.size > MAX_PHOTO_BYTES) {
+        setError(t.photo_tooLarge);
+        return;
+      }
+      setError(null);
+      isEditPhotoReplaceRef.current = true;
+      editPhotoReuseOriginalIdRef.current = null;
+      setCropQueue([f]);
+      setModalStep("crop");
+    };
+    input.click();
+  }
+
+  async function handleEditReCropClick() {
     if (editOrigKey && editPhotoId) {
       // Fetch resized original for re-crop
       try {
@@ -252,31 +308,28 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
           const blob = await res.blob();
           const file = new File([blob], "original.jpg", { type: "image/jpeg" });
           isEditPhotoReplaceRef.current = true;
+          editPhotoReuseOriginalIdRef.current = editPhotoId;
           setCropQueue([file]);
           setModalStep("crop");
           return;
         }
       } catch { /* fall through to file picker */ }
     }
-    // No original or fetch failed — open file picker
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = () => {
-      const f = input.files?.[0];
-      if (!f) return;
-      isEditPhotoReplaceRef.current = true;
-      setCropQueue([f]);
-      setModalStep("crop");
-    };
-    input.click();
+    openEditPhotoFilePicker();
   }
 
   async function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editAscent) return;
+    if (submitInFlightRef.current) return;
+    submitInFlightRef.current = true;
     setError(null);
     setLoading(true);
+
+    const stopSubmitting = () => {
+      submitInFlightRef.current = false;
+      setLoading(false);
+    };
 
     const form = new FormData(e.currentTarget);
     const newPeakId = form.get("peakId") as string | null;
@@ -286,14 +339,14 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
 
     if (!newPeakId) {
       setError(t.field_peak);
-      setLoading(false);
+      stopSubmitting();
       return;
     }
 
     // Photo is required — either the existing photo is kept or a new one is pending
     if (!editPhotoUrl && !editPhotoId && !pendingPhoto) {
       setError(t.field_photos);
-      setLoading(false);
+      stopSubmitting();
       return;
     }
 
@@ -306,7 +359,7 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     if (!patchRes.ok) {
       const data = await patchRes.json().catch(() => ({}));
       setError(typeof data.error === "string" ? data.error : t.edit_failedToSave);
-      setLoading(false);
+      stopSubmitting();
       return;
     }
 
@@ -324,29 +377,50 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       fd.append("file", pendingPhoto.blob, "photo.jpg");
       fd.append("ascentId", editAscent.id);
       fd.append("cropMeta", JSON.stringify(pendingPhoto.cropMeta));
-      if (editOrigKey && editPhotoId) {
+      if (pendingPhoto.reuseOriginalPhotoId) {
         // Re-crop: reuse the existing original stored in R2
-        fd.append("reuseOriginalPhotoId", editPhotoId);
+        fd.append("reuseOriginalPhotoId", pendingPhoto.reuseOriginalPhotoId);
       } else if (pendingPhoto.originalFile) {
         // New file from picker: upload original for future re-crops
-        const originalBlob = await resizeForStorage(pendingPhoto.originalFile);
+        let originalBlob: Blob;
+        try {
+          originalBlob = await resizeForStorage(pendingPhoto.originalFile);
+        } catch {
+          setError(t.edit_failedToSave);
+          stopSubmitting();
+          return;
+        }
         fd.append("originalFile", originalBlob, "original.jpg");
       }
       const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
-      if (photoRes.ok) {
-        const photo = await photoRes.json();
-        newPhotoId = photo.id ?? null;
-        newPhotoOriginalKey = photo.originalStorageKey ?? null;
-        await fetch(`/api/photos/${photo.id}/faces`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ faces: facesPayload }),
-        });
+      if (!photoRes.ok) {
+        setError(t.edit_failedToSave);
+        stopSubmitting();
+        return;
+      }
+      const photo = await photoRes.json().catch(() => null);
+      if (!photo?.id) {
+        setError(t.edit_failedToSave);
+        stopSubmitting();
+        return;
+      }
+      newPhotoId = photo.id ?? null;
+      newPhotoOriginalKey = photo.originalStorageKey ?? null;
+      const facesRes = await fetch(`/api/photos/${photo.id}/faces`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ faces: facesPayload }),
+      });
+      if (!facesRes.ok) {
+        await fetch(`/api/photos/${photo.id}`, { method: "DELETE" }).catch(() => {});
+        setError(t.edit_failedToSave);
+        stopSubmitting();
+        return;
       }
       // Delete old photo — always delete if one existed; keep original R2 file only
       // when re-cropping (the new photo already references the same original key)
       if (editAscent.photoId) {
-        const deleteUrl = editOrigKey
+        const deleteUrl = pendingPhoto.reuseOriginalPhotoId
           ? `/api/photos/${editAscent.photoId}?keepOriginal=1`
           : `/api/photos/${editAscent.photoId}`;
         await fetch(deleteUrl, { method: "DELETE" }).catch(() => {});
@@ -370,13 +444,14 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         photoUrl: editPhotoUrl,
         photoId: newPhotoId ?? editAscent.photoId,
         photoOriginalKey: newPhotoOriginalKey ?? (newPhotoId ? null : editAscent.originalStorageKey),
+        photoCropAspect: pendingPhoto ? (pendingPhoto.cropMeta.aspect ?? null) : (editAscent.cropAspect ?? null),
         peakId: newPeakId,
-        peakName: peaks.find((p) => p.id === newPeakId)?.name ?? editAscent.peakName,
-        peakAltitudeM: peaks.find((p) => p.id === newPeakId)?.altitudeM ?? null,
+        peakName: selectedPeak?.id === newPeakId ? selectedPeak.name : editAscent.peakName,
+        peakAltitudeM: selectedPeak?.id === newPeakId ? selectedPeak.altitudeM : null,
       },
     }));
 
-    setLoading(false);
+    stopSubmitting();
     router.refresh();
     onClose();
   }
@@ -385,27 +460,35 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     if (!editAscent) return;
     setLoading(true);
     await fetch(`/api/ascents/${editAscent.id}`, { method: "DELETE" });
-    window.location.href = "/ascents";
+    window.location.href = "/ascents?view=mine";
   }
 
   // ── Submit ───────────────────────────────────────────────────────────────
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (isEditMode || editAscent) return;
+    if (submitInFlightRef.current) return;
+    submitInFlightRef.current = true;
     setError(null);
     setLoading(true);
+
+    const stopSubmitting = () => {
+      submitInFlightRef.current = false;
+      setLoading(false);
+    };
 
     const form = new FormData(e.currentTarget);
 
     if (!form.get("peakId")) {
       setError(t.field_peak);
-      setLoading(false);
+      stopSubmitting();
       return;
     }
 
     if (readyItems.length === 0) {
       setError(t.field_photos);
-      setLoading(false);
+      stopSubmitting();
       return;
     }
 
@@ -424,11 +507,19 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
     if (!ascentRes.ok) {
       const data = await ascentRes.json().catch(() => ({}));
       setError(typeof data.error === "string" ? data.error : t.edit_failedToSave);
-      setLoading(false);
+      stopSubmitting();
       return;
     }
 
     const ascent = await ascentRes.json();
+    const rollbackCreatedAscent = async () => {
+      await fetch(`/api/ascents/${ascent.id}`, { method: "DELETE" }).catch(() => {});
+    };
+    const failCreateFlow = async (message: string) => {
+      await rollbackCreatedAscent();
+      setError(message);
+      stopSubmitting();
+    };
 
     // Step 2 — upload photos + face tags
     for (let i = 0; i < readyItems.length; i++) {
@@ -436,18 +527,27 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
       const fd = new FormData();
       fd.append("file", item.blob, "photo.jpg");
       fd.append("ascentId", ascent.id);
-      const originalBlob = await resizeForStorage(item.originalFile);
+      let originalBlob: Blob;
+      try {
+        originalBlob = await resizeForStorage(item.originalFile);
+      } catch {
+        await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+        return;
+      }
       fd.append("originalFile", originalBlob, "original.jpg");
       fd.append("cropMeta", JSON.stringify(item.cropMeta));
       const photoRes = await fetch("/api/photos/upload", { method: "POST", body: fd });
       if (!photoRes.ok) {
-        setError(fmt(t.newAscent_photoFailed, { i: i + 1 }));
-        setLoading(false);
-        router.refresh(); onClose(); return;
+        await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+        return;
+      }
+      const photo = await photoRes.json().catch(() => null);
+      if (!photo?.id) {
+        await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+        return;
       }
       if (selectedPersons.length > 0) {
-        const photo = await photoRes.json();
-        await fetch(`/api/photos/${photo.id}/faces`, {
+        const facesRes = await fetch(`/api/photos/${photo.id}/faces`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -458,10 +558,15 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
             })),
           }),
         });
+        if (!facesRes.ok) {
+          await failCreateFlow(fmt(t.newAscent_photoFailed, { i: i + 1 }));
+          return;
+        }
       }
     }
 
-    window.location.href = `/ascents?highlight=${ascent.id}`;
+    // Land on the feed and play the capture-reveal on the new card (in place).
+    window.location.href = `/ascents?highlight=${ascent.id}&reveal=1`;
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -487,6 +592,54 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
 
   if (modalStep === "form") {
     const preview = isEditMode ? (editPhotoUrl ?? null) : (readyItems[0]?.preview ?? null);
+    const previewIsLandscape = isEditMode
+      // A pending re-crop wins over the original aspect (user may have changed it)
+      ? (pendingPhoto ? pendingPhoto.cropMeta.aspect === "landscape" : editAscent?.cropAspect === "landscape")
+      : (readyItems[0]?.cropMeta?.aspect === "landscape");
+    const canReCropEditPhoto = isEditMode && !!editOrigKey && !!editPhotoId;
+    const renderEditPhotoActions = (compact = false) => isEditMode ? (
+      <div style={{
+        position: "absolute",
+        bottom: compact ? 8 : 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "calc(100% - 24px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexWrap: "wrap",
+        gap: 8,
+        zIndex: 2,
+      }}>
+        {canReCropEditPhoto && (
+          <button
+            type="button"
+            onClick={handleEditReCropClick}
+            style={{
+              background: "rgba(0,0,0,0.6)", color: "white", border: "none",
+              borderRadius: "var(--radius-full)", padding: compact ? "6px 12px" : "8px 16px",
+              fontSize: compact ? 12 : 13, fontWeight: 600,
+              cursor: "pointer", backdropFilter: "blur(4px)",
+            }}
+          >
+            {t.detail_reCrop}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={openEditPhotoFilePicker}
+          style={{
+            background: "rgba(0,0,0,0.72)", color: "white", border: "none",
+            borderRadius: "var(--radius-full)", padding: compact ? "6px 12px" : "8px 16px",
+            fontSize: compact ? 12 : 13, fontWeight: 600,
+            cursor: "pointer", backdropFilter: "blur(4px)",
+          }}
+        >
+          {t.detail_changePhoto}
+        </button>
+      </div>
+    ) : null;
+
     return (
       <>
       <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
@@ -498,28 +651,27 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
             borderRight: "1px solid #e5e7eb", overflow: "hidden",
             position: "relative",
           }}>
-            {preview && (
+            {preview && (previewIsLandscape ? (
+              <>
+                {/* Blur fill for landscape */}
+                <div style={{
+                  position: "absolute", inset: 0,
+                  backgroundImage: `url("${preview}")`,
+                  backgroundSize: "cover", backgroundPosition: "center",
+                  filter: "blur(24px)", transform: "scale(1.1)",
+                }} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={preview} alt="" style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: 1 }} />
+              </>
+            ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={preview}
                 alt=""
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
-            )}
-            {isEditMode && (
-              <button
-                type="button"
-                onClick={handleEditPhotoClick}
-                style={{
-                  position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
-                  background: "rgba(0,0,0,0.6)", color: "white", border: "none",
-                  borderRadius: "var(--radius-full)", padding: "8px 18px", fontSize: 13, fontWeight: 600,
-                  cursor: "pointer", backdropFilter: "blur(4px)",
-                }}
-              >
-                ✏️ {t.detail_editPhoto}
-              </button>
-            )}
+            ))}
+            {renderEditPhotoActions()}
           </div>
         )}
 
@@ -530,27 +682,18 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         }}>
           {/* Photo thumbnail on mobile */}
           {isMobile && preview && (
-            <div style={{ marginBottom: 20, position: "relative" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={preview}
-                alt=""
-                style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: "var(--radius-md)", display: "block" }}
-              />
-              {isEditMode && (
-                <button
-                  type="button"
-                  onClick={handleEditPhotoClick}
-                  style={{
-                    position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
-                    background: "rgba(0,0,0,0.6)", color: "white", border: "none",
-                    borderRadius: "var(--radius-full)", padding: "6px 14px", fontSize: 12, fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  ✏️ {t.detail_editPhoto}
-                </button>
+            <div style={{ marginBottom: 20, position: "relative", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
+              {previewIsLandscape ? (
+                <div style={{ position: "relative", width: "100%", maxHeight: 200, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ position: "absolute", inset: 0, backgroundImage: `url("${preview}")`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(20px)", transform: "scale(1.1)" }} />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={preview} alt="" style={{ position: "relative", width: "100%", maxHeight: 200, objectFit: "contain", display: "block", zIndex: 1 }} />
+                </div>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={preview} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: "var(--radius-md)", display: "block" }} />
               )}
+              {renderEditPhotoActions(true)}
             </div>
           )}
 
@@ -563,12 +706,21 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
             <div>
               <label style={labelStyle}>{t.field_peak} *</label>
               <PeakPicker
-                peaks={peaks}
+                initialPeak={
+                  isEditMode
+                    ? { id: editAscent!.peakId, name: editAscent!.peakName, altitudeM: 0 }
+                    : suggestedPeak
+                      ? { id: suggestedPeak.id, name: suggestedPeak.name, altitudeM: suggestedPeak.altitudeM }
+                      : defaultPeakId && defaultPeakName
+                        ? { id: defaultPeakId, name: defaultPeakName, altitudeM: 0 }
+                        : null
+                }
                 defaultPeakId={isEditMode ? editAscent!.peakId : (defaultPeakId ?? suggestedPeakId ?? undefined)}
                 defaultPeakName={isEditMode ? editAscent!.peakName : (defaultPeakName ?? undefined)}
                 name="peakId"
                 placeholder={t.field_selectPeak}
                 suggested={!isEditMode && !defaultPeakId && !!suggestedPeakId}
+                onSelect={setSelectedPeak}
               />
             </div>
 
@@ -602,11 +754,15 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               </label>
               <textarea
                 id="modal-description" name="description" rows={3}
-                defaultValue={isEditMode ? (editAscent!.description ?? "") : undefined}
+                defaultValue={isEditMode ? (editAscent!.description ?? "").slice(0, NOTES_MAX_CHARS) : undefined}
                 placeholder={t.field_notesPlaceholder}
-                maxLength={2000}
+                maxLength={NOTES_MAX_CHARS}
+                onChange={(e) => setDescLen(e.target.value.length)}
                 style={{ ...inputStyle, resize: "vertical" }}
               />
+              <div style={{ textAlign: "right", fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
+                {descLen}/{NOTES_MAX_CHARS}
+              </div>
             </div>
 
             {/* Personas */}

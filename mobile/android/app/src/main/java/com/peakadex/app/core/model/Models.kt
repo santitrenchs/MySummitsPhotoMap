@@ -26,6 +26,17 @@ data class User(
 data class SettingsResponse(val user: User)
 
 @Serializable
+data class RegisterRequest(
+    val name: String,
+    val username: String? = null,
+    val email: String,
+    val password: String,
+    val acceptedTerms: Boolean = true,
+    val acceptedPrivacy: Boolean = true,
+    val marketing: Boolean = false,
+)
+
+@Serializable
 data class UpdateSettingsRequest(
     val name: String? = null,
     val username: String? = null,
@@ -153,6 +164,14 @@ data class PersonSummary(
     val id: String,
     val name: String,
     val avatarUrl: String? = null,
+)
+
+// GET /api/v1/persons returns { persons: [...] } where each entry is a user
+// (id = userId, plus name/username/avatarUrl). The wrapper must be modelled or
+// the List<Person> deserialization fails silently → empty tag suggestions.
+@Serializable
+data class PersonsResponse(
+    val persons: List<Person> = emptyList(),
 )
 
 // MARK: - Friendship
@@ -390,6 +409,13 @@ data class AscentResponse(
 @Serializable
 data class PhotoResponse(
     val photo: Photo,
+)
+
+// MARK: - Single peak response ({ "peak": {...} })
+
+@Serializable
+data class PeakResponse(
+    val peak: Peak,
 )
 
 // MARK: - Atlas / map models

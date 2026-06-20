@@ -26,7 +26,7 @@ export type AscentDetailProps = {
   description: string | null;
   wikiloc: string | null;
   userName: string;
-  heroPhoto: { id: string; url: string; originalStorageKey: string | null; cropRotation: number | null } | null;
+  heroPhoto: { id: string; url: string; originalStorageKey: string | null; cropRotation: number | null; cropAspect?: string | null } | null;
   persons: Person[];
   ascentId: string;
 };
@@ -148,7 +148,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
     setDeleting(true);
     try {
       await fetch(`/api/ascents/${id}`, { method: "DELETE" });
-      router.push("/ascents");
+      router.push("/ascents?view=mine");
     } finally {
       setDeleting(false);
     }
@@ -329,7 +329,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
         await fetch(`/api/photos/${photo.id}?keepOriginal=${reuseOriginalId ? "1" : "0"}`, { method: "DELETE" });
       }
 
-      setPhoto({ id: newPhoto.id, url: newPhoto.url, originalStorageKey: newPhoto.originalStorageKey ?? null, cropRotation: newPhoto.cropRotation ?? null });
+      setPhoto({ id: newPhoto.id, url: newPhoto.url, originalStorageKey: newPhoto.originalStorageKey ?? null, cropRotation: newPhoto.cropRotation ?? null, cropAspect: newPhoto.cropAspect ?? null });
       router.refresh();
     } catch {
       // silently ignore — page refresh will show real state
@@ -409,15 +409,33 @@ export function AscentDetailClient(props: AscentDetailProps) {
         <div style={{ position: "relative", aspectRatio: "4/5", background: "#0f172a", overflow: "hidden" }}>
 
           {photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={imgUrl(photo.url, 1080)}
-              alt={peakName}
-              style={{
-                width: "100%", height: "100%", objectFit: "cover", display: "block",
-                opacity: replacing ? 0.5 : 1, transition: "opacity 0.2s",
-              }}
-            />
+            photo.cropAspect === "landscape" ? (
+              <div style={{ position: "absolute", inset: 0, overflow: "hidden", opacity: replacing ? 0.5 : 1, transition: "opacity 0.2s" }}>
+                {/* Blurred background fill for landscape photos */}
+                <div style={{
+                  position: "absolute", inset: 0,
+                  backgroundImage: `url("${imgUrl(photo.url, 1080)}")`,
+                  backgroundSize: "cover", backgroundPosition: "center",
+                  filter: "blur(28px)", transform: "scale(1.1)",
+                }} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imgUrl(photo.url, 1080)}
+                  alt={peakName}
+                  style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: 1 }}
+                />
+              </div>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imgUrl(photo.url, 1080)}
+                alt={peakName}
+                style={{
+                  width: "100%", height: "100%", objectFit: "cover", display: "block",
+                  opacity: replacing ? 0.5 : 1, transition: "opacity 0.2s",
+                }}
+              />
+            )
           ) : (
             <HeroPlaceholder />
           )}
@@ -588,6 +606,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
                   <textarea
                     value={descDraft}
                     onChange={(e) => setDescDraft(e.target.value)}
+                    maxLength={100}
                     onBlur={saveDescriptionOnBlur}
                     onKeyDown={(e) => {
                       if (e.key === "Escape") {
@@ -614,6 +633,9 @@ export function AscentDetailClient(props: AscentDetailProps) {
                       <span style={{ fontSize: 11, color: "#9ca3af" }}>{t.saving}</span>
                     </div>
                   )}
+                  <div style={{ textAlign: "right", fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
+                    {descDraft.length}/100
+                  </div>
                 </div>
               ) : (
                 <button

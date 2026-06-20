@@ -6,8 +6,10 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -47,6 +49,7 @@ import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBlueLight
+import com.peakadex.app.core.ui.UiText
 
 // ── Profile menu bottom sheet ─────────────────────────────────────────────────
 // Shown when the user taps the avatar in MainTopBar.
@@ -153,11 +156,19 @@ fun SettingsScreen(
     LaunchedEffect(state.languageSaved) {
         if (state.languageSaved) { snackbarHostState.showSnackbar(languageSavedMsg); vm.clearLanguageSaved() }
     }
+    // Explicit Activity.recreate() — required on API < 33 where AppCompatDelegate
+    // stores the locale but does not automatically recreate the Activity.
+    LaunchedEffect(state.localeToApply) {
+        val locale = state.localeToApply ?: return@LaunchedEffect
+        Log.d("SettingsScreen", "localeToApply=$locale — calling Activity.recreate()")
+        vm.clearLocaleToApply()
+        (context as? Activity)?.recreate()
+    }
     LaunchedEffect(state.googleUnlinked) {
         if (state.googleUnlinked) { snackbarHostState.showSnackbar(googleUnlinkedMsg); vm.clearGoogleUnlinked() }
     }
     LaunchedEffect(state.error) {
-        if (state.error != null) { snackbarHostState.showSnackbar(state.error!!); vm.clearError() }
+        if (state.error != null) { snackbarHostState.showSnackbar(state.error!!.asString(context)); vm.clearError() }
     }
 
     // ── Language picker sheet ─────────────────────────────────────────────────
@@ -305,7 +316,7 @@ fun SettingsScreen(
                         placeholder    = stringResource(R.string.settings_field_username_placeholder),
                         prefix         = "@",
                         isError        = state.usernameError != null,
-                        supportingText = state.usernameError,
+                        supportingText = state.usernameError?.asString(),
                         imeAction      = ImeAction.Done,
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -426,7 +437,7 @@ fun SettingsScreen(
                             PasswordField(stringResource(R.string.settings_confirm_password), state.confirmPassword, vm::onConfirmPasswordChange, ImeAction.Done)
                             if (state.passwordError != null) {
                                 Text(
-                                    text     = state.passwordError!!,
+                                    text     = state.passwordError!!.asString(),
                                     color    = Color(0xFFEF4444),
                                     fontSize = 13.sp,
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),

@@ -45,7 +45,9 @@ import com.peakadex.app.core.model.ProfileStats
 import com.peakadex.app.core.model.Rarity
 import com.peakadex.app.R
 import com.peakadex.app.core.model.User
+import com.peakadex.app.core.ui.FirstCardOnboardingBanner
 import com.peakadex.app.core.ui.SkeletonBlock
+import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.ui.rememberSkeletonBrush
 import com.peakadex.app.core.ui.theme.*
 import kotlinx.coroutines.launch
@@ -110,7 +112,7 @@ fun ProfileSummaryScreen(
                 }
                 is ProfileUiState.Error -> {
                     Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text(s.message, color = PeakMuted, fontSize = 14.sp)
+                        Text(s.message.asString(), color = PeakMuted, fontSize = 14.sp)
                     }
                 }
                 is ProfileUiState.Success -> {
@@ -124,10 +126,11 @@ fun ProfileSummaryScreen(
 // ── Full profile: header + 3 tabs (Cimas / Fotos / Etiquetado) — Bitácora tab ─
 
 @Composable
-fun ProfileScreen(
+fun BitacoraScreen(
     onNavigateToSettings: () -> Unit,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
+    onCaptureFirstSummit: () -> Unit = {},
     vm: ProfileViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -152,18 +155,19 @@ fun ProfileScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(s.message, color = PeakMuted, fontSize = 14.sp)
+                    Text(s.message.asString(), color = PeakMuted, fontSize = 14.sp)
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { vm.load() }) { Text(stringResource(R.string.action_retry)) }
                 }
             }
             is ProfileUiState.Success -> {
                 ProfileContent(
-                    state               = s,
-                    onPeakQuery         = vm::setPeakQuery,
-                    onPeakRarityFilter  = vm::setPeakRarityFilter,
-                    onNavigateToLogbook = onNavigateToLogbook,
-                    onAscentClick       = onAscentClick,
+                    state                = s,
+                    onPeakQuery          = vm::setPeakQuery,
+                    onPeakRarityFilter   = vm::setPeakRarityFilter,
+                    onNavigateToCards  = onNavigateToCards,
+                    onAscentClick        = onAscentClick,
+                    onCaptureFirstSummit = onCaptureFirstSummit,
                 )
             }
         }
@@ -354,8 +358,9 @@ private fun ProfileContent(
     state: ProfileUiState.Success,
     onPeakQuery: (String) -> Unit,
     onPeakRarityFilter: (String?) -> Unit,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
+    onCaptureFirstSummit: () -> Unit = {},
 ) {
     var activeTab by remember { mutableIntStateOf(0) }
     val tabs = listOf(
@@ -391,15 +396,16 @@ private fun ProfileContent(
         // ── Tab content ──
         when (activeTab) {
             0 -> CimasTab(
-                peaks               = state.filteredPeaks,
-                allPeaks            = state.data.peaks,
-                stats               = state.data.stats,
-                rarities            = state.data.rarities,
-                query               = state.peakQuery,
-                rarityFilter        = state.peakRarityFilter,
-                onQuery             = onPeakQuery,
+                peaks                = state.filteredPeaks,
+                allPeaks             = state.data.peaks,
+                stats                = state.data.stats,
+                rarities             = state.data.rarities,
+                query                = state.peakQuery,
+                rarityFilter         = state.peakRarityFilter,
+                onQuery              = onPeakQuery,
+                onCaptureFirstSummit = onCaptureFirstSummit,
                 onRarityFilter      = onPeakRarityFilter,
-                onNavigateToLogbook = onNavigateToLogbook,
+                onNavigateToCards = onNavigateToCards,
             )
             1 -> PhotosTab(
                 photos        = state.data.photos,
@@ -535,7 +541,8 @@ private fun CimasTab(
     rarityFilter: String?,
     onQuery: (String) -> Unit,
     onRarityFilter: (String?) -> Unit,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
+    onCaptureFirstSummit: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
@@ -560,29 +567,10 @@ private fun CimasTab(
 
         // Search field
         item(key = "search") {
-            OutlinedTextField(
-                value         = query,
-                onValueChange = onQuery,
-                placeholder   = { Text(stringResource(R.string.profile_search_placeholder), fontSize = 14.sp, color = PeakSubtle) },
-                singleLine    = true,
-                leadingIcon   = {
-                    Icon(
-                        imageVector        = SearchIcon,
-                        contentDescription = null,
-                        tint               = PeakSubtle,
-                        modifier           = Modifier.size(18.dp),
-                    )
-                },
-                trailingIcon = if (query.isNotEmpty()) ({
-                    IconButton(onClick = { onQuery("") }) {
-                        Icon(
-                            imageVector        = CloseIcon,
-                            contentDescription = stringResource(R.string.action_clear),
-                            tint               = PeakSubtle,
-                            modifier           = Modifier.size(16.dp),
-                        )
-                    }
-                }) else null,
+            com.peakadex.app.core.ui.PeakSearchField(
+                value           = query,
+                onValueChange   = onQuery,
+                placeholder     = stringResource(R.string.profile_search_placeholder),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
                     onSearch = {
@@ -592,14 +580,6 @@ private fun CimasTab(
                         }
                     },
                 ),
-                shape  = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = PeakBlueActive,
-                    unfocusedBorderColor = PeakBorderLight,
-                    focusedContainerColor   = Color.White,
-                    unfocusedContainerColor = Color.White,
-                ),
-                textStyle = TextStyle(fontSize = 14.sp, color = PeakNavyDark),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -608,18 +588,21 @@ private fun CimasTab(
 
         if (peaks.isEmpty()) {
             item(key = "empty") {
-                Box(
-                    Modifier.fillMaxWidth().padding(48.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text     = if (query.isNotBlank() || rarityFilter != null)
-                            stringResource(R.string.profile_empty_filtered)
-                        else
-                            stringResource(R.string.profile_empty_peaks),
-                        fontSize = 14.sp,
-                        color    = PeakSubtle,
-                    )
+                if (query.isNotBlank() || rarityFilter != null) {
+                    // Filtered empty state
+                    Box(
+                        Modifier.fillMaxWidth().padding(48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text     = stringResource(R.string.profile_empty_filtered),
+                            fontSize = 14.sp,
+                            color    = PeakSubtle,
+                        )
+                    }
+                } else {
+                    // No ascents at all — show onboarding banner
+                    FirstCardOnboardingBanner(onCapture = onCaptureFirstSummit)
                 }
             }
         } else {
@@ -627,7 +610,7 @@ private fun CimasTab(
                 PeakRowCard(
                     peak      = peak,
                     rarityMap = rarityMap,
-                    onClick   = { onNavigateToLogbook(peak.id, peak.name) },
+                    onClick   = { onNavigateToCards(peak.id, peak.name) },
                     modifier  = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 5.dp),
@@ -818,16 +801,16 @@ private fun PeakRowCard(
                             color     = rarityColor,
                             darkColor = rarityColorDark,
                         )
+                        Spacer(Modifier.width(10.dp))
                     }
-                    Spacer(Modifier.weight(1f))
                     Text(
                         text       = "${peak.altitudeM} m",
                         fontSize   = 13.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color      = PeakNavyDark,
                         maxLines   = 1,
-                        modifier   = Modifier.width(76.dp),
                     )
+                    Spacer(Modifier.weight(1f))
                     Text(
                         text       = formatDate(peak.lastDate),
                         fontSize   = 12.sp,

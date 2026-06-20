@@ -10,6 +10,7 @@ export const PHOTOS_INCLUDE = {
     id: true,
     url: true,
     originalStorageKey: true,
+    cropAspect: true,
     faceDetections: {
       select: {
         faceTags: {
@@ -34,10 +35,9 @@ type RawAscent = {
   peak: {
     id: string; name: string; altitudeM: number; isMythic: boolean;
     mountainRange: string | null; latitude: number; longitude: number;
-    wikiTexts?: { lang: string; wikiUrl: string; body: string }[];
   };
   photos: {
-    id: string; url: string; originalStorageKey: string | null;
+    id: string; url: string; originalStorageKey: string | null; cropAspect: string | null;
     faceDetections: { faceTags: { userId: string | null; user: { id: string; name: string; username: string | null } | null }[] }[];
   }[];
   user: { name?: string | null; avatarUrl?: string | null } | null;
@@ -60,8 +60,6 @@ export function enrichAscent(
       }
     }
   }
-  const wikiTexts = a.peak.wikiTexts ?? [];
-  const wikiText = wikiTexts.find(w => w.lang === locale) ?? wikiTexts.find(w => w.lang === "en") ?? wikiTexts[0] ?? null;
   return {
     id: a.id,
     date: a.date.toISOString(),
@@ -69,10 +67,11 @@ export function enrichAscent(
     description: a.description,
     wikiloc: a.wikiloc,
     createdByUserId: a.createdBy,
-    peak: { ...a.peak, wikiTexts: undefined, wikiUrl: wikiText?.wikiUrl ?? null, wikiBody: wikiText?.body ?? null },
+    peak: a.peak,
     firstPhotoId: firstPhoto?.id ?? null,
     firstPhotoUrl: firstPhoto?.url ?? null,
     firstPhotoOriginalKey: firstPhoto?.originalStorageKey ?? null,
+    firstPhotoCropAspect: firstPhoto?.cropAspect ?? null,
     persons: Array.from(personMap.values()),
     isOwn,
     isUnseen: feedSeens ? feedSeens.length === 0 : false,
@@ -134,7 +133,7 @@ function buildFilters(opts: {
 }
 
 const ASCENT_INCLUDE = {
-  peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true, wikiTexts: { select: { lang: true, wikiUrl: true, body: true } } } },
+  peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true } },
   photos: PHOTOS_INCLUDE,
   user: { select: { id: true, name: true, avatarUrl: true } },
 } as const;
@@ -143,6 +142,8 @@ const ASCENT_INCLUDE_WITH_SEEN = (userId: string) => ({
   ...ASCENT_INCLUDE,
   feedSeens: { where: { userId }, select: { seenAt: true } },
 }) as const;
+
+const PUBLISHED_ASCENT_FILTER = { photos: { some: {} } } as const;
 
 export async function fetchFeedPage({
   userId,
@@ -198,6 +199,7 @@ export async function fetchFeedPage({
   // baseFilters (timeRange/month) and the per-stream cursor (beforeOwn/beforeFriends).
   const ownConditions: Record<string, unknown>[] = [
     { tenantId, createdBy: userId },
+    PUBLISHED_ASCENT_FILTER,
     ...baseFilters,
   ];
   if (beforeOwn) ownConditions.push({ date: { lt: beforeOwn } });
@@ -205,6 +207,7 @@ export async function fetchFeedPage({
 
   const friendsConditions: Record<string, unknown>[] = [
     { createdBy: { in: friendUserIds } },
+    PUBLISHED_ASCENT_FILTER,
     ...baseFilters,
   ];
   if (beforeFriends) friendsConditions.push({ date: { lt: beforeFriends } });
@@ -240,6 +243,7 @@ export async function fetchFeedPage({
       ? prisma.ascent.findFirst({
           where: {
             id: highlightId,
+            ...PUBLISHED_ASCENT_FILTER,
             OR: [
               { tenantId, createdBy: userId },
               { createdBy: { in: friendUserIds } },
@@ -311,4 +315,92 @@ export async function fetchFeedPage({
   const hasMore = nextBeforeOwn !== null || nextBeforeFriends !== null;
 
   return { ascents, hasMore, nextBeforeOwn, nextBeforeFriends };
+}
+
+export async function fetchFeedSummary({
+  userId,
+  tenantId,
+  friendUserIds,
+  view,
+  personId,
+  peakId,
+  month,
+  rarity,
+  mythic,
+  timeRange,
+}: {
+  userId: string;
+  tenantId: string;
+  friendUserIds: string[];
+  view?: View;
+  personId?: string;
+  peakId?: string;
+  month?: string;
+  rarity?: Rarity;
+  mythic?: boolean;
+  timeRange?: TimeRange;
+}) {
+  const db = await getTenantConnection(tenantId);
+  const baseFilters = buildFilters({ peakId, month, rarity, mythic, timeRange });
+
+  const runOwn = view !== "friends" && view !== "with-me";
+  const runFriends = view !== "mine" && friendUserIds.length > 0;
+
+  const personTagPredicate = personId
+    ? { photos: { some: { faceDetections: { some: { faceTags: { some: { userId: personId } } } } } } }
+    : null;
+
+  const withMeTagPredicate = view === "with-me"
+    ? { photos: { some: { faceDetections: { some: { faceTags: { some: { userId } } } } } } }
+    : null;
+
+  const ownConditions: Record<string, unknown>[] = [
+    { tenantId, createdBy: userId },
+    PUBLISHED_ASCENT_FILTER,
+    ...baseFilters,
+  ];
+  if (view === "person" && personTagPredicate) ownConditions.push(personTagPredicate);
+
+  const friendsConditions: Record<string, unknown>[] = [
+    { createdBy: { in: friendUserIds } },
+    PUBLISHED_ASCENT_FILTER,
+    ...baseFilters,
+  ];
+  if (view === "with-me" && withMeTagPredicate) friendsConditions.push(withMeTagPredicate);
+  if (view === "person" && personId) {
+    friendsConditions.push({
+      OR: [
+        { createdBy: personId },
+        ...(personTagPredicate ? [personTagPredicate] : []),
+      ],
+    });
+  }
+
+  const [ownCount, ownPeaks, friendsCount, friendPeaks] = await Promise.all([
+    runOwn
+      ? db.ascent.count({ where: { AND: ownConditions } })
+      : Promise.resolve(0),
+    runOwn
+      ? db.ascent.findMany({
+          where: { AND: ownConditions },
+          select: { peakId: true },
+          distinct: ["peakId"],
+        })
+      : Promise.resolve([]),
+    runFriends
+      ? prisma.ascent.count({ where: { AND: friendsConditions } })
+      : Promise.resolve(0),
+    runFriends
+      ? prisma.ascent.findMany({
+          where: { AND: friendsConditions },
+          select: { peakId: true },
+          distinct: ["peakId"],
+        })
+      : Promise.resolve([]),
+  ]);
+
+  return {
+    totalAscents: ownCount + friendsCount,
+    uniquePeaks: new Set([...ownPeaks, ...friendPeaks].map((a) => a.peakId)).size,
+  };
 }

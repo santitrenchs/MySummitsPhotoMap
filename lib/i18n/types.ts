@@ -7,7 +7,7 @@ export type Dict = {
   lang_en: string; lang_es: string; lang_ca: string; lang_fr: string; lang_de: string;
 
   // Nav
-  nav_map: string; nav_ascents: string;
+  nav_map: string; nav_ascents: string; nav_bitacora: string; nav_cordadas: string;
   nav_settings: string; nav_signOut: string; nav_profile: string;
   nav_comingSoon: string; nav_logAscent: string;
 
@@ -51,7 +51,7 @@ export type Dict = {
   // Ascent detail
   detail_with: string; detail_photos: string; detail_addPhotos: string;
   detail_location: string; detail_routeWikiloc: string; detail_openWikiloc: string;
-  detail_editPhoto: string; detail_tagPeople: string; detail_reCrop: string;
+  detail_editPhoto: string; detail_tagPeople: string; detail_reCrop: string; detail_changePhoto: string;
   detail_viewOnMap: string; detail_addPhoto: string;
   detail_addWikiloc: string; detail_and: string;
 
@@ -106,6 +106,14 @@ export type Dict = {
   friends_taggedSection: string;
   friends_block: string; friends_blocked: string; friends_unblock: string;
   friends_blockedSection: string; friends_friendsSection: string; friends_addSection: string;
+
+  // Cordadas
+  cordadas_createTitle: string; cordadas_nameLabel: string; cordadas_namePlaceholder: string;
+  cordadas_descriptionLabel: string; cordadas_descriptionPlaceholder: string;
+  cordadas_createBtn: string; cordadas_creating: string;
+  cordadas_inviteTitle: string; cordadas_allInvited: string;
+  cordadas_invited: string; cordadas_invite: string;
+  cordadas_photoLabel: string; cordadas_changePhoto: string; cordadas_founder: string;
 
   // Settings
   settings_title: string; settings_subtitle: string; settings_language: string;
@@ -290,8 +298,9 @@ export type Dict = {
   home_rarityChartTitle: string;
   // Peakadex capture cards
   card_capturedSummit: string; card_capturedMythicSummit: string;
-  card_peakCapture: string; card_mythic: string;
+  card_peakCapture: string; card_mythic: string; card_cordada_label: string; card_cordada_label_other: string; share_tapToFlip: string;
   card_rarity: string; card_altitude: string; card_reward: string;
+  capture_reveal_captured: string;
   share_joinCta: string;
   card_share: string; card_shareCopied: string; card_shareError: string; card_shareCopyLink: string;
   card_shareTitle: string; card_shareWhatsapp: string; card_shareInstagramStory: string; card_shareDownload: string;

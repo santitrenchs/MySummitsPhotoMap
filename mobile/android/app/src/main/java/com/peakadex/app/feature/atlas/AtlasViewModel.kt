@@ -35,11 +35,15 @@ data class SelectedPeakUi(
 data class AtlasUiState(
     val isLoadingAscents: Boolean = true,
     val climbedByPeakId: Map<String, MapAscent> = emptyMap(),
-    val viewportPeaks: List<Peak> = emptyList(),    // unclimbed peaks in viewport
+    // Accumulative cache of all unclimbed peaks seen so far (keyed by peak id).
+    // Merges on every viewport fetch — never replaces — so peaks remain available
+    // after the camera moves away, exactly like peaksCacheRef in the web MapView.
+    val peaksCache: Map<String, Peak> = emptyMap(),
     val listPeaks: List<Peak> = emptyList(),         // fixed-radius peaks for list view
     val isLoadingList: Boolean = false,
     val filter: AtlasFilter = AtlasFilter.ALL,
     val selectedRarityIds: Set<String> = emptySet(), // empty = all rarities
+    val mythicFilter: Boolean = false,
     val sortMode: SortMode = SortMode.DISTANCE,
     val rarities: List<Rarity> = emptyList(),
     val selected: SelectedPeakUi? = null,
@@ -57,6 +61,9 @@ private const val TAG = "AtlasViewModel"
 // firing mid-animation (camera idle fires 2-3× during a single fly-to).
 private const val VIEWPORT_DEBOUNCE_MS = 500L
 private const val SEARCH_DEBOUNCE_MS   = 300L
+// Maximum entries in the peaks cache. Oldest keys are evicted when exceeded,
+// mirroring the CACHE_MAX eviction in the web MapView's peaksCacheRef.
+private const val PEAKS_CACHE_MAX = 2000
 
 private data class ViewportBounds(
     val north: Double, val south: Double,
@@ -124,34 +131,65 @@ class AtlasViewModel : ViewModel() {
                 val climbed = _uiState.value.climbedByPeakId
                 val unclimbed = response.peaks.filter { it.id !in climbed }
                 val culled = applyViewportScore(unclimbed, zoom, centerLat, centerLon)
-                _uiState.update { it.copy(viewportPeaks = culled) }
+                // Merge into the accumulative cache — never replace. This mirrors the web
+                // MapView's peaksCacheRef so peaks remain selectable after the camera moves.
+                _uiState.update { state ->
+                    val merged = LinkedHashMap<String, Peak>(state.peaksCache)
+                    for (p in culled) merged[p.id] = p
+                    // Evict oldest entries if the cache is too large
+                    val evicted = if (merged.size > PEAKS_CACHE_MAX) {
+                        val drop = merged.size - PEAKS_CACHE_MAX
+                        val iter = merged.iterator()
+                        repeat(drop) { if (iter.hasNext()) { iter.next(); iter.remove() } }
+                        merged
+                    } else merged
+                    state.copy(peaksCache = evicted)
+                }
             }
         }
     }
 
     fun onFilterChanged(filter: AtlasFilter) {
         _uiState.update { it.copy(filter = filter, selected = null) }
-        // Switching away from CLIMBED leaves viewportPeaks stale (they were skipped while
-        // CLIMBED was active). Re-fetch immediately so unclimbed peaks appear at once.
-        if (filter != AtlasFilter.CLIMBED && _uiState.value.viewportPeaks.isEmpty()) {
+        // Switching away from CLIMBED: peaksCache may be empty if no viewport fetches ran.
+        // Re-fetch immediately so unclimbed peaks appear at once.
+        if (filter != AtlasFilter.CLIMBED && _uiState.value.peaksCache.isEmpty()) {
             lastBounds?.let { b -> onMapIdle(b.north, b.south, b.east, b.west, b.zoom) }
         }
     }
 
     fun onRarityFilterChanged(ids: Set<String>) {
-        _uiState.update { it.copy(selectedRarityIds = ids) }
+        _uiState.update { it.copy(selectedRarityIds = ids, mythicFilter = false) }
+    }
+
+    fun onMythicFilterChanged(enabled: Boolean) {
+        _uiState.update { it.copy(mythicFilter = enabled, selectedRarityIds = emptySet()) }
     }
 
     fun onSortModeChanged(mode: SortMode) {
         _uiState.update { it.copy(sortMode = mode) }
     }
 
-    fun onPeakSelected(peakId: String) {
+    // Called from list, search results, or any context where the full Peak object is available.
+    // Never does a lookup — cannot fail silently. Mirrors web's flyToPeak(peak).
+    fun onPeakSelected(peak: Peak) {
+        val ascent = _uiState.value.climbedByPeakId[peak.id]
+        // Also add to cache so the map can render it even if it was outside the viewport.
+        _uiState.update { state ->
+            val merged = LinkedHashMap<String, Peak>(state.peaksCache)
+            merged[peak.id] = peak
+            state.copy(peaksCache = merged, selected = SelectedPeakUi(peak, ascent))
+        }
+    }
+
+    // Called from map tap events where only the peakId from the GeoJSON feature is available.
+    fun onPeakSelectedById(peakId: String) {
         val state = _uiState.value
         val ascent = state.climbedByPeakId[peakId]
         val peak = ascent?.peak
-            ?: state.viewportPeaks.find { it.id == peakId }
+            ?: state.peaksCache[peakId]
             ?: state.searchResults.find { it.id == peakId }
+            ?: state.listPeaks.find { it.id == peakId }
             ?: return
         _uiState.update { it.copy(selected = SelectedPeakUi(peak, ascent)) }
     }
@@ -242,7 +280,13 @@ class AtlasViewModel : ViewModel() {
         val west  = centerLon - 0.60
         runCatching { api.getViewportPeaks(north, south, east, west, zoom = 12) }
             .onSuccess { response ->
-                _uiState.update { it.copy(listPeaks = response.peaks, isLoadingList = false) }
+                // Merge into the accumulative cache so tapping a peak from the list
+                // works even if its area is outside the current map viewport.
+                _uiState.update { state ->
+                    val merged = LinkedHashMap<String, Peak>(state.peaksCache)
+                    for (p in response.peaks) merged[p.id] = p
+                    state.copy(listPeaks = response.peaks, peaksCache = merged, isLoadingList = false)
+                }
             }
             .onFailure {
                 _uiState.update { it.copy(isLoadingList = false) }
@@ -254,6 +298,7 @@ class AtlasViewModel : ViewModel() {
             it.copy(
                 filter            = AtlasFilter.ALL,
                 selectedRarityIds = emptySet(),
+                mythicFilter      = false,
                 sortMode          = SortMode.DISTANCE,
             )
         }

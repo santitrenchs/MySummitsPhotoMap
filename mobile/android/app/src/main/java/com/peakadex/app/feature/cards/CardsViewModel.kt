@@ -1,10 +1,13 @@
-package com.peakadex.app.feature.logbook
+package com.peakadex.app.feature.cards
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.R
+import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.model.Ascent
+import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -18,34 +21,34 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 
-private const val TAG = "LogbookViewModel"
+private const val TAG = "CardsViewModel"
 
-sealed class LogbookUiState {
-    data object Loading : LogbookUiState()
-    data class Success(val ascents: List<Ascent>) : LogbookUiState()
-    data class Error(val message: String) : LogbookUiState()
+sealed class CardsUiState {
+    data object Loading : CardsUiState()
+    data class Success(val ascents: List<Ascent>) : CardsUiState()
+    data class Error(val message: UiText) : CardsUiState()
 }
 
-class LogbookViewModel : ViewModel() {
+class CardsViewModel : ViewModel() {
 
     private val api = AppContainer.apiService
 
-    private val _uiState      = MutableStateFlow<LogbookUiState>(LogbookUiState.Loading)
-    val uiState: StateFlow<LogbookUiState> = _uiState.asStateFlow()
+    private val _uiState      = MutableStateFlow<CardsUiState>(CardsUiState.Loading)
+    val uiState: StateFlow<CardsUiState> = _uiState.asStateFlow()
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     // ── Filter state ──────────────────────────────────────────────────────────
 
-    private val _filters = MutableStateFlow(LogbookFilterState())
-    val filters: StateFlow<LogbookFilterState> = _filters.asStateFlow()
+    private val _filters = MutableStateFlow(CardsFilterState())
+    val filters: StateFlow<CardsFilterState> = _filters.asStateFlow()
 
     // ── Derived: filtered + sorted ascents ───────────────────────────────────
     // Survives configuration changes; reacts to both data and filter mutations.
 
     val filteredAscents: StateFlow<List<Ascent>> = combine(_uiState, _filters) { state, filters ->
-        if (state !is LogbookUiState.Success) emptyList()
+        if (state !is CardsUiState.Success) emptyList()
         else applyFilters(state.ascents, filters)
     }.stateIn(
         scope         = viewModelScope,
@@ -60,7 +63,7 @@ class LogbookViewModel : ViewModel() {
     fun load() {
         currentJob?.cancel()
         currentJob = viewModelScope.launch {
-            _uiState.value = LogbookUiState.Loading
+            _uiState.value = CardsUiState.Loading
             fetch()
         }
     }
@@ -88,13 +91,13 @@ class LogbookViewModel : ViewModel() {
 
     fun clearFilters() {
         // Preserves search text; only resets the filter panel state.
-        _filters.value = LogbookFilterState(search = _filters.value.search)
+        _filters.value = CardsFilterState(search = _filters.value.search)
     }
 
     private suspend fun fetch() {
         try {
             val response = api.getAscents()
-            _uiState.value = LogbookUiState.Success(response.ascents)
+            _uiState.value = CardsUiState.Success(response.ascents)
             // After the feed loads, mark unseen friends' ascents as seen after a short delay
             // (simulates the user having "seen" them — same behaviour as web).
             // This updates the FeedSeen table so next refresh they appear in date order.
@@ -103,13 +106,13 @@ class LogbookViewModel : ViewModel() {
             throw e   // never swallow cancellation — structured concurrency requires it
         } catch (e: HttpException) {
             Log.e(TAG, "getAscents HTTP ${e.code()}")
-            _uiState.value = LogbookUiState.Error("Error del servidor (${e.code()})")
+            _uiState.value = CardsUiState.Error(UiText.Dynamic("Error ${e.code()}"))
         } catch (e: IOException) {
             Log.e(TAG, "getAscents network error", e)
-            _uiState.value = LogbookUiState.Error("Sin conexión. Comprueba tu red.")
+            _uiState.value = CardsUiState.Error(UiText.StringRes(R.string.error_no_connection))
         } catch (e: Exception) {
             Log.e(TAG, "getAscents unexpected", e)
-            _uiState.value = LogbookUiState.Error("Error inesperado: ${e.message}")
+            _uiState.value = CardsUiState.Error(UiText.StringRes(R.string.error_unexpected))
         }
     }
 
@@ -117,6 +120,7 @@ class LogbookViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 api.shareAscent(id)
+                Telemetry.logEvent(Telemetry.Event.ASCENT_SHARED, mapOf("ascent_id" to id))
                 Log.d(TAG, "Ascent $id marked as public for sharing")
             } catch (e: Exception) {
                 Log.d(TAG, "shareAscent non-critical failure: ${e.message}")

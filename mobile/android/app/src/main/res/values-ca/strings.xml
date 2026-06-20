@@ -5,7 +5,7 @@
     <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_cordada">Cordada</string>
     <string name="nav_tab_map">Atlas</string>
-    <string name="nav_tab_logbook">Bitàcola</string>
+    <string name="nav_tab_bitacora">Bitàcola</string>
     <string name="nav_tab_cards">Cartes</string>
     <string name="nav_fab_new_ascent">Nova ascensió</string>
 
@@ -36,6 +36,24 @@
     <string name="auth_password_show">Mostra</string>
     <string name="auth_tagline_p1">Converteix els teus cims</string>
     <string name="auth_tagline_p2">en cartes col·leccionables.</string>
+    <string name="auth_register_title">Crear compte</string>
+    <string name="auth_register_subtitle">Comença a registrar els teus cims</string>
+    <string name="auth_name_placeholder">Nom</string>
+    <string name="auth_confirm_password_placeholder">Confirmar contrasenya</string>
+    <string name="auth_invite_code_placeholder">Codi d\'invitació (opcional)</string>
+    <string name="auth_register_btn">Crear compte</string>
+    <string name="auth_have_account">Ja tens compte?</string>
+    <string name="auth_sign_in_link">Inicia sessió</string>
+    <string name="auth_terms_prefix">He llegit i accepto els </string>
+    <string name="auth_terms_link">Termes i condicions</string>
+    <string name="auth_terms_and"> i la </string>
+    <string name="auth_privacy_link">Política de privacitat</string>
+    <string name="auth_username_placeholder">nom d\'usuari</string>
+    <string name="auth_username_hint">Es genera automàticament a partir del teu nom</string>
+    <string name="auth_creating_account">Creant compte…</string>
+    <string name="auth_legal_marketing">Accepto rebre novetats i comunicacions de Peakadex (opcional)</string>
+    <string name="auth_legal_must_accept">Has d\'acceptar els termes i la política de privacitat</string>
+    <string name="error_username_taken_register">Aquest nom d\'usuari ja està en ús. Prova\'n un altre.</string>
 
     <!-- ── Perfil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Perfil</string>
@@ -56,20 +74,28 @@
     <string name="profile_empty_tagged">Encara no t\'han etiquetat en cap foto</string>
 
     <!-- ── Bitàcola / Cartes ─────────────────────────────────────────────────── -->
-    <string name="logbook_filter_mine">Les meves Cartes</string>
-    <string name="logbook_filter_friends">La meva Cordada</string>
-    <string name="logbook_stat_rarity">RARESA</string>
-    <string name="logbook_stat_altitude">ALTITUD</string>
-    <string name="logbook_stat_ep">EP</string>
-    <string name="logbook_stats_title">ESTADÍSTIQUES PEAKADEX</string>
-    <string name="logbook_stat_ascents">ASCENSIONS</string>
-    <string name="logbook_stat_climbers">ALPINISTES</string>
-    <string name="logbook_empty_friends_title">Sense activitat d\'amics</string>
-    <string name="logbook_empty_friends_desc">Quan els teus amics registrin cims apareixeran aquí.\nUsa el filtre per veure les teves pròpies ascensions.</string>
-    <string name="logbook_empty_mine_title">La teva bitàcola és buida</string>
-    <string name="logbook_empty_mine_desc">Registra la teva primera ascensió per començar.</string>
-    <string name="logbook_empty_search_title">Sense resultats</string>
-    <string name="logbook_empty_search_desc">Prova a ajustar la cerca o els filtres.</string>
+    <string name="cards_filter_mine">Les meves Cartes</string>
+    <string name="cards_filter_friends">La meva Cordada</string>
+    <string name="cards_search_hint">Cerca cims…</string>
+    <string name="cards_filters_title">Filtres</string>
+    <string name="cards_filters_clear">Netejar tot</string>
+    <string name="cards_filters_section_view">VISTA</string>
+    <string name="cards_filters_section_rarity">RARESA</string>
+    <string name="cards_filters_see_cards">Veure %d cartes</string>
+    <string name="cards_stat_rarity">RARESA</string>
+    <string name="cards_stat_altitude">ALTITUD</string>
+    <string name="cards_stat_reward">RECOMPENSA</string>
+    <string name="cards_stats_title">ESTADÍSTIQUES PEAKADEX</string>
+    <string name="card_cordada_label">La teva Cordada:</string>
+    <string name="card_cordada_label_other">Cordada:</string>
+    <string name="cards_stat_ascents">ASCENSIONS</string>
+    <string name="cards_stat_climbers">ALPINISTES</string>
+    <string name="cards_empty_friends_title">Sense activitat d\'amics</string>
+    <string name="cards_empty_friends_desc">Quan els teus amics registrin cims apareixeran aquí.\nUsa el filtre per veure les teves pròpies ascensions.</string>
+    <string name="cards_empty_mine_title">La teva bitàcola és buida</string>
+    <string name="cards_empty_mine_desc">Registra la teva primera ascensió per començar.</string>
+    <string name="cards_empty_search_title">Sense resultats</string>
+    <string name="cards_empty_search_desc">Prova a ajustar la cerca o els filtres.</string>
 
     <!-- ── Home ─────────────────────────────────────────────────────────────── -->
     <string name="home_stat_ascents_label">ascensions</string>
@@ -81,6 +107,10 @@
     <string name="home_no_friends_title">Competeix amb els teus amics!</string>
     <string name="home_no_friends_desc">Convida amics per veure la teva posició a la cordada.</string>
     <string name="home_invite_friends_btn">Convidar amics</string>
+    <string name="home_solo_placeholder">Aquí apareixeran els teus amics</string>
+    <string name="home_solo_invite_btn">Convidar amics</string>
+    <string name="home_solo_empty_title">La teva cordada és buida.</string>
+    <string name="home_solo_empty_desc">Convida els teus primers companys per compartir cims i competir junts.</string>
     <string name="home_empty_ascents_desc">Comença a construir el teu historial de cims.</string>
     <string name="home_register_ascent_btn">+ Registrar ascensió</string>
     <string name="home_levels_see_all">Veure tots els nivells →</string>
@@ -94,6 +124,15 @@
     <string name="home_period_peaks_suffix"> cims</string>
     <string name="home_period_meters_suffix"> m ascendits</string>
     <string name="home_onboarding_title">🏔️ Registra la teva primera ascensió</string>
+    <string name="onboarding_card_title">La teva primera carta t\'espera</string>
+    <string name="onboarding_card_desc">Captura un cim i desbloqueja la teva primera carta col·leccionable de muntanya.</string>
+    <string name="onboarding_card_btn">Capturar</string>
+    <string name="onboarding_card_peak">Mont Blanc</string>
+    <string name="onboarding_card_user">Luc Moreau</string>
+    <string name="onboarding_card_date">22 jul 2023</string>
+    <string name="onboarding_card_altitude">4.808 m</string>
+    <string name="onboarding_card_rarity">Edelweiss</string>
+    <string name="onboarding_card_coords">45.8326°N · 6.8652°E</string>
     <string name="home_hero_alt_for_level">Superar els %1$dm per a %2$s</string>
     <string name="home_hero_for_level">per a %s</string>
     <string name="home_level_req_altitude">Superar els %dm</string>
@@ -110,11 +149,17 @@
 
     <!-- ── Nova ascensió ─────────────────────────────────────────────────────── -->
     <string name="new_ascent_title">Registrar ascensió</string>
+    <string name="new_ascent_edit_title">Editar ascensió</string>
+    <string name="new_ascent_delete">Eliminar ascensió</string>
+    <string name="new_ascent_delete_confirm">Vols eliminar aquesta ascensió? Aquesta acció no es pot desfer.</string>
+    <string name="new_ascent_change_photo">Canviar foto</string>
     <string name="new_ascent_add_photo">Afegeix una foto</string>
     <string name="new_ascent_photo_formats">JPEG · PNG · WebP · màx. 10 MB</string>
     <string name="new_ascent_select_photo_btn">Seleccionar foto</string>
     <string name="new_ascent_rotate_btn">  Girar 90°</string>
     <string name="new_ascent_next_btn">Següent</string>
+    <string name="new_ascent_crop_portrait">4:5</string>
+    <string name="new_ascent_crop_landscape">Horitzontal</string>
     <string name="new_ascent_save_btn">Desar</string>
     <string name="new_ascent_discard_title">Descartar ascensió?</string>
     <string name="new_ascent_discard_message">Perdràs la foto i les dades introduïdes.</string>
@@ -128,9 +173,7 @@
     <string name="new_ascent_route_placeholder">Nom de la ruta...</string>
     <string name="new_ascent_notes_placeholder">Afegeix una descripció, condicions...</string>
     <string name="new_ascent_tag_placeholder">Cercar persona...</string>
-    <string name="capture_reveal_title">Raresa \"%1$s\" capturada</string>
-    <string name="capture_reveal_subtitle">Nova flor afegida a les teves cards</string>
-    <string name="capture_reveal_continue">Toca per continuar</string>
+    <string name="capture_reveal_captured">Cim capturat!</string>
 
     <!-- ── Ajustos ───────────────────────────────────────────────────────────── -->
     <string name="settings_title">Ajustos</string>
@@ -215,6 +258,8 @@
     <string name="atlas_layers_satellite">Satèl·lit</string>
     <string name="atlas_layers_section">CAPES</string>
     <string name="atlas_layers_trails">Senders</string>
+    <string name="atlas_layers_huts">Refugis</string>
+    <string name="atlas_layers_parks">Parcs</string>
 
     <!-- ── Atlas — detall de cim ─────────────────────────────────────────────── -->
     <string name="atlas_peak_unclimbed">Encara sense escalar</string>
@@ -241,6 +286,9 @@
     <string name="atlas_section_sort">ORDENAR</string>
     <string name="atlas_filter_captured">Capturades (%d)</string>
     <string name="atlas_filter_not_captured">Per escalar</string>
+    <string name="atlas_filter_mythic">⭐ Mític</string>
+    <string name="cards_filter_mythic">⭐ Mític</string>
+    <string name="card_mythic">MYTHIC</string>
     <string name="atlas_sort_distance">Distància</string>
     <string name="atlas_sort_relevance">Rellevància</string>
     <string name="atlas_sort_altitude">Altitud</string>
@@ -334,4 +382,44 @@
     <string name="cordadas_photo_hint">S\'usarà com a portada i avatar</string>
     <string name="cordadas_edit_photo">Editar foto</string>
     <string name="cordadas_delete_warning">Aquesta acció no es pot desfer</string>
+
+    <!-- ── Errors ─────────────────────────────────────────────────────────────── -->
+    <string name="error_fields_required">Si us plau, omple tots els camps</string>
+    <string name="error_invalid_credentials">Correu electrònic o contrasenya incorrectes</string>
+    <string name="error_too_many_attempts">Massa intents. Espera un moment</string>
+    <string name="error_server_response">Error en processar la resposta del servidor</string>
+    <string name="error_no_connection">Sense connexió a internet</string>
+    <string name="error_unexpected">Error inesperat. Torna-ho a intentar</string>
+    <string name="error_passwords_mismatch">Les contrasenyes no coincideixen</string>
+    <string name="error_password_too_short">La contrasenya ha de tenir almenys 8 caràcters</string>
+    <string name="error_invite_code_invalid">Codi d\'invitació invàlid o caducat</string>
+    <string name="error_email_already_exists">Ja existeix un compte amb aquest correu</string>
+    <string name="error_google_no_account">No s\'ha trobat cap compte de Google en aquest dispositiu. Afegeix un compte als Ajustos del sistema i torna-ho a intentar.</string>
+    <string name="error_google_unexpected">Error inesperat amb Google Sign-In</string>
+    <string name="error_load_profile">Error en carregar el perfil</string>
+    <string name="error_load_config">Error en carregar la configuració</string>
+    <string name="error_name_empty">El nom no pot estar buit</string>
+    <string name="error_username_taken">Aquest nom d\'usuari ja està en ús</string>
+    <string name="error_save">Error en desar</string>
+    <string name="error_password_current_required">Introdueix la teva contrasenya actual</string>
+    <string name="error_password_current_wrong">Contrasenya actual incorrecta</string>
+    <string name="error_password_change">Error en canviar la contrasenya</string>
+    <string name="error_save_language">Error en desar l\'idioma</string>
+    <string name="error_unlink_google">Error en desvincular Google</string>
+    <string name="error_load_photo">No s\'ha pogut carregar la foto</string>
+    <string name="error_select_peak">Selecciona un cim</string>
+    <string name="error_photo_required">La foto és obligatòria</string>
+    <string name="error_crop_photo">No s\'ha pogut retallar la foto</string>
+    <string name="cards_you">Tu</string>
+    <string name="settings_username_format_error">Només lletres, números, punts i guions baixos (3–20 caràcters)</string>
+    <!-- ── Atlas onboarding ─────────────────────────────────────────────────── -->
+    <string name="map_onboarding_title">Captura les rareses\nde la muntanya</string>
+    <string name="map_onboarding_sub">Cada cim amaga una flor única. Com més alt arribes, més rara és la troballa. Explora, ascendeix i construeix la teva col·lecció.</string>
+    <string name="map_onboarding_rarities">Nivells de raresa</string>
+    <string name="map_onboarding_cta">Explorar el mapa</string>
+    <string name="map_onboarding_dont_show">No tornar a mostrar</string>
+    <string name="cards_friends_empty">Els teus amics encara no han pujat cap cim.</string>
+    <string name="cards_friends_empty_subtitle">Continua escalant i comparteix les teves ascensions.</string>
+    <string name="cards_mine_empty">Encara no tens cap ascensió registrada.</string>
+    <string name="cards_mine_empty_subtitle">Captura el teu primer cim per començar.</string>
 </resources>

@@ -4,7 +4,7 @@ export const ca: Dict = {
   dateLocale: "ca-ES",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Bitàcola",
+  nav_map: "Atlas", nav_ascents: "Cards", nav_bitacora: "Bitàcola", nav_cordadas: "Cordada",
   nav_settings: "Configuració", nav_signOut: "Tancar sessió", nav_profile: "Perfil",
   nav_comingSoon: "Aviat", nav_logAscent: "Registrar ascensió",
 
@@ -38,8 +38,8 @@ export const ca: Dict = {
   newAscent_savingAscent: "Desant ascensió…",
   newAscent_uploadingPhoto: "Pujant foto {i} de {n}…",
   newAscent_savingTags: "Desant etiquetes de la foto {i}…",
-  newAscent_save: "Desar canvis",
-  newAscent_saveChanges: "Desar canvis", newAscent_delete: "Eliminar ascensió",
+  newAscent_save: "Desar",
+  newAscent_saveChanges: "Desar", newAscent_delete: "Eliminar ascensió",
   newAscent_saveWithPhotos: "Desar + {n} foto(s)",
   newAscent_photoFailed: "Ascensió desada, però la foto {i} no s'ha pogut pujar.",
   newAscent_tagged: "{n} etiquetats",
@@ -52,7 +52,7 @@ export const ca: Dict = {
   detail_with: "Amb", detail_photos: "Fotos · {n}", detail_addPhotos: "Afegir fotos",
   detail_location: "Ubicació", detail_routeWikiloc: "Ruta · Wikiloc",
   detail_openWikiloc: "Obrir a Wikiloc ↗",
-  detail_editPhoto: "Editar foto", detail_tagPeople: "Etiquetar", detail_reCrop: "Re-enquadrar",
+  detail_editPhoto: "Editar foto", detail_tagPeople: "Etiquetar", detail_reCrop: "Re-enquadrar", detail_changePhoto: "Canviar foto",
   detail_viewOnMap: "🗺  Veure al mapa", detail_addPhoto: "Afegir foto",
   detail_addWikiloc: "Afegir ruta Wikiloc", detail_and: "i",
   date_today: "Avui", date_selectYear: "Selecciona l'any",
@@ -64,7 +64,7 @@ export const ca: Dict = {
 
   ascents_newAscent: "+ Nova ascensió", ascents_logTitle: "Registrar ascensió", ascents_editTitle: "Editar ascensió",
   ascents_emptyTitle: "Encara sense ascensions", ascents_emptySub: "Registra el teu primer cim des del mapa o aquí",
-  ascents_title: "Ascensions", ascents_search: "🔍  Cerca cims, rutes, amics…",
+  ascents_title: "Cards", ascents_search: "🔍  Cerca cims, rutes, amics…",
   ascents_filters: "Filtres", ascents_allYears: "Tots els anys", ascents_allPeople: "Tots els amics",
   ascents_withPhoto: "📸 Amb foto", ascents_clearAll: "Netejar tot",
   ascents_noResults: "Cap ascensió trobada", ascents_noResultsSub: "Prova d'ajustar els filtres",
@@ -86,13 +86,19 @@ export const ca: Dict = {
   friends_add: "Afegir", friends_requestSent: "Enviada", friends_alreadyFriends: "Amics",
   friends_accept: "Acceptar", friends_reject: "Ignorar", friends_remove: "Eliminar amic",
   friends_cancel: "Cancel·lar sol·licitud", friends_pendingSection: "Sol·licituds ({n})",
-  friends_noPending: "Sense sol·licituds pendents", friends_noFriends: "Encara no tens amics a Peakadex",
-  friends_noFriendsSub: "Cerca els teus companys de muntanya aquí dalt",
+  friends_noPending: "Sense sol·licituds pendents", friends_noFriends: "Encara no tens amics a Peakadex.",
+  friends_noFriendsSub: "Convida els teus companys de cordada o crea un grup per començar.",
   friends_noResults: "No s'han trobat usuaris", friends_since: "Amics des de",
   friends_filterResults: "{n} resultat{n,plural,=1{}other{s}}",
   friends_seeMore: "Veure'n més ({n} restants)",
   friends_block: "Bloquejar", friends_blocked: "Bloquejat", friends_unblock: "Desbloquejar",
   friends_blockedSection: "Bloquejats", friends_friendsSection: "Amics", friends_addSection: "Afegir amics",
+  cordadas_createTitle: "Nova cordada", cordadas_nameLabel: "Nom", cordadas_namePlaceholder: "Ex. Els Piolets",
+  cordadas_descriptionLabel: "Descripció", cordadas_descriptionPlaceholder: "Qui sou? Quines muntanyes teniu en ment?",
+  cordadas_createBtn: "Crear cordada", cordadas_creating: "Creant…",
+  cordadas_inviteTitle: "Convidar amics", cordadas_allInvited: "Tots els teus amics ja pertanyen a aquesta cordada.",
+  cordadas_invited: "Convidat ✓", cordadas_invite: "Convidar",
+  cordadas_photoLabel: "Foto de portada", cordadas_changePhoto: "Canviar foto", cordadas_founder: "Fundador",
 
 
 
@@ -223,7 +229,7 @@ export const ca: Dict = {
 
 
 
-  nav_home: "Peakadex stats",
+  nav_home: "Stats",
   home_greeting: "Hola, {name} 👋",
   home_statSummits: "Cims", home_statPhotos: "Fotos",
   home_statRegions: "Regions", home_statFriends: "Amics",
@@ -310,8 +316,9 @@ export const ca: Dict = {
   auth_backToLogin: "Tornar a l'inici de sessió",
 
   card_capturedSummit: "ha capturat un cim", card_capturedMythicSummit: "ha capturat una cima mítica",
-  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
+  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC", card_cordada_label: "La teva Cordada:", card_cordada_label_other: "Cordada:", share_tapToFlip: "Toca la carta per veure el revers",
   card_rarity: "Raresa", card_altitude: "Altitud", card_reward: "Recompensa",
+  capture_reveal_captured: "Cim capturat!",
   share_joinCta: "Uneix-te a Peakadex →",
   card_share: "Compartir", card_shareCopied: "Copiat!", card_shareError: "Error en compartir", card_shareCopyLink: "Copiar enllaç",
   card_shareTitle: "Comparteix aquest cim", card_shareWhatsapp: "Enviar a amics", card_shareInstagramStory: "Instagram Story", card_shareDownload: "Descarregar imatge",

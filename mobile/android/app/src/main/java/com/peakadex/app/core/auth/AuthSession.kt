@@ -1,5 +1,6 @@
 package com.peakadex.app.core.auth
 
+import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.api.AuthInterceptor
 import com.peakadex.app.core.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,16 +37,19 @@ class AuthSession(
         tokenStorage.saveUserProfile(user.name, user.avatarUrl)
         authInterceptor.token = token
         _currentUser.value = user
+        Telemetry.setUser(user.id)
     }
 
     fun updateUser(user: User) {
         tokenStorage.saveUserProfile(user.name, user.avatarUrl)
         _currentUser.value = user
+        Telemetry.setUser(user.id)
     }
 
     fun logout() {
         tokenStorage.deleteToken()
         authInterceptor.token = null
         _currentUser.value = null
+        Telemetry.clearUser()
     }
 }

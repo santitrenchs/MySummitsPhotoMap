@@ -311,6 +311,17 @@ Android `HomeScreen`/Stats uses a **structural skeleton**, not a generic spinner
 - shimmer blocks reuse the existing quiet neutral palette; no marketing-style cards or decorative gradients.
 - Keep dimensions stable; the skeleton should reserve the same space as the real content.
 - Compile gotcha fixed 2026-06-02: if shimmer/offset helpers use `Offset`, import `androidx.compose.ui.geometry.Offset`.
+- Android status/header area must use the same page background as the rest of the skeleton. Do not add a darker or stronger top band above the first skeleton block.
+
+### Android Bitácora + Cards Skeletons
+
+Android `LogbookScreen` and Cards use structural skeletons in the same quiet style as Stats:
+- same top bar/logo/avatar context as the loaded screen.
+- same page background from top to bottom; no stronger header color or separate top band.
+- same spacing rhythm and stable row/card dimensions as the loaded content.
+- Bitácora skeleton: filter/search area placeholder followed by feed-card placeholders.
+- Cards skeleton: tab row placeholder followed by a card-shaped placeholder matching the flip-card footprint.
+- Shimmer blocks use neutral surfaces only; no decorative gradients or fake content labels.
 
 ### Android Photo Cropper Rule
 
@@ -400,10 +411,10 @@ container: textAlign center · padding 80px 0
 | 1 | HeroHeader | Always | ✅ | ✅ |
 | 2 | OnboardingBanner | `totalAscents == 0` | ✅ | ✅ |
 | 3 | ProgressionSection | Always | ❌ removed 2026-05-30 | ✅ |
-| 4 | MonthlyChartSection | `totalAscents >= 1` AND `monthlyStats` not empty | ✅ | ✅ |
-| 5 | RarityChartSection | `totalAscents >= 1` | ✅ | ✅ |
-| 6 | LeaderboardCard | `leaderboard.size > 1` — title **"Tu cordada"** | ✅ | ✅ |
-| 7 | NoFriendsCta | `totalFriends == 0` | ✅ | ✅ |
+| 4 | LeaderboardCard | `leaderboard.size > 1` — title **"Tu cordada"** (moved before charts 2026-06-16) | ✅ | ✅ |
+| 5 | MonthlyChartSection | `totalAscents >= 1` AND `monthlyStats` not empty | ✅ | ✅ |
+| 6 | RarityChartSection | `totalAscents >= 1` | ✅ | ✅ |
+| 7 | NoFriendsCta (web) / SoloRankingSection (Android) | `totalFriends == 0` | ✅ | ✅ |
 | 8 | RecentAscentsRow | `recentAscents` not empty — title **"Tus últimas cimas"** | ✅ | ✅ |
 
 **Motivation banner (🏆 / ⚠️ / 🎯): removed from web (2026-05-30). Never render it on Android or iOS.**
@@ -519,7 +530,7 @@ Row with `IntrinsicSize.Min` height. `12dp` rounded corners.
 
 ---
 
-### 4 — MonthlyChartSection
+### 5 — MonthlyChartSection
 
 Shared `ChartCard` wrapper (white surface, 1dp `outlineVariant` border, 16dp radius, 16dp padding). Title: `"Últimos 6 meses"`. Subtitle row: total summits in blue + total meters ascended in dark gray.
 
@@ -538,7 +549,7 @@ Empty month bar: solid `#E5E7EB` fill. **Not tappable** (no summits to filter).
 
 ---
 
-### 5 — RarityChartSection
+### 6 — RarityChartSection
 
 Same `ChartCard` wrapper. Title: `"Cimas por rareza"`.
 
@@ -557,61 +568,66 @@ Same `ChartCard` wrapper. Title: `"Cimas por rareza"`.
 
 ---
 
-### 6 — LeaderboardCard
+### 4 — LeaderboardCard
 
-Container: `16dp` horizontal padding, `16dp` rounded corners, 1dp `outlineVariant` border, white surface.
+Container: `16dp` horizontal padding, `16dp` rounded corners, 1dp `outlineVariant` border, white surface. **Moved before MonthlyChart/RarityChart on web (2026-06-16)** — same JSX position as Android.
 
-**Column header row** (inside the card, above the divider):
-- Padding start `19dp` (16 outer + 3 for the left border slot of the current user row), end `16dp`, vertical `10dp/4dp`
-- `22dp` spacer (rank column) + `weight(1f)` spacer (name) + `"Cimas"` w:52dp + `"Cairns"` w:52dp + `"EP"` w:44dp
-- Header text: 10sp semibold `#94A3B8`, centered
+**No column headers** — metrics are shown inline within each row (redesigned 2026-06-16). The previous column-aligned header row was removed because fixed offsets broke at different viewport widths and when the "Tú" row added its 3px left border.
 
-`HorizontalDivider` between headers and rows.
+`HorizontalDivider` after the card title row.
 
-#### Current user row
+#### Row structure — inline 3-line layout (web + Android parity)
 
-`IntrinsicSize.Min` row. Background: horizontal gradient `#EFF6FF → #F0F9FF`.
+Each row is: **RankBadge** (30×44px) + **Avatar** (52px circle) + **Text column** (3 lines), with the "Tú" row having a `3px` left blue border strip and `#F0F9FF` background.
 
-Left blue border strip: `3dp` wide, full height, `#0369A1`.
+**Line 1** — name + `(tú)` marker:
+- Name: 14sp bold `#111827`, single line ellipsis
+- `(tú)` inline: 12sp `#9ca3af` — NOT a colored badge
 
-Inner padding: start 16dp, end 16dp, top 16dp, bottom 14dp.
+**Line 2** — level:
+- Level name: 12sp regular `#6b7280`, fontWeight 500. Resolved as `entry.levelIdx >= 1 ? LEVEL_DEFS[entry.levelIdx - 1].name : "—"` — **never use `% LEVEL_DEFS.length`**
 
-- **Rank**: 22dp wide, 13sp bold `#0369A1`
-- **Name column** (`weight(1f)`):
-  - Row: name text (14sp bold `#0F172A`, ellipsis) + `" (tú)"` (12sp `#64748B`)
-  - Below: level pill (see below)
-- **Cimas**: `#0369A1`
-- **Cairns**: `#D97706` (amber — always amber, regardless of user)
-- **EP**: `#0369A1`
+**Line 3** — inline metrics (all in one flex row, gap 4px):
+- `{ascentCount}` — 12sp bold `#374151` + `"cimas"` label 12sp `#6b7280`
+- `·` separator 12sp `#9ca3af`
+- CairnIcon (11×10px amber SVG, 3-layer cairn) + `{CS}` 12sp bold `#F59E0B`
+- `·` separator
+- `{ep}` 12sp bold `#374151` + `"EP"` label 12sp `#6b7280`
 
-#### Other user rows
+#### RankBadge
 
-Padding: `horizontal 16dp, vertical 12dp`.
+Rectangular badge, `30×44px`, `borderRadius: 10` for top-3, transparent bg + no radius for rank ≥4:
 
-- **Rank**: 22dp wide, 13sp bold `#D1D5DB` (light gray — no medals)
-- **Name column** (`weight(1f)`):
-  - Name: 13sp semibold `#111827`
-  - Below: level pill
-- **Cimas**: `#374151`
-- **Cairns**: `#D97706`
-- **EP**: `#374151`
+| Rank | bg | text color |
+|------|-----|-----------|
+| 1 | `#FDE68A` | `#D97706` |
+| 2 | `#E5E7EB` | `#6B7280` |
+| 3 | `#F8D9B8` | `#B45309` |
+| ≥4 | transparent | `#111827` |
 
-#### Level pill (inside leaderboard rows)
+Rank number: 14sp extrabold, centered.
 
-```
-bg: #F3F4F6, text: #374151, 10sp bold, 4dp radius, padding 6dp×2dp
-text = entry.levelIdx >= 1 ? LEVEL_DEFS[entry.levelIdx - 1].name : "—"
-```
+#### Avatar
+
+52px circle. Initials fallback colored by the first character of the name (consistent hue function). If `avatarUrl` available: crop-fill.
+
+#### CairnIcon
+
+Inline SVG, 11×10px, amber colors (`#F59E0B` / `#D97706`). Three-layer cairn shape. Never use emoji for this.
+
+#### Ellipsis row
+
+When the current user is not in the top 5 displayed rows, an ellipsis row (`· · ·`, 14sp `#9ca3af`, centered) is inserted after the visible top rows, followed by the current user's own row. This matches Android's `CordadaDetailScreen` pattern exactly.
+
+#### Level text
 
 `entry.levelIdx` = number of completed levels from `user_stats` (0 = none, 1 = Scout done, …, 6 = Zenith done). **Never use `% LEVEL_DEFS.length`** — it maps `levelIdx=0` to Zenith incorrectly.
 
-#### Metric column
-
-`14sp extrabold`, centered, column width as above. No label below the number (labels are in the header row).
-
 ---
 
-### 7 — NoFriendsCta
+### 7 — NoFriendsCta (web) / SoloRankingSection (Android)
+
+**Web — NoFriendsCta:**
 
 ```
 background: linear-gradient(135deg, #EFF6FF → #F0F9FF)
@@ -625,6 +641,10 @@ alignment:  center
 - Title: `"El camino se disfruta más acompañado."` — 15sp bold `#111827`
 - Subtitle: `"Encuentra tu cordada, revive cada ascensión y creced juntos en la montaña."` — 13sp `#6B7280`
 - CTA: `"Invitar amigos"` — bg `#0369A1`, white text, `8dp` radius. Tap → navigate to friends/invite screen.
+
+**Android — SoloRankingSection:**
+
+Shown when `totalFriends == 0`. Displays the user at rank #1 with their EP score (0 if new), flanked by 3 ghost avatar circles with dashed borders connected by dotted lines. Aspirational copy: `"Tu cordada está vacía. Invita a tus primeros compañeros para compartir cimas y competir juntos."` Green CTA `"Invitar amigos"` → opens the Friends/Cordada tab with `InviteFriendSheet` pre-opened.
 
 ---
 
@@ -714,7 +734,8 @@ The card flips on tap (Y-axis rotation, 700 ms). Front shows the photo; back sho
 
 | Layer | Spec |
 |-------|------|
-| Header row | Avatar 32dp circle (+ unseen dot top-right if isUnseen) · user name 13sp bold · date 11sp muted |
+| Header row | Avatar 32dp circle (+ unseen dot top-right if isUnseen) · user name 13sp bold · date 11sp muted · **(own cards only) share + edit icons** top-right |
+| Share + edit icons (own cards only — `ascent.isOwn`) | two 28dp `IconButton`s, 16dp/15dp glyphs, tint `PeakSubtle` (grey `#9CA3AF`, matches web). **Share** = 3-node network icon → marks public + opens OS share sheet. **Edit** = pencil → opens the edit sheet. ⚠️ Inline `ImageVector` glyphs **must use a concrete base colour** (`Color.Black`) — `Color.Unspecified` draws no pixels so the tint has nothing to recolour → invisible. |
 | Photo | `4:5` aspect ratio · 18dp radius · ContentScale.Crop · placeholder 🏔️ 52sp |
 | Gradient overlay | bottom 55% of photo: transparent → `rgba(7,18,31,0.42)` → `rgba(7,18,31,0.82)` |
 | Peak name | 24sp extrabold white, letterSpacing −0.035em, 1 line ellipsis |
@@ -734,8 +755,63 @@ The card flips on tap (Y-axis rotation, 700 ms). Front shows the photo; back sho
 | Altitude | 28sp black white, letterSpacing −0.04em |
 | Rarity progress bar | 4dp tall · `rgba(255,255,255,0.25)` track · rarity.color fill · width = `altitudeM / 8849` |
 | Stats row (2 cells) | **ASCENSIONES** `—` · **ALPINISTAS** `—` (placeholder until future endpoint) |
-| Persons byline | `{name} con {persons…}` · 13sp · 2-line clamp |
-| Description | 13sp muted · 2-line clamp |
+| Cordada pills | label + one rounded pill per member (their **username**) · pill bg = `rarity.color` @ 12% · 11sp · `FlowRow` · shown above the quote. **Own card** (`isOwn`): label **"Tu Cordada:"** (possessive) + only the tagged users (you're implicitly in) — shown only when `persons` non-empty. **Friend's card** (`!isOwn`): label **"Cordada:"** (no possessive) + the **owner prepended** before the tagged users (so all members show) — always shown (owner is always present), so a solo ascent shows "Cordada: {owner}". |
+| Description quote | **blockquote**: 3dp left vertical bar in `rarity.color` (rounded 2dp, height = text) + 10dp gap + message text · 13sp *italic* muted · lineHeight 18sp · **maxLines 3** |
+
+> **Card-back message ("cita") — 100-char cap.** The message is capped at **100 characters** on input (`NOTES_MAX_CHARS` in `NewAscentViewModel.kt`, shared by create + edit) so the 3-line quote always renders in full (no ellipsis) on every screen size. The ellipsis on the `Text` is only a defensive fallback for legacy data >100 chars. The create/edit notes field shows an `n/100` counter and is 3 lines.
+
+> **Cordada pills detail.** `ascent.persons` already carries the username (`API builds persons as { id = userId, name = username ?? name }`), so the pill text is `person.name`. Two i18n keys: `card_cordada_label` (own card, possessive) — es "Tu Cordada:" · ca "La teva Cordada:" · en "Your rope team:" · fr "Ta cordée:" · de "Deine Seilschaft:"; and `card_cordada_label_other` (friend's card, no possessive) — es "Cordada:" · ca "Cordada:" · en "Rope team:" · fr "Cordée:" · de "Seilschaft:". On a friend's card the owner is prepended (`[owner, ...persons]`, deduped); `persons` already excludes the owner. Rationale: on your own card you're implicitly in the team; on someone else's card you want to see every member, including who climbed it. **Web parity:** `AscentCard.tsx` uses the identical pills + blockquote (it ported the Android style; `variant === "profile"` = own); web grouped cards were removed (one card per ascent).
+
+> **Landscape photos (blur-fill).** Horizontal photos are NOT cropped to 4:5. Crop step detects landscape (image wider than the 4:5 box) and offers a **4:5 ↔ Horizontal** toggle (default landscape for horizontal sources); output is marked `cropAspect = "landscape"`. Everywhere a landscape photo renders (feed card, detail hero, capture-reveal card, share card front, new-ascent preview) it shows a **blurred cover background + the full photo on top** (`object-fit: contain` / `ContentScale.Fit`), instead of cropping a horizontal photo to a center sliver. ⚠️ **Web CSS `url()` must be quoted** (`url("…")`) — Cloudflare image URLs contain commas that break an unquoted `url()` → the blur silently fails. Implemented on web + Android (parity); the only delta is the OG image (server-composited blur-fill).
+
+> **Mythic card treatment.** Mythic peaks (`isMythic`) get, on the **front**: a gold **"MYTHIC"** badge top-left of the photo (`#EAB308` bg, white, 10sp/900, letterSpacing 0.12em) and a **pulsing gold glow** around the whole card (animated colored shadow `#EAB308`, ~1.8s reverse loop). Web (`AscentCard.tsx`) and Android (`CardsScreen.kt`, infinite-transition shadow) match. The capture-reveal has its own mythic glow/particles (Android). **The Cairn was removed from the reward** (2026-06-17): the reward cell is now just **"+N EP"** in an amber pill on every card; `CairnGlyph` and the `cards_card_cairn` string are gone.
+
+#### Back-side mini-map + nearby peaks
+
+The card back mini-map renders immediately from the ascent payload:
+- Prefer `ascent.peak.nearbyPeaks` from `GET /api/v1/ascents`.
+- Only call the fallback nearby-peaks endpoint when the `nearbyPeaks` field is **missing/null**. If it is present as an empty array, do not fallback.
+- The main peak is the large highlighted marker. Nearby peaks are small muted circles.
+- Nearby peaks may display compact labels when there is room: one line, `Name · altitude m`, small white text with a subtle dark halo. Labels must avoid colliding with the main peak name/altitude overlay and with each other. It is acceptable that not every nearby marker has a label on cramped maps.
+- Nearby peaks are selected by backend relevance, not pure distance: important/high/rare peaks in the local area should win over tiny closer points. Do not re-rank on Android.
+
+---
+
+### Share card — public link page (`/ascent/[id]`)
+
+The public share page (opened from the share link, no auth) renders a **flippable card that mirrors the in-app card**, built by the client component `components/share/ShareCard.tsx` (the page `app/ascent/[id]/page.tsx` stays a server component and passes data + i18n strings).
+
+- **Size/frame = app card**: reuses the `.peak-card` class (radius 28, padding 7, border, shadow + grain texture); `max-width: 496px` (= the app feed card's rendered width: 520 container − 24 padding). Photo frame: inset `6px 10px`, radius `var(--radius-xl)` (20px) + inset hairline. Header reuses `.card-user` / `.pc-avatar` / `.user-name` (13px) / `.user-date` (11px) — identical to the app.
+- **Flip on tap** (same `.flip-card` / `.flip-inner` / `.card-front` / `.card-back` structure as the app).
+- **Front**: photo + overlay + watermark "peak ✿ adex" + peak name + coordinates + stat band with the **"+N EP" reward** (amber pill, no Cairn). The owner "Únete a Peakadex" CTA sits in the header (share-page-only). The **comment is NOT on the front** (it's on the back, like the app).
+- **Back** = the app `CardBack` (mini-map + elevation profile + stats + Cordada **showing all members incl. the owner**, since it's "someone else's" card + comment blockquote).
+- Below the card: hint text **"Toca la carta para ver el reverso"** (`share_tapToFlip`, 5 locales).
+- **No public API exposure**: nearby peaks are **disabled** on the share page (`PeakMiniMap disableNearby` → base map + central marker only, no `/api/peaks` fetch); the elevation profile is passed from the cached `peak.elevationProfile` (no fetch). `CardBack` + `PeakMiniMap` gained optional `disableNearby` / `elevationProfile` props (the app path is unchanged). The only visual delta vs the app back: no surrounding nearby-peak markers.
+- The WhatsApp/OG preview image is unaffected (still server-composited by `/api/og/[id]`); the flip is only for users opening the link in a browser.
+
+---
+
+### Web edit-ascent modal — photo actions
+
+The web edit modal must keep photo editing visually clear and separate from creation:
+
+- The modal opens directly on the edit form. It must not show the create-mode photo picker (`PickStep`) while editing.
+- The photo preview overlays compact pill buttons at the bottom center.
+- If the current photo has an `originalStorageKey`, show **Re-encuadrar** (`detail_reCrop`) and **Cambiar foto** (`detail_changePhoto`).
+- If the current photo has no stored original, show only **Cambiar foto**.
+- **Re-encuadrar** reuses the stored original and is for crop adjustment only.
+- **Cambiar foto** opens the file picker for a new image and then the cropper.
+- In edit mode, the cropper back arrow returns to the edit form, not to the create picker.
+- Selecting a replacement image in edit mode must not apply EXIF date/GPS suggestions or change the visible date/peak automatically.
+- Keep the buttons short in every locale; they sit over the photo preview and must fit on narrow mobile screens.
+
+Visual style:
+
+```
+container: position absolute · bottom 8/16 · left 50% · translateX(-50%)
+layout: flex row · wrap · gap 8 · justify center
+button: pill · rgba(0,0,0,0.60-0.72) · white text · 12-13px semi-bold
+```
 
 ---
 
@@ -761,6 +837,8 @@ Nine rarity chips (✿ emoji only — no label) + one Mythic chip (⭐ Mythic, a
 | Selected | `rarity.color` @ **100%** | `rarity.color` @ **15% alpha** | `rarity.color` solid |
 
 This makes every rarity visually distinct before the user taps it. Daisy = green, Heather = cyan, Gentian = dark blue, Tundra = teal, Edelweiss = purple, Draba = pink, Saxifrage = orange, Cinquefoil = yellow, Snow Lotus = slate.
+
+**CTA count source (web):** the bottom CTA must display server summary counts (`totalAscents` + `uniquePeaks`) from `/api/ascents/feed/summary`, not the number of cards currently loaded by the virtualized feed. The feed remains paginated for performance; never load all cards just to calculate this label. When local search text is active, web may fall back to local loaded-count until search is server-side.
 
 **Mythic chip:**
 
@@ -818,11 +896,13 @@ Shown below the search bar when `isDirty = true`. Horizontal scroll. Each chip h
 
 ### Empty states
 
-| Condition | Emoji | Title | Subtitle |
-|-----------|-------|-------|---------|
-| Friends view + no data (default on first load) | 👥 52sp | "Sin actividad de amigos" | "Cuando tus amigos registren cimas aparecerán aquí.\nUsa el filtro para ver tus propias ascensiones." |
-| Mine view + no ascents at all | 🏔️ 52sp | "Tu bitácora está vacía" | "Registra tu primera ascensión para empezar." |
-| Any filter combination → 0 results | ✿ 48sp (`#0369A1`) | "Sin resultados" | "Prueba a ajustar la búsqueda o los filtros." |
+**Friends view + Mine view (no data):** identical to the Rope Team (Cordada) empty state — `RopeTeamIcon` in a 72dp `#EFF6FF` circle (`PeakBlueActive` tint, 34dp icon), 15sp SemiBold `#111827` title, 13sp `#9CA3AF` subtitle, `fillMaxWidth` + `padding(vertical=56dp)` + `spacedBy(10dp)`. Both states use the same strings: `friends_empty` + `friends_empty_subtitle`. Icon defined in `core/ui/SharedIcons.kt`.
+
+| Condition | Component | Strings |
+|-----------|-----------|---------|
+| Friends view (Mi Cordada) + no data | `RopeTeamIcon` circle + title + subtitle | `friends_empty` / `friends_empty_subtitle` |
+| Mine view + no ascents | `RopeTeamIcon` circle + title + subtitle | `friends_empty` / `friends_empty_subtitle` |
+| Any filter → 0 results | `CardsNoResultsState`: `✿` 48sp + title + subtitle | `cards_empty_search_title` / `cards_empty_search_desc` |
 
 ---
 
@@ -1033,7 +1113,7 @@ The Cimas tab uses compact text-first rows. Photos are intentionally **not** sho
 ```
 ┌──────────────────────────────────────────────┐
 │  │ Pica d'Estats                             │
-│  │ ● Snow Lotus            3143 m  12 ene '24│
+│  │ ● Snow Lotus  3143 m            12 ene '24│
 └──────────────────────────────────────────────┘
 ```
 
@@ -1043,13 +1123,17 @@ The Cimas tab uses compact text-first rows. Photos are intentionally **not** sho
 | Left strip | 4dp, `rarityColor`, full height |
 | Row content padding | start 12dp, end 14dp, top 12dp, bottom 16dp |
 | Name | 14sp, bold, `PeakNavyDark`, 1 line ellipsis |
-| Second line | rarity pill left; altitude fixed-width column; last ascent date fixed-width and right-aligned |
+| Second line | rarity pill **+ altitude grouped on the left** (10dp gap); last ascent date pushed to the right (`Spacer(weight 1f)` sits after the altitude) |
 | Rarity pill | min height 26dp, rounded 100dp, `rarityColor.copy(alpha = 0.13f)`, dot + label |
 | Rarity label | 10sp bold, `lineHeight = 12.sp`, `rarityColorDark`, 1 line ellipsis |
-| Altitude | 13sp extra-bold, `PeakNavyDark`, width 76dp, left-aligned |
+| Altitude | 13sp extra-bold, `PeakNavyDark`, immediately right of the rarity pill, wrap-content (no fixed width) |
 | Last date | 12sp semibold, `PeakNavyMid`, width 78dp, `TextAlign.End` |
 
 Search behaviour: while typing, the search field must stay visible and focused; results update below it. Do **not** auto-scroll on every keystroke. On IME Search, clear focus and scroll to the first result (`LazyListState.animateScrollToItem(2)`) if any results exist. The list uses `imePadding()` and enough bottom content padding so results remain reachable above the keyboard and bottom nav.
+
+Search input gotcha: when typing, the user must always see the text they are entering. Partial filter results may update live, but never at the cost of hiding the focused `OutlinedTextField` behind the keyboard or scrolling it off-screen. The right behaviour is: keep the input pinned in view, keep focus, update results below, and only jump to the result list after the keyboard search action.
+
+Rarity pill gotcha: the pill must never be clipped vertically. Keep the row at least `84dp`, give the second line enough top/bottom breathing room, and center altitude/date against the rarity pill's vertical center.
 
 ---
 
@@ -1074,6 +1158,67 @@ Score formula per peak: `normAlt × 0.5 + rarityWeight × 0.3 + normDist × 0.2`
 (`normDist` = proximity to viewport center, closer = higher score)
 
 Unclimbed peaks are clustered only at broad exploration zooms (`clusterMaxZoom=9`). From close regional zoom onward, individual dots take over; peak labels appear progressively from zoom 10.5.
+
+### Peak selection — two paths, never fails silently (fix 2026-06-05)
+
+Two separate entry points for selecting a peak, matching web's `flyToPeak(peak)` pattern:
+
+| Entry point | Method | Why |
+|---|---|---|
+| Tap on map dot/marker | `onPeakSelectedById(peakId)` | GeoJSON feature only exposes the id |
+| Tap in list or search results | `onPeakSelected(peak: Peak)` | Full object available — no lookup needed |
+
+`onPeakSelected(peak)` inserts the peak into `peaksCache` before setting `selected`, so the peak is guaranteed to exist on the map when the camera flies to it.
+
+**Do NOT call `onPeakSelectedById` from the list.** The old bug: list called `onPeakSelected(peak.id)`, ViewModel searched in `viewportPeaks` (which only contained the current viewport) — if the peak was far away it wasn't found, `selected` stayed `null`, the camera flew but the detail sheet never opened.
+
+### Peaks cache — accumulative, never destructive (fix 2026-06-05)
+
+`peaksCache: Map<String, Peak>` replaces the old `viewportPeaks: List<Peak>`. Key differences:
+
+| Old `viewportPeaks` | New `peaksCache` |
+|---|---|
+| Replaced on every `onMapIdle` | Merged — peaks are never removed unless cache > 2000 |
+| Empty when camera leaves an area | Peaks from previous viewports remain available |
+| `onPeakSelectedById` failed for out-of-viewport peaks | Always finds the peak if it was ever loaded |
+
+`peaksCache` is populated by three sources: `onMapIdle` (viewport fetch), `loadListPeaks` (list open), and `onPeakSelected(peak)` (explicit selection). All merge via `LinkedHashMap` — insertion order used for LRU eviction at 2000 entries.
+
+**iOS port:** implement the same `peaksCache` pattern. A `var peaksCache: [String: Peak]` dictionary on the ViewModel that merges — never replaces. Same two-method split: `selectPeak(_ peak: Peak)` and `selectPeakById(_ peakId: String)`.
+
+**Web:** `peaksCacheRef` in `MapView.tsx` already implements the equivalent pattern correctly. See the pending parity task in CLAUDE.md for the rarity pill count fix needed on web.
+
+### Mythic filter in Atlas FiltersPanel (added 2026-06-11)
+
+The Atlas `FiltersPanel` includes a **⭐ Mythic chip** inside the RAREZA `FlowRow`, after the rarity pills. Behavior mirrors the Cards screen:
+
+- **Mutually exclusive with rarity pills**: activating Mythic deselects all rarity pills; activating any rarity pill deactivates Mythic.
+- `isDirty` and `hasActiveFilters` both include `mythicFilter`.
+- Filtering is client-side on the already-loaded `peaksCache` / `listPeaks` — no extra API call.
+- `filteredCount` in the panel footer accounts for `mythicFilter`.
+
+**Chip style** (same as Cards):
+
+| State | bg | border | text |
+|-------|----|--------|------|
+| Unselected | default chip | `PeakBorderLight` | default |
+| Selected | `#FFFBEB` | `#FDE68A` | `#92400E` |
+
+**i18n key:** `atlas_filter_mythic` — es "⭐ Mítico" · ca "⭐ Mític" · en "⭐ Mythic" · fr "⭐ Mythique" · de "⭐ Mythisch". Cards uses the parallel key `cards_filter_mythic` (same translations). **Never hardcode the label** — always use `stringResource`.
+
+### Rarity pill counts — context-aware by status filter (fix 2026-06-05)
+
+The count shown on each rarity pill in the filters panel depends on the active status filter:
+
+| Status filter | Pill count shows |
+|---|---|
+| **Todas** | Peaks in current viewport cache (climbed + unclimbed in this area) |
+| **Sin capturar** | Unclimbed peaks in current viewport cache only |
+| **Capturadas** | All user captures globally (personal inventory, not location-dependent) |
+
+**Rationale:** "Capturadas" is a personal inventory — showing global count makes sense. "Sin capturar" and "Todas" are exploration tools — showing local count is actionable ("X peaks of this rarity near me now").
+
+**iOS port:** same logic. **Web TODO:** update `MapView.tsx` rarity pill `count` to be filter-aware (currently always counts full `allPeaks` cache regardless of filter).
 
 ### List view — data source
 
@@ -1102,6 +1247,80 @@ The list panel is **decoupled from the map zoom**. When the user taps "Lista":
 | Right: distance | 11sp, `PeakSubtle` (km or m) | 11sp, `PeakSubtle` |
 | Row divider | `HorizontalDivider` 1dp `PeakBorderLight` | same |
 | Row padding | `horizontal=16dp, vertical=10dp` | same |
+
+---
+
+## Capture Reveal — post-creation animation (Android, redesigned 2026-06-17)
+
+Full-screen cinematic overlay after an ascent is created; it **auto-dissolves** to the new card (no tap). Implemented with **Lottie** (`feature/newascent/AscentCaptureReveal.kt`). Authoritative cross-platform spec for web/iOS.
+
+### Concept — it IS the real card
+
+The card the user just earned (`CardFront`) sits **centered over the feed**. Two cover layers hide its content and dissolve on reveal:
+- an **opaque white backdrop** over the screen (hides the feed settling to Mine + scrolling to the new card behind);
+- a **light-gray cover `#EAEEF3`** over the photo area, ABOVE the gradient + peak name (so the name is hidden during the build). The reveal "scene" plays on this gray.
+
+No dark scrim, no separate navy background — it reads as the actual card being unveiled.
+
+### Visual composition (the scene, top → bottom)
+
+```
+            🌼   daisy (Lottie, petals tinted to rarity)
+       PEAK CAPTURED!   ← epic: uppercase, Black, rarity-tinted glow, size ∝ flower
+
+                        (gap)
+
+           Peak name    ← 22sp Black, rarity color
+            0000 m      ← 28sp Black, rarity color
+      ▁▂▃▅▃▂▁ profile   ← rarity-tinted elevation profile, flush to bottom
+```
+
+`MYTHIC` pill (mythic only) appears top-left.
+
+### Flower (daisy)
+
+- Asset: `res/raw/flower_bloom.json` — a **daisy** (center disc + 5 petals; stem/leaves disabled in the file), 1080×1080, 25fps/75f, **Spanish node names**.
+- **Per-rarity tint at runtime** (`rememberLottieDynamicProperties`): petals = `rarity.color` via wildcard `("**","Grupo 2","Relleno 1")`; center disc = a **darker shade** (`× 0.55`) via fill `("flor","Grupo 1","Relleno 1")` + stroke `("flor","Grupo 1","Trazo 1")`. Black petal outlines stay. On the mythic beat the petals animate to **gold** (`#FFD700`), center to darker gold.
+- Blooms once (speed 0.85), then breathing (±3.5%) + sway (±1.5°). `flowerDp = maxHeight × 0.65`, centered. The daisy art lives in the **top third of its frame**, so the headline is pulled up (`offset y = -0.40 × flowerDp`) to hug it.
+
+### Type & color
+
+| Element | Text | Style |
+|---|---|---|
+| Headline | `capture_reveal_captured` UPPERCASE (es "¡Cima capturada!" / en "Peak captured!") | Black, `fontSize ∝ flower`, rarity-tinted `Shadow` glow |
+| Peak name | `peak.name` | 22sp Black, `-0.04em`, **rarity color** |
+| Altitude | `{altitudeM} m` | 28sp Black, `-0.04em`, **rarity color** |
+| Profile | elevation polyline | `ElevationProfileCanvas` (reused from `CardBack`, `lineColor` = rarity), flush to image bottom |
+
+### Timeline (fully automatic — no taps)
+
+1. Card enters (scale-in + fade). Flower blooms.
+2. `infoAppear` (spring) pops in **PEAK CAPTURED!** + name + altitude + profile.
+3. **+700ms after bloom**: the **RARITY stat-band cell** pops big→small (`rarityScale` 2.1→1, held ~1.4s) — sequenced after the headline so it's noticed.
+4. **+2.3s after bloom**: the **EP cell** rolls `0→N` (1.3s); the whole amber reward pill scales big (1.9)→1 with a pop.
+5. **Mythic beat** (~400ms after EP): petals→gold, **MYTHIC pill** pops big→small top-left, gold glow + particle burst.
+6. **Auto-reveal**: ~**2s** after the sequence ends (mythic waits ~2.2s extra for its beat) the focus-pull runs by itself — photo blur 16→0, both covers dissolve, scene fades — then it hands off to the feed.
+
+### Reward — no Cairn
+
+The reward shows only **"+N EP"** (amber pill). The Cairn was removed everywhere (always 1 on mythic). Mythic is conveyed by the gold petals + MYTHIC pill + glow, not a cairn count.
+
+### Web implementation note — pinned reveal card, not virtualized
+
+On web, the reveal must feel like the real card being unveiled in the feed, but the reveal target **must not live inside the virtualized Virtuoso list while the animation runs**.
+
+Final web architecture (2026-06-18):
+- Creation redirects to `/ascents?highlight={id}&reveal=1`.
+- The server page reads `reveal=1` and passes `revealId` into `AscentsClient`; do not depend on client-only search params for first render.
+- `AscentsClient` renders the reveal ascent as a **pinned real `AscentCard` above Virtuoso**.
+- The same ascent is temporarily removed from the Virtuoso data (`feedAscents`) so the DOM has exactly one `#ascent-{id}`.
+- The reveal animation is an overlay inside that real card (`AscentCardReveal.sceneOverlay`), not a separate full-screen card and not a replacement for the card.
+- When the overlay settles, the final card remains pinned in the same position. Do not immediately reinsert it into Virtuoso; that creates a visible jump.
+- Changing filters/search/sort clears the pin and returns the feed to its normal virtualized order.
+
+Rationale: with `react-virtuoso` + `useWindowScroll`, Chrome can correct estimated item measurements after first paint. Earlier approaches that used `initialTopMostItemIndex` for the reveal appeared correct, then jumped to another card while the reveal continued lower in the feed. Pinning the reveal card outside the virtual list removes it from Virtuoso measurement/offset correction entirely, making Chrome, Safari, and mobile behavior stable.
+
+Accessibility: respect `prefers-reduced-motion` by settling the reveal quickly, and keep decorative reveal overlay content `aria-hidden`.
 
 ---
 
@@ -1147,6 +1366,8 @@ The bottom nav bar hides on downward scroll and reappears on upward scroll. Appl
 **File:** `feature/splash/SplashScreen.kt`
 
 > Not to be confused with the OS Splash Screen (the one with the app icon, ~200ms, handled by `Theme.Peakadex.Splash`). This screen is shown while the app resolves auth state (typically 500–1000ms).
+
+**OS-level splash (`themes.xml`):** `Theme.Peakadex.Splash` now uses `windowSplashScreenBackground=#FFFFFF` + `windowSplashScreenAnimatedIcon=ic_launcher_foreground`. Previously it was dark blue `#0D2538` with no icon. Both levels are now white for a seamless OS splash → auth gate → login/home transition.
 
 **Design:** full white screen, `PeakadexLogo(height = 44.dp)` centered.
 
@@ -1211,6 +1432,31 @@ The global create-FAB lives in `MainScaffold` and is gated to `Logbook`/`Cards` 
 - **Shape:** `CircleShape`. **Position:** bottom-end. **Icon:** white `PlusIcon` at `24dp`. **Elevation:** `4dp` default / `8dp` pressed.
 
 **Not a create-FAB (exempt):** the cordada-detail avatar-edit `SmallFloatingActionButton` (white bg + blue pencil, overlaid on the cover) is a contextual *edit* control, not a "create" action — it keeps its own styling.
+
+---
+
+## Search fields & filter buttons — app-wide shared components (Android, 2026-06-09)
+
+**RULE (mandatory): every search input and every filter button in the Android app MUST use the shared components in `core/ui/PeakSearchComponents.kt`. Never hand-roll a new `OutlinedTextField` / `BasicTextField` search bar or a custom filter button per screen.** If you add a new filter or a new search field anywhere, reuse `PeakSearchField` / `PeakFilterButton`. If they lack a capability you need, **extend the shared component with a new optional parameter** — do not fork the styling locally.
+
+**Why:** before unification there were 3 different search-bar styles and 2 different filter-button styles (different heights 38/44/56dp, two grays, pill vs 12dp, shadow vs flat, text 14/15/16sp). The shared components are the single source of truth.
+
+**`PeakSearchField`** — unified search input:
+- **Material 3 aligned:** pill `RoundedCornerShape(24.dp)`, filled **white** surface, subtle **2dp** elevation (readable both floating over the Atlas map and inline on white screens).
+- **Height 48dp** — Material minimum touch target.
+- **Text + placeholder are 16sp** — this is the **iOS-gotcha compliance point** (inputs < 16px trigger iOS Safari auto-zoom; we keep 16sp everywhere so the same spec ports to web/iOS). **Never drop below 16sp.**
+- Leading search icon 18dp (`PeakMuted`), cursor `PeakBlueActive`, placeholder `PeakSubtle`, text `PeakTextHeadline`.
+- Clear button shown when non-empty (override via `showClear` / `onClear`).
+- Flexible params: `keyboardOptions`, `keyboardActions`, `enabled`, `modifier` (outer Row — for `weight`/`fillMaxWidth`/`bringIntoViewRequester`), `textFieldModifier` (inner `BasicTextField` — for `focusRequester`/`onFocusChanged`).
+
+**`PeakFilterButton`** — unified filter button:
+- Same pill shape / 48dp height / 2dp elevation. Funnel `FiltersIcon` (16dp) + label (14sp Bold).
+- Active appearance (`active = filtersOpen || hasActiveFilters`) → **`PeakSlate`** bg + white content. Inactive → white bg + `PeakSlate` content.
+- Blue dot badge via `showBadge = hasActiveFilters && !filtersOpen` (`PeakBlueActive`).
+
+**Current consumers (all migrated 2026-06-09):** Atlas (search + filter), Cards/Logbook (search + filter), Friends (search), Cordadas invite sheet (search), Cordadas member picker (search, uses `textFieldModifier` for `focusRequester`), Profile Cimas tab (search). The per-screen `SearchIcon`/`FiltersIcon`/`SearchIconVec`/`SearchIconSmall` private icons were deleted — the icons now live inside `PeakSearchComponents.kt`.
+
+**Out of scope (not search/filter — keep their own styling):** the New-Ascent peak picker / route / notes / tag inputs (form autocomplete), invitation email field, Login email/password, and Settings account/password fields. These are form/auth inputs, not search bars.
 
 ---
 
@@ -1432,3 +1678,114 @@ Sheets use the shared `CordadaModalSheet` wrapper around Material 3 `ModalBottom
 
 - **Push notifications (FCM)** for cordada invites / friend requests — pending (only the tab badge + email exist today).
 - The tab badge refreshes on tab change, **not** in real time.
+
+---
+
+## Cordadas — Web UI spec (2026-06-16)
+
+The web cordada detail (`/cordadas/[id]`) and invite page (`/cordadas/[id]/invite`) follow the same visual language as the Android spec above. All design decisions are driven by Android; web must match.
+
+### Back navigation
+
+Web has no OS back button. Use an **overlay circular `←` button** directly on the hero — the same pattern established by `AscentDetailClient.tsx`:
+
+| Context | Style |
+|---|---|
+| Photo hero exists | `position: absolute; top: 10; left: 10` — 32px circle, `rgba(0,0,0,0.45)` bg, `backdropFilter: blur(6px)`, white `←` |
+| No photo (compact header) | 32px circle, `#f3f4f6` bg, `border: 1px solid #e5e7eb`, `#374151` text, inline in identity row before the avatar |
+
+**Never use a text link** (e.g. `< Cordadas`). That pattern belongs to Android's native back-stack; it reads as a breadcrumb on web, not as navigation.
+
+### Ranking rows
+
+`MemberRow` in `CordadaDetailClient.tsx` matches Android's `CordadaDetailScreen` ranking row spec:
+
+**`RankBadge`** — rectangular, `30×44px`, `borderRadius: 10` for top-3, transparent for rank ≥4:
+
+| Rank | bg | color |
+|---|---|---|
+| 1 | `#FDE68A` | `#D97706` |
+| 2 | `#E5E7EB` | `#6B7280` |
+| 3 | `#F8D9B8` | `#B45309` |
+| ≥4 | transparent | `#111827` |
+
+**Row anatomy** (avatar 52px, `gap: 12`, full row `padding: 10px 12px`):
+- **Background**: `#F0F9FF` (sky-50, blue) for the current user's row; `white` for others.
+- **Line 1**: name (bold) + inline `(Tú)` in `#9ca3af` for current user — NOT a colored badge.
+- **Line 2**: level name (no emoji) · green `#16A34A` "Fundador" (`cordadas_founder` i18n key) for the owner.
+- **Line 3**: N cimas · `CairnIcon` · N · N EP — using the inline amber SVG cairn, never an emoji.
+
+**`CairnIcon`** SVG (11×10px, amber `#F59E0B`):
+```tsx
+function CairnIcon() {
+  return (
+    <svg width="11" height="10" viewBox="0 0 11 10" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M0.55 10 L10.45 10 L9.02 7.2 L1.98 7.2 Z" fill="#F59E0B" />
+      <path d="M1.98 6.8 L9.02 6.8 L7.7 4 L3.3 4 Z" fill="#F59E0B" />
+      <path d="M3.3 3.6 L7.7 3.6 L6.38 0.4 L4.62 0.4 Z" fill="#F59E0B" />
+    </svg>
+  );
+}
+```
+
+### Owner actions — ⋮ overflow menu
+
+**Delete cordada is not a footer button.** It lives in a `⋮` overflow menu justified to the right of the avatar/member bar, matching how iOS/web apps handle rare destructive owner actions (Gmail, Spotify):
+
+- `⋮` button (32px, rounded, `#6b7280`) opens a small dropdown positioned `absolute; right: 0; top: 100%`.
+- Dropdown contains one item: trash icon + "Eliminar cordada" in `#ef4444`.
+- A `position: fixed; inset: 0; zIndex: 40` click-away overlay closes the dropdown without action.
+- Clicking the item opens a `ConfirmSheet` for double-check before DELETE.
+
+**"Salir de la cordada"** footer button remains — shown only to non-owner members. The owner never sees this option (must delete instead).
+
+### Pending invite rows
+
+A dedicated `PendingInviteRow` component (not `MemberRow`):
+
+```
+[Avatar 40px] [Name bold / "Invitación enviada" #9ca3af]  [Cancelar outlined button]
+```
+
+- "Cancelar" button: `border: 1.5px solid #2F7A5F`, `color: #2F7A5F`, no fill, `borderRadius: 8`.
+- Clicking opens a `ConfirmSheet` (not a direct DELETE) — same double-check UX as Android.
+- On confirm: DELETE → dismiss modal → show toast "Invitación cancelada".
+
+**Toast** (2500ms, `position: fixed; bottom: 32; left: 50%; transform: translateX(-50%); zIndex: 300`) uses a `useRef` timer to avoid dismissing a fresh toast when rapidly triggered.
+
+### Invite page hero
+
+`/cordadas/[id]/invite` shares the same hero as the detail:
+
+- **With photo**: 180px full-width cover + bottom gradient scrim + overlay `←` (links back to `/cordadas/${cordadaId}`, not to `/cordadas`) + name (22sp extra-bold white) + member count anchored bottom-left.
+- **Without photo**: compact identity header — `←` + `CordadaAvatar` 68px + name + member count.
+- Divider below hero, then invite title + search + friend rows (name only, no username prefix; level without emoji; "Invitar" / "Invitado" outlined-style button).
+- Server component (`page.tsx`) passes `cordadaAvatarUrl: cordada.avatarUrl ?? null` and `memberCount: cordada.members.filter(m => !m.isPending).length`.
+
+### Web list — modal sidebar offset
+
+`position: fixed` modal panels in `CordadasClient.tsx` are positioned relative to the viewport, which starts at x=0 regardless of the 68px sidebar `margin-left` applied to `.azi-main`. Without adjustment, modals appear shifted left on desktop.
+
+Fix: inject a `<style>` block at the top of the `CordadasClient` return and apply `.cordadas-sheet-panel` to every fixed modal panel:
+
+```css
+@media (min-width: 640px) {
+  .cordadas-sheet-panel { margin-left: 68px; }
+}
+```
+
+Apply this class to: the action choice modal (Añadir amigo / Nueva cordada) and the add-friend panel. Any future fixed panels in `CordadasClient` must also carry this class.
+
+### Buscar amigos modal — invite-by-email always visible (2026-06-16)
+
+In `CordadasClient.tsx`, the "¿No está en Peakadex todavía?" invite-by-email block is rendered **always** after the search results, not gated on `searchResults.length === 0`.
+
+- The "Sin resultados" empty-state message is still gated on `searchResults.length === 0` (shown only when search returns nothing).
+- The invite-by-email dashed card **renders unconditionally** below the results list.
+- This allows users to invite a non-registered contact even when the search also returns existing users to add.
+
+### i18n keys added (2026-06-16)
+
+| Key | es | ca | en | fr | de |
+|---|---|---|---|---|---|
+| `cordadas_founder` | Fundador | Fundador | Founder | Fondateur | Gründer |

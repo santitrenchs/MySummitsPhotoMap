@@ -3,6 +3,7 @@ package com.peakadex.app.feature.friends
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.model.CordadaDetail
 import com.peakadex.app.core.model.CordadaInvite
 import com.peakadex.app.core.model.CordadaSummary
@@ -104,6 +105,14 @@ class CordadasViewModel : ViewModel() {
                     _state.update { it.copy(error = "avatar_upload_failed") }
                 }
                 _state.update { it.copy(isCreating = false) }
+                Telemetry.logEvent(
+                    Telemetry.Event.CORDADA_CREATED,
+                    mapOf(
+                        "cordada_id" to created.cordada.id,
+                        "member_count" to memberIds.size,
+                        "has_avatar" to (avatarBytes != null),
+                    ),
+                )
                 onSuccess(created.cordada.id)
             } catch (e: CancellationException) {
                 throw e
@@ -214,13 +223,19 @@ class CordadasViewModel : ViewModel() {
         }
     }
 
-    fun leaveCordada(cordadaId: String, myUserId: String) {
+    fun leaveCordada(cordadaId: String, myUserId: String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             try {
                 api.removeCordadaMember(cordadaId, myUserId)
-                _state.update { it.copy(selectedDetail = null) }
-                load()
-            } catch (_: Exception) {}
+                // Navigate back ONLY on success. FriendsScreen's LifecycleResumeEffect
+                // will call load() when it resumes, refreshing the list from the server.
+                onSuccess()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                android.util.Log.e("CordadasVM", "leaveCordada failed: ${e.javaClass.simpleName} — ${e.message}")
+                _state.update { it.copy(error = "Error al salir de la cordada") }
+            }
         }
     }
 

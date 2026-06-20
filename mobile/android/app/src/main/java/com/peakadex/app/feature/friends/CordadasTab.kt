@@ -235,36 +235,21 @@ fun InviteCard(invite: CordadaInvite, onAccept: () -> Unit, onReject: () -> Unit
 
 // ── Ranking (Amigos-style rows) ──────────────────────────────────────────────────
 
-/** Ice-axe rank badge: colored pill with piolet for top 3, number-only pill for the rest. */
 @Composable
 private fun RankBadge(rank: Int) {
-    // bg = soft fill, content = darker accent (icon + number)
     val (bg, content) = when (rank) {
-        1    -> Color(0xFFFDE68A) to Color(0xFFD97706)   // gold
-        2    -> Color(0xFFE5E7EB) to Color(0xFF6B7280)   // silver
-        3    -> Color(0xFFF8D9B8) to Color(0xFFB45309)   // bronze
-        else -> Color(0xFFF3F4F6) to Color(0xFF6B7280)   // plain
+        1    -> Color(0xFFFDE68A) to Color(0xFFD97706)
+        2    -> Color(0xFFE5E7EB) to Color(0xFF6B7280)
+        3    -> Color(0xFFF8D9B8) to Color(0xFFB45309)
+        else -> Color.Transparent to Color(0xFF111827)
     }
     Box(
         modifier = Modifier
             .size(width = 30.dp, height = 44.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(bg),
+            .then(if (rank <= 3) Modifier.clip(RoundedCornerShape(10.dp)).background(bg) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        if (rank <= 3) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector        = PioletIcon,
-                    contentDescription = null,
-                    tint               = content,
-                    modifier           = Modifier.size(18.dp),
-                )
-                Text("$rank", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = content)
-            }
-        } else {
-            Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
-        }
+        Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
     }
 }
 
@@ -474,23 +459,6 @@ private val PhotoImageIcon: ImageVector by lazy {
     }.build()
 }
 
-private val SearchIconSmall: ImageVector by lazy {
-    ImageVector.Builder("Search", 18.dp, 18.dp, 24f, 24f).apply {
-        path(
-            stroke          = SolidColor(Color(0xFF9CA3AF)),
-            strokeLineWidth = 2f,
-            strokeLineCap   = StrokeCap.Round,
-        ) {
-            moveTo(21f, 21f); lineTo(16.65f, 16.65f)
-            moveTo(19f, 11f)
-            curveTo(19f, 15.418f, 15.418f, 19f, 11f, 19f)
-            curveTo(6.582f, 19f, 3f, 15.418f, 3f, 11f)
-            curveTo(3f, 6.582f, 6.582f, 3f, 11f, 3f)
-            curveTo(15.418f, 3f, 19f, 6.582f, 19f, 11f)
-            close()
-        }
-    }.build()
-}
 
 // ── Shared sheet shell ─────────────────────────────────────────────────────────
 
@@ -926,51 +894,32 @@ fun CreateCordadaSheet(
                         )
                     }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF3F4F6))
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(SearchIconSmall, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        BasicTextField(
-                            value = memberQuery,
-                            onValueChange = { value ->
-                                memberQuery = value
-                                scope.launch {
-                                    delay(120)
-                                    membersBlockBringIntoView.bringIntoView()
+                    com.peakadex.app.core.ui.PeakSearchField(
+                        value = memberQuery,
+                        onValueChange = { value ->
+                            memberQuery = value
+                            scope.launch {
+                                delay(120)
+                                membersBlockBringIntoView.bringIntoView()
+                            }
+                        },
+                        placeholder     = stringResource(R.string.cordadas_invite_search),
+                        enabled         = !isCreating,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                        modifier        = Modifier.fillMaxWidth(),
+                        textFieldModifier = Modifier
+                            .focusRequester(membersFocusRequester)
+                            .onFocusChanged {
+                                memberSearchFocused = it.isFocused
+                                if (it.isFocused) {
+                                    scope.launch {
+                                        delay(250)
+                                        membersBlockBringIntoView.bringIntoView()
+                                    }
                                 }
                             },
-                            singleLine = true,
-                            enabled = !isCreating,
-                            textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, color = Color(0xFF111827)),
-                            cursorBrush = SolidColor(PeakBlueActive),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = { focusManager.clearFocus() },
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .focusRequester(membersFocusRequester)
-                                .onFocusChanged {
-                                    memberSearchFocused = it.isFocused
-                                    if (it.isFocused) {
-                                        scope.launch {
-                                            delay(250)
-                                            membersBlockBringIntoView.bringIntoView()
-                                        }
-                                    }
-                                },
-                            decorationBox = { inner ->
-                                if (memberQuery.isEmpty()) Text(stringResource(R.string.cordadas_invite_search), fontSize = 16.sp, color = Color(0xFF9CA3AF))
-                                inner()
-                            },
-                        )
-                    }
+                    )
 
                     if (showMemberSuggestions && !memberSearchFocused) {
                         MemberSuggestionList(
@@ -1052,43 +1001,24 @@ private fun InviteSheet(
                 modifier   = Modifier.padding(bottom = 12.dp),
             )
             // Search bar
-            Row(
-                modifier         = Modifier
+            com.peakadex.app.core.ui.PeakSearchField(
+                value           = query,
+                onValueChange   = onQueryChange,
+                placeholder     = stringResource(R.string.cordadas_invite_search),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                modifier        = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF3F4F6))
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(SearchIconSmall, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                BasicTextField(
-                    value         = query,
-                    onValueChange = onQueryChange,
-                    singleLine    = true,
-                    textStyle     = LocalTextStyle.current.copy(fontSize = 16.sp, color = Color(0xFF111827)),
-                    cursorBrush   = SolidColor(PeakBlueActive),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = { focusManager.clearFocus() },
-                    ),
-                    modifier      = Modifier
-                        .weight(1f)
-                        .bringIntoViewRequester(searchBringIntoView)
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                scope.launch {
-                                    delay(250)
-                                    searchBringIntoView.bringIntoView()
-                                }
+                    .bringIntoViewRequester(searchBringIntoView)
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            scope.launch {
+                                delay(250)
+                                searchBringIntoView.bringIntoView()
                             }
-                        },
-                    decorationBox = { inner ->
-                        if (query.isEmpty()) Text(stringResource(R.string.cordadas_invite_search), fontSize = 16.sp, color = Color(0xFF9CA3AF))
-                        inner()
+                        }
                     },
-                )
-            }
+            )
             Spacer(Modifier.height(8.dp))
             // Results
             if (isSearching) {
@@ -1517,11 +1447,16 @@ fun CordadaDetailRoute(
     vm: CordadasViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
-    val currentUserId = AppContainer.authSession.currentUser.value?.id ?: ""
 
     LaunchedEffect(cordadaId) { vm.openDetail(cordadaId) }
 
     val detail = state.selectedDetail
+
+    // Derive currentUserId from the cordada member list (more reliable than authSession
+    // which may be null on first load). Fall back to authSession as last resort.
+    val currentUserId = detail?.members?.firstOrNull { it.isCurrentUser }?.userId
+        ?: AppContainer.authSession.currentUser.value?.id
+        ?: ""
     if (detail == null) {
         Surface(Modifier.fillMaxSize(), color = PeakBackground) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -1538,7 +1473,7 @@ fun CordadaDetailRoute(
             onInviteQueryChange = vm::onInviteQueryChange,
             onInvite            = { vm.inviteUser(detail.id, it) },
             onExpel             = { vm.removeMember(detail.id, it) },
-            onLeave             = { vm.leaveCordada(detail.id, currentUserId); onBack() },
+            onLeave             = { vm.leaveCordada(detail.id, currentUserId, onBack) },
             onDelete            = { vm.deleteCordada(detail.id); onBack() },
             onEditImage         = { vm.updateCordadaAvatar(detail.id, it) },
             onBack              = onBack,

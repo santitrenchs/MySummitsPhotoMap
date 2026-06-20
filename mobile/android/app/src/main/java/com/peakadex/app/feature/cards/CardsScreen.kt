@@ -1,4 +1,4 @@
-package com.peakadex.app.feature.logbook
+package com.peakadex.app.feature.cards
 
 import android.graphics.Paint
 import android.graphics.RectF
@@ -6,7 +6,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -23,11 +28,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
@@ -50,6 +58,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -68,10 +77,13 @@ import androidx.compose.runtime.snapshotFlow
 import coil3.compose.AsyncImage
 import com.peakadex.app.R
 import androidx.compose.ui.res.stringResource
+import com.peakadex.app.core.ui.RopeTeamIcon
 import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.NearbyPeak
 import com.peakadex.app.core.model.Peak
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.peakadex.app.core.ui.SkeletonBlock
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
@@ -84,6 +96,7 @@ import com.peakadex.app.core.ui.rarityForAltitude
 import com.peakadex.app.core.ui.theme.PeakOnSurface
 import com.peakadex.app.core.ui.theme.PeakSubtle
 import com.peakadex.app.core.ui.theme.PeakTextHeadline
+import com.peakadex.app.core.ui.UiText
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
@@ -215,6 +228,7 @@ private fun gridPointFor(lat: Double, lon: Double, grid: PeakTileGrid): GridPoin
 }
 
 // ── Custom icons ───────────────────────────────────────────────────────────────
+// Search + filter icons now live in core/ui/PeakSearchComponents.kt (shared).
 
 private val CloseSmallIcon: ImageVector by lazy {
     ImageVector.Builder("CloseSmall", 16.dp, 16.dp, 16f, 16f).apply {
@@ -223,35 +237,37 @@ private val CloseSmallIcon: ImageVector by lazy {
     }.build()
 }
 
-// Share icon — 3 nodes connected by lines (matches web AscentCard)
-private val ShareNetworkIcon: ImageVector by lazy {
+// Share icon — 3 nodes connected by lines (matches web AscentCard).
+// NOTE: paths must use a concrete colour (Color.Black). With Color.Unspecified the
+// vector draws nothing, so the Icon `tint` has no pixels to recolour → invisible.
+internal val ShareNetworkIcon: ImageVector by lazy {
     ImageVector.Builder("ShareNetwork", 20.dp, 20.dp, 20f, 20f).apply {
-        // Top-right circle (cx=16, cy=4, r=2) → fill
-        path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
+        // Top-right circle (cx=16, cy=4, r=2)
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.4f, fill = null) {
             moveTo(18f, 4f); arcTo(2f, 2f, 0f, false, true, 14f, 4f); arcTo(2f, 2f, 0f, false, true, 18f, 4f); close()
         }
         // Left circle (cx=4, cy=10, r=2)
-        path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.4f, fill = null) {
             moveTo(6f, 10f); arcTo(2f, 2f, 0f, false, true, 2f, 10f); arcTo(2f, 2f, 0f, false, true, 6f, 10f); close()
         }
         // Bottom-right circle (cx=16, cy=16, r=2)
-        path(fill = SolidColor(Color.Unspecified), stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.4f) {
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.4f, fill = null) {
             moveTo(18f, 16f); arcTo(2f, 2f, 0f, false, true, 14f, 16f); arcTo(2f, 2f, 0f, false, true, 18f, 16f); close()
         }
         // Connecting lines
-        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
             moveTo(6f, 9f); lineTo(14f, 5f)
         }
-        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, fill = null) {
             moveTo(6f, 11f); lineTo(14f, 15f)
         }
     }.build()
 }
 
-// Pencil / edit icon (matches web AscentCard)
-private val PencilIcon: ImageVector by lazy {
+// Pencil / edit icon (matches web AscentCard). Concrete colour so the tint applies.
+internal val PencilIcon: ImageVector by lazy {
     ImageVector.Builder("Pencil", 20.dp, 20.dp, 20f, 20f).apply {
-        path(stroke = SolidColor(Color.Unspecified), strokeLineWidth = 1.8f,
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f,
             strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round, fill = null) {
             moveTo(14.5f, 2.5f)
             arcToRelative(2.121f, 2.121f, 0f, false, true, 3f, 3f)
@@ -265,8 +281,8 @@ private val PencilIcon: ImageVector by lazy {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogbookScreen(
-    onAscentClick: (String) -> Unit,
+fun CardsScreen(
+    onEditAscent: (Ascent) -> Unit = {},
     initialPeakId:       String? = null,
     initialPeakName:     String? = null,
     onPeakIdConsumed:    () -> Unit = {},
@@ -274,8 +290,12 @@ fun LogbookScreen(
     onRarityIdConsumed:  () -> Unit = {},
     refreshTrigger: Int = 0,
     highlightId: String? = null,
+    // Scroll-only target: used to scroll to a card WITHOUT arming its ring yet
+    // (the capture-reveal owns the ring timing, arming it on the final tap).
+    // Falls back to highlightId when not set.
+    scrollToId: String? = null,
     onHighlightConsumed: () -> Unit = {},
-    vm: LogbookViewModel = viewModel(),
+    vm: CardsViewModel = viewModel(),
 ) {
     // Apply peak filter from Atlas navigation once, then signal consumed so the
     // caller can clear the pending state (prevents re-applying on recomposition).
@@ -301,6 +321,14 @@ fun LogbookScreen(
         }
     }
 
+    // When arriving right after creating an ascent (refreshTrigger > 0), switch to
+    // the Mine filter SYNCHRONOUSLY on the first composition — before the initial
+    // load completes — so the Friends feed never flashes before we switch.
+    remember(refreshTrigger) {
+        if (refreshTrigger > 0) vm.setViewFilter(ViewFilter.Mine)
+        refreshTrigger
+    }
+
     val uiState         by vm.uiState.collectAsStateWithLifecycle()
     val isRefreshing    by vm.isRefreshing.collectAsStateWithLifecycle()
     val filters         by vm.filters.collectAsStateWithLifecycle()
@@ -313,19 +341,29 @@ fun LogbookScreen(
         if (refreshTrigger > 0) {
             vm.setViewFilter(ViewFilter.Mine)
             vm.refresh()
-            // Wait until the LazyColumn is laid out — animateScrollToItem is a no-op
-            // if called before the list has performed its first layout pass.
+            // Wait until the REFRESHED list actually contains the new ascent, then
+            // until the LazyColumn is laid out. Waiting only on totalItemsCount > 0
+            // matched the stale (pre-refresh) list, so indexOfFirst missed the new
+            // id and we scrolled to index 0 ("the first of mine"). Observe the VM's
+            // StateFlow so we see fresh data, not the captured stale `filteredAscents`.
+            val scrollTarget = scrollToId ?: highlightId
             withTimeoutOrNull(10_000L) {
+                if (scrollTarget != null) {
+                    vm.filteredAscents.filter { list -> list.any { it.id == scrollTarget } }.first()
+                }
                 snapshotFlow { listState.layoutInfo.totalItemsCount }
                     .filter { it > 0 }
                     .first()
-            } ?: return@LaunchedEffect  // network error — give up silently
+                true
+            } ?: return@LaunchedEffect  // network error / not found — give up silently
 
-            // Scroll to the exact position of the new ascent (not necessarily index 0,
-            // since the server's canonical sort may place it after unseen friends etc.)
-            val targetIdx = filteredAscents.indexOfFirst { it.id == highlightId }
+            // Scroll instantly (not animated) so the feed is already settled behind
+            // the capture-reveal overlay — no visible scroll motion under the card.
+            // Not necessarily index 0: the canonical sort may place it after unseen
+            // friends, and past-dated own ascents aren't first either.
+            val targetIdx = vm.filteredAscents.value.indexOfFirst { it.id == scrollTarget }
                 .takeIf { it >= 0 } ?: 0
-            listState.animateScrollToItem(targetIdx)
+            listState.scrollToItem(targetIdx)
         }
     }
 
@@ -353,20 +391,24 @@ fun LogbookScreen(
             }
         }
     }
-    // Always show filter bar when the active filter changes
-    LaunchedEffect(filters.viewFilter) { isFilterBarVisible = true }
+    // Always show filter bar when filters change (so user sees their active state)
+    LaunchedEffect(filters.isDirty) { isFilterBarVisible = true }
+
+    var showFiltersPanel by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().nestedScroll(filterScrollConnection)) {
 
-        // ── Quick filter: Mis Cards | Mi Cordada ──────────────────────────────
+        // ── Search + filters button bar ───────────────────────────────────────
         AnimatedVisibility(
             visible = isFilterBarVisible,
             enter   = slideInVertically(animationSpec = tween(200), initialOffsetY = { -it }),
             exit    = slideOutVertically(animationSpec = tween(200), targetOffsetY = { -it }),
         ) {
             QuickFilterBar(
-                viewFilter         = filters.viewFilter,
-                onViewFilterChange = vm::setViewFilter,
+                filters        = filters,
+                filteredCount  = filteredAscents.size,
+                onSearchChange = vm::setSearch,
+                onOpenFilters  = { showFiltersPanel = true },
             )
         }
 
@@ -378,8 +420,10 @@ fun LogbookScreen(
             )
         }
 
-        // ── Rarity filter chip — only when navigating from Home charts ─────
-        if (filters.rarityId != null) {
+        // ── Rarity filter chip — shown when set from Home charts ──────────
+        // (when rarityId is set from the filter panel there's no separate chip;
+        //  the filters button itself turns blue to indicate active state)
+        if (filters.rarityId != null && filters.peakId == null) {
             val rarityInfo = RARITY_PALETTE.find { it.id == filters.rarityId }
             if (rarityInfo != null) {
                 RarityFilterChip(
@@ -390,24 +434,24 @@ fun LogbookScreen(
         }
 
         when (uiState) {
-            is LogbookUiState.Loading -> LogbookLoadingState()
-            is LogbookUiState.Error   -> LogbookErrorState((uiState as LogbookUiState.Error).message) { vm.load() }
-            is LogbookUiState.Success -> PullToRefreshBox(
+            is CardsUiState.Loading -> CardsLoadingState()
+            is CardsUiState.Error   -> CardsErrorState((uiState as CardsUiState.Error).message.asString()) { vm.load() }
+            is CardsUiState.Success -> PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh    = { vm.refresh() },
                 modifier     = Modifier.fillMaxSize(),
             ) {
                 when {
-                    filteredAscents.isEmpty() && (filters.peakId != null || filters.rarityId != null) ->
-                        LogbookNoResultsState()
+                    filteredAscents.isEmpty() && (filters.peakId != null || filters.rarityId != null || filters.mythic || filters.search.isNotBlank()) ->
+                        CardsNoResultsState()
                     filteredAscents.isEmpty() && filters.viewFilter == ViewFilter.Friends ->
-                        LogbookFriendsEmptyState()
+                        CardsFriendsEmptyState()
                     filteredAscents.isEmpty() ->
-                        LogbookEmptyState()
+                        CardsEmptyState()
                     else ->
-                        LogbookList(
+                        CardsList(
                             ascents             = filteredAscents,
-                            onAscentClick       = onAscentClick,
+                            onEditAscent        = onEditAscent,
                             onShareClick        = onShareClick,
                             listState           = listState,
                             highlightId         = highlightId,
@@ -417,46 +461,254 @@ fun LogbookScreen(
             }
         }
     }
+
+    // ── Filters panel ─────────────────────────────────────────────────────────
+    if (showFiltersPanel) {
+        CardsFiltersPanel(
+            filters        = filters,
+            filteredCount  = filteredAscents.size,
+            onViewFilterChange = vm::setViewFilter,
+            onRarityChange     = vm::setRarityId,
+            onMythicChange     = vm::setMythic,
+            onClearAll         = vm::clearFilters,
+            onDismiss          = { showFiltersPanel = false },
+        )
+    }
 }
 
-// ── Quick filter bar — SecondaryTabRow (M3) ───────────────────────────────────
+// ── Quick filter bar — search + filters button ────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QuickFilterBar(
-    viewFilter: ViewFilter,
-    onViewFilterChange: (ViewFilter) -> Unit,
+    filters: CardsFilterState,
+    filteredCount: Int,
+    onSearchChange: (String) -> Unit,
+    onOpenFilters: () -> Unit,
 ) {
-    val selectedIndex = if (viewFilter == ViewFilter.Mine) 0 else 1
-    SecondaryTabRow(
-        selectedTabIndex = selectedIndex,
-        containerColor   = Color.White,
-        contentColor     = PeakBlueActive,
-        modifier         = Modifier.fillMaxWidth(),
+    val hasActiveFilters = filters.isDirty
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White),
     ) {
-        Tab(
-            selected = selectedIndex == 0,
-            onClick  = { onViewFilterChange(ViewFilter.Mine) },
-            icon = {
-                Icon(
-                    imageVector        = SoloPersonIcon,
-                    contentDescription = stringResource(R.string.logbook_filter_mine),
-                    tint               = if (selectedIndex == 0) PeakBlueActive else PeakMuted,
-                    modifier           = Modifier.size(24.dp),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            com.peakadex.app.core.ui.PeakSearchField(
+                value         = filters.search,
+                onValueChange = onSearchChange,
+                placeholder   = stringResource(R.string.cards_search_hint),
+                modifier      = Modifier.weight(1f),
+            )
+            com.peakadex.app.core.ui.PeakFilterButton(
+                label     = stringResource(R.string.cards_filters_title),
+                active    = hasActiveFilters,
+                showBadge = hasActiveFilters,
+                onClick   = onOpenFilters,
+            )
+        }
+        HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.06f))
+    }
+}
+
+// ── Filters panel (ModalBottomSheet) ─────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun CardsFiltersPanel(
+    filters: CardsFilterState,
+    filteredCount: Int,
+    onViewFilterChange: (ViewFilter) -> Unit,
+    onRarityChange: (String?) -> Unit,
+    onMythicChange: (Boolean) -> Unit,
+    onClearAll: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState       = sheetState,
+        containerColor   = Color.White,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(bottom = 20.dp),
+        ) {
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text       = stringResource(R.string.cards_filters_title),
+                    fontSize   = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = Color(0xFF111827),
+                    modifier   = Modifier.weight(1f),
                 )
-            },
-        )
-        Tab(
-            selected = selectedIndex == 1,
-            onClick  = { onViewFilterChange(ViewFilter.Friends) },
-            icon = {
-                Icon(
-                    imageVector        = CordadaIcon,
-                    contentDescription = stringResource(R.string.logbook_filter_friends),
-                    tint               = if (selectedIndex == 1) PeakBlueActive else PeakMuted,
-                    modifier           = Modifier.size(24.dp),
+                if (filters.isDirty) {
+                    TextButton(onClick = onClearAll) {
+                        Text(
+                            text     = stringResource(R.string.cards_filters_clear),
+                            fontSize = 14.sp,
+                            color    = PeakBlueActive,
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(color = Color(0xFFF3F4F6))
+            Spacer(Modifier.height(16.dp))
+
+            // ── VISTA ──────────────────────────────────────────────────────────
+            Text(
+                text     = stringResource(R.string.cards_filters_section_view),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.08.em,
+                color    = PeakMuted,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterToggleChip(
+                    label    = stringResource(R.string.cards_filter_mine),
+                    selected = filters.viewFilter == ViewFilter.Mine,
+                    onClick  = { onViewFilterChange(ViewFilter.Mine) },
                 )
-            },
+                FilterToggleChip(
+                    label    = stringResource(R.string.cards_filter_friends),
+                    selected = filters.viewFilter == ViewFilter.Friends,
+                    onClick  = { onViewFilterChange(ViewFilter.Friends) },
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // ── RAREZA ─────────────────────────────────────────────────────────
+            Text(
+                text     = stringResource(R.string.cards_filters_section_rarity),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.08.em,
+                color    = PeakMuted,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            FlowRow(
+                modifier            = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement   = Arrangement.spacedBy(8.dp),
+            ) {
+                RARITY_PALETTE.forEach { rarity ->
+                    val isSelected = !filters.mythic && filters.rarityId == rarity.id
+                    RarityToggleChip(
+                        rarity   = rarity,
+                        selected = isSelected,
+                        onClick  = {
+                            if (isSelected) onRarityChange(null)
+                            else { onMythicChange(false); onRarityChange(rarity.id) }
+                        },
+                    )
+                }
+                // Mythic chip
+                val mythicSelected = filters.mythic
+                FilterToggleChip(
+                    label    = stringResource(R.string.cards_filter_mythic),
+                    selected = mythicSelected,
+                    selectedBg     = Color(0xFFFFFBEB),
+                    selectedBorder = Color(0xFFFDE68A),
+                    selectedText   = Color(0xFF92400E),
+                    onClick  = {
+                        if (mythicSelected) onMythicChange(false)
+                        else { onRarityChange(null); onMythicChange(true) }
+                    },
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── CTA ────────────────────────────────────────────────────────────
+            Button(
+                onClick  = onDismiss,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .height(50.dp),
+                shape  = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
+            ) {
+                Text(
+                    text       = stringResource(R.string.cards_filters_see_cards, filteredCount),
+                    fontSize   = 15.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color      = Color.White,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterToggleChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    selectedBg: Color     = Color(0xFFEFF6FF),
+    selectedBorder: Color = Color(0xFF7DD3FC),
+    selectedText: Color   = Color(0xFF0369A1),
+) {
+    val bg     = if (selected) selectedBg     else Color(0xFFF1F5F9)
+    val border = if (selected) selectedBorder else Color.Transparent
+    val text   = if (selected) selectedText   else Color(0xFF374151)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(100.dp))
+            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onClick() }
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = text)
+    }
+}
+
+@Composable
+private fun RarityToggleChip(
+    rarity: RarityInfo,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val bg     = if (selected) rarity.color.copy(alpha = 0.13f) else Color(0xFFF1F5F9)
+    val border = if (selected) rarity.color.copy(alpha = 0.45f) else Color.Transparent
+    val text   = if (selected) rarity.color else Color(0xFF374151)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(100.dp))
+            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onClick() }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text       = "✿ ${rarity.label}",
+            fontSize   = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color      = text,
         )
     }
 }
@@ -531,9 +783,9 @@ private fun RarityFilterChip(rarityInfo: RarityInfo, onDismiss: () -> Unit) {
 // ── List ───────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LogbookList(
+private fun CardsList(
     ascents: List<Ascent>,
-    onAscentClick: (String) -> Unit,
+    onEditAscent: (Ascent) -> Unit,
     onShareClick: (String) -> Unit,
     listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
     highlightId: String? = null,
@@ -555,7 +807,7 @@ private fun LogbookList(
         items(ascents, key = { it.id }) { ascent ->
             AscentFlipCard(
                 ascent        = ascent,
-                onDetailClick = { onAscentClick(ascent.id) },
+                onEditClick   = { onEditAscent(ascent) },
                 onShareClick  = { onShareClick(ascent.id) },
                 isHighlighted = ascent.id == highlightId,
             )
@@ -568,8 +820,8 @@ private fun LogbookList(
 @Composable
 private fun AscentFlipCard(
     ascent:       Ascent,
-    onDetailClick: () -> Unit,
-    onShareClick:  () -> Unit,
+    onEditClick:  () -> Unit,
+    onShareClick: () -> Unit,
     isHighlighted: Boolean = false,
 ) {
     var isFlipped by remember { mutableStateOf(false) }
@@ -588,11 +840,25 @@ private fun AscentFlipCard(
     val density = LocalDensity.current.density
     val rarity  = rarityForAltitude(ascent.peak.altitudeM)
 
+    // Mythic glow: pulsing gold shadow (mirrors web .peak-card.mythic box-shadow).
+    val isMythic = ascent.peak.isMythic == true
+    val mythicTransition = rememberInfiniteTransition(label = "mythic")
+    val mythicPulse by mythicTransition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Reverse),
+        label = "mythicPulse",
+    )
+    val glowColor = Color(0xFFEAB308).copy(alpha = 0.32f + mythicPulse * 0.42f)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp), clip = false,
-                ambientColor = Color(0x1A0D2538), spotColor = Color(0x1A0D2538))
+            .shadow(
+                elevation = if (isMythic) (10f + mythicPulse * 12f).dp else 8.dp,
+                shape = RoundedCornerShape(28.dp), clip = false,
+                ambientColor = if (isMythic) glowColor else Color(0x1A0D2538),
+                spotColor    = if (isMythic) glowColor else Color(0x1A0D2538),
+            )
             .then(
                 if (ringAlpha > 0f) Modifier.border(
                     width = 3.dp,
@@ -610,10 +876,10 @@ private fun AscentFlipCard(
         ) {
             if (rotation <= 90f) {
                 CardFront(
-                    ascent        = ascent,
-                    rarity        = rarity,
-                    onDetailClick = onDetailClick,
-                    onShareClick  = onShareClick,
+                    ascent       = ascent,
+                    rarity       = rarity,
+                    onEditClick  = onEditClick,
+                    onShareClick = onShareClick,
                 )
             } else {
                 Box(Modifier.graphicsLayer { rotationY = 180f }) {
@@ -626,15 +892,32 @@ private fun AscentFlipCard(
 
 // ── Card front ─────────────────────────────────────────────────────────────────
 
+// Drives the capture-reveal animation when CardFront is shown inside
+// AscentCaptureReveal. It is null on every normal feed render — the card looks
+// and behaves exactly as before unless a reveal state is supplied.
+internal data class CardRevealState(
+    val photoBlur:    Dp = 0.dp,                          // blur applied only to the hero photo
+    val photoCover:   Float = 0f,                         // light-gray cover hiding photo + name during build (0..1)
+    val rarityScale:  Float = 1f,                         // scale of the rarity cell value (big → 1 highlight)
+    val epDisplay:    Int? = null,                        // null → show rarity.ep (final value)
+    val epScale:      Float = 1f,                         // scale of the EP number (big while rolling → 1)
+    val photoOverlay: (@Composable BoxScope.() -> Unit)? = null, // flower scene, inside the photo
+)
+
 @Composable
-private fun CardFront(
+internal fun CardFront(
     ascent:       Ascent,
     rarity:       RarityInfo,
-    onDetailClick: () -> Unit,
-    onShareClick:  () -> Unit,
+    onEditClick:  () -> Unit,
+    onShareClick: () -> Unit,
+    reveal:       CardRevealState? = null,
 ) {
+    val photoBlur  = reveal?.photoBlur ?: 0.dp
+    val photoCover = reveal?.photoCover ?: 0f
     val heroUrl  = ascent.photos.firstOrNull()?.url
-    val userName = ascent.user?.name ?: "Tú"
+    val heroLandscape = ascent.photos.firstOrNull()?.cropAspect == "landscape"
+    val isMythic = ascent.peak.isMythic == true
+    val userName = ascent.user?.name ?: stringResource(R.string.cards_you)
     val initials = userName.split(" ").take(2).mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
 
     Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(7.dp)) {
@@ -681,7 +964,7 @@ private fun CardFront(
                         )
                     }
                     IconButton(
-                        onClick   = onDetailClick,
+                        onClick   = onEditClick,
                         modifier  = Modifier.size(28.dp),
                     ) {
                         Icon(
@@ -703,7 +986,15 @@ private fun CardFront(
                 .clip(RoundedCornerShape(18.dp)).background(Color(0xFFF1F5F9)),
         ) {
             if (heroUrl != null) {
-                AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                if (heroLandscape) {
+                    // Landscape: blurred cover background + full photo contained on top
+                    AsyncImage(model = heroUrl, contentDescription = null, contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().blur(24.dp + photoBlur))
+                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize().blur(photoBlur))
+                } else {
+                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().blur(photoBlur))
+                }
             } else {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("🏔️", fontSize = 52.sp) }
             }
@@ -713,19 +1004,47 @@ private fun CardFront(
                     .background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, 0.3f to Color(0x6B07121F), 1f to Color(0xD107121F)))),
             )
 
-            Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 12.dp, vertical = 12.dp)) {
-                Text(ascent.peak.name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
-                    letterSpacing = (-0.035).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // Mythic badge — top-left, mirrors web .mythic-badge
+            if (isMythic) {
+                Text(
+                    text       = stringResource(R.string.card_mythic),
+                    color      = Color.White,
+                    fontSize   = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.12.em,
+                    modifier   = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(12.dp)
+                        .shadow(8.dp, RoundedCornerShape(percent = 50), clip = false,
+                            ambientColor = Color(0x59EAB308), spotColor = Color(0x59EAB308))
+                        .background(Color(0xF2EAB308), RoundedCornerShape(percent = 50))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+
+            // Name + altitude match the card back (CardBack) exactly so they don't
+            // visibly change when the card flips. Route is front-only, below.
+            Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 14.dp, vertical = 14.dp)) {
+                Text(ascent.peak.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
+                    letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black,
+                    color = Color.White, letterSpacing = (-0.04).em)
                 if (!ascent.route.isNullOrBlank()) {
                     Spacer(Modifier.height(2.dp))
                     Text(ascent.route, fontSize = 13.sp, color = Color(0xCCFFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    listOfNotNull(ascent.peak.mountainRange, "${ascent.peak.altitudeM} m").joinToString(" · "),
-                    fontSize = 10.sp, color = Color(0x99FFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
             }
+
+            // Capture-reveal: light-gray cover that hides the photo AND the peak name
+            // during the build (they reappear as it dissolves on auto-reveal). Sits
+            // above the gradient/name, below the flower scene.
+            if (photoCover > 0f) {
+                Box(Modifier.fillMaxSize().background(Color(0xFFEAEEF3).copy(alpha = photoCover)))
+            }
+
+            // Capture-reveal scene (flower + headline + name + profile) on top of the
+            // cover. Null on normal feed renders.
+            reveal?.photoOverlay?.invoke(this)
         }
 
         Spacer(Modifier.height(6.dp))
@@ -734,18 +1053,82 @@ private fun CardFront(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StatBandItem(stringResource(R.string.logbook_stat_rarity),   "✿ ${rarity.label}", rarity.color,       Modifier.weight(1f))
-            StatBandItem(stringResource(R.string.logbook_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
-            StatBandItem(stringResource(R.string.logbook_stat_ep),        "+${rarity.ep}",     rarity.color,       Modifier.weight(1f))
+            RarityStatItem(
+                label       = stringResource(R.string.cards_stat_rarity),
+                rarityLabel = rarity.label,
+                color       = rarity.color,
+                scale       = reveal?.rarityScale ?: 1f,
+                modifier    = Modifier.weight(1f),
+            )
+            StatBandItem(stringResource(R.string.cards_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
+            RewardStatItem(
+                ep       = reveal?.epDisplay ?: rarity.ep,
+                epScale  = reveal?.epScale ?: 1f,
+                modifier = Modifier.weight(1f),
+            )
         }
         Spacer(Modifier.height(3.dp))
     }
 }
 
+// Reward cell — shows "🪨 1 Cairn · +N EP" for mythic peaks, else "+N EP".
+// Mirrors web AscentCard reward pill (Cairn score before EP for mythic).
+// Rarity cell — mirrors web: a rounded pill tinted with the rarity colour (~12%)
+// wrapping "✿ Label". `scale` drives the capture-reveal highlight pop.
 @Composable
-private fun StatBandItem(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+internal fun RarityStatItem(label: String, rarityLabel: String, color: Color, scale: Float = 1f, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 8.dp, vertical = 6.dp),
+        modifier = modifier.background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
+        Spacer(Modifier.height(2.dp))
+        Row(
+            modifier = Modifier
+                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .wrapContentWidth(unbounded = true)
+                .background(color.copy(alpha = 0.125f), RoundedCornerShape(100))
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text("✿", fontSize = 11.sp, color = color, lineHeight = 11.sp)
+            Text(rarityLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
+// Reward cell — amber pill with "+N EP" (#d97706). The Cairn was removed (it was
+// always 1 on mythic, so it added no info and made the pill overflow).
+@Composable
+internal fun RewardStatItem(
+    ep: Int,
+    epScale: Float = 1f,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(stringResource(R.string.cards_stat_reward), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
+        Spacer(Modifier.height(2.dp))
+        Row(
+            modifier = Modifier
+                .graphicsLayer { scaleX = epScale; scaleY = epScale }
+                .wrapContentWidth(unbounded = true)
+                .background(Color(0xFFFEF3C7), RoundedCornerShape(100))
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("+$ep EP", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706), maxLines = 1, softWrap = false)
+        }
+    }
+}
+
+@Composable
+internal fun StatBandItem(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.09.em, color = Color(0xFF8A94A3))
@@ -957,11 +1340,12 @@ private fun fitTextToWidth(text: String, paint: Paint, maxWidth: Float): String 
 // ── Elevation profile ──────────────────────────────────────────────────────────
 
 @Composable
-private fun ElevationProfileCanvas(
+internal fun ElevationProfileCanvas(
     peakId: String,
     profile: com.peakadex.app.core.model.ElevationProfileData?,
     altitudeM: Int,
     modifier: Modifier = Modifier,
+    lineColor: Color = Color.White,
 ) {
     // Start with whatever the API response gave us (may be null if not included).
     var resolvedProfile by remember(peakId) { mutableStateOf(profile) }
@@ -983,7 +1367,7 @@ private fun ElevationProfileCanvas(
 
     if (pts == null) {
         // Show an altitude bar as fallback while loading (or if fetch failed).
-        ElevationFallbackBar(altitudeM = altitudeM, modifier = modifier)
+        ElevationFallbackBar(altitudeM = altitudeM, modifier = modifier, lineColor = lineColor)
         return
     }
 
@@ -1007,7 +1391,7 @@ private fun ElevationProfileCanvas(
             lineTo(toX(pts.size - 1), h)
             close()
         }
-        drawPath(areaPath, color = Color.White.copy(alpha = 0.20f))
+        drawPath(areaPath, color = lineColor.copy(alpha = 0.20f))
 
         // Line
         val linePath = Path().apply {
@@ -1016,21 +1400,21 @@ private fun ElevationProfileCanvas(
                 else        lineTo(toX(i), toY(p.elevation))
             }
         }
-        drawPath(linePath, color = Color.White,
+        drawPath(linePath, color = lineColor,
             style = Stroke(width = 1.5.dp.toPx(), join = StrokeJoin.Round))
     }
 }
 
 // Simple altitude bar shown while the profile is loading or when fetch fails.
 @Composable
-private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) {
+private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier, lineColor: Color = Color.White) {
     val pct = (altitudeM / 8849f).coerceIn(0f, 1f)
     Canvas(modifier = modifier) {
         val barH  = 4.dp.toPx()
         val y     = (size.height - barH) / 2
         // Track
         drawRoundRect(
-            color        = Color.White.copy(alpha = 0.20f),
+            color        = lineColor.copy(alpha = 0.20f),
             topLeft      = androidx.compose.ui.geometry.Offset(0f, y),
             size         = androidx.compose.ui.geometry.Size(size.width, barH),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),
@@ -1038,7 +1422,7 @@ private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) 
         // Fill
         if (pct > 0f) {
             drawRoundRect(
-                color        = Color.White.copy(alpha = 0.65f),
+                color        = lineColor.copy(alpha = 0.65f),
                 topLeft      = androidx.compose.ui.geometry.Offset(0f, y),
                 size         = androidx.compose.ui.geometry.Size(size.width * pct, barH),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2),
@@ -1049,9 +1433,9 @@ private fun ElevationFallbackBar(altitudeM: Int, modifier: Modifier = Modifier) 
 
 // ── Card back ──────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
-    val bylineName  = ascent.user?.name ?: "Tú"
 
     // BoxWithConstraints lets us compute heights in dp so the map is exactly 65% of the
     // total card height while keeping the card the same size as before.
@@ -1099,38 +1483,79 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(rarity.color))
                     Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.logbook_stats_title), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.cards_stats_title), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.07.em, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    StatBandItem(stringResource(R.string.logbook_stat_ascents),  ascent.peakStats?.totalAscents?.toString()  ?: "—", PeakOnSurface, Modifier.weight(1f))
-                    StatBandItem(stringResource(R.string.logbook_stat_climbers), ascent.peakStats?.uniqueClimbers?.toString() ?: "—", PeakOnSurface, Modifier.weight(1f))
+                    StatBandItem(stringResource(R.string.cards_stat_ascents),  ascent.peakStats?.totalAscents?.toString()  ?: "—", PeakOnSurface, Modifier.weight(1f))
+                    StatBandItem(stringResource(R.string.cards_stat_climbers), ascent.peakStats?.uniqueClimbers?.toString() ?: "—", PeakOnSurface, Modifier.weight(1f))
                 }
             }
 
-            // Footer — persons + description. Remaining height is white space.
+            // Footer — cordada pills + description quote. Remaining height is white space.
             Column(modifier = Modifier.padding(horizontal = 3.dp)) {
-                val personsText = when {
-                    ascent.persons.isEmpty() -> null
-                    ascent.persons.size == 1 -> "con ${ascent.persons[0].name}"
-                    else -> buildString {
-                        append("con ")
-                        ascent.persons.dropLast(1).forEachIndexed { i, p -> if (i > 0) append(", "); append(p.name) }
-                        append(" y ${ascent.persons.last().name}")
-                    }
+                // Cordada — one pill per member, above the quote.
+                // Own card: just tagged people (you're implicitly in the team).
+                // Friend card: prepend the owner so all members show; always shown.
+                val cordadaMembers = if (ascent.isOwn) {
+                    ascent.persons.map { it.name }
+                } else {
+                    (listOfNotNull(ascent.user?.name?.takeIf { it.isNotBlank() }) +
+                        ascent.persons.map { it.name }).distinct()
                 }
-                if (personsText != null) {
-                    Text(
-                        buildAnnotatedString {
-                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)) { append(bylineName) }
-                            append(" $personsText")
-                        },
-                        fontSize = 13.sp, color = PeakOnSurface, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(Modifier.height(4.dp))
+                if (cordadaMembers.isNotEmpty()) {
+                    FlowRow(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement   = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            stringResource(if (ascent.isOwn) R.string.card_cordada_label else R.string.card_cordada_label_other),
+                            fontSize   = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier   = Modifier.align(Alignment.CenterVertically),
+                        )
+                        cordadaMembers.forEach { name ->
+                            Text(
+                                name,
+                                fontSize   = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color      = PeakOnSurface,
+                                maxLines   = 1,
+                                overflow   = TextOverflow.Ellipsis,
+                                modifier   = Modifier
+                                    .clip(RoundedCornerShape(percent = 50))
+                                    .background(rarity.color.copy(alpha = 0.12f))
+                                    .padding(horizontal = 9.dp, vertical = 3.dp),
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
                 }
                 if (!ascent.description.isNullOrBlank()) {
-                    Text(ascent.description, fontSize = 13.sp, color = PeakMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 19.sp)
+                    // Blockquote — rarity-coloured vertical bar + the user's message.
+                    // The message is capped at 100 chars on input (3 lines), so it always
+                    // renders in full; ellipsis is only a defensive fallback for legacy data.
+                    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                        Box(
+                            modifier = Modifier
+                                .width(3.dp)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(rarity.color),
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            ascent.description,
+                            fontSize   = 13.sp,
+                            color      = PeakMuted,
+                            fontStyle  = FontStyle.Italic,
+                            maxLines   = 3,
+                            overflow   = TextOverflow.Ellipsis,
+                            lineHeight = 18.sp,
+                        )
+                    }
                 }
             }
             // Any remaining height → white space (no explicit Spacer needed; Column clips to totalH)
@@ -1141,52 +1566,80 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
 // ── States ─────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LogbookFriendsEmptyState() {
+private fun CardsFriendsEmptyState() {
     Column(
-        Modifier.fillMaxSize().padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
+        modifier            = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 56.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("👥", fontSize = 52.sp)
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.logbook_empty_friends_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)
-        Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.logbook_empty_friends_desc), fontSize = 14.sp, color = PeakMuted, lineHeight = 20.sp,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Box(
+            modifier         = Modifier.size(72.dp).clip(CircleShape).background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(RopeTeamIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(34.dp))
+        }
+        Text(
+            stringResource(R.string.friends_empty),
+            fontSize   = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            color      = Color(0xFF111827),
+            textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Text(
+            stringResource(R.string.friends_empty_subtitle),
+            fontSize  = 13.sp,
+            color     = Color(0xFF9CA3AF),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
     }
 }
 
 @Composable
-private fun LogbookEmptyState() {
+private fun CardsEmptyState() {
     Column(
-        Modifier.fillMaxSize().padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
+        modifier            = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 56.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("🏔️", fontSize = 52.sp)
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.logbook_empty_mine_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = PeakTextHeadline)
-        Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.logbook_empty_mine_desc), fontSize = 14.sp, color = PeakMuted, lineHeight = 20.sp,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Box(
+            modifier         = Modifier.size(72.dp).clip(CircleShape).background(Color(0xFFEFF6FF)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(RopeTeamIcon, contentDescription = null, tint = PeakBlueActive, modifier = Modifier.size(34.dp))
+        }
+        Text(
+            stringResource(R.string.friends_empty),
+            fontSize   = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            color      = Color(0xFF111827),
+            textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Text(
+            stringResource(R.string.friends_empty_subtitle),
+            fontSize  = 13.sp,
+            color     = Color(0xFF9CA3AF),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
     }
 }
 
 @Composable
-private fun LogbookNoResultsState() {
+private fun CardsNoResultsState() {
     Column(
         Modifier.fillMaxSize().padding(horizontal = 32.dp),
         verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("✿", fontSize = 48.sp, color = PeakBlueActive)
         Spacer(Modifier.height(14.dp))
-        Text(stringResource(R.string.logbook_empty_search_title), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PeakOnSurface)
+        Text(stringResource(R.string.cards_empty_search_title), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PeakOnSurface)
         Spacer(Modifier.height(4.dp))
-        Text(stringResource(R.string.logbook_empty_search_desc), fontSize = 13.sp, color = PeakSubtle,
+        Text(stringResource(R.string.cards_empty_search_desc), fontSize = 13.sp, color = PeakSubtle,
             lineHeight = 19.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
 @Composable
-private fun LogbookLoadingState() {
+private fun CardsLoadingState() {
     val shimmer = rememberSkeletonBrush("cardsSkeleton")
 
     LazyColumn(
@@ -1286,7 +1739,7 @@ private fun CardSkeleton(brush: Brush) {
 }
 
 @Composable
-private fun LogbookErrorState(message: String, onRetry: () -> Unit) {
+private fun CardsErrorState(message: String, onRetry: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         Text("⚠️", fontSize = 40.sp)
         Spacer(Modifier.height(12.dp))
@@ -1423,7 +1876,7 @@ private val CordadaIcon: ImageVector by lazy {
     }.build()
 }
 
-internal fun formatDate(isoDate: String): String {
+private fun formatDate(isoDate: String): String {
     return try {
         val local = if (isoDate.length > 10) LocalDate.parse(isoDate.substring(0, 10)) else LocalDate.parse(isoDate)
         val day   = local.dayOfMonth

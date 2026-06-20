@@ -1,6 +1,23 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { login } from "./helpers";
 import path from "path";
+
+async function createAnetoAscent(page: Page): Promise<string> {
+  await page.goto("/ascents/new");
+
+  const testImage = path.join(__dirname, "fixtures", "test-photo.jpg");
+  await page.setInputFiles('input[type="file"]', testImage);
+  await page.getByRole("button", { name: /next|siguiente/i }).click();
+
+  await page.getByPlaceholder(/cima|peak/i).fill("Aneto");
+  await page.getByText("Aneto").first().click();
+  await page.getByRole("button", { name: /guardar|save/i }).click();
+
+  await page.waitForURL(/\/ascents\?highlight=/, { timeout: 15_000 });
+  const highlightId = new URL(page.url()).searchParams.get("highlight");
+  expect(highlightId).toBeTruthy();
+  return highlightId!;
+}
 
 test.describe("Create ascent flow", () => {
   test.beforeEach(async ({ page }) => {
@@ -36,6 +53,59 @@ test.describe("Create ascent flow", () => {
 
     // Should land on the ascent detail or list after saving
     await expect(page).toHaveURL(/\/ascents/);
+  });
+
+  test("capture reveal keeps one stable card and settles without feed jump @capture-reveal", async ({ page }) => {
+    const highlightId = await createAnetoAscent(page);
+
+    const item = page.locator(`#ascent-${highlightId}`);
+    const card = item.locator(".peak-card");
+    const overlay = item.getByTestId("capture-reveal-overlay");
+
+    await expect(item).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("pinned-reveal-ascent")).toBeVisible();
+    await expect(page.locator(`[id="ascent-${highlightId}"]`)).toHaveCount(1);
+    await expect(item).toBeInViewport({ timeout: 1_500 });
+    await expect(card).toHaveCount(1);
+    await expect(overlay).toBeVisible({ timeout: 5_000 });
+    await expect(overlay).toHaveAttribute("data-reveal-status", /mounting|playing|settling/);
+
+    const beforeBox = await card.boundingBox();
+    expect(beforeBox).not.toBeNull();
+    if (!beforeBox) return;
+
+    const beforeScrollY = await page.evaluate(() => window.scrollY);
+    expect(beforeBox.width).toBeGreaterThan(100);
+    expect(beforeBox.height).toBeGreaterThan(260);
+    await page.waitForTimeout(1_000);
+    const scrollYAfterFirstSecond = await page.evaluate(() => window.scrollY);
+    expect(Math.abs(scrollYAfterFirstSecond - beforeScrollY)).toBeLessThanOrEqual(8);
+
+    await expect(overlay).toBeHidden({ timeout: 18_000 });
+    await expect(card).toHaveCount(1);
+    await expect(card).toBeVisible();
+
+    const afterBox = await card.boundingBox();
+    expect(afterBox).not.toBeNull();
+    if (!afterBox) return;
+
+    const afterScrollY = await page.evaluate(() => window.scrollY);
+    expect(Math.abs(afterScrollY - beforeScrollY)).toBeLessThanOrEqual(8);
+    expect(Math.abs(afterBox.height - beforeBox.height)).toBeLessThanOrEqual(24);
+  });
+
+  test("capture reveal respects reduced motion and settles immediately @capture-reveal", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const highlightId = await createAnetoAscent(page);
+
+    const item = page.locator(`#ascent-${highlightId}`);
+    const card = item.locator(".peak-card");
+    const overlay = item.getByTestId("capture-reveal-overlay");
+
+    await expect(item).toBeVisible({ timeout: 15_000 });
+    await expect(card).toHaveCount(1);
+    await expect(overlay).toBeHidden({ timeout: 3_000 });
+    await expect(card).toBeVisible();
   });
 });
 

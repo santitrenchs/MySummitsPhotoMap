@@ -1,14 +1,15 @@
 package com.peakadex.app.feature.settings
 
 import android.app.Application
-import android.app.LocaleManager
-import android.os.Build
-import android.os.LocaleList
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.R
 import com.peakadex.app.core.model.UpdatePasswordRequest
+import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.model.UpdateSettingsRequest
 import com.peakadex.app.core.model.User
 import kotlinx.coroutines.CancellationException
@@ -32,7 +33,7 @@ data class SettingsUiState(
     // editable fields (dirty copies)
     val nameInput: String = "",
     val usernameInput: String = "",
-    val usernameError: String? = null,
+    val usernameError: UiText? = null,
     // toggles
     val appearInSearch: Boolean = true,
     val allowOthersToTag: Boolean = true,
@@ -57,8 +58,10 @@ data class SettingsUiState(
     val passwordSuccess: Boolean = false,
     val languageSaved: Boolean = false,
     val googleUnlinked: Boolean = false,
-    val error: String? = null,
-    val passwordError: String? = null,
+    val error: UiText? = null,
+    val passwordError: UiText? = null,
+    // Non-null signals the UI to apply this locale and call Activity.recreate()
+    val localeToApply: String? = null,
 )
 
 val SettingsUiState.isProfileDirty: Boolean
@@ -97,10 +100,10 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: IOException) {
                 Log.e(TAG, "load: network error", e)
-                _state.update { it.copy(isLoading = false, error = "Sin conexión a internet") }
+                _state.update { it.copy(isLoading = false, error = UiText.StringRes(R.string.error_no_connection)) }
             } catch (e: Exception) {
                 Log.e(TAG, "load: error", e)
-                _state.update { it.copy(isLoading = false, error = "Error al cargar configuración") }
+                _state.update { it.copy(isLoading = false, error = UiText.StringRes(R.string.error_load_config)) }
             }
         }
     }
@@ -110,7 +113,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     fun onUsernameChange(value: String) {
         val error = when {
             value.isNotEmpty() && !USERNAME_RE.matches(value) ->
-                "Solo letras, números, puntos y guiones bajos (3–20 caracteres)"
+                UiText.StringRes(R.string.settings_username_format_error)
             else -> null
         }
         _state.update { it.copy(usernameInput = value, usernameError = error) }
@@ -119,7 +122,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     fun saveProfile() {
         val s = _state.value
         if (s.nameInput.isBlank()) {
-            _state.update { it.copy(error = "El nombre no puede estar vacío") }
+            _state.update { it.copy(error = UiText.StringRes(R.string.error_name_empty)) }
             return
         }
         if (s.usernameError != null) return
@@ -147,13 +150,13 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 Log.e(TAG, "saveProfile HTTP ${e.code()}")
                 _state.update { it.copy(
                     isSaving = false,
-                    error = if (e.code() == 409) "Ese nombre de usuario ya está en uso" else "Error al guardar",
+                    error = if (e.code() == 409) UiText.StringRes(R.string.error_username_taken) else UiText.StringRes(R.string.error_save),
                 ) }
             } catch (e: IOException) {
-                _state.update { it.copy(isSaving = false, error = "Sin conexión a internet") }
+                _state.update { it.copy(isSaving = false, error = UiText.StringRes(R.string.error_no_connection)) }
             } catch (e: Exception) {
                 Log.e(TAG, "saveProfile error", e)
-                _state.update { it.copy(isSaving = false, error = "Error al guardar") }
+                _state.update { it.copy(isSaving = false, error = UiText.StringRes(R.string.error_save)) }
             }
         }
     }
@@ -218,11 +221,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         val s = _state.value
         when {
             s.currentPassword.isBlank() ->
-                { _state.update { it.copy(passwordError = "Introduce tu contraseña actual") }; return }
+                { _state.update { it.copy(passwordError = UiText.StringRes(R.string.error_password_current_required)) }; return }
             s.newPassword.length < 8 ->
-                { _state.update { it.copy(passwordError = "La contraseña debe tener al menos 8 caracteres") }; return }
+                { _state.update { it.copy(passwordError = UiText.StringRes(R.string.error_password_too_short)) }; return }
             s.newPassword != s.confirmPassword ->
-                { _state.update { it.copy(passwordError = "Las contraseñas no coinciden") }; return }
+                { _state.update { it.copy(passwordError = UiText.StringRes(R.string.error_passwords_mismatch)) }; return }
         }
         viewModelScope.launch {
             _state.update { it.copy(isChangingPassword = true, passwordError = null, passwordSuccess = false) }
@@ -247,13 +250,13 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 Log.e(TAG, "savePassword HTTP ${e.code()}")
                 _state.update { it.copy(
                     isChangingPassword = false,
-                    passwordError = if (e.code() == 400) "Contraseña actual incorrecta" else "Error al cambiar contraseña",
+                    passwordError = if (e.code() == 400) UiText.StringRes(R.string.error_password_current_wrong) else UiText.StringRes(R.string.error_password_change),
                 ) }
             } catch (e: IOException) {
-                _state.update { it.copy(isChangingPassword = false, passwordError = "Sin conexión a internet") }
+                _state.update { it.copy(isChangingPassword = false, passwordError = UiText.StringRes(R.string.error_no_connection)) }
             } catch (e: Exception) {
                 Log.e(TAG, "savePassword error", e)
-                _state.update { it.copy(isChangingPassword = false, passwordError = "Error al cambiar contraseña") }
+                _state.update { it.copy(isChangingPassword = false, passwordError = UiText.StringRes(R.string.error_password_change)) }
             }
         }
     }
@@ -269,31 +272,32 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(isLanguageSheetOpen = show) }
 
     fun saveLanguage(locale: String) {
+        Log.d(TAG, "saveLanguage: called with locale='$locale'")
         _state.update { it.copy(isSavingLanguage = true, isLanguageSheetOpen = false) }
         viewModelScope.launch {
             try {
                 AppContainer.apiService.updateSettings(UpdateSettingsRequest(language = locale))
+                Log.d(TAG, "saveLanguage: API ok — signalling UI to apply locale")
+                // Set the locale via AppCompatDelegate (stores the preference)
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(locale))
+                // Signal the UI composable to call Activity.recreate() explicitly —
+                // required on API < 33 where AppCompatDelegate doesn't auto-recreate.
                 _state.update { it.copy(
                     isSavingLanguage = false,
                     selectedLanguage = locale,
-                    // Only show snackbar on API < 33; on API 33+ the Activity restarts
-                    languageSaved = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU,
+                    localeToApply    = locale,
                 ) }
-                // Apply locale change — triggers Activity recreation on API 33+
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    val lm = getApplication<Application>().getSystemService(LocaleManager::class.java)
-                    lm.applicationLocales = LocaleList.forLanguageTags(locale)
-                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "saveLanguage error", e)
-                _state.update { it.copy(isSavingLanguage = false, error = "Error al guardar idioma") }
+                _state.update { it.copy(isSavingLanguage = false, error = UiText.StringRes(R.string.error_save_language)) }
             }
         }
     }
 
     fun clearLanguageSaved() = _state.update { it.copy(languageSaved = false) }
+    fun clearLocaleToApply() = _state.update { it.copy(localeToApply = null) }
 
     // ─── Google unlink ────────────────────────────────────────────────────────
 
@@ -314,7 +318,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "unlinkGoogle error", e)
-                _state.update { it.copy(isUnlinkingGoogle = false, error = "Error al desvincular Google") }
+                _state.update { it.copy(isUnlinkingGoogle = false, error = UiText.StringRes(R.string.error_unlink_google)) }
             }
         }
     }

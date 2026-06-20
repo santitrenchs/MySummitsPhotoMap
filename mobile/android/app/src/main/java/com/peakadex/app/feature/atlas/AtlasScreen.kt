@@ -126,6 +126,8 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapLibreMapOptions
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.style.expressions.Expression.any
+import org.maplibre.android.style.expressions.Expression.eq
 import org.maplibre.android.style.expressions.Expression.get
 import org.maplibre.android.style.expressions.Expression.has
 import org.maplibre.android.style.expressions.Expression.literal
@@ -135,10 +137,18 @@ import org.maplibre.android.style.expressions.Expression.stop
 import org.maplibre.android.style.expressions.Expression.toNumber
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.FillLayer
 import org.maplibre.android.style.layers.HillshadeLayer
+import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property.NONE
 import org.maplibre.android.style.layers.Property.VISIBLE
+import org.maplibre.android.style.layers.PropertyFactory.fillColor
+import org.maplibre.android.style.layers.PropertyFactory.fillOpacity
 import org.maplibre.android.style.layers.PropertyFactory.hillshadeExaggeration
+import org.maplibre.android.style.layers.PropertyFactory.lineColor
+import org.maplibre.android.style.layers.PropertyFactory.lineDasharray
+import org.maplibre.android.style.layers.PropertyFactory.lineOpacity
+import org.maplibre.android.style.layers.PropertyFactory.lineWidth
 import org.maplibre.android.style.layers.PropertyFactory.hillshadeHighlightColor
 import org.maplibre.android.style.layers.PropertyFactory.hillshadeShadowColor
 import org.maplibre.android.style.layers.PropertyFactory.rasterOpacity
@@ -167,6 +177,7 @@ import org.maplibre.android.style.sources.GeoJsonOptions
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.android.style.sources.RasterSource
 import org.maplibre.android.style.sources.TileSet
+import org.maplibre.android.style.sources.VectorSource
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -198,6 +209,12 @@ private const val SRC_TRAILS              = "trails-source"
 private const val LYR_HILLSHADE           = "hillshade-layer"
 private const val LYR_TRAILS              = "trails-layer"
 
+private const val SRC_OFM                 = "ofm-source"          // OpenFreeMap vector tiles
+private const val LYR_HUTS_DOTS           = "huts-dots-layer"
+private const val LYR_HUTS_LABELS         = "huts-labels-layer"
+private const val LYR_PARKS_FILL          = "parks-fill-layer"
+private const val LYR_PARKS_OUTLINE       = "parks-outline-layer"
+
 private const val SRC_SELECTED            = "selected-source"
 private const val LYR_SELECTED_GLOW       = "selected-glow-layer"
 
@@ -209,7 +226,7 @@ private const val LYR_SATELLITE           = "satellite-layer"
 @Composable
 fun AtlasScreen(
     atlasRefreshTrigger: Int = 0,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit = { _, _ -> },
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit = { _, _ -> },
     onNavigateToNewAscent: (peakId: String, peakName: String) -> Unit = { _, _ -> },
     vm: AtlasViewModel = viewModel(),
 ) {
@@ -236,11 +253,19 @@ fun AtlasScreen(
     var terrain3d  by rememberSaveable { mutableStateOf(false) }
     var mapType    by rememberSaveable { mutableStateOf(MapType.NORMAL) }
     var trails     by rememberSaveable { mutableStateOf(false) }
+    var huts       by rememberSaveable { mutableStateOf(false) }
+    var parks      by rememberSaveable { mutableStateOf(false) }
     // remember: estado transitorio, resetear en rotación es correcto
     var layersOpen    by remember { mutableStateOf(false) }
     var filtersOpen   by remember { mutableStateOf(false) }
     var geoLocating   by remember { mutableStateOf(false) }
     val hasInitialFlown = remember { mutableStateOf(false) }
+
+    // ── Atlas onboarding sheet — shown once until user checks "don't show" ────
+    val prefs = remember { context.getSharedPreferences("peakadex_prefs", android.content.Context.MODE_PRIVATE) }
+    val onboardingSeen = remember { prefs.getBoolean("map_onboarding_seen", false) }
+    var showOnboarding by rememberSaveable { mutableStateOf(!onboardingSeen) }
+    android.util.Log.d("AtlasOnboarding", "showOnboarding=$showOnboarding onboardingSeen=$onboardingSeen")
 
     // ── Location permission + geolocate ──────────────────────────────────────
     val locationPermLauncher = rememberLauncherForActivityResult(
@@ -307,7 +332,9 @@ fun AtlasScreen(
                         """.trimIndent()
 
                         val tileSet = TileSet("2.2.0",
-                            "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png")
+                            "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+                            "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+                            "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png")
                         tileSet.setMaxZoom(19f)
                         tileSet.setMinZoom(0f)
                         val basemapSource = RasterSource("carto-basemap", tileSet, 256)
@@ -356,7 +383,7 @@ fun AtlasScreen(
                             )
                             val peakId = features.firstOrNull()?.getStringProperty("id")
                             if (peakId != null) {
-                                vm.onPeakSelected(peakId)
+                                vm.onPeakSelectedById(peakId)
                             } else {
                                 vm.onSelectionDismissed()
                             }
@@ -401,15 +428,16 @@ fun AtlasScreen(
 
         // ── Update GeoJSON sources when peaks / filter change ─────────────────
         val climbed           = uiState.climbedByPeakId
-        val viewport          = uiState.viewportPeaks
+        val viewport          = uiState.peaksCache.values.toList()
         val filter            = uiState.filter
         val rarities          = uiState.rarities
         val selectedRarityIds = uiState.selectedRarityIds
+        val mythicFilter      = uiState.mythicFilter
 
-        LaunchedEffect(styleReady.value, climbed, viewport, filter, selectedRarityIds, rarities) {
+        LaunchedEffect(styleReady.value, climbed, viewport, filter, selectedRarityIds, mythicFilter, rarities) {
             if (!styleReady.value) return@LaunchedEffect
             val style = mapRef.value?.style ?: return@LaunchedEffect
-            updateMapSources(style, climbed, viewport, filter, selectedRarityIds, rarities)
+            updateMapSources(style, climbed, viewport, filter, selectedRarityIds, mythicFilter, rarities)
         }
 
         // ── Load photo markers async (incremental) ───────────────────────────
@@ -443,6 +471,22 @@ fun AtlasScreen(
             if (!styleReady.value) return@LaunchedEffect
             mapRef.value?.style?.getLayer(LYR_TRAILS)
                 ?.setProperties(visibility(if (trails) VISIBLE else NONE))
+        }
+
+        // ── Toggle refugios (huts) overlay ────────────────────────────────────
+        LaunchedEffect(styleReady.value, huts) {
+            if (!styleReady.value) return@LaunchedEffect
+            val style = mapRef.value?.style ?: return@LaunchedEffect
+            style.getLayer(LYR_HUTS_DOTS)?.setProperties(visibility(if (huts) VISIBLE else NONE))
+            style.getLayer(LYR_HUTS_LABELS)?.setProperties(visibility(if (huts) VISIBLE else NONE))
+        }
+
+        // ── Toggle parques (parks) overlay ────────────────────────────────────
+        LaunchedEffect(styleReady.value, parks) {
+            if (!styleReady.value) return@LaunchedEffect
+            val style = mapRef.value?.style ?: return@LaunchedEffect
+            style.getLayer(LYR_PARKS_FILL)?.setProperties(visibility(if (parks) VISIBLE else NONE))
+            style.getLayer(LYR_PARKS_OUTLINE)?.setProperties(visibility(if (parks) VISIBLE else NONE))
         }
 
         // ── 3D camera tilt ────────────────────────────────────────────────────
@@ -524,6 +568,7 @@ fun AtlasScreen(
         if (showTopBar) {
             val hasActiveFilters = uiState.filter != AtlasFilter.ALL ||
                     uiState.selectedRarityIds.isNotEmpty() ||
+                    uiState.mythicFilter ||
                     uiState.sortMode != SortMode.DISTANCE
             SearchBarOverlay(
                 query            = uiState.searchQuery,
@@ -583,7 +628,7 @@ fun AtlasScreen(
             MapControlsColumn(
                 showTopBar     = showTopBar,
                 onToggleTopBar = { showTopBar = !showTopBar },
-                hasActiveLayers= mapType != MapType.NORMAL || trails,
+                hasActiveLayers= mapType != MapType.NORMAL || trails || huts || parks,
                 layersOpen     = layersOpen,
                 onToggleLayers = { layersOpen = !layersOpen },
                 terrain3d      = terrain3d,
@@ -606,10 +651,11 @@ fun AtlasScreen(
                 filter            = filter,
                 center            = cameraCenter.value,
                 selectedRarityIds = selectedRarityIds,
+                mythicFilter      = mythicFilter,
                 sortMode          = uiState.sortMode,
                 rarities          = rarities,
                 onPeakClick       = { peak ->
-                    vm.onPeakSelected(peak.id)
+                    vm.onPeakSelected(peak)   // full object — never fails silently
                     vm.onToggleList()
                     mapRef.value?.animateCamera(
                         CameraUpdateFactory.newLatLngZoom(
@@ -641,6 +687,10 @@ fun AtlasScreen(
                 onMapType = { mapType = it },
                 trails    = trails,
                 onTrails  = { trails = it },
+                huts      = huts,
+                onHuts    = { huts = it },
+                parks     = parks,
+                onParks   = { parks = it },
                 onDismiss = { layersOpen = false },
             )
         }
@@ -649,6 +699,7 @@ fun AtlasScreen(
         if (filtersOpen) {
             val isDirty = uiState.filter != AtlasFilter.ALL ||
                           uiState.selectedRarityIds.isNotEmpty() ||
+                          uiState.mythicFilter ||
                           uiState.sortMode != SortMode.DISTANCE
             FiltersPanel(
                 rarities              = rarities,
@@ -658,6 +709,8 @@ fun AtlasScreen(
                 onFilterChanged       = vm::onFilterChanged,
                 selectedRarityIds     = selectedRarityIds,
                 onRarityFilterChanged = vm::onRarityFilterChanged,
+                mythicFilter          = mythicFilter,
+                onMythicFilterChanged = vm::onMythicFilterChanged,
                 sortMode              = uiState.sortMode,
                 onSortModeChanged     = vm::onSortModeChanged,
                 isDirty               = isDirty,
@@ -666,12 +719,23 @@ fun AtlasScreen(
             )
         }
 
+        // ── Atlas onboarding sheet ────────────────────────────────────────────
+        if (showOnboarding) {
+            MapOnboardingSheet(
+                onDismiss  = { showOnboarding = false },
+                onDontShow = {
+                    prefs.edit().putBoolean("map_onboarding_seen", true).apply()
+                    showOnboarding = false
+                },
+            )
+        }
+
         // ── Peak detail bottom sheet ──────────────────────────────────────────
         if (selected != null) {
             PeakDetailSheet(
                 selected              = selected,
                 rarities              = rarities,
-                onNavigateToLogbook   = onNavigateToLogbook,
+                onNavigateToCards   = onNavigateToCards,
                 onNavigateToNewAscent = onNavigateToNewAscent,
                 onDismiss             = vm::onSelectionDismissed,
             )
@@ -697,6 +761,11 @@ private fun setupSources(style: org.maplibre.android.maps.Style) {
         "https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png")
     trailsTileSet.setMaxZoom(17f)
     style.addSource(RasterSource(SRC_TRAILS, trailsTileSet, 256))
+
+    // OpenFreeMap vector tiles — used for refugios (alpine huts) and parques (parks)
+    style.addSource(
+        VectorSource(SRC_OFM, "https://tiles.openfreemap.org/planet")
+    )
 
     // Peak data sources
     style.addSource(GeoJsonSource(SRC_CLIMBED, FeatureCollection.fromFeatures(emptyList<Feature>())))
@@ -742,6 +811,89 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 rasterOpacity(0.75f),
                 visibility(NONE),
             ),
+    )
+
+    // National parks / nature reserves fill — initially hidden
+    style.addLayer(
+        FillLayer(LYR_PARKS_FILL, SRC_OFM)
+            .withSourceLayer("landuse")
+            .withFilter(
+                any(
+                    eq(get("class"), literal("national_park")),
+                    eq(get("class"), literal("nature_reserve")),
+                    eq(get("class"), literal("protected_area")),
+                )
+            )
+            .withProperties(
+                fillColor("#22c55e"),
+                fillOpacity(0.07f),
+                visibility(NONE),
+            )
+            .also { it.setMinZoom(4.0f) },
+    )
+    // National parks outline — initially hidden
+    style.addLayer(
+        LineLayer(LYR_PARKS_OUTLINE, SRC_OFM)
+            .withSourceLayer("landuse")
+            .withFilter(
+                any(
+                    eq(get("class"), literal("national_park")),
+                    eq(get("class"), literal("nature_reserve")),
+                    eq(get("class"), literal("protected_area")),
+                )
+            )
+            .withProperties(
+                lineColor("#16a34a"),
+                lineOpacity(0.45f),
+                lineWidth(1.5f),
+                lineDasharray(arrayOf(3f, 2f)),
+                visibility(NONE),
+            )
+            .also { it.setMinZoom(4.0f) },
+    )
+    // Alpine hut / wilderness hut dots — initially hidden
+    style.addLayer(
+        CircleLayer(LYR_HUTS_DOTS, SRC_OFM)
+            .withSourceLayer("poi")
+            .withFilter(
+                any(
+                    eq(get("subclass"), literal("alpine_hut")),
+                    eq(get("subclass"), literal("wilderness_hut")),
+                )
+            )
+            .withProperties(
+                circleRadius(5f),
+                circleColor("#f59e0b"),
+                circleOpacity(0.9f),
+                circleStrokeWidth(1.5f),
+                circleStrokeColor("#FFFFFF"),
+                visibility(NONE),
+            )
+            .also { it.setMinZoom(9.0f) },
+    )
+    // Alpine hut labels — initially hidden
+    style.addLayer(
+        SymbolLayer(LYR_HUTS_LABELS, SRC_OFM)
+            .withSourceLayer("poi")
+            .withFilter(
+                any(
+                    eq(get("subclass"), literal("alpine_hut")),
+                    eq(get("subclass"), literal("wilderness_hut")),
+                )
+            )
+            .withProperties(
+                textField("{name}"),
+                textSize(11f),
+                textOffset(arrayOf(0f, 1.2f)),
+                textAnchor("top"),
+                textColor("#92400e"),
+                textHaloColor("rgba(255,255,255,1.0)"),
+                textHaloWidth(1.5f),
+                textIgnorePlacement(false),
+                textAllowOverlap(false),
+                visibility(NONE),
+            )
+            .also { it.setMinZoom(12.0f) },
     )
 
     // Clustered groups of unclimbed peaks
@@ -829,50 +981,60 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
 
 // ── Update GeoJSON sources ────────────────────────────────────────────────────
 
-private fun updateMapSources(
+private suspend fun updateMapSources(
     style: org.maplibre.android.maps.Style,
     climbed: Map<String, MapAscent>,
     viewport: List<Peak>,
     filter: AtlasFilter,
     selectedRarityIds: Set<String>,
+    mythicFilter: Boolean,
     rarities: List<Rarity>,
 ) {
-    val rarityColorMap = rarities.associateBy { it.id }
+    // Build Feature objects off the Main thread — GeoJSON object construction is
+    // CPU-bound (string/property allocation) and blocks the UI at 500+ peaks.
+    val (climbedFeatures, unclimbedFeatures) = withContext(kotlinx.coroutines.Dispatchers.Default) {
+        val rarityColorMap = rarities.associateBy { it.id }
 
-    val climbedFeatures: List<Feature> = if (filter != AtlasFilter.NOT_YET) {
-        climbed.values
-            .filter { selectedRarityIds.isEmpty() || it.peak.rarityId in selectedRarityIds }
-            .map { ascent ->
-                Feature.fromGeometry(
-                    Point.fromLngLat(ascent.peak.longitude, ascent.peak.latitude),
-                ).apply {
-                    addStringProperty("id",        ascent.peakId)
-                    addStringProperty("name",      ascent.peak.name)
-                    addNumberProperty("altitudeM", ascent.peak.altitudeM)
-                    addStringProperty("iconImage", "peak-photo-${ascent.peakId}")
+        val climbed_f: List<Feature> = if (filter != AtlasFilter.NOT_YET) {
+            climbed.values
+                .filter { selectedRarityIds.isEmpty() || it.peak.rarityId in selectedRarityIds }
+                .filter { !mythicFilter || it.peak.isMythic == true }
+                .map { ascent ->
+                    Feature.fromGeometry(
+                        Point.fromLngLat(ascent.peak.longitude, ascent.peak.latitude),
+                    ).apply {
+                        addStringProperty("id",        ascent.peakId)
+                        addStringProperty("name",      ascent.peak.name)
+                        addNumberProperty("altitudeM", ascent.peak.altitudeM)
+                        addStringProperty("iconImage", "peak-photo-${ascent.peakId}")
+                    }
                 }
-            }
-    } else emptyList()
+        } else emptyList()
 
+        val unclimbed_f: List<Feature> = if (filter != AtlasFilter.CLIMBED) {
+            viewport
+                .filter { it.id !in climbed }
+                .filter { selectedRarityIds.isEmpty() || it.rarityId in selectedRarityIds }
+                .filter { !mythicFilter || it.isMythic == true }
+                .map { peak ->
+                    val rarityColor = peak.rarityId?.let { rarityColorMap[it]?.color } ?: UNCLIMBED_COLOR
+                    Feature.fromGeometry(
+                        Point.fromLngLat(peak.longitude, peak.latitude),
+                    ).apply {
+                        addStringProperty("id",          peak.id)
+                        addStringProperty("name",        peak.name)
+                        addNumberProperty("altitudeM",   peak.altitudeM)
+                        addStringProperty("rarityColor", rarityColor)
+                    }
+                }
+        } else emptyList()
+
+        climbed_f to unclimbed_f
+    }
+
+    // setGeoJson and layer visibility must run on Main thread (MapLibre GL requirement).
     style.getSourceAs<GeoJsonSource>(SRC_CLIMBED)
         ?.setGeoJson(FeatureCollection.fromFeatures(climbedFeatures))
-
-    val unclimbedFeatures: List<Feature> = if (filter != AtlasFilter.CLIMBED) {
-        viewport
-            .filter { it.id !in climbed }
-            .filter { selectedRarityIds.isEmpty() || it.rarityId in selectedRarityIds }
-            .map { peak ->
-                val rarityColor = peak.rarityId?.let { rarityColorMap[it]?.color } ?: UNCLIMBED_COLOR
-                Feature.fromGeometry(
-                    Point.fromLngLat(peak.longitude, peak.latitude),
-                ).apply {
-                    addStringProperty("id",          peak.id)
-                    addStringProperty("name",        peak.name)
-                    addNumberProperty("altitudeM",   peak.altitudeM)
-                    addStringProperty("rarityColor", rarityColor)
-                }
-            }
-    } else emptyList()
 
     style.getSourceAs<GeoJsonSource>(SRC_UNCLIMBED)
         ?.setGeoJson(FeatureCollection.fromFeatures(unclimbedFeatures))
@@ -1025,87 +1187,20 @@ private fun SearchBarOverlay(
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Search pill
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .shadow(4.dp, RoundedCornerShape(28.dp))
-                .background(androidx.compose.ui.graphics.Color.White, RoundedCornerShape(28.dp))
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector        = SearchIcon,
-                contentDescription = null,
-                tint               = PeakSubtle,
-                modifier           = Modifier.size(20.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            OutlinedTextField(
-                value         = query,
-                onValueChange = onQuery,
-                placeholder   = {
-                    Text(stringResource(R.string.atlas_search_placeholder),
-                        fontSize = 14.sp, color = PeakSubtle)
-                },
-                singleLine = true,
-                modifier   = Modifier.weight(1f),
-                colors     = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
-                    focusedBorderColor   = androidx.compose.ui.graphics.Color.Transparent,
-                ),
-            )
-            if (isActive) {
-                IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        imageVector        = CloseIcon,
-                        contentDescription = stringResource(R.string.atlas_action_close),
-                        tint               = PeakMuted,
-                        modifier           = Modifier.size(18.dp),
-                    )
-                }
-            }
-        }
-
-        // Filtros button
-        val filtersActive = filtersOpen || hasActiveFilters
-        Box {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .shadow(4.dp, RoundedCornerShape(28.dp))
-                    .background(
-                        if (filtersActive) PeakSlate else androidx.compose.ui.graphics.Color.White,
-                        RoundedCornerShape(28.dp),
-                    )
-                    .clickable(onClick = onToggleFilters)
-                    .padding(horizontal = 16.dp),
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(
-                    imageVector        = FiltersIcon,
-                    contentDescription = stringResource(R.string.atlas_btn_filters),
-                    tint               = if (filtersActive) androidx.compose.ui.graphics.Color.White else PeakSlate,
-                    modifier           = Modifier.size(16.dp),
-                )
-                Text(
-                    text       = stringResource(R.string.atlas_btn_filters),
-                    fontSize   = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = if (filtersActive) androidx.compose.ui.graphics.Color.White else PeakSlate,
-                )
-            }
-            if (hasActiveFilters && !filtersOpen) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .align(Alignment.TopEnd)
-                        .offset(x = 2.dp, y = (-2).dp)
-                        .background(PeakBlueActive, CircleShape),
-                )
-            }
-        }
+        com.peakadex.app.core.ui.PeakSearchField(
+            value         = query,
+            onValueChange = onQuery,
+            placeholder   = stringResource(R.string.atlas_search_placeholder),
+            modifier      = Modifier.weight(1f),
+            showClear     = isActive,
+            onClear       = onDismiss,
+        )
+        com.peakadex.app.core.ui.PeakFilterButton(
+            label     = stringResource(R.string.atlas_btn_filters),
+            active    = filtersOpen || hasActiveFilters,
+            showBadge = hasActiveFilters && !filtersOpen,
+            onClick   = onToggleFilters,
+        )
     }
 }
 
@@ -1205,7 +1300,7 @@ private fun SearchResultsList(
 private fun PeakDetailSheet(
     selected: SelectedPeakUi,
     rarities: List<Rarity>,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onNavigateToNewAscent: (peakId: String, peakName: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1351,7 +1446,7 @@ private fun PeakDetailSheet(
                 if (ascent != null) {
                     // Climbed: "Ver capturas" (ghost) + "Capturar" (dark)
                     OutlinedButton(
-                        onClick  = { onDismiss(); onNavigateToLogbook(peak.id, peak.name) },
+                        onClick  = { onDismiss(); onNavigateToCards(peak.id, peak.name) },
                         modifier = Modifier.weight(1f).height(40.dp),
                         shape    = RoundedCornerShape(10.dp),
                         border   = BorderStroke(1.dp, PeakSlate),
@@ -1581,11 +1676,12 @@ private fun PeaksListPanel(
     filter: AtlasFilter,
     center: LatLng?,
     selectedRarityIds: Set<String>,
+    mythicFilter: Boolean,
     sortMode: SortMode,
     rarities: List<Rarity>,
     onPeakClick: (Peak) -> Unit,
 ) {
-    val items = remember(climbed, listPeaks, filter, center, selectedRarityIds, sortMode, rarities) {
+    val items = remember(climbed, listPeaks, filter, center, selectedRarityIds, mythicFilter, sortMode, rarities) {
         val climbedPeaks = if (filter != AtlasFilter.NOT_YET)
             climbed.values.map { it.peak } else emptyList()
         val unclimbedPeaks = if (filter != AtlasFilter.CLIMBED)
@@ -1593,6 +1689,7 @@ private fun PeaksListPanel(
         val all = (climbedPeaks + unclimbedPeaks)
             .distinctBy { it.id }
             .filter { p -> selectedRarityIds.isEmpty() || p.rarityId in selectedRarityIds }
+            .filter { p -> !mythicFilter || p.isMythic == true }
         val rarityWeights = rarities.associate { it.id to it.scoreWeight }
         val maxAlt = all.maxOfOrNull { it.altitudeM } ?: 1
         when (sortMode) {
@@ -1740,6 +1837,10 @@ private fun LayersPanel(
     onMapType: (MapType) -> Unit,
     trails: Boolean,
     onTrails: (Boolean) -> Unit,
+    huts: Boolean,
+    onHuts: (Boolean) -> Unit,
+    parks: Boolean,
+    onParks: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -1803,7 +1904,20 @@ private fun LayersPanel(
                         icon     = TrailsIcon,
                         modifier = Modifier.weight(1f),
                     )
-                    Spacer(Modifier.weight(1f))
+                    LayerCard(
+                        label    = stringResource(R.string.atlas_layers_huts),
+                        active   = huts,
+                        onClick  = { onHuts(!huts) },
+                        icon     = HutsIcon,
+                        modifier = Modifier.weight(1f),
+                    )
+                    LayerCard(
+                        label    = stringResource(R.string.atlas_layers_parks),
+                        active   = parks,
+                        onClick  = { onParks(!parks) },
+                        icon     = ParksIcon,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -1880,6 +1994,8 @@ private fun FiltersPanel(
     onFilterChanged: (AtlasFilter) -> Unit,
     selectedRarityIds: Set<String>,
     onRarityFilterChanged: (Set<String>) -> Unit,
+    mythicFilter: Boolean,
+    onMythicFilterChanged: (Boolean) -> Unit,
     sortMode: SortMode,
     onSortModeChanged: (SortMode) -> Unit,
     isDirty: Boolean,
@@ -1888,22 +2004,29 @@ private fun FiltersPanel(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Count climbed peaks per rarity
-    val rarityClimbedCounts = remember(climbed, rarities) {
-        rarities.associateWith { rarity ->
-            climbed.values.count { it.peak.rarityId == rarity.id }
+    // Rarity pill counts — depends on the active status filter:
+    //   CLIMBED  → all user captures globally (personal inventory, not location-dependent)
+    //   NOT_YET  → unclimbed peaks in the current viewport cache only
+    //   ALL      → all peaks in the current viewport cache (climbed + unclimbed in this area)
+    val rarityTotalCounts = remember(climbed, viewport, filter, rarities) {
+        val peaks: List<Peak> = when (filter) {
+            AtlasFilter.CLIMBED -> climbed.values.map { it.peak }
+            AtlasFilter.NOT_YET -> viewport.filter { it.id !in climbed }
+            AtlasFilter.ALL     -> viewport
         }
+        rarities.associateWith { rarity -> peaks.count { it.rarityId == rarity.id } }
     }
 
     // Total visible peaks after all active filters
-    val filteredCount = remember(climbed, viewport, filter, selectedRarityIds) {
+    val filteredCount = remember(climbed, viewport, filter, selectedRarityIds, mythicFilter) {
         val climbedPeaks = if (filter != AtlasFilter.NOT_YET)
             climbed.values.map { it.peak } else emptyList()
         val unclimbedPeaks = if (filter != AtlasFilter.CLIMBED)
             viewport.filter { it.id !in climbed } else emptyList()
         (climbedPeaks + unclimbedPeaks)
             .distinctBy { it.id }
-            .count { p -> selectedRarityIds.isEmpty() || p.rarityId in selectedRarityIds }
+            .filter { p -> selectedRarityIds.isEmpty() || p.rarityId in selectedRarityIds }
+            .count { p -> !mythicFilter || p.isMythic == true }
     }
 
     ModalBottomSheet(
@@ -1982,16 +2105,42 @@ private fun FiltersPanel(
                             rarities.forEach { rarity ->
                                 RarityPill(
                                     rarity   = rarity,
-                                    count    = rarityClimbedCounts[rarity] ?: 0,
-                                    selected = rarity.id in selectedRarityIds,
+                                    count    = rarityTotalCounts[rarity] ?: 0,
+                                    selected = !mythicFilter && rarity.id in selectedRarityIds,
                                     onToggle = {
                                         val newSet = selectedRarityIds.toMutableSet()
-                                        if (rarity.id in newSet) newSet.remove(rarity.id)
+                                        if (!mythicFilter && rarity.id in newSet) newSet.remove(rarity.id)
                                         else newSet.add(rarity.id)
+                                        onMythicFilterChanged(false)
                                         onRarityFilterChanged(newSet)
                                     },
                                 )
                             }
+                            // ── Mythic chip ───────────────────────────────────
+                            FilterChip(
+                                selected = mythicFilter,
+                                onClick  = { onMythicFilterChanged(!mythicFilter) },
+                                label    = {
+                                    Text(
+                                        text       = stringResource(R.string.atlas_filter_mythic),
+                                        fontSize   = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = androidx.compose.ui.graphics.Color(0xFFFFFBEB),
+                                    selectedLabelColor     = androidx.compose.ui.graphics.Color(0xFF92400E),
+                                ),
+                                border = if (mythicFilter)
+                                    FilterChipDefaults.filterChipBorder(
+                                        enabled             = true,
+                                        selected            = true,
+                                        selectedBorderColor = androidx.compose.ui.graphics.Color(0xFFFDE68A),
+                                        selectedBorderWidth = 1.dp,
+                                    )
+                                else
+                                    atlasFilterChipBorder(selected = false),
+                            )
                         }
                     }
                 }
@@ -2169,7 +2318,7 @@ private fun RarityPill(
     }
 }
 
-// ── FilterChip helpers — same palette used in LogbookScreen ──────────────────
+// ── FilterChip helpers — same palette used in CardsScreen ──────────────────
 
 @Composable
 private fun atlasFilterChipColors() = FilterChipDefaults.filterChipColors(
@@ -2378,18 +2527,43 @@ private val TrailsIcon: ImageVector by lazy {
     }.build()
 }
 
-// Filters (3 decreasing-width lines) icon
-private val FiltersIcon: ImageVector by lazy {
-    ImageVector.Builder("Filters", 24.dp, 24.dp, 24f, 24f).apply {
+// Alpine hut icon — house silhouette with a triangle roof
+private val HutsIcon: ImageVector by lazy {
+    ImageVector.Builder("Huts", 24.dp, 24.dp, 24f, 24f).apply {
+        // Roof triangle
         path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
             strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
-        ) { moveTo(4f, 6f);  lineTo(20f, 6f)  }
+            strokeLineJoin = StrokeJoin.Round,
+        ) { moveTo(3f, 11f); lineTo(12f, 3f); lineTo(21f, 11f) }
+        // House body
         path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
             strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
-        ) { moveTo(7f, 12f); lineTo(17f, 12f) }
+            strokeLineJoin = StrokeJoin.Round,
+        ) { moveTo(5f, 11f); lineTo(5f, 21f); lineTo(19f, 21f); lineTo(19f, 11f) }
+        // Door
+        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
+            strokeLineWidth = 1.5f, strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        ) { moveTo(10f, 21f); lineTo(10f, 15f); lineTo(14f, 15f); lineTo(14f, 21f) }
+    }.build()
+}
+
+// Park icon — leaf / tree shape
+private val ParksIcon: ImageVector by lazy {
+    ImageVector.Builder("Parks", 24.dp, 24.dp, 24f, 24f).apply {
+        // Tree canopy circle (filled green)
+        path(fill = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B))) {
+            // Simplified tree: triangle canopy
+            moveTo(12f, 3f); lineTo(20f, 15f); lineTo(4f, 15f); close()
+        }
+        // Trunk
         path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
             strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round,
-        ) { moveTo(10f, 18f); lineTo(14f, 18f) }
+        ) { moveTo(12f, 15f); lineTo(12f, 21f) }
+        // Ground line
+        path(stroke = SolidColor(androidx.compose.ui.graphics.Color(0xFF1E293B)),
+            strokeLineWidth = 1.5f, strokeLineCap = StrokeCap.Round,
+        ) { moveTo(9f, 21f); lineTo(15f, 21f) }
     }.build()
 }
 

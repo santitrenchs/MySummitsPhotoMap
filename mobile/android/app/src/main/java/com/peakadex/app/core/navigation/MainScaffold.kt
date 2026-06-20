@@ -40,7 +40,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.peakadex.app.AppContainer
+import com.peakadex.app.core.analytics.Telemetry
+import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.User
+import com.peakadex.app.core.model.UserSummary
 import com.peakadex.app.core.ui.PeakadexLogo
 import com.peakadex.app.core.ui.RarityInfo
 import com.peakadex.app.core.ui.rarityForAltitude
@@ -50,20 +53,21 @@ import com.peakadex.app.core.ui.theme.PeakBlueLight
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.feature.atlas.AtlasScreen
 import com.peakadex.app.feature.home.HomeScreen
-import com.peakadex.app.feature.logbook.LogbookScreen
+import com.peakadex.app.feature.cards.CardsScreen
 import com.peakadex.app.feature.newascent.AscentCaptureReveal
 import com.peakadex.app.feature.newascent.NewAscentSheet
 import com.peakadex.app.feature.friends.FriendsScreen
 import com.peakadex.app.feature.friends.UserAvatar
-import com.peakadex.app.feature.profile.ProfileScreen
+import com.peakadex.app.feature.profile.BitacoraScreen
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 
 data class TabItem(val screen: Screen, val label: String, val iconRes: Int)
 
 private data class CaptureRevealState(
-    val ascentId: String,
-    val rarity: RarityInfo,
+    val ascent:         Ascent,
+    val rarity:         RarityInfo,
+    val isMythic:       Boolean,
     val taggingWarning: String?,
 )
 
@@ -71,7 +75,7 @@ private data class CaptureRevealState(
 private fun tabItems() = listOf(
     TabItem(Screen.Home,    stringResource(R.string.nav_tab_home),    R.drawable.ic_tab_home),
     TabItem(Screen.Friends, stringResource(R.string.nav_tab_cordada), R.drawable.ic_tab_friends),
-    TabItem(Screen.Logbook, stringResource(R.string.nav_tab_logbook), R.drawable.ic_tab_logbook),
+    TabItem(Screen.Bitacora, stringResource(R.string.nav_tab_bitacora), R.drawable.ic_tab_bitacora),
     TabItem(Screen.Map,     stringResource(R.string.nav_tab_map),     R.drawable.ic_tab_map),
     TabItem(Screen.Cards,   stringResource(R.string.nav_tab_cards),   R.drawable.ic_tab_cards),
 )
@@ -108,10 +112,17 @@ fun MainScaffold(navController: NavController) {
 
     // New ascent sheet — peak pre-fill from Atlas "Capturar" button
     var showNewAscent         by remember { mutableStateOf(false) }
+    var autoOpenFriendInvite  by remember { mutableStateOf(false) }
     var newAscentPeakId       by remember { mutableStateOf<String?>(null) }
     var newAscentPeakName     by remember { mutableStateOf<String?>(null) }
-    var logbookRefreshTrigger  by remember { mutableIntStateOf(0) }
-    var logbookHighlightId     by remember { mutableStateOf<String?>(null) }
+    // Edit-ascent sheet — non-null while editing one of the user's own cards.
+    var editAscent            by remember { mutableStateOf<Ascent?>(null) }
+    var cardsRefreshTrigger  by remember { mutableIntStateOf(0) }
+    var cardsHighlightId     by remember { mutableStateOf<String?>(null) }
+    // Scroll-only target for the capture-reveal: Cards scrolls to the new card
+    // WITHOUT showing its ring while the reveal overlay is up. The ring is armed
+    // (via cardsHighlightId) only on the reveal's final tap.
+    var cardsScrollId        by remember { mutableStateOf<String?>(null) }
     var atlasRefreshTrigger    by remember { mutableIntStateOf(0) }
     var captureReveal          by remember { mutableStateOf<CaptureRevealState?>(null) }
 
@@ -158,10 +169,14 @@ fun MainScaffold(navController: NavController) {
         }
     }
 
-    // Always show the bar when switching tabs
+    // Always show the bar when switching tabs + log the screen view
     LaunchedEffect(currentRoute) {
         isBottomBarVisible = true
+        Telemetry.logScreen(currentRoute)
     }
+
+    // Outer Box so captureReveal can overlay the full screen (including top/bottom bars)
+    Box(modifier = Modifier.fillMaxSize()) {
 
     Scaffold(
         modifier = Modifier.nestedScroll(hideOnScrollConnection),
@@ -176,11 +191,11 @@ fun MainScaffold(navController: NavController) {
             )
         },
         // ② FAB — M3 canonical position for primary action (bottom-end, above nav bar).
-        // Only on Logbook (Bitácora) + Cards, where the primary action is "create ascent".
+        // Only on Bitácora + Cards, where the primary action is "create ascent".
         // Stats is a dashboard (no create action); Atlas creates from the peak detail sheet;
         // Friends renders its own green speed-dial FAB. Color = PeakGreenCTA (DESIGN.md: CTA = green).
         floatingActionButton = {
-            if (currentRoute == Screen.Logbook.route || currentRoute == Screen.Cards.route) {
+            if (currentRoute == Screen.Bitacora.route || currentRoute == Screen.Cards.route) {
                 FloatingActionButton(
                     onClick = { newAscentPeakId = null; newAscentPeakName = null; showNewAscent = true },
                     containerColor = PeakGreenCTA,
@@ -228,17 +243,67 @@ fun MainScaffold(navController: NavController) {
             onDismiss       = { showNewAscent = false },
             onSuccess       = { ascent, taggingWarning ->
                 showNewAscent      = false
-                logbookHighlightId = ascent.id
-                logbookRefreshTrigger++
+                // Navigate to Cards + switch to Mine NOW, while it's behind the
+                // reveal overlay. We set cardsScrollId (NOT the ring) so the feed
+                // scrolls to the new card by id (not index 0, which fails for
+                // past-dated ascents) and settles instantly, but its ring stays off
+                // until the reveal's final tap. By the time the user dismisses the
+                // reveal, Cards is on Mine + scrolled to the new card — so removing
+                // the overlay never flashes the Friends feed nor a premature ring.
+                cardsScrollId    = ascent.id
+                cardsHighlightId = null
+                cardsRefreshTrigger++
                 atlasRefreshTrigger++
+                tabNavController.navigate(Screen.Cards.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState    = false
+                }
+                // The create response has no `user`, so the reveal card would fall
+                // back to "You". Attach the current user (name + avatar) so the
+                // reveal header matches the real feed card exactly.
+                val me = user
+                val revealAscent = if (ascent.user == null && me != null) {
+                    ascent.copy(
+                        user  = UserSummary(id = me.id, name = me.name, username = me.username, avatarUrl = me.avatarUrl),
+                        isOwn = true,
+                    )
+                } else ascent
                 captureReveal = CaptureRevealState(
-                    ascentId       = ascent.id,
-                    rarity         = rarityForAltitude(ascent.peak.altitudeM),
+                    ascent         = revealAscent,
+                    rarity         = rarityForAltitude(revealAscent.peak.altitudeM),
+                    isMythic       = revealAscent.peak.isMythic == true,
                     taggingWarning = taggingWarning,
                 )
             },
             initialPeakId   = newAscentPeakId,
             initialPeakName = newAscentPeakName,
+        )
+    }
+
+    // Edit-ascent sheet (reuses the create form in edit mode). No capture-reveal —
+    // on success just refresh + highlight the edited card in Cards.
+    editAscent?.let { editing ->
+        NewAscentSheet(
+            onDismiss  = { editAscent = null },
+            editAscent = editing,
+            onSuccess  = { _, taggingWarning ->
+                editAscent          = null
+                cardsHighlightId  = editing.id
+                cardsRefreshTrigger++
+                atlasRefreshTrigger++
+                if (taggingWarning != null) {
+                    scope.launch { snackbarHostState.showSnackbar(taggingWarning) }
+                }
+            },
+            onDeleted  = {
+                // Close the sheet + reload Cards (drops the deleted card) and Atlas.
+                editAscent        = null
+                cardsHighlightId  = null
+                cardsScrollId     = null
+                cardsRefreshTrigger++
+                atlasRefreshTrigger++
+            },
         )
     }
         NavHost(
@@ -254,15 +319,24 @@ fun MainScaffold(navController: NavController) {
                         tabNavController.navigate(Screen.Cards.route) {
                             popUpTo(Screen.Home.route) { saveState = true }
                             launchSingleTop = true
-                            restoreState    = false  // force fresh so LaunchedEffect fires
+                            restoreState    = false
                         }
                     },
+                    onNavigateToFriends = {
+                        autoOpenFriendInvite = true
+                        tabNavController.navigate(Screen.Friends.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = false
+                        }
+                    },
+                    onCaptureFirstSummit = { showNewAscent = true },
                 )
             }
             composable(Screen.Map.route) {
                 AtlasScreen(
                     atlasRefreshTrigger = atlasRefreshTrigger,
-                    onNavigateToLogbook = { peakId, peakName ->
+                    onNavigateToCards = { peakId, peakName ->
                         pendingPeakId   = peakId
                         pendingPeakName = peakName
                         tabNavController.navigate(Screen.Cards.route) {
@@ -278,10 +352,11 @@ fun MainScaffold(navController: NavController) {
                     },
                 )
             }
-            composable(Screen.Logbook.route) {
-                ProfileScreen(
+            composable(Screen.Bitacora.route) {
+                BitacoraScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                    onNavigateToLogbook  = { peakId, peakName ->
+                    onCaptureFirstSummit = { showNewAscent = true },
+                    onNavigateToCards  = { peakId, peakName ->
                         pendingPeakId   = peakId
                         pendingPeakName = peakName
                         tabNavController.navigate(Screen.Cards.route) {
@@ -291,12 +366,12 @@ fun MainScaffold(navController: NavController) {
                         }
                     },
                     onAscentClick = { ascentId, isOwn ->
-                        logbookHighlightId = ascentId
-                        // Own photos: switch to Mine filter + refresh so LogbookScreen
+                        cardsHighlightId = ascentId
+                        // Own photos: switch to Mine filter + refresh so CardsScreen
                         // scrolls to and highlights the card automatically.
                         // Tagged photos: keep existing Friends filter; the ring will
                         // appear if the card is already visible in the list.
-                        if (isOwn) logbookRefreshTrigger++
+                        if (isOwn) cardsRefreshTrigger++
                         tabNavController.navigate(Screen.Cards.route) {
                             popUpTo(Screen.Home.route) { saveState = true }
                             launchSingleTop = true
@@ -307,46 +382,58 @@ fun MainScaffold(navController: NavController) {
             }
             composable(Screen.Friends.route) {
                 FriendsScreen(
-                    onOpenCordada = { id ->
+                    onOpenCordada            = { id ->
                         navController.navigate(Screen.CordadaDetail.createRoute(id))
                     },
+                    autoOpenInvite           = autoOpenFriendInvite,
+                    onAutoOpenInviteConsumed = { autoOpenFriendInvite = false },
                 )
             }
             composable(Screen.Cards.route) {
-                LogbookScreen(
-                    onAscentClick       = { ascentId ->
-                        navController.navigate(Screen.AscentDetail.createRoute(ascentId))
-                    },
+                CardsScreen(
+                    onEditAscent        = { ascent -> editAscent = ascent },
                     initialPeakId       = pendingPeakId,
                     initialPeakName     = pendingPeakName,
                     onPeakIdConsumed    = { pendingPeakId = null; pendingPeakName = null },
                     initialRarityId     = pendingRarityId,
                     onRarityIdConsumed  = { pendingRarityId = null },
-                    refreshTrigger      = logbookRefreshTrigger,
-                    highlightId         = logbookHighlightId,
-                    onHighlightConsumed = { logbookHighlightId = null },
+                    refreshTrigger      = cardsRefreshTrigger,
+                    highlightId         = cardsHighlightId,
+                    scrollToId          = cardsScrollId,
+                    onHighlightConsumed = { cardsHighlightId = null },
                 )
             }
         }
 
-        captureReveal?.let { reveal ->
-            AscentCaptureReveal(
-                ascentId = reveal.ascentId,
-                rarity = reveal.rarity,
-                onFinished = {
-                    captureReveal = null
-                    tabNavController.navigate(Screen.Cards.route) {
-                        popUpTo(Screen.Home.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState    = false
-                    }
-                    if (reveal.taggingWarning != null) {
-                        scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }
-                    }
-                },
-            )
-        }
+    } // end Scaffold
+
+    // Capture reveal overlays the FULL screen (above top bar, FAB and bottom nav)
+    captureReveal?.let { reveal ->
+        AscentCaptureReveal(
+            ascent   = reveal.ascent,
+            rarity   = reveal.rarity,
+            isMythic = reveal.isMythic,
+            onFinished = {
+                // Cards is already on Mine + scrolled to the new card (via
+                // cardsScrollId in onSuccess), but its ring was held off. Drop the
+                // overlay and ARM the ring now so it appears fresh on the card the
+                // reveal hands off to.
+                captureReveal = null
+                cardsScrollId = null
+                cardsHighlightId = null
+                scope.launch {
+                    // next frame so the null→id change re-fires the ring effect
+                    kotlinx.coroutines.delay(16)
+                    cardsHighlightId = reveal.ascent.id
+                }
+                if (reveal.taggingWarning != null) {
+                    scope.launch { snackbarHostState.showSnackbar(reveal.taggingWarning) }
+                }
+            },
+        )
     }
+
+    } // end outer Box
 }
 
 // ── Top bar (M3 CenterAlignedTopAppBar) ────────────────────────────────────────

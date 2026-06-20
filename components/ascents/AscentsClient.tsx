@@ -5,8 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
-import { AscentCard } from "@/components/cards/AscentCard";
-import { GroupedAscentCard } from "@/components/cards/GroupedAscentCard";
+import { AscentCard, type AscentCardData, type AscentCardReveal } from "@/components/cards/AscentCard";
+// Capture-reveal is now an overlay on top of the real card. The card itself stays
+// mounted, so Virtuoso measures one stable item and the settle has no visible swap.
+import { CaptureRevealOverlay, useCaptureReveal } from "@/components/cards/CaptureReveal";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
@@ -19,10 +21,11 @@ export type AscentData = {
   description: string | null;
   wikiloc?: string | null;
   createdByUserId: string;
-  peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number; wikiUrl?: string | null; wikiBody?: string | null };
+  peak: { id: string; name: string; altitudeM: number; isMythic: boolean; mountainRange: string | null; latitude: number; longitude: number };
   firstPhotoId: string | null;
   firstPhotoUrl: string | null;
   firstPhotoOriginalKey?: string | null;
+  firstPhotoCropAspect?: string | null;
   persons: { id: string; name: string; email?: string | null }[];
   isOwn: boolean;
   isUnseen?: boolean;
@@ -35,6 +38,25 @@ type Rarity = RarityId;
 type ViewChip = "mine" | "friends" | "person" | "with-me";
 type TimeRange = "all" | "month" | "year";
 type Sort = "date-desc" | "elev-desc";
+
+function toAscentCardData(a: AscentData): AscentCardData {
+  const others = a.persons.filter((p) => p.id !== a.createdByUserId);
+  return {
+    id: a.id,
+    date: a.date,
+    route: a.route,
+    description: a.description,
+    wikiloc: a.wikiloc,
+    peak: a.peak,
+    photoUrl: a.firstPhotoUrl,
+    photoId: a.firstPhotoId,
+    originalStorageKey: a.firstPhotoOriginalKey,
+    cropAspect: a.firstPhotoCropAspect,
+    persons: others,
+    user: { name: a.userName, avatarUrl: a.userAvatarUrl },
+    peakStats: a.peakStats,
+  };
+}
 
 function getRarity(altitudeM: number): Rarity {
   for (let i = RARITIES.length - 1; i >= 0; i--) {
@@ -52,32 +74,89 @@ const RARITY_COLORS: Record<Rarity, { bg: string; border: string; text: string; 
 const RARITY_LABELS: Record<Rarity, string> =
   Object.fromEntries(RARITIES.map((r) => [r.id, r.label])) as Record<Rarity, string>;
 
+function AscentCardSlot({
+  ascent,
+  locale,
+  variant,
+  animationIndex,
+  isRevealing,
+  disableEntrance,
+  onRevealFinished,
+}: {
+  ascent: AscentCardData;
+  locale: string;
+  variant: "social" | "profile";
+  animationIndex: number;
+  isRevealing: boolean;
+  disableEntrance: boolean;
+  onRevealFinished: () => void;
+}) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const revealValues = useCaptureReveal({
+    enabled: isRevealing,
+    ascent,
+    hostRef,
+    onFinished: onRevealFinished,
+  });
+  const reveal: AscentCardReveal | undefined = isRevealing
+    ? {
+        photoBlur: revealValues.photoBlur,
+        coverAlpha: revealValues.coverAlpha,
+        epDisplay: revealValues.epDisplay,
+        epScale: revealValues.epScale,
+        rarityScale: revealValues.rarityScale,
+        sceneOverlay: (
+          <CaptureRevealOverlay
+            ascent={ascent}
+            locale={locale}
+            values={revealValues}
+          />
+        ),
+      }
+    : undefined;
+
+  return (
+    <div
+      ref={hostRef}
+      data-testid={isRevealing ? "reveal-card-slot" : "ascent-card-slot"}
+      data-reveal-status={isRevealing ? revealValues.status : undefined}
+    >
+      <AscentCard
+        variant={variant}
+        locale={locale}
+        animationIndex={animationIndex}
+        ascent={ascent}
+        reveal={reveal}
+        disableEntrance={isRevealing || disableEntrance}
+      />
+    </div>
+  );
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function AscentsClient({
   ascents,
   allPersons,
   allYears,
-  currentUserEmail,
-  currentUserName,
   currentUserId,
   hasFriends = true,
   hasMore: initialHasMore = false,
   initialBeforeOwn = null,
   initialBeforeFriends = null,
   friendUserIds = [],
+  revealId,
 }: {
   ascents: AscentData[];
   allPersons: { id: string; name: string }[];
   allYears: number[];
-  currentUserEmail?: string | null;
-  currentUserName?: string;
   currentUserId?: string;
   hasFriends?: boolean;
   hasMore?: boolean;
   initialBeforeOwn?: string | null;
   initialBeforeFriends?: string | null;
   friendUserIds?: string[];
+  revealId?: string;
 }) {
   const t = useT();
   const searchParams = useSearchParams();
@@ -89,10 +168,23 @@ export function AscentsClient({
   // from causing the other stream's items to be skipped (see ascent-feed.ts comments).
   const [beforeOwn, setBeforeOwn] = useState<string | null>(initialBeforeOwn);
   const [beforeFriends, setBeforeFriends] = useState<string | null>(initialBeforeFriends);
+  // Full-reload (view/filter change) in flight — drives a loading state instead of
+  // showing the stale "0 results" + empty state of the previous view's data.
+  const [isRefetching, setIsRefetching] = useState(false);
+  type FilterSummary = { totalAscents: number; uniquePeaks: number };
+  const [filterSummary, setFilterSummary] = useState<FilterSummary | null>(null);
+  const [filterSummaryKey, setFilterSummaryKey] = useState("");
+  const [isFilterSummaryLoading, setIsFilterSummaryLoading] = useState(false);
+  const filterSummaryCacheRef = useRef<Map<string, FilterSummary>>(new Map());
+  const filterSummarySeqRef = useRef(0);
+  // Per-(filter signature) cache so switching back to an already-loaded view/filter
+  // is instant (no network). Seeded with the SSR page and warmed in the background.
+  type FeedCacheEntry = { ascents: AscentData[]; beforeOwn: string | null; beforeFriends: string | null; hasMore: boolean };
+  const feedCacheRef = useRef<Map<string, FeedCacheEntry>>(new Map());
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const { id, date, route, description, persons, photoUrl, photoId, photoOriginalKey, peakId, peakName, peakAltitudeM } =
+      const { id, date, route, description, persons, photoUrl, photoId, photoOriginalKey, photoCropAspect, peakId, peakName, peakAltitudeM } =
         (e as CustomEvent).detail;
       setLocalAscents((prev) =>
         prev.map((a) => {
@@ -106,6 +198,7 @@ export function AscentsClient({
             firstPhotoUrl: photoUrl ?? a.firstPhotoUrl,
             firstPhotoId: photoId !== undefined ? photoId : a.firstPhotoId,
             firstPhotoOriginalKey: photoOriginalKey !== undefined ? photoOriginalKey : a.firstPhotoOriginalKey,
+            firstPhotoCropAspect: photoCropAspect !== undefined ? photoCropAspect : a.firstPhotoCropAspect,
             peak: peakId && peakId !== a.peak.id
               ? { ...a.peak, id: peakId, name: peakName, altitudeM: peakAltitudeM ?? a.peak.altitudeM }
               : a.peak,
@@ -154,6 +247,34 @@ export function AscentsClient({
   // Highlight + scroll to newly created ascent from ?highlight= URL param
   const [highlightId, setHighlightId] = useState<string | null>(() => searchParams.get("highlight"));
 
+  // Capture-reveal: when arriving with ?reveal=1 (right after creating), the
+  // highlighted card plays the cinematic reveal in place, then settles to normal.
+  // NOTE: this is intentionally separate from `highlightId` — the ring auto-clears
+  // after 2.5s, which would otherwise cut the (longer) reveal short. It is cleared
+  // only by the reveal's own onFinished.
+  // Initialize from the SERVER-provided prop (read server-side from ?reveal=1), NOT
+  // from useSearchParams: this component is inside <Suspense>, where useSearchParams
+  // is unreliable on the first client render → revealCardId came back null, the
+  // reveal was silently skipped, and initialTopMostItemIndex then scrolled to the
+  // highlight index (the "jumps to another card, no reveal" bug). The prop is
+  // deterministic (SSR === client) so the first paint already renders the card
+  // with its reveal overlay in place — no target swap, no late reveal mount.
+  const [revealCardId, setRevealCardId] = useState<string | null>(revealId ?? null);
+  const [pinnedRevealId, setPinnedRevealId] = useState<string | null>(revealId ?? null);
+  // The card whose reveal just finished skips the entrance animation so the
+  // persistent card doesn't replay cardFadeUp while settling.
+  const [settledRevealId, setSettledRevealId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Strip ?reveal=1 so a refresh doesn't replay the animation. State is already
+    // set from the prop — this only cleans the URL.
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("reveal") === "1") {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("reveal");
+      window.history.replaceState(null, "", u.toString());
+    }
+  }, []);
   // Lock body scroll when sheet open
   useEffect(() => {
     if (filtersOpen) {
@@ -207,16 +328,26 @@ export function AscentsClient({
     });
   }, [localAscents, peakFilter, search, viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, currentUserId]);
 
-  const groups = useMemo(() => {
-    const map = new Map<string, AscentData[]>();
-    for (const a of filtered) {
-      const day = new Date(a.date).toISOString().substring(0, 10);
-      const key = `${a.peak.id}__${day}`;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(a);
-    }
-    return Array.from(map.values());
-  }, [filtered]);
+  const pinnedRevealAscent = useMemo(() => {
+    if (!pinnedRevealId) return null;
+    return filtered.find((a) => a.id === pinnedRevealId) ?? localAscents.find((a) => a.id === pinnedRevealId) ?? null;
+  }, [filtered, localAscents, pinnedRevealId]);
+
+  const feedAscents = useMemo(() => {
+    if (!pinnedRevealId) return filtered;
+    return filtered.filter((a) => a.id !== pinnedRevealId);
+  }, [filtered, pinnedRevealId]);
+
+  // Position normal highlights on the first paint. Capture reveal is intentionally
+  // excluded: its target card is rendered outside Virtuoso while the reveal settles,
+  // avoiding useWindowScroll measurement corrections that can jump to another card.
+  const initialHighlightIndex = useMemo(() => {
+    if (revealId || !highlightId) return undefined;
+    const idx = filtered.findIndex((a) => a.id === highlightId);
+    return idx >= 0 ? { index: idx, align: "center" as const } : undefined;
+    // Compute ONCE at mount — deliberately empty deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cleanup mark-as-seen timers on unmount
   useEffect(() => {
@@ -230,10 +361,11 @@ export function AscentsClient({
   // Build URL params from current filter state. Sent to server on every fetch (initial + loadMore +
   // filter-triggered refetch). Server applies these as WHERE clauses so pagination only returns
   // items that match — no more endless auto-retry just to find one matching ascent.
-  const buildFilterParams = useCallback(() => {
+  const buildFilterParams = useCallback((viewOverride?: ViewChip) => {
+    const v = viewOverride ?? viewChip;
     const p = new URLSearchParams();
-    if (viewChip !== "friends") p.set("view", viewChip);
-    if (viewChip === "person" && selectedPersonId) p.set("personId", selectedPersonId);
+    if (v !== "friends") p.set("view", v);
+    if (v === "person" && selectedPersonId) p.set("personId", selectedPersonId);
     if (peakFilter) p.set("peakId", peakFilter);
     if (monthFilter) p.set("month", monthFilter);
     if (rarity) p.set("rarity", rarity);
@@ -241,6 +373,40 @@ export function AscentsClient({
     if (timeRange !== "all") p.set("timeRange", timeRange);
     return p;
   }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange]);
+  const currentFilterSummaryKey = useMemo(() => buildFilterParams().toString(), [buildFilterParams]);
+
+  useEffect(() => {
+    const hasClientSearch = search.trim().length > 0;
+    if (!filtersOpen || hasClientSearch) {
+      setIsFilterSummaryLoading(false);
+      return;
+    }
+
+    const cached = filterSummaryCacheRef.current.get(currentFilterSummaryKey);
+    if (cached) {
+      setFilterSummary(cached);
+      setFilterSummaryKey(currentFilterSummaryKey);
+      setIsFilterSummaryLoading(false);
+      return;
+    }
+
+    const seq = ++filterSummarySeqRef.current;
+    setFilterSummary(null);
+    setFilterSummaryKey(currentFilterSummaryKey);
+    setIsFilterSummaryLoading(true);
+    fetch(`/api/ascents/feed/summary?${currentFilterSummaryKey}`)
+      .then((r) => r.json())
+      .then((data: FilterSummary) => {
+        if (filterSummarySeqRef.current !== seq) return;
+        filterSummaryCacheRef.current.set(currentFilterSummaryKey, data);
+        setFilterSummaryKey(currentFilterSummaryKey);
+        setFilterSummary(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (filterSummarySeqRef.current === seq) setIsFilterSummaryLoading(false);
+      });
+  }, [currentFilterSummaryKey, filtersOpen, search]);
 
   // Fetch sequence: prevents stale responses from contaminating localAscents when the user changes
   // a filter while a previous loadMore is in flight (and only the latest fetch clears isFetchingMore).
@@ -248,7 +414,7 @@ export function AscentsClient({
 
   // Load more from server when Virtuoso reaches the end — APPENDS to localAscents
   const loadMore = useCallback(() => {
-    if (!hasMore || isFetchingMore) return;
+    if (!hasMore || isFetchingMore || isRefetching) return;
     const seq = ++fetchSeqRef.current;
     setIsFetchingMore(true);
     const oldIds = new Set(localAscents.map((a) => a.id));
@@ -271,19 +437,34 @@ export function AscentsClient({
       .finally(() => {
         if (fetchSeqRef.current === seq) setIsFetchingMore(false);
       });
-  }, [hasMore, isFetchingMore, localAscents, beforeOwn, beforeFriends, buildFilterParams]);
+  }, [hasMore, isFetchingMore, isRefetching, localAscents, beforeOwn, beforeFriends, buildFilterParams]);
 
   // Refetch from scratch when a server-affecting filter changes — REPLACES localAscents
   const isInitialFilterMount = useRef(true);
   useEffect(() => {
+    // While the capture-reveal is playing, never refetch/replace the list — that
+    // would swap the list for the loading spinner and unmount the revealing card.
+    if (revealCardId) return;
+    const key = buildFilterParams().toString();
     if (isInitialFilterMount.current) {
       isInitialFilterMount.current = false;
+      // Seed the cache with the SSR page so returning to this view/filter is instant.
+      feedCacheRef.current.set(key, { ascents: localAscents, beforeOwn, beforeFriends, hasMore });
+      return;
+    }
+    // Cache hit → restore instantly, no network, no loading flash.
+    const cached = feedCacheRef.current.get(key);
+    if (cached) {
+      setLocalAscents(cached.ascents);
+      setHasMore(cached.hasMore);
+      setBeforeOwn(cached.beforeOwn);
+      setBeforeFriends(cached.beforeFriends);
+      setIsRefetching(false);
       return;
     }
     const seq = ++fetchSeqRef.current;
-    const params = buildFilterParams();
-    setIsFetchingMore(true);
-    fetch(`/api/ascents/feed?${params.toString()}`)
+    setIsRefetching(true);
+    fetch(`/api/ascents/feed?${key}`)
       .then((r) => r.json())
       .then((data: { ascents: AscentData[]; hasMore: boolean; nextBeforeOwn: string | null; nextBeforeFriends: string | null }) => {
         if (fetchSeqRef.current !== seq) return; // stale — a newer fetch superseded us
@@ -291,13 +472,30 @@ export function AscentsClient({
         setHasMore(data.hasMore);
         setBeforeOwn(data.nextBeforeOwn);
         setBeforeFriends(data.nextBeforeFriends);
+        feedCacheRef.current.set(key, { ascents: data.ascents, beforeOwn: data.nextBeforeOwn, beforeFriends: data.nextBeforeFriends, hasMore: data.hasMore });
       })
       .catch(() => {})
       .finally(() => {
-        if (fetchSeqRef.current === seq) setIsFetchingMore(false);
+        if (fetchSeqRef.current === seq) setIsRefetching(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange]);
+  }, [viewChip, selectedPersonId, peakFilter, monthFilter, rarity, mythicFilter, timeRange, revealCardId]);
+
+  // Warm the opposite primary view (mine↔friends) in the background on mount so
+  // the first toggle is instant. Only when no other server filters are active.
+  useEffect(() => {
+    if (selectedPersonId || peakFilter || monthFilter || rarity || mythicFilter || timeRange !== "all") return;
+    const other: ViewChip = viewChip === "mine" ? "friends" : "mine";
+    const key = buildFilterParams(other).toString();
+    if (feedCacheRef.current.has(key)) return;
+    fetch(`/api/ascents/feed?${key}`)
+      .then((r) => r.json())
+      .then((data: { ascents: AscentData[]; hasMore: boolean; nextBeforeOwn: string | null; nextBeforeFriends: string | null }) => {
+        feedCacheRef.current.set(key, { ascents: data.ascents, beforeOwn: data.nextBeforeOwn, beforeFriends: data.nextBeforeFriends, hasMore: data.hasMore });
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-fetch more when client-side filters reduce the result set below the viewport-fill threshold.
   // Without this, with restrictive filters (e.g. by person) the rendered list can stay so short that
@@ -305,11 +503,11 @@ export function AscentsClient({
   // user thinking there are no more items even though the server still has data.
   const MIN_GROUPS_TO_FILL = 15;
   useEffect(() => {
-    if (!hasMore || isFetchingMore) return;
-    if (groups.length < MIN_GROUPS_TO_FILL) {
+    if (!hasMore || isFetchingMore || isRefetching) return;
+    if (filtered.length < MIN_GROUPS_TO_FILL) {
       loadMore();
     }
-  }, [groups.length, hasMore, isFetchingMore, loadMore]);
+  }, [filtered.length, hasMore, isFetchingMore, isRefetching, loadMore]);
 
   // Mark unseen friend ascents as seen after 1s in the rendered range
   const handleRangeChanged = useCallback(
@@ -326,35 +524,34 @@ export function AscentsClient({
         }).catch(() => {});
       };
       for (let i = startIndex; i <= endIndex; i++) {
-        const group = groups[i];
-        if (!group) continue;
-        const unseenIds = group.filter((a) => a.isUnseen).map((a) => a.id);
-        if (unseenIds.length === 0) continue;
-        const key = unseenIds.join(",");
+        const a = feedAscents[i];
+        if (!a || !a.isUnseen) continue;
+        const key = a.id;
         if (cardTimersRef.current.has(key)) continue;
         cardTimersRef.current.set(
           key,
           setTimeout(() => {
             cardTimersRef.current.delete(key);
-            for (const id of unseenIds) pendingSeenRef.current.add(id);
+            pendingSeenRef.current.add(a.id);
             if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
             flushTimerRef.current = setTimeout(flush, 1000);
           }, 1000)
         );
       }
     },
-    [groups]
+    [feedAscents]
   );
 
-  // Scroll to highlighted ascent when present in groups
+  // Scroll to highlighted ascent when present in the list
   useEffect(() => {
     if (!highlightId) return;
-    const idx = groups.findIndex((g) => g.some((a) => a.id === highlightId));
+    if (revealCardId) return;
+    const idx = filtered.findIndex((a) => a.id === highlightId);
     if (idx < 0) return;
     virtuosoRef.current?.scrollToIndex({ index: idx, align: "center", behavior: "smooth" });
     const timer = setTimeout(() => setHighlightId(null), 2500);
     return () => clearTimeout(timer);
-  }, [highlightId, groups]);
+  }, [highlightId, filtered, revealCardId]);
 
   // Scroll to top when the filter SET changes — NOT on data updates (which also re-derive `filtered`).
   // Depend on the raw filter inputs so pagination/localAscents updates don't trigger a scroll reset.
@@ -367,10 +564,32 @@ export function AscentsClient({
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, peakFilter, search]);
 
+  const isInitialPinnedFilterMount = useRef(true);
+  useEffect(() => {
+    if (isInitialPinnedFilterMount.current) {
+      isInitialPinnedFilterMount.current = false;
+      return;
+    }
+    if (pinnedRevealId) setPinnedRevealId(null);
+  }, [viewChip, selectedPersonId, rarity, mythicFilter, timeRange, monthFilter, sort, peakFilter, search, pinnedRevealId]);
+
+  const finishReveal = useCallback((id: string) => {
+    // End the overlay but keep the just-created card pinned as the final card.
+    // Re-inserting it into Virtuoso immediately would create the same visual jump
+    // we are avoiding during the reveal.
+    setRevealCardId(null);
+    setHighlightId(null);
+    setSettledRevealId(id);
+  }, []);
+
   const uniquePeaks = useMemo(
     () => new Set(filtered.map((a) => a.peak.id)).size,
     [filtered]
   );
+  const canUseFilterSummary = search.trim().length === 0 && filterSummaryKey === currentFilterSummaryKey && filterSummary !== null;
+  const filterCtaTotalAscents = canUseFilterSummary ? filterSummary.totalAscents : filtered.length;
+  const filterCtaUniquePeaks = canUseFilterSummary ? filterSummary.uniquePeaks : uniquePeaks;
+  const isFilterCtaLoading = search.trim().length === 0 && isFilterSummaryLoading && !filterSummary;
 
   const isDirty =
     viewChip !== "friends" || rarity !== null || mythicFilter || timeRange !== "all" ||
@@ -810,19 +1029,29 @@ export function AscentsClient({
             onClick={() => setFiltersOpen(false)}
             style={{ borderRadius: 14, fontFamily: "inherit", boxShadow: "0 4px 14px rgba(3,105,161,0.32)", gap: 6 }}
           >
-            <span style={{ fontSize: 15, fontWeight: 800 }}>
-              {i(t.filter_results, { n: filtered.length })}
-            </span>
-            <span style={{ opacity: 0.45, fontSize: 14 }}>·</span>
-            <span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>
-              {i(t.filter_uniquePeaks, { n: uniquePeaks })}
-            </span>
+            {isRefetching || isFilterCtaLoading ? (
+              <span style={{ fontSize: 15, fontWeight: 800 }}>…</span>
+            ) : (
+              <>
+                <span style={{ fontSize: 15, fontWeight: 800 }}>
+                  {i(t.filter_results, { n: filterCtaTotalAscents })}
+                </span>
+                <span style={{ opacity: 0.45, fontSize: 14 }}>·</span>
+                <span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>
+                  {i(t.filter_uniquePeaks, { n: filterCtaUniquePeaks })}
+                </span>
+              </>
+            )}
           </Button>
         </div>
       </div>
 
       {/* ── Feed ──────────────────────────────────────────────────────── */}
-      {filtered.length === 0 ? (
+      {isRefetching ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "80px 0", marginTop: 8 }}>
+          <div style={{ width: 28, height: 28, border: "3px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+        </div>
+      ) : !pinnedRevealAscent && filtered.length === 0 ? (
         viewChip === "friends" && !hasFriends ? (
           <div style={{
             background: "linear-gradient(135deg,#eff6ff,#f0f9ff)",
@@ -852,75 +1081,67 @@ export function AscentsClient({
         )
       ) : (
         <div style={{ marginTop: 8 }}>
-          <Virtuoso
-            ref={virtuosoRef}
-            useWindowScroll
-            data={groups}
-            endReached={loadMore}
-            rangeChanged={handleRangeChanged}
-            increaseViewportBy={{ top: 200, bottom: 800 }}
-            computeItemKey={(_index, group) => {
-              if (group.length === 1) return group[0].id;
-              return `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
-            }}
-            itemContent={(index, group) => {
-              if (group.length === 1) {
-                const a = group[0];
-                const others = a.persons.filter((p) => p.id !== a.createdByUserId);
+          {pinnedRevealAscent && (
+            <div id={`ascent-${pinnedRevealAscent.id}`} data-testid="pinned-reveal-ascent" style={{ paddingBottom: 24 }}>
+              <AscentCardSlot
+                ascent={toAscentCardData(pinnedRevealAscent)}
+                locale={t.dateLocale}
+                variant={pinnedRevealAscent.isOwn ? "profile" : "social"}
+                animationIndex={0}
+                isRevealing={revealCardId === pinnedRevealAscent.id}
+                disableEntrance={settledRevealId === pinnedRevealAscent.id}
+                onRevealFinished={() => finishReveal(pinnedRevealAscent.id)}
+              />
+            </div>
+          )}
+          {feedAscents.length > 0 && (
+            <Virtuoso
+              ref={virtuosoRef}
+              useWindowScroll
+              {...(initialHighlightIndex ? { initialTopMostItemIndex: initialHighlightIndex } : {})}
+              data={feedAscents}
+              endReached={loadMore}
+              rangeChanged={handleRangeChanged}
+              increaseViewportBy={{ top: 200, bottom: 800 }}
+              computeItemKey={(_index, a) => a.id}
+              itemContent={(index, a) => {
+                // The just-created card plays the reveal in place; the ring appears
+                // once it finishes (so it doesn't show during the build).
+                const isRevealing = revealCardId === a.id;
                 return (
-                  <div
-                    id={`ascent-${a.id}`}
-                    style={{
-                      paddingBottom: 24,
-                      borderRadius: "var(--radius-lg)",
-                      transition: "box-shadow 0.4s ease, outline 0.4s ease",
-                      ...(highlightId === a.id ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
-                    }}
-                  >
-                    <AscentCard
-                      variant={a.isOwn ? "profile" : "social"}
-                      locale={t.dateLocale}
-                      animationIndex={index}
-                      ascent={{
-                        id: a.id,
-                        date: a.date,
-                        route: a.route,
-                        description: a.description,
-                        wikiloc: a.wikiloc,
-                        peak: a.peak,
-                        photoUrl: a.firstPhotoUrl,
-                        photoId: a.firstPhotoId,
-                        originalStorageKey: a.firstPhotoOriginalKey,
-                        persons: others,
-                        user: { name: a.userName, avatarUrl: a.userAvatarUrl },
-                        peakStats: a.peakStats,
+                  <div id={`ascent-${a.id}`} style={{ paddingBottom: 24 }}>
+                    {/* Highlight ring wraps ONLY the card (radius matches .peak-card = 28px)
+                        so it hugs the card and isn't enlarged by the bottom padding. */}
+                    <div
+                      style={{
+                        borderRadius: 28,
+                        transition: "box-shadow 0.4s ease",
+                        ...(highlightId === a.id && !isRevealing ? { boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)" } : {}),
                       }}
-                    />
+                    >
+                      <AscentCardSlot
+                        ascent={toAscentCardData(a)}
+                        locale={t.dateLocale}
+                        variant={a.isOwn ? "profile" : "social"}
+                        animationIndex={index}
+                        isRevealing={isRevealing}
+                        disableEntrance={settledRevealId === a.id}
+                        onRevealFinished={() => finishReveal(a.id)}
+                      />
+                    </div>
                   </div>
                 );
-              }
-              const groupKey = `${group[0].peak.id}__${group[0].date.substring(0, 10)}`;
-              return (
-                <div id={`group-${groupKey}`} style={{ paddingBottom: 24 }}>
-                  <GroupedAscentCard
-                    ascents={group}
-                    currentUserEmail={currentUserEmail}
-                    currentUserName={currentUserName}
-                    animationIndex={index}
-                    peakStats={group[0].peakStats}
-                  />
-                </div>
-              );
-            }}
-            components={{
-              Footer: () =>
-                isFetchingMore ? (
-                  <div style={{ height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ width: 24, height: 24, border: "2.5px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-                  </div>
-                ) : null,
-            }}
-          />
+              }}
+              components={{
+                Footer: () =>
+                  isFetchingMore ? (
+                    <div style={{ height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ width: 24, height: 24, border: "2.5px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                    </div>
+                  ) : null,
+              }}
+            />
+          )}
         </div>
       )}
 

@@ -3,9 +3,9 @@
 
     <!-- ── Main navigation ───────────────────────────────────────────────────── -->
     <string name="nav_tab_home">Stats</string>
-    <string name="nav_tab_cordada">Cordada</string>
+    <string name="nav_tab_cordada">Rope Team</string>
     <string name="nav_tab_map">Atlas</string>
-    <string name="nav_tab_logbook">Logbook</string>
+    <string name="nav_tab_bitacora">Logbook</string>
     <string name="nav_tab_cards">Cards</string>
     <string name="nav_fab_new_ascent">New ascent</string>
 
@@ -36,6 +36,24 @@
     <string name="auth_password_show">Show</string>
     <string name="auth_tagline_p1">Turn your summits</string>
     <string name="auth_tagline_p2">into collectible cards.</string>
+    <string name="auth_register_title">Create account</string>
+    <string name="auth_register_subtitle">Start logging your summits</string>
+    <string name="auth_name_placeholder">Name</string>
+    <string name="auth_confirm_password_placeholder">Confirm password</string>
+    <string name="auth_invite_code_placeholder">Invitation code (optional)</string>
+    <string name="auth_register_btn">Create account</string>
+    <string name="auth_have_account">Already have an account?</string>
+    <string name="auth_sign_in_link">Sign in</string>
+    <string name="auth_terms_prefix">I have read and accept the </string>
+    <string name="auth_terms_link">Terms and conditions</string>
+    <string name="auth_terms_and"> and the </string>
+    <string name="auth_privacy_link">Privacy policy</string>
+    <string name="auth_username_placeholder">username</string>
+    <string name="auth_username_hint">Auto-generated from your name</string>
+    <string name="auth_creating_account">Creating account…</string>
+    <string name="auth_legal_marketing">I agree to receive news and updates from Peakadex (optional)</string>
+    <string name="auth_legal_must_accept">You must accept the terms and privacy policy</string>
+    <string name="error_username_taken_register">That username is already taken. Please try another.</string>
 
     <!-- ── Profile ──────────────────────────────────────────────────────────── -->
     <string name="profile_title">Profile</string>
@@ -55,32 +73,44 @@
     <string name="profile_empty_photos">No photos yet</string>
     <string name="profile_empty_tagged">You haven\'t been tagged in any photo yet</string>
 
-    <!-- ── Logbook / Cards ──────────────────────────────────────────────────── -->
-    <string name="logbook_filter_mine">My Cards</string>
-    <string name="logbook_filter_friends">My Crew</string>
-    <string name="logbook_stat_rarity">RARITY</string>
-    <string name="logbook_stat_altitude">ALTITUDE</string>
-    <string name="logbook_stat_ep">EP</string>
-    <string name="logbook_stats_title">PEAKADEX STATS</string>
-    <string name="logbook_stat_ascents">ASCENTS</string>
-    <string name="logbook_stat_climbers">CLIMBERS</string>
-    <string name="logbook_empty_friends_title">No friends activity</string>
-    <string name="logbook_empty_friends_desc">When your friends log peaks they\'ll appear here.\nUse the filter to see your own ascents.</string>
-    <string name="logbook_empty_mine_title">Your logbook is empty</string>
-    <string name="logbook_empty_mine_desc">Log your first ascent to get started.</string>
-    <string name="logbook_empty_search_title">No results</string>
-    <string name="logbook_empty_search_desc">Try adjusting the search or filters.</string>
+    <!-- ── Bitácora / Cards ──────────────────────────────────────────────────── -->
+    <string name="cards_filter_mine">My Cards</string>
+    <string name="cards_filter_friends">My Rope Team</string>
+    <string name="cards_search_hint">Search summits…</string>
+    <string name="cards_filters_title">Filters</string>
+    <string name="cards_filters_clear">Clear all</string>
+    <string name="cards_filters_section_view">VIEW</string>
+    <string name="cards_filters_section_rarity">RARITY</string>
+    <string name="cards_filters_see_cards">See %d cards</string>
+    <string name="cards_stat_rarity">RARITY</string>
+    <string name="cards_stat_altitude">ALTITUDE</string>
+    <string name="cards_stat_reward">REWARD</string>
+    <string name="cards_stats_title">PEAKADEX STATS</string>
+    <string name="card_cordada_label">Your rope team:</string>
+    <string name="card_cordada_label_other">Rope team:</string>
+    <string name="cards_stat_ascents">ASCENTS</string>
+    <string name="cards_stat_climbers">CLIMBERS</string>
+    <string name="cards_empty_friends_title">No friends activity</string>
+    <string name="cards_empty_friends_desc">When your friends log peaks they\'ll appear here.\nUse the filter to see your own ascents.</string>
+    <string name="cards_empty_mine_title">Your logbook is empty</string>
+    <string name="cards_empty_mine_desc">Log your first ascent to get started.</string>
+    <string name="cards_empty_search_title">No results</string>
+    <string name="cards_empty_search_desc">Try adjusting the search or filters.</string>
 
     <!-- ── Home ─────────────────────────────────────────────────────────────── -->
     <string name="home_stat_ascents_label">ascents</string>
     <string name="home_stat_peaks_label">peaks</string>
     <string name="home_stat_max_alt_label">max. alt.</string>
-    <string name="home_section_leaderboard">Your crew</string>
+    <string name="home_section_leaderboard">Your rope team</string>
     <string name="home_section_last_peaks">Your latest peaks</string>
     <string name="home_see_all_btn">See all →</string>
     <string name="home_no_friends_title">Compete with your friends!</string>
-    <string name="home_no_friends_desc">Invite friends to see your rank in the crew.</string>
+    <string name="home_no_friends_desc">Invite friends to see your rank in the rope team.</string>
     <string name="home_invite_friends_btn">Invite friends</string>
+    <string name="home_solo_placeholder">Your friends will appear here</string>
+    <string name="home_solo_invite_btn">Invite friends</string>
+    <string name="home_solo_empty_title">Your rope team is empty.</string>
+    <string name="home_solo_empty_desc">Invite your first teammates to share summits and compete together.</string>
     <string name="home_empty_ascents_desc">Start building your peak history.</string>
     <string name="home_register_ascent_btn">+ Log ascent</string>
     <string name="home_levels_see_all">See all levels →</string>
@@ -94,6 +124,15 @@
     <string name="home_period_peaks_suffix"> peaks</string>
     <string name="home_period_meters_suffix"> m gained</string>
     <string name="home_onboarding_title">🏔️ Log your first ascent</string>
+    <string name="onboarding_card_title">Your first card awaits</string>
+    <string name="onboarding_card_desc">Capture a summit and unlock your first collectible mountain card.</string>
+    <string name="onboarding_card_btn">Capture</string>
+    <string name="onboarding_card_peak">Mont Blanc</string>
+    <string name="onboarding_card_user">Luc Moreau</string>
+    <string name="onboarding_card_date">22 Jul 2023</string>
+    <string name="onboarding_card_altitude">4,808 m</string>
+    <string name="onboarding_card_rarity">Edelweiss</string>
+    <string name="onboarding_card_coords">45.8326°N · 6.8652°E</string>
     <string name="home_hero_alt_for_level">Reach %1$dm for %2$s</string>
     <string name="home_hero_for_level">for %s</string>
     <string name="home_level_req_altitude">Reach %dm</string>
@@ -110,11 +149,17 @@
 
     <!-- ── New ascent ────────────────────────────────────────────────────────── -->
     <string name="new_ascent_title">Log ascent</string>
+    <string name="new_ascent_edit_title">Edit ascent</string>
+    <string name="new_ascent_delete">Delete ascent</string>
+    <string name="new_ascent_delete_confirm">Delete this ascent? This action cannot be undone.</string>
+    <string name="new_ascent_change_photo">Change photo</string>
     <string name="new_ascent_add_photo">Add a photo</string>
     <string name="new_ascent_photo_formats">JPEG · PNG · WebP · max. 10 MB</string>
     <string name="new_ascent_select_photo_btn">Select photo</string>
     <string name="new_ascent_rotate_btn">  Rotate 90°</string>
     <string name="new_ascent_next_btn">Next</string>
+    <string name="new_ascent_crop_portrait">4:5</string>
+    <string name="new_ascent_crop_landscape">Landscape</string>
     <string name="new_ascent_save_btn">Save</string>
     <string name="new_ascent_discard_title">Discard ascent?</string>
     <string name="new_ascent_discard_message">You\'ll lose the photo and all entered data.</string>
@@ -128,9 +173,7 @@
     <string name="new_ascent_route_placeholder">Route name...</string>
     <string name="new_ascent_notes_placeholder">Add a description, conditions...</string>
     <string name="new_ascent_tag_placeholder">Search person...</string>
-    <string name="capture_reveal_title">Rarity \"%1$s\" captured</string>
-    <string name="capture_reveal_subtitle">New flower added to your cards</string>
-    <string name="capture_reveal_continue">Tap to continue</string>
+    <string name="capture_reveal_captured">Peak captured!</string>
 
     <!-- ── Settings ─────────────────────────────────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -215,6 +258,8 @@
     <string name="atlas_layers_satellite">Satellite</string>
     <string name="atlas_layers_section">LAYERS</string>
     <string name="atlas_layers_trails">Trails</string>
+    <string name="atlas_layers_huts">Huts</string>
+    <string name="atlas_layers_parks">Parks</string>
 
     <!-- ── Atlas — peak detail ───────────────────────────────────────────────── -->
     <string name="atlas_peak_unclimbed">Not yet climbed</string>
@@ -241,6 +286,9 @@
     <string name="atlas_section_sort">SORT</string>
     <string name="atlas_filter_captured">Climbed (%d)</string>
     <string name="atlas_filter_not_captured">Not yet</string>
+    <string name="atlas_filter_mythic">⭐ Mythic</string>
+    <string name="cards_filter_mythic">⭐ Mythic</string>
+    <string name="card_mythic">MYTHIC</string>
     <string name="atlas_sort_distance">Distance</string>
     <string name="atlas_sort_relevance">Relevance</string>
     <string name="atlas_sort_altitude">Altitude</string>
@@ -264,7 +312,7 @@
     <string name="friends_empty_subtitle">Invite your climbing partners or create a group to get started.</string>
     <string name="friends_fab_add">Add</string>
     <string name="friends_action_invite">Invite a friend</string>
-    <string name="friends_action_create_cordada">Create a cordada</string>
+    <string name="friends_action_create_cordada">Create a rope team</string>
     <string name="friends_invite_title">Invite a friend</string>
     <string name="friends_invite_subtitle">We\'ll email them to join Peakadex.</string>
     <string name="friends_invite_email_hint">Email address</string>
@@ -287,23 +335,23 @@
     <string name="friends_invite_no_contact_data_title">No contact details</string>
     <string name="friends_invite_no_contact_data_body">This contact has no available email or phone. You can type an email manually.</string>
     <string name="friends_invite_write_email">Write email</string>
-    <string name="friends_invite_whatsapp_message">Join Peakadex to share ascents and cordadas with me! https://www.peakadex.com</string>
+    <string name="friends_invite_whatsapp_message">Join Peakadex to share ascents and rope teams with me! https://www.peakadex.com</string>
     <string name="friends_invite_self">You can\'t invite yourself.</string>
     <string name="friends_invite_error">Couldn\'t send the invitation. Please try again.</string>
     <string name="friends_confirm_remove">Remove %s from your friends?</string>
     <string name="friends_generic_error">Something went wrong. Please try again.</string>
-    <string name="cordadas_create_error">Couldn\'t create the cordada. Please try again.</string>
-    <string name="cordadas_avatar_upload_error">Cordada created, but the image couldn\'t be uploaded.</string>
+    <string name="cordadas_create_error">Couldn\'t create the rope team. Please try again.</string>
+    <string name="cordadas_avatar_upload_error">Rope team created, but the image couldn\'t be uploaded.</string>
     <string name="stats_unique_peaks">Summits</string>
     <string name="stats_total_ascents">Ascents</string>
     <string name="stats_max_altitude">Max altitude</string>
     <string name="stats_total_ep">EP</string>
     <string name="friends_menu_label">Friends</string>
-    <string name="cordadas_tab">Cordadas</string>
+    <string name="cordadas_tab">Rope teams</string>
     <string name="cordadas_ranking">Ranking</string>
-    <string name="cordadas_empty">You don\'t belong to any cordada yet.</string>
-    <string name="cordadas_new">New cordada</string>
-    <string name="cordadas_create_title">Create cordada</string>
+    <string name="cordadas_empty">You don\'t belong to any rope team yet.</string>
+    <string name="cordadas_new">New rope team</string>
+    <string name="cordadas_create_title">Create rope team</string>
     <string name="cordadas_name_hint">Name (required)</string>
     <string name="cordadas_desc_hint">Description (optional)</string>
     <string name="cordadas_create_btn">Create</string>
@@ -315,23 +363,63 @@
     <string name="cordadas_pending_count">%d pending</string>
     <string name="cordadas_owner_badge">Owner</string>
     <string name="cordadas_invite_btn">Invite</string>
-    <string name="cordadas_invite_title">Invite to cordada</string>
+    <string name="cordadas_invite_title">Invite to rope team</string>
     <string name="cordadas_invite_search">Search user…</string>
     <string name="cordadas_invite_send">Invite</string>
-    <string name="cordadas_leave">Leave cordada</string>
-    <string name="cordadas_delete">Delete cordada</string>
+    <string name="cordadas_leave">Leave rope team</string>
+    <string name="cordadas_delete">Delete rope team</string>
     <string name="cordadas_expel">Remove</string>
-    <string name="cordadas_confirm_leave">Leave this cordada?</string>
-    <string name="cordadas_confirm_delete">Delete this cordada? This action cannot be undone.</string>
-    <string name="cordadas_delete_detail">Deleting this cordada will remove the group and cancel pending invitations. Members\' ascents will not be deleted.</string>
+    <string name="cordadas_confirm_leave">Leave this rope team?</string>
+    <string name="cordadas_confirm_delete">Delete this rope team? This action cannot be undone.</string>
+    <string name="cordadas_delete_detail">Deleting this rope team will remove the group and cancel pending invitations. Members\' ascents will not be deleted.</string>
     <string name="cordadas_delete_confirm_button">Delete permanently</string>
     <string name="cordadas_confirm_expel">Remove this member?</string>
     <string name="cordadas_pending">Pending</string>
     <string name="cordadas_founder">Founder</string>
-    <string name="cordadas_of_members_prefix">Cordada of </string>
+    <string name="cordadas_of_members_prefix">Rope team of </string>
     <string name="cordadas_invite_sent_label">Invitation sent</string>
-    <string name="cordadas_add_photo">Add cordada photo</string>
+    <string name="cordadas_add_photo">Add rope team photo</string>
     <string name="cordadas_photo_hint">Used as cover and avatar</string>
     <string name="cordadas_edit_photo">Edit photo</string>
     <string name="cordadas_delete_warning">This action cannot be undone</string>
+
+    <!-- ── Errors ─────────────────────────────────────────────────────────────── -->
+    <string name="error_fields_required">Please fill in all fields</string>
+    <string name="error_invalid_credentials">Incorrect email or password</string>
+    <string name="error_too_many_attempts">Too many attempts. Please wait a moment</string>
+    <string name="error_server_response">Error processing the server response</string>
+    <string name="error_no_connection">No internet connection</string>
+    <string name="error_unexpected">Unexpected error. Please try again</string>
+    <string name="error_passwords_mismatch">Passwords do not match</string>
+    <string name="error_password_too_short">Password must be at least 8 characters</string>
+    <string name="error_invite_code_invalid">Invalid or expired invitation code</string>
+    <string name="error_email_already_exists">An account with this email already exists</string>
+    <string name="error_google_no_account">No Google account found on this device. Add an account in system Settings and try again.</string>
+    <string name="error_google_unexpected">Unexpected error with Google Sign-In</string>
+    <string name="error_load_profile">Error loading profile</string>
+    <string name="error_load_config">Error loading configuration</string>
+    <string name="error_name_empty">Name cannot be empty</string>
+    <string name="error_username_taken">That username is already taken</string>
+    <string name="error_save">Error saving</string>
+    <string name="error_password_current_required">Enter your current password</string>
+    <string name="error_password_current_wrong">Incorrect current password</string>
+    <string name="error_password_change">Error changing password</string>
+    <string name="error_save_language">Error saving language</string>
+    <string name="error_unlink_google">Error unlinking Google</string>
+    <string name="error_load_photo">Could not load photo</string>
+    <string name="error_select_peak">Select a peak</string>
+    <string name="error_photo_required">A photo is required</string>
+    <string name="error_crop_photo">Could not crop the photo</string>
+    <string name="cards_you">You</string>
+    <string name="settings_username_format_error">Only letters, numbers, dots and underscores (3–20 chars)</string>
+    <!-- ── Atlas onboarding ─────────────────────────────────────────────────── -->
+    <string name="map_onboarding_title">Collect the mountain\'s\nrarest flowers</string>
+    <string name="map_onboarding_sub">Every summit hides a unique flower. The higher you climb, the rarer the find. Explore, ascend and build your collection.</string>
+    <string name="map_onboarding_rarities">Rarity tiers</string>
+    <string name="map_onboarding_cta">Explore the map</string>
+    <string name="map_onboarding_dont_show">Don\'t show again</string>
+    <string name="cards_friends_empty">Your friends haven\'t logged any summits yet.</string>
+    <string name="cards_friends_empty_subtitle">Keep climbing and share your ascents.</string>
+    <string name="cards_mine_empty">You haven\'t logged any ascents yet.</string>
+    <string name="cards_mine_empty_subtitle">Capture your first summit to get started.</string>
 </resources>

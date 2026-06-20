@@ -1,4 +1,4 @@
-package com.peakadex.app.feature.logbook
+package com.peakadex.app.feature.cards
 
 import com.peakadex.app.core.model.Ascent
 import java.time.LocalDate
@@ -7,7 +7,7 @@ enum class ViewFilter { All, Mine, Friends }
 enum class TimeRange { All, Month, Year }
 enum class SortOrder { DateDesc, ElevDesc }
 
-data class LogbookFilterState(
+data class CardsFilterState(
     val search:      String      = "",
     // Default is Friends — matches web's Ascensiones default behaviour.
     // ViewFilter.Friends is treated as the baseline: it does NOT count as "dirty".
@@ -22,7 +22,7 @@ data class LogbookFilterState(
 ) {
     val isDirty: Boolean
         // Friends is the default — only other views count as dirty
-        get() = viewFilter != ViewFilter.Friends || rarityId != null || mythic || timeRange != TimeRange.All || sort != SortOrder.DateDesc || peakId != null
+        get() = viewFilter != ViewFilter.Friends || rarityId != null || mythic || timeRange != TimeRange.All || sort != SortOrder.DateDesc || peakId != null || search.isNotBlank()
 }
 
 fun getRarityIdForAltitude(altitudeM: Int): String = when {
@@ -37,7 +37,7 @@ fun getRarityIdForAltitude(altitudeM: Int): String = when {
     else              -> "daisy"
 }
 
-fun applyFilters(ascents: List<Ascent>, filters: LogbookFilterState): List<Ascent> {
+fun applyFilters(ascents: List<Ascent>, filters: CardsFilterState): List<Ascent> {
     var r = ascents
 
     // Peak filter from Atlas navigation — takes precedence over view filter

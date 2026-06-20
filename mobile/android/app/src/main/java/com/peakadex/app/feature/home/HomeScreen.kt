@@ -29,12 +29,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -64,13 +66,15 @@ import com.peakadex.app.core.ui.RARITY_PALETTE
 import com.peakadex.app.core.ui.LEVEL_DEFS
 import com.peakadex.app.core.ui.LevelDef
 import com.peakadex.app.core.ui.levelName
-import com.peakadex.app.core.ui.levelAccent
 import com.peakadex.app.feature.friends.CairnIcon
 import com.peakadex.app.feature.friends.FriendsDivider
 import com.peakadex.app.feature.friends.FriendsTextMuted
 import com.peakadex.app.feature.friends.FriendsTextPrimary
 import com.peakadex.app.feature.friends.FriendsTextSecondary
 import com.peakadex.app.feature.friends.UserAvatar
+import com.peakadex.app.core.ui.FirstCardOnboardingBanner
+import com.peakadex.app.core.ui.UiText
+import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
@@ -112,6 +116,8 @@ private fun meetsLevel(def: LevelDef, uniquePeaks: Int, stats: UserStats): Boole
 @Composable
 fun HomeScreen(
     onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
+    onNavigateToFriends: () -> Unit = {},
+    onCaptureFirstSummit: () -> Unit = {},
     vm: HomeViewModel = viewModel(),
 ) {
     val state        by vm.uiState.collectAsStateWithLifecycle()
@@ -120,14 +126,14 @@ fun HomeScreen(
 
     when (val s = state) {
         is HomeUiState.Loading -> HomeLoadingState()
-        is HomeUiState.Error   -> HomeErrorState(s.message) { vm.load() }
+        is HomeUiState.Error   -> HomeErrorState(s.message.asString()) { vm.load() }
         is HomeUiState.Success -> {
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh    = { vm.refresh() },
                 modifier     = Modifier.fillMaxSize(),
             ) {
-                HomeContent(data = s.data, user = user, onNavigateToCardsWithRarity = onNavigateToCardsWithRarity)
+                HomeContent(data = s.data, user = user, onNavigateToCardsWithRarity = onNavigateToCardsWithRarity, onNavigateToFriends = onNavigateToFriends, onCaptureFirstSummit = onCaptureFirstSummit)
             }
         }
     }
@@ -471,6 +477,8 @@ private fun HomeContent(
     data: HomeData,
     user: User?,
     onNavigateToCardsWithRarity: (rarityId: String) -> Unit = {},
+    onNavigateToFriends: () -> Unit = {},
+    onCaptureFirstSummit: () -> Unit = {},
 ) {
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
 
@@ -484,7 +492,7 @@ private fun HomeContent(
 
         // 3 — Onboarding (new users)
         if (data.stats.totalAscents == 0) {
-            item { OnboardingBanner() }
+            item { FirstCardOnboardingBanner(onCapture = onCaptureFirstSummit) }
         }
 
         // 4 — Monthly chart (≥1 ascent)
@@ -497,9 +505,9 @@ private fun HomeContent(
             item { RarityChartSection(data.stats.rarityBreakdown, onNavigateToCardsWithRarity) }
         }
 
-        // 6 — No friends CTA
-        if (data.stats.totalFriends == 0) {
-            item { NoFriendsCta() }
+        // 6 — Solo ranking (no friends yet)
+        if (data.stats.totalFriends == 0 && data.leaderboard.isNotEmpty()) {
+            item { SoloRankingSection(meEntry = data.leaderboard.first { it.isCurrentUser }, onInvite = onNavigateToFriends) }
         }
 
         // 7 — Recent ascents
@@ -1391,13 +1399,12 @@ private fun FriendRankBadge(rank: Int) {
         1    -> Color(0xFFFDE68A) to Color(0xFFD97706)
         2    -> Color(0xFFE5E7EB) to Color(0xFF6B7280)
         3    -> Color(0xFFF8D9B8) to Color(0xFFB45309)
-        else -> Color(0xFFF3F4F6) to Color(0xFF6B7280)
+        else -> Color.Transparent to Color(0xFF111827)
     }
     Box(
         modifier         = Modifier
             .size(width = 30.dp, height = 44.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(bg),
+            .then(if (rank <= 3) Modifier.clip(RoundedCornerShape(10.dp)).background(bg) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         if (rank <= 3) {
@@ -1643,37 +1650,124 @@ private fun LeaderboardMetricCol(value: String, color: Color, modifier: Modifier
 // ── No friends CTA ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun NoFriendsCta() {
-    Column(
+private fun SoloRankingSection(
+    meEntry: LeaderboardEntry,
+    onInvite: () -> Unit,
+) {
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 20.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primaryContainer)))
-            .border(BorderStroke(1.5.dp, MaterialTheme.colorScheme.primaryContainer), RoundedCornerShape(12.dp))
-            .padding(22.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
-        Text("👥", fontSize = 36.sp)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text  = stringResource(R.string.home_no_friends_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text       = stringResource(R.string.home_no_friends_desc),
-            fontSize   = 13.sp,
-            color      = MaterialTheme.colorScheme.onSurfaceVariant,
-            lineHeight = 18.sp,
-        )
-        Spacer(Modifier.height(14.dp))
-        Button(
-            onClick = { /* Phase 5 */ },
-            colors  = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-        ) {
-            Text(stringResource(R.string.home_invite_friends_btn), fontWeight = FontWeight.SemiBold)
+        Column {
+            // ── Title (identical to FriendsRankingSection) ────────────────────
+            Text(
+                text       = stringResource(R.string.home_section_leaderboard),
+                fontSize   = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color      = FriendsTextPrimary,
+                modifier   = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+            HorizontalDivider(color = FriendsDivider)
+
+            // ── User row at rank 1 (reuses exact FriendRankRow) ──────────────
+            FriendRankRow(entry = meEntry, rank = 1)
+
+            HorizontalDivider(color = FriendsDivider, modifier = Modifier.padding(start = 76.dp))
+
+            // ── Ghost avatars + aspirational text ─────────────────────────────
+            Column(
+                modifier            = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // 4 dashed circles with dotted connectors between them
+                Row(
+                    verticalAlignment      = Alignment.CenterVertically,
+                    horizontalArrangement  = Arrangement.Center,
+                    modifier               = Modifier.fillMaxWidth(),
+                ) {
+                    repeat(4) { i ->
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .drawBehind {
+                                    val stroke = 1.5.dp.toPx()
+                                    val intervals = floatArrayOf(6.dp.toPx(), 4.dp.toPx())
+                                    drawCircle(
+                                        color       = Color(0xFFD1D5DB),
+                                        radius      = size.minDimension / 2f - stroke / 2f,
+                                        style       = Stroke(
+                                            width       = stroke,
+                                            pathEffect  = PathEffect.dashPathEffect(intervals, 0f),
+                                        ),
+                                    )
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector        = GhostPersonIcon,
+                                contentDescription = null,
+                                tint               = Color(0xFFD1D5DB),
+                                modifier           = Modifier.size(22.dp),
+                            )
+                        }
+                        if (i < 3) {
+                            // Dotted connector line
+                            Canvas(modifier = Modifier.width(16.dp).height(1.dp)) {
+                                val intervals = floatArrayOf(3.dp.toPx(), 3.dp.toPx())
+                                drawLine(
+                                    color       = Color(0xFFD1D5DB),
+                                    start       = Offset(0f, size.height / 2f),
+                                    end         = Offset(size.width, size.height / 2f),
+                                    strokeWidth = 1.5.dp.toPx(),
+                                    pathEffect  = PathEffect.dashPathEffect(intervals, 0f),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    text       = stringResource(R.string.home_solo_empty_title),
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = FriendsTextPrimary,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text       = stringResource(R.string.home_solo_empty_desc),
+                    fontSize   = 13.sp,
+                    color      = FriendsTextSecondary,
+                    lineHeight = 19.sp,
+                    textAlign  = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier   = Modifier.padding(horizontal = 8.dp),
+                )
+                Spacer(Modifier.height(20.dp))
+            }
+
+            HorizontalDivider(color = FriendsDivider)
+
+            // ── CTA button ────────────────────────────────────────────────────
+            Button(
+                onClick  = onInvite,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .height(48.dp),
+                shape  = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
+            ) {
+                Text(
+                    text       = stringResource(R.string.home_solo_invite_btn),
+                    fontWeight = FontWeight.Bold,
+                    fontSize   = 14.sp,
+                )
+            }
         }
     }
 }
@@ -1766,3 +1860,34 @@ private fun initials(name: String): String {
     else
         name.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
 }
+
+// ── Ghost person icon (inline, no Material dependency) ─────────────────────────
+
+private val GhostPersonIcon: ImageVector get() = ImageVector.Builder(
+    name = "GhostPerson", defaultWidth = 24.dp, defaultHeight = 24.dp,
+    viewportWidth = 24f, viewportHeight = 24f,
+).apply {
+    // Head circle
+    addPath(
+        pathData = PathBuilder().apply {
+            moveTo(12f, 4f)
+            curveTo(9.79f, 4f, 8f, 5.79f, 8f, 8f)
+            curveTo(8f, 10.21f, 9.79f, 12f, 12f, 12f)
+            curveTo(14.21f, 12f, 16f, 10.21f, 16f, 8f)
+            curveTo(16f, 5.79f, 14.21f, 4f, 12f, 4f)
+            close()
+        }.nodes,
+        fill = androidx.compose.ui.graphics.SolidColor(Color(0xFFD1D5DB)),
+    )
+    // Body / shoulders
+    addPath(
+        pathData = PathBuilder().apply {
+            moveTo(12f, 14f)
+            curveTo(7.58f, 14f, 4f, 16.69f, 4f, 20f)
+            lineTo(20f, 20f)
+            curveTo(20f, 16.69f, 16.42f, 14f, 12f, 14f)
+            close()
+        }.nodes,
+        fill = androidx.compose.ui.graphics.SolidColor(Color(0xFFD1D5DB)),
+    )
+}.build()

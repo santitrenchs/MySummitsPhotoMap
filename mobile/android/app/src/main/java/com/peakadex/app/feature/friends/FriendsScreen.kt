@@ -1,5 +1,7 @@
 package com.peakadex.app.feature.friends
 
+import com.peakadex.app.core.ui.RopeTeamIcon
+
 import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
@@ -162,37 +164,6 @@ private val PersonAddIcon: ImageVector by lazy {
     }.build()
 }
 
-/** Two connected rope nodes — "create cordada". */
-private val RopeTeamIcon: ImageVector by lazy {
-    ImageVector.Builder("RopeTeam", 24.dp, 24.dp, 24f, 24f).apply {
-        path(
-            stroke          = androidx.compose.ui.graphics.SolidColor(Color(0xFF374151)),
-            strokeLineWidth = 2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-            strokeLineJoin  = androidx.compose.ui.graphics.StrokeJoin.Round,
-        ) {
-            // First climber / anchor node
-            moveTo(8.5f, 8f)
-            curveTo(8.5f, 9.66f, 7.16f, 11f, 5.5f, 11f)
-            curveTo(3.84f, 11f, 2.5f, 9.66f, 2.5f, 8f)
-            curveTo(2.5f, 6.34f, 3.84f, 5f, 5.5f, 5f)
-            curveTo(7.16f, 5f, 8.5f, 6.34f, 8.5f, 8f)
-            close()
-            // Second climber / anchor node
-            moveTo(21.5f, 16f)
-            curveTo(21.5f, 17.66f, 20.16f, 19f, 18.5f, 19f)
-            curveTo(16.84f, 19f, 15.5f, 17.66f, 15.5f, 16f)
-            curveTo(15.5f, 14.34f, 16.84f, 13f, 18.5f, 13f)
-            curveTo(20.16f, 13f, 21.5f, 14.34f, 21.5f, 16f)
-            close()
-            // Rope
-            moveTo(8.35f, 9.7f)
-            curveTo(11.2f, 10.7f, 13.45f, 12.1f, 15.65f, 14.25f)
-            moveTo(8f, 13.8f)
-            curveTo(10.95f, 12.65f, 13.35f, 11.6f, 16.2f, 10.2f)
-        }
-    }.build()
-}
 
 /** Cairn (CS) icon — three stacked amber trapezoids, identical to the Stats hero. */
 @Composable
@@ -246,24 +217,6 @@ internal val CrownIcon: ImageVector by lazy {
             lineTo(21f, 7f)
             lineTo(19f, 19f)
             lineTo(5f, 19f)
-            close()
-        }
-    }.build()
-}
-
-private val SearchIconVec: ImageVector by lazy {
-    ImageVector.Builder("Search", 20.dp, 20.dp, 24f, 24f).apply {
-        path(
-            stroke          = androidx.compose.ui.graphics.SolidColor(FriendsTextMuted),
-            strokeLineWidth = 2f,
-            strokeLineCap   = androidx.compose.ui.graphics.StrokeCap.Round,
-        ) {
-            moveTo(21f, 21f); lineTo(16.65f, 16.65f)
-            moveTo(19f, 11f)
-            curveTo(19f, 15.418f, 15.418f, 19f, 11f, 19f)
-            curveTo(6.582f, 19f, 3f, 15.418f, 3f, 11f)
-            curveTo(3f, 6.582f, 6.582f, 3f, 11f, 3f)
-            curveTo(15.418f, 3f, 19f, 6.582f, 19f, 11f)
             close()
         }
     }.build()
@@ -328,36 +281,12 @@ private fun SearchBar(
     onQueryChange: (String) -> Unit,
     placeholder: String,
 ) {
-    Row(
-        modifier         = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF3F4F6))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector        = SearchIconVec,
-            contentDescription = null,
-            tint               = Color.Unspecified,
-            modifier           = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(8.dp))
-        BasicTextField(
-            value         = query,
-            onValueChange = onQueryChange,
-            singleLine    = true,
-            textStyle     = LocalTextStyle.current.copy(fontSize = 16.sp, color = FriendsTextPrimary),
-            cursorBrush   = SolidColor(PeakBlueActive),
-            modifier      = Modifier.weight(1f),
-            decorationBox = { inner ->
-                if (query.isEmpty()) {
-                    Text(placeholder, fontSize = 16.sp, color = FriendsTextMuted)
-                }
-                inner()
-            },
-        )
-    }
+    com.peakadex.app.core.ui.PeakSearchField(
+        value         = query,
+        onValueChange = onQueryChange,
+        placeholder   = placeholder,
+        modifier      = Modifier.fillMaxWidth(),
+    )
 }
 
 // ── Rows ───────────────────────────────────────────────────────────────────────
@@ -888,6 +817,8 @@ private val PlusIcon: ImageVector by lazy {
 @Composable
 fun FriendsScreen(
     onOpenCordada: (String) -> Unit = {},
+    autoOpenInvite: Boolean = false,
+    onAutoOpenInviteConsumed: () -> Unit = {},
     friendsVm: FriendsViewModel = viewModel(),
     cordadasVm: CordadasViewModel = viewModel(),
 ) {
@@ -897,6 +828,14 @@ fun FriendsScreen(
     var showCreateSheet by remember { mutableStateOf(false) }
     var showInviteFriendSheet by remember { mutableStateOf(false) }
     var showActionSheet by remember { mutableStateOf(false) }
+
+    // Auto-open invite sheet when triggered from another screen (e.g. SoloRankingSection CTA)
+    LaunchedEffect(autoOpenInvite) {
+        if (autoOpenInvite) {
+            showInviteFriendSheet = true
+            onAutoOpenInviteConsumed()
+        }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val genericError = stringResource(R.string.friends_generic_error)
@@ -916,11 +855,13 @@ fun FriendsScreen(
     }
 
     // Refresh the cordadas list when returning from the full-screen detail
-    // (a member may have left, been expelled, or the cordada deleted). Skips
-    // the very first resume to avoid a redundant load right after init.
-    var firstResume by remember { mutableStateOf(true) }
+    // Reload on every resume — covers returning from CordadaDetail (outer nav) and
+    // switching back from another tab. The ViewModel's init already loads on first
+    // creation, so the extra call here is a fast no-op in most cases (Retrofit
+    // doesn't block the UI). This is the most reliable way to keep the list fresh
+    // after leave / expel / delete without cross-VM signalling.
     LifecycleResumeEffect(Unit) {
-        if (firstResume) firstResume = false else cordadasVm.load()
+        cordadasVm.load()
         onPauseOrDispose { }
     }
 

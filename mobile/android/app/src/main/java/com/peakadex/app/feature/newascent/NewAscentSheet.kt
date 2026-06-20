@@ -64,6 +64,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -79,11 +80,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -103,12 +107,15 @@ import com.peakadex.app.core.ui.theme.PeakMuted
 import com.peakadex.app.core.ui.theme.PeakNavyDark
 import com.peakadex.app.core.ui.theme.PeakOnSurface
 import com.peakadex.app.core.ui.theme.PeakSubtle
+import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+
+// NOTES_MAX_CHARS lives in NewAscentViewModel.kt (shared by create + edit).
 
 // ── Sheet entry point ──────────────────────────────────────────────────────────
 
@@ -117,8 +124,10 @@ import java.time.format.FormatStyle
 fun NewAscentSheet(
     onDismiss: () -> Unit,
     onSuccess: (ascent: Ascent, taggingWarning: String?) -> Unit = { _, _ -> },
+    onDeleted: () -> Unit = {},
     initialPeakId: String? = null,
     initialPeakName: String? = null,
+    editAscent: Ascent? = null,
     vm: NewAscentViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -128,9 +137,13 @@ fun NewAscentSheet(
 
     // Reset state on each presentation (ViewModel persists across opens)
     LaunchedEffect(Unit) {
-        vm.reset()
-        if (initialPeakId != null && initialPeakName != null) {
-            vm.setInitialPeak(initialPeakId, initialPeakName)
+        if (editAscent != null) {
+            vm.initForEdit(editAscent)
+        } else {
+            vm.reset()
+            if (initialPeakId != null && initialPeakName != null) {
+                vm.setInitialPeak(initialPeakId, initialPeakName)
+            }
         }
     }
 
@@ -144,7 +157,8 @@ fun NewAscentSheet(
         when (state.step) {
             NewAscentStep.PICK -> scope.launch { sheetState.hide(); onDismiss() }
             NewAscentStep.CROP -> vm.onCropBack()
-            NewAscentStep.FORM -> vm.onFormBack()
+            // In edit mode the form is the first step → back closes the sheet.
+            NewAscentStep.FORM -> if (state.isEditMode) scope.launch { sheetState.hide(); onDismiss() } else vm.onFormBack()
         }
     }
 
@@ -176,8 +190,13 @@ fun NewAscentSheet(
                 state    = state,
                 vm       = vm,
                 onBack   = vm::onFormBack,
-                onSubmit = { vm.submit { ascent, warning -> onSuccess(ascent, warning); onDismiss() } },
+                onSubmit = {
+                    if (state.isEditMode) vm.submitEdit { warning -> editAscent?.let { onSuccess(it, warning) }; onDismiss() }
+                    else vm.submit { ascent, warning -> onSuccess(ascent, warning); onDismiss() }
+                },
+                onReplacePhoto = { photoPicker.launch("image/*") },
                 onClose  = { scope.launch { sheetState.hide(); onDismiss() } },
+                onDelete = { vm.deleteAscent { onDeleted() } },
             )
         }
     }
@@ -187,7 +206,7 @@ fun NewAscentSheet(
 
 @Composable
 private fun PhotoPickStep(
-    error: String?,
+    error: UiText?,
     onPickPhoto: () -> Unit,
     onClose: () -> Unit,
 ) {
@@ -239,7 +258,7 @@ private fun PhotoPickStep(
                 }
 
                 if (error != null) {
-                    Text(error, fontSize = 13.sp, color = Color(0xFFEF4444))
+                    Text(error.asString(), fontSize = 13.sp, color = Color(0xFFEF4444))
                 }
 
                 Button(
@@ -262,10 +281,22 @@ private fun PhotoPickStep(
 private fun PhotoCropStep(
     bitmap: Bitmap,
     onBack: () -> Unit,
-    onDone: (Bitmap) -> Unit,
+    onDone: (Bitmap, String) -> Unit,
 ) {
     var cropImageView by remember { mutableStateOf<CropImageView?>(null) }
     var cropError by remember { mutableStateOf<String?>(null) }
+    val cropErrorMsg = stringResource(R.string.error_crop_photo)
+
+    // Landscape support (mirrors web): horizontal photos default to a full-width
+    // landscape crop (blur-fill on display) instead of being forced into 4:5.
+    val isLandscapeCapable = bitmap.width > bitmap.height
+    var landscapeMode by remember(bitmap) { mutableStateOf(isLandscapeCapable) }
+
+    LaunchedEffect(cropImageView, landscapeMode, bitmap) {
+        val v = cropImageView ?: return@LaunchedEffect
+        if (landscapeMode) v.setAspectRatio(bitmap.width, bitmap.height)
+        else v.setAspectRatio(4, 5)
+    }
 
     Column(
         modifier = Modifier
@@ -291,8 +322,8 @@ private fun PhotoCropStep(
                             guidelines = CropImageView.Guidelines.ON,
                             scaleType = CropImageView.ScaleType.FIT_CENTER,
                             fixAspectRatio = true,
-                            aspectRatioX = 4,
-                            aspectRatioY = 5,
+                            aspectRatioX = if (isLandscapeCapable) bitmap.width else 4,
+                            aspectRatioY = if (isLandscapeCapable) bitmap.height else 5,
                             autoZoomEnabled = true,
                             multiTouchEnabled = true,
                             centerMoveEnabled = true,
@@ -335,6 +366,21 @@ private fun PhotoCropStep(
                 Text(it, color = Color(0xFFEF4444), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp))
             }
 
+            // Aspect toggle — only for horizontal photos
+            if (isLandscapeCapable) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                ) {
+                    CropAspectChip(stringResource(R.string.new_ascent_crop_portrait), !landscapeMode) {
+                        cropError = null; landscapeMode = false
+                    }
+                    CropAspectChip(stringResource(R.string.new_ascent_crop_landscape), landscapeMode) {
+                        cropError = null; landscapeMode = true
+                    }
+                }
+            }
+
             Row(
                 modifier             = Modifier.fillMaxWidth(),
                 verticalAlignment    = Alignment.CenterVertically,
@@ -354,16 +400,18 @@ private fun PhotoCropStep(
 
                 Button(
                     onClick = {
-                        val cropped = cropImageView?.getCroppedImage(
-                            1080,
-                            1350,
-                            CropImageView.RequestSizeOptions.RESIZE_FIT,
-                        )
+                        // Landscape: fit within 1080 wide, preserving the horizontal
+                        // proportions. Portrait/square: 1080×1350 (4:5).
+                        val cropped = if (landscapeMode) {
+                            cropImageView?.getCroppedImage(1080, 1080, CropImageView.RequestSizeOptions.RESIZE_FIT)
+                        } else {
+                            cropImageView?.getCroppedImage(1080, 1350, CropImageView.RequestSizeOptions.RESIZE_FIT)
+                        }
                         if (cropped != null) {
                             cropError = null
-                            onDone(cropped)
+                            onDone(cropped, if (landscapeMode) "landscape" else "4:5")
                         } else {
-                            cropError = "No se pudo recortar la foto"
+                            cropError = cropErrorMsg
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PeakGreenCTA),
@@ -377,6 +425,23 @@ private fun PhotoCropStep(
     }
 }
 
+@Composable
+private fun CropAspectChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        text       = label,
+        color      = if (selected) Color.Black else Color.White,
+        fontSize   = 13.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier   = Modifier
+            .background(
+                color = if (selected) Color.White else Color(0x33FFFFFF),
+                shape = RoundedCornerShape(20.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 7.dp),
+    )
+}
+
 // ── Step 3: Form ───────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -386,10 +451,33 @@ private fun AscentFormStep(
     vm: NewAscentViewModel,
     onBack: () -> Unit,
     onSubmit: () -> Unit,
+    onReplacePhoto: () -> Unit,
     onClose: () -> Unit,
+    onDelete: () -> Unit = {},
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showDiscard    by remember { mutableStateOf(false) }
+    var showDatePicker   by remember { mutableStateOf(false) }
+    var showDiscard      by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // ── Delete confirmation (double-check before deleting the ascent) ──────────
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title   = { Text(stringResource(R.string.new_ascent_delete)) },
+            text    = { Text(stringResource(R.string.new_ascent_delete_confirm)) },
+            confirmButton = {
+                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) {
+                    Text(stringResource(R.string.action_delete), color = Color(0xFFDC2626))
+                }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+
+    // Captured INSIDE the ModalBottomSheet window — Material3 renders sheet content
+    // in a separate window, so the host's FocusManager would clear the wrong window.
+    val focusManager       = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val formattedDate = remember(state.date) {
         runCatching {
@@ -469,7 +557,7 @@ private fun AscentFormStep(
                 Icon(BackArrowIcon, contentDescription = stringResource(R.string.action_back), tint = PeakNavyDark)
             }
             Text(
-                stringResource(R.string.new_ascent_title),
+                stringResource(if (state.isEditMode) R.string.new_ascent_edit_title else R.string.new_ascent_title),
                 fontWeight = FontWeight.SemiBold,
                 fontSize   = 16.sp,
                 color      = PeakNavyDark,
@@ -485,7 +573,13 @@ private fun AscentFormStep(
                 )
             } else {
                 TextButton(
-                    onClick  = onSubmit,
+                    onClick  = {
+                        // End the active TextInputSession in THIS (sheet) window so the
+                        // keyboard cannot re-show itself over the capture-reveal overlay.
+                        focusManager.clearFocus(force = true)
+                        keyboardController?.hide()
+                        onSubmit()
+                    },
                     modifier = Modifier.align(Alignment.CenterEnd),
                     enabled  = state.selectedPeak != null && !state.isLoading,
                 ) {
@@ -507,22 +601,61 @@ private fun AscentFormStep(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
 
-            // Photo preview
-            state.croppedBitmap?.let { bmp ->
+            // Photo preview. In edit mode the existing photo is shown (until replaced)
+            // and the whole frame is tappable to pick + crop a new one.
+            val croppedBmp  = state.croppedBitmap
+            val existingUrl = state.existingPhotoUrl
+            if (croppedBmp != null || existingUrl != null) {
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(4f / 5f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color.Black),
+                            .background(Color.Black)
+                            .then(if (state.isEditMode) Modifier.clickable { onReplacePhoto() } else Modifier),
                     ) {
-                        Image(
-                            bitmap       = bmp.asImageBitmap(),
-                            contentDescription = "Foto",
-                            contentScale = ContentScale.Crop,
-                            modifier     = Modifier.fillMaxSize(),
-                        )
+                        if (croppedBmp != null) {
+                            val img = croppedBmp.asImageBitmap()
+                            if (state.cropAspect == "landscape") {
+                                Image(bitmap = img, contentDescription = null, contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize().blur(24.dp))
+                                Image(bitmap = img, contentDescription = null, contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize())
+                            } else {
+                                Image(bitmap = img, contentDescription = null, contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize())
+                            }
+                        } else if (state.existingPhotoCropAspect == "landscape") {
+                            AsyncImage(model = existingUrl, contentDescription = null, contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().blur(24.dp))
+                            AsyncImage(model = existingUrl, contentDescription = null, contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize())
+                        } else {
+                            AsyncImage(
+                                model              = existingUrl,
+                                contentDescription = null,
+                                contentScale       = ContentScale.Crop,
+                                modifier           = Modifier.fillMaxSize(),
+                            )
+                        }
+                        if (state.isEditMode) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 12.dp)
+                                    .clip(RoundedCornerShape(percent = 50))
+                                    .background(Color(0xCC000000))
+                                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                            ) {
+                                Text(
+                                    stringResource(R.string.new_ascent_change_photo),
+                                    color      = Color.White,
+                                    fontSize   = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -618,14 +751,23 @@ private fun AscentFormStep(
                     FormLabel(stringResource(R.string.new_ascent_field_notes))
                     OutlinedTextField(
                         value           = state.notes,
-                        onValueChange   = { if (it.length <= 2000) vm.onNotesChange(it) },
+                        onValueChange   = { if (it.length <= NOTES_MAX_CHARS) vm.onNotesChange(it) },
                         modifier        = Modifier.fillMaxWidth(),
                         placeholder     = { Text(stringResource(R.string.new_ascent_notes_placeholder), color = PeakSubtle) },
                         minLines        = 3,
-                        maxLines        = 6,
+                        maxLines        = 3,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                         shape           = RoundedCornerShape(8.dp),
                         colors          = inputColors(),
+                        supportingText  = {
+                            Text(
+                                "${state.notes.length}/$NOTES_MAX_CHARS",
+                                modifier  = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.End,
+                                fontSize  = 11.sp,
+                                color     = PeakSubtle,
+                            )
+                        },
                     )
                 }
             }
@@ -691,11 +833,27 @@ private fun AscentFormStep(
                         border = BorderStroke(1.dp, Color(0xFFFECACA)),
                     ) {
                         Text(
-                            text     = state.error!!,
+                            text     = state.error!!.asString(),
                             modifier = Modifier.padding(12.dp),
                             fontSize = 13.sp,
                             color    = Color(0xFFDC2626),
                         )
+                    }
+                }
+            }
+
+            // Delete ascent — edit mode only, with a double-check dialog (mirrors web).
+            if (state.isEditMode) {
+                item {
+                    Column {
+                        HorizontalDivider(color = PeakBorderLight, modifier = Modifier.padding(vertical = 8.dp))
+                        TextButton(
+                            onClick  = { showDeleteConfirm = true },
+                            enabled  = !state.isLoading,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(stringResource(R.string.new_ascent_delete), color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
             }

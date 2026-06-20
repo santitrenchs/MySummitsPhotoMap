@@ -5,7 +5,7 @@
     <string name="nav_tab_home">Stats</string>
     <string name="nav_tab_cordada">Cordada</string>
     <string name="nav_tab_map">Atlas</string>
-    <string name="nav_tab_logbook">Bitácora</string>
+    <string name="nav_tab_bitacora">Bitácora</string>
     <string name="nav_tab_cards">Cartas</string>
     <string name="nav_fab_new_ascent">Nueva ascensión</string>
 
@@ -36,6 +36,24 @@
     <string name="auth_password_show">Mostrar</string>
     <string name="auth_tagline_p1">Convierte tus cimas</string>
     <string name="auth_tagline_p2">en cartas coleccionables.</string>
+    <string name="auth_register_title">Crear cuenta</string>
+    <string name="auth_register_subtitle">Empieza a registrar tus cumbres</string>
+    <string name="auth_name_placeholder">Nombre</string>
+    <string name="auth_confirm_password_placeholder">Confirmar contraseña</string>
+    <string name="auth_invite_code_placeholder">Código de invitación (opcional)</string>
+    <string name="auth_register_btn">Crear cuenta</string>
+    <string name="auth_have_account">¿Ya tienes cuenta?</string>
+    <string name="auth_sign_in_link">Inicia sesión</string>
+    <string name="auth_terms_prefix">He leído y acepto los </string>
+    <string name="auth_terms_link">Términos y condiciones</string>
+    <string name="auth_terms_and"> y la </string>
+    <string name="auth_privacy_link">Política de privacidad</string>
+    <string name="auth_username_placeholder">nombre de usuario</string>
+    <string name="auth_username_hint">Se genera automáticamente a partir de tu nombre</string>
+    <string name="auth_creating_account">Creando cuenta…</string>
+    <string name="auth_legal_marketing">Acepto recibir novedades y comunicaciones de Peakadex (opcional)</string>
+    <string name="auth_legal_must_accept">Debes aceptar los términos y la política de privacidad</string>
+    <string name="error_username_taken_register">Ese nombre de usuario ya está en uso. Prueba con otro.</string>
 
     <!-- ── Perfil ────────────────────────────────────────────────────────────── -->
     <string name="profile_title">Perfil</string>
@@ -56,20 +74,28 @@
     <string name="profile_empty_tagged">Aún no estás etiquetado/a en ninguna foto</string>
 
     <!-- ── Bitácora / Cards ──────────────────────────────────────────────────── -->
-    <string name="logbook_filter_mine">Mis Cards</string>
-    <string name="logbook_filter_friends">Mi Cordada</string>
-    <string name="logbook_stat_rarity">RAREZA</string>
-    <string name="logbook_stat_altitude">ALTITUD</string>
-    <string name="logbook_stat_ep">EP</string>
-    <string name="logbook_stats_title">ESTADÍSTICAS PEAKADEX</string>
-    <string name="logbook_stat_ascents">ASCENSIONES</string>
-    <string name="logbook_stat_climbers">ALPINISTAS</string>
-    <string name="logbook_empty_friends_title">Sin actividad de amigos</string>
-    <string name="logbook_empty_friends_desc">Cuando tus amigos registren cimas aparecerán aquí.\nUsa el filtro para ver tus propias ascensiones.</string>
-    <string name="logbook_empty_mine_title">Tu bitácora está vacía</string>
-    <string name="logbook_empty_mine_desc">Registra tu primera ascensión para empezar.</string>
-    <string name="logbook_empty_search_title">Sin resultados</string>
-    <string name="logbook_empty_search_desc">Prueba a ajustar la búsqueda o los filtros.</string>
+    <string name="cards_filter_mine">Mis Cards</string>
+    <string name="cards_filter_friends">Mi Cordada</string>
+    <string name="cards_search_hint">Buscar cimas…</string>
+    <string name="cards_filters_title">Filtros</string>
+    <string name="cards_filters_clear">Limpiar todo</string>
+    <string name="cards_filters_section_view">VISTA</string>
+    <string name="cards_filters_section_rarity">RAREZA</string>
+    <string name="cards_filters_see_cards">Ver %d cartas</string>
+    <string name="cards_stat_rarity">RAREZA</string>
+    <string name="cards_stat_altitude">ALTITUD</string>
+    <string name="cards_stat_reward">RECOMPENSA</string>
+    <string name="cards_stats_title">ESTADÍSTICAS PEAKADEX</string>
+    <string name="card_cordada_label">Tu Cordada:</string>
+    <string name="card_cordada_label_other">Cordada:</string>
+    <string name="cards_stat_ascents">ASCENSIONES</string>
+    <string name="cards_stat_climbers">ALPINISTAS</string>
+    <string name="cards_empty_friends_title">Sin actividad de amigos</string>
+    <string name="cards_empty_friends_desc">Cuando tus amigos registren cimas aparecerán aquí.\nUsa el filtro para ver tus propias ascensiones.</string>
+    <string name="cards_empty_mine_title">Tu bitácora está vacía</string>
+    <string name="cards_empty_mine_desc">Registra tu primera ascensión para empezar.</string>
+    <string name="cards_empty_search_title">Sin resultados</string>
+    <string name="cards_empty_search_desc">Prueba a ajustar la búsqueda o los filtros.</string>
 
     <!-- ── Home ─────────────────────────────────────────────────────────────── -->
     <string name="home_stat_ascents_label">ascensiones</string>
@@ -81,6 +107,10 @@
     <string name="home_no_friends_title">¡Compite con tus amigos!</string>
     <string name="home_no_friends_desc">Invita a amigos para ver tu posición en la cordada.</string>
     <string name="home_invite_friends_btn">Invitar amigos</string>
+    <string name="home_solo_placeholder">Aquí aparecerán tus amigos</string>
+    <string name="home_solo_invite_btn">Invitar amigos</string>
+    <string name="home_solo_empty_title">Tu cordada está vacía.</string>
+    <string name="home_solo_empty_desc">Invita a tus primeros compañeros para compartir cimas y competir juntos.</string>
     <string name="home_empty_ascents_desc">Empieza a construir tu historial de cimas.</string>
     <string name="home_register_ascent_btn">+ Registrar ascensión</string>
     <string name="home_levels_see_all">Ver todos los niveles →</string>
@@ -94,6 +124,15 @@
     <string name="home_period_peaks_suffix"> cimas</string>
     <string name="home_period_meters_suffix"> m ascendidos</string>
     <string name="home_onboarding_title">🏔️ Registra tu primera ascensión</string>
+    <string name="onboarding_card_title">Tu primera carta te espera</string>
+    <string name="onboarding_card_desc">Captura una cima y desbloquea tu primera carta coleccionable de montaña.</string>
+    <string name="onboarding_card_btn">Capturar</string>
+    <string name="onboarding_card_peak">Mont Blanc</string>
+    <string name="onboarding_card_user">Luc Moreau</string>
+    <string name="onboarding_card_date">22 jul 2023</string>
+    <string name="onboarding_card_altitude">4.808 m</string>
+    <string name="onboarding_card_rarity">Edelweiss</string>
+    <string name="onboarding_card_coords">45.8326°N · 6.8652°E</string>
     <string name="home_hero_alt_for_level">Superar los %1$dm para %2$s</string>
     <string name="home_hero_for_level">para %s</string>
     <string name="home_level_req_altitude">Superar los %dm</string>
@@ -110,11 +149,17 @@
 
     <!-- ── Nueva ascensión ───────────────────────────────────────────────────── -->
     <string name="new_ascent_title">Registrar ascensión</string>
+    <string name="new_ascent_edit_title">Editar ascensión</string>
+    <string name="new_ascent_delete">Eliminar ascensión</string>
+    <string name="new_ascent_delete_confirm">¿Eliminar esta ascensión? Esta acción no se puede deshacer.</string>
+    <string name="new_ascent_change_photo">Cambiar foto</string>
     <string name="new_ascent_add_photo">Añade una foto</string>
     <string name="new_ascent_photo_formats">JPEG · PNG · WebP · máx. 10 MB</string>
     <string name="new_ascent_select_photo_btn">Seleccionar foto</string>
     <string name="new_ascent_rotate_btn">  Girar 90°</string>
     <string name="new_ascent_next_btn">Siguiente</string>
+    <string name="new_ascent_crop_portrait">4:5</string>
+    <string name="new_ascent_crop_landscape">Horizontal</string>
     <string name="new_ascent_save_btn">Guardar</string>
     <string name="new_ascent_discard_title">¿Descartar ascensión?</string>
     <string name="new_ascent_discard_message">Perderás la foto y los datos introducidos.</string>
@@ -128,9 +173,7 @@
     <string name="new_ascent_route_placeholder">Nombre de la ruta...</string>
     <string name="new_ascent_notes_placeholder">Añade una descripción, condiciones...</string>
     <string name="new_ascent_tag_placeholder">Buscar persona...</string>
-    <string name="capture_reveal_title">Rareza \"%1$s\" capturada</string>
-    <string name="capture_reveal_subtitle">Nueva flor añadida a tus cards</string>
-    <string name="capture_reveal_continue">Toca para continuar</string>
+    <string name="capture_reveal_captured">¡Cima capturada!</string>
 
     <!-- ── Ajustes ───────────────────────────────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -215,6 +258,8 @@
     <string name="atlas_layers_satellite">Satélite</string>
     <string name="atlas_layers_section">CAPAS</string>
     <string name="atlas_layers_trails">Senderos</string>
+    <string name="atlas_layers_huts">Refugios</string>
+    <string name="atlas_layers_parks">Parques</string>
 
     <!-- ── Atlas — detalle de cima ───────────────────────────────────────────── -->
     <string name="atlas_peak_unclimbed">Aún sin escalar</string>
@@ -241,6 +286,9 @@
     <string name="atlas_section_sort">ORDENAR</string>
     <string name="atlas_filter_captured">Capturadas (%d)</string>
     <string name="atlas_filter_not_captured">Sin capturar</string>
+    <string name="atlas_filter_mythic">⭐ Mítico</string>
+    <string name="cards_filter_mythic">⭐ Mítico</string>
+    <string name="card_mythic">MYTHIC</string>
     <string name="atlas_sort_distance">Distancia</string>
     <string name="atlas_sort_relevance">Relevancia</string>
     <string name="atlas_sort_altitude">Altitud</string>
@@ -338,4 +386,45 @@
     <string name="cordadas_photo_hint">Se usará como portada y avatar</string>
     <string name="cordadas_edit_photo">Editar foto</string>
     <string name="cordadas_delete_warning">Esta acción no se puede deshacer</string>
+
+    <!-- ── Errors (shared across all ViewModels) ──────────────────────────────── -->
+    <string name="error_fields_required">Por favor completa todos los campos</string>
+    <string name="error_invalid_credentials">Email o contraseña incorrectos</string>
+    <string name="error_too_many_attempts">Demasiados intentos. Espera un momento</string>
+    <string name="error_server_response">Error al procesar la respuesta del servidor</string>
+    <string name="error_no_connection">Sin conexión a internet</string>
+    <string name="error_unexpected">Error inesperado. Inténtalo de nuevo</string>
+    <string name="error_passwords_mismatch">Las contraseñas no coinciden</string>
+    <string name="error_password_too_short">La contraseña debe tener al menos 8 caracteres</string>
+    <string name="error_invite_code_invalid">Código de invitación inválido o expirado</string>
+    <string name="error_email_already_exists">Ya existe una cuenta con ese email</string>
+    <string name="error_google_no_account">No se encontró ninguna cuenta de Google en este dispositivo. Añade una cuenta en Ajustes del sistema e inténtalo de nuevo.</string>
+    <string name="error_google_unexpected">Error inesperado con Google Sign-In</string>
+    <string name="error_load_profile">Error al cargar el perfil</string>
+    <string name="error_load_config">Error al cargar la configuración</string>
+    <string name="error_name_empty">El nombre no puede estar vacío</string>
+    <string name="error_username_taken">Ese nombre de usuario ya está en uso</string>
+    <string name="error_save">Error al guardar</string>
+    <string name="error_password_current_required">Introduce tu contraseña actual</string>
+    <string name="error_password_current_wrong">Contraseña actual incorrecta</string>
+    <string name="error_password_change">Error al cambiar contraseña</string>
+    <string name="error_save_language">Error al guardar idioma</string>
+    <string name="error_unlink_google">Error al desvincular Google</string>
+    <string name="error_load_photo">No se pudo cargar la foto</string>
+    <string name="error_select_peak">Selecciona una cima</string>
+    <string name="error_photo_required">La foto es obligatoria</string>
+    <string name="error_crop_photo">No se pudo recortar la foto</string>
+    <string name="cards_you">Tú</string>
+    <string name="settings_username_format_error">Solo letras, números, puntos y guiones bajos (3–20 caracteres)</string>
+
+    <!-- ── Atlas onboarding ───────────────────────────────────────────────────── -->
+    <string name="map_onboarding_title">Captura las rarezas\nde la montaña</string>
+    <string name="map_onboarding_sub">Cada cima esconde una flor única. Cuanto más alto llegues, más rara es la conquista. Explora, asciende y construye tu colección.</string>
+    <string name="map_onboarding_rarities">Niveles de rareza</string>
+    <string name="map_onboarding_cta">Explorar el mapa</string>
+    <string name="map_onboarding_dont_show">No volver a mostrar</string>
+    <string name="cards_friends_empty">Tus amigos aún no han subido ninguna cima.</string>
+    <string name="cards_friends_empty_subtitle">Sigue escalando y comparte tus ascensiones.</string>
+    <string name="cards_mine_empty">Aún no tienes ninguna ascensión registrada.</string>
+    <string name="cards_mine_empty_subtitle">Captura tu primera cima para empezar.</string>
 </resources>

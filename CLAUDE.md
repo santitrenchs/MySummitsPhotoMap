@@ -21,6 +21,13 @@ The codebase lives at `MySummitsPhotoMap/` and is built with **Next.js (App Rout
 ### Peak
 A mountain summit. Global catalog, not user-owned. Has a name, altitude, coordinates, and optionally a mountain range and country. Peaks are the fixed reference points everything revolves around.
 
+Peak also stores cached enrichment data used by Cards and mobile map previews:
+- `elevationProfile Json?` — compact profile polyline around the peak.
+- `nearbyPeaks Json?` — the 5 most relevant surrounding peaks for the card mini-map.
+- `nearbyPeaksUpdatedAt DateTime?` — timestamp of the nearby-peaks cache.
+
+These fields are global on `Peak`, not per-user. Once any user creates an ascent for a peak, future users benefit from the cached profile/nearby data.
+
 ### Ascent
 A user's documented climb of a specific Peak. Each ascent belongs to one user (via `createdBy`), references one peak, has a date, optional route description, optional Wikiloc embed URL, and zero or more photos. This is the primary content unit of the app.
 
@@ -46,10 +53,10 @@ The gamification dashboard. Entry point of the app (root `/` redirects here when
 1. **HeroHeader** — always shown
 2. **OnboardingBanner** — only when `totalAscents == 0`
 3. **ProgressionSection** — level cards (Android/iOS only; removed from web as of 2026-05-30)
-4. **MonthlyChartSection** — "Últimos 6 meses", shown when `totalAscents >= 1` and data non-empty
-5. **RarityChartSection** — "Cimas por rareza", shown when `totalAscents >= 1`
-6. **LeaderboardCard** — "Tu cordada", shown when `leaderboard.size > 1`
-7. **NoFriendsCta** — shown when `totalFriends == 0`
+4. **LeaderboardCard** — "Tu cordada", shown when `leaderboard.size > 1` (moved before charts 2026-06-16)
+5. **MonthlyChartSection** — "Últimos 6 meses", shown when `totalAscents >= 1` and data non-empty
+6. **RarityChartSection** — "Cimas por rareza", shown when `totalAscents >= 1`
+7. **NoFriendsCta** — shown when `totalFriends == 0` (web only); **SoloRankingSection** — shown when `totalFriends == 0` (Android only)
 8. **RecentAscentsRow** — "Tus últimas cimas", shown when `recentAscents` non-empty
 
 **Web hero layout** (`components/home/HomeClient.tsx`): horizontal row — avatar (56px circle) + name in bold white + `· AchievedLevelName` at 55% opacity (right of name) + CS pill + EP pill. Below: horizontal divider. Below: 3-metric row (ascensiones / cimas / alt. máx). Below: solid-black progress strip with green gradient bar and label `"{uniquePeaks} / {total} cimas · para {NextLevelName}"` (or alt-req variant). The **Progression section** (level cards) and the **motivation banner** have been removed from web — they remain on Android/iOS only.
@@ -66,7 +73,7 @@ The gamification dashboard. Entry point of the app (root `/` redirects here when
 - **Monthly chart** ("Últimos 6 meses"): stacked bar chart, one column per month. Each individual color segment is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. The month count label and month label below each bar link to the month filter (`?month=YYYY-MM&view=mine`). Empty months are not clickable.
 - **Rarity chart** ("Cimas por rareza"): 9-column bar chart, one per rarity tier. Each **active** bar (count > 0) is clickable → navigates to Ascensiones/Cards filtered by that rarity + `view=mine`. Inactive bars (count = 0) are not clickable.
   - **Web** (`components/home/HomeClient.tsx`): active bars wrapped in `<Link href="/ascents?rarity=<rarityId>&view=mine">`. Monthly segments wrapped in individual `<Link>` within the bar container.
-  - **Android** (`HomeScreen.kt`): `Modifier.clickable(indication=null)` on each active `Column` / bar segment. Navigates via `onNavigateToCardsWithRarity(rarityId)` callback → `MainScaffold` sets `pendingRarityId` → `LogbookScreen` applies `clearFilters() + setRarityId() + setViewFilter(Mine)`.
+  - **Android** (`HomeScreen.kt`): `Modifier.clickable(indication=null)` on each active `Column` / bar segment. Navigates via `onNavigateToCardsWithRarity(rarityId)` callback → `MainScaffold` sets `pendingRarityId` → `CardsScreen` applies `clearFilters() + setRarityId() + setViewFilter(Mine)`.
   - **Rarity counts**: the rarity chart shows **unique peaks** per rarity (deduped by `peakId` in `home.service.ts`). The monthly chart shows **all ascents** (no dedup). These intentionally differ — clicking a rarity bar in the chart may show more cards in the filtered view (because the filter shows all ascents of that rarity, including repeats).
 - **Recent ascents** ("Tus últimas cimas"): horizontal scroll cards with image overlay
 
@@ -177,19 +184,86 @@ A combined social + personal climb log. Shows **friends' ascents by default** (s
   - **Web — share endpoint**: `POST /api/ascents/{id}/share` + warms OG image cache with `GET /api/og/{ascentId}`. Component: `components/cards/AscentCard.tsx` → `activatePublicShare()`.
   - **Web mobile**: `navigator.share({ url, title: "Peakadex" })` — native OS sheet.
   - **Web desktop**: custom dark popover (`#0D2538` bg, `zIndex: 1100`) with two options: WhatsApp (`wa.me/?text=encodeURIComponent(url)`) + copy link (clipboard API, ✓ feedback after copy).
-  - **Android**: `Intent.ACTION_SEND` + type `"text/plain"` + `Intent.createChooser(intent, null)`. API call via `vm.shareAscent(ascentId)`. File: `LogbookScreen.kt` + `LogbookViewModel.shareAscent()`.
+  - **Android**: `Intent.ACTION_SEND` + type `"text/plain"` + `Intent.createChooser(intent, null)`. API call via `vm.shareAscent(ascentId)`. File: `CardsScreen.kt` + `CardsViewModel.shareAscent()`.
   - **Mobile v1 endpoint**: `POST /api/v1/ascents/{id}/share` (owner-only, sets `isPublic = true`). File: `app/api/v1/ascents/[id]/share/route.ts`.
   - **iOS (planned)**: `UIActivityViewController` with the URL + call `POST /api/v1/ascents/{id}/share` first.
 - **Edit flow:**
   - **Web**: dispatches `CustomEvent("open-ascent-modal", { detail: { editAscent: {...} } })` — opens the edit modal in-place. `NavBar.tsx` listens for this event.
-  - **Android / iOS**: navigates to `AscentDetailScreen` / equivalent detail view (full inline edit, no separate edit screen).
+    - Deleting an own ascent from the edit modal or the ascent detail must return to `/ascents?view=mine`, never bare `/ascents` (bare `/ascents` defaults to friends/"Mi equipo").
+    - Photo editing in the web modal has two explicit actions: **Re-encuadrar / Re-crop** (reuse existing original via `reuseOriginalPhotoId`) and **Cambiar foto / Change photo** (open file picker for a real replacement). Never route edit photo replacement through the create-mode `PickStep`.
+  - **Android**: the pencil on own cards opens the **create sheet (`NewAscentSheet`) in EDIT mode** — full web parity (peak, date, route, notes, tagged people, photo replace). See "Android App — Edit ascent flow" below. (It no longer opens the read-only `AscentDetailScreen`.)
+  - **iOS (planned)**: same — reuse the create sheet in edit mode.
 
 **`Ascent.isPublic` Prisma field:**
 - `isPublic Boolean @default(false)` — controls whether `/ascent/{id}` (OG share page at `app/(share)/ascent/[id]/`) is publicly accessible without authentication.
 - Set to `true` by `POST /api/ascents/{id}/share` or `POST /api/v1/ascents/{id}/share`. Never automatically reset to `false`.
 - The share page at `/ascent/{id}` uses `?lang=` query param for i18n. OG image generated by `app/api/og/[id]/route.ts` (Sharp + opentype, cached).
+- **⚠️ WhatsApp link preview — keep the OG image under ~300 KB**: WhatsApp's crawler (`facebookexternalhit`) silently drops `og:image`s larger than ~300 KB → the shared link shows **no image preview at all**. `app/api/og/[id]/route.ts` composites once then steps JPEG quality down (86→76→66→56) until under `WA_MAX_BYTES = 280 KB`. Never remove this size cap. WhatsApp also caches preview results aggressively with no purge tool — when testing a fix, bust its cache by changing the URL (add a query param). Both `/ascent/{id}` and `/api/og/[id]` must stay whitelisted in `proxy.ts` or the crawler is redirected to `/login` (no OG tags = no preview).
+- **Landscape photos in share card + OG**: `getPublicAscent()` returns `photoCropAspect`. When `"landscape"`, the share page and OG image render a blurred cover background + the full photo contained on top (instead of cropping a horizontal photo to a center sliver). CSS `url()` for the blur fill MUST be quoted — Cloudflare image URLs contain commas that break an unquoted `url()`.
+- **Share page card** (`/ascent/{id}`) — **flippable, mirrors the in-app card** (2026-06-15). The page (`app/ascent/[id]/page.tsx`, server) passes data + i18n strings to the client component `components/share/ShareCard.tsx`. It replicates the app `.flip-card`/`.peak-card` structure: size/frame match the app (reuses `.peak-card` → radius 28, padding 7, grain texture; `max-width: 496px`; header reuses `.card-user`/`.pc-avatar`/`.user-name`/`.user-date`). **Front** = photo + watermark + coords + stat band with the "+N EP" reward (no Cairn, no comment). **Back** = the app `<CardBack>` (mini-map + elevation + stats + Cordada showing **all members incl. owner** + comment blockquote). Hint **"Toca la carta para ver el reverso"** (`share_tapToFlip`) below. **No public API exposure**: nearby peaks are disabled (`PeakMiniMap`/`CardBack` gained an optional `disableNearby` prop → base map + central marker only, no `/api/peaks`) and the elevation profile is passed from the cached `peak.elevationProfile` (`CardBack` `elevationProfile` prop → no `/api/peaks/[id]/elevation` fetch). `getPublicAscent()` now also returns `peak.id`, `peak.elevationProfile`, tagged `persons`, and `peakStats`. The app card path is unchanged (both props optional).
+- **Wikipedia-texts feature removed** (2026-06-15, discarded): no more `wikiTexts` in the feed query, admin peaks WikiRow, `/api/admin/peaks/[id]/wiki`, `wiki.service.ts`, ingestion script, or `PeakWikiText` Prisma model. ⚠️ The `peak_wiki_descriptions` table still exists on staging+prod (orphaned) — dropping it needs a manual `prisma db push` (destructive, not yet done).
+
+**Peak enrichment cache for Cards (web + Android):**
+- `createAscent()` in `lib/services/ascent.service.ts` must call both `ensureElevationProfileForPeak(input.peakId)` and `ensureNearbyPeaksForPeak(input.peakId)` with `Promise.allSettled()`. A failure to enrich the peak must be logged but must never block ascent creation.
+- `PEAK_SELECT` in `ascent.service.ts` must include both `elevationProfile` and `nearbyPeaks`, so `GET /api/v1/ascents` sends the cache in each ascent payload. This is critical for Android Cards: the back of the card must render immediately from the ascent payload instead of doing a slow on-demand nearby-peaks request after flip.
+- `ensureNearbyPeaksForPeak(peakId, { force?: boolean })` returns the cached JSON if present unless `force` is true. Backfills and algorithm changes should pass `force: true`.
+- Nearby-peaks cache shape includes `id`, `name`, `nameEn`, `latitude`, `longitude`, `altitudeM`, `rarityId`, and `distanceM`.
+- Selection criterion (updated 2026-06-04): choose the 5 most relevant peaks, not merely the 5 nearest. Candidates inside `20_000m` are preferred when at least five exist; otherwise all bbox candidates are considered. Relevance score is `altitudeM + rarityWeight * 50 - distanceM / 100`, sorted descending, then by shorter distance. This avoids showing tiny nearby bumps when more important surrounding summits are visible in the same local area.
+- Backfill status (2026-06-04): staging and production ascended peaks were recalculated after the relevance-ranking change. Staging: 50/50 ascended peaks enriched. Production: 96/96 ascended peaks enriched.
 
 **Filter spec for mobile** → see `DESIGN.md` "Logbook Screen — Bitácora" and `mobile/ios/PLAN.md` Fase 3.
+
+#### Cards — landscape, card-back, mythic, comment cap (web + Android, 2026-06-15)
+
+- **Landscape photos**: horizontal photos are no longer force-cropped to 4:5. The crop step detects a landscape source and offers a **4:5 ↔ Horizontal** toggle (default landscape for horizontal images), storing `Photo.cropAspect = "landscape"`. Data chain (web): `cropAspect` flows through `PHOTOS_INCLUDE`/`PHOTOS_SELECT` → `enrichAscent().firstPhotoCropAspect` → `AscentData` → `AscentCardData.cropAspect`. When landscape, every surface renders a **blurred cover background + the full photo `object-fit: contain`** (feed card, detail hero, new-ascent preview, share card front; OG image composites the blur server-side). **⚠️ Web CSS `url()` must be quoted** (`url("…")`) — Cloudflare image URLs contain commas that break an unquoted `url()` → blur silently fails. Android: `PhotoCropStep` toggle, `ContentScale.Fit` over a `.blur()` cover; v1 upload accepts a `cropAspect` form field. `photo.service.uploadPhoto` persists `cropAspect` whenever `cropMeta` is present (decoupled from the original-key path so mobile uploads without an original still save it).
+- **Card back — Cordada + comment**: on the back, tagged people render as rarity-tinted **pills** under a label, and the comment renders as an **italic blockquote with a rarity-colored left bar (3-line clamp)**. **Own card**: label `card_cordada_label` ("Tu Cordada:") + tagged users only, shown only when there are tags. **Friend's card**: label `card_cordada_label_other` ("Cordada:", no possessive) + the **owner prepended** to the tagged users, **always shown** (owner always present). Web (`AscentCard.tsx` `variant === "profile"` = own) and Android (`CardsScreen.kt` `ascent.isOwn`) match. The back map is a **contained frame with white margin + rounded corners** on both platforms.
+- **Comment 100-char cap**: the comment/notes field is capped at **100 chars with an `n/100` counter** on both platforms, in create AND edit (web modal `NewAscentModalContent` + detail inline editor; Android `NOTES_MAX_CHARS`). Edit prefills truncate existing >100 descriptions to 100.
+- **Mythic card treatment** (front): gold **"MYTHIC"** badge top-left + a **pulsing gold glow** (animated colored shadow). Web + Android match (`card_mythic`).
+- **Card front stat band — RARITY / ALTITUDE / RAREZA→REWARD (web is the source of truth, Android matches, 2026-06-17)**:
+  - **RARITY** cell: a rounded **pill tinted with the rarity colour (~12% alpha)** wrapping `✿ Label` (web `AscentCard.tsx`; Android `RarityStatItem`).
+  - **REWARD** cell (label `card_reward` / `cards_stat_reward`): an **amber pill (`#FEF3C7`)** with **"+N EP" in amber `#D97706`**. The **Cairn was removed** (it was always 1 on mythic, added no info, and made the pill overflow) — removed from `AscentCard.tsx`, `ShareCard.tsx`, and Android `RewardStatItem`; `CairnGlyph` and the `cards_card_cairn` string are gone.
+  - Android pills use `wrapContentWidth(unbounded = true)` so they size to content and overflow the cell (mirrors web's `nowrap` pill) instead of truncating.
+- **Card front name + altitude match the back (web + Android, 2026-06-17)**: the peak **name** (22px/900/`-0.03em` web, 22sp/Black/`-0.04em` Android) and **altitude** (28px/900/`-0.04em`) on the front photo overlay use the **same size as the card back** (`.back-map-name`/`.back-map-alt`) so they don't visibly jump on flip. The **route** sits below the altitude in smaller text (front-only). Note: the front photo (4:5) and back mini-map (`flex 65%`) have different heights, so the size matches but the absolute Y is only approximate.
+- **Web grouped cards removed**: the feed renders **one card per ascent** (`GroupedAscentCard` deleted; `AscentsClient` renders the flat `filtered` list). Same-peak/same-day ascents now appear as separate cards.
+- **Share page card** → see "Share page card" under the share section below.
+
+#### Ascents feed filter — instant switching + loading state (web, 2026-06-15)
+
+`AscentsClient` SSR-loads only the active view's stream, so switching Mi equipo ↔ Mis Cimas used to flash "0 cartas" + the empty state until a refetch landed. Fix: (1) an `isRefetching` flag drives a **spinner in the feed + "…" on the filter CTA** during a full reload (instead of the stale 0/empty); (2) a **per-(filter-signature) client cache** (`feedCacheRef`) seeded with the SSR page — cache hits restore instantly with no network; (3) the **opposite primary view is prefetched in the background on mount**, so the common toggle is instant. `loadMore`/autofill pause while refetching. ⚠️ Virtuoso gotcha: pass `initialTopMostItemIndex` **only when there's a real highlight index** — passing `undefined` with `useWindowScroll` leaves the list unrendered (blank feed). The highlight ring wraps only the card (radius 28, no bottom padding) so it hugs it.
+
+**Filter CTA counts (web, 2026-06-18):** the bottom-sheet CTA must show **server totals**, not `filtered.length`, because the feed is paginated (`PAGE_SIZE`) and only keeps the currently loaded cards in memory. `GET /api/ascents/feed/summary` returns `{ totalAscents, uniquePeaks }` using the same filter params as `/api/ascents/feed` but without loading photos/cards or changing pagination. `AscentsClient` caches summaries by filter signature and uses them only for the CTA text. Do **not** increase `PAGE_SIZE` or load all cards to fix counts. Search is still client-side, so while search text is non-empty the CTA falls back to the local filtered count until search is moved server-side.
+
+#### Capture Reveal — web implementation, Chrome-safe architecture (2026-06-18)
+
+The Android capture-reveal was ported to web (`components/cards/CaptureReveal.tsx`): after creating an ascent, `NewAscentModalContent` does `window.location.href = /ascents?highlight={id}&reveal=1` (full reload). The just-created card plays the cinematic reveal **as a real card experience**, not a full-screen fake overlay. The user explicitly rejected a full-screen reveal that hides the feed/card context.
+
+**Final architecture (source of truth on `develop`):**
+- `app/(app)/ascents/page.tsx` reads `?reveal=1` server-side and passes `revealId` into `AscentsClient`. Do **not** rely on client `useSearchParams()` for this value: `AscentsClient` is under `<Suspense>`, and the first client render was flaky when the reveal state came only from search params.
+- `AscentsClient` keeps the actual `AscentCard` mounted through `AscentCardSlot`. The reveal is an overlay inside the card via the `reveal` prop (`photoBlur`, `coverAlpha`, `sceneOverlay`, `epDisplay`, `epScale`, `rarityScale`). The card itself is not swapped out for a special reveal component.
+- `useCaptureReveal()` is a small state machine (`idle → mounting → playing → settling → done/failed`). It waits for stable `.peak-card` + `.image-frame` layout before starting the timeline, has a timeout/fail-safe, and respects `prefers-reduced-motion` by settling almost immediately.
+- `CaptureRevealOverlay` renders the Lottie daisy (`RevealFlower`, `ssr:false`), headline, peak name/altitude, mythic beat, and `ElevationProfile`. It is `aria-hidden` so screen readers do not read decorative animation content.
+- When the reveal finishes, `revealCardId` and `highlightId` are cleared and `settledRevealId` disables the normal card entrance animation. Do **not** show the highlight ring after reveal: the ring/box-shadow transition caused a visible final jump.
+
+**Critical Virtuoso rule: reveal cards are pinned outside the virtual feed.**
+
+The web feed uses `react-virtuoso` with `useWindowScroll`. Chrome proved sensitive to Virtuoso measurement corrections:
+- Early attempts that rendered the reveal item inside Virtuoso could collapse the card to ~0 in Chrome while Safari looked fine.
+- Re-enabling `initialTopMostItemIndex` for the reveal made the first paint look correct, then Virtuoso recalculated real item heights and the viewport jumped to another card while the reveal continued lower in the feed.
+
+The robust fix is:
+- `pinnedRevealId` is initialized from `revealId`.
+- `pinnedRevealAscent` renders **above Virtuoso** as a normal `AscentCardSlot`.
+- `feedAscents` excludes that same ascent while it is pinned, so there is no duplicate DOM node with the same `ascent-{id}`.
+- The pinned card remains pinned after the overlay settles, so the final card is visible in exactly the same place. Do **not** immediately reinsert it into Virtuoso on `onFinished`; that would reintroduce the jump.
+- If the user changes filters/search/sort, the pin is cleared and the feed returns to its natural virtualized order.
+- `initialTopMostItemIndex` is still allowed for normal non-reveal highlights, but **not** for `reveal=1`.
+
+**Why this is the stable browser-compatible solution:** the reveal card no longer participates in Virtuoso's initial measurement, estimated offset, range correction, or `useWindowScroll` anchoring. Chrome/Safari differences in measurement timing cannot move or collapse the reveal card because it is outside the virtualized list during the cinematic.
+
+**Tests / regression guard:**
+- `e2e/ascents.spec.ts` has `@capture-reveal` tests asserting the pinned reveal card is visible, unique (`#ascent-{id}` count = 1), remains in viewport, and the scroll does not move during the first second.
+- `playwright.reveal.config.ts` runs the reveal tests in desktop Chrome, desktop WebKit/Safari, and mobile Chrome.
+- Run with `npm run test:e2e:reveal` when e2e credentials/server are available; `npm run test:e2e:reveal -- --list` verifies the matrix without executing the flow.
 
 ### Social
 An activity feed showing **friends' recent ascents only**. No algorithmic content, no strangers. Pure friends-only feed designed to spark motivation through seeing what your circle has been doing.
@@ -315,7 +389,8 @@ FaceDetection / FaceTag
 ## Deployment
 
 - **Production URL**: [www.peakadex.com](https://www.peakadex.com) (custom domain via GoDaddy CNAME → Railway)
-- **Platform**: Railway (auto-deploys on push to `main`)
+- **Platform**: Railway. **Production** auto-deploys on push to `main`. **Staging** (project "courteous-youth") auto-deploys from the **`develop`** branch (confirmed in the Railway panel 2026-06-15: branch=`develop`, auto-deploy ON, Wait-for-CI OFF). So **push to `develop` to deploy staging** — the `staging` branch is NOT what Railway watches. ⚠️ Auto-deploys can occasionally stall (a push lands on `develop` but Railway doesn't create the deploy); fix with a **manual Redeploy of the latest commit** in Railway, or push an empty commit to `develop` to re-fire the webhook. Note: Railway's "Redeploy" reuses that deployment's commit, so to ship the newest code redeploy the *latest* commit, not a stale one.
+- **Android backend targets**: debug builds use the Railway staging API (`mysummitsphotomap-staging.up.railway.app`); release builds use production (`www.peakadex.com`). After backend/API changes needed by Android, push to `develop` so staging is updated.
 - **Databases**: Two Railway PostgreSQL instances — sandbox (port 40040) and production (port 10046 / internal `postgres-52e3.railway.internal:5432`)
 - **File storage**: Cloudflare R2, public base URL `https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev`
   - Avatar key pattern: `avatars/{userId}.jpg`
@@ -511,9 +586,12 @@ cropAspect String?           // "4:5" | "1:1"
 - `app/api/photos/[id]/original/route.ts` — serves the original via proxy (private, 1h cache)
 - `app/api/photos/[id]/route.ts` — DELETE accepts `?keepOriginal=1` to preserve original during re-crop
 
-**Re-crop flow** (`AscentDetailClient`):
-- "Editar foto" button: if `photo.originalStorageKey` exists → fetches original + existing face tags → opens `ImageCropModal` → re-crop → new display JPEG uploaded, original reused via `reuseOriginalPhotoId`, old photo deleted with `?keepOriginal=1`
-- If no `originalStorageKey` (legacy photo) → opens file picker for full replacement
+**Re-crop / replace flow**:
+- `AscentDetailClient`: the detail-page "Editar foto" flow may auto-pick re-crop when an original exists, or file picker for legacy photos.
+- `NewAscentModalContent` edit modal (web cards): the UI must expose two separate actions over the preview:
+  - `detail_reCrop` ("Re-encuadrar" / "Re-crop"): fetch existing original, opens `ImageCropModal`, uploads a new display JPEG with `reuseOriginalPhotoId`, then deletes old photo with `?keepOriginal=1`.
+  - `detail_changePhoto` ("Cambiar foto" / "Change photo"): opens file picker, uploads `file` + new `originalFile` + `cropMeta`, then deletes the old photo normally.
+- Edit photo replacement must never enter the create-mode `PickStep`; that step extracts EXIF date/GPS and can contaminate edit state.
 - Re-crop uses fresh face detection (no initialFaces merge) — crop coordinates changed
 
 **face-api / TF.js backend:**
@@ -533,7 +611,7 @@ cropAspect String?           // "4:5" | "1:1"
 |-----|----|----|----|----|-----|
 | Home | **Stats** | **Stats** | **Stats** | **Stats** | **Stats** |
 | Map | **Atlas** | **Atlas** | **Atlas** | **Atlas** | **Atlas** |
-| Ascents | **Bitácora** | **Bitàcola** | **Logbook** | **Carnet** | **Logbuch** |
+| Ascents | **Cards** | **Cards** | **Cards** | **Cards** | **Cards** |
 | New ascent | **+** | **+** | **+** | **+** | **+** |
 
 Note: "Atlas" is intentionally not translated — it's a brand name kept across all locales. The Home tab was renamed from "Peakadex stats" to "Stats" (2026-05-28) for brevity.
@@ -555,6 +633,7 @@ When tapping a climbed peak, the panel shows the hero photo (if any) with altitu
 
 ## Known Gotchas
 
+- **CI (`.github/workflows/ci.yml`) gates — keep green**: runs `tsc --noEmit` (over the WHOLE project incl. `__tests__`), `node scripts/check-i18n.js`, vitest, and ESLint. (1) `__tests__/level-utils.test.ts` must track the current `LEVEL_DEFS` (6 levels: Scout base → Zenith 220 unique + 6500m) and the **9 rarities** in `rarityBreakdown` + `levelIdx` in the stats mock — it was stale for a while and reddened both the TS and unit-test jobs. (2) `check-i18n.js` strips `//` and `/* */` comments before extracting Dict keys — a `word:` inside a type comment (e.g. `// Validation error:`) otherwise registers as a phantom missing key. (3) **`react-hooks/immutability`** (React Compiler) flags writes to `document.cookie` / `window.location.href` as "value cannot be modified" even in event handlers — these are legitimate browser side-effects; add `// eslint-disable-next-line react-hooks/immutability`. Railway deploys independently of CI, so prod can ship while CI is red — but keep CI green so it can catch real regressions.
 - **`toLocaleString()` without locale**: causes hydration mismatch between Node.js server and browser. Always pass an explicit locale string, or skip formatting entirely for short numbers (e.g. `{altitudeM} m` not `{altitudeM.toLocaleString()} m`).
 - **Array guard on face detections**: API endpoints that return face detections can return non-arrays on edge cases. Always guard with `Array.isArray(data) ? data : []` before calling `.some()`, `.map()`, etc.
 - **Peak coordinates order**: maplibre-gl uses `[longitude, latitude]`. The DB stores `latitude` and `longitude` as separate fields. Always write `[peak.longitude, peak.latitude]` — never swap.
@@ -639,13 +718,24 @@ This section is the authoritative specification for the create and edit ascent f
 ### State machine
 
 ```
-CREATE mode:  pick → crop → form → (submit) → /ascents?highlight={id}
-EDIT mode:    form  (starts here directly)    → (submit) → router.refresh() + onClose()
+CREATE mode:  pick → crop → form → (submit) → /ascents?highlight={id}&reveal=1
+EDIT mode:    form  (starts here directly) → crop → form → (submit) → router.refresh() + onClose()
 ```
 
-- **`pick`**: PickStep. User selects ≥1 image. Validates size ≤ 10 MB. Triggers EXIF extraction for date + GPS peak suggestion (skipped if `defaultPeakId` is present).
-- **`crop`**: ImageCropModal for each queued file. Ratios: 1:1 or 4:5. Supports 90° rotation. Produces `{ blob, cropMeta, originalFile }` per photo. In edit mode re-crop fetches the original via `GET /api/photos/{id}/original`.
+- **`pick`**: PickStep. User selects ≥1 image. Validates size ≤ 10 MB. Triggers EXIF extraction for date + GPS peak suggestion (skipped if `defaultPeakId` is present). **Create mode only.** Edit mode must never render `PickStep`; it starts and returns to `form`.
+- **`crop`**: ImageCropModal for each queued file. Ratios: 1:1 or 4:5. Supports 90° rotation. Produces `{ blob, cropMeta, originalFile }` per photo. In edit mode, `Re-encuadrar` fetches the original via `GET /api/photos/{id}/original`; `Cambiar foto` opens a file picker directly and marks the pending photo as a true replacement.
 - **`form`**: Fields: peak (required), date (required, default today or EXIF date), route (optional, max 500), notes (optional, max 2000), persons (optional), wikiloc (edit mode only, optional).
+
+### Web edit photo UX contract (2026-06-18)
+
+`NewAscentModalContent` deliberately separates **create photo selection** from **edit photo replacement**:
+- Create mode: `PickStep` → EXIF date/GPS suggestion → crop → form → `POST /api/ascents`.
+- Edit mode: form preview shows **Re-encuadrar** when `originalStorageKey` exists and always shows **Cambiar foto**. Both go directly to `ImageCropModal`, then back to the edit form.
+- The back arrow from crop in edit mode must return to the edit form, not to `PickStep`.
+- EXIF extraction (`extractImageMeta`) must run only in create mode. A replacement image in edit mode must never change the existing ascent date or peak automatically.
+- `handleSubmit` (create) must bail out if `editAscent` exists. `handleEditSubmit` must use the existing `editAscent.id`.
+- `submitInFlightRef` blocks double submit for both create and edit.
+- If new photo upload or face-save fails in edit mode, do not delete the old photo. If face-save fails after a new photo row was created, delete that new photo best-effort and keep the old one.
 
 ### Validation rules (enforced before any API call)
 
@@ -668,8 +758,9 @@ EDIT mode:    form  (starts here directly)    → (submit) → router.refresh() 
 
 1. `PATCH /api/ascents/{id}` — updates peakId, date, route, description, wikiloc
 2. **If new photo pending**: `POST /api/photos/upload` → `POST /api/photos/{id}/faces` → delete old photo
-   - If old photo had `originalStorageKey`: delete with `?keepOriginal=1`, pass `reuseOriginalPhotoId`
-   - If old photo had no `originalStorageKey` (legacy): delete normally
+   - If action was **Re-encuadrar**: pass `reuseOriginalPhotoId` and delete old photo with `?keepOriginal=1`
+   - If action was **Cambiar foto**: upload a new `originalFile` and delete old photo normally
+   - If upload/faces fail: keep the old photo; never delete it before the new photo is fully usable
 3. **If no new photo**: `POST /api/photos/{existingPhotoId}/faces` to update person tags in place
 4. On success: `router.refresh()` + `onClose()` (no full reload — modal closes, list refreshes in background)
 
@@ -696,11 +787,15 @@ document.dispatchEvent(new CustomEvent("open-ascent-modal", {
 ### i18n
 
 All visible strings use `t.*` keys — no hardcoded text in any language. Keys used:
-`ascents_logTitle`, `ascents_editTitle`, `field_peak`, `field_selectPeak`, `field_date`, `field_route`, `field_routePlaceholder`, `field_notes`, `field_notesPlaceholder`, `tag_tagPeople`, `tag_searchOrType`, `optional`, `crop_title`, `crop_next`, `newAscent_save`, `newAscent_saveChanges`, `newAscent_delete`, `newAscent_discardTitle`, `newAscent_discardMessage`, `newAscent_discard`, `newAscent_clickOrDrag`, `newAscent_maxSize`, `newAscent_selectFiles`, `photo_tooLarge`, `newAscent_photoFailed`, `ascents_delete_title`, `ascents_delete_body`, `delete`, `deleting`, `cancel`, `detail_editPhoto`, `edit_failedToSave`, `peak_notFound`, `peak_moreResults`.
+`ascents_logTitle`, `ascents_editTitle`, `field_peak`, `field_selectPeak`, `field_date`, `field_route`, `field_routePlaceholder`, `field_notes`, `field_notesPlaceholder`, `tag_tagPeople`, `tag_searchOrType`, `optional`, `crop_title`, `crop_next`, `newAscent_save`, `newAscent_saveChanges`, `newAscent_delete`, `newAscent_discardTitle`, `newAscent_discardMessage`, `newAscent_discard`, `newAscent_clickOrDrag`, `newAscent_maxSize`, `newAscent_selectFiles`, `photo_tooLarge`, `newAscent_photoFailed`, `ascents_delete_title`, `ascents_delete_body`, `delete`, `deleting`, `cancel`, `detail_editPhoto`, `detail_reCrop`, `detail_changePhoto`, `edit_failedToSave`, `peak_notFound`, `peak_moreResults`.
+
+`newAscent_save` and `newAscent_saveChanges` are intentionally short in every locale (`Guardar` / `Desar` / `Save` / `Enregistrer` / `Speichern`) because they render as the compact top-right modal action and longer strings overlap on small screens.
 
 ### What must NOT change without updating this contract
 
 - The `pick → crop → form` step order in create mode
+- The edit photo flow staying `form → crop → form` (never `PickStep`; never EXIF suggestions)
+- The two explicit edit photo actions: `detail_reCrop` reuses original, `detail_changePhoto` replaces with a new file
 - Photo being required in both create and edit mode
 - The `userCleared` guard in PeakPicker (prevents wiping `defaultPeakId` during async load)
 - The `open-ascent-modal` custom event signature (`{ peakId, peakName }`)
@@ -956,11 +1051,15 @@ data class SelectedPeakUi(val peak: Peak, val ascent: MapAscent?)  // ascent=nul
 data class AtlasUiState(
     val isLoadingAscents:   Boolean                  = true,
     val climbedByPeakId:    Map<String, MapAscent>   = emptyMap(),
-    val viewportPeaks:      List<Peak>               = emptyList(),   // unclimbed peaks for map dots
+    // Accumulative cache of all unclimbed peaks seen so far (keyed by peak id).
+    // Merges on every viewport fetch — never replaces — so peaks remain available
+    // after the camera moves away. Mirrors web MapView's peaksCacheRef. Max 2000 entries.
+    val peaksCache:         Map<String, Peak>        = emptyMap(),
     val listPeaks:          List<Peak>               = emptyList(),   // fixed-radius peaks for list view
     val isLoadingList:      Boolean                  = false,
     val filter:             AtlasFilter              = AtlasFilter.ALL,
     val selectedRarityIds:  Set<String>              = emptySet(),
+    val mythicFilter:       Boolean                  = false,
     val sortMode:           SortMode                 = SortMode.DISTANCE,
     val rarities:           List<Rarity>             = emptyList(),
     val selected:           SelectedPeakUi?          = null,
@@ -991,9 +1090,17 @@ val lon = centerLon ?: lastBounds?.let { (it.east + it.west) / 2 }
 - `VIEWPORT_DEBOUNCE_MS = 500L` — viewport queries (longer to avoid mid-animation firing)
 - `SEARCH_DEBOUNCE_MS = 300L` — text search
 
-`onMapIdle()` receives `zoom: Double`, saves bounds in `lastBounds`, computes center, passes to `applyViewportScore()`. Unclimbed only — already-climbed peaks are filtered out of `viewportPeaks`.
+`onMapIdle()` receives `zoom: Double`, saves bounds in `lastBounds`, merges new peaks into `peaksCache`. Unclimbed only — already-climbed peaks are always available via `climbedByPeakId`.
 
-**`lastBounds` re-fetch:** when switching from CLIMBED filter back to ALL/NOT_YET, `viewportPeaks` is empty (queries were skipped). `onFilterChanged` re-calls `onMapIdle(lastBounds)` to repopulate immediately.
+**`lastBounds` re-fetch:** when switching from CLIMBED filter back to ALL/NOT_YET, `peaksCache` may be empty if no viewport fetches ran. `onFilterChanged` re-calls `onMapIdle(lastBounds)` to repopulate immediately.
+
+**Mythic filter (`mythicFilter: Boolean`, added 2026-06-11):** Filters peaks by `isMythic == true` on both the map sources and the list panel. Mutually exclusive with rarity pills — activating it clears `selectedRarityIds`, and activating a rarity pill clears `mythicFilter`. `onMythicFilterChanged(enabled)` in the ViewModel handles this. `isDirty` and `hasActiveFilters` both include `mythicFilter`. String key `atlas_filter_mythic` (⭐ Mítico / Mític / Mythic / Mythique / Mythisch) — all 5 locales. The chip uses the same amber theme as the Cards screen (`#FFFBEB` bg, `#FDE68A` border, `#92400E` text).
+
+**`onPeakSelected` vs `onPeakSelectedById` (fix 2026-06-05):** Two separate functions to avoid silent failures:
+- `onPeakSelected(peak: Peak)` — called from list and search results where the full `Peak` object is available. Inserts peak into `peaksCache` and sets `selected` immediately. Never fails silently. Mirrors web's `flyToPeak(peak)`.
+- `onPeakSelectedById(peakId: String)` — called from map tap events (GeoJSON feature only has the id). Looks up in: `climbedByPeakId → peaksCache → searchResults → listPeaks`. Returns silently only if genuinely not found anywhere.
+
+**`peaksCache` merge pattern:** both `onMapIdle` and `loadListPeaks` merge into `peaksCache` (never replace). Eviction via `LinkedHashMap` insertion order when size > 2000. `onPeakSelected(peak)` also inserts the peak so it remains selectable after the list closes and the camera flies to a remote area.
 
 **Initial viewport fetch:** `addOnCameraIdleListener` does NOT fire for the initial resting position. Trigger `vm.onMapIdle(...)` once manually after style loads (inside `map.setStyle { style -> ... }`).
 
@@ -1133,7 +1240,7 @@ Flow:
 The list is **decoupled from the map viewport**. When the user opens the list:
 1. `onToggleList(centerLat, centerLon)` is called with the current map center coordinates.
 2. `loadListPeaks(lat, lon)` fires a fresh API query with a fixed ~50 km radius bbox (±0.45° lat, ±0.60° lon) and `zoom=12` (500-peak server limit).
-3. The list shows peaks from `listPeaks` (fixed radius) not from `viewportPeaks` (zoom-culled).
+3. The list shows peaks from `listPeaks` (fixed radius) not from `peaksCache` (zoom-culled viewport).
 
 This means: even if the user is at zoom 6 (showing a whole mountain range), the list shows all peaks within ~50 km of the map center — not the tiny zoom-culled subset visible on the map.
 
@@ -1166,8 +1273,8 @@ A `CircularProgressIndicator` shows while `isLoadingList = true`. When the list 
 | `PeaksListPanel` | Full-screen white overlay with `statusBarsPadding()`; spinner while `isLoadingList`; `LazyColumn`; each row has 44dp photo thumbnail (climbed, rarity border) or 9dp blue dot (unclimbed) + name + range/country + altitude + distance from center |
 | `LayersPanel` | `ModalBottomSheet` white; **3-column** `LayerCard` grid (Normal / Terrain / Satélite) + Trails toggle row; active card has blue border + checkmark badge |
 | `LayerCard` | 44dp icon box, checkmark badge on active, `PeakBlueActive` border/text when active |
-| `FiltersPanel` | `ModalBottomSheet` white; header with "Limpiar todo" when dirty; `FlowRow` of `RarityPill`s; `FilterChip` for status (ALL/CLIMBED/NOT_YET) and sort (DISTANCE/RELEVANCE/ALTITUDE); footer "Ver N cimas" green CTA button |
-| `RarityPill` | Toggle pill; colored border + background tint when selected; `✿ label (N)` format |
+| `FiltersPanel` | `ModalBottomSheet` white; header with "Limpiar todo" when dirty; `FlowRow` of `RarityPill`s + **⭐ Mythic chip** (amber theme, mutually exclusive with rarities); `FilterChip` for status (ALL/CLIMBED/NOT_YET) and sort (DISTANCE/RELEVANCE/ALTITUDE); footer "Ver N cimas" green CTA button |
+| `RarityPill` | Toggle pill; colored border + background tint when selected; `✿ label (N)` format. Visually deselected when `mythicFilter = true` |
 
 ---
 
@@ -1182,7 +1289,7 @@ A `CircularProgressIndicator` shows while `isLoadingList = true`. When the list 
 ### Navigation contract
 
 `AtlasScreen` receives two lambdas:
-- `onNavigateToLogbook: (peakId: String, peakName: String) -> Unit` — from "Ver capturas" on a climbed peak detail
+- `onNavigateToCards: (peakId: String, peakName: String) -> Unit` — from "Ver capturas" on a climbed peak detail
 - `onNavigateToNewAscent: (peakId: String, peakName: String) -> Unit` — from "Capturar" buttons; navigates to `NewAscentScreen` with pre-selected peak
 
 ---
@@ -1192,6 +1299,26 @@ A `CircularProgressIndicator` shows while `isLoadingList = true`. When the list 
 **No Material Icons dependency.** All icons in `AtlasScreen.kt` are defined as private `val` using `ImageVector.Builder` + path DSL. Icon names: `SearchIcon`, `CloseIcon`, `FiltersIcon`, `LayersIcon`, `LocationIcon`, `MapOutlineIcon`, `ListIcon`, `TerrainIcon`, `TrailsIcon`, `CheckIcon`, **`SatelliteIcon`** (rounded square frame + 2×2 grid lines).
 
 `SatelliteIcon` uses `curveTo()` for bezier curves — NOT `cubicTo()` (that name does not exist in Compose `PathBuilder` and causes a compile error).
+
+---
+
+### Web MapView — pending parity with Android fixes (2026-06-05)
+
+The Android Atlas received two architectural fixes that the **web `MapView.tsx` already implements correctly** but should be kept in sync if the web map is ever refactored:
+
+**1. Accumulative peak cache (web already correct)**
+Web `MapView.tsx` uses `peaksCacheRef` (a `Map<string, MapPeak>`) that merges on every `fetchPeaksForViewport` call and never replaces. Android now matches this with `peaksCache: Map<String, Peak>`. Do NOT revert Android to a `List<Peak>` that replaces on each idle event.
+
+**2. `flyToPeak(peak)` receives the full object (web already correct)**
+Web always passes the full `MapPeak` object to `flyToPeak()` which sets `selected` immediately before the camera flies — no lookup by id that can fail. Android now has the same split: `onPeakSelected(peak: Peak)` for list/search, `onPeakSelectedById(peakId)` for map taps. When porting to iOS, follow the same pattern.
+
+**3. Rarity pill counts — context-aware by status filter (web TODO)**
+Web `MapView.tsx` line ~1451: `const count = allPeaks.filter((p) => p.rarityId === r.id).length` — always counts the full accumulative cache regardless of the active status filter. Android now applies context-aware counts:
+- `CLIMBED` filter → global user captures only
+- `NOT_YET` filter → viewport unclimbed only  
+- `ALL` filter → full viewport cache
+
+**Web task:** update `MapView.tsx` rarity pill count logic to match the Android behaviour. The count variable should be derived from the active `filter` state (`"climbed"` / `"not-climbed"` / `"all"`).
 
 ---
 
@@ -1211,8 +1338,8 @@ This section is the **authoritative spec** for the Android new-ascent flow. Ever
 - `core/model/Models.kt` — data classes
 - `core/api/ApiService.kt` — Retrofit interfaces
 - `core/navigation/MainScaffold.kt` — orchestrates trigger state
-- `feature/logbook/LogbookScreen.kt` — receives refresh/highlight, scrolls to new ascent
-- `feature/logbook/LogbookViewModel.kt` — `refresh()` + filter mutation
+- `feature/cards/CardsScreen.kt` — receives refresh/highlight, scrolls to new ascent
+- `feature/cards/CardsViewModel.kt` — `refresh()` + filter mutation
 
 ---
 
@@ -1223,7 +1350,7 @@ PICK  → user taps anywhere to open photo picker
 CROP  → crop 4:5 with CanHub `CropImageView`, rule-of-thirds grid, rotate 90°
 FORM  → peak search, date, route (optional), notes (optional), person tags
          ↓ submit
-onSuccess(ascentId) → close sheet → navigate to Logbook + scroll to + highlight
+onSuccess(ascentId) → close sheet → navigate to Cards + scroll to + highlight
 ```
 
 `NewAscentStep` enum: `PICK`, `CROP`, `FORM`.
@@ -1392,21 +1519,68 @@ In every `suspend fun` that catches `Exception`, always add this **before** the 
 }
 ```
 
-Swallowing `CancellationException` causes a brief error state flash when the ViewModel cancels an in-flight job on navigation (e.g. `vm.refresh()` in `refreshTrigger LaunchedEffect` cancels the previous `load()` job — without this fix, the Logbook briefly shows "Error inesperado" for ~100ms before the success response arrives).
+Swallowing `CancellationException` causes a brief error state flash when the ViewModel cancels an in-flight job on navigation (e.g. `vm.refresh()` in `refreshTrigger LaunchedEffect` cancels the previous `load()` job — without this fix, the Cards screen briefly shows "Error inesperado" for ~100ms before the success response arrives).
 
 ---
+
+### Capture Reveal — cinematic post-creation animation (Android, redesigned 2026-06-17)
+
+**File:** `feature/newascent/AscentCaptureReveal.kt` (Lottie-based). Full-screen overlay after an ascent is created; **auto-dissolves** to the real card (no tap).
+
+**Concept (card-grounded):** the REAL card (`CardFront`, made `internal` in `CardsScreen.kt`) floats centered over the feed. Two cover layers hide the card content during the build and **dissolve on reveal**:
+- An **opaque white backdrop** (`backdropAlpha`) over the whole screen — hides the still-settling feed behind (it switches to Mine + scrolls to the new card underneath).
+- A **light-gray cover** (`#EAEEF3`, `photoCover`) over the photo area only — the reveal "scene" plays on it. It sits **above** the photo gradient + peak name, so the name is hidden during the build and reappears on dissolve.
+
+Both, plus a photo blur (16→0), fade out together during the focus-pull.
+
+**Tech:** Lottie (`com.airbnb.android:lottie-compose`), **NOT Rive**. The flower asset is `res/raw/flower_bloom.json` — a **daisy** (center disc + 5 petals; stem/leaves are disabled in the file), 1080×1080, 25fps/75f, **Spanish node names**.
+
+**Flower tinting (runtime, per rarity)** — `rememberLottieDynamicProperties`:
+- Petals → `rarity.color` via keyPath `arrayOf("**", "Grupo 2", "Relleno 1")` (only petal layers have a `Grupo 2`; the wildcard scopes to them).
+- Center disc → a **darker shade** (`rarity.color × 0.55`) via fill `("flor","Grupo 1","Relleno 1")` + stroke `("flor","Grupo 1","Trazo 1")` (`STROKE_COLOR`) — kept visually distinct from the petals.
+- On the **mythic beat** `petalColor` animates rarity → gold `#FFD700` (1000ms); the center follows in darker gold.
+
+**Flower lifecycle:** blooms once (`iterations = 1, speed = GROW_SPEED = 0.85`), then breathing (±3.5%) + sway (±1.5°). `onBloomed` fires at `progress >= 0.99`. While loading render nothing; `CaptureFlowerFallback` (Canvas) only on genuine `isFailure`. The daisy art sits in the **top third of its 1080 frame** (the lower part is the hidden stem area), so the headline below is pulled up with `offset(y = -(flowerDp * 0.40f))` to hug the actual flower.
+
+**Layout (in the photo area, via `BoxWithConstraints`):**
+- `flowerDp = maxHeight * 0.65`; flower centered, `offset(y = -5%)`.
+- **"PEAK CAPTURED!"** — epic headline just under the flower: uppercase, Black, rarity-tinted glow (`Shadow`), `fontSize ∝ flower` (`flowerDp.value * 0.105`), localized `capture_reveal_captured` (es "¡Cima capturada!" / en "Peak captured!" / …).
+- **Peak name + altitude** — a separate `BottomCenter` block (`padding bottom 52dp`, just above the profile). Same sizes as the front card (22sp / 28sp Black, `-0.04em`) but in **rarity colour** (so they pop on the gray; readable for most rarities).
+- **Elevation profile** — `ElevationProfileCanvas` (reused from `CardBack`, made `internal`; gained a `lineColor` param), rarity-tinted, `fillMaxWidth().height(40dp)`, flush to the **bottom** of the image container.
+
+**Staged timeline (all automatic):**
+1. Card enters (scale-in + fade, `EaseOutBack`). Flower blooms.
+2. `infoAppear` (spring) fades/pops in "PEAK CAPTURED!" + name + altitude + profile after `bloomDone`.
+3. **+700ms after bloom**: the **rarity stat-band cell** pops big→small (`rarityScale` 2.1→1, held ~1400ms) — sequenced *after* the headline so it's noticed.
+4. **`T_EP`=2300ms after bloom**: the **EP cell** rolls `0→N` (`EP_COUNT_MS`=1300ms); the whole amber reward pill scales big (1.9)→1 with a pop on land.
+5. **Mythic beat** (~400ms after EP, only `isMythic`): petals→gold, **MYTHIC pill** pops big→small top-left (`pillScale`, `TransformOrigin(0,0)`), + `MythicGlow` (gold radial) and `MythicParticles` (burst).
+6. **Auto-reveal**: ~**2s** after the sequence finishes (mythic waits an extra ~2.2s for its beat), the focus-pull runs automatically (blur→0, covers dissolve, scene fades), then `onFinished` hands off to the feed. **There is no tap** — `doReveal()` is invoked by a `LaunchedEffect(epDone)` timer.
+
+**`CardFront` reveal hook — `CardRevealState`** (in `CardsScreen.kt`, `null` on normal feed renders): `photoBlur`, `photoCover`, `rarityScale` (rarity cell pop), `epDisplay`/`epScale` (EP roll), `photoOverlay` (the scene composable). The reward pill shows **only "+N EP"** (the Cairn was removed — see card front spec).
+
+**`onSuccess` must attach photo + user + mythic:** `createAscent` returns the ascent BEFORE the photo upload and omits `user`/`isMythic`/`rarityId`. So `NewAscentViewModel.submit` merges `isMythic`/`rarityId` from `selectedPeak` and `MainScaffold.onSuccess` attaches the current `UserSummary` (name/avatar, `isOwn=true`) — otherwise the reveal card shows no image, "You" as the name, and never fires the mythic beat.
+
+### Post-creation navigation — avoiding the cordada flash
+
+`CaptureRevealState(ascent, rarity, isMythic, taggingWarning)` carries the **full `Ascent`** (+ `isMythic` from `ascent.peak.isMythic`). The reveal sits on top; navigation happens **underneath it during `onSuccess`**, not on dismiss:
+
+- **`onSuccess`** (hidden behind the overlay): set `cardsHighlightId = ascent.id` **before** bumping `cardsRefreshTrigger++`, then `navigate(Cards)`. The highlight id must be set first so `CardsScreen`'s scroll `LaunchedEffect(refreshTrigger)` finds the new card by id (not index 0, which fails for past-dated ascents). This settles Cards on the **Mine** filter + scrolls to the new card while still hidden.
+- **`onFinished`** (fired automatically ~2s after the sequence, no tap): `captureReveal = null`, then **re-arm** the ring: `cardsHighlightId = null` → next frame → `= ascent.id` (the 2.5s consume timer burns during the multi-second reveal, so re-setting makes the ring appear fresh). The scroll target uses a separate `cardsScrollId` so the feed settles to the new card without showing its ring prematurely.
+- **`CardsScreen`** switches to Mine **synchronously** on first composition via `remember(refreshTrigger){ if (refreshTrigger>0) vm.setViewFilter(ViewFilter.Mine) }` — before the initial load completes — so the Friends/cordada feed never flashes before the switch.
+
+**Why this order matters:** doing the nav/highlight on dismiss (`onFinished`) instead caused (a) a cordada-feed flash when the overlay was removed, and (b) the highlight-consume timer to burn during the reveal so the new card had no ring. Keep nav + highlight in `onSuccess`, re-arm the ring in `onFinished`.
 
 ### Post-creation UX — MainScaffold state machine
 
 After `onSuccess(ascentId)` fires from `NewAscentSheet`, `MainScaffold` must:
 1. Store the new ascent ID for highlighting
 2. Increment a trigger counter to force a data reload
-3. Navigate to Logbook with `restoreState = false` so a fresh ViewModel is created
+3. Navigate to Cards with `restoreState = false` so a fresh ViewModel is created
 
 ```kotlin
 // MainScaffold.kt — state vars:
-var logbookRefreshTrigger by remember { mutableIntStateOf(0) }
-var logbookHighlightId    by remember { mutableStateOf<String?>(null) }
+var cardsRefreshTrigger by remember { mutableIntStateOf(0) }
+var cardsHighlightId    by remember { mutableStateOf<String?>(null) }
 var atlasRefreshTrigger   by remember { mutableIntStateOf(0) }   // reloads climbedByPeakId after new ascent
 
 // MainScaffold.kt also has: val snackbarHostState = remember { SnackbarHostState() }
@@ -1416,10 +1590,10 @@ var atlasRefreshTrigger   by remember { mutableIntStateOf(0) }   // reloads clim
 // NewAscentSheet onSuccess (signature updated 2026-05-25 to carry taggingWarning):
 onSuccess = { ascentId, taggingWarning ->
     showNewAscent      = false
-    logbookHighlightId = ascentId
-    logbookRefreshTrigger++
+    cardsHighlightId = ascentId
+    cardsRefreshTrigger++
     atlasRefreshTrigger++   // reload Atlas climbedByPeakId so new ascent appears on map
-    tabNavController.navigate(Screen.Logbook.route) {
+    tabNavController.navigate(Screen.Bitacora.route) {
         popUpTo(Screen.Home.route) { saveState = true }
         launchSingleTop = true
         restoreState    = false   // CRITICAL: force fresh ViewModel so LaunchedEffect fires
@@ -1429,13 +1603,13 @@ onSuccess = { ascentId, taggingWarning ->
     }
 },
 
-// LogbookScreen composable:
-composable(Screen.Logbook.route) {
-    LogbookScreen(
+// CardsScreen composable:
+composable(Screen.Bitacora.route) {
+    CardsScreen(
         ...
-        refreshTrigger      = logbookRefreshTrigger,
-        highlightId         = logbookHighlightId,
-        onHighlightConsumed = { logbookHighlightId = null },
+        refreshTrigger      = cardsRefreshTrigger,
+        highlightId         = cardsHighlightId,
+        onHighlightConsumed = { cardsHighlightId = null },
     )
 }
 ```
@@ -1444,7 +1618,7 @@ composable(Screen.Logbook.route) {
 
 ---
 
-### Post-creation UX — LogbookScreen scroll-to-new-ascent
+### Post-creation UX — CardsScreen scroll-to-new-ascent
 
 **Two separate problems to solve:**
 
@@ -1455,7 +1629,7 @@ At the instant the StateFlow changes, `LazyColumn` hasn't been placed in the com
 Server canonical sort: unseen friends first (by altitude desc), then own + seen friends (by date desc). After switching to Mine filter, own ascents preserve this order — the new ascent may be at index 5, 10, or any position.
 
 ```kotlin
-// LogbookScreen.kt — hoist listState so LaunchedEffect can scroll it:
+// CardsScreen.kt — hoist listState so LaunchedEffect can scroll it:
 val listState = rememberLazyListState()
 
 LaunchedEffect(refreshTrigger) {
@@ -1479,7 +1653,7 @@ LaunchedEffect(refreshTrigger) {
 }
 
 // Pass listState down to LazyColumn:
-LogbookList(
+CardsList(
     ...,
     listState           = listState,
     highlightId         = highlightId,
@@ -1487,7 +1661,7 @@ LogbookList(
 )
 ```
 
-**Required imports in LogbookScreen.kt:**
+**Required imports in CardsScreen.kt:**
 ```kotlin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
@@ -1506,7 +1680,7 @@ Web uses `boxShadow: "0 0 0 3px #0ea5e9, 0 4px 24px rgba(14,165,233,0.35)"` for 
 Android equivalent: sky-blue 3dp border that **snaps in instantly** then **fades out over 400ms** after `onHighlightConsumed` sets `isHighlighted = false`.
 
 ```kotlin
-// In LogbookList:
+// In CardsList:
 LaunchedEffect(highlightId) {
     if (highlightId != null) {
         delay(2_500L)
@@ -1535,7 +1709,7 @@ Box(
 ) { ... }
 ```
 
-Color `#0EA5E9` = sky-500. Duration: visible 2500ms (in `LogbookList`), fade 400ms (in `animateFloatAsState`).
+Color `#0EA5E9` = sky-500. Duration: visible 2500ms (in `CardsList`), fade 400ms (in `animateFloatAsState`).
 
 ---
 
@@ -1554,7 +1728,7 @@ Implementation gotcha: the skeleton shimmer/geometry uses `Offset`; keep `import
 
 ---
 
-### Backward compatibility — Atlas → Logbook peak filter
+### Backward compatibility — Atlas → Cards peak filter
 
 The `initialPeakId` path is independent of `refreshTrigger` and is handled by its own `LaunchedEffect`:
 
@@ -1582,9 +1756,49 @@ This fires on initial composition (when navigating from Atlas) and is unaffected
 | `CancellationException` swallowed | Add `catch (e: CancellationException) { throw e }` first |
 | Scroll to index 0 after creation | Use `filteredAscents.indexOfFirst { it.id == highlightId }` |
 | `snapshotFlow { stateFlow }` race | Wait on `listState.layoutInfo.totalItemsCount > 0` instead |
-| `restoreState = true` on Logbook nav | Must be `false` after creation to force fresh ViewModel |
+| `restoreState = true` on Cards nav | Must be `false` after creation to force fresh ViewModel |
 | `vm.load()` after creation | Use `vm.refresh()` to keep list visible during reload |
 | Ring border on every recompose | Gate with `if (ringAlpha > 0f)` to avoid unnecessary `Modifier.border` |
+| `GET /api/v1/persons` returns `{ persons: [...] }` | `getPersons()` must return a `PersonsResponse` wrapper, not `List<Person>` — else deserialization fails silently → empty tag suggestions |
+| Persons from `/persons` have `id` = userId, no `userId` field | Map `userId = it.userId ?: it.id` after loading so the tagging calls (which use `person.userId`) fire |
+| `PATCH /api/v1/ascents/{id}` returns `{ ascent }` (minimal, no `peak`) | `updateAscent()` returns `Unit` — the body isn't deserializable into the rich `Ascent` model and isn't needed (Cards refreshes separately) |
+| `DELETE .../photos/{id}/persons` takes `userId` in **body** | Use `@HTTP(method="DELETE", hasBody=true)` with `@Body { userId }`, not a path segment |
+| Inline `ImageVector` glyph invisible | Build paths with a concrete colour (`Color.Black`), never `Color.Unspecified` — the latter draws no pixels so the `Icon` tint has nothing to recolour |
+
+---
+
+## Android App — Edit ascent flow (web parity, 2026-06-10)
+
+The pencil icon on a user's **own** card (`ascent.isOwn`) opens the **create sheet in EDIT mode** — full parity with web's edit modal. There is **no separate edit screen**; `AscentDetailScreen` (read-only) is no longer reached from Cards.
+
+**Files:** `feature/newascent/NewAscentSheet.kt` + `NewAscentViewModel.kt`, hosted by `MainScaffold.kt`; trigger from `feature/cards/CardsScreen.kt` (`CardFront` pencil).
+
+**Entry:** `CardsScreen(onEditAscent: (Ascent) -> Unit)` → `MainScaffold` sets `var editAscent by remember { mutableStateOf<Ascent?>(null) }` and renders a second `NewAscentSheet(editAscent = editing, …)`. The global new-ascent sheet and the edit sheet share the same Activity-scoped `NewAscentViewModel` (`viewModel()`), but are mutually exclusive so there is no conflict.
+
+**ViewModel — edit mode:**
+- `NewAscentUiState` gains `editAscentId`, `existingPhotoId`, `existingPhotoUrl`, `originalPersonUserIds`, and `val isEditMode get() = editAscentId != null`.
+- `initForEdit(ascent)`: starts on `FORM`, prefills peak/date(`take(10)`)/route/notes(`take(NOTES_MAX_CHARS)`)/persons + the existing photo. **`ascent.persons[i].id` IS the userId** (API builds persons as `{ id = userId, name = username ?? name }`), so persons are mapped to `Person(id, name, userId = id)`.
+- `submitEdit(onSuccess: (taggingWarning: String?) -> Unit)`:
+  1. `PATCH /api/v1/ascents/{id}` with `peakId`/`date`/`route`/`description`.
+  2. **If a new photo was cropped** (`croppedBitmap != null`): upload it → tag each selected person → delete the old photo.
+  3. **If photo unchanged**: reconcile tags on the existing photo — add `selected − original`, remove `original − selected` (via `addPhotoPerson` / `removePhotoPerson`).
+- `onCropBack()` returns to `FORM` in edit mode (no PICK step before the form).
+
+**Sheet:** `editAscent: Ascent?` param. `LaunchedEffect(Unit)` → `initForEdit` if set else `reset`/`setInitialPeak`. FORM photo preview shows the existing photo (Coil `AsyncImage`) with a **"Change photo"** pill tap target (`new_ascent_change_photo`) that launches the picker → crop → FORM. Header title `new_ascent_edit_title` ("Editar ascensión"). Back/`BackHandler` on FORM closes the sheet in edit mode.
+
+**Post-edit:** `onSuccess` sets `cardsHighlightId = editing.id`, bumps `cardsRefreshTrigger` (Cards → Mine + refresh + scroll + ring) and `atlasRefreshTrigger`. **No capture-reveal** (that's create-only). A `taggingWarning` (blocked by `allowOthersToTag`) is shown via the `MainScaffold` snackbar.
+
+**Share** was already implemented (see "Card actions"); this completed the edit half.
+
+---
+
+## Card back — message quote + Cordada pills (Android, 2026-06-10)
+
+`CardBack` in `CardsScreen.kt` footer (above the white space):
+- **Cordada pills**: shown when `ascent.persons` is non-empty — a localized possessive label (`card_cordada_label`: es "Tu Cordada:" · ca "La teva Cordada:" · en "Your rope team:" · fr "Ta cordée:" · de "Deine Seilschaft:") + one rounded pill per tagged user showing their **username** (`person.name`, already `username ?? name` from the API), pill bg = `rarity.color` @ 12%, 11sp, `FlowRow` (requires `@OptIn(ExperimentalLayoutApi::class)` on `CardBack`). Replaced the old `"{author} con {persons}"` plain-text line.
+- **Message quote (blockquote)**: 3dp left vertical bar in `rarity.color` (rounded 2dp, `height(IntrinsicSize.Min)` + `fillMaxHeight`) + 10dp gap + the message text, 13sp *italic* `PeakMuted`, lineHeight 18sp, **maxLines 3**.
+
+**100-char cap:** `NOTES_MAX_CHARS = 100` (top-level in `NewAscentViewModel.kt`, shared by create + edit). The notes field caps input at 100 and shows an `n/100` counter (`supportingText`); the field is 3 lines. Because input is capped, the 3-line quote always renders in full — the `TextOverflow.Ellipsis` is only a defensive fallback for legacy data >100 chars.
 
 ---
 
@@ -1684,8 +1898,9 @@ Must extend `AndroidViewModel`, not `ViewModel`, to access `LocaleManager` via `
 
 **Language change logic:**
 - API ≥ 33 (`TIRAMISU`): `LocaleManager.setApplicationLocales(LocaleList.forLanguageTags(locale))` → Activity recreates automatically. No snackbar shown.
-- API < 33: saves to server only + shows "Idioma guardado" snackbar. App language does not change at runtime.
+- API < 33: `AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(locale))` + sets `localeToApply` state → `LaunchedEffect(state.localeToApply)` in `SettingsScreen` calls `(context as? Activity)?.recreate()` to apply immediately.
 - `languageSaved = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU`
+- **`MainActivity` must extend `AppCompatActivity`** (not `ComponentActivity`) — required for `AppCompatDelegate.setApplicationLocales()` to work on API < 33. `themes.xml` parent is `Theme.AppCompat.Light.NoActionBar`. Dependency: `androidx.appcompat:appcompat:1.7.0` in `gradle/libs.versions.toml`.
 
 **Each privacy/notification toggle** fires an immediate `PATCH /api/v1/settings` — no "Save" button.
 
@@ -1768,6 +1983,7 @@ Files fixed: `app/api/v1/photos/[id]/persons/route.ts`, `app/api/face-detections
 - **`Image` not `Icon` for flags**: `Icon` applies Material3 tint, destroying flag colors.
 - **`BorderStroke` import**: `import androidx.compose.foundation.BorderStroke` — needed for the `OutlinedButton` border.
 - **`languageSaved` flag only true on API < 33**: on API ≥ 33 `LocaleManager` recreates the Activity; showing a snackbar is unnecessary and would never appear.
+- **`AppCompatActivity` required for per-app locale on API < 33**: `ComponentActivity` + `LocaleManager` (API 33+ only) silently fails on Android 8.1. Use `AppCompatDelegate.setApplicationLocales()` + `AppCompatActivity` + `Theme.AppCompat` parent for all API levels. The explicit `Activity.recreate()` call in the composable is also required — the delegate alone does not recreate the Activity on API < 33.
 - **`person.userId == null` in tag loop**: skip silently — only registered+linked users can be tagged via API. A 400 from the server is expected for unlinked persons and should not surface as an error to the user.
 
 ---
@@ -1782,14 +1998,14 @@ Files fixed: `app/api/v1/photos/[id]/persons/route.ts`, `app/api/face-detections
 // MainScaffold.kt — tabItems()
 TabItem(Screen.Home,    R.string.nav_tab_home,    R.drawable.ic_tab_home),
 TabItem(Screen.Friends, R.string.nav_tab_cordada, R.drawable.ic_tab_friends),  // Amigos + Cordadas
-TabItem(Screen.Logbook, R.string.nav_tab_logbook, R.drawable.ic_tab_logbook),
+TabItem(Screen.Bitacora, R.string.nav_tab_bitacora, R.drawable.ic_tab_bitacora),
 TabItem(Screen.Map,     R.string.nav_tab_map,     R.drawable.ic_tab_map),
 TabItem(Screen.Cards,   R.string.nav_tab_cards,   R.drawable.ic_tab_cards),
 ```
 
 ### Create-FAB visibility + color (2026-06-02)
 
-The global create-FAB in `MainScaffold` is gated to **`Logbook` + `Cards` only** (`currentRoute == Screen.Logbook.route || currentRoute == Screen.Cards.route`) — both create an ascent. It is **NOT** shown on Stats (dashboard, no create action) or Atlas (creates via the peak detail sheet). Friends renders its own speed-dial FAB inside its nested Scaffold.
+The global create-FAB in `MainScaffold` is gated to **`Bitácora` + `Cards` only** (`currentRoute == Screen.Bitacora.route || currentRoute == Screen.Cards.route`) — both create an ascent. It is **NOT** shown on Stats (dashboard, no create action) or Atlas (creates via the peak detail sheet). Friends renders its own speed-dial FAB inside its nested Scaffold.
 
 **All create-FABs are `PeakGreenCTA` (#2F7A5F)** — never blue. Blue (`PeakBlueActive`) is reserved for active/selected states. Same treatment everywhere: `CircleShape`, bottom-end, white `PlusIcon` 24dp, elevation 4/8dp. See `DESIGN.md → "Floating Action Buttons — app-wide rules"` for the authoritative cross-platform spec. The cordada-detail avatar-edit `SmallFloatingActionButton` is exempt (it's an edit control, not a create action).
 
@@ -1878,22 +2094,22 @@ fun ProfileSummaryScreen(onBack: () -> Unit, onNavigateToSettings: () -> Unit, .
 
 ---
 
-### ProfileScreen (Bitácora tab) — no ProfileHeader
+### BitacoraScreen (Bitácora tab) — no ProfileHeader
 
-`ProfileScreen` (the Bitácora root tab) starts **directly** with `SecondaryTabRow` (Cimas / Fotos / Etiquetado). There is no `ProfileHeader` rendered above the tabs on this screen — the header only appears in `ProfileSummaryScreen`.
+`BitacoraScreen` (the Bitácora root tab, defined in `feature/profile/ProfileScreen.kt`) starts **directly** with `SecondaryTabRow` (Cimas / Fotos / Etiquetado). There is no `ProfileHeader` rendered above the tabs on this screen — the header only appears in `ProfileSummaryScreen`.
 
 ```kotlin
 @Composable
-fun ProfileScreen(
+fun BitacoraScreen(
     onNavigateToSettings: () -> Unit,
-    onNavigateToLogbook: (peakId: String, peakName: String) -> Unit,
+    onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     vm: ProfileViewModel = viewModel(),
 )
 ```
 
 **Tab content callbacks:**
-- Tab 0 (Cimas): `PeaksTab` → `onNavigateToLogbook(peak.id, peak.name)` on row tap
+- Tab 0 (Cimas): `PeaksTab` → `onNavigateToCards(peak.id, peak.name)` on row tap
 - Tab 1 (Fotos): `PhotosTab` → `onAscentClick(ascentId, true)` (own photos)
 - Tab 2 (Etiquetado): `PhotosTab(showCreator = true)` → `onAscentClick(ascentId, false)` (others' photos)
 
@@ -1919,9 +2135,9 @@ The Cimas tab uses compact text-first rows. Do **not** show the peak photo in th
 - Row height: `84.dp`, left rarity strip 4dp full height, row shape `RoundedCornerShape(12.dp)`.
 - Content padding: start 12dp, end 14dp, top 12dp, bottom 16dp.
 - First line: peak name, 14sp bold, `PeakNavyDark`, one-line ellipsis.
-- Second line: rarity pill left, then fixed metadata columns on the right.
+- Second line: rarity pill + altitude grouped on the **left**, last-ascent date pushed to the **right** (`Spacer(weight 1f)` sits after the altitude, not after the pill).
 - Rarity pill: min height 26dp, rounded 100dp, `rarityColor.copy(alpha = 0.13f)`, 9dp rarity dot + 10sp bold label, `lineHeight = 12.sp`, `rarityColorDark`.
-- Altitude: fixed width 76dp, left-aligned, 13sp extra-bold, `PeakNavyDark`.
+- Altitude: immediately right of the rarity pill (10dp gap), wrap-content (no fixed width), 13sp extra-bold, `PeakNavyDark`.
 - Last ascent date: fixed width 78dp, `TextAlign.End`, 12sp semibold, `PeakNavyMid`.
 - Removed from the Cimas row: photo thumbnail, repeat-count pill, first-date column, mountain-range text.
 
@@ -1935,11 +2151,11 @@ All three Bitácora tabs navigate to the Cards screen (never to `AscentDetailScr
 
 **Why not AscentDetailScreen for Tags?** The v1 ascent detail endpoint only returns data for ascents owned by the requesting user — calling it with another user's `ascentId` returns 404.
 
-**Cimas tap** → Cards filtered by that peak. Reuses the existing Atlas→Logbook `pendingPeakId`/`pendingPeakName` infrastructure:
+**Cimas tap** → Cards filtered by that peak. Reuses the existing Atlas→Cards `pendingPeakId`/`pendingPeakName` infrastructure:
 
 ```kotlin
-// MainScaffold.kt — Screen.Logbook.route composable
-onNavigateToLogbook = { peakId, peakName ->
+// MainScaffold.kt — Screen.Bitacora.route composable
+onNavigateToCards = { peakId, peakName ->
     pendingPeakId   = peakId
     pendingPeakName = peakName
     tabNavController.navigate(Screen.Cards.route) {
@@ -1954,8 +2170,8 @@ onNavigateToLogbook = { peakId, peakName ->
 
 ```kotlin
 onAscentClick = { ascentId, isOwn ->
-    logbookHighlightId = ascentId
-    if (isOwn) logbookRefreshTrigger++   // triggers setViewFilter(Mine) + refresh + scroll
+    cardsHighlightId = ascentId
+    if (isOwn) cardsRefreshTrigger++   // triggers setViewFilter(Mine) + refresh + scroll
     tabNavController.navigate(Screen.Cards.route) {
         popUpTo(Screen.Home.route) { saveState = true }
         launchSingleTop = true
@@ -1965,16 +2181,24 @@ onAscentClick = { ascentId, isOwn ->
 ```
 
 **Tags tap (others' ascent)** → Cards (Friends filter, best-effort highlight ring — no guaranteed scroll since friends' ascents aren't at top):
-- Same navigation call as above but `isOwn = false` → `logbookRefreshTrigger` is NOT incremented → no Mine filter switch, no refresh.
-- `logbookHighlightId` is still set → ring will show if the ascent happens to be visible.
+- Same navigation call as above but `isOwn = false` → `cardsRefreshTrigger` is NOT incremented → no Mine filter switch, no refresh.
+- `cardsHighlightId` is still set → ring will show if the ascent happens to be visible.
 
 ---
 
-### Cards screen — simplified filter (SecondaryTabRow)
+### Search fields & filter buttons — shared components (Android, 2026-06-09)
 
-Removed: search bar, filter button, active chips row, full filter bottom sheet.
+**MANDATORY RULE: every search input and every filter button in the Android app uses the shared components in `core/ui/PeakSearchComponents.kt` — `PeakSearchField` and `PeakFilterButton`. Never hand-roll a per-screen `OutlinedTextField`/`BasicTextField` search bar or a custom filter button.** If you add a new filter or search field anywhere, reuse these. If they lack a capability, **extend the shared component with a new optional param** — do not fork the styling locally.
 
-Filter: `SecondaryTabRow` (M3) with two `Tab` items — replaces the previous `SingleChoiceSegmentedButtonRow` (was ~60dp, new tabs are 48dp flat, no padding).
+- `PeakSearchField`: pill (24dp radius), white fill + 2dp elevation, **48dp** height, **16sp** text + placeholder (iOS-gotcha: never < 16sp), leading lupa, clear button. Params: `keyboardOptions`, `keyboardActions`, `enabled`, `showClear`/`onClear`, `modifier` (outer Row), `textFieldModifier` (inner `BasicTextField`, for `focusRequester`/`onFocusChanged`).
+- `PeakFilterButton`: same pill/48dp/elevation, funnel icon + 14sp Bold label. `active` → `PeakSlate` bg; `showBadge` → blue `PeakBlueActive` dot.
+- Consumers (all migrated): Atlas, Cards, Friends, Cordadas invite + member picker, Profile Cimas. Per-screen search/filter icons were deleted (icons live inside the shared file).
+- Out of scope (form/auth inputs, keep own styling): New-Ascent peak picker/route/notes/tags, invitation email, Login, Settings.
+- Full spec: `DESIGN.md → "Search fields & filter buttons — app-wide shared components"`.
+
+### Cards screen — filter (search + filters button via shared components)
+
+Cards uses `PeakSearchField` (local name-search via `vm.setSearch`) + `PeakFilterButton` (opens `CardsFiltersPanel` ModalBottomSheet with **Vista** Mías/Mi Cordada + **Rareza** pills + Mítico + CTA "Ver N cartas"). This replaced the earlier two-tab `SecondaryTabRow` (which itself replaced `SingleChoiceSegmentedButtonRow`). The view-filter values are unchanged:
 
 | Tab index | Label | Filter | Sort |
 |---|---|---|---|
@@ -1984,43 +2208,29 @@ Filter: `SecondaryTabRow` (M3) with two `Tab` items — replaces the previous `S
 **"Mi Cordada" never shows own cards** — `ViewFilter.Friends` filters `isOwn == false`.
 
 ```kotlin
-@OptIn(ExperimentalMaterial3Api::class)
+// QuickFilterBar = PeakSearchField + PeakFilterButton (shared components).
+// The view filter (Mine/Friends) now lives inside CardsFiltersPanel, NOT as tabs.
 @Composable
-private fun QuickFilterBar(viewFilter: ViewFilter, onViewFilterChange: (ViewFilter) -> Unit) {
-    val selectedIndex = if (viewFilter == ViewFilter.Mine) 0 else 1
-    SecondaryTabRow(
-        selectedTabIndex = selectedIndex,
-        containerColor   = Color.White,
-        contentColor     = PeakBlueActive,
-        modifier         = Modifier.fillMaxWidth(),
-    ) {
-        Tab(
-            selected = selectedIndex == 0,
-            onClick  = { onViewFilterChange(ViewFilter.Mine) },
-            text     = {
-                Text(
-                    stringResource(R.string.logbook_filter_mine),
-                    fontSize   = 13.sp,
-                    fontWeight = if (selectedIndex == 0) FontWeight.SemiBold else FontWeight.Normal,
-                    color      = if (selectedIndex == 0) PeakBlueActive else PeakMuted,
-                )
-            },
-        )
-        Tab(
-            selected = selectedIndex == 1,
-            onClick  = { onViewFilterChange(ViewFilter.Friends) },
-            text     = {
-                Text(
-                    stringResource(R.string.logbook_filter_friends),
-                    fontSize   = 13.sp,
-                    fontWeight = if (selectedIndex == 1) FontWeight.SemiBold else FontWeight.Normal,
-                    color      = if (selectedIndex == 1) PeakBlueActive else PeakMuted,
-                )
-            },
-        )
+private fun QuickFilterBar(
+    filters: CardsFilterState,
+    filteredCount: Int,
+    onSearchChange: (String) -> Unit,
+    onOpenFilters: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().background(Color.White)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PeakSearchField(filters.search, onSearchChange,
+                stringResource(R.string.cards_search_hint), Modifier.weight(1f))
+            PeakFilterButton(stringResource(R.string.cards_filters_title),
+                active = filters.isDirty, showBadge = filters.isDirty, onClick = onOpenFilters)
+        }
+        HorizontalDivider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.06f))
     }
 }
 ```
+
+**`CardsFiltersPanel`** (ModalBottomSheet, opened by the filters button): **VISTA** (`FilterToggleChip` Mías/Mi Cordada → `vm.setViewFilter`), **RAREZA** (`FlowRow` of `RarityToggleChip` from `RARITY_PALETTE` → `vm.setRarityId`, + Mítico → `vm.setMythic`), header "Limpiar todo" (when `isDirty` → `vm.clearFilters`), CTA "Ver N cartas" (closes panel). `filters.isDirty` includes `search.isNotBlank()`. The Mythic chip label uses `stringResource(R.string.cards_filter_mythic)` — **never hardcode `"⭐ Mítico"`**; the key exists in all 5 locales.
 
 **Peak filter chip** — shown only when navigating from Atlas (or Cimas tab):
 
@@ -2041,6 +2251,8 @@ private fun PeakFilterChip(peakName: String, onDismiss: () -> Unit) {
 ```
 
 Rendered conditionally: `if (filters.peakId != null) PeakFilterChip(peakName = filters.peakName ?: filters.peakId ?: "", ...)`.
+
+**Empty states**: Cards (CardsScreen) empty states use the **same visual component as the Rope Team (Cordada) empty state** — `RopeTeamIcon` (from `core/ui/SharedIcons.kt`) in a 72dp `#EFF6FF` circle, 15sp SemiBold title, 13sp `#9CA3AF` subtitle, `fillMaxWidth` + `padding(vertical=56dp)` + `spacedBy(10dp)`. Both `CardsFriendsEmptyState` and `CardsEmptyState` use the **same strings** as Cordada: `friends_empty` + `friends_empty_subtitle`. `FirstCardOnboardingBanner` is **not** shown in CardsScreen — it is reserved for HomeScreen and BitacoraScreen CimasTab. The `onCaptureFirstSummit` parameter is not present on `CardsScreen`.
 
 ---
 
@@ -2153,6 +2365,35 @@ fun SplashScreen(isAuthenticated: Boolean, onReady: (authenticated: Boolean) -> 
 - `MIN_SHOW_MS` reduced from 1500ms to 1000ms — no animation to watch, so shorter wait is fine
 - White background creates a seamless transition: OS splash (white + icon) → this screen (white + wordmark) → app
 - Logo at 44dp — slightly larger than the top bar (32dp) to breathe in full-screen context
+- **OS-level splash (`themes.xml`)**: `Theme.Peakadex.Splash` now uses `windowSplashScreenBackground=#FFFFFF` + `windowSplashScreenAnimatedIcon=ic_launcher_foreground`. Previously it was dark blue `#0D2538` with no icon, causing a jarring color transition. Both the OS splash and this Compose screen are now white for a seamless start.
+
+---
+
+### FirstCardOnboardingBanner — Android
+
+**File:** `core/ui/FirstCardOnboardingBanner.kt`
+
+Shown when the user has no ascents yet, as a prompt to log their first climb.
+
+- **Shown in**: Stats (HomeScreen) when `totalAscents == 0`; Bitácora (BitacoraScreen CimasTab) when peaks list is empty with no active filter.
+- **NOT shown in**: Cards (CardsScreen) — that screen uses a simple centered text message instead.
+- **Layout**: white card with shadow, 24dp radius. Row: `MontBlancCardMockup` (143dp wide image from `drawable/onboarding_ecrins.png` — a partially tilted card PNG with shadow baked in) + text column (title 17sp extrabold, description 12sp, half-width CTA button "Capturar" 44dp height, `PeakGreenCTA`, 12dp radius).
+- **i18n strings**: `onboarding_card_title`, `onboarding_card_desc`, `onboarding_card_btn` ("Capturar" / "Capture" / "Capturar" / "Capturer" / "Erfassen").
+- Tapping the CTA opens the new ascent sheet via the `onCaptureFirstSummit` callback.
+
+---
+
+### MapOnboardingSheet — Android Atlas
+
+**File:** `feature/atlas/MapOnboardingSheet.kt`
+
+Shown the first time a user opens the Atlas tab. Persisted via `SharedPreferences` key `"map_onboarding_seen"`.
+
+- M3 `ModalBottomSheet` with `skipPartiallyExpanded = false`, `fillMaxHeight(0.82f)` + `statusBarsPadding()` to stay within the app area (not full-screen).
+- **Accent bar**: `Brush.horizontalGradient([#0369A1, #38BDF8, #818CF8])` — 4dp height rendered in the dragHandle.
+- **Content**: title + subtitle + "NIVELES DE RAREZA" divider + 3×3 rarity grid (chunked `Row`s, avoids nested scroll) + CTA "Explorar el mapa" (blue `#0369A1`) + "No volver a mostrar" checkbox.
+- Each `RarityCell`: colored bg/border per rarity ID, `✿` symbol, rarity name, altitude range label.
+- **i18n keys**: `map_onboarding_title`, `map_onboarding_sub`, `map_onboarding_rarities`, `map_onboarding_cta`, `map_onboarding_dont_show` (all 5 locales).
 
 ---
 
@@ -2419,6 +2660,26 @@ item {
 
 ---
 
+## Android Core Utilities
+
+### `UiText` — `core/ui/UiText.kt`
+
+Sealed class bridging ViewModels (which have no `Context` access) with the UI layer (`stringResource`).
+
+```kotlin
+sealed class UiText {
+    data class StringRes(val id: Int) : UiText()   // NOTE: @StringRes annotation omitted — name clash
+    data class Dynamic(val value: String) : UiText()
+
+    @Composable fun asString(): String
+    fun asString(context: Context): String
+}
+```
+
+**Gotcha**: adding `@StringRes` annotation to the `StringRes` data class causes a "Illegal annotation class" compile error due to the name clash between the class name and the annotation. Do not add it.
+
+---
+
 ## Cordadas — Climbing Groups (Android + v1 API, updated 2026-06-04)
 
 Cordadas are named climbing groups (think "teams"/"squads"). A user can belong to many cordadas. Each cordada has one **OWNER** and N **MEMBER**s. Membership is invite-based (no auto-join). The feature shipped on Android first; web UI is pending.
@@ -2526,7 +2787,7 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 
 **Row buttons:** all accept/reject/add/invite actions use the shared **`RowActionButton`** (≥40dp): **Aceptar** = `FilledTonalButton` **tonal green** (`#DCFCE7`/`#16A34A`, deliberately not solid so it doesn't compete with the FAB); **Rechazar** = `OutlinedButton`. The hand-rolled `SmallBtn`/`FriendBtn` (<40dp) were removed.
 
-**Cordada DETAIL = full-screen route (`Screen.CordadaDetail = "cordada/{id}"`, `CordadaDetailRoute`)** on the **outer** navController — **not** a sheet/overlay. As a drill-down it **loses `MainTopBar` + bottom nav** (correct Material). It has **one quiet `TopAppBar`**: back arrow LEFT, **empty title**, overflow `⋮` RIGHT for destructive actions. The cordada name lives in the cover hero when there is a real photo, or in a compact identity header when there is not; never duplicate it in the app bar. `BackHandler` returns to the list. `CordadaDetailRoute` owns its own `CordadasViewModel`, loads by id (`openDetail(id)`); `onLeave`/`onDelete` call `onBack()`. `FriendsScreen` reloads cordadas on **resume** (`LifecycleResumeEffect`, skipping the first) so membership changes show on return.
+**Cordada DETAIL = full-screen route (`Screen.CordadaDetail = "cordada/{id}"`, `CordadaDetailRoute`)** on the **outer** navController — **not** a sheet/overlay. As a drill-down it **loses `MainTopBar` + bottom nav** (correct Material). It has **one quiet `TopAppBar`**: back arrow LEFT, **empty title**, overflow `⋮` RIGHT for destructive actions. The cordada name lives in the cover hero when there is a real photo, or in a compact identity header when there is not; never duplicate it in the app bar. `BackHandler` returns to the list. `CordadaDetailRoute` owns its own `CordadasViewModel`, loads by id (`openDetail(id)`); `onLeave`/`onDelete` call `onBack()`. `FriendsScreen` reloads cordadas on **every resume** (`LifecycleResumeEffect`, **no firstResume skip**) so membership changes always show on return from the outer-nav detail route.
 
 **Email on invite:** `inviteToCordada()` (server) sends `sendCordadaInviteEmail(to, inviterName, cordadaName, locale)` — all 5 locales, best-effort, gated on the recipient's `emailNotifications`.
 
@@ -2564,14 +2825,15 @@ Retrofit interface lives in `core/api/ApiService.kt` (`getCordadas`, `createCord
 - Create CTA is full-width 48dp green. It is disabled until name is non-blank; during creation inputs are disabled and the button shows a spinner.
 - `createCordada(..., onSuccess)` sets `isCreating`, disables inputs while creating, uploads avatar best-effort, and navigates to the new detail on success.
 
-> **i18n**: all `friends_*` and `cordadas_*` strings used by these screens are **fully translated in all 5 locales** (verified 2026-06-03); back-button contentDescription uses `R.string.action_back`. `nav_tab_cordada` = "Cordada" in every locale (brand term, intentionally untranslated). Do not hardcode user-visible strings in `feature/friends`.
+> **i18n**: all `friends_*` and `cordadas_*` strings used by these screens are **fully translated in all 5 locales** (verified 2026-06-03); back-button contentDescription uses `R.string.action_back`. `nav_tab_cordada` per locale: **es** "Cordada" · **ca** "Cordada" · **en** "Rope Team" · **fr** "Cordée" · **de** "Seilschaft". Do not hardcode user-visible strings in `feature/friends`.
 
 `CordadasViewModel` notes:
 - `load()` calls `getCordadas()` → fills `cordadas` + `pendingInvites`.
 - `onInviteQueryChange` debounces 350ms, then `searchUsers(query)`, then **excludes current members** by `userId`.
 - `inviteUser` tracks `inviteSentIds` so the row shows "Invitado" without a reload.
 - `respondToInvite` optimistically removes the invite from `pendingInvites`; calls `load()` only on ACCEPTED.
-- Optimistic mutation on `removeMember`; `leaveCordada`/`deleteCordada` clear `selectedDetail` + `load()`.
+- Optimistic mutation on `removeMember`; `deleteCordada` clears `selectedDetail` + `load()`.
+- **`leaveCordada(cordadaId, myUserId, onSuccess)`**: calls `api.removeCordadaMember` then invokes `onSuccess()` **only on success**. On failure: sets `error` state, does NOT navigate. `currentUserId` for the call is derived from `detail.members.firstOrNull { it.isCurrentUser }?.userId` (not from `authSession.currentUser` which can be null on API <33).
 
 `CordadaDetailScreen` current visual contract:
 - Quiet top app bar: back icon only, no title. The hero/header owns the cordada name.
@@ -2656,3 +2918,99 @@ Important details:
 - **Friend rows are not tappable** — no friend detail/stats sheet (removed). Don't reintroduce one; tapping a friend does nothing but the `⋮` menu.
 - **Badge refreshes on tab change, not real-time** — push (FCM) is not implemented. The cordada-invite email + tab badge are the only proactive signals today.
 - **Accept reloads** — `accept()` and `respondToInvite("ACCEPTED")` both call `load()` after the optimistic update so stats render correctly; don't drop the reload.
+- **`LifecycleResumeEffect` must NOT skip the first resume for Cordadas**: the `firstResume` guard was removed from `FriendsScreen`. When returning from `CordadaDetailRoute` (outer nav), `FriendsScreen`'s `LifecycleResumeEffect` must fire and call `cordadasVm.load()` unconditionally to refresh the list. With the guard, the first resume after a leave/expel was silently skipped.
+- **`leaveCordada` must not call `onSuccess` on failure**: previously it called `onSuccess()` even on API error, closing the detail and showing stale state. Always gate `onSuccess()` in the `try` block, with `error` state set in the `catch`.
+
+---
+
+## Cordadas — Web UI (updated 2026-06-16)
+
+The web cordada detail (`app/(app)/cordadas/[id]/page.tsx` + `components/cordadas/CordadaDetailClient.tsx`) and invite page (`app/(app)/cordadas/[id]/invite/page.tsx` + `components/cordadas/CordadaInviteClient.tsx`) ship with full Android parity. The web list (`/cordadas`) is in `CordadasClient.tsx`.
+
+### Back navigation — overlay ← button
+
+Web does not have a native back button. The established web pattern (also used in `AscentDetailClient`) is an **overlay circular ← button** placed directly on the hero:
+
+- **With photo hero**: `position: absolute; top: 10; left: 10` — 32px circle, `background: rgba(0,0,0,0.45)`, `backdropFilter: blur(6px)`, white `←` arrow, `Link href="/cordadas"` (detail) or `Link href="/cordadas/${cordadaId}"` (invite page).
+- **Without photo** (compact identity header): gray circle button — 32px, `background: #f3f4f6`, `border: 1px solid #e5e7eb`, `color: #374151`, same `←` arrow. Positioned inline in the identity header row, before the avatar.
+
+**Never use a `< Cordadas` text link** for navigation back — that is an Android pattern and does not fit web UX.
+
+### Cordada detail — ranking rows (Android parity)
+
+`MemberRow` matches Android's spec exactly:
+
+- **`RankBadge`**: rectangular colored badge `30×44px`, `borderRadius: 10` for top-3, transparent for rank ≥4.
+  - Rank 1: `bg #FDE68A`, `color #D97706`
+  - Rank 2: `bg #E5E7EB`, `color #6B7280`
+  - Rank 3: `bg #F8D9B8`, `color #B45309`
+  - Rank ≥4: transparent bg, `#111827` text
+- **Avatar**: 52px (not 42px).
+- **"Tú" indicator**: inline gray text `(Tú)` after the name — NOT a colored badge. Row background `#F0F9FF` (blue, not green).
+- **3 text lines**:
+  - Line 1: member name (bold)
+  - Line 2: level name WITHOUT emoji · "Fundador" in green `#16A34A` for owner
+  - Line 3: N cimas · `CairnIcon` N · N EP
+- **`CairnIcon`**: inline SVG (3-layer cairn in `#F59E0B` amber, 11×10px). Never use emoji for this.
+- **Leaderboard sort**: `uniquePeaks` desc then `totalEp` desc. Stats from `user_stats` (pre-computed).
+
+**i18n key added**: `cordadas_founder` — es "Fundador" · ca "Fundador" · en "Founder" · fr "Fondateur" · de "Gründer". Add to `lib/i18n/types.ts` + all 5 locale files.
+
+### Cordada detail — owner actions (⋮ overflow)
+
+**Delete cordada is NOT a large footer button**. It lives in a `⋮` overflow menu in the avatar bar row (justified right, same row as member avatars + dashed `+` invite slot):
+
+- `⋮` button opens a small dropdown (positioned `absolute; right: 0; top: 100%`).
+- Dropdown has one item: "🗑 Eliminar cordada" in `#ef4444` red.
+- Clicking opens the existing `ConfirmSheet` for confirmation before DELETE.
+- Background overlay (`position: fixed; inset: 0; zIndex: 40`) closes the dropdown on click outside.
+
+**"Salir de la cordada"** remains as a footer button — only for non-owner members. The owner never sees this button.
+
+### Cordada detail — pending invite rows
+
+Pending invites use a dedicated `PendingInviteRow` component (NOT `MemberRow`):
+- Avatar 40px, name (bold 14px), subtitle "Invitación enviada" (`#9ca3af`).
+- **"Cancelar" button**: outlined style — `border: 1.5px solid #2F7A5F`, `color: #2F7A5F`, no fill.
+- Clicking "Cancelar" opens a `ConfirmSheet` first (NOT a direct action) — matches the Android double-check UX.
+- On confirmed cancel: DELETE `/api/v1/cordadas/{id}/members/{targetUserId}` → dismisses modal → shows toast "Invitación cancelada" (2500ms).
+
+**Toast pattern** (same as `AscentDetailClient`):
+```tsx
+const [toast, setToast] = useState<string | null>(null);
+const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+function showToast(msg: string) {
+  if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  setToast(msg);
+  toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+}
+// Render: position: fixed, bottom: 32, left: 50%, transform: translateX(-50%), zIndex: 300
+```
+
+### Invite page — hero parity with detail
+
+`/cordadas/[id]/invite` shares the same hero structure as the detail page:
+- **With photo**: 180px full-width cover, bottom scrim gradient, overlay `←` button (back to `/cordadas/${cordadaId}`), name (22sp extra-bold white) + member count anchored bottom-left.
+- **Without photo**: compact identity header with `←` button + `CordadaAvatar` (68px initials circle) + name + member count.
+- Divider below the hero, then invite title + search + friend list.
+- Friend names shown as `friend.name` (not `@username`). Level shown without emoji.
+- `page.tsx` passes `cordadaAvatarUrl: cordada.avatarUrl ?? null` and `memberCount: cordada.members.filter(m => !m.isPending).length`.
+
+### Web cordadas list — modal alignment fix
+
+`position: fixed` modal panels on `/cordadas` (`CordadasClient.tsx`) are offset from the viewport by the sidebar's `margin-left: 68px` on desktop. Fix: apply a CSS class `.cordadas-sheet-panel` to both the choice modal and the add-friend modal, with:
+```css
+@media (min-width: 640px) {
+  .cordadas-sheet-panel { margin-left: 68px; }
+}
+```
+Inject via a `<style>` tag at the top of the `CordadasClient` return. This aligns modals with the content area rather than the raw viewport edge.
+
+### Gotchas (web cordadas)
+
+- **`cordadas_founder` must be in `types.ts`**: adding to locale files without the key in `lib/i18n/types.ts` → TypeScript `Property 'cordadas_founder' does not exist on type 'Dict'` compile error.
+- **`PendingInviteRow` not `MemberRow`**: pending invites have no rank, no stats, no expel action. A dedicated component avoids cluttering `MemberRow` with conditional branches.
+- **Cancel invite = ConfirmSheet first**: never call DELETE directly on the Cancelar button click — Android uses a double-check and web must match.
+- **Toast needs useRef timer**: without clearing the previous timer, rapidly triggering a toast can leave the previous `setTimeout` running and dismiss the new toast prematurely.
+- **Hero ← on invite page goes to `/cordadas/${cordadaId}`**, not `/cordadas` — the user came from the detail page, not the list.
+- **`position: fixed` modals ignore sidebar `margin-left`**: always use the `.cordadas-sheet-panel` class trick for any future fixed panels in `CordadasClient`.

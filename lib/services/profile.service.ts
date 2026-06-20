@@ -144,6 +144,13 @@ export async function getProfileData(tenantId: string, userId: string) {
       uniquePeaks: peakMap.size,
       totalPhotos: allPhotos.length,
       friendCount,
+      maxAltitudeM: peaks.length > 0 ? peaks[0].altitudeM : 0,
+      rarityBreakdown: Object.fromEntries(
+        Array.from(peakMap.values()).reduce((acc, pk) => {
+          acc.set(pk.rarityId, (acc.get(pk.rarityId) ?? 0) + 1);
+          return acc;
+        }, new Map<string, number>())
+      ) as Record<string, number>,
     },
   };
 }

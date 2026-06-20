@@ -179,8 +179,8 @@
   flex: 0 1 65%;
   aspect-ratio: auto;
   min-height: 0;
-  margin: 0;
-  border-radius: 0;
+  /* Contained map with white margin + rounded corners (matches Android CardBack).
+     margin (6px 10px) + border-radius (--radius-xl) inherited from base .image-frame. */
 }
 
 .card-back .stat-band {
@@ -216,6 +216,7 @@
 
 /* ── Outer card ───────────────────────────────────────────────────────── */
 .peak-card {
+  position: relative;
   background: #fff;
   border-radius: 28px;
   padding: 7px;
@@ -364,6 +365,7 @@
   position: absolute;
   inset: auto 0 0 0;
   height: 48%;
+  z-index: 2;
   background: linear-gradient(
     to top,
     rgba(7, 18, 31, 0.82) 0%,
@@ -377,6 +379,7 @@
   position: absolute;
   top: 12px;
   left: 12px;
+  z-index: 3;
   background: rgba(234, 179, 8, 0.95);
   color: white;
   font-size: 10px;
@@ -392,22 +395,35 @@
   left: 14px;
   right: 14px;
   bottom: 16px;
+  z-index: 3;
 }
 
+/* Name + altitude match the card back (.back-map-name / .back-map-alt) exactly so
+   they don't visibly change when the card flips. The route is front-only, below. */
 .peak-name {
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   color: white;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.45);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.peak-alt {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
 .peak-route {
-  margin-top: 5px;
+  margin-top: 4px;
   font-size: 13px;
   font-weight: 600;
   color: rgba(255,255,255,0.86);
@@ -519,30 +535,7 @@
 /* ── Footer / caption ─────────────────────────────────────────────────── */
 .capture-note {
   flex: 1;
-  border-top: 1px solid rgba(13, 37, 56, 0.08);
   padding: 8px 14px;
-}
-
-.note-byline {
-  font-size: 13px;
-  color: #374151;
-  line-height: 1.35;
-}
-
-.note-byline strong {
-  color: #111827;
-  font-weight: 800;
-}
-
-.note-text {
-  margin-top: 5px;
-  font-size: 13px;
-  color: #6B7280;
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 /* ── Card back — map hero ─────────────────────────────────────────────── */

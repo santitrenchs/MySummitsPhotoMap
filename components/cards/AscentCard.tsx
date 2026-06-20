@@ -46,15 +46,25 @@ export type AscentCardData = {
     mountainRange?: string | null;
     latitude: number;
     longitude: number;
-    wikiUrl?: string | null;
-    wikiBody?: string | null;
   };
   photoUrl: string | null;
   photoId?: string | null;
   originalStorageKey?: string | null;
+  cropAspect?: string | null;
   persons: { id: string; name: string }[];
   user: { name: string; avatarUrl?: string | null };
   peakStats?: { totalAscents: number; uniqueClimbers: number };
+};
+
+// Drives the capture-reveal overlay while the real AscentCard stays mounted.
+// null on every normal feed render — the card looks/behaves exactly as before.
+export type AscentCardReveal = {
+  photoBlur: number;      // px, blur applied to the hero photo
+  coverAlpha: number;     // 0..1, light-gray cover hiding photo + name during build
+  epDisplay: number;      // EP value shown in the reward cell (rolling)
+  epScale: number;        // reward pill scale (big → 1)
+  rarityScale: number;    // rarity pill scale (big → 1 highlight)
+  sceneOverlay?: React.ReactNode;  // flower + headline + name + altitude + profile, inside the photo
 };
 
 type Props = {
@@ -64,6 +74,9 @@ type Props = {
   onDelete?: (id: string) => void;
   isDeleting?: boolean;
   animationIndex?: number;
+  reveal?: AscentCardReveal;
+  /** Skip the entrance animation while/after reveal so the measured feed item stays still. */
+  disableEntrance?: boolean;
 };
 
 // ─── Rarity aliases (lib/rarity.ts is the source of truth) ───────────────────
@@ -133,7 +146,7 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 
 // ─── AscentCard ───────────────────────────────────────────────────────────────
 
-export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Props) {
+export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal, disableEntrance }: Props) {
   const t = useT();
   const [isFlipped, setIsFlipped] = useState(false);
   const [sharePopover, setSharePopover] = useState<string | null>(null); // URL string when open
@@ -144,6 +157,14 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
 
   const rarity = getRarity(ascent.peak.altitudeM);
   const isMythic = ascent.peak.isMythic ?? false;
+
+  // Cordada members on the card back.
+  // Own card ("profile"): just the tagged people — you're implicitly in the team.
+  // Friend card ("social"): prepend the owner so you see ALL members; always shown.
+  const isOwnCard = variant === "profile";
+  const cordadaMembers = isOwnCard
+    ? ascent.persons.map((p) => ({ key: p.id, name: p.name }))
+    : [{ key: "__owner__", name: ascent.user.name }, ...ascent.persons.map((p) => ({ key: p.id, name: p.name }))];
 
   const dateStr = new Date(ascent.date).toLocaleDateString(locale, {
     day: "numeric", month: "short", year: "numeric",
@@ -158,23 +179,36 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
       peakStats={ascent.peakStats}
       mythicLabel={t.card_mythic}
       footer={
-        <footer className="capture-note">
-          <p className="note-byline">
-            <strong>{ascent.user.name}</strong>
-            {ascent.persons.length > 0 && (
-              <>
-                {" "}{t.detail_with.toLowerCase()}{" "}
-                {ascent.persons.map((p, i) => (
-                  <span key={p.id}>
-                    {i > 0 && (i === ascent.persons.length - 1 ? ` ${t.detail_and} ` : ", ")}
-                    <strong>{p.name}</strong>
-                  </span>
-                ))}
-              </>
-            )}
-          </p>
+        <footer className="capture-note" style={{ borderTop: "none" }}>
+          {/* Cordada — one pill per member (rarity-tinted), matches Android CardBack.
+              Friend cards prepend the owner and always show; own cards only when tagged. */}
+          {cordadaMembers.length > 0 && (
+            <div style={{
+              display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6,
+              marginBottom: ascent.description ? 8 : 0,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280" }}>
+                {isOwnCard ? t.card_cordada_label : t.card_cordada_label_other}
+              </span>
+              {cordadaMembers.map((m) => (
+                <span key={m.key} style={{
+                  fontSize: 11, fontWeight: 600, color: "#111827",
+                  background: RARITY_COLOR[rarity] + "1F",
+                  borderRadius: "var(--radius-full)", padding: "3px 9px",
+                  maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>{m.name}</span>
+              ))}
+            </div>
+          )}
+          {/* Message blockquote — rarity-coloured left bar + italic text, 3-line clamp */}
           {ascent.description && (
-            <p className="note-text">{ascent.description}</p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ width: 3, alignSelf: "stretch", borderRadius: 2, background: RARITY_COLOR[rarity], flexShrink: 0 }} />
+              <p style={{
+                margin: 0, fontSize: 13, fontStyle: "italic", color: "#6B7280", lineHeight: 1.4,
+                display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+              }}>{ascent.description}</p>
+            </div>
           )}
         </footer>
       }
@@ -247,6 +281,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                       photoUrl: ascent.photoUrl ?? null,
                       photoId: ascent.photoId ?? null,
                       originalStorageKey: ascent.originalStorageKey ?? null,
+                      cropAspect: ascent.cropAspect ?? null,
                       persons: ascent.persons.map((p) => ({ id: p.id, name: p.name })),
                     },
                   },
@@ -277,23 +312,48 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           {showMap && isFlipped
             ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={ascent.peak.name} altitudeM={ascent.peak.altitudeM} />
             : ascent.photoUrl
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.nameEn ?? ascent.peak.name} loading="lazy" />
+              ? ascent.cropAspect === "landscape"
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", filter: reveal ? `blur(${reveal.photoBlur}px)` : undefined, transition: reveal ? "filter 750ms ease" : undefined }}>
+                    {/* Blurred background fill for landscape photos */}
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      backgroundImage: `url("${imgUrl(ascent.photoUrl, 800)}")`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      filter: "blur(24px)",
+                      transform: "scale(1.1)",
+                    }} />
+                    {/* Sharp image centered */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imgUrl(ascent.photoUrl, 800)}
+                      alt={ascent.peak.nameEn ?? ascent.peak.name}
+                      loading="lazy"
+                      style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", zIndex: 1 }}
+                    />
+                  </div>
+                // eslint-disable-next-line @next/next/no-img-element
+                : <img src={imgUrl(ascent.photoUrl, 800)} alt={ascent.peak.nameEn ?? ascent.peak.name} loading="lazy" style={reveal ? { filter: `blur(${reveal.photoBlur}px)` } : undefined} />
               : <MountainPlaceholder />
           }
           <div className="image-overlay" />
           {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
           <div className="peak-info">
             <div className="peak-name">{ascent.peak.nameEn ?? ascent.peak.name}</div>
+            <div className="peak-alt">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
-            <div className="peak-meta">
-              <span>
-                {ascent.peak.mountainRange
-                  ? ascent.peak.mountainRange
-                  : `${ascent.peak.altitudeM.toLocaleString(locale)} m`}
-              </span>
-            </div>
           </div>
+          {/* Capture-reveal: light-gray cover (hides photo + name during build) + scene
+              (flower + headline + name + altitude + profile), on top of everything. */}
+          {reveal && (
+            <>
+              <div style={{ position: "absolute", inset: 0, background: "#EAEEF3", opacity: reveal.coverAlpha, transition: "opacity 750ms ease", zIndex: 8 }} />
+              {reveal.sceneOverlay && (
+                <div style={{ position: "absolute", inset: 0, zIndex: 9 }}>{reveal.sceneOverlay}</div>
+              )}
+            </>
+          )}
         </div>
         <div className="stat-band">
           <div className="stat-item" style={{ textAlign: "center" }}>
@@ -303,6 +363,8 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 display: "inline-flex", alignItems: "center", gap: 5,
                 background: RARITY_COLOR[rarity] + "20",
                 borderRadius: "var(--radius-full)", padding: "4px 10px",
+                transform: reveal ? `scale(${reveal.rarityScale})` : undefined,
+                transition: reveal ? "transform 300ms cubic-bezier(.34,1.56,.64,1)" : undefined,
               }}>
                 <span style={{ color: RARITY_COLOR[rarity], fontSize: 11, lineHeight: 1 }}>✿</span>
                 <span style={{ color: RARITY_COLOR[rarity], fontSize: 11, fontWeight: 700 }}>{RARITY_LABEL[rarity]}</span>
@@ -320,19 +382,10 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
                 display: "inline-flex", alignItems: "center", gap: 5,
                 background: "#fef3c7", borderRadius: "var(--radius-full)", padding: "4px 10px",
                 whiteSpace: "nowrap",
+                transform: reveal ? `scale(${reveal.epScale})` : undefined,
+                transition: reveal ? "transform 300ms cubic-bezier(.34,1.56,.64,1)" : undefined,
               }}>
-                {isMythic && (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 20 20" fill="#f59e0b" style={{ flexShrink: 0 }}>
-                      <ellipse cx="10" cy="17" rx="6" ry="2.5"/>
-                      <ellipse cx="10" cy="12" rx="4.5" ry="2"/>
-                      <ellipse cx="10" cy="7.5" rx="3" ry="1.8"/>
-                      <ellipse cx="10" cy="4" rx="1.8" ry="1.3"/>
-                    </svg>
-                    <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 700 }}>1 Cairn ·</span>
-                  </>
-                )}
-                <span style={{ color: "#d97706", fontSize: 13, fontWeight: 700 }}>+{RARITY_EP[rarity]} EP</span>
+                <span style={{ color: "#d97706", fontSize: 13, fontWeight: 700 }}>+{reveal ? reveal.epDisplay : RARITY_EP[rarity]} EP</span>
               </div>
             </div>
           </div>
@@ -352,7 +405,14 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0 }: Prop
           // @ts-expect-error CSS custom property
           style={{ "--card-i": Math.min(animationIndex, 8) }}
         >
-          <div className="card-face card-front">{buildFace(false)}</div>
+          {/* Skip cardFadeUp while/after reveal so the persistent card settles without
+              replaying its entrance animation. */}
+          <div
+            className="card-face card-front"
+            style={reveal || disableEntrance ? { animation: "none" } : undefined}
+          >
+            {buildFace(false)}
+          </div>
           <div className="card-face card-back">{buildBack()}</div>
         </article>
       </div>

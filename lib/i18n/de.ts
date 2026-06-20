@@ -4,7 +4,7 @@ export const de: Dict = {
   dateLocale: "de-DE",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Logbuch",
+  nav_map: "Atlas", nav_ascents: "Cards", nav_bitacora: "Logbuch", nav_cordadas: "Seilschaft",
   nav_settings: "Einstellungen", nav_signOut: "Abmelden", nav_profile: "Profil",
   nav_comingSoon: "Bald", nav_logAscent: "Besteigung eintragen",
 
@@ -38,8 +38,8 @@ export const de: Dict = {
   newAscent_savingAscent: "Besteigung wird gespeichert…",
   newAscent_uploadingPhoto: "Foto {i} von {n} wird hochgeladen…",
   newAscent_savingTags: "Tags für Foto {i} werden gespeichert…",
-  newAscent_save: "Änderungen speichern",
-  newAscent_saveChanges: "Änderungen speichern", newAscent_delete: "Besteigung löschen",
+  newAscent_save: "Speichern",
+  newAscent_saveChanges: "Speichern", newAscent_delete: "Besteigung löschen",
   newAscent_saveWithPhotos: "Speichern + {n} Foto(s)",
   newAscent_photoFailed: "Besteigung gespeichert, aber Foto {i} konnte nicht hochgeladen werden.",
   newAscent_tagged: "{n} markiert",
@@ -52,7 +52,7 @@ export const de: Dict = {
   detail_with: "Mit", detail_photos: "Fotos · {n}", detail_addPhotos: "Fotos hinzufügen",
   detail_location: "Standort", detail_routeWikiloc: "Route · Wikiloc",
   detail_openWikiloc: "In Wikiloc öffnen ↗",
-  detail_editPhoto: "Foto bearbeiten", detail_tagPeople: "Markieren", detail_reCrop: "Neu zuschneiden",
+  detail_editPhoto: "Foto bearbeiten", detail_tagPeople: "Markieren", detail_reCrop: "Neu zuschneiden", detail_changePhoto: "Foto ändern",
   detail_viewOnMap: "🗺  Auf Karte anzeigen", detail_addPhoto: "Foto hinzufügen",
   detail_addWikiloc: "Wikiloc-Route hinzufügen", detail_and: "und",
   date_today: "Heute", date_selectYear: "Jahr wählen",
@@ -64,7 +64,7 @@ export const de: Dict = {
 
   ascents_newAscent: "+ Neue Besteigung", ascents_logTitle: "Besteigung eintragen", ascents_editTitle: "Besteigung bearbeiten",
   ascents_emptyTitle: "Noch keine Besteigungen", ascents_emptySub: "Trage deine erste Besteigung über die Karte oder hier ein",
-  ascents_title: "Besteigungen", ascents_search: "🔍  Gipfel, Routen, Freunde suchen…",
+  ascents_title: "Cards", ascents_search: "🔍  Gipfel, Routen, Freunde suchen…",
   ascents_filters: "Filter", ascents_allYears: "Alle Jahre", ascents_allPeople: "Alle Freunde",
   ascents_withPhoto: "📸 Mit Foto", ascents_clearAll: "Alles löschen",
   ascents_noResults: "Keine Besteigungen gefunden", ascents_noResultsSub: "Filter anpassen und erneut versuchen",
@@ -86,13 +86,19 @@ export const de: Dict = {
   friends_add: "Hinzufügen", friends_requestSent: "Gesendet", friends_alreadyFriends: "Freunde",
   friends_accept: "Annehmen", friends_reject: "Ignorieren", friends_remove: "Freund entfernen",
   friends_cancel: "Anfrage abbrechen", friends_pendingSection: "Anfragen ({n})",
-  friends_noPending: "Keine ausstehenden Anfragen", friends_noFriends: "Noch keine Freunde auf Peakadex",
-  friends_noFriendsSub: "Suche oben nach deinen Bergkameraden",
+  friends_noPending: "Keine ausstehenden Anfragen", friends_noFriends: "Noch keine Freunde auf Peakadex.",
+  friends_noFriendsSub: "Lade deine Seilschaft ein oder erstelle eine Gruppe, um loszulegen.",
   friends_noResults: "Keine Benutzer gefunden", friends_since: "Freunde seit",
   friends_filterResults: "{n} Ergebnis{n,plural,=1{}other{se}}",
   friends_seeMore: "Mehr anzeigen ({n} verbleibend)",
   friends_block: "Blockieren", friends_blocked: "Blockiert", friends_unblock: "Entblocken",
   friends_blockedSection: "Blockierte Nutzer", friends_friendsSection: "Freunde", friends_addSection: "Freunde hinzufügen",
+  cordadas_createTitle: "Neue Seilschaft", cordadas_nameLabel: "Name", cordadas_namePlaceholder: "Z. B. Die Piolets",
+  cordadas_descriptionLabel: "Beschreibung", cordadas_descriptionPlaceholder: "Wer seid ihr? Welche Berge habt ihr im Sinn?",
+  cordadas_createBtn: "Seilschaft erstellen", cordadas_creating: "Wird erstellt…",
+  cordadas_inviteTitle: "Freunde einladen", cordadas_allInvited: "Alle deine Freunde gehören bereits dieser Seilschaft an.",
+  cordadas_invited: "Eingeladen ✓", cordadas_invite: "Einladen",
+  cordadas_photoLabel: "Titelfoto", cordadas_changePhoto: "Foto ändern", cordadas_founder: "Gründer",
 
 
 
@@ -223,7 +229,7 @@ export const de: Dict = {
 
 
 
-  nav_home: "Peakadex stats",
+  nav_home: "Stats",
   home_greeting: "Hallo, {name} 👋",
   home_statSummits: "Gipfel", home_statPhotos: "Fotos",
   home_statRegions: "Regionen", home_statFriends: "Freunde",
@@ -310,8 +316,9 @@ export const de: Dict = {
   auth_backToLogin: "Zurück zur Anmeldung",
 
   card_capturedSummit: "hat einen Gipfel erklommen", card_capturedMythicSummit: "hat einen mythischen Gipfel erklommen",
-  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
+  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC", card_cordada_label: "Deine Seilschaft:", card_cordada_label_other: "Seilschaft:", share_tapToFlip: "Tippe auf die Karte für die Rückseite",
   card_rarity: "Seltenheit", card_altitude: "Höhe", card_reward: "Belohnung",
+  capture_reveal_captured: "Gipfel erfasst!",
   share_joinCta: "Peakadex beitreten →",
   card_share: "Teilen", card_shareCopied: "Kopiert!", card_shareError: "Fehler beim Teilen", card_shareCopyLink: "Link kopieren",
   card_shareTitle: "Gipfel teilen", card_shareWhatsapp: "An Freunde senden", card_shareInstagramStory: "Instagram Story", card_shareDownload: "Bild herunterladen",

@@ -6,7 +6,7 @@ import com.peakadex.app.core.ui.theme.PeakNavyLight
 // ── Shared rarity palette ──────────────────────────────────────────────────────
 //
 // Single source of truth for the 9 rarity tiers used across HomeScreen (charts)
-// and LogbookScreen (cards). Previously duplicated as private RarityMeta /
+// and CardsScreen. Previously duplicated as private RarityMeta /
 // RarityDef in each screen — any colour change now only needs updating here.
 
 data class RarityInfo(

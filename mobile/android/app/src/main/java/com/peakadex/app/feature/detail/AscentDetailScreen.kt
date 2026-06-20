@@ -1,4 +1,4 @@
-package com.peakadex.app.feature.logbook
+package com.peakadex.app.feature.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -34,6 +35,9 @@ import androidx.compose.ui.res.stringResource
 import com.peakadex.app.core.model.Ascent
 import com.peakadex.app.core.model.PersonSummary
 import com.peakadex.app.core.model.Photo
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 // ── Entry point ────────────────────────────────────────────────────────────────
 
@@ -129,12 +133,28 @@ private fun HeroImage(photo: Photo?, peakName: String, altitudeM: Int) {
             .background(Color(0xFF1C2D3F)),
     ) {
         if (photo != null) {
-            AsyncImage(
-                model              = photo.url,
-                contentDescription = peakName,
-                contentScale       = ContentScale.Crop,
-                modifier           = Modifier.fillMaxSize(),
-            )
+            if (photo.cropAspect == "landscape") {
+                // Landscape: blurred cover background + full photo contained on top
+                AsyncImage(
+                    model              = photo.url,
+                    contentDescription = null,
+                    contentScale       = ContentScale.Crop,
+                    modifier           = Modifier.fillMaxSize().blur(28.dp),
+                )
+                AsyncImage(
+                    model              = photo.url,
+                    contentDescription = peakName,
+                    contentScale       = ContentScale.Fit,
+                    modifier           = Modifier.fillMaxSize(),
+                )
+            } else {
+                AsyncImage(
+                    model              = photo.url,
+                    contentDescription = peakName,
+                    contentScale       = ContentScale.Crop,
+                    modifier           = Modifier.fillMaxSize(),
+                )
+            }
         } else {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("🏔️", fontSize = 64.sp)
@@ -433,4 +453,17 @@ private val BackArrowIcon: ImageVector by lazy {
             strokeLineJoin  = StrokeJoin.Round,
         ) { moveTo(10f, 6f); lineTo(4f, 12f); lineTo(10f, 18f) }
     }.build()
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+private fun formatDate(isoDate: String): String {
+    return try {
+        val local = if (isoDate.length > 10) LocalDate.parse(isoDate.substring(0, 10)) else LocalDate.parse(isoDate)
+        val day   = local.dayOfMonth
+        val month = local.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()).lowercase().trimEnd('.')
+        "$day $month. ${local.year}"
+    } catch (e: Exception) {
+        isoDate.take(10)
+    }
 }

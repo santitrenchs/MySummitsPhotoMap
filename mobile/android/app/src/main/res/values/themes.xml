@@ -1,13 +1,14 @@
 <resources>
-    <!-- Base app theme — actual theming is done in Compose via PeakadexTheme -->
-    <style name="Theme.Peakadex" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Base app theme — AppCompat parent required for AppCompatDelegate locale switching.
+         Actual theming (colors, typography) is done entirely in Compose via PeakadexTheme. -->
+    <style name="Theme.Peakadex" parent="Theme.AppCompat.Light.NoActionBar" />
 
     <!-- Splash screen theme (androidx.core:core-splashscreen)
-         Shows only the brand background colour — no icon.
-         The ✿ animated loading screen is handled in Compose (SplashScreen.kt),
-         which renders on the same #0D2538 background for a seamless transition. -->
+         White background + Peakadex logo centred — matches SplashScreen.kt for a
+         seamless system-splash → app-splash transition. -->
     <style name="Theme.Peakadex.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#0D2538</item>
+        <item name="windowSplashScreenBackground">#FFFFFF</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.Peakadex</item>
     </style>
 </resources>

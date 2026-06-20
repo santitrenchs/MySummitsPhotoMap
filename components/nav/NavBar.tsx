@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { PeakadexLogo } from "@/components/brand/Logo";
 
-// index 0 = Home (compass), 1 = Map (atlas), 2 = Ascents (history)
+// index 0 = Home (compass), 1 = Map (atlas), 2 = Bitácora (mountain+log), 3 = Cards (two portrait cards)
 function SpriteIcon({ index, size = 22, active = false }: { index: number; size?: number; active?: boolean }) {
   const opacity = active ? 1 : 0.45;
   const style: React.CSSProperties = { transition: "opacity 150ms ease", opacity, flexShrink: 0 };
@@ -28,8 +28,8 @@ function SpriteIcon({ index, size = 22, active = false }: { index: number; size?
     </svg>
   );
 
-  // index 2 — Ascents history
-  return (
+  // index 2 — Bitácora (mountain + log lines)
+  if (index === 2) return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
       <path d="M3.5 13.5L8.6 7.2L12 11.3L14.3 8.5L20.5 16.5H3.5V13.5Z" stroke="#0F2233" strokeWidth="2" strokeLinejoin="round"/>
       <path d="M4.5 16.5H20.5L17.7 13.1L15.8 15.2L12 11.3L9.2 14.7L7.6 12.8L4.5 16.5Z" fill="#64748B"/>
@@ -37,6 +37,29 @@ function SpriteIcon({ index, size = 22, active = false }: { index: number; size?
       <path d="M9 20H20" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
       <circle cx="5" cy="23" r="1" fill="#0F2233"/>
       <path d="M9 23H17" stroke="#0F2233" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+
+  // index 3 — Cards (two portrait cards, back card rotated behind front)
+  if (index === 3) return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
+      <g transform="rotate(-15, 11, 13)">
+        <rect x="4" y="4" width="14" height="18" rx="2" stroke="#0F2233" strokeWidth="1.8" fill="#E2E8F0"/>
+      </g>
+      <rect x="7" y="5" width="12" height="16" rx="2" stroke="#0F2233" strokeWidth="2" fill="white"/>
+      <path d="M9.5 16L12.5 11L14.5 13.5L16.5 11.5L18.5 15.5" stroke="#0F2233" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>
+  );
+
+  // index 4 — Cordadas (two people)
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
+      {/* back person */}
+      <circle cx="15.5" cy="7.5" r="2.8" stroke="#0F2233" strokeWidth="1.7" fill="none"/>
+      <path d="M11 19.5c0-3 2-5 4.5-5s4.5 2 4.5 5" stroke="#0F2233" strokeWidth="1.7" strokeLinecap="round" fill="none"/>
+      {/* front person */}
+      <circle cx="8.5" cy="8" r="3.2" stroke="#0F2233" strokeWidth="2" fill="none"/>
+      <path d="M2 20.5c0-3.5 2.9-6 6.5-6s6.5 2.5 6.5 6" stroke="#0F2233" strokeWidth="2" strokeLinecap="round" fill="none"/>
     </svg>
   );
 }
@@ -392,29 +415,6 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
                 <span className="sheet-item-icon"><ProfileIcon size={18} /></span>
                 {t.nav_profile}
               </Link>
-              <Link href="/friends" className="sheet-item" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
-                <span className="sheet-item-icon" style={{ position: "relative" }}>
-                  <FriendsIcon size={18} />
-                  {totalPending > 0 && (
-                    <span style={{
-                      position: "absolute", top: -4, right: -4,
-                      minWidth: 14, height: 14, borderRadius: 7,
-                      background: "#ef4444", color: "white",
-                      fontSize: 9, fontWeight: 700, lineHeight: "14px",
-                      textAlign: "center", padding: "0 3px",
-                    }}>{totalPending}</span>
-                  )}
-                </span>
-                {t.friends_title}
-                {totalPending > 0 && (
-                  <span style={{
-                    marginLeft: "auto", minWidth: 20, height: 20, borderRadius: 10,
-                    background: "#ef4444", color: "white",
-                    fontSize: 11, fontWeight: 700, lineHeight: "20px",
-                    textAlign: "center", padding: "0 5px",
-                  }}>{totalPending}</span>
-                )}
-              </Link>
               <Link href="/settings" className="sheet-item" onClick={() => setMobileMenuOpen(false)}>
                 <span className="sheet-item-icon"><SettingsIcon size={18} /></span>
                 {t.nav_settings}
@@ -458,19 +458,43 @@ export function NavBar({ userName, userEmail, userAvatarUrl, pendingFriendReques
         <div className="tab-inner">
           <Link href="/home" className={`tab-item${tabActive("/home") ? " active" : ""}`} onClick={() => handleTabClick("/home")}>
             <div className="tab-icon-wrap">
-              <SpriteIcon index={0} size={26} active={tabActive("/home")} />
+              <SpriteIcon index={0} size={24} active={tabActive("/home")} />
             </div>
             <span className="tab-label">{t.nav_home}</span>
           </Link>
+          <Link href="/cordadas" className={`tab-item${tabActive("/cordadas") ? " active" : ""}`} onClick={() => handleTabClick("/cordadas")} style={{ position: "relative" }}>
+            <div className="tab-icon-wrap" style={{ position: "relative" }}>
+              <SpriteIcon index={4} size={24} active={tabActive("/cordadas")} />
+              {totalPending > 0 && (
+                <span style={{
+                  position: "absolute", top: -2, right: -4,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: "#ef4444", color: "#fff",
+                  fontSize: 9, fontWeight: 700, lineHeight: "16px",
+                  textAlign: "center", padding: "0 3px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {totalPending > 99 ? "99+" : totalPending}
+                </span>
+              )}
+            </div>
+            <span className="tab-label">{t.nav_cordadas}</span>
+          </Link>
+          <Link href="/bitacora" className={`tab-item${tabActive("/bitacora") ? " active" : ""}`} onClick={() => handleTabClick("/bitacora")}>
+            <div className="tab-icon-wrap">
+              <SpriteIcon index={2} size={24} active={tabActive("/bitacora")} />
+            </div>
+            <span className="tab-label">{t.nav_bitacora}</span>
+          </Link>
           <Link href="/map" className={`tab-item${tabActive("/map") ? " active" : ""}`} onClick={() => handleTabClick("/map")}>
             <div className="tab-icon-wrap">
-              <SpriteIcon index={1} size={26} active={tabActive("/map")} />
+              <SpriteIcon index={1} size={24} active={tabActive("/map")} />
             </div>
             <span className="tab-label">{t.nav_map}</span>
           </Link>
           <Link href="/ascents" className={`tab-item${tabActive("/ascents") ? " active" : ""}`} onClick={() => handleTabClick("/ascents")}>
             <div className="tab-icon-wrap" style={{ position: "relative" }}>
-              <SpriteIcon index={2} size={26} active={tabActive("/ascents")} />
+              <SpriteIcon index={3} size={24} active={tabActive("/ascents")} />
               {liveFeedCount > 0 && (
                 <span style={{
                   position: "absolute", top: -2, right: -4,

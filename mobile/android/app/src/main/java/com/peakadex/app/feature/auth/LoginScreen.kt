@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.peakadex.app.R
 import com.peakadex.app.core.ui.PeakadexLogo
+import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.ui.theme.*
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -74,7 +75,7 @@ fun LoginScreen(
     }
 
     val isLoading    = uiState is AuthUiState.Loading
-    val errorMessage = (uiState as? AuthUiState.Error)?.message
+    val errorMessage = (uiState as? AuthUiState.Error)?.message?.asString()
 
     Column(
         modifier = Modifier
@@ -340,16 +341,23 @@ fun PeakTextField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    prefix: String? = null,
+    isError: Boolean = false,
+    supportingText: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     trailingIcon: @Composable (() -> Unit)? = null,
+    imeAction: ImeAction = ImeAction.Default,
 ) {
     OutlinedTextField(
         value                = value,
         onValueChange        = onValueChange,
         placeholder          = { Text(placeholder, color = PeakNavyLight, fontSize = 15.sp) },
+        prefix               = if (prefix != null) { { Text(prefix, color = PeakNavyLight, fontSize = 15.sp) } } else null,
         singleLine           = true,
+        isError              = isError,
+        supportingText       = if (supportingText != null) { { Text(supportingText, fontSize = 12.sp) } } else null,
         visualTransformation = visualTransformation,
         keyboardOptions      = keyboardOptions,
         keyboardActions      = keyboardActions,
@@ -421,7 +429,7 @@ internal val EyeOffIcon: ImageVector get() = androidx.compose.ui.graphics.vector
 }.build()
 
 // Google "G" multicolor icon matching the web SVG exactly
-private val GoogleIcon: ImageVector get() = androidx.compose.ui.graphics.vector.ImageVector.Builder(
+internal val GoogleIcon: ImageVector get() = androidx.compose.ui.graphics.vector.ImageVector.Builder(
     name = "Google", defaultWidth = 18.dp, defaultHeight = 18.dp,
     viewportWidth = 18f, viewportHeight = 18f,
 ).apply {

@@ -3,6 +3,7 @@ package com.peakadex.app.feature.friends
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
+import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.model.FriendEntry
 import com.peakadex.app.core.model.IncomingRequest
 import com.peakadex.app.core.model.SentRequest
@@ -161,6 +162,9 @@ class FriendsViewModel : ViewModel() {
                     "already_registered" -> InviteState.ALREADY_REGISTERED
                     else                  -> InviteState.INVITED
                 }
+                if (next == InviteState.INVITED) {
+                    Telemetry.logEvent(Telemetry.Event.FRIEND_INVITED, mapOf("method" to "email_external"))
+                }
                 _state.update { it.copy(inviteState = next) }
             } catch (e: HttpException) {
                 _state.update {
@@ -192,6 +196,9 @@ class FriendsViewModel : ViewModel() {
                     "not_registered"      -> InviteState.CONTACT_NOT_REGISTERED
                     "already_registered"  -> InviteState.ALREADY_REGISTERED
                     else                  -> InviteState.CONTACT_NOT_REGISTERED
+                }
+                if (next == InviteState.FRIEND_REQUEST_SENT) {
+                    Telemetry.logEvent(Telemetry.Event.FRIEND_INVITED, mapOf("method" to "friend_request"))
                 }
                 _state.update { it.copy(inviteState = next) }
                 if (next == InviteState.FRIEND_REQUEST_SENT) load()

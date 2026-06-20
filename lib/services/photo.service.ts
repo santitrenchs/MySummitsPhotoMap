@@ -56,14 +56,19 @@ export async function uploadPhoto({
       ascentId,
       storageKey: key,
       url,
-      ...(resolvedOriginalKey && cropMeta ? {
-        originalStorageKey: resolvedOriginalKey,
-        cropX: cropMeta.x,
-        cropY: cropMeta.y,
-        cropW: cropMeta.w,
-        cropH: cropMeta.h,
+      // cropAspect drives display (landscape blur-fill) and must persist even
+      // when there's no stored original (e.g. mobile v1 upload). Crop coords +
+      // original key are only saved when an original exists (for re-crop).
+      ...(cropMeta ? {
         cropAspect: cropMeta.aspect,
-        cropRotation: cropMeta.rotation,
+        ...(resolvedOriginalKey ? {
+          originalStorageKey: resolvedOriginalKey,
+          cropX: cropMeta.x,
+          cropY: cropMeta.y,
+          cropW: cropMeta.w,
+          cropH: cropMeta.h,
+          cropRotation: cropMeta.rotation,
+        } : {}),
       } : {}),
     },
   });

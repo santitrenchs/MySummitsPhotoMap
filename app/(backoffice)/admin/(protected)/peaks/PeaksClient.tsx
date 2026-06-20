@@ -459,7 +459,7 @@ export function PeaksClient() {
                   <tbody>
                     {peaks.map((peak, i) =>
                       editingId === peak.id ? (
-                        <EditRowWithWiki
+                        <EditRow
                           key={peak.id}
                           peak={peak}
                           state={editState}
@@ -638,15 +638,6 @@ function ViewRow({
   );
 }
 
-function EditRowWithWiki(props: Parameters<typeof EditRow>[0]) {
-  return (
-    <>
-      <EditRow {...props} isLast={false} />
-      <WikiRow peakId={props.peak.id} isLast={props.isLast} visibleCols={props.visibleCols} />
-    </>
-  );
-}
-
 function EditRow({
   peak, state, onChange, onSave, onCancel, saving, error, isLast, visibleCols,
 }: {
@@ -740,89 +731,6 @@ function PagBtn({ children, disabled, onClick }: { children: React.ReactNode; di
     <button className={`btn btn-secondary btn-sm`} onClick={onClick} disabled={disabled}>
       {children}
     </button>
-  );
-}
-
-// ── Wiki row ──────────────────────────────────────────────────────────────────
-
-type WikiText = { id: string; lang: string; title: string; body: string; wikiUrl: string };
-
-function WikiRow({ peakId, isLast, visibleCols }: { peakId: string; isLast: boolean; visibleCols: Record<ColKey, boolean> }) {
-  const [wikiTexts, setWikiTexts] = useState<WikiText[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const colSpan = 1 + (visibleCols.altitude ? 1 : 0) + (visibleCols.country ? 1 : 0) + (visibleCols.comarca ? 1 : 0) +
-    (visibleCols.range ? 1 : 0) + (visibleCols.tags ? 1 : 0) + (visibleCols.osmId ? 1 : 0) + (visibleCols.latlon ? 1 : 0) +
-    (visibleCols.gps ? 1 : 0) + (visibleCols.mythic ? 1 : 0) + (visibleCols.ascents ? 1 : 0) + 1;
-
-  useEffect(() => {
-    setLoading(true);
-    fetch(`/api/admin/peaks/${peakId}/wiki`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
-        setWikiTexts(d.wikiTexts ?? []);
-      })
-      .catch((e) => setError(`Error al cargar textos: ${e.message}`))
-      .finally(() => setLoading(false));
-  }, [peakId]);
-
-  async function handleRefresh() {
-    setRefreshing(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/admin/peaks/${peakId}/wiki`, { method: "POST" });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error ?? `HTTP ${res.status}`);
-      setWikiTexts(d.wikiTexts ?? []);
-    } catch (e) {
-      setError(`Error: ${(e as Error).message}`);
-    } finally {
-      setRefreshing(false);
-    }
-  }
-
-  const langEmoji: Record<string, string> = { en: "🇬🇧", es: "🇪🇸", ca: "🏴󠁥󠁳󠁣󠁴󠁿", fr: "🇫🇷", de: "🇩🇪" };
-
-  return (
-    <tr style={{ background: "var(--bg-secondary)" }}>
-      <td colSpan={colSpan} style={{ padding: "12px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Textos Wikipedia
-          </span>
-          <button className="btn btn-secondary btn-sm" onClick={handleRefresh} disabled={refreshing}>
-            {refreshing ? "Buscando…" : "🔄 Actualizar desde Wikipedia"}
-          </button>
-        </div>
-        {loading ? (
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Cargando…</span>
-        ) : error ? (
-          <span style={{ fontSize: 12, color: "var(--color-red)" }}>{error}</span>
-        ) : wikiTexts.length === 0 ? (
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{'Sin textos guardados — pulsa "Actualizar desde Wikipedia" para buscar.'}</span>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
-            {wikiTexts.map((wt) => (
-              <div key={wt.lang} className="card" style={{ padding: "10px 12px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <span style={{ fontSize: 16 }}>{langEmoji[wt.lang] ?? "🌐"}</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{wt.lang}</span>
-                  <a href={wt.wikiUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "var(--color-gentian)", marginLeft: 2, textDecoration: "none" }}>
-                    {wt.title} ↗
-                  </a>
-                </div>
-                <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {wt.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </td>
-    </tr>
   );
 }
 

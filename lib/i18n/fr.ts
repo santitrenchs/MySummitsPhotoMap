@@ -4,7 +4,7 @@ export const fr: Dict = {
   dateLocale: "fr-FR",
   lang_en: "English", lang_es: "Español", lang_ca: "Català", lang_fr: "Français", lang_de: "Deutsch",
 
-  nav_map: "Atlas", nav_ascents: "Carnet",
+  nav_map: "Atlas", nav_ascents: "Cards", nav_bitacora: "Carnet", nav_cordadas: "Cordée",
   nav_settings: "Paramètres", nav_signOut: "Se déconnecter", nav_profile: "Profil",
   nav_comingSoon: "Bientôt", nav_logAscent: "Enregistrer une ascension",
 
@@ -38,8 +38,8 @@ export const fr: Dict = {
   newAscent_savingAscent: "Enregistrement de l'ascension…",
   newAscent_uploadingPhoto: "Envoi de la photo {i} sur {n}…",
   newAscent_savingTags: "Enregistrement des tags de la photo {i}…",
-  newAscent_save: "Enregistrer les modifications",
-  newAscent_saveChanges: "Enregistrer les modifications", newAscent_delete: "Supprimer l\'ascension",
+  newAscent_save: "Enregistrer",
+  newAscent_saveChanges: "Enregistrer", newAscent_delete: "Supprimer l\'ascension",
   newAscent_saveWithPhotos: "Enregistrer + {n} photo(s)",
   newAscent_photoFailed: "Ascension enregistrée mais la photo {i} n'a pas pu être envoyée.",
   newAscent_tagged: "{n} identifiés",
@@ -52,7 +52,7 @@ export const fr: Dict = {
   detail_with: "Avec", detail_photos: "Photos · {n}", detail_addPhotos: "Ajouter des photos",
   detail_location: "Localisation", detail_routeWikiloc: "Itinéraire · Wikiloc",
   detail_openWikiloc: "Ouvrir dans Wikiloc ↗",
-  detail_editPhoto: "Modifier photo", detail_tagPeople: "Étiqueter", detail_reCrop: "Recadrer",
+  detail_editPhoto: "Modifier photo", detail_tagPeople: "Étiqueter", detail_reCrop: "Recadrer", detail_changePhoto: "Changer photo",
   detail_viewOnMap: "🗺  Voir sur la carte", detail_addPhoto: "Ajouter photo",
   detail_addWikiloc: "Ajouter itinéraire Wikiloc", detail_and: "et",
   date_today: "Aujourd'hui", date_selectYear: "Choisir l'année",
@@ -64,7 +64,7 @@ export const fr: Dict = {
 
   ascents_newAscent: "+ Nouvelle ascension", ascents_logTitle: "Enregistrer une ascension", ascents_editTitle: "Modifier l'ascension",
   ascents_emptyTitle: "Aucune ascension pour l'instant", ascents_emptySub: "Enregistre ton premier sommet depuis la carte ou ici",
-  ascents_title: "Ascensions", ascents_search: "🔍  Chercher sommets, itinéraires, amis…",
+  ascents_title: "Cards", ascents_search: "🔍  Chercher sommets, itinéraires, amis…",
   ascents_filters: "Filtres", ascents_allYears: "Toutes les années", ascents_allPeople: "Tous les amis",
   ascents_withPhoto: "📸 Avec photo", ascents_clearAll: "Tout effacer",
   ascents_noResults: "Aucune ascension trouvée", ascents_noResultsSub: "Essaie d'ajuster les filtres",
@@ -86,13 +86,19 @@ export const fr: Dict = {
   friends_add: "Ajouter", friends_requestSent: "Envoyée", friends_alreadyFriends: "Amis",
   friends_accept: "Accepter", friends_reject: "Ignorer", friends_remove: "Supprimer l'ami",
   friends_cancel: "Annuler la demande", friends_pendingSection: "Demandes ({n})",
-  friends_noPending: "Aucune demande en attente", friends_noFriends: "Pas encore d'amis sur Peakadex",
-  friends_noFriendsSub: "Cherche tes compagnons de montagne ci-dessus",
+  friends_noPending: "Aucune demande en attente", friends_noFriends: "Pas encore d'amis sur Peakadex.",
+  friends_noFriendsSub: "Invite tes compagnons de cordée ou crée un groupe pour commencer.",
   friends_noResults: "Aucun utilisateur trouvé", friends_since: "Amis depuis",
   friends_filterResults: "{n} résultat{n,plural,=1{}other{s}}",
   friends_seeMore: "Voir plus ({n} restants)",
   friends_block: "Bloquer", friends_blocked: "Bloqué", friends_unblock: "Débloquer",
   friends_blockedSection: "Utilisateurs bloqués", friends_friendsSection: "Amis", friends_addSection: "Ajouter des amis",
+  cordadas_createTitle: "Nouvelle cordée", cordadas_nameLabel: "Nom", cordadas_namePlaceholder: "Ex. Les Piolets",
+  cordadas_descriptionLabel: "Description", cordadas_descriptionPlaceholder: "Qui êtes-vous ? Quelles montagnes avez-vous en tête ?",
+  cordadas_createBtn: "Créer la cordée", cordadas_creating: "Création…",
+  cordadas_inviteTitle: "Inviter des amis", cordadas_allInvited: "Tous tes amis font déjà partie de cette cordée.",
+  cordadas_invited: "Invité ✓", cordadas_invite: "Inviter",
+  cordadas_photoLabel: "Photo de couverture", cordadas_changePhoto: "Changer la photo", cordadas_founder: "Fondateur",
 
 
 
@@ -223,7 +229,7 @@ export const fr: Dict = {
 
 
 
-  nav_home: "Peakadex stats",
+  nav_home: "Stats",
   home_greeting: "Bonjour, {name} 👋",
   home_statSummits: "Sommets", home_statPhotos: "Photos",
   home_statRegions: "Régions", home_statFriends: "Amis",
@@ -310,8 +316,9 @@ export const fr: Dict = {
   auth_backToLogin: "Retour à la connexion",
 
   card_capturedSummit: "a capturé un sommet", card_capturedMythicSummit: "a capturé un sommet mythique",
-  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC",
+  card_peakCapture: "Peak Capture", card_mythic: "MYTHIC", card_cordada_label: "Ta cordée:", card_cordada_label_other: "Cordée:", share_tapToFlip: "Touche la carte pour voir le dos",
   card_rarity: "Rareté", card_altitude: "Altitude", card_reward: "Récompense",
+  capture_reveal_captured: "Sommet capturé !",
   share_joinCta: "Rejoindre Peakadex →",
   card_share: "Partager", card_shareCopied: "Copié !", card_shareError: "Erreur de partage", card_shareCopyLink: "Copier le lien",
   card_shareTitle: "Partage ce sommet", card_shareWhatsapp: "Envoyer à des amis", card_shareInstagramStory: "Instagram Story", card_shareDownload: "Télécharger l'image",

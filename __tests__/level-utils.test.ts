@@ -5,6 +5,7 @@ import type { HomeData } from "@/lib/services/home.service";
 function makeStats(overrides: Partial<HomeData["stats"]> = {}): HomeData["stats"] {
   return {
     totalAscents: 0,
+    levelIdx: 0,
     totalPhotos: 0,
     uniquePeaks: 0,
     totalRegions: 0,
@@ -20,7 +21,7 @@ function makeStats(overrides: Partial<HomeData["stats"]> = {}): HomeData["stats"
     peaks6000plus: 0,
     peaks6500plus: 0,
     peaks8000plus: 0,
-    rarityBreakdown: { daisy: 0, gentian: 0, edelweiss: 0, saxifrage: 0, cinquefoil: 0, snow_lotus: 0 },
+    rarityBreakdown: { daisy: 0, heather: 0, gentian: 0, tundra: 0, edelweiss: 0, draba: 0, saxifrage: 0, cinquefoil: 0, snow_lotus: 0 },
     ...overrides,
   };
 }
@@ -81,44 +82,49 @@ describe("getAltCount()", () => {
 });
 
 describe("meetsLevel()", () => {
-  // LEVEL_DEFS[0]: 20 unique peaks + 1×2000m
-  // LEVEL_DEFS[5]: 300 unique peaks + 1×8000m
-  const level1 = LEVEL_DEFS[0];
-  const level6 = LEVEL_DEFS[5];
+  // LEVEL_DEFS[0] = Scout (base, always met); LEVEL_DEFS[1] = Guide (20 unique + 1×2000m);
+  // LEVEL_DEFS[5] = Zenith (220 unique + 1×6500m).
+  const scout = LEVEL_DEFS[0];
+  const guide = LEVEL_DEFS[1];
+  const zenith = LEVEL_DEFS[5];
+
+  it("Scout (base level) is always met", () => {
+    expect(meetsLevel(scout, 0, makeStats())).toBe(true);
+  });
 
   it("fails when unique peak count is below target", () => {
-    expect(meetsLevel(level1, 19, makeStats({ peaks2000plus: 1 }))).toBe(false);
+    expect(meetsLevel(guide, 19, makeStats({ peaks2000plus: 1 }))).toBe(false);
   });
 
   it("fails when count is met but altReq is not", () => {
-    expect(meetsLevel(level1, 20, makeStats({ peaks2000plus: 0 }))).toBe(false);
+    expect(meetsLevel(guide, 20, makeStats({ peaks2000plus: 0 }))).toBe(false);
   });
 
   it("passes when both unique peak count and altReq are met", () => {
-    expect(meetsLevel(level1, 20, makeStats({ peaks2000plus: 1 }))).toBe(true);
+    expect(meetsLevel(guide, 20, makeStats({ peaks2000plus: 1 }))).toBe(true);
   });
 
   it("passes with excess peaks and altReqs", () => {
-    expect(meetsLevel(level1, 100, makeStats({ peaks2000plus: 5 }))).toBe(true);
+    expect(meetsLevel(guide, 100, makeStats({ peaks2000plus: 5 }))).toBe(true);
   });
 
-  it("Zenith requires 300 unique peaks + 1×8000m", () => {
-    expect(meetsLevel(level6, 300, makeStats({ peaks8000plus: 0 }))).toBe(false);
-    expect(meetsLevel(level6, 299, makeStats({ peaks8000plus: 1 }))).toBe(false);
-    expect(meetsLevel(level6, 300, makeStats({ peaks8000plus: 1 }))).toBe(true);
+  it("Zenith requires 220 unique peaks + 1×6500m", () => {
+    expect(meetsLevel(zenith, 220, makeStats({ peaks6500plus: 0 }))).toBe(false);
+    expect(meetsLevel(zenith, 219, makeStats({ peaks6500plus: 1 }))).toBe(false);
+    expect(meetsLevel(zenith, 220, makeStats({ peaks6500plus: 1 }))).toBe(true);
   });
 });
 
 describe("getLevelState()", () => {
-  it("returns level index 0 for a fresh user (0 peaks)", () => {
+  it("returns index 1 for a fresh user (Scout met, Guide in progress)", () => {
     const { currentIdx } = getLevelState(makeStats());
-    expect(currentIdx).toBe(0);
+    expect(currentIdx).toBe(1);
   });
 
-  it("advances to level 1 when first level is met (20 unique peaks + 1×2000m)", () => {
+  it("advances to index 2 when Guide is met (20 unique peaks + 1×2000m)", () => {
     const stats = makeStats({ uniquePeaks: 20, peaks2000plus: 1 });
     const { currentIdx } = getLevelState(stats);
-    expect(currentIdx).toBe(1);
+    expect(currentIdx).toBe(2);
   });
 
   it("reaches max level (Zenith) when all requirements are met", () => {
@@ -136,7 +142,7 @@ describe("getLevelState()", () => {
     const stats = makeStats({
       uniquePeaks: 300,
       peaks2000plus: 1, peaks3000plus: 1, peaks4000plus: 1,
-      peaks5000plus: 1, peaks6500plus: 1, peaks8000plus: 0,
+      peaks5000plus: 1, peaks6500plus: 0, peaks8000plus: 0,
     });
     const { isMaxLevel } = getLevelState(stats);
     expect(isMaxLevel).toBe(false);
@@ -153,10 +159,11 @@ describe("getLevelState()", () => {
   });
 
   it("next points to the next unachieved level", () => {
-    // Meets Scout (20 unique + 2000m) but not Guide (50 unique + 3000m)
+    // Meets Guide (20 unique + 2000m) but not Explorer (50 unique + 3000m).
+    // currentIdx = index of first unmet level = Explorer (index 2); next = Alpinist.
     const stats = makeStats({ uniquePeaks: 20, peaks2000plus: 1, peaks3000plus: 0 });
     const { currentIdx, next } = getLevelState(stats);
-    expect(currentIdx).toBe(1);
-    expect(next?.idx).toBe(3); // LEVEL_DEFS[2].idx = 3
+    expect(currentIdx).toBe(2);
+    expect(next?.idx).toBe(4); // LEVEL_DEFS[3].idx = 4 (Alpinist)
   });
 });
