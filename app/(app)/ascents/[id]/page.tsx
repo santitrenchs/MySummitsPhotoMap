@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getServerT } from "@/lib/i18n/server";
 import { AscentDetailClient } from "@/components/ascents/AscentDetailClient";
 import { prisma } from "@/lib/db/client";
+import { peakDisplayName } from "@/lib/peak-name";
 
 export default async function AscentDetailPage({
   params,
@@ -19,7 +20,7 @@ export default async function AscentDetailPage({
     include: {
       peak: {
         select: {
-          name: true, altitudeM: true, mountainRange: true,
+          name: true, nameEn: true, altitudeM: true, mountainRange: true,
           latitude: true, longitude: true,
         },
       },
@@ -76,7 +77,7 @@ export default async function AscentDetailPage({
     <AscentDetailClient
       id={id}
       ascentId={id}
-      peakName={ascent.peak.name}
+      peakName={peakDisplayName(ascent.peak)}
       peakAltitudeM={ascent.peak.altitudeM}
       peakMountainRange={ascent.peak.mountainRange}
       peakLatitude={ascent.peak.latitude}

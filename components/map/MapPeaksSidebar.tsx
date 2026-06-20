@@ -6,6 +6,7 @@ import type { MapPeak, AscentMapEntry, MapBounds, RarityDef, GeocodedPlace } fro
 import { RARITY_SCORE_WEIGHTS } from "./MapView";
 import { RARITY_COLORS, RARITIES } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
+import { peakDisplayParts } from "@/lib/peak-name";
 import MapPeakCard from "./MapPeakCard";
 
 type Filter = "all" | "climbed" | "not-climbed";
@@ -407,6 +408,7 @@ export default function MapPeaksSidebar({
                 const isClimbed = ascentByPeakId.has(peak.id);
                 const rc = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
                 const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
+                const { primary: peakLabel, original: peakOriginal } = peakDisplayParts(peak);
                 return (
                   <button
                     key={peak.id}
@@ -424,15 +426,15 @@ export default function MapPeaksSidebar({
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
                         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111827",
                           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {peak.name}
+                          {peakLabel}
                         </p>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
                           {peak.altitudeM} m
                         </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
-                        <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                          {peak.mountainRange ?? ""}
+                        <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {peakOriginal ?? peak.mountainRange ?? ""}
                         </p>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                           {isClimbed && (

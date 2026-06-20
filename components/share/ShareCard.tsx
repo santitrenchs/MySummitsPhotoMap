@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CardBack } from "@/components/cards/CardBack";
 import { getRarityId, RARITY_COLORS, RARITY_LABELS, RARITY_EP, type RarityId } from "@/lib/rarity";
+import { peakDisplayName } from "@/lib/peak-name";
 import type { ElevationProfile as ElevationProfileData } from "@/lib/services/elevation.service";
 
 export type ShareCardData = {
@@ -14,6 +15,7 @@ export type ShareCardData = {
   peak: {
     id: string;
     name: string;
+    nameEn: string | null;
     altitudeM: number;
     mountainRange: string | null;
     isMythic: boolean;
@@ -62,6 +64,7 @@ function InitialsAvatar({ name, size }: { name: string; size: number }) {
 
 export function ShareCard(props: ShareCardData) {
   const { peak, labels, locale } = props;
+  const peakName = peakDisplayName(peak);
   const [isFlipped, setIsFlipped] = useState(false);
 
   const rarity: RarityId = getRarityId(peak.altitudeM);
@@ -110,11 +113,11 @@ export function ShareCard(props: ShareCardData) {
               <>
                 <div style={{ position: "absolute", inset: 0, backgroundImage: `url("${props.photoUrl}")`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(24px)", transform: "scale(1.1)" }} />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={props.photoUrl} alt={peak.name} style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: 1 }} />
+                <img src={props.photoUrl} alt={peakName} style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: 1 }} />
               </>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={props.photoUrl} alt={peak.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              <img src={props.photoUrl} alt={peakName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             )
           ) : (
             <div style={{ width: "100%", height: "100%", background: "linear-gradient(180deg, #bfdbfe 0%, #dbeafe 100%)" }} />
@@ -140,7 +143,7 @@ export function ShareCard(props: ShareCardData) {
 
           {/* Peak info */}
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 16, zIndex: 3 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.2, letterSpacing: "-0.3px" }}>{peak.name}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.2, letterSpacing: "-0.3px" }}>{peakName}</div>
             {props.route && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{props.route}</div>}
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>
               {`${Math.abs(peak.latitude).toFixed(4)}°${peak.latitude >= 0 ? "N" : "S"}`}
@@ -183,7 +186,7 @@ export function ShareCard(props: ShareCardData) {
           <div className="card-face card-back">
             <CardBack
               peak={{ id: peak.id, name: peak.name, altitudeM: peak.altitudeM, latitude: peak.latitude, longitude: peak.longitude, mountainRange: peak.mountainRange, isMythic: peak.isMythic }}
-              peakName={peak.name}
+              peakName={peakName}
               rarity={rarity}
               isFlipped={isFlipped}
               locale={locale}

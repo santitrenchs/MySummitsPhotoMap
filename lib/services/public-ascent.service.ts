@@ -9,6 +9,7 @@ export type PublicAscentData = {
   peak: {
     id: string;
     name: string;
+    nameEn: string | null;
     altitudeM: number;
     mountainRange: string | null;
     isMythic: boolean;
@@ -38,6 +39,7 @@ export async function getPublicAscent(id: string): Promise<PublicAscentData | nu
         select: {
           id: true,
           name: true,
+          nameEn: true,
           altitudeM: true,
           mountainRange: true,
           isMythic: true,
