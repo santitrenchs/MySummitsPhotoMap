@@ -254,7 +254,6 @@ fun AtlasScreen(
     var mapType    by rememberSaveable { mutableStateOf(MapType.NORMAL) }
     var trails     by rememberSaveable { mutableStateOf(false) }
     var huts       by rememberSaveable { mutableStateOf(false) }
-    var parks      by rememberSaveable { mutableStateOf(false) }
     // remember: estado transitorio, resetear en rotación es correcto
     var layersOpen    by remember { mutableStateOf(false) }
     var filtersOpen   by remember { mutableStateOf(false) }
@@ -481,14 +480,6 @@ fun AtlasScreen(
             style.getLayer(LYR_HUTS_LABELS)?.setProperties(visibility(if (huts) VISIBLE else NONE))
         }
 
-        // ── Toggle parques (parks) overlay ────────────────────────────────────
-        LaunchedEffect(styleReady.value, parks) {
-            if (!styleReady.value) return@LaunchedEffect
-            val style = mapRef.value?.style ?: return@LaunchedEffect
-            style.getLayer(LYR_PARKS_FILL)?.setProperties(visibility(if (parks) VISIBLE else NONE))
-            style.getLayer(LYR_PARKS_OUTLINE)?.setProperties(visibility(if (parks) VISIBLE else NONE))
-        }
-
         // ── 3D camera tilt ────────────────────────────────────────────────────
         LaunchedEffect(terrain3d) {
             val map = mapRef.value ?: return@LaunchedEffect
@@ -586,15 +577,16 @@ fun AtlasScreen(
 
         // ── Search results list ───────────────────────────────────────────────
         AnimatedVisibility(
-            visible  = uiState.isSearchActive && (uiState.searchResults.isNotEmpty() || uiState.placeResults.isNotEmpty()),
+            visible  = uiState.isSearchActive && (uiState.searchResults.isNotEmpty() || uiState.placeResults.isNotEmpty() || uiState.refugioResults.isNotEmpty()),
             enter    = slideInVertically(),
             exit     = slideOutVertically(),
             modifier = Modifier.align(Alignment.TopCenter),
         ) {
             SearchResultsList(
-                results        = uiState.searchResults,
-                placeResults   = uiState.placeResults,
-                climbedPeakIds = climbed.keys,
+                results         = uiState.searchResults,
+                placeResults    = uiState.placeResults,
+                refugioResults  = uiState.refugioResults,
+                climbedPeakIds  = climbed.keys,
                 onResultClick  = { peak ->
                     vm.onSearchResultSelected(peak)
                     mapRef.value?.animateCamera(
@@ -628,7 +620,7 @@ fun AtlasScreen(
             MapControlsColumn(
                 showTopBar     = showTopBar,
                 onToggleTopBar = { showTopBar = !showTopBar },
-                hasActiveLayers= mapType != MapType.NORMAL || trails || huts || parks,
+                hasActiveLayers= mapType != MapType.NORMAL || trails || huts,
                 layersOpen     = layersOpen,
                 onToggleLayers = { layersOpen = !layersOpen },
                 terrain3d      = terrain3d,
@@ -689,8 +681,6 @@ fun AtlasScreen(
                 onTrails  = { trails = it },
                 huts      = huts,
                 onHuts    = { huts = it },
-                parks     = parks,
-                onParks   = { parks = it },
                 onDismiss = { layersOpen = false },
             )
         }
@@ -813,7 +803,7 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
             ),
     )
 
-    // National parks / nature reserves fill — initially hidden
+    // National parks / nature reserves fill — always visible (no toggle, matches web)
     style.addLayer(
         FillLayer(LYR_PARKS_FILL, SRC_OFM)
             .withSourceLayer("landuse")
@@ -827,11 +817,11 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
             .withProperties(
                 fillColor("#22c55e"),
                 fillOpacity(0.07f),
-                visibility(NONE),
+                visibility(VISIBLE),
             )
             .also { it.setMinZoom(4.0f) },
     )
-    // National parks outline — initially hidden
+    // National parks outline — always visible (no toggle, matches web)
     style.addLayer(
         LineLayer(LYR_PARKS_OUTLINE, SRC_OFM)
             .withSourceLayer("landuse")
@@ -847,7 +837,7 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 lineOpacity(0.45f),
                 lineWidth(1.5f),
                 lineDasharray(arrayOf(3f, 2f)),
-                visibility(NONE),
+                visibility(VISIBLE),
             )
             .also { it.setMinZoom(4.0f) },
     )
@@ -1210,6 +1200,7 @@ private fun SearchBarOverlay(
 private fun SearchResultsList(
     results: List<Peak>,
     placeResults: List<com.peakadex.app.core.model.GeocodedPlace>,
+    refugioResults: List<com.peakadex.app.core.model.GeocodedPlace>,
     climbedPeakIds: Set<String>,
     onResultClick: (Peak) -> Unit,
     onPlaceClick: (com.peakadex.app.core.model.GeocodedPlace) -> Unit,
@@ -1280,6 +1271,45 @@ private fun SearchResultsList(
                     Spacer(Modifier.width(12.dp))
                     Text(
                         text     = place.name,
+                        fontSize = 14.sp,
+                        color    = PeakTextHeadline,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                HorizontalDivider(thickness = 0.5.dp, color = PeakBorderLight)
+            }
+        }
+
+        // ── Refugios (Nominatim) ───────────────────────────────────────────
+        if (refugioResults.isNotEmpty()) {
+            if (results.isNotEmpty() || placeResults.isNotEmpty()) {
+                item {
+                    Text(
+                        text       = stringResource(R.string.atlas_section_refugios),
+                        fontSize   = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = PeakMuted,
+                        modifier   = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                    HorizontalDivider(thickness = 0.5.dp, color = PeakBorderLight)
+                }
+            }
+            items(refugioResults) { refugio ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onPlaceClick(refugio) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("🏠", fontSize = 14.sp)
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text     = refugio.name,
                         fontSize = 14.sp,
                         color    = PeakTextHeadline,
                         maxLines = 1,
@@ -1839,8 +1869,6 @@ private fun LayersPanel(
     onTrails: (Boolean) -> Unit,
     huts: Boolean,
     onHuts: (Boolean) -> Unit,
-    parks: Boolean,
-    onParks: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -1909,13 +1937,6 @@ private fun LayersPanel(
                         active   = huts,
                         onClick  = { onHuts(!huts) },
                         icon     = HutsIcon,
-                        modifier = Modifier.weight(1f),
-                    )
-                    LayerCard(
-                        label    = stringResource(R.string.atlas_layers_parks),
-                        active   = parks,
-                        onClick  = { onParks(!parks) },
-                        icon     = ParksIcon,
                         modifier = Modifier.weight(1f),
                     )
                 }

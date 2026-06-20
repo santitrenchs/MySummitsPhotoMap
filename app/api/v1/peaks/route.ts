@@ -6,32 +6,43 @@ import { prisma } from "@/lib/db/client";
 
 type NominatimResult = {
   display_name: string;
+  name?: string;
   lat: string;
   lon: string;
   class: string;
+  type: string;
 };
 
-const PLACE_CLASSES = new Set(["place", "boundary"]);
+type GeocodedPlace = { name: string; lat: number; lon: number };
 
-async function geocodePlaces(q: string): Promise<{ name: string; lat: number; lon: number }[]> {
+const PLACE_CLASSES = new Set(["place", "boundary"]);
+const REFUGE_TOURISM_TYPES = new Set(["alpine_hut", "wilderness_hut", "chalet"]);
+function isRefuge(r: NominatimResult): boolean {
+  return (
+    (r.class === "tourism" && REFUGE_TOURISM_TYPES.has(r.type)) ||
+    (r.class === "amenity" && r.type === "shelter")
+  );
+}
+
+async function geocode(q: string): Promise<{ places: GeocodedPlace[]; refugios: GeocodedPlace[] }> {
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&accept-language=ca,es,en`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=12&accept-language=ca,es,en`;
     const res = await fetch(url, {
       headers: { "User-Agent": "Peakadex/1.0 (noreply@peakadex.com)" },
       signal: AbortSignal.timeout(3000),
     });
-    if (!res.ok) return [];
+    if (!res.ok) return { places: [], refugios: [] };
     const data: NominatimResult[] = await res.json();
-    return data
-      .filter((r) => PLACE_CLASSES.has(r.class))
-      .slice(0, 5)
-      .map((r) => ({
-        name: r.display_name,
-        lat: parseFloat(r.lat),
-        lon: parseFloat(r.lon),
-      }));
+    const toPlace = (r: NominatimResult): GeocodedPlace => ({
+      name: isRefuge(r) ? r.display_name.split(",")[0].trim() : r.display_name,
+      lat: parseFloat(r.lat),
+      lon: parseFloat(r.lon),
+    });
+    const places   = data.filter((r) => PLACE_CLASSES.has(r.class)).slice(0, 5).map(toPlace);
+    const refugios = data.filter(isRefuge).slice(0, 5).map(toPlace);
+    return { places, refugios };
   } catch {
-    return [];
+    return { places: [], refugios: [] };
   }
 }
 
@@ -53,7 +64,7 @@ export async function GET(req: NextRequest) {
 
   if (q.length >= 2) {
     // Text search — run DB + Nominatim in parallel
-    const [peaks, places] = await Promise.all([
+    const [peaks, geo] = await Promise.all([
       prisma.peak.findMany({
         where: {
           OR: [
@@ -78,9 +89,9 @@ export async function GET(req: NextRequest) {
           elevationProfile: true,
         },
       }),
-      geocodePlaces(q),
+      geocode(q),
     ]);
-    return NextResponse.json({ peaks, places });
+    return NextResponse.json({ peaks, places: geo.places, refugios: geo.refugios });
   }
 
   const zoom  = parseInt(searchParams.get("zoom") ?? "");

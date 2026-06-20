@@ -281,6 +281,7 @@
     <string name="atlas_btn_filters">Filter</string>
     <string name="atlas_clear_filters">Alles löschen</string>
     <string name="atlas_section_places">ORTE</string>
+    <string name="atlas_section_refugios">HÜTTEN</string>
     <string name="atlas_section_rarity">SELTENHEIT</string>
     <string name="atlas_section_status">STATUS</string>
     <string name="atlas_section_sort">SORTIEREN</string>

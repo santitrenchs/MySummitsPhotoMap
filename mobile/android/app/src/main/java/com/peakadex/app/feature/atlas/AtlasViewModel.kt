@@ -50,6 +50,7 @@ data class AtlasUiState(
     val searchQuery: String = "",
     val searchResults: List<Peak> = emptyList(),
     val placeResults: List<GeocodedPlace> = emptyList(),
+    val refugioResults: List<GeocodedPlace> = emptyList(),
     val isSearchActive: Boolean = false,
     val showList: Boolean = false,
     val error: String? = null,
@@ -201,7 +202,7 @@ class AtlasViewModel : ViewModel() {
     fun onSearchQueryChanged(query: String) {
         _uiState.update { it.copy(searchQuery = query, isSearchActive = query.isNotEmpty()) }
         if (query.isBlank()) {
-            _uiState.update { it.copy(searchResults = emptyList(), placeResults = emptyList()) }
+            _uiState.update { it.copy(searchResults = emptyList(), placeResults = emptyList(), refugioResults = emptyList()) }
             return
         }
         searchJob?.cancel()
@@ -210,8 +211,9 @@ class AtlasViewModel : ViewModel() {
             runCatching { api.searchPeaks(query) }.onSuccess { response ->
                 _uiState.update {
                     it.copy(
-                        searchResults = response.peaks.take(20),
-                        placeResults  = response.places,
+                        searchResults  = response.peaks.take(20),
+                        placeResults   = response.places,
+                        refugioResults = response.refugios,
                     )
                 }
             }
@@ -224,8 +226,9 @@ class AtlasViewModel : ViewModel() {
             it.copy(
                 searchQuery   = "",
                 isSearchActive = false,
-                searchResults = emptyList(),
-                placeResults  = emptyList(),
+                searchResults  = emptyList(),
+                placeResults   = emptyList(),
+                refugioResults = emptyList(),
                 selected      = SelectedPeakUi(peak, ascent),
             )
         }
@@ -237,8 +240,9 @@ class AtlasViewModel : ViewModel() {
             it.copy(
                 searchQuery   = "",
                 isSearchActive = false,
-                searchResults = emptyList(),
-                placeResults  = emptyList(),
+                searchResults  = emptyList(),
+                placeResults   = emptyList(),
+                refugioResults = emptyList(),
             )
         }
     }
@@ -248,8 +252,9 @@ class AtlasViewModel : ViewModel() {
             it.copy(
                 searchQuery   = "",
                 isSearchActive = false,
-                searchResults = emptyList(),
-                placeResults  = emptyList(),
+                searchResults  = emptyList(),
+                placeResults   = emptyList(),
+                refugioResults = emptyList(),
             )
         }
     }
