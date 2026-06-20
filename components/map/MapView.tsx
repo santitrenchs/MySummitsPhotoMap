@@ -202,6 +202,7 @@ export default function MapView({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<MapPeak[]>([]);
   const [placeResults, setPlaceResults] = useState<GeocodedPlace[]>([]);
+  const [refugioResults, setRefugioResults] = useState<GeocodedPlace[]>([]);
   // allPeaks grows as the user pans: starts with climbed peaks, gains viewport peaks from API
   const [allPeaks, setAllPeaks] = useState<MapPeak[]>(peaks);
   const [loadingPeaks, setLoadingPeaks] = useState(false);
@@ -220,14 +221,15 @@ export default function MapView({
   // Search debounce
   useEffect(() => {
     const q = searchQuery.trim();
-    if (q.length < 2) { setSearchResults([]); setPlaceResults([]); return; }
+    if (q.length < 2) { setSearchResults([]); setPlaceResults([]); setRefugioResults([]); return; }
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/peaks?q=${encodeURIComponent(q)}`);
         if (!res.ok) return;
-        const data: { peaks: MapPeak[]; places: GeocodedPlace[] } = await res.json();
+        const data: { peaks: MapPeak[]; places: GeocodedPlace[]; refugios?: GeocodedPlace[] } = await res.json();
         setSearchResults((data.peaks ?? []).slice(0, 8));
         setPlaceResults(data.places ?? []);
+        setRefugioResults(data.refugios ?? []);
       } catch { /* ignore */ }
     }, 300);
     return () => clearTimeout(timer);
@@ -1289,7 +1291,7 @@ export default function MapView({
                   zIndex: 1,
                   maxHeight: 320, overflowY: "auto",
                 }}>
-                  {searchResults.length === 0 && placeResults.length === 0 ? (
+                  {searchResults.length === 0 && placeResults.length === 0 && refugioResults.length === 0 ? (
                     <div style={{ padding: "24px 16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
                       Sin resultados
                     </div>
@@ -1377,6 +1379,36 @@ export default function MapView({
                               <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>📍</span>
                               <p style={{ margin: 0, fontSize: 13, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {place.name}
+                              </p>
+                            </button>
+                          ))}
+                        </>
+                      )}
+                      {refugioResults.length > 0 && (
+                        <>
+                          <div style={{ padding: "6px 14px 4px", fontSize: 10, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase", borderTop: "1px solid #f3f4f6" }}>
+                            Refugios
+                          </div>
+                          {refugioResults.map((refugio, i) => (
+                            <button
+                              key={i}
+                              className="search-result"
+                              onClick={() => {
+                                mapRef.current?.flyTo({ center: [refugio.lon, refugio.lat], zoom: 14 });
+                                setSearchQuery("");
+                              }}
+                              style={{
+                                display: "flex", alignItems: "center", gap: 10,
+                                width: "100%", padding: "10px 14px",
+                                background: "none", border: "none",
+                                borderBottom: "1px solid #f3f4f6",
+                                borderLeft: "3px solid #b45309",
+                                cursor: "pointer", textAlign: "left",
+                              }}
+                            >
+                              <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>🏠</span>
+                              <p style={{ margin: 0, fontSize: 13, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {refugio.name}
                               </p>
                             </button>
                           ))}
@@ -1829,6 +1861,8 @@ export default function MapView({
                 searchResults={searchResults}
                 placeResults={placeResults}
                 onSelectPlace={(place) => { setMobileView("map"); mapRef.current?.flyTo({ center: [place.lon, place.lat], zoom: 12 }); setSearchQuery(""); }}
+                refugioResults={refugioResults}
+                onSelectRefugio={(r) => { setMobileView("map"); mapRef.current?.flyTo({ center: [r.lon, r.lat], zoom: 14 }); setSearchQuery(""); }}
                 hideSearchInput
                 hideFilters
                 asMobileList
@@ -1888,6 +1922,8 @@ export default function MapView({
             searchResults={searchResults}
             placeResults={placeResults}
             onSelectPlace={(place) => { mapRef.current?.flyTo({ center: [place.lon, place.lat], zoom: 12 }); setSearchQuery(""); }}
+            refugioResults={refugioResults}
+            onSelectRefugio={(r) => { mapRef.current?.flyTo({ center: [r.lon, r.lat], zoom: 14 }); setSearchQuery(""); }}
           />
         )}
 
