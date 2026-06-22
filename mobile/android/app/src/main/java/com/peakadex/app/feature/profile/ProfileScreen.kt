@@ -1065,7 +1065,7 @@ private fun PeakRowCard(
                         fontWeight = FontWeight.SemiBold,
                         color      = PeakNavyMid,
                     )
-                    if (peak.count > 1 && peak.firstDate.isNotEmpty() && peak.firstDate != peak.lastDate) {
+                    if (peak.count > 1 && !peak.firstDate.isNullOrEmpty() && peak.firstDate != peak.lastDate) {
                         Spacer(Modifier.width(10.dp))
                         Text(
                             text       = stringResource(R.string.profile_date_primera),
@@ -1076,7 +1076,7 @@ private fun PeakRowCard(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text       = formatDate(peak.firstDate),
+                            text       = formatDate(peak.firstDate ?: ""),
                             fontSize   = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color      = PeakNavyLight,

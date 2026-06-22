@@ -434,7 +434,7 @@
     <string name="profile_filter_showN">Voir %d sommets</string>
     <string name="profile_sort_altDesc">Altitude ↓</string>
     <string name="profile_sort_altAsc">Altitude ↑</string>
-    <string name="profile_sort_countDesc">Plus d'ascensions</string>
+    <string name="profile_sort_countDesc">Plus d\'ascensions</string>
     <string name="profile_sort_recent">Plus récent</string>
     <string name="profile_sort_alpha">A–Z</string>
     <string name="profile_date_ultima">DERNIÈRE</string>

@@ -71,7 +71,7 @@
     <string name="profile_peaks_suffix">peaks · </string>
     <string name="profile_ascents_suffix">asc.</string>
     <string name="profile_empty_photos">No photos yet</string>
-    <string name="profile_empty_tagged">You haven't been tagged in any photo yet</string>
+    <string name="profile_empty_tagged">You haven\'t been tagged in any photo yet</string>
     <string name="profile_filter_button">Filters</string>
     <string name="profile_filter_title">Sort &amp; filter</string>
     <string name="profile_filter_clearAll">Clear all</string>
