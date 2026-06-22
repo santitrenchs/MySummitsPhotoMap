@@ -1070,9 +1070,6 @@ private fun PeakRowCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     DateBlock(stringResource(R.string.profile_date_ultima), formatDate(peak.lastDate), PeakNavyDark)
-                    if (peak.count > 1 && !peak.firstDate.isNullOrEmpty()) {
-                        DateBlock(stringResource(R.string.profile_date_primera), formatDate(peak.firstDate ?: ""), PeakNavyDark)
-                    }
                     Spacer(Modifier.weight(1f))
                     if (!peak.mountainRange.isNullOrBlank()) {
                         Text(
