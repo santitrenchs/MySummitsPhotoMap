@@ -911,6 +911,48 @@ private fun CimasStatsHeader(
 
 // ── PeakRowCard ───────────────────────────────────────────────────────────────
 
+/** Overlapping stacked cards showing ×N — matches web CaptureStack. */
+@Composable
+private fun CaptureStack(count: Int, accent: Color) {
+    if (count <= 1) return
+    val visible  = minOf(count, 4)
+    val overflow = if (count > 4) count - 4 else 0
+    val cardW    = 18.dp
+    val advance  = 12.dp   // 18dp - 6dp overlap
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.width(cardW + advance * (visible - 1)).height(22.dp)) {
+            // Draw back-to-front so the first card (with ×N) ends on top
+            for (i in (visible - 1) downTo 0) {
+                Box(
+                    modifier = Modifier
+                        .offset(x = advance * i)
+                        .width(cardW)
+                        .height(22.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (i == 0) accent else Color.White)
+                        .border(1.5.dp, accent, RoundedCornerShape(4.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (i == 0) {
+                        Text(
+                            text       = "×$count",
+                            fontSize   = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color      = Color.White,
+                            maxLines   = 1,
+                        )
+                    }
+                }
+            }
+        }
+        if (overflow > 0) {
+            Spacer(Modifier.width(4.dp))
+            Text("+$overflow", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = accent)
+        }
+    }
+}
+
 @Composable
 private fun PeakRowCard(
     peak: ProfilePeak,
@@ -944,12 +986,12 @@ private fun PeakRowCard(
                     .background(rarityColor),
             )
 
-            // Photo thumbnail — fills card height, fixed width
+            // Photo thumbnail — fills card height, fixed 96dp width, dark fallback
             Box(
                 modifier = Modifier
-                    .width(88.dp)
+                    .width(96.dp)
                     .fillMaxHeight()
-                    .background(Color(0xFFE5E7EB)),
+                    .background(Color(0xFF0D2538)),
             ) {
                 if (peak.firstPhotoUrl != null) {
                     AsyncImage(
@@ -958,51 +1000,34 @@ private fun PeakRowCard(
                         contentScale       = ContentScale.Crop,
                         modifier           = Modifier.fillMaxSize(),
                     )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(36.dp)
-                            .align(Alignment.BottomCenter)
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))
-                                )
-                            ),
+                } else {
+                    Text(
+                        text     = "🏔",
+                        fontSize = 28.sp,
+                        color    = Color.White.copy(alpha = 0.4f),
+                        modifier = Modifier.align(Alignment.Center),
                     )
+                }
+                // Altitude overlay — gradient to top, centered text
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                0.45f to Color.Transparent,
+                                1f to Color(0xFF0D2538).copy(alpha = 0.55f),
+                            )
+                        )
+                        .padding(top = 14.dp, bottom = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(
                         text       = "${peak.altitudeM} m",
                         fontSize   = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color      = Color.White,
-                        modifier   = Modifier.align(Alignment.BottomStart).padding(start = 5.dp, bottom = 4.dp),
-                    )
-                } else {
-                    Text(
-                        text       = "${peak.altitudeM} m",
-                        fontSize   = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = PeakNavyMid,
-                        modifier   = Modifier.align(Alignment.Center),
-                    )
-                }
-                if (peak.count > 1) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.Black.copy(alpha = 0.55f))
-                            .padding(horizontal = 5.dp, vertical = 2.dp),
-                    ) {
-                        Text(text = "×${peak.count}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-                }
-                if (peak.isMythic) {
-                    Text(
-                        text     = "✦",
-                        fontSize = 12.sp,
-                        color    = Color(0xFFFFD700),
-                        modifier = Modifier.align(Alignment.TopStart).padding(4.dp),
                     )
                 }
             }
@@ -1011,32 +1036,26 @@ private fun PeakRowCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 10.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                // Name + mountain range on same row
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                // Header: name + capture stack
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Text(
                         text       = peak.name,
                         fontSize   = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color      = PeakNavyDark,
+                        letterSpacing = (-0.2).sp,
                         maxLines   = 1,
                         overflow   = TextOverflow.Ellipsis,
                         modifier   = Modifier.weight(1f),
                     )
-                    if (!peak.mountainRange.isNullOrBlank()) {
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text       = peak.mountainRange,
-                            fontSize   = 10.sp,
-                            color      = PeakNavyLight,
-                            maxLines   = 1,
-                            overflow   = TextOverflow.Ellipsis,
-                            textAlign  = TextAlign.End,
-                            modifier   = Modifier.widthIn(max = 100.dp),
-                        )
-                    }
+                    CaptureStack(count = peak.count, accent = rarityColor)
                 }
 
                 // Rarity pill
@@ -1044,43 +1063,52 @@ private fun PeakRowCard(
                     CompactRarityPill(label = rarity.label, color = rarityColor, darkColor = rarityColorDark)
                 }
 
-                // ÚLTIMA label + date
-                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Text(
-                        text          = stringResource(R.string.profile_date_ultima),
-                        fontSize      = 9.sp,
-                        fontWeight    = FontWeight.Bold,
-                        color         = PeakNavyLight,
-                        letterSpacing = 0.5.sp,
-                    )
-                    Text(
-                        text       = formatDate(peak.lastDate),
-                        fontSize   = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color      = PeakNavyMid,
-                    )
-                }
-
-                // PRIMERA label + date (only when count > 1 and dates differ)
-                if (peak.count > 1 && !peak.firstDate.isNullOrEmpty() && peak.firstDate != peak.lastDate) {
-                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                // Bottom row: ÚLTIMA / PRIMERA dates side by side + mountain range right
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    verticalAlignment     = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    DateBlock(stringResource(R.string.profile_date_ultima), formatDate(peak.lastDate), PeakNavyDark)
+                    if (peak.count > 1 && !peak.firstDate.isNullOrEmpty()) {
+                        DateBlock(stringResource(R.string.profile_date_primera), formatDate(peak.firstDate ?: ""), PeakNavyDark)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    if (!peak.mountainRange.isNullOrBlank()) {
                         Text(
-                            text          = stringResource(R.string.profile_date_primera),
-                            fontSize      = 9.sp,
-                            fontWeight    = FontWeight.Bold,
-                            color         = PeakNavyLight,
-                            letterSpacing = 0.5.sp,
-                        )
-                        Text(
-                            text       = formatDate(peak.firstDate ?: ""),
-                            fontSize   = 12.sp,
+                            text       = peak.mountainRange,
+                            fontSize   = 10.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color      = PeakNavyLight,
+                            color      = Color(0xFFCBD5E1),
+                            maxLines   = 1,
+                            overflow   = TextOverflow.Ellipsis,
+                            textAlign  = TextAlign.End,
+                            modifier   = Modifier.widthIn(max = 80.dp),
                         )
                     }
                 }
             }
         }
+    }
+}
+
+/** Date label (uppercase, gray) over the date value — matches web bottom-row date block. */
+@Composable
+private fun DateBlock(label: String, value: String, valueColor: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Text(
+            text          = label,
+            fontSize      = 8.sp,
+            fontWeight    = FontWeight.Bold,
+            color         = Color(0xFF94A3B8),
+            letterSpacing = 1.sp,
+        )
+        Text(
+            text       = value,
+            fontSize   = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color      = valueColor,
+        )
     }
 }
 
