@@ -423,4 +423,20 @@
     <string name="cards_friends_empty_subtitle">Continua escalant i comparteix les teves ascensions.</string>
     <string name="cards_mine_empty">Encara no tens cap ascensió registrada.</string>
     <string name="cards_mine_empty_subtitle">Captura el teu primer cim per començar.</string>
+
+    <string name="profile_filter_button">Filtres</string>
+    <string name="profile_filter_title">Ordenar i filtrar</string>
+    <string name="profile_filter_clearAll">Esborrar tot</string>
+    <string name="profile_filter_sort">ORDENAR</string>
+    <string name="profile_filter_rarity">RARESA</string>
+    <string name="profile_filter_range">SERRALADA</string>
+    <string name="profile_filter_mythic">⭐ Mític</string>
+    <string name="profile_filter_showN">Veure %d cims</string>
+    <string name="profile_sort_altDesc">Altitud ↓</string>
+    <string name="profile_sort_altAsc">Altitud ↑</string>
+    <string name="profile_sort_countDesc">Més ascensions</string>
+    <string name="profile_sort_recent">Més recent</string>
+    <string name="profile_sort_alpha">A–Z</string>
+    <string name="profile_date_ultima">ÚLTIMA</string>
+    <string name="profile_date_primera">PRIMERA</string>
 </resources>

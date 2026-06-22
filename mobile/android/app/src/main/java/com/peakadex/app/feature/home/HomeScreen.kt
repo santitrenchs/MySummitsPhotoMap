@@ -1407,16 +1407,7 @@ private fun FriendRankBadge(rank: Int) {
             .then(if (rank <= 3) Modifier.clip(RoundedCornerShape(10.dp)).background(bg) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        if (rank <= 3) {
-            Icon(
-                painter            = painterResource(R.drawable.ic_piolet),
-                contentDescription = null,
-                tint               = content,
-                modifier           = Modifier.size(22.dp),
-            )
-        } else {
-            Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
-        }
+        Text("$rank", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = content)
     }
 }
 

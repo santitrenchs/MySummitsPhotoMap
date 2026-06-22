@@ -140,13 +140,16 @@ import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.FillLayer
 import org.maplibre.android.style.layers.HillshadeLayer
 import org.maplibre.android.style.layers.LineLayer
+import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.Property.NONE
 import org.maplibre.android.style.layers.Property.VISIBLE
 import org.maplibre.android.style.layers.PropertyFactory.fillColor
 import org.maplibre.android.style.layers.PropertyFactory.fillOpacity
 import org.maplibre.android.style.layers.PropertyFactory.hillshadeExaggeration
+import org.maplibre.android.style.layers.PropertyFactory.lineCap
 import org.maplibre.android.style.layers.PropertyFactory.lineColor
 import org.maplibre.android.style.layers.PropertyFactory.lineDasharray
+import org.maplibre.android.style.layers.PropertyFactory.lineJoin
 import org.maplibre.android.style.layers.PropertyFactory.lineOpacity
 import org.maplibre.android.style.layers.PropertyFactory.lineWidth
 import org.maplibre.android.style.layers.PropertyFactory.hillshadeHighlightColor
@@ -205,9 +208,9 @@ private const val DEFAULT_RARITY_COLOR    = "#22C55E"   // green-500
 private const val UNCLIMBED_COLOR         = "#3B82F6"   // blue-500
 
 private const val SRC_TERRAIN_DEM         = "terrain-dem"
-private const val SRC_TRAILS              = "trails-source"
 private const val LYR_HILLSHADE           = "hillshade-layer"
-private const val LYR_TRAILS              = "trails-layer"
+private const val LYR_TRAILS_CASING       = "trails-casing-layer"
+private const val LYR_TRAILS_LINE         = "trails-line-layer"
 
 private const val SRC_OFM                 = "ofm-source"          // OpenFreeMap vector tiles
 private const val LYR_HUTS_DOTS           = "huts-dots-layer"
@@ -252,7 +255,7 @@ fun AtlasScreen(
     var showTopBar by rememberSaveable { mutableStateOf(true) }
     var terrain3d  by rememberSaveable { mutableStateOf(false) }
     var mapType    by rememberSaveable { mutableStateOf(MapType.NORMAL) }
-    var trails     by rememberSaveable { mutableStateOf(false) }
+    var trails     by rememberSaveable { mutableStateOf(true) }
     var huts       by rememberSaveable { mutableStateOf(false) }
     // remember: estado transitorio, resetear en rotación es correcto
     var layersOpen    by remember { mutableStateOf(false) }
@@ -468,8 +471,10 @@ fun AtlasScreen(
         // ── Toggle trails overlay ─────────────────────────────────────────────
         LaunchedEffect(styleReady.value, trails) {
             if (!styleReady.value) return@LaunchedEffect
-            mapRef.value?.style?.getLayer(LYR_TRAILS)
-                ?.setProperties(visibility(if (trails) VISIBLE else NONE))
+            val style = mapRef.value?.style ?: return@LaunchedEffect
+            val vis = if (trails) VISIBLE else NONE
+            style.getLayer(LYR_TRAILS_CASING)?.setProperties(visibility(vis))
+            style.getLayer(LYR_TRAILS_LINE)?.setProperties(visibility(vis))
         }
 
         // ── Toggle refugios (huts) overlay ────────────────────────────────────
@@ -746,13 +751,7 @@ private fun setupSources(style: org.maplibre.android.maps.Style) {
     // terrain-dem source is declared in baseStyleJson (needed there for the
     // terrain property to resolve at style-load time). Do not re-add here.
 
-    // Hiking trails overlay (WaymarkedTrails)
-    val trailsTileSet = TileSet("2.2.0",
-        "https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png")
-    trailsTileSet.setMaxZoom(17f)
-    style.addSource(RasterSource(SRC_TRAILS, trailsTileSet, 256))
-
-    // OpenFreeMap vector tiles — used for refugios (alpine huts) and parques (parks)
+    // OpenFreeMap vector tiles — used for trails, refugios (alpine huts) and parques (parks)
     style.addSource(
         VectorSource(SRC_OFM, "https://tiles.openfreemap.org/planet")
     )
@@ -794,19 +793,10 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 visibility(NONE),
             ),
     )
-    // Hiking trails overlay — initially hidden
-    style.addLayer(
-        RasterLayer(LYR_TRAILS, SRC_TRAILS)
-            .withProperties(
-                rasterOpacity(0.75f),
-                visibility(NONE),
-            ),
-    )
-
     // National parks / nature reserves fill — always visible (no toggle, matches web)
     style.addLayer(
         FillLayer(LYR_PARKS_FILL, SRC_OFM)
-            .withSourceLayer("landuse")
+            .withSourceLayer("park")
             .withFilter(
                 any(
                     eq(get("class"), literal("national_park")),
@@ -824,7 +814,7 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
     // National parks outline — always visible (no toggle, matches web)
     style.addLayer(
         LineLayer(LYR_PARKS_OUTLINE, SRC_OFM)
-            .withSourceLayer("landuse")
+            .withSourceLayer("park")
             .withFilter(
                 any(
                     eq(get("class"), literal("national_park")),
@@ -840,6 +830,43 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 visibility(VISIBLE),
             )
             .also { it.setMinZoom(4.0f) },
+    )
+
+    // Hiking trails — OFM transportation vector (path/track/footway/bridleway)
+    // Same source as web MapView.tsx. Casing = white stroke, line = brown dashed.
+    val trailFilter = any(
+        eq(get("class"), literal("path")),
+        eq(get("class"), literal("track")),
+        eq(get("class"), literal("footway")),
+        eq(get("class"), literal("bridleway")),
+    )
+    style.addLayer(
+        LineLayer(LYR_TRAILS_CASING, SRC_OFM)
+            .withSourceLayer("transportation")
+            .withFilter(trailFilter)
+            .withProperties(
+                lineColor("white"),
+                lineWidth(3f),
+                lineOpacity(0.6f),
+                lineJoin(Property.LINE_JOIN_ROUND),
+                lineCap(Property.LINE_CAP_ROUND),
+                visibility(VISIBLE),
+            )
+            .also { it.setMinZoom(11.0f) },
+    )
+    style.addLayer(
+        LineLayer(LYR_TRAILS_LINE, SRC_OFM)
+            .withSourceLayer("transportation")
+            .withFilter(trailFilter)
+            .withProperties(
+                lineColor("#b45309"),
+                lineWidth(1.5f),
+                lineDasharray(arrayOf(2f, 2f)),
+                lineJoin(Property.LINE_JOIN_ROUND),
+                lineCap(Property.LINE_CAP_ROUND),
+                visibility(VISIBLE),
+            )
+            .also { it.setMinZoom(11.0f) },
     )
     // Alpine hut / wilderness hut dots — initially hidden
     style.addLayer(

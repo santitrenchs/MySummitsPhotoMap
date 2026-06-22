@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
         lastDate:      toDateStr(p.lastDate),
         firstDate:     toDateStr(p.firstDate),
         firstPhotoUrl: p.firstPhotoUrl ?? null,
+        isMythic:      p.isMythic ?? false,
       })),
       photos: data.allPhotos.map((p) => ({
         id:       p.id,

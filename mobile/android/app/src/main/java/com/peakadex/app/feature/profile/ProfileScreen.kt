@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -165,7 +167,10 @@ fun BitacoraScreen(
                     state                = s,
                     onPeakQuery          = vm::setPeakQuery,
                     onPeakRarityFilter   = vm::setPeakRarityFilter,
-                    onNavigateToCards  = onNavigateToCards,
+                    onPeakSortMode       = vm::setPeakSortMode,
+                    onPeakMythicFilter   = vm::setPeakMythicFilter,
+                    onPeakRangeFilter    = vm::setPeakRangeFilter,
+                    onNavigateToCards    = onNavigateToCards,
                     onAscentClick        = onAscentClick,
                     onCaptureFirstSummit = onCaptureFirstSummit,
                 )
@@ -358,6 +363,9 @@ private fun ProfileContent(
     state: ProfileUiState.Success,
     onPeakQuery: (String) -> Unit,
     onPeakRarityFilter: (String?) -> Unit,
+    onPeakSortMode: (PeakSortMode) -> Unit,
+    onPeakMythicFilter: (Boolean) -> Unit,
+    onPeakRangeFilter: (String?) -> Unit,
     onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     onCaptureFirstSummit: () -> Unit = {},
@@ -402,10 +410,16 @@ private fun ProfileContent(
                 rarities             = state.data.rarities,
                 query                = state.peakQuery,
                 rarityFilter         = state.peakRarityFilter,
+                sortMode             = state.peakSortMode,
+                mythicFilter         = state.peakMythicFilter,
+                rangeFilter          = state.peakRangeFilter,
                 onQuery              = onPeakQuery,
+                onRarityFilter       = onPeakRarityFilter,
+                onSortMode           = onPeakSortMode,
+                onMythicFilter       = onPeakMythicFilter,
+                onRangeFilter        = onPeakRangeFilter,
                 onCaptureFirstSummit = onCaptureFirstSummit,
-                onRarityFilter      = onPeakRarityFilter,
-                onNavigateToCards = onNavigateToCards,
+                onNavigateToCards    = onNavigateToCards,
             )
             1 -> PhotosTab(
                 photos        = state.data.photos,
@@ -539,8 +553,14 @@ private fun CimasTab(
     rarities: List<Rarity>,
     query: String,
     rarityFilter: String?,
+    sortMode: PeakSortMode,
+    mythicFilter: Boolean,
+    rangeFilter: String?,
     onQuery: (String) -> Unit,
     onRarityFilter: (String?) -> Unit,
+    onSortMode: (PeakSortMode) -> Unit,
+    onMythicFilter: (Boolean) -> Unit,
+    onRangeFilter: (String?) -> Unit,
     onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onCaptureFirstSummit: () -> Unit = {},
 ) {
@@ -548,60 +568,63 @@ private fun CimasTab(
     val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    var filtersOpen by remember { mutableStateOf(false) }
+
+    val availableRanges = remember(allPeaks) {
+        allPeaks.mapNotNull { it.mountainRange }.distinct().sorted()
+    }
+    val isDirty = rarityFilter != null || mythicFilter || rangeFilter != null || sortMode != PeakSortMode.ALTITUDE_DESC
 
     LazyColumn(
         state          = listState,
         contentPadding = PaddingValues(bottom = 180.dp),
         modifier       = Modifier.fillMaxSize().background(PeakBackground).imePadding(),
     ) {
-        // Stats header
         item(key = "stats_header") {
             CimasStatsHeader(
-                allPeaks     = allPeaks,
-                stats        = stats,
-                rarities     = rarities,
-                rarityFilter = rarityFilter,
+                allPeaks       = allPeaks,
+                stats          = stats,
+                rarities       = rarities,
+                rarityFilter   = rarityFilter,
                 onRarityFilter = onRarityFilter,
             )
         }
 
-        // Search field
-        item(key = "search") {
-            com.peakadex.app.core.ui.PeakSearchField(
-                value           = query,
-                onValueChange   = onQuery,
-                placeholder     = stringResource(R.string.profile_search_placeholder),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        focusManager.clearFocus()
-                        if (peaks.isNotEmpty()) {
-                            scope.launch { listState.animateScrollToItem(2) }
-                        }
-                    },
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            )
+        item(key = "search_bar") {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                com.peakadex.app.core.ui.PeakSearchField(
+                    value           = query,
+                    onValueChange   = onQuery,
+                    placeholder     = stringResource(R.string.profile_search_placeholder),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            focusManager.clearFocus()
+                            if (peaks.isNotEmpty()) scope.launch { listState.animateScrollToItem(2) }
+                        },
+                    ),
+                    modifier = Modifier.weight(1f),
+                )
+                com.peakadex.app.core.ui.PeakFilterButton(
+                    label       = stringResource(R.string.profile_filter_button),
+                    active      = isDirty,
+                    showBadge   = isDirty,
+                    onClick     = { filtersOpen = true },
+                )
+            }
         }
 
         if (peaks.isEmpty()) {
             item(key = "empty") {
-                if (query.isNotBlank() || rarityFilter != null) {
-                    // Filtered empty state
-                    Box(
-                        Modifier.fillMaxWidth().padding(48.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text     = stringResource(R.string.profile_empty_filtered),
-                            fontSize = 14.sp,
-                            color    = PeakSubtle,
-                        )
+                if (query.isNotBlank() || isDirty) {
+                    Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
+                        Text(stringResource(R.string.profile_empty_filtered), fontSize = 14.sp, color = PeakSubtle)
                     }
                 } else {
-                    // No ascents at all — show onboarding banner
                     FirstCardOnboardingBanner(onCapture = onCaptureFirstSummit)
                 }
             }
@@ -611,11 +634,157 @@ private fun CimasTab(
                     peak      = peak,
                     rarityMap = rarityMap,
                     onClick   = { onNavigateToCards(peak.id, peak.name) },
-                    modifier  = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 5.dp),
+                    modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 5.dp),
                 )
             }
+        }
+    }
+
+    if (filtersOpen) {
+        CimasFiltersPanel(
+            sortMode        = sortMode,
+            mythicFilter    = mythicFilter,
+            rangeFilter     = rangeFilter,
+            availableRanges = availableRanges,
+            peakCount       = peaks.size,
+            isDirty         = isDirty,
+            onSortMode      = onSortMode,
+            onMythicFilter  = onMythicFilter,
+            onRangeFilter   = onRangeFilter,
+            onClearAll      = {
+                onRarityFilter(null)
+                onMythicFilter(false)
+                onRangeFilter(null)
+                onSortMode(PeakSortMode.ALTITUDE_DESC)
+            },
+            onDismiss = { filtersOpen = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun CimasFiltersPanel(
+    sortMode: PeakSortMode,
+    mythicFilter: Boolean,
+    rangeFilter: String?,
+    availableRanges: List<String>,
+    peakCount: Int,
+    isDirty: Boolean,
+    onSortMode: (PeakSortMode) -> Unit,
+    onMythicFilter: (Boolean) -> Unit,
+    onRangeFilter: (String?) -> Unit,
+    onClearAll: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState       = sheetState,
+        containerColor   = Color.White,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 4.dp),
+        ) {
+            // Header
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.profile_filter_title), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PeakNavyDark)
+                if (isDirty) {
+                    TextButton(onClick = onClearAll) {
+                        Text(stringResource(R.string.profile_filter_clearAll), fontSize = 13.sp, color = PeakBlueActive)
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+
+            // Sort
+            Text(stringResource(R.string.profile_filter_sort), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PeakNavyLight, letterSpacing = 1.sp)
+            Spacer(Modifier.height(8.dp))
+            val sortOptions = listOf(
+                PeakSortMode.ALTITUDE_DESC to R.string.profile_sort_altDesc,
+                PeakSortMode.ALTITUDE_ASC  to R.string.profile_sort_altAsc,
+                PeakSortMode.COUNT_DESC    to R.string.profile_sort_countDesc,
+                PeakSortMode.RECENT        to R.string.profile_sort_recent,
+                PeakSortMode.ALPHA         to R.string.profile_sort_alpha,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                sortOptions.forEach { (mode, labelRes) ->
+                    val active = sortMode == mode
+                    FilterChip(
+                        selected = active,
+                        onClick  = { onSortMode(mode) },
+                        label    = { Text(stringResource(labelRes), fontSize = 13.sp) },
+                        colors   = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = PeakBlueActive,
+                            selectedLabelColor     = Color.White,
+                        ),
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+
+            // Mythic
+            Text(stringResource(R.string.profile_filter_rarity), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PeakNavyLight, letterSpacing = 1.sp)
+            Spacer(Modifier.height(8.dp))
+            FilterChip(
+                selected = mythicFilter,
+                onClick  = { onMythicFilter(!mythicFilter) },
+                label    = { Text(stringResource(R.string.profile_filter_mythic), fontSize = 13.sp) },
+                colors   = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFFFFFBEB),
+                    selectedLabelColor     = Color(0xFF92400E),
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled              = true,
+                    selected             = mythicFilter,
+                    selectedBorderColor  = Color(0xFFFDE68A),
+                    selectedBorderWidth  = 1.dp,
+                ),
+            )
+
+            // Mountain range (only if multiple ranges available)
+            if (availableRanges.size > 1) {
+                Spacer(Modifier.height(16.dp))
+                Text(stringResource(R.string.profile_filter_range), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PeakNavyLight, letterSpacing = 1.sp)
+                Spacer(Modifier.height(8.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    availableRanges.forEach { range ->
+                        val active = rangeFilter == range
+                        FilterChip(
+                            selected = active,
+                            onClick  = { onRangeFilter(if (active) null else range) },
+                            label    = { Text(range, fontSize = 12.sp) },
+                            colors   = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PeakBlueActive,
+                                selectedLabelColor     = Color.White,
+                            ),
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+            Button(
+                onClick  = onDismiss,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape    = RoundedCornerShape(12.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = PeakClimbedGreen),
+            ) {
+                Text(
+                    text       = stringResource(R.string.profile_filter_showN, peakCount),
+                    fontSize   = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -766,22 +935,99 @@ private fun PeakRowCard(
         border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.height(84.dp),
+            modifier          = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Left rarity strip
             Box(
                 Modifier
                     .width(4.dp)
-                    .fillMaxHeight()
+                    .height(96.dp)
                     .background(rarityColor),
             )
 
+            // Photo thumbnail
+            Box(
+                modifier = Modifier
+                    .width(88.dp)
+                    .height(96.dp)
+                    .background(Color(0xFFE5E7EB)),
+            ) {
+                if (peak.firstPhotoUrl != null) {
+                    AsyncImage(
+                        model             = peak.firstPhotoUrl,
+                        contentDescription = null,
+                        contentScale      = ContentScale.Crop,
+                        modifier          = Modifier.fillMaxSize(),
+                    )
+                    // Bottom gradient + altitude overlay
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(36.dp)
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))
+                                )
+                            ),
+                    )
+                    Text(
+                        text       = "${peak.altitudeM} m",
+                        fontSize   = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = Color.White,
+                        modifier   = Modifier.align(Alignment.BottomStart).padding(start = 5.dp, bottom = 4.dp),
+                    )
+                } else {
+                    // Fallback: altitude centered
+                    Text(
+                        text       = "${peak.altitudeM} m",
+                        fontSize   = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = PeakNavyMid,
+                        modifier   = Modifier.align(Alignment.Center),
+                    )
+                }
+                // ×N capture stack badge (when count > 1)
+                if (peak.count > 1) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.Black.copy(alpha = 0.55f))
+                            .padding(horizontal = 5.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(
+                            text       = "×${peak.count}",
+                            fontSize   = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = Color.White,
+                        )
+                    }
+                }
+                // Mythic glow badge
+                if (peak.isMythic) {
+                    Text(
+                        text     = "✦",
+                        fontSize = 12.sp,
+                        color    = Color(0xFFFFD700),
+                        modifier = Modifier.align(Alignment.TopStart).padding(4.dp),
+                    )
+                }
+            }
+
+            // Content column
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 12.dp, end = 14.dp, top = 12.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp),
+                    .weight(1f)
+                    .padding(start = 10.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp),
             ) {
+                // Name
                 Text(
                     text       = peak.name,
                     fontSize   = 14.sp,
@@ -791,34 +1037,61 @@ private fun PeakRowCard(
                     overflow   = TextOverflow.Ellipsis,
                 )
 
+                // Rarity pill
+                if (rarity != null) {
+                    CompactRarityPill(
+                        label     = rarity.label,
+                        color     = rarityColor,
+                        darkColor = rarityColorDark,
+                    )
+                }
+
+                // Date row: ÚLTIMA + date | PRIMERA + firstDate (when count > 1)
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier          = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (rarity != null) {
-                        CompactRarityPill(
-                            label     = rarity.label,
-                            color     = rarityColor,
-                            darkColor = rarityColorDark,
-                        )
-                        Spacer(Modifier.width(10.dp))
-                    }
                     Text(
-                        text       = "${peak.altitudeM} m",
-                        fontSize   = 13.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color      = PeakNavyDark,
-                        maxLines   = 1,
+                        text       = stringResource(R.string.profile_date_ultima),
+                        fontSize   = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = PeakNavyLight,
+                        letterSpacing = 0.5.sp,
                     )
-                    Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text       = formatDate(peak.lastDate),
-                        fontSize   = 12.sp,
+                        fontSize   = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color      = PeakNavyMid,
+                    )
+                    if (peak.count > 1 && !peak.firstDate.isNullOrEmpty() && peak.firstDate != peak.lastDate) {
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text       = stringResource(R.string.profile_date_primera),
+                            fontSize   = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = PeakNavyLight,
+                            letterSpacing = 0.5.sp,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text       = formatDate(peak.firstDate ?: ""),
+                            fontSize   = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = PeakNavyLight,
+                        )
+                    }
+                }
+
+                // Mountain range (if present)
+                if (!peak.mountainRange.isNullOrBlank()) {
+                    Text(
+                        text       = peak.mountainRange,
+                        fontSize   = 11.sp,
+                        color      = PeakNavyLight,
                         maxLines   = 1,
-                        textAlign  = TextAlign.End,
-                        modifier   = Modifier.width(78.dp),
+                        overflow   = TextOverflow.Ellipsis,
                     )
                 }
             }

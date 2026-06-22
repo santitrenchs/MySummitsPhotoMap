@@ -72,6 +72,21 @@
     <string name="profile_ascents_suffix">asc.</string>
     <string name="profile_empty_photos">No photos yet</string>
     <string name="profile_empty_tagged">You haven\'t been tagged in any photo yet</string>
+    <string name="profile_filter_button">Filters</string>
+    <string name="profile_filter_title">Sort &amp; filter</string>
+    <string name="profile_filter_clearAll">Clear all</string>
+    <string name="profile_filter_sort">SORT BY</string>
+    <string name="profile_filter_rarity">RARITY</string>
+    <string name="profile_filter_range">MOUNTAIN RANGE</string>
+    <string name="profile_filter_mythic">⭐ Mythic</string>
+    <string name="profile_filter_showN">Show %d summits</string>
+    <string name="profile_sort_altDesc">Altitude ↓</string>
+    <string name="profile_sort_altAsc">Altitude ↑</string>
+    <string name="profile_sort_countDesc">Most ascents</string>
+    <string name="profile_sort_recent">Most recent</string>
+    <string name="profile_sort_alpha">A–Z</string>
+    <string name="profile_date_ultima">LAST</string>
+    <string name="profile_date_primera">FIRST</string>
 
     <!-- ── Bitácora / Cards ──────────────────────────────────────────────────── -->
     <string name="cards_filter_mine">My Cards</string>

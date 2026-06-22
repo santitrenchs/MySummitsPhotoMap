@@ -72,6 +72,21 @@
     <string name="profile_ascents_suffix">asc.</string>
     <string name="profile_empty_photos">Sin fotos</string>
     <string name="profile_empty_tagged">Aún no estás etiquetado/a en ninguna foto</string>
+    <string name="profile_filter_button">Filtros</string>
+    <string name="profile_filter_title">Ordenar y filtrar</string>
+    <string name="profile_filter_clearAll">Limpiar todo</string>
+    <string name="profile_filter_sort">ORDENAR</string>
+    <string name="profile_filter_rarity">RAREZA</string>
+    <string name="profile_filter_range">CORDILLERA</string>
+    <string name="profile_filter_mythic">⭐ Mítico</string>
+    <string name="profile_filter_showN">Ver %d cimas</string>
+    <string name="profile_sort_altDesc">Altitud ↓</string>
+    <string name="profile_sort_altAsc">Altitud ↑</string>
+    <string name="profile_sort_countDesc">Más ascensos</string>
+    <string name="profile_sort_recent">Más reciente</string>
+    <string name="profile_sort_alpha">A–Z</string>
+    <string name="profile_date_ultima">ÚLTIMA</string>
+    <string name="profile_date_primera">PRIMERA</string>
 
     <!-- ── Bitácora / Cards ──────────────────────────────────────────────────── -->
     <string name="cards_filter_mine">Mis Cards</string>
