@@ -464,6 +464,7 @@ data class ProfilePeak(
     val mountainRange: String? = null,
     val country: String? = null,
     val rarityId: String? = null,
+    val isMythic: Boolean = false,
     val count: Int,
     val lastDate: String,        // "YYYY-MM-DD"
     val firstDate: String? = null,

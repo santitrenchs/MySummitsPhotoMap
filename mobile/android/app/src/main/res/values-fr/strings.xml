@@ -423,4 +423,20 @@
     <string name="cards_friends_empty_subtitle">Continue à grimper et partage tes ascensions.</string>
     <string name="cards_mine_empty">Tu n\'as encore aucune ascension enregistrée.</string>
     <string name="cards_mine_empty_subtitle">Capture ton premier sommet pour commencer.</string>
+
+    <string name="profile_filter_button">Filtres</string>
+    <string name="profile_filter_title">Trier et filtrer</string>
+    <string name="profile_filter_clearAll">Tout effacer</string>
+    <string name="profile_filter_sort">TRIER</string>
+    <string name="profile_filter_rarity">RARETÉ</string>
+    <string name="profile_filter_range">MASSIF</string>
+    <string name="profile_filter_mythic">⭐ Mythique</string>
+    <string name="profile_filter_showN">Voir %d sommets</string>
+    <string name="profile_sort_altDesc">Altitude ↓</string>
+    <string name="profile_sort_altAsc">Altitude ↑</string>
+    <string name="profile_sort_countDesc">Plus d'ascensions</string>
+    <string name="profile_sort_recent">Plus récent</string>
+    <string name="profile_sort_alpha">A–Z</string>
+    <string name="profile_date_ultima">DERNIÈRE</string>
+    <string name="profile_date_primera">PREMIÈRE</string>
 </resources>

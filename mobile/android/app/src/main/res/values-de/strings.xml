@@ -423,4 +423,20 @@
     <string name="cards_friends_empty_subtitle">Weiter klettern und Aufstiege teilen.</string>
     <string name="cards_mine_empty">Du hast noch keine Aufstiege erfasst.</string>
     <string name="cards_mine_empty_subtitle">Erfasse deinen ersten Gipfel, um zu starten.</string>
+
+    <string name="profile_filter_button">Filter</string>
+    <string name="profile_filter_title">Sortieren und filtern</string>
+    <string name="profile_filter_clearAll">Alles löschen</string>
+    <string name="profile_filter_sort">SORTIEREN</string>
+    <string name="profile_filter_rarity">SELTENHEIT</string>
+    <string name="profile_filter_range">GEBIRGE</string>
+    <string name="profile_filter_mythic">⭐ Mythisch</string>
+    <string name="profile_filter_showN">%d Gipfel anzeigen</string>
+    <string name="profile_sort_altDesc">Höhe ↓</string>
+    <string name="profile_sort_altAsc">Höhe ↑</string>
+    <string name="profile_sort_countDesc">Meiste Besteigungen</string>
+    <string name="profile_sort_recent">Neueste</string>
+    <string name="profile_sort_alpha">A–Z</string>
+    <string name="profile_date_ultima">LETZTE</string>
+    <string name="profile_date_primera">ERSTE</string>
 </resources>
