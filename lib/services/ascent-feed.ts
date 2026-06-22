@@ -33,7 +33,7 @@ type RawAscent = {
   createdBy: string;
   peakId: string;
   peak: {
-    id: string; name: string; altitudeM: number; isMythic: boolean;
+    id: string; name: string; nameEn: string | null; altitudeM: number; isMythic: boolean;
     mountainRange: string | null; latitude: number; longitude: number;
   };
   photos: {
@@ -133,7 +133,7 @@ function buildFilters(opts: {
 }
 
 const ASCENT_INCLUDE = {
-  peak: { select: { id: true, name: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true } },
+  peak: { select: { id: true, name: true, nameEn: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true } },
   photos: PHOTOS_INCLUDE,
   user: { select: { id: true, name: true, avatarUrl: true } },
 } as const;
