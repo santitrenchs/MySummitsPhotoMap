@@ -22,6 +22,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -647,12 +648,16 @@ private fun CimasTab(
 
     if (filtersOpen) {
         CimasFiltersPanel(
+            allPeaks        = allPeaks,
+            rarities        = rarities,
+            rarityFilter    = rarityFilter,
             sortMode        = sortMode,
             mythicFilter    = mythicFilter,
             rangeFilter     = rangeFilter,
             availableRanges = availableRanges,
             peakCount       = peaks.size,
             isDirty         = isDirty,
+            onRarityFilter  = onRarityFilter,
             onSortMode      = onSortMode,
             onMythicFilter  = onMythicFilter,
             onRangeFilter   = onRangeFilter,
@@ -667,15 +672,116 @@ private fun CimasTab(
     }
 }
 
+private val FILTER_SECTION_LABEL_COLOR = Color(0xFF9CA3AF)
+
+@Composable
+private fun FilterSectionLabel(text: String) {
+    Text(
+        text          = text,
+        fontSize      = 10.sp,
+        fontWeight    = FontWeight.ExtraBold,
+        letterSpacing = 1.sp,
+        color         = FILTER_SECTION_LABEL_COLOR,
+    )
+}
+
+/** Rarity / mythic pill: ✿ (or ⭐) + label + count, dimmed when locked (count == 0). Matches web. */
+@Composable
+private fun RarityFilterPill(
+    glyph: String,
+    label: String,
+    count: Int,
+    color: Color,
+    colorDark: Color,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    val locked = count == 0
+    val borderColor = when {
+        active -> color.copy(alpha = 0.53f)
+        locked -> Color(0xFFF1F5F9)
+        else   -> Color(0xFFE5E7EB)
+    }
+    val bgColor = when {
+        active -> color.copy(alpha = 0.13f)
+        locked -> Color(0xFFF8FAFC)
+        else   -> Color(0xFFF9FAFB)
+    }
+    val glyphColor  = if (locked) Color(0xFFCBD5E1) else color
+    val labelColor  = when { active -> colorDark; locked -> Color(0xFFCBD5E1); else -> Color(0xFF6B7280) }
+    val countColor  = when { active -> colorDark; locked -> Color(0xFFCBD5E1); else -> Color(0xFF9CA3AF) }
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(bgColor)
+            .border(1.5.dp, borderColor, RoundedCornerShape(100.dp))
+            .then(if (locked) Modifier else Modifier.clickable { onClick() })
+            .alpha(if (locked) 0.55f else 1f)
+            .padding(horizontal = 11.dp, vertical = 7.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Text(text = glyph, fontSize = 14.sp, lineHeight = 14.sp, color = glyphColor)
+        Text(text = label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = labelColor, maxLines = 1)
+        Text(
+            text       = if (locked) "—" else count.toString(),
+            fontSize   = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color      = countColor,
+        )
+    }
+}
+
+/** Range / sort pill: label + optional count, blue when active. Matches web. */
+@Composable
+private fun TextFilterPill(
+    label: String,
+    count: Int?,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(if (active) Color(0xFFEFF6FF) else Color(0xFFF9FAFB))
+            .border(1.5.dp, if (active) Color(0xFF0369A1) else Color(0xFFE5E7EB), RoundedCornerShape(100.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Text(
+            text       = label,
+            fontSize   = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color      = if (active) Color(0xFF0369A1) else Color(0xFF6B7280),
+            maxLines   = 1,
+        )
+        if (count != null) {
+            Text(
+                text       = count.toString(),
+                fontSize   = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color      = if (active) Color(0xFF0369A1).copy(alpha = 0.53f) else Color(0xFF6B7280).copy(alpha = 0.5f),
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun CimasFiltersPanel(
+    allPeaks: List<ProfilePeak>,
+    rarities: List<Rarity>,
+    rarityFilter: String?,
     sortMode: PeakSortMode,
     mythicFilter: Boolean,
     rangeFilter: String?,
     availableRanges: List<String>,
     peakCount: Int,
     isDirty: Boolean,
+    onRarityFilter: (String?) -> Unit,
     onSortMode: (PeakSortMode) -> Unit,
     onMythicFilter: (Boolean) -> Unit,
     onRangeFilter: (String?) -> Unit,
@@ -683,6 +789,11 @@ private fun CimasFiltersPanel(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Counts from the full peak set (web computes from `peaks` = all)
+    val rarityCounts = remember(allPeaks) { allPeaks.groupingBy { it.rarityId }.eachCount() }
+    val mythicCount  = remember(allPeaks) { allPeaks.count { it.isMythic } }
+    val rangeCounts  = remember(allPeaks) { allPeaks.mapNotNull { it.mountainRange }.groupingBy { it }.eachCount() }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -701,17 +812,66 @@ private fun CimasFiltersPanel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.profile_filter_title), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PeakNavyDark)
+                Text(stringResource(R.string.profile_filter_title), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = PeakNavyDark)
                 if (isDirty) {
                     TextButton(onClick = onClearAll) {
-                        Text(stringResource(R.string.profile_filter_clearAll), fontSize = 13.sp, color = PeakBlueActive)
+                        Text(stringResource(R.string.profile_filter_clearAll), fontSize = 13.sp, color = Color(0xFF0369A1))
                     }
                 }
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Sort
-            Text(stringResource(R.string.profile_filter_sort), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PeakNavyLight, letterSpacing = 1.sp)
+            // ── RAREZA (all rarities + mythic at end) ──
+            FilterSectionLabel(stringResource(R.string.profile_filter_rarity))
+            Spacer(Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                rarities.forEach { r ->
+                    val color     = runCatching { Color(android.graphics.Color.parseColor(r.color)) }.getOrDefault(PeakClimbedGreen)
+                    val colorDark = runCatching { Color(android.graphics.Color.parseColor(r.colorDark)) }.getOrDefault(PeakBlueDark)
+                    val active    = rarityFilter == r.id
+                    RarityFilterPill(
+                        glyph     = "✿",
+                        label     = r.label,
+                        count     = rarityCounts[r.id] ?: 0,
+                        color     = color,
+                        colorDark = colorDark,
+                        active    = active,
+                        onClick   = { onRarityFilter(if (active) null else r.id) },
+                    )
+                }
+                // Mythic pill at the end of the rarity row
+                RarityFilterPill(
+                    glyph     = "⭐",
+                    label     = "Mythic",
+                    count     = mythicCount,
+                    color     = Color(0xFFF59E0B),
+                    colorDark = Color(0xFF92400E),
+                    active    = mythicFilter,
+                    onClick   = { onMythicFilter(!mythicFilter) },
+                )
+            }
+
+            // ── CORDILLERA ──
+            if (availableRanges.isNotEmpty()) {
+                Spacer(Modifier.height(20.dp))
+                FilterSectionLabel(stringResource(R.string.profile_filter_range))
+                Spacer(Modifier.height(8.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    availableRanges.forEach { range ->
+                        val active = rangeFilter == range
+                        TextFilterPill(
+                            label   = range,
+                            count   = rangeCounts[range],
+                            active  = active,
+                            onClick = { onRangeFilter(if (active) null else range) },
+                        )
+                    }
+                }
+            }
+
+            // ── ORDENAR POR ──
+            Spacer(Modifier.height(20.dp))
+            FilterSectionLabel(stringResource(R.string.profile_filter_sort))
             Spacer(Modifier.height(8.dp))
             val sortOptions = listOf(
                 PeakSortMode.ALTITUDE_DESC to R.string.profile_sort_altDesc,
@@ -722,57 +882,12 @@ private fun CimasFiltersPanel(
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 sortOptions.forEach { (mode, labelRes) ->
-                    val active = sortMode == mode
-                    FilterChip(
-                        selected = active,
-                        onClick  = { onSortMode(mode) },
-                        label    = { Text(stringResource(labelRes), fontSize = 13.sp) },
-                        colors   = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = PeakBlueActive,
-                            selectedLabelColor     = Color.White,
-                        ),
+                    TextFilterPill(
+                        label   = stringResource(labelRes),
+                        count   = null,
+                        active  = sortMode == mode,
+                        onClick = { onSortMode(mode) },
                     )
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-
-            // Mythic
-            Text(stringResource(R.string.profile_filter_rarity), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PeakNavyLight, letterSpacing = 1.sp)
-            Spacer(Modifier.height(8.dp))
-            FilterChip(
-                selected = mythicFilter,
-                onClick  = { onMythicFilter(!mythicFilter) },
-                label    = { Text(stringResource(R.string.profile_filter_mythic), fontSize = 13.sp) },
-                colors   = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(0xFFFFFBEB),
-                    selectedLabelColor     = Color(0xFF92400E),
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled              = true,
-                    selected             = mythicFilter,
-                    selectedBorderColor  = Color(0xFFFDE68A),
-                    selectedBorderWidth  = 1.dp,
-                ),
-            )
-
-            // Mountain range (only if multiple ranges available)
-            if (availableRanges.size > 1) {
-                Spacer(Modifier.height(16.dp))
-                Text(stringResource(R.string.profile_filter_range), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PeakNavyLight, letterSpacing = 1.sp)
-                Spacer(Modifier.height(8.dp))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    availableRanges.forEach { range ->
-                        val active = rangeFilter == range
-                        FilterChip(
-                            selected = active,
-                            onClick  = { onRangeFilter(if (active) null else range) },
-                            label    = { Text(range, fontSize = 12.sp) },
-                            colors   = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = PeakBlueActive,
-                                selectedLabelColor     = Color.White,
-                            ),
-                        )
-                    }
                 }
             }
 
@@ -786,7 +901,7 @@ private fun CimasFiltersPanel(
                 Text(
                     text       = stringResource(R.string.profile_filter_showN, peakCount),
                     fontSize   = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.ExtraBold,
                 )
             }
             Spacer(Modifier.height(8.dp))
