@@ -69,7 +69,7 @@ private fun DetailContent(ascent: Ascent, onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        text     = ascent.peak.name,
+                        text     = ascent.peak.displayName,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style    = MaterialTheme.typography.titleLarge,
@@ -100,7 +100,7 @@ private fun DetailContent(ascent: Ascent, onBack: () -> Unit) {
             ),
         ) {
             // Hero image
-            item { HeroImage(photo = heroPhoto, peakName = ascent.peak.name, altitudeM = ascent.peak.altitudeM) }
+            item { HeroImage(photo = heroPhoto, peakName = ascent.peak.displayName, altitudeM = ascent.peak.altitudeM) }
 
             // Peak info card
             item {
@@ -210,7 +210,7 @@ private fun PeakInfoCard(ascent: Ascent) {
     ) {
         // Peak name + range/country
         Text(
-            text          = ascent.peak.name,
+            text          = ascent.peak.displayName,
             fontSize      = 22.sp,
             fontWeight    = FontWeight.ExtraBold,
             color         = MaterialTheme.colorScheme.onSurface,

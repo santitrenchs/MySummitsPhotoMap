@@ -94,7 +94,10 @@ data class Peak(
     val isMythic: Boolean? = null,
     val elevationProfile: ElevationProfileData? = null,
     val nearbyPeaks: List<NearbyPeak>? = null,
-)
+) {
+    /** Latin transliteration when [name] is non-Western (mirrors web peakDisplayName). */
+    val displayName: String get() = com.peakadex.app.core.util.peakDisplayName(name, nameEn)
+}
 
 @Serializable
 data class NearbyPeak(
@@ -106,7 +109,9 @@ data class NearbyPeak(
     val altitudeM: Int,
     val rarityId: String? = null,
     val distanceM: Int? = null,
-)
+) {
+    val displayName: String get() = com.peakadex.app.core.util.peakDisplayName(name, nameEn)
+}
 
 // MARK: - Ascent
 

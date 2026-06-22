@@ -1021,7 +1021,7 @@ private suspend fun updateMapSources(
                         Point.fromLngLat(ascent.peak.longitude, ascent.peak.latitude),
                     ).apply {
                         addStringProperty("id",        ascent.peakId)
-                        addStringProperty("name",      ascent.peak.name)
+                        addStringProperty("name",      ascent.peak.displayName)
                         addNumberProperty("altitudeM", ascent.peak.altitudeM)
                         addStringProperty("iconImage", "peak-photo-${ascent.peakId}")
                     }
@@ -1039,7 +1039,7 @@ private suspend fun updateMapSources(
                         Point.fromLngLat(peak.longitude, peak.latitude),
                     ).apply {
                         addStringProperty("id",          peak.id)
-                        addStringProperty("name",        peak.name)
+                        addStringProperty("name",        peak.displayName)
                         addNumberProperty("altitudeM",   peak.altitudeM)
                         addStringProperty("rarityColor", rarityColor)
                     }
@@ -1260,7 +1260,7 @@ private fun SearchResultsList(
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(peak.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text(peak.displayName, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                     val sub = listOfNotNull(peak.mountainRange, "${peak.altitudeM} m").joinToString(" · ")
                     if (sub.isNotEmpty()) {
                         Text(sub, fontSize = 12.sp, color = PeakMuted)
@@ -1428,7 +1428,7 @@ private fun PeakDetailSheet(
                     verticalAlignment     = Alignment.Top,
                 ) {
                     Text(
-                        text       = peak.name,
+                        text       = peak.displayName,
                         fontSize   = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color      = PeakTextHeadline,
@@ -1483,7 +1483,7 @@ private fun PeakDetailSheet(
             if (ascent?.photoUrl != null) {
                 coil3.compose.AsyncImage(
                     model              = ascent.photoUrl,
-                    contentDescription = peak.name,
+                    contentDescription = peak.displayName,
                     contentScale       = ContentScale.Crop,
                     modifier           = Modifier
                         .fillMaxWidth()
@@ -1503,7 +1503,7 @@ private fun PeakDetailSheet(
                 if (ascent != null) {
                     // Climbed: "Ver capturas" (ghost) + "Capturar" (dark)
                     OutlinedButton(
-                        onClick  = { onDismiss(); onNavigateToCards(peak.id, peak.name) },
+                        onClick  = { onDismiss(); onNavigateToCards(peak.id, peak.displayName) },
                         modifier = Modifier.weight(1f).height(40.dp),
                         shape    = RoundedCornerShape(10.dp),
                         border   = BorderStroke(1.dp, PeakSlate),
@@ -1512,7 +1512,7 @@ private fun PeakDetailSheet(
                         Text(stringResource(R.string.atlas_btn_view_ascents), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                     Button(
-                        onClick  = { onDismiss(); onNavigateToNewAscent(peak.id, peak.name) },
+                        onClick  = { onDismiss(); onNavigateToNewAscent(peak.id, peak.displayName) },
                         modifier = Modifier.weight(1f).height(40.dp),
                         shape    = RoundedCornerShape(10.dp),
                         colors   = ButtonDefaults.buttonColors(containerColor = PeakSlate),
@@ -1522,7 +1522,7 @@ private fun PeakDetailSheet(
                 } else {
                     // Unclimbed: single full-width "Capturar" button
                     Button(
-                        onClick  = { onDismiss(); onNavigateToNewAscent(peak.id, peak.name) },
+                        onClick  = { onDismiss(); onNavigateToNewAscent(peak.id, peak.displayName) },
                         modifier = Modifier.fillMaxWidth().height(40.dp),
                         shape    = RoundedCornerShape(10.dp),
                         colors   = ButtonDefaults.buttonColors(containerColor = PeakSlate),
@@ -1845,7 +1845,7 @@ private fun PeaksListPanel(
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                peak.name,
+                                peak.displayName,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize   = 15.sp,
                                 maxLines   = 1,

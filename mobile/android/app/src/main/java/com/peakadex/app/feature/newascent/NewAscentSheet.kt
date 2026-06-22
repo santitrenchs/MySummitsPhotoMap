@@ -888,7 +888,7 @@ private fun PeakResultRow(peak: Peak, onClick: () -> Unit) {
         verticalAlignment     = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(peak.name, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = PeakNavyDark)
+            Text(peak.displayName, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = PeakNavyDark)
             peak.mountainRange?.let { Text(it, fontSize = 12.sp, color = PeakSubtle) }
         }
         Text("${peak.altitudeM} m", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PeakBlueActive)
