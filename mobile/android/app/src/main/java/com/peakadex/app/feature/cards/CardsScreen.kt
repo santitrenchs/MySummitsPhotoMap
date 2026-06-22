@@ -990,10 +990,10 @@ internal fun CardFront(
                     // Landscape: blurred cover background + full photo contained on top
                     AsyncImage(model = heroUrl, contentDescription = null, contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().blur(24.dp + photoBlur))
-                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Fit,
+                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.displayName, contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize().blur(photoBlur))
                 } else {
-                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().blur(photoBlur))
+                    AsyncImage(model = heroUrl, contentDescription = ascent.peak.displayName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().blur(photoBlur))
                 }
             } else {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("🏔️", fontSize = 52.sp) }
@@ -1025,7 +1025,7 @@ internal fun CardFront(
             // Name + altitude match the card back (CardBack) exactly so they don't
             // visibly change when the card flips. Route is front-only, below.
             Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 14.dp, vertical = 14.dp)) {
-                Text(ascent.peak.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
+                Text(ascent.peak.displayName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
                     letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black,
                     color = Color.White, letterSpacing = (-0.04).em)
@@ -1254,7 +1254,7 @@ private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Co
                 )
 
                 if (pos.y < labelBottomLimit) {
-                    val rawLabel = "${nearby.name} · ${nearby.altitudeM} m"
+                    val rawLabel = "${nearby.displayName} · ${nearby.altitudeM} m"
                     val label = fitTextToWidth(rawLabel, labelPaint, labelMaxWidth)
                     val labelWidth = labelPaint.measureText(label)
                     val baselineY = pos.y + (labelHeight / 2f) - labelMetrics.descent
@@ -1464,7 +1464,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                         Text(ascent.peak.mountainRange, fontSize = 11.sp, color = Color(0xB3FFFFFF))
                         Spacer(Modifier.height(2.dp))
                     }
-                    Text(ascent.peak.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
+                    Text(ascent.peak.displayName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
                         letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black,
                         color = Color.White, letterSpacing = (-0.04).em)

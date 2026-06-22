@@ -121,7 +121,7 @@ class NewAscentViewModel : ViewModel() {
             step                  = NewAscentStep.FORM,
             editAscentId          = ascent.id,
             selectedPeak          = ascent.peak,
-            peakQuery             = ascent.peak.name,
+            peakQuery             = ascent.peak.displayName,
             date                  = ascent.date.take(10),
             route                 = ascent.route ?: "",
             notes                 = (ascent.description ?: "").take(NOTES_MAX_CHARS),
@@ -215,7 +215,7 @@ class NewAscentViewModel : ViewModel() {
                     val peak = api.getPeak(s.initialPeakId).peak
                     _state.update { st ->
                         if (st.selectedPeak?.id == peak.id)
-                            st.copy(selectedPeak = peak, peakQuery = peak.name, isPeakDropdownOpen = false)
+                            st.copy(selectedPeak = peak, peakQuery = peak.displayName, isPeakDropdownOpen = false)
                         else st
                     }
                 }
@@ -245,7 +245,7 @@ class NewAscentViewModel : ViewModel() {
     }
 
     fun onPeakSelected(peak: Peak) = _state.update {
-        it.copy(selectedPeak = peak, peakQuery = peak.name, peakResults = emptyList(), isPeakDropdownOpen = false)
+        it.copy(selectedPeak = peak, peakQuery = peak.displayName, peakResults = emptyList(), isPeakDropdownOpen = false)
     }
 
     fun onPeakDropdownDismiss() = _state.update { it.copy(isPeakDropdownOpen = false) }
