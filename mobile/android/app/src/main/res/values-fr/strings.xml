@@ -427,7 +427,7 @@
     <string name="profile_filter_button">Filtres</string>
     <string name="profile_filter_title">Trier et filtrer</string>
     <string name="profile_filter_clearAll">Tout effacer</string>
-    <string name="profile_filter_sort">TRIER</string>
+    <string name="profile_filter_sort">Trier par</string>
     <string name="profile_filter_rarity">RARETÉ</string>
     <string name="profile_filter_range">MASSIF</string>
     <string name="profile_filter_mythic">⭐ Mythique</string>

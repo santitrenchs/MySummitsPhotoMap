@@ -427,7 +427,7 @@
     <string name="profile_filter_button">Filter</string>
     <string name="profile_filter_title">Sortieren und filtern</string>
     <string name="profile_filter_clearAll">Alles löschen</string>
-    <string name="profile_filter_sort">SORTIEREN</string>
+    <string name="profile_filter_sort">Sortieren nach</string>
     <string name="profile_filter_rarity">SELTENHEIT</string>
     <string name="profile_filter_range">GEBIRGE</string>
     <string name="profile_filter_mythic">⭐ Mythisch</string>

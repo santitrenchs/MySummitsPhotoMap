@@ -75,7 +75,7 @@
     <string name="profile_filter_button">Filters</string>
     <string name="profile_filter_title">Sort &amp; filter</string>
     <string name="profile_filter_clearAll">Clear all</string>
-    <string name="profile_filter_sort">SORT BY</string>
+    <string name="profile_filter_sort">Sort by</string>
     <string name="profile_filter_rarity">RARITY</string>
     <string name="profile_filter_range">MOUNTAIN RANGE</string>
     <string name="profile_filter_mythic">⭐ Mythic</string>

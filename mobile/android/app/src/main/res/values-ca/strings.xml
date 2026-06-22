@@ -427,7 +427,7 @@
     <string name="profile_filter_button">Filtres</string>
     <string name="profile_filter_title">Ordenar i filtrar</string>
     <string name="profile_filter_clearAll">Esborrar tot</string>
-    <string name="profile_filter_sort">ORDENAR</string>
+    <string name="profile_filter_sort">Ordenar per</string>
     <string name="profile_filter_rarity">RARESA</string>
     <string name="profile_filter_range">SERRALADA</string>
     <string name="profile_filter_mythic">⭐ Mític</string>

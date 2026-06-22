@@ -75,7 +75,7 @@
     <string name="profile_filter_button">Filtros</string>
     <string name="profile_filter_title">Ordenar y filtrar</string>
     <string name="profile_filter_clearAll">Limpiar todo</string>
-    <string name="profile_filter_sort">ORDENAR</string>
+    <string name="profile_filter_sort">Ordenar por</string>
     <string name="profile_filter_rarity">RAREZA</string>
     <string name="profile_filter_range">CORDILLERA</string>
     <string name="profile_filter_mythic">⭐ Mítico</string>
