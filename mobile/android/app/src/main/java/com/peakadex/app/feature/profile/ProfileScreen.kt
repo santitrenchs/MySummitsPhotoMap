@@ -934,33 +934,30 @@ private fun PeakRowCard(
         shadowElevation = 2.dp,
         border          = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier          = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Left rarity strip
+        // IntrinsicSize.Min so strip + photo fill the height driven by the content column
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            // Left rarity strip — fills card height
             Box(
                 Modifier
                     .width(4.dp)
-                    .height(96.dp)
+                    .fillMaxHeight()
                     .background(rarityColor),
             )
 
-            // Photo thumbnail
+            // Photo thumbnail — fills card height, fixed width
             Box(
                 modifier = Modifier
                     .width(88.dp)
-                    .height(96.dp)
+                    .fillMaxHeight()
                     .background(Color(0xFFE5E7EB)),
             ) {
                 if (peak.firstPhotoUrl != null) {
                     AsyncImage(
-                        model             = peak.firstPhotoUrl,
+                        model              = peak.firstPhotoUrl,
                         contentDescription = null,
-                        contentScale      = ContentScale.Crop,
-                        modifier          = Modifier.fillMaxSize(),
+                        contentScale       = ContentScale.Crop,
+                        modifier           = Modifier.fillMaxSize(),
                     )
-                    // Bottom gradient + altitude overlay
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -980,7 +977,6 @@ private fun PeakRowCard(
                         modifier   = Modifier.align(Alignment.BottomStart).padding(start = 5.dp, bottom = 4.dp),
                     )
                 } else {
-                    // Fallback: altitude centered
                     Text(
                         text       = "${peak.altitudeM} m",
                         fontSize   = 10.sp,
@@ -989,27 +985,18 @@ private fun PeakRowCard(
                         modifier   = Modifier.align(Alignment.Center),
                     )
                 }
-                // ×N capture stack badge (when count > 1)
                 if (peak.count > 1) {
-                    Row(
+                    Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(4.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color.Black.copy(alpha = 0.55f))
                             .padding(horizontal = 5.dp, vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        Text(
-                            text       = "×${peak.count}",
-                            fontSize   = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color      = Color.White,
-                        )
+                        Text(text = "×${peak.count}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
-                // Mythic glow badge
                 if (peak.isMythic) {
                     Text(
                         text     = "✦",
@@ -1020,79 +1007,77 @@ private fun PeakRowCard(
                 }
             }
 
-            // Content column
+            // Content column — drives card height
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 10.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                // Name
-                Text(
-                    text       = peak.name,
-                    fontSize   = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = PeakNavyDark,
-                    maxLines   = 1,
-                    overflow   = TextOverflow.Ellipsis,
-                )
-
-                // Rarity pill
-                if (rarity != null) {
-                    CompactRarityPill(
-                        label     = rarity.label,
-                        color     = rarityColor,
-                        darkColor = rarityColorDark,
-                    )
-                }
-
-                // Date row: ÚLTIMA + date | PRIMERA + firstDate (when count > 1)
-                Row(
-                    modifier          = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                // Name + mountain range on same row
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text       = stringResource(R.string.profile_date_ultima),
-                        fontSize   = 9.sp,
+                        text       = peak.name,
+                        fontSize   = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color      = PeakNavyLight,
-                        letterSpacing = 0.5.sp,
+                        color      = PeakNavyDark,
+                        maxLines   = 1,
+                        overflow   = TextOverflow.Ellipsis,
+                        modifier   = Modifier.weight(1f),
                     )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text       = formatDate(peak.lastDate),
-                        fontSize   = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color      = PeakNavyMid,
-                    )
-                    if (peak.count > 1 && !peak.firstDate.isNullOrEmpty() && peak.firstDate != peak.lastDate) {
-                        Spacer(Modifier.width(10.dp))
+                    if (!peak.mountainRange.isNullOrBlank()) {
+                        Spacer(Modifier.width(6.dp))
                         Text(
-                            text       = stringResource(R.string.profile_date_primera),
-                            fontSize   = 9.sp,
-                            fontWeight = FontWeight.Bold,
+                            text       = peak.mountainRange,
+                            fontSize   = 10.sp,
                             color      = PeakNavyLight,
-                            letterSpacing = 0.5.sp,
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text       = formatDate(peak.firstDate ?: ""),
-                            fontSize   = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color      = PeakNavyLight,
+                            maxLines   = 1,
+                            overflow   = TextOverflow.Ellipsis,
+                            textAlign  = TextAlign.End,
+                            modifier   = Modifier.widthIn(max = 100.dp),
                         )
                     }
                 }
 
-                // Mountain range (if present)
-                if (!peak.mountainRange.isNullOrBlank()) {
+                // Rarity pill
+                if (rarity != null) {
+                    CompactRarityPill(label = rarity.label, color = rarityColor, darkColor = rarityColorDark)
+                }
+
+                // ÚLTIMA label + date
+                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Text(
-                        text       = peak.mountainRange,
-                        fontSize   = 11.sp,
-                        color      = PeakNavyLight,
-                        maxLines   = 1,
-                        overflow   = TextOverflow.Ellipsis,
+                        text          = stringResource(R.string.profile_date_ultima),
+                        fontSize      = 9.sp,
+                        fontWeight    = FontWeight.Bold,
+                        color         = PeakNavyLight,
+                        letterSpacing = 0.5.sp,
                     )
+                    Text(
+                        text       = formatDate(peak.lastDate),
+                        fontSize   = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color      = PeakNavyMid,
+                    )
+                }
+
+                // PRIMERA label + date (only when count > 1 and dates differ)
+                if (peak.count > 1 && !peak.firstDate.isNullOrEmpty() && peak.firstDate != peak.lastDate) {
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text(
+                            text          = stringResource(R.string.profile_date_primera),
+                            fontSize      = 9.sp,
+                            fontWeight    = FontWeight.Bold,
+                            color         = PeakNavyLight,
+                            letterSpacing = 0.5.sp,
+                        )
+                        Text(
+                            text       = formatDate(peak.firstDate ?: ""),
+                            fontSize   = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = PeakNavyLight,
+                        )
+                    }
                 }
             }
         }
