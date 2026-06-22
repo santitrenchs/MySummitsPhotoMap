@@ -343,7 +343,12 @@ private fun CompactRarityPill(label: String, color: Color, darkColor: Color) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        RarityDot(color)
+        Text(
+            text       = "✿",
+            fontSize   = 11.sp,
+            lineHeight = 11.sp,
+            color      = color,
+        )
         Text(
             text       = label,
             fontSize   = 10.sp,
