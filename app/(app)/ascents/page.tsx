@@ -5,9 +5,9 @@ import { AscentsClient } from "@/components/ascents/AscentsClient";
 import { OpenAscentModalButton } from "@/components/ascents/OpenAscentModalButton";
 import { getServerT, getLocale } from "@/lib/i18n/server";
 import { prisma } from "@/lib/db/client";
-import { fetchFeedPage, type View, type Rarity } from "@/lib/services/ascent-feed";
+import { fetchFeedPage, type View } from "@/lib/services/ascent-feed";
+import { isFeedRarity } from "@/lib/services/feed-merge";
 
-const RARITIES: ReadonlySet<Rarity> = new Set(["daisy", "gentian", "edelweiss", "saxifrage", "cinquefoil", "snow_lotus"]);
 const VIEWS: ReadonlySet<View> = new Set(["mine", "friends", "with-me", "person"]);
 
 export default async function AscentsPage({
@@ -37,7 +37,7 @@ export default async function AscentsPage({
   const viewParam = getStr("view");
   const initialView: View = highlight ? "mine" : (viewParam && VIEWS.has(viewParam as View) ? viewParam as View : "friends");
   const rarityParam = getStr("rarity");
-  const initialRarity = rarityParam && RARITIES.has(rarityParam as Rarity) ? rarityParam as Rarity : undefined;
+  const initialRarity = rarityParam && isFeedRarity(rarityParam) ? rarityParam : undefined;
 
   const { ascents, hasMore, nextBeforeOwn, nextBeforeFriends } = await fetchFeedPage({
     userId: session.user.id,

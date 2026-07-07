@@ -60,6 +60,22 @@ describe("getT()", () => {
     const t = getT("xx");
     expect(t.save).toBe("Save");
   });
+
+  it("every locale exposes exactly the same key set as English", () => {
+    // Defense-in-depth with scripts/check-i18n.js — catches a locale drifting from Dict
+    const enKeys = Object.keys(getT("en")).sort();
+    for (const locale of ["es", "ca", "fr", "de"]) {
+      expect(Object.keys(getT(locale)).sort(), `locale ${locale}`).toEqual(enKeys);
+    }
+  });
+
+  it("no locale has empty string values", () => {
+    for (const locale of ["en", "es", "ca", "fr", "de"]) {
+      const dict = getT(locale) as Record<string, string>;
+      const empties = Object.entries(dict).filter(([, v]) => typeof v === "string" && v.trim() === "");
+      expect(empties, `locale ${locale}`).toEqual([]);
+    }
+  });
 });
 
 describe("isValidLocale()", () => {

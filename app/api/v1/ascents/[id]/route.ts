@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { getV1Session } from "@/lib/api-v1/auth";
 import { deleteAscent } from "@/lib/services/ascent.service";
+import { AscentPatchSchemaV1, buildAscentPatchData } from "@/lib/services/ascent-patch";
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { recomputeUserStats } from "@/lib/services/stats.service";
-
-const PatchSchema = z.object({
-  peakId:      z.string().uuid().optional(),
-  route:       z.string().max(500).nullable().optional(),
-  description: z.string().max(2000).nullable().optional(),
-  date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-});
 
 export async function GET(
   req: NextRequest,
@@ -45,7 +38,7 @@ export async function PATCH(
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
 
-  const parsed = PatchSchema.safeParse(body);
+  const parsed = AscentPatchSchemaV1.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.errors }, { status: 400 });
   }
@@ -55,11 +48,7 @@ export async function PATCH(
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const input = parsed.data;
-  const data: Record<string, unknown> = {};
-  if ("peakId"      in input) data.peakId      = input.peakId;
-  if ("route"       in input) data.route       = input.route ?? null;
-  if ("description" in input) data.description = input.description ?? null;
-  if ("date"        in input) data.date        = input.date ? new Date(input.date) : null;
+  const data = buildAscentPatchData(input);
 
   const updated = await db.ascent.update({ where: { id }, data });
 

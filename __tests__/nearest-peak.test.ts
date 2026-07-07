@@ -36,6 +36,20 @@ describe("nearestPeak", () => {
     expect(result?.id).toBe("aneto");
   });
 
+  it("includes a peak exactly at the threshold distance (<=, not <)", () => {
+    // 1° of latitude ≈ 111.19 km with R=6371. A peak 0.5° north is ~55.6 km away.
+    const peak = { id: "north", latitude: 43.1314, longitude: 0.6558 };
+    const dist = 55.597; // measured haversine distance for this pair
+    expect(nearestPeak(42.6314, 0.6558, [peak], dist + 0.01)?.id).toBe("north");
+    expect(nearestPeak(42.6314, 0.6558, [peak], dist - 0.01)).toBeNull();
+  });
+
+  it("picks the closest among several peaks inside the threshold", () => {
+    // Test point sits on Maladeta; Aneto is ~3 km away — both within 5 km.
+    const result = nearestPeak(42.6567, 0.6444, [ANETO, MALADETA]);
+    expect(result?.id).toBe("maladeta");
+  });
+
   it("preserves all extra fields on the returned peak", () => {
     const peak = { id: "x", latitude: 42.63, longitude: 0.65, altitudeM: 3404, name: "Test" };
     const result = nearestPeak(42.63, 0.65, [peak]);

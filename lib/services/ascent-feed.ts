@@ -1,6 +1,16 @@
 import { prisma } from "@/lib/db/client";
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { getPeakStats } from "@/lib/services/peak.service";
+import {
+  buildFilters,
+  mergeFeedStreams,
+  nextStreamCursor,
+  type View,
+  type Rarity,
+  type TimeRange,
+} from "@/lib/services/feed-merge";
+
+export type { View, Rarity, TimeRange };
 
 export const PAGE_SIZE = 10;
 
@@ -80,57 +90,7 @@ export function enrichAscent(
   };
 }
 
-export type View = "mine" | "friends" | "with-me" | "person";
-export type Rarity = "daisy" | "gentian" | "edelweiss" | "saxifrage" | "cinquefoil" | "snow_lotus";
-export type TimeRange = "all" | "month" | "year";
-
-function rarityRange(r: Rarity): { min: number; max: number | null } {
-  switch (r) {
-    case "daisy": return { min: 0, max: 1500 };
-    case "gentian": return { min: 1500, max: 3000 };
-    case "edelweiss": return { min: 3000, max: 5000 };
-    case "saxifrage": return { min: 5000, max: 7000 };
-    case "cinquefoil": return { min: 7000, max: 8000 };
-    case "snow_lotus": return { min: 8000, max: null };
-  }
-}
-
-// Build the "filter" portion of a WHERE clause — applied to both own and friends queries.
-// Excludes the stream selector (createdBy / tenantId) and the cursor (date.lt), which are
-// stream-specific.
-function buildFilters(opts: {
-  peakId?: string;
-  month?: string;
-  rarity?: Rarity;
-  mythic?: boolean;
-  timeRange?: TimeRange;
-}) {
-  const conditions: Record<string, unknown>[] = [];
-  if (opts.peakId) conditions.push({ peakId: opts.peakId });
-
-  // Date range — explicit month wins over timeRange shortcut
-  if (opts.month) {
-    const [y, m] = opts.month.split("-").map((s) => parseInt(s, 10));
-    const start = new Date(Date.UTC(y, m - 1, 1));
-    const end = new Date(Date.UTC(y, m, 1));
-    conditions.push({ date: { gte: start, lt: end } });
-  } else if (opts.timeRange === "month") {
-    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    conditions.push({ date: { gte: cutoff } });
-  } else if (opts.timeRange === "year") {
-    const yr = new Date().getFullYear();
-    conditions.push({ date: { gte: new Date(Date.UTC(yr, 0, 1)), lt: new Date(Date.UTC(yr + 1, 0, 1)) } });
-  }
-
-  if (opts.mythic) {
-    conditions.push({ peak: { isMythic: true } });
-  } else if (opts.rarity) {
-    const { min, max } = rarityRange(opts.rarity);
-    conditions.push({ peak: { altitudeM: max !== null ? { gte: min, lt: max } : { gte: min } } });
-  }
-
-  return conditions;
-}
+// View / Rarity / TimeRange types + buildFilters live in feed-merge.ts (pure, unit-tested).
 
 const ASCENT_INCLUDE = {
   peak: { select: { id: true, name: true, nameEn: true, altitudeM: true, isMythic: true, mountainRange: true, latitude: true, longitude: true } },
@@ -288,30 +248,14 @@ export async function fetchFeedPage({
     };
   }
 
-  const byDate = (a: { date: string }, b: { date: string }) =>
-    new Date(b.date).getTime() - new Date(a.date).getTime();
-
-  let ascents;
-  if (!skipUnseen) {
-    const unseenFriends = friendAscents.filter((a) => a.isUnseen).sort(byDate);
-    const rest = [...myAscents, ...friendAscents.filter((a) => !a.isUnseen)].sort(byDate);
-    ascents = [...unseenFriends, ...rest];
-  } else {
-    ascents = [...myAscents, ...friendAscents].sort(byDate);
-  }
-
-  // Inject highlight ascent if not already present
-  if (highlightAscent && !ascents.find((a) => a.id === highlightAscent!.id)) {
-    ascents = [...ascents, highlightAscent].sort(byDate);
-  }
+  // Canonical order (unseen-first) + highlight injection — pure logic in feed-merge.ts.
+  const ascents = mergeFeedStreams({ myAscents, friendAscents, highlightAscent, skipUnseen });
 
   // Per-stream cursors for next page. A stream is "exhausted" when it returns less than PAGE_SIZE
   // (no more items older than its current cursor). Tracking them separately prevents one stream's
   // older items from causing the other stream's items to be skipped.
-  const nextBeforeOwn =
-    myRaw.length === PAGE_SIZE ? myRaw[myRaw.length - 1].date.toISOString() : null;
-  const nextBeforeFriends =
-    friendsRaw.length === PAGE_SIZE ? friendsRaw[friendsRaw.length - 1].date.toISOString() : null;
+  const nextBeforeOwn = nextStreamCursor(myRaw, PAGE_SIZE);
+  const nextBeforeFriends = nextStreamCursor(friendsRaw, PAGE_SIZE);
   const hasMore = nextBeforeOwn !== null || nextBeforeFriends !== null;
 
   return { ascents, hasMore, nextBeforeOwn, nextBeforeFriends };

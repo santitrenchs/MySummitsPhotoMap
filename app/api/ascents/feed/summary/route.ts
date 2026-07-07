@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db/client";
-import { fetchFeedSummary, type View, type Rarity, type TimeRange } from "@/lib/services/ascent-feed";
+import { fetchFeedSummary, type View, type TimeRange } from "@/lib/services/ascent-feed";
+import { isFeedRarity } from "@/lib/services/feed-merge";
 
-const RARITIES: ReadonlySet<Rarity> = new Set([
-  "daisy", "gentian", "edelweiss", "saxifrage", "cinquefoil", "snow_lotus",
-]);
 const VIEWS: ReadonlySet<View> = new Set(["mine", "friends", "with-me", "person"]);
 const TIME_RANGES: ReadonlySet<TimeRange> = new Set(["all", "month", "year"]);
 
@@ -34,7 +32,7 @@ export async function GET(req: NextRequest) {
     personId: p.get("personId") ?? undefined,
     peakId: p.get("peakId") ?? undefined,
     month: p.get("month") ?? undefined,
-    rarity: rarityStr && RARITIES.has(rarityStr as Rarity) ? (rarityStr as Rarity) : undefined,
+    rarity: rarityStr && isFeedRarity(rarityStr) ? rarityStr : undefined,
     mythic: p.get("mythic") === "1",
     timeRange: timeRangeStr && TIME_RANGES.has(timeRangeStr as TimeRange) ? (timeRangeStr as TimeRange) : undefined,
   });

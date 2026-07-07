@@ -127,23 +127,12 @@ export async function getHomeData(userId: string): Promise<HomeData> {
   const peaks6500plus = uniquePeakAltitudes.filter((m) => m >= 6500).length;
   const peaks8000plus = uniquePeakAltitudes.filter((m) => m >= 8000).length;
 
-  function altToRarity(m: number): keyof typeof rarityBreakdown {
-    if (m >= 8000) return "snow_lotus";
-    if (m >= 7000) return "cinquefoil";
-    if (m >= 6000) return "saxifrage";
-    if (m >= 5000) return "draba";
-    if (m >= 4000) return "edelweiss";
-    if (m >= 3000) return "tundra";
-    if (m >= 2000) return "gentian";
-    if (m >= 1000) return "heather";
-    return "daisy";
-  }
   const rarityBreakdown = { daisy: 0, heather: 0, gentian: 0, tundra: 0, edelweiss: 0, draba: 0, saxifrage: 0, cinquefoil: 0, snow_lotus: 0 };
   const seenPeakIds = new Set<string>();
   for (const a of myAscents) {
     if (!seenPeakIds.has(a.peakId)) {
       seenPeakIds.add(a.peakId);
-      rarityBreakdown[altToRarity(a.peak.altitudeM)]++;
+      rarityBreakdown[getRarityId(a.peak.altitudeM)]++;
     }
   }
 
