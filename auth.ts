@@ -17,8 +17,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     createUser: async (data) => {
       const user = await prisma.$transaction(async (tx) => {
         const username = await generateUniqueUsername(data.name ?? data.email ?? "user");
+        // Build the row explicitly — never spread `data`. The OAuth adapter
+        // includes fields that don't exist on User (e.g. `image`), and a blind
+        // `...data` makes Prisma throw "Unknown argument", breaking sign-up
+        // (surfaced as error=Configuration). Map `image` → `avatarUrl`.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const image = (data as any).image as string | undefined;
         const created = await tx.user.create({
-          data: { ...data, name: data.name ?? data.email ?? "user", username },
+          data: {
+            email: data.email,
+            emailVerified: data.emailVerified ?? null,
+            name: data.name ?? data.email ?? "user",
+            username,
+            avatarUrl: image ?? null,
+          },
         });
         const slug = await generateUniqueSlug(created.name ?? created.email);
         const tenant = await tx.tenant.create({
@@ -42,6 +54,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       allowDangerousEmailAccountLinking: true,
+      // Always show the Google account chooser instead of silently reusing the
+      // browser's active Google session — lets users pick/switch accounts.
+      authorization: { params: { prompt: "select_account" } },
     }),
     Credentials({
       credentials: {
