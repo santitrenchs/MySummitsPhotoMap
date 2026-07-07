@@ -111,8 +111,12 @@ export async function GET(request: Request) {
 
   if (!isNaN(north) && !isNaN(south) && !isNaN(east) && !isNaN(west)) {
     where = {
-      latitude:  { gte: south, lte: north },
-      longitude: { gte: west,  lte: east  },
+      latitude: { gte: south, lte: north },
+      // Viewports crossing the antimeridian arrive with east < west — a single
+      // gte/lte range matches nothing there. Split into the two hemibands.
+      ...(west <= east
+        ? { longitude: { gte: west, lte: east } }
+        : { OR: [{ longitude: { gte: west } }, { longitude: { lte: east } }] }),
     };
     take = 600;
   } else if (!isNaN(lat) && !isNaN(lng) && !isNaN(radius)) {

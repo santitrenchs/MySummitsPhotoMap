@@ -236,6 +236,7 @@
 
     <!-- ── Atlas — barra de cerca ────────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Cerca cim…</string>
+    <string name="atlas_search_no_results">Sense resultats</string>
     <string name="atlas_action_search">Cerca</string>
     <string name="atlas_action_close">Tanca</string>
 

@@ -102,8 +102,12 @@ export async function GET(req: NextRequest) {
 
   if (!isNaN(north) && !isNaN(south) && !isNaN(east) && !isNaN(west)) {
     where = {
-      latitude:  { gte: south, lte: north },
-      longitude: { gte: west,  lte: east  },
+      latitude: { gte: south, lte: north },
+      // Viewports crossing the antimeridian arrive with east < west — a single
+      // gte/lte range matches nothing there. Split into the two hemibands.
+      ...(west <= east
+        ? { longitude: { gte: west, lte: east } }
+        : { OR: [{ longitude: { gte: west } }, { longitude: { lte: east } }] }),
     };
     // Return fewer peaks at low zoom (large viewport) and more at high zoom
     // (small viewport where every local peak matters).
@@ -120,6 +124,13 @@ export async function GET(req: NextRequest) {
     };
     take = 50;
     includeElevationProfile = false;
+  }
+
+  // No usable search text (< 2 chars) and no valid bbox/radius params: refuse
+  // to run an unbounded full-table query. Before this guard, a 1-char `q` (or
+  // missing params) skipped every branch and returned the ENTIRE peak catalog.
+  if (!where) {
+    return NextResponse.json({ peaks: [], places: [], refugios: [] });
   }
 
   const peaks = await prisma.peak.findMany({

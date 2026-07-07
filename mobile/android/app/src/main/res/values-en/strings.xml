@@ -251,6 +251,7 @@
 
     <!-- ── Atlas — search bar ────────────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Search peak…</string>
+    <string name="atlas_search_no_results">No results</string>
     <string name="atlas_action_search">Search</string>
     <string name="atlas_action_close">Close</string>
 

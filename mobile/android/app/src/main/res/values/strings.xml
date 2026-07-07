@@ -251,6 +251,7 @@
 
     <!-- ── Atlas — barra de búsqueda ─────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Buscar pico…</string>
+    <string name="atlas_search_no_results">Sin resultados</string>
     <string name="atlas_action_search">Buscar</string>
     <string name="atlas_action_close">Cerrar</string>
 

@@ -260,13 +260,18 @@ fun AtlasScreen(
     var layersOpen    by remember { mutableStateOf(false) }
     var filtersOpen   by remember { mutableStateOf(false) }
     var geoLocating   by remember { mutableStateOf(false) }
-    val hasInitialFlown = remember { mutableStateOf(false) }
+
+    // Camera persistence across tab visits: the MapView is destroyed on every tab
+    // switch, so without this each return to Atlas re-flies to the most recent
+    // ascent, discarding wherever the user had navigated. [lat, lon, zoom]
+    val savedCameraPos  = rememberSaveable { mutableStateOf<DoubleArray?>(null) }
+    // A restored camera means the initial fly-to already happened in a past visit.
+    val hasInitialFlown = remember { mutableStateOf(savedCameraPos.value != null) }
 
     // ── Atlas onboarding sheet — shown once until user checks "don't show" ────
     val prefs = remember { context.getSharedPreferences("peakadex_prefs", android.content.Context.MODE_PRIVATE) }
     val onboardingSeen = remember { prefs.getBoolean("map_onboarding_seen", false) }
     var showOnboarding by rememberSaveable { mutableStateOf(!onboardingSeen) }
-    android.util.Log.d("AtlasOnboarding", "showOnboarding=$showOnboarding onboardingSeen=$onboardingSeen")
 
     // ── Location permission + geolocate ──────────────────────────────────────
     val locationPermLauncher = rememberLauncherForActivityResult(
@@ -298,6 +303,16 @@ fun AtlasScreen(
                     .compassEnabled(false)
                     .logoEnabled(false)
                     .attributionEnabled(false)
+                // Restore the camera from the previous tab visit so the map opens
+                // exactly where the user left it (instead of the world-default 0,0).
+                savedCameraPos.value?.let { c ->
+                    options.camera(
+                        org.maplibre.android.camera.CameraPosition.Builder()
+                            .target(LatLng(c[0], c[1]))
+                            .zoom(c[2])
+                            .build(),
+                    )
+                }
                 MapView(ctx, options).also { mv ->
                     mapViewRef.value = mv
                     // The Activity is already STARTED/RESUMED when the user navigates
@@ -390,13 +405,32 @@ fun AtlasScreen(
                                 LYR_UNCLIMBED_SINGLE,
                                 LYR_UNCLIMBED_CLUSTER,
                             )
-                            val peakId = features.firstOrNull()?.getStringProperty("id")
-                            if (peakId != null) {
-                                vm.onPeakSelectedById(peakId)
-                            } else {
-                                vm.onSelectionDismissed()
+                            val feature = features.firstOrNull()
+                            val peakId  = feature?.getStringProperty("id")
+                            when {
+                                peakId != null -> {
+                                    vm.onPeakSelectedById(peakId)
+                                    true
+                                }
+                                feature != null && feature.hasProperty("point_count") -> {
+                                    // Cluster tapped — zoom in toward it so it expands
+                                    // into individual peaks (before this, tapping a
+                                    // cluster silently dismissed the selection).
+                                    val target = (feature.geometry() as? Point)
+                                        ?.let { LatLng(it.latitude(), it.longitude()) }
+                                        ?: latLng
+                                    map.animateCamera(
+                                        CameraUpdateFactory.newLatLngZoom(
+                                            target, map.cameraPosition.zoom + 2.0,
+                                        ), 500,
+                                    )
+                                    true
+                                }
+                                else -> {
+                                    vm.onSelectionDismissed()
+                                    false
+                                }
                             }
-                            peakId != null
                         }
                     }
                 }
@@ -423,6 +457,13 @@ fun AtlasScreen(
             lifecycleOwner.lifecycle.addObserver(observer)
             onDispose {
                 lifecycleOwner.lifecycle.removeObserver(observer)
+                // Snapshot the camera BEFORE teardown so the next tab visit
+                // restores this exact position instead of re-flying.
+                mapRef.value?.cameraPosition?.let { pos ->
+                    pos.target?.let { t ->
+                        savedCameraPos.value = doubleArrayOf(t.latitude, t.longitude, pos.zoom)
+                    }
+                }
                 // Proper teardown: onPause → onStop → onDestroy.
                 // onDispose fires while the Activity is still RESUMED (tab navigation),
                 // so the lifecycle observer never receives ON_PAUSE/ON_STOP — call
@@ -588,8 +629,11 @@ fun AtlasScreen(
         }
 
         // ── Search results list ───────────────────────────────────────────────
+        // Visible for any active query of >= 2 chars: the list itself renders a
+        // spinner while searching and a "no results" row when nothing matches —
+        // before this, a slow or empty search showed NOTHING (looked frozen).
         AnimatedVisibility(
-            visible  = uiState.isSearchActive && (uiState.searchResults.isNotEmpty() || uiState.placeResults.isNotEmpty() || uiState.refugioResults.isNotEmpty()),
+            visible  = uiState.isSearchActive && uiState.searchQuery.trim().length >= 2,
             enter    = slideInVertically(),
             exit     = slideOutVertically(),
             modifier = Modifier.align(Alignment.TopCenter),
@@ -598,6 +642,7 @@ fun AtlasScreen(
                 results         = uiState.searchResults,
                 placeResults    = uiState.placeResults,
                 refugioResults  = uiState.refugioResults,
+                isSearching     = uiState.isSearching,
                 climbedPeakIds  = climbed.keys,
                 onResultClick  = { peak ->
                     vm.onSearchResultSelected(peak)
@@ -715,14 +760,22 @@ fun AtlasScreen(
                           uiState.selectedRarityIds.isNotEmpty() ||
                           uiState.mythicFilter ||
                           uiState.sortMode != SortMode.DISTANCE
+            // Counts must reflect what the user is looking at: the accumulative
+            // cache holds peaks from every area visited this session (plus, before
+            // the zoom guard, the world's 50 highest) — scope it to the camera bounds.
+            val bounds = uiState.bounds
+            val visibleViewport = remember(viewport, bounds) {
+                if (bounds == null) viewport
+                else viewport.filter { bounds.contains(it.latitude, it.longitude) }
+            }
             FiltersPanel(
                 rarities              = rarities,
                 climbed               = climbed,
-                viewport              = viewport,
+                viewport              = visibleViewport,
                 filter                = filter,
                 onFilterChanged       = vm::onFilterChanged,
                 selectedRarityIds     = selectedRarityIds,
-                onRarityFilterChanged = vm::onRarityFilterChanged,
+                onToggleRarity        = vm::toggleRarity,
                 mythicFilter          = mythicFilter,
                 onMythicFilterChanged = vm::onMythicFilterChanged,
                 sortMode              = uiState.sortMode,
@@ -1296,6 +1349,7 @@ private fun SearchResultsList(
     results: List<Peak>,
     placeResults: List<com.peakadex.app.core.model.GeocodedPlace>,
     refugioResults: List<com.peakadex.app.core.model.GeocodedPlace>,
+    isSearching: Boolean,
     climbedPeakIds: Set<String>,
     onResultClick: (Peak) -> Unit,
     onPlaceClick: (com.peakadex.app.core.model.GeocodedPlace) -> Unit,
@@ -1309,6 +1363,29 @@ private fun SearchResultsList(
             .background(androidx.compose.ui.graphics.Color.White, RoundedCornerShape(16.dp))
             .padding(vertical = 4.dp),
     ) {
+        // ── Loading / no-results row (only while there is nothing to show) ──
+        if (results.isEmpty() && placeResults.isEmpty() && refugioResults.isEmpty()) {
+            item {
+                Box(
+                    modifier         = Modifier.fillMaxWidth().padding(vertical = 18.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(20.dp),
+                            color       = PeakBlueActive,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(
+                            text     = stringResource(R.string.atlas_search_no_results),
+                            fontSize = 13.sp,
+                            color    = PeakSubtle,
+                        )
+                    }
+                }
+            }
+        }
         // ── Picos ──────────────────────────────────────────────────────────
         items(results) { peak ->
             Row(
@@ -1625,7 +1702,11 @@ private fun geoLocateNow(
         lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
             ?: lm.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
-    }.getOrNull()
+    }.getOrNull()?.takeIf {
+        // A cached fix (PASSIVE especially) can be hours old — silently flying
+        // the camera to a stale spot is worse than requesting a fresh fix below.
+        System.currentTimeMillis() - it.time <= LOCATION_MAX_AGE_MS
+    }
 
     if (loc != null) {
         map?.animateCamera(
@@ -1708,6 +1789,7 @@ private fun geoLocateNow(
 }
 
 private const val GEOLOCATE_TIMEOUT_MS = 10_000L
+private const val LOCATION_MAX_AGE_MS  = 10 * 60_000L   // reject cached fixes older than 10 min
 
 // ── Distance helper ───────────────────────────────────────────────────────────
 
@@ -2143,7 +2225,7 @@ private fun FiltersPanel(
     filter: AtlasFilter,
     onFilterChanged: (AtlasFilter) -> Unit,
     selectedRarityIds: Set<String>,
-    onRarityFilterChanged: (Set<String>) -> Unit,
+    onToggleRarity: (String) -> Unit,
     mythicFilter: Boolean,
     onMythicFilterChanged: (Boolean) -> Unit,
     sortMode: SortMode,
@@ -2257,13 +2339,9 @@ private fun FiltersPanel(
                                     rarity   = rarity,
                                     count    = rarityTotalCounts[rarity] ?: 0,
                                     selected = !mythicFilter && rarity.id in selectedRarityIds,
-                                    onToggle = {
-                                        val newSet = selectedRarityIds.toMutableSet()
-                                        if (!mythicFilter && rarity.id in newSet) newSet.remove(rarity.id)
-                                        else newSet.add(rarity.id)
-                                        onMythicFilterChanged(false)
-                                        onRarityFilterChanged(newSet)
-                                    },
+                                    // Single atomic ViewModel update — toggles the rarity
+                                    // and clears the mythic filter in one state write.
+                                    onToggle = { onToggleRarity(rarity.id) },
                                 )
                             }
                             // ── Mythic chip ───────────────────────────────────

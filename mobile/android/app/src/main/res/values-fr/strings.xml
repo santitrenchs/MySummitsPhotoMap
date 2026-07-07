@@ -236,6 +236,7 @@
 
     <!-- ── Atlas — barre de recherche ────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Rechercher un sommet…</string>
+    <string name="atlas_search_no_results">Aucun résultat</string>
     <string name="atlas_action_search">Rechercher</string>
     <string name="atlas_action_close">Fermer</string>
 

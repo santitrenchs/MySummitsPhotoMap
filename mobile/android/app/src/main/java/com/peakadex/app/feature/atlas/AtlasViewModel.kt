@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -53,9 +54,13 @@ data class AtlasUiState(
     val placeResults: List<GeocodedPlace> = emptyList(),
     val refugioResults: List<GeocodedPlace> = emptyList(),
     val isSearchActive: Boolean = false,
+    val isSearching: Boolean = false,    // a search request is in flight (or debouncing)
     val showList: Boolean = false,
     val error: String? = null,           // getMapAscents (climbed peaks) failed
     val viewportError: Boolean = false,  // last viewport peaks fetch failed
+    // Current camera bounds — lets the UI (filter counts) scope the accumulative
+    // peaksCache to what the user is actually looking at.
+    val bounds: ViewportBounds? = null,
 )
 
 private const val TAG = "AtlasViewModel"
@@ -68,11 +73,14 @@ private const val SEARCH_DEBOUNCE_MS   = 300L
 // mirroring the CACHE_MAX eviction in the web MapView's peaksCacheRef.
 private const val PEAKS_CACHE_MAX = 2000
 
-private data class ViewportBounds(
+data class ViewportBounds(
     val north: Double, val south: Double,
     val east: Double,  val west: Double,
     val zoom: Double,
-)
+) {
+    fun contains(lat: Double, lon: Double): Boolean =
+        lat in south..north && lon in west..east
+}
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 
@@ -124,6 +132,7 @@ class AtlasViewModel : ViewModel() {
 
     fun onMapIdle(north: Double, south: Double, east: Double, west: Double, zoom: Double) {
         lastBounds = ViewportBounds(north, south, east, west, zoom)
+        _uiState.update { it.copy(bounds = lastBounds) }
         if (_uiState.value.filter == AtlasFilter.CLIMBED) return
         viewportJob?.cancel()
         viewportJob = viewModelScope.launch {
@@ -131,7 +140,9 @@ class AtlasViewModel : ViewModel() {
             val centerLat = (north + south) / 2.0
             val centerLon = (east + west) / 2.0
             try {
-                val response = api.getViewportPeaks(north, south, east, west, zoom.toInt())
+                // roundToInt, not toInt: truncating 5.9 → 5 crosses the server's
+                // `zoom < 6` boundary and cuts the take limit from 150 to 50 peaks.
+                val response = api.getViewportPeaks(north, south, east, west, zoom.roundToInt())
                 val climbed = _uiState.value.climbedByPeakId
                 val unclimbed = response.peaks.filter { it.id !in climbed }
                 val culled = applyViewportScore(unclimbed, zoom, centerLat, centerLon)
@@ -179,8 +190,16 @@ class AtlasViewModel : ViewModel() {
         }
     }
 
-    fun onRarityFilterChanged(ids: Set<String>) {
-        _uiState.update { it.copy(selectedRarityIds = ids, mythicFilter = false) }
+    // Single atomic update: toggling a rarity also deactivates the mythic filter
+    // (mutually exclusive). Doing this in one _uiState.update avoids the previous
+    // two-step dance in the UI (onMythicFilterChanged(false) + onRarityFilterChanged)
+    // whose correctness depended on call order.
+    fun toggleRarity(id: String) {
+        _uiState.update {
+            val next = if (id in it.selectedRarityIds) it.selectedRarityIds - id
+                       else it.selectedRarityIds + id
+            it.copy(selectedRarityIds = next, mythicFilter = false)
+        }
     }
 
     fun onMythicFilterChanged(enabled: Boolean) {
@@ -221,11 +240,20 @@ class AtlasViewModel : ViewModel() {
 
     fun onSearchQueryChanged(query: String) {
         _uiState.update { it.copy(searchQuery = query, isSearchActive = query.isNotEmpty()) }
-        if (query.isBlank()) {
-            _uiState.update { it.copy(searchResults = emptyList(), placeResults = emptyList(), refugioResults = emptyList()) }
+        // Server search requires >= 2 chars (a 1-char q falls through the server's
+        // search branch into an unbounded query). Don't fire for short queries.
+        if (query.trim().length < 2) {
+            searchJob?.cancel()
+            _uiState.update {
+                it.copy(
+                    searchResults = emptyList(), placeResults = emptyList(),
+                    refugioResults = emptyList(), isSearching = false,
+                )
+            }
             return
         }
         searchJob?.cancel()
+        _uiState.update { it.copy(isSearching = true) }
         searchJob = viewModelScope.launch {
             delay(SEARCH_DEBOUNCE_MS)
             try {
@@ -235,27 +263,33 @@ class AtlasViewModel : ViewModel() {
                         searchResults  = response.peaks.take(20),
                         placeResults   = response.places,
                         refugioResults = response.refugios,
+                        isSearching    = false,
                     )
                 }
             } catch (e: CancellationException) {
-                throw e   // superseded by a newer keystroke
+                throw e   // superseded by a newer keystroke — that one owns isSearching
             } catch (e: Exception) {
                 // Clear stale results from the PREVIOUS query — leaving them on
                 // screen misleads the user into tapping outdated matches.
                 Log.e(TAG, "peak search failed: ${e.message}")
                 _uiState.update {
-                    it.copy(searchResults = emptyList(), placeResults = emptyList(), refugioResults = emptyList())
+                    it.copy(
+                        searchResults = emptyList(), placeResults = emptyList(),
+                        refugioResults = emptyList(), isSearching = false,
+                    )
                 }
             }
         }
     }
 
     fun onSearchResultSelected(peak: Peak) {
+        searchJob?.cancel()   // an in-flight search must not repopulate results after selection
         val ascent = _uiState.value.climbedByPeakId[peak.id]
         _uiState.update {
             it.copy(
                 searchQuery   = "",
                 isSearchActive = false,
+                isSearching    = false,
                 searchResults  = emptyList(),
                 placeResults   = emptyList(),
                 refugioResults = emptyList(),
@@ -266,10 +300,12 @@ class AtlasViewModel : ViewModel() {
 
     fun onPlaceSelected() {
         // Place selection only moves the camera — no peak detail sheet.
+        searchJob?.cancel()
         _uiState.update {
             it.copy(
                 searchQuery   = "",
                 isSearchActive = false,
+                isSearching    = false,
                 searchResults  = emptyList(),
                 placeResults   = emptyList(),
                 refugioResults = emptyList(),
@@ -278,10 +314,12 @@ class AtlasViewModel : ViewModel() {
     }
 
     fun onSearchDismissed() {
+        searchJob?.cancel()
         _uiState.update {
             it.copy(
                 searchQuery   = "",
                 isSearchActive = false,
+                isSearching    = false,
                 searchResults  = emptyList(),
                 placeResults   = emptyList(),
                 refugioResults = emptyList(),

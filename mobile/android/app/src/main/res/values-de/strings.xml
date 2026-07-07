@@ -236,6 +236,7 @@
 
     <!-- ── Atlas — Suchleiste ────────────────────────────────────────────────── -->
     <string name="atlas_search_placeholder">Gipfel suchen…</string>
+    <string name="atlas_search_no_results">Keine Ergebnisse</string>
     <string name="atlas_action_search">Suchen</string>
     <string name="atlas_action_close">Schließen</string>
 
