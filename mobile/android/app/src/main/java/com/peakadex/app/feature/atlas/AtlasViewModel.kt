@@ -152,9 +152,12 @@ class AtlasViewModel : ViewModel() {
 
     fun onFilterChanged(filter: AtlasFilter) {
         _uiState.update { it.copy(filter = filter, selected = null) }
-        // Switching away from CLIMBED: peaksCache may be empty if no viewport fetches ran.
-        // Re-fetch immediately so unclimbed peaks appear at once.
-        if (filter != AtlasFilter.CLIMBED && _uiState.value.peaksCache.isEmpty()) {
+        // Switching away from CLIMBED: no viewport fetches ran while it was active,
+        // so the cache has nothing for wherever the camera moved in the meantime.
+        // Always re-fetch the last bounds — a non-empty cache from an OLD area must
+        // not suppress this, or the current area shows zero unclimbed peaks until
+        // the user moves the camera again. The merge-only cache makes this cheap.
+        if (filter != AtlasFilter.CLIMBED) {
             lastBounds?.let { b -> onMapIdle(b.north, b.south, b.east, b.west, b.zoom) }
         }
     }

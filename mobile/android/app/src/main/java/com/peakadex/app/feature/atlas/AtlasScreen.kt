@@ -197,7 +197,6 @@ enum class MapType { NORMAL, TERRAIN, SATELLITE }
 // ── Source / layer IDs ────────────────────────────────────────────────────────
 
 private const val SRC_CLIMBED             = "climbed-source"
-private const val SRC_UNCLIMBED           = "unclimbed-source"
 private const val SRC_UNCLIMBED_CLUSTERED = "unclimbed-clustered-source"
 private const val LYR_CLIMBED             = "climbed-layer"
 private const val LYR_UNCLIMBED_CLUSTER   = "unclimbed-cluster-layer"
@@ -353,14 +352,22 @@ fun AtlasScreen(
                             styleReady.value = true
                             // OnCameraIdleListener doesn't fire for the initial resting
                             // position — trigger the first viewport fetch manually.
-                            val b = map.projection.visibleRegion.latLngBounds
-                            vm.onMapIdle(
-                                north = b.getLatNorth(),
-                                south = b.getLatSouth(),
-                                east  = b.getLonEast(),
-                                west  = b.getLonWest(),
-                                zoom  = map.cameraPosition.zoom,
-                            )
+                            // Guard: at style load the camera is still at the MapView
+                            // default (lat 0, lon 0, zoom 0). Fetching that viewport
+                            // pulls the 50 highest peaks in the world (Himalaya) into
+                            // the cache, polluting filter counts for the whole session.
+                            // The initial fly-to fires a camera-idle at the real
+                            // position, which performs the actual first fetch.
+                            if (map.cameraPosition.zoom >= 5.0) {
+                                val b = map.projection.visibleRegion.latLngBounds
+                                vm.onMapIdle(
+                                    north = b.getLatNorth(),
+                                    south = b.getLatSouth(),
+                                    east  = b.getLonEast(),
+                                    west  = b.getLonWest(),
+                                    zoom  = map.cameraPosition.zoom,
+                                )
+                            }
                         }
 
                         map.addOnCameraIdleListener {
@@ -756,10 +763,13 @@ private fun setupSources(style: org.maplibre.android.maps.Style) {
         VectorSource(SRC_OFM, "https://tiles.openfreemap.org/planet")
     )
 
-    // Peak data sources
+    // Peak data sources. Unclimbed peaks live in a SINGLE clustered source:
+    // rendering singles and clusters from the same source guarantees every
+    // feature is drawn exactly once (a solitary peak has no point_count and
+    // renders as a dot; grouped peaks render as a cluster). Two sources caused
+    // solitary peaks to vanish below zoom 9 and duplicates at zoom 9-10.
     style.addSource(GeoJsonSource(SRC_CLIMBED, FeatureCollection.fromFeatures(emptyList<Feature>())))
     style.addSource(GeoJsonSource(SRC_SELECTED, FeatureCollection.fromFeatures(emptyList<Feature>())))
-    style.addSource(GeoJsonSource(SRC_UNCLIMBED, FeatureCollection.fromFeatures(emptyList<Feature>())))
     style.addSource(
         GeoJsonSource(
             SRC_UNCLIMBED_CLUSTERED,
@@ -932,9 +942,12 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 circleStrokeColor("#FFFFFF"),
             ),
     )
-    // Individual unclimbed peaks — colored by rarity via GeoJSON property
+    // Individual unclimbed peaks — colored by rarity via GeoJSON property.
+    // Same clustered source as the cluster layer: features the clusterer left
+    // ungrouped (no point_count) render as dots at EVERY zoom level. No minZoom —
+    // a solitary peak at zoom 5 must still be visible.
     style.addLayer(
-        CircleLayer(LYR_UNCLIMBED_SINGLE, SRC_UNCLIMBED)
+        CircleLayer(LYR_UNCLIMBED_SINGLE, SRC_UNCLIMBED_CLUSTERED)
             .withFilter(not(has("point_count")))
             .withProperties(
                 circleRadius(7f),
@@ -942,12 +955,11 @@ private fun setupLayers(style: org.maplibre.android.maps.Style) {
                 circleOpacity(0.85f),
                 circleStrokeWidth(1.5f),
                 circleStrokeColor("#FFFFFF"),
-            )
-            .also { it.setMinZoom(9.0f) },
+            ),
     )
     // Peak labels appear once the map is close enough for real discovery.
     style.addLayer(
-        SymbolLayer(LYR_UNCLIMBED_LABELS, SRC_UNCLIMBED)
+        SymbolLayer(LYR_UNCLIMBED_LABELS, SRC_UNCLIMBED_CLUSTERED)
             .withFilter(not(has("point_count")))
             .withProperties(
                 textField("{name}"),
@@ -1053,8 +1065,6 @@ private suspend fun updateMapSources(
     style.getSourceAs<GeoJsonSource>(SRC_CLIMBED)
         ?.setGeoJson(FeatureCollection.fromFeatures(climbedFeatures))
 
-    style.getSourceAs<GeoJsonSource>(SRC_UNCLIMBED)
-        ?.setGeoJson(FeatureCollection.fromFeatures(unclimbedFeatures))
     style.getSourceAs<GeoJsonSource>(SRC_UNCLIMBED_CLUSTERED)
         ?.setGeoJson(FeatureCollection.fromFeatures(unclimbedFeatures))
 
@@ -1574,12 +1584,28 @@ private fun geoLocateNow(
         else -> { onDone(); return }
     }
 
+    // A fresh fix may never arrive (GPS indoors) — without a hard timeout the
+    // geolocate button spins forever. `finish()` guards a single onDone() call
+    // whichever fires first: the fix, the timeout, or a synchronous failure.
+    val handler  = android.os.Handler(android.os.Looper.getMainLooper())
+    var finished = false
+    fun finish() {
+        if (!finished) {
+            finished = true
+            handler.removeCallbacksAndMessages(null)
+            onDone()
+        }
+    }
+
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-        // API 30+: getCurrentLocation replaces the deprecated requestSingleUpdate
+        // API 30+: getCurrentLocation replaces the deprecated requestSingleUpdate.
+        // The CancellationSignal aborts the request when our timeout fires.
+        val cancelSignal = android.os.CancellationSignal()
+        handler.postDelayed({ cancelSignal.cancel(); finish() }, GEOLOCATE_TIMEOUT_MS)
         runCatching {
             lm.getCurrentLocation(
                 provider,
-                null,
+                cancelSignal,
                 ContextCompat.getMainExecutor(context),
             ) { location ->
                 if (location != null) {
@@ -1589,23 +1615,41 @@ private fun geoLocateNow(
                         ), 800,
                     )
                 }
-                onDone()
+                finish()
             }
-        }.onFailure { onDone() }
+        }.onFailure { finish() }
     } else {
-        @Suppress("DEPRECATION")
-        runCatching {
-            lm.requestSingleUpdate(provider, { location ->
+        // API < 30: requestSingleUpdate has NO internal timeout and keeps the
+        // listener registered until a fix arrives — removeUpdates on timeout.
+        // Full object (not a SAM lambda): on API 26-28 the platform interface
+        // still declares onStatusChanged/onProvider* as abstract, so a lambda
+        // risks AbstractMethodError if the framework invokes them.
+        val listener = object : android.location.LocationListener {
+            override fun onLocationChanged(location: android.location.Location) {
                 map?.animateCamera(
                     CameraUpdateFactory.newLatLngZoom(
                         LatLng(location.latitude, location.longitude), 14.0,
                     ), 800,
                 )
-                onDone()
-            }, android.os.Looper.getMainLooper())
-        }.onFailure { onDone() }
+                finish()
+            }
+            @Deprecated("Deprecated in Java")
+            override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
+            override fun onProviderEnabled(provider: String) = Unit
+            override fun onProviderDisabled(provider: String) = Unit
+        }
+        handler.postDelayed({
+            runCatching { lm.removeUpdates(listener) }
+            finish()
+        }, GEOLOCATE_TIMEOUT_MS)
+        @Suppress("DEPRECATION")
+        runCatching {
+            lm.requestSingleUpdate(provider, listener, android.os.Looper.getMainLooper())
+        }.onFailure { finish() }
     }
 }
+
+private const val GEOLOCATE_TIMEOUT_MS = 10_000L
 
 // ── Distance helper ───────────────────────────────────────────────────────────
 
