@@ -627,6 +627,18 @@ fun AtlasScreen(
             )
         }
 
+        // ── Network error chip — climbed load or viewport fetch failed ───────
+        // Without this, a failed fetch is invisible: the map just shows only
+        // climbed peaks (or nothing) and the user has no way to recover.
+        if (!uiState.isLoadingAscents && (uiState.error != null || uiState.viewportError)) {
+            NetworkErrorChip(
+                onRetry  = vm::retry,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = if (showTopBar) 68.dp else 12.dp),
+            )
+        }
+
         // ── Map control buttons (bottom-right) ────────────────────────────────
         if (!uiState.showList) {
             MapControlsColumn(
@@ -1117,6 +1129,12 @@ private suspend fun loadPhotoMarkers(
                         ?.let { rarityColorMap[it]?.color }
                         ?: DEFAULT_RARITY_COLOR
 
+                    // markLoaded: only marker outcomes that can't improve go into
+                    // loadedMarkerIds. A download that FAILED still registers a
+                    // fallback dot (so the peak stays visible) but is NOT marked
+                    // loaded — the next effect run (climbed/rarities change)
+                    // retries the photo instead of showing a white dot forever.
+                    var markLoaded = true
                     val markerBitmap: Bitmap = if (ascent.photoUrl != null) {
                         try {
                             val result = imageLoader.execute(
@@ -1127,12 +1145,23 @@ private suspend fun loadPhotoMarkers(
                                     .build(),
                             )
                             val src = (result.image as? BitmapImage)?.bitmap
-                            if (src != null) createCircularMarkerBitmap(src, ringColor, sizePx = 88)
-                            else             createFallbackMarkerBitmap(ringColor, sizePx = 88)
+                            if (src != null) {
+                                createCircularMarkerBitmap(src, ringColor, sizePx = 88)
+                            } else {
+                                markLoaded = false
+                                createFallbackMarkerBitmap(ringColor, sizePx = 88)
+                            }
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            // Never swallow: the effect restarted (e.g. rarities just
+                            // arrived). Swallowing it registered a cancelled download
+                            // as a permanent fallback marker.
+                            throw e
                         } catch (_: Exception) {
+                            markLoaded = false
                             createFallbackMarkerBitmap(ringColor, sizePx = 88)
                         }
                     } else {
+                        // No photo at all — the fallback dot IS the final marker.
                         createFallbackMarkerBitmap(ringColor, sizePx = 48)
                     }
 
@@ -1140,7 +1169,7 @@ private suspend fun loadPhotoMarkers(
                     // — serialised, no concurrent mutation of either resource.
                     withContext(Dispatchers.Main) {
                         map.style?.addImage("peak-photo-$peakId", markerBitmap, false)
-                        loadedMarkerIds.add(peakId)
+                        if (markLoaded) loadedMarkerIds.add(peakId)
                     }
                 }
             }
@@ -1194,6 +1223,35 @@ private fun createFallbackMarkerBitmap(ringColorHex: String, sizePx: Int): Bitma
     canvas.drawCircle(cx, cx, cx - ringW / 2f, paint)
 
     return output
+}
+
+// ── Network error chip ────────────────────────────────────────────────────────
+
+@Composable
+private fun NetworkErrorChip(onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .shadow(4.dp, RoundedCornerShape(24.dp))
+            .background(androidx.compose.ui.graphics.Color.White, RoundedCornerShape(24.dp))
+            .padding(start = 14.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text       = stringResource(R.string.error_no_connection),
+            fontSize   = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color      = PeakTextHeadline,
+        )
+        TextButton(onClick = onRetry) {
+            Text(
+                text       = stringResource(R.string.action_retry),
+                fontSize   = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color      = PeakBlueActive,
+            )
+        }
+    }
 }
 
 // ── Search bar overlay ────────────────────────────────────────────────────────

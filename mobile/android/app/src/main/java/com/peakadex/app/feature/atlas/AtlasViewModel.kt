@@ -8,6 +8,7 @@ import com.peakadex.app.core.model.GeocodedPlace
 import com.peakadex.app.core.model.MapAscent
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Rarity
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,7 +54,8 @@ data class AtlasUiState(
     val refugioResults: List<GeocodedPlace> = emptyList(),
     val isSearchActive: Boolean = false,
     val showList: Boolean = false,
-    val error: String? = null,
+    val error: String? = null,           // getMapAscents (climbed peaks) failed
+    val viewportError: Boolean = false,  // last viewport peaks fetch failed
 )
 
 private const val TAG = "AtlasViewModel"
@@ -128,7 +130,8 @@ class AtlasViewModel : ViewModel() {
             delay(VIEWPORT_DEBOUNCE_MS)
             val centerLat = (north + south) / 2.0
             val centerLon = (east + west) / 2.0
-            runCatching { api.getViewportPeaks(north, south, east, west, zoom.toInt()) }.onSuccess { response ->
+            try {
+                val response = api.getViewportPeaks(north, south, east, west, zoom.toInt())
                 val climbed = _uiState.value.climbedByPeakId
                 val unclimbed = response.peaks.filter { it.id !in climbed }
                 val culled = applyViewportScore(unclimbed, zoom, centerLat, centerLon)
@@ -144,10 +147,24 @@ class AtlasViewModel : ViewModel() {
                         repeat(drop) { if (iter.hasNext()) { iter.next(); iter.remove() } }
                         merged
                     } else merged
-                    state.copy(peaksCache = evicted)
+                    state.copy(peaksCache = evicted, viewportError = false)
                 }
+            } catch (e: CancellationException) {
+                throw e   // never swallow — a newer viewport fetch superseded this one
+            } catch (e: Exception) {
+                // Surface the failure: without this the map silently shows only
+                // climbed peaks and the user has no idea a fetch failed.
+                Log.e(TAG, "viewport peaks fetch failed: ${e.message}")
+                _uiState.update { it.copy(viewportError = true) }
             }
         }
+    }
+
+    // Retries whatever failed: the climbed-ascents load and/or the last viewport fetch.
+    fun retry() {
+        if (_uiState.value.error != null) loadClimbedAscents()
+        _uiState.update { it.copy(viewportError = false) }
+        lastBounds?.let { b -> onMapIdle(b.north, b.south, b.east, b.west, b.zoom) }
     }
 
     fun onFilterChanged(filter: AtlasFilter) {
@@ -211,13 +228,23 @@ class AtlasViewModel : ViewModel() {
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(SEARCH_DEBOUNCE_MS)
-            runCatching { api.searchPeaks(query) }.onSuccess { response ->
+            try {
+                val response = api.searchPeaks(query)
                 _uiState.update {
                     it.copy(
                         searchResults  = response.peaks.take(20),
                         placeResults   = response.places,
                         refugioResults = response.refugios,
                     )
+                }
+            } catch (e: CancellationException) {
+                throw e   // superseded by a newer keystroke
+            } catch (e: Exception) {
+                // Clear stale results from the PREVIOUS query — leaving them on
+                // screen misleads the user into tapping outdated matches.
+                Log.e(TAG, "peak search failed: ${e.message}")
+                _uiState.update {
+                    it.copy(searchResults = emptyList(), placeResults = emptyList(), refugioResults = emptyList())
                 }
             }
         }
@@ -286,22 +313,25 @@ class AtlasViewModel : ViewModel() {
         val south = centerLat - 0.45
         val east  = centerLon + 0.60
         val west  = centerLon - 0.60
-        runCatching { api.getViewportPeaks(north, south, east, west, zoom = 12) }
-            .onSuccess { response ->
-                // Merge into the accumulative cache so tapping a peak from the list
-                // works even if its area is outside the current map viewport.
-                _uiState.update { state ->
-                    val merged = LinkedHashMap<String, Peak>(state.peaksCache)
-                    for (p in response.peaks) merged[p.id] = p
-                    state.copy(listPeaks = response.peaks, peaksCache = merged, isLoadingList = false)
-                }
+        try {
+            val response = api.getViewportPeaks(north, south, east, west, zoom = 12)
+            // Merge into the accumulative cache so tapping a peak from the list
+            // works even if its area is outside the current map viewport.
+            _uiState.update { state ->
+                val merged = LinkedHashMap<String, Peak>(state.peaksCache)
+                for (p in response.peaks) merged[p.id] = p
+                state.copy(listPeaks = response.peaks, peaksCache = merged, isLoadingList = false)
             }
-            .onFailure {
-                _uiState.update { it.copy(isLoadingList = false) }
-            }
+        } catch (e: CancellationException) {
+            throw e   // list was closed / reopened — a newer load owns the state
+        } catch (e: Exception) {
+            Log.e(TAG, "list peaks fetch failed: ${e.message}")
+            _uiState.update { it.copy(isLoadingList = false) }
+        }
     }
 
     fun clearFilters() {
+        val wasClimbed = _uiState.value.filter == AtlasFilter.CLIMBED
         _uiState.update {
             it.copy(
                 filter            = AtlasFilter.ALL,
@@ -309,6 +339,11 @@ class AtlasViewModel : ViewModel() {
                 mythicFilter      = false,
                 sortMode          = SortMode.DISTANCE,
             )
+        }
+        // Same rationale as onFilterChanged: leaving CLIMBED means no viewport
+        // fetches ran while it was active — refresh the current area.
+        if (wasClimbed) {
+            lastBounds?.let { b -> onMapIdle(b.north, b.south, b.east, b.west, b.zoom) }
         }
     }
 
