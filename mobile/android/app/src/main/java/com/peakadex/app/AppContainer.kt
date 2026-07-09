@@ -30,6 +30,7 @@ object AppContainer {
         _tokenStorage    = TokenStorage(context.applicationContext)
         _authInterceptor = AuthInterceptor()
         _authSession     = AuthSession(_tokenStorage, _authInterceptor)
+        _authInterceptor.onUnauthorized = { _authSession.onUnauthorized() }
         _apiService      = ApiClient.buildService(_authInterceptor)
     }
 }

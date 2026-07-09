@@ -10,7 +10,7 @@ const TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 const RegisterSchema = z.object({
   name:        z.string().min(2).max(100),
-  email:       z.string().email(),
+  email:       z.string().email().transform((v) => v.trim().toLowerCase()),
   password:    z.string().min(8),
   voucherCode: z.string().optional(), // kept for API compat, ignored (system removed)
 });

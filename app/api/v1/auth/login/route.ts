@@ -13,10 +13,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const { email, password } = body;
-  if (!email || !password) {
+  const { email: rawEmail, password } = body;
+  if (!rawEmail || !password) {
     return NextResponse.json({ error: "missing_credentials" }, { status: 400 });
   }
+  const email = rawEmail.trim().toLowerCase();
 
   let user;
   try {

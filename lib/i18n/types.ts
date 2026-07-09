@@ -156,6 +156,7 @@ export type Dict = {
   auth_createAccountDesc: string; auth_yourName: string; auth_password: string;
   auth_minPassword: string; auth_registrationFailed: string;
   auth_creatingAccount: string; auth_createAccount: string; auth_haveAccount: string; auth_continueWithGoogle: string;
+  auth_oauthError: string;
   auth_forgotPassword: string; auth_forgotPasswordDesc: string;
   auth_sendResetLink: string; auth_sendingResetLink: string; auth_resetLinkSent: string;
   auth_resetPassword: string; auth_resetPasswordDesc: string;

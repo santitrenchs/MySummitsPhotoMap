@@ -166,6 +166,7 @@ export const en: Dict = {
   auth_creatingAccount: "Creating account…", auth_createAccount: "Create account",
   auth_haveAccount: "Already have an account?",
   auth_continueWithGoogle: "Continue with Google",
+  auth_oauthError: "Could not sign in with Google. Please try again.",
 
   crop_title: "Crop", crop_next: "Next",
 

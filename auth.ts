@@ -13,10 +13,14 @@ const baseAdapter = PrismaAdapter(prisma);
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: {
     ...baseAdapter,
+    // Normalize the lookup email — Google may report a different casing than the
+    // one the user registered with, and Postgres unique lookups are case-sensitive.
+    getUserByEmail: (email) => baseAdapter.getUserByEmail!(email.trim().toLowerCase()),
     // When a new user signs in via Google, create Tenant + Membership too
     createUser: async (data) => {
       const user = await prisma.$transaction(async (tx) => {
-        const username = await generateUniqueUsername(data.name ?? data.email ?? "user");
+        const email = data.email.trim().toLowerCase();
+        const username = await generateUniqueUsername(data.name ?? email ?? "user");
         // Build the row explicitly — never spread `data`. The OAuth adapter
         // includes fields that don't exist on User (e.g. `image`), and a blind
         // `...data` makes Prisma throw "Unknown argument", breaking sign-up
@@ -25,9 +29,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const image = (data as any).image as string | undefined;
         const created = await tx.user.create({
           data: {
-            email: data.email,
+            email,
             emailVerified: data.emailVerified ?? null,
-            name: data.name ?? data.email ?? "user",
+            name: data.name ?? email ?? "user",
             username,
             avatarUrl: image ?? null,
           },
@@ -67,7 +71,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email: (credentials.email as string).trim().toLowerCase() },
           include: {
             memberships: {
               select: { tenantId: true },

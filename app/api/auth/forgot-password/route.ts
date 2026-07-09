@@ -8,7 +8,7 @@ import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 // Max 3 reset requests per IP per 15 minutes
 const isRateLimited = createRateLimiter(3, 15 * 60 * 1000);
 
-const Schema = z.object({ email: z.string().email() });
+const Schema = z.object({ email: z.string().email().transform((v) => v.trim().toLowerCase()) });
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);

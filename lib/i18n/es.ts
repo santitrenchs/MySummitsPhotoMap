@@ -166,6 +166,7 @@ export const es: Dict = {
   auth_creatingAccount: "Creando cuenta…", auth_createAccount: "Crear cuenta",
   auth_haveAccount: "¿Ya tienes cuenta?",
   auth_continueWithGoogle: "Continuar con Google",
+  auth_oauthError: "No se pudo iniciar sesión con Google. Inténtalo de nuevo.",
 
   crop_title: "Recortar", crop_next: "Siguiente",
 

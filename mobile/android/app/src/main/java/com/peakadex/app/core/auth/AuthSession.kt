@@ -14,6 +14,11 @@ class AuthSession(
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
+    // Set when an authenticated API call returns 401 (token expired/revoked).
+    // NavGraph observes it and kicks the user back to the login screen.
+    private val _sessionExpired = MutableStateFlow(false)
+    val sessionExpired: StateFlow<Boolean> = _sessionExpired.asStateFlow()
+
     val isAuthenticated: Boolean
         get() = tokenStorage.getToken() != null
 
@@ -37,7 +42,19 @@ class AuthSession(
         tokenStorage.saveUserProfile(user.name, user.avatarUrl)
         authInterceptor.token = token
         _currentUser.value = user
+        _sessionExpired.value = false
         Telemetry.setUser(user.id)
+    }
+
+    /** Called from AuthInterceptor (OkHttp thread) when a 401 arrives with a token attached. */
+    fun onUnauthorized() {
+        if (tokenStorage.getToken() == null) return  // already logged out
+        logout()
+        _sessionExpired.value = true
+    }
+
+    fun consumeSessionExpired() {
+        _sessionExpired.value = false
     }
 
     fun updateUser(user: User) {

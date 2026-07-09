@@ -100,14 +100,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_token" }, { status: 401 });
   }
 
-  // Security: verify the token was issued for our app (Web Client ID)
+  // Security: verify the token was issued for our app (Web Client ID).
+  // Fail closed — without GOOGLE_CLIENT_ID we cannot validate the audience,
+  // and accepting arbitrary Google idTokens would allow account takeover.
   const webClientId = process.env.GOOGLE_CLIENT_ID;
-  if (webClientId && tokenInfo.aud !== webClientId) {
+  if (!webClientId) {
+    console.error("[v1/auth/google] GOOGLE_CLIENT_ID env var is not set — refusing login");
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
+  }
+  if (tokenInfo.aud !== webClientId) {
     console.error("[v1/auth/google] aud mismatch:", tokenInfo.aud);
     return NextResponse.json({ error: "token_audience_mismatch" }, { status: 401 });
   }
 
-  const { sub: googleId, email, name } = tokenInfo;
+  const { sub: googleId, name } = tokenInfo;
+  // Normalize: Postgres email lookups are case-sensitive and users may have
+  // registered with a different casing than what Google reports.
+  const email = tokenInfo.email.trim().toLowerCase();
 
   const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
   if (!secret) {

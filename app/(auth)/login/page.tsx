@@ -51,7 +51,12 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const t = useT();
   const justRegistered = searchParams.get("registered") === "1";
-  const [error, setError]               = useState<string | null>(null);
+  // NextAuth redirects back to /login?error=OAuthCallback|Configuration|AccessDenied|…
+  // when the Google flow fails — surface it instead of silently dropping it.
+  const oauthError = searchParams.get("error");
+  const [error, setError]               = useState<string | null>(
+    () => (oauthError ? t.auth_oauthError : null)
+  );
   const [loading, setLoading]           = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 

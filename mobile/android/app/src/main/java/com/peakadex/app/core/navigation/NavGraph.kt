@@ -1,6 +1,9 @@
 package com.peakadex.app.core.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -16,6 +19,18 @@ import com.peakadex.app.feature.splash.SplashScreen
 @Composable
 fun NavGraph(isAuthenticated: Boolean) {
     val navController = rememberNavController()
+
+    // Expired/revoked token detected by AuthInterceptor → clear the whole back
+    // stack and land on Login. The session itself was already wiped in AuthSession.
+    val sessionExpired by AppContainer.authSession.sessionExpired.collectAsState()
+    LaunchedEffect(sessionExpired) {
+        if (sessionExpired) {
+            AppContainer.authSession.consumeSessionExpired()
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     NavHost(
         navController    = navController,

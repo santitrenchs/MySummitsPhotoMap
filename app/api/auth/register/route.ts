@@ -13,7 +13,7 @@ const isRateLimited = createRateLimiter(5, 15 * 60 * 1000);
 const RegisterSchema = z.object({
   name:            z.string().min(2).max(100),
   username:        z.string().min(3).max(30).regex(/^[a-z0-9_]+$/, "Invalid username"),
-  email:           z.string().email(),
+  email:           z.string().email().transform((v) => v.trim().toLowerCase()),
   password:        z.string().min(8),
   acceptedTerms:   z.literal(true, { errorMap: () => ({ message: "Must accept terms" }) }),
   acceptedPrivacy: z.literal(true, { errorMap: () => ({ message: "Must accept privacy policy" }) }),
