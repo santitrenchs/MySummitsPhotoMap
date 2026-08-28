@@ -20,9 +20,15 @@ android {
 
     buildTypes {
         val googleWebClientId = "\"459929432551-ha3k64nssd83o0qt9biro3l52de06am9.apps.googleusercontent.com\""
+        // CARTO basemaps key. Free (5M tile requests/month) and public by design — it ships
+        // inside the APK — but this repo is public, so it is read from a Gradle property
+        // (CARTO_API_KEY in ~/.gradle/gradle.properties) rather than committed. Without it
+        // the basemap tiles render with an "API KEY REQUIRED" watermark.
+        val cartoApiKey = "\"" + providers.gradleProperty("CARTO_API_KEY").getOrElse("") + "\""
         debug {
             buildConfigField("String", "BASE_URL", "\"https://mysummitsphotomap-staging.up.railway.app/api/v1/\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", googleWebClientId)
+            buildConfigField("String", "CARTO_API_KEY", cartoApiKey)
         }
         release {
             isMinifyEnabled = true
@@ -32,6 +38,7 @@ android {
             )
             buildConfigField("String", "BASE_URL", "\"https://www.peakadex.com/api/v1/\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", googleWebClientId)
+            buildConfigField("String", "CARTO_API_KEY", cartoApiKey)
         }
     }
 

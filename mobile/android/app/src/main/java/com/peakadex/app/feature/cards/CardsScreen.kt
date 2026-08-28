@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.peakadex.app.core.util.CartoTiles
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.filter
@@ -1192,7 +1193,7 @@ private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Co
             for (col in 0..1) {
                 val tileX = grid.cols[col]
                 val tileY = grid.rows[row]
-                val url   = "https://a.basemaps.cartocdn.com/rastertiles/voyager/${grid.zoom}/$tileX/$tileY@2x.png"
+                val url   = CartoTiles.tileUrl(grid.zoom, tileX, tileY)
                 AsyncImage(
                     model              = url,
                     contentDescription = null,

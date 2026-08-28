@@ -115,6 +115,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import com.peakadex.app.core.util.CartoTiles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -347,10 +348,7 @@ fun AtlasScreen(
                             }
                         """.trimIndent()
 
-                        val tileSet = TileSet("2.2.0",
-                            "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                            "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                            "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png")
+                        val tileSet = TileSet("2.2.0", *CartoTiles.basemapUrls)
                         tileSet.setMaxZoom(19f)
                         tileSet.setMinZoom(0f)
                         val basemapSource = RasterSource("carto-basemap", tileSet, 256)

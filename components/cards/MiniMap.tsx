@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { CARTO_RASTER_TILES, CARTO_ATTRIBUTION } from "@/lib/map-tiles";
 
 interface Props {
   latitude: number;
@@ -38,12 +39,9 @@ export function MiniMap({ latitude, longitude, label, zoom = 12 }: Props) {
         sources: {
           carto: {
             type: "raster" as const,
-            tiles: [
-              "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-              "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-            ],
+            tiles: CARTO_RASTER_TILES,
             tileSize: 256,
-            attribution: "© OpenStreetMap © CARTO",
+            attribution: CARTO_ATTRIBUTION,
           },
         },
         layers: [{ id: "carto-tiles", type: "raster" as const, source: "carto" }],

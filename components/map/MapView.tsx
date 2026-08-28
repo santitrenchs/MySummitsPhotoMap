@@ -13,6 +13,7 @@ import MapPeaksSidebar from "./MapPeaksSidebar";
 import MapOnboardingModal from "./MapOnboardingModal";
 import { Button } from "@/components/ui/Button";
 import { imgUrl } from "@/lib/storage/image-url";
+import { CARTO_RASTER_TILES, CARTO_ATTRIBUTION } from "@/lib/map-tiles";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -109,13 +110,9 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   sources: {
     carto: {
       type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-      ],
+      tiles: CARTO_RASTER_TILES,
       tileSize: 256,
-      attribution: "© OpenStreetMap © CARTO",
+      attribution: CARTO_ATTRIBUTION,
     },
   },
   layers: [{ id: "carto-tiles", type: "raster", source: "carto" }],

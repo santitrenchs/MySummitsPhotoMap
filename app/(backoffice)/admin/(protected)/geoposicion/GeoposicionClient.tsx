@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { CARTO_RASTER_TILES, CARTO_ATTRIBUTION } from "@/lib/map-tiles";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,13 +68,9 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   sources: {
     carto: {
       type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-      ],
+      tiles: CARTO_RASTER_TILES,
       tileSize: 256,
-      attribution: "© OpenStreetMap © CARTO",
+      attribution: CARTO_ATTRIBUTION,
     },
   },
   layers: [{ id: "carto-tiles", type: "raster", source: "carto" }],
