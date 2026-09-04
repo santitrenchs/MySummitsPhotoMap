@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/client";
+import { PUBLISHED_ASCENT_FILTER } from "@/lib/services/ascent-feed";
 
 const PAGE_SIZE = 20;
 
@@ -152,6 +153,7 @@ export async function countUnseenFeed(userId: string): Promise<number> {
     where: {
       createdBy: { in: friendIds },
       feedSeens: { none: { userId } },
+      ...PUBLISHED_ASCENT_FILTER,
     },
   });
 }

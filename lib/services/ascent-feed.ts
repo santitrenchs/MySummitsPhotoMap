@@ -14,6 +14,11 @@ export type { View, Rarity, TimeRange };
 
 export const PAGE_SIZE = 10;
 
+// Cap on how many unseen friend ascents the first page will fetch regardless
+// of date. Generous enough that a real "unseen" badge count never exceeds it
+// in practice, while bounding the query.
+const MAX_UNSEEN_FRIENDS = 50;
+
 export const PHOTOS_INCLUDE = {
   orderBy: { createdAt: "asc" as const },
   select: {
@@ -103,7 +108,7 @@ const ASCENT_INCLUDE_WITH_SEEN = (userId: string) => ({
   feedSeens: { where: { userId }, select: { seenAt: true } },
 }) as const;
 
-const PUBLISHED_ASCENT_FILTER = { photos: { some: {} } } as const;
+export const PUBLISHED_ASCENT_FILTER = { photos: { some: {} } } as const;
 
 export async function fetchFeedPage({
   userId,
@@ -181,7 +186,14 @@ export async function fetchFeedPage({
     });
   }
 
-  const [myRaw, friendsRaw, highlightRaw] = await Promise.all([
+  // Once the initial page's dedicated unseen-fetch (below) has run, continued
+  // pagination only needs to walk the already-seen stream chronologically —
+  // still-unseen ascents were already delivered in full by that fetch.
+  const chronologicalFriendsConditions = skipUnseen
+    ? [...friendsConditions, { feedSeens: { some: { userId } } }]
+    : friendsConditions;
+
+  const [myRaw, unseenFriendsRaw, friendsRaw, highlightRaw] = await Promise.all([
     runOwn
       ? db.ascent.findMany({
           where: { AND: ownConditions },
@@ -190,9 +202,24 @@ export async function fetchFeedPage({
           include: ASCENT_INCLUDE,
         })
       : Promise.resolve([]),
+    // Dedicated first-page fetch: ALL currently-unseen friend ascents, regardless
+    // of their `date`. A friend can back-date an ascent (log a climb from years
+    // ago) long after the fact — the chronological query below only ever pages
+    // through the PAGE_SIZE most-recent-by-date rows, so a back-dated upload
+    // could sit buried past the user's normal scroll depth and never be reached,
+    // leaving it (and the "unseen" badge) stuck forever. Fetching the full unseen
+    // set up-front guarantees every unseen ascent is surfaced on the first load.
+    runFriends && !skipUnseen
+      ? prisma.ascent.findMany({
+          where: { AND: [...friendsConditions, { feedSeens: { none: { userId } } }] },
+          orderBy: { date: "desc" },
+          take: MAX_UNSEEN_FRIENDS,
+          include: ASCENT_INCLUDE_WITH_SEEN(userId),
+        })
+      : Promise.resolve([]),
     runFriends
       ? prisma.ascent.findMany({
-          where: { AND: friendsConditions },
+          where: { AND: chronologicalFriendsConditions },
           orderBy: { date: "desc" },
           take: PAGE_SIZE,
           include: ASCENT_INCLUDE_WITH_SEEN(userId),
@@ -214,7 +241,16 @@ export async function fetchFeedPage({
       : Promise.resolve(null),
   ]);
 
-  const allRaw = [...myRaw, ...friendsRaw, ...(highlightRaw ? [highlightRaw] : [])];
+  // The chronological fetch may overlap with the dedicated unseen fetch (a
+  // recent, still-unseen ascent matches both) — drop those from the
+  // chronological side so each ascent is only enriched/merged once.
+  const unseenIds = new Set(unseenFriendsRaw.map((a) => a.id));
+  const combinedFriendsRaw = [
+    ...unseenFriendsRaw,
+    ...friendsRaw.filter((a) => !unseenIds.has(a.id)),
+  ];
+
+  const allRaw = [...myRaw, ...combinedFriendsRaw, ...(highlightRaw ? [highlightRaw] : [])];
   const uniquePeakIds = [...new Set(allRaw.map((a) => a.peakId))];
   const peakStatsMap = await getPeakStats(uniquePeakIds);
 
@@ -223,7 +259,7 @@ export async function fetchFeedPage({
     peakStats: peakStatsMap.get(a.peakId),
   }));
 
-  const friendAscents = friendsRaw.map((a) => ({
+  const friendAscents = combinedFriendsRaw.map((a) => ({
     ...enrichAscent(
       a as RawAscent,
       false,
