@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { adminListChallenges, createChallenge } from "@/lib/services/challenge.service";
+import { adminListChallenges, createChallenge, parseTranslations } from "@/lib/services/challenge.service";
 
 // GET /api/admin/challenges
 export async function GET() {
@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
     const created = await createChallenge({
       name: typeof body.name === "string" ? body.name : "",
       description: typeof body.description === "string" ? body.description : null,
+      translations: parseTranslations(body.translations),
       coverUrl: typeof body.coverUrl === "string" ? body.coverUrl : null,
       sortOrder: Number.isFinite(Number(body.sortOrder)) ? Number(body.sortOrder) : 0,
       isActive: body.isActive === undefined ? true : Boolean(body.isActive),

@@ -25,10 +25,22 @@ type PickedPeak = {
 
 type SearchPeak = PickedPeak & { comarca: string | null };
 
+/** Locales the app ships. "es" is the base text stored in name/description. */
+const LOCALES = [
+  { code: "es", label: "Español (base)" },
+  { code: "ca", label: "Català" },
+  { code: "en", label: "English" },
+  { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" },
+] as const;
+type LocaleCode = (typeof LOCALES)[number]["code"];
+type Translations = Partial<Record<string, { name?: string | null; description?: string | null }>>;
+
 type EditorState = {
   id: string | null; // null = creating
   name: string;
   description: string;
+  translations: Translations;
   sortOrder: number;
   isActive: boolean;
   coverUrl: string | null;
@@ -36,7 +48,7 @@ type EditorState = {
 };
 
 const EMPTY_EDITOR: EditorState = {
-  id: null, name: "", description: "", sortOrder: 0, isActive: true, coverUrl: null, peaks: [],
+  id: null, name: "", description: "", translations: {}, sortOrder: 0, isActive: true, coverUrl: null, peaks: [],
 };
 
 export function ChallengesClient() {
@@ -75,6 +87,7 @@ export function ChallengesClient() {
       id: c.id,
       name: c.name,
       description: c.description ?? "",
+      translations: c.translations ?? {},
       sortOrder: c.sortOrder,
       isActive: c.isActive,
       coverUrl: c.coverUrl,
@@ -90,6 +103,7 @@ export function ChallengesClient() {
       const payload = {
         name: editor.name,
         description: editor.description || null,
+        translations: editor.translations,
         sortOrder: editor.sortOrder,
         isActive: editor.isActive,
         peakIds: editor.peaks.map((p) => p.id),
@@ -256,6 +270,7 @@ function ChallengeEditor({
   saving: boolean;
   error: string | null;
 }) {
+  const [lang, setLang] = useState<LocaleCode>("es");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchPeak[]>([]);
   const [searching, setSearching] = useState(false);
@@ -279,6 +294,18 @@ function ChallengeEditor({
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query]);
+
+  /** Spanish writes the base columns; any other locale writes into `translations`. */
+  function setLangField(field: "name" | "description", value: string) {
+    if (lang === "es") {
+      setState({ ...state, [field]: value });
+      return;
+    }
+    setState({
+      ...state,
+      translations: { ...state.translations, [lang]: { ...state.translations[lang], [field]: value } },
+    });
+  }
 
   const pickedIds = new Set(state.peaks.map((p) => p.id));
 
@@ -314,24 +341,57 @@ function ChallengeEditor({
       >
         <h2 className="modal-title">{state.id ? "Editar reto" : "Nuevo reto"}</h2>
 
+        {/* Name + description per language. "es" writes the base columns, which every
+            other locale falls back to, so a challenge works with only Spanish filled in. */}
         <div className="form-group">
-          <label className="form-label">Nombre</label>
-          <input
-            className="form-input"
-            value={state.name}
-            onChange={(e) => setState({ ...state, name: e.target.value })}
-            placeholder="Els 3000 del Pirineu"
-          />
-        </div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+            {LOCALES.map((l) => {
+              const active = lang === l.code;
+              const filled = l.code === "es"
+                ? !!state.name.trim()
+                : !!state.translations[l.code]?.name?.trim();
+              return (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => setLang(l.code)}
+                  style={{
+                    padding: "5px 11px", borderRadius: 999, cursor: "pointer", fontSize: 12,
+                    fontWeight: 600,
+                    border: `1px solid ${active ? "#2563eb" : "var(--border)"}`,
+                    background: active ? "#eff6ff" : "transparent",
+                    color: active ? "#1d4ed8" : "var(--text-muted)",
+                  }}
+                >
+                  {l.label}{filled && l.code !== "es" ? " ✓" : ""}
+                </button>
+              );
+            })}
+          </div>
 
-        <div className="form-group">
-          <label className="form-label">Descripción (opcional)</label>
+          <label className="form-label">Nombre {lang !== "es" && `(${lang})`}</label>
           <input
             className="form-input"
-            value={state.description}
-            onChange={(e) => setState({ ...state, description: e.target.value })}
-            placeholder="Subtítulo que se ve en la card de Disponibles"
+            value={lang === "es" ? state.name : (state.translations[lang]?.name ?? "")}
+            onChange={(e) => setLangField("name", e.target.value)}
+            placeholder={lang === "es" ? "Els 3000 del Pirineu" : `Nombre en ${lang} — vacío usa el texto base`}
           />
+
+          <label className="form-label" style={{ marginTop: 12 }}>
+            Descripción {lang !== "es" && `(${lang})`}
+          </label>
+          <input
+            className="form-input"
+            value={lang === "es" ? state.description : (state.translations[lang]?.description ?? "")}
+            onChange={(e) => setLangField("description", e.target.value)}
+            placeholder={lang === "es" ? "Subtítulo que se ve en la card de Disponibles" : "Vacío usa el texto base"}
+          />
+
+          {lang !== "es" && (
+            <p style={{ fontSize: 11.5, color: "var(--text-muted)", margin: "8px 0 0" }}>
+              Lo que dejes vacío se muestra en español.
+            </p>
+          )}
         </div>
 
         <div style={{ display: "flex", gap: 16, alignItems: "flex-end" }}>

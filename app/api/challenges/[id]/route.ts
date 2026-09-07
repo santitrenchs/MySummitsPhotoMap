@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getChallengeDetail } from "@/lib/services/challenge.service";
+import { getLocale } from "@/lib/i18n/server";
 
 // GET /api/challenges/[id] → detail scoped to the session user.
 // The user id always comes from the session, never from the request.
@@ -10,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
   try {
-    const challenge = await getChallengeDetail(id, session.user.id);
+    const challenge = await getChallengeDetail(id, session.user.id, await getLocale());
     // null also covers "inactive and the user is not a participant" — unpublished
     // challenges must not be reachable by guessing an id.
     if (!challenge) return NextResponse.json({ error: "Not found" }, { status: 404 });

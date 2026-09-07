@@ -4,6 +4,7 @@ import {
   adminGetChallenge,
   updateChallenge,
   deleteChallenge,
+  parseTranslations,
   type ChallengeInput,
 } from "@/lib/services/challenge.service";
 
@@ -30,6 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const input: Partial<ChallengeInput> = {};
   if ("name" in body) input.name = String(body.name ?? "");
   if ("description" in body) input.description = body.description ?? null;
+  if ("translations" in body) input.translations = parseTranslations(body.translations);
   if ("coverUrl" in body) input.coverUrl = body.coverUrl ?? null;
   if ("sortOrder" in body) input.sortOrder = Number(body.sortOrder) || 0;
   if ("isActive" in body) input.isActive = Boolean(body.isActive);

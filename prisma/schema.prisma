@@ -411,6 +411,10 @@ model Challenge {
   slug         String   @unique
   name         String
   description  String?                 // subtitle on the "Disponibles" card
+  /// Per-locale overrides: { "en": { "name": "...", "description": "..." }, ... }.
+  /// `name`/`description` above stay as the fallback for locales with no entry, so a
+  /// challenge is usable the moment it is created, without filling in all five.
+  translations Json?
   coverUrl     String?                 // R2; missing → color gradient fallback
   sortOrder    Int      @default(0)    // manual order; tie → createdAt desc
   isActive     Boolean  @default(true) // retire without deleting or losing others' progress

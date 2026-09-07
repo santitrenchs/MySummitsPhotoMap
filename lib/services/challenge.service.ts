@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/client";
 import { getRarityId } from "@/lib/rarity";
 import type { RarityId } from "@/lib/rarity";
 import { peakDisplayName } from "@/lib/peak-name";
+import type { Locale } from "@/lib/i18n/types";
 
 /**
  * Retos (Challenges) — curated peak lists created by admins; users only join or leave.
@@ -86,6 +87,7 @@ export type AdminChallengeSummary = {
 export type ChallengeInput = {
   name: string;
   description?: string | null;
+  translations?: ChallengeTranslations | null;
   coverUrl?: string | null;
   sortOrder?: number;
   isActive?: boolean;
@@ -93,6 +95,35 @@ export type ChallengeInput = {
 };
 
 export const MAX_PEAKS_PER_CHALLENGE = 500;
+
+/** Per-locale overrides for a challenge's name/description. */
+export type ChallengeTranslations = Partial<
+  Record<Locale, { name?: string | null; description?: string | null }>
+>;
+
+/**
+ * Reads the stored `translations` JSON defensively — it is admin-authored and could be
+ * anything, so a malformed value degrades to "no translations" rather than throwing.
+ */
+export function parseTranslations(raw: unknown): ChallengeTranslations {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return raw as ChallengeTranslations;
+}
+
+/**
+ * Locale text with fallback to the base column.
+ * The base `name`/`description` are what the admin typed first, so a challenge always
+ * reads correctly even with no translation filled in for the viewer's language.
+ */
+function localized(
+  base: string,
+  raw: unknown,
+  locale: Locale,
+  field: "name" | "description",
+): string {
+  const value = parseTranslations(raw)[locale]?.[field];
+  return typeof value === "string" && value.trim() ? value : base;
+}
 
 // ── Internals ──────────────────────────────────────────────────────────────────
 
@@ -155,6 +186,7 @@ async function assertValidPeakIds(peakIds: string[]): Promise<string[]> {
  */
 export async function listChallenges(
   userId: string,
+  locale: Locale = "en",
 ): Promise<{ mine: ChallengeSummary[]; available: ChallengeAvailable[] }> {
   const [memberships, available] = await Promise.all([
     prisma.challengeParticipant.findMany({
@@ -197,8 +229,10 @@ export async function listChallenges(
     mine: memberships.map((m) => ({
       id: m.challenge.id,
       slug: m.challenge.slug,
-      name: m.challenge.name,
-      description: m.challenge.description,
+      name: localized(m.challenge.name, m.challenge.translations, locale, "name"),
+      description: m.challenge.description
+        ? localized(m.challenge.description, m.challenge.translations, locale, "description")
+        : null,
       coverUrl: m.challenge.coverUrl,
       totalPeaks: m.challenge._count.peaks,
       completedPeaks: completedByChallenge.get(m.challengeId) ?? 0,
@@ -207,8 +241,10 @@ export async function listChallenges(
     available: available.map((c) => ({
       id: c.id,
       slug: c.slug,
-      name: c.name,
-      description: c.description,
+      name: localized(c.name, c.translations, locale, "name"),
+      description: c.description
+        ? localized(c.description, c.translations, locale, "description")
+        : null,
       coverUrl: c.coverUrl,
       totalPeaks: c._count.peaks,
       isJoined: c.participants.length > 0,
@@ -225,6 +261,7 @@ export async function listChallenges(
 export async function getChallengeDetail(
   challengeId: string,
   userId: string,
+  locale: Locale = "en",
 ): Promise<ChallengeDetail | null> {
   const challenge = await prisma.challenge.findUnique({
     where: { id: challengeId },
@@ -293,8 +330,10 @@ export async function getChallengeDetail(
   return {
     id: challenge.id,
     slug: challenge.slug,
-    name: challenge.name,
-    description: challenge.description,
+    name: localized(challenge.name, challenge.translations, locale, "name"),
+    description: challenge.description
+      ? localized(challenge.description, challenge.translations, locale, "description")
+      : null,
     coverUrl: challenge.coverUrl,
     isActive: challenge.isActive,
     isJoined,
@@ -340,6 +379,7 @@ export async function adminListChallenges(): Promise<AdminChallengeSummary[]> {
     slug: c.slug,
     name: c.name,
     description: c.description,
+    translations: parseTranslations(c.translations),
     coverUrl: c.coverUrl,
     sortOrder: c.sortOrder,
     isActive: c.isActive,
@@ -373,6 +413,7 @@ export async function adminGetChallenge(challengeId: string) {
     slug: c.slug,
     name: c.name,
     description: c.description,
+    translations: parseTranslations(c.translations),
     coverUrl: c.coverUrl,
     sortOrder: c.sortOrder,
     isActive: c.isActive,
@@ -401,6 +442,7 @@ export async function createChallenge(input: ChallengeInput): Promise<{ id: stri
       slug,
       name,
       description: input.description?.trim() || null,
+      translations: (input.translations ?? {}) as object,
       coverUrl: input.coverUrl || null,
       sortOrder: input.sortOrder ?? 0,
       isActive: input.isActive ?? true,
@@ -429,6 +471,7 @@ export async function updateChallenge(
     name?: string;
     slug?: string;
     description?: string | null;
+    translations?: object;
     coverUrl?: string | null;
     sortOrder?: number;
     isActive?: boolean;
@@ -441,6 +484,7 @@ export async function updateChallenge(
     if (name !== existing.name) data.slug = await uniqueSlug(name, challengeId);
   }
   if (input.description !== undefined) data.description = input.description?.trim() || null;
+  if (input.translations !== undefined) data.translations = (input.translations ?? {}) as object;
   if (input.coverUrl !== undefined) data.coverUrl = input.coverUrl || null;
   if (input.sortOrder !== undefined) data.sortOrder = input.sortOrder;
   if (input.isActive !== undefined) data.isActive = input.isActive;
