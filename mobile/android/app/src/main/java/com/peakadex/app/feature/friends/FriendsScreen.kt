@@ -62,7 +62,6 @@ import com.peakadex.app.core.model.IncomingRequest
 import com.peakadex.app.core.model.UserStub
 import com.peakadex.app.core.model.UserStatsResponse
 import com.peakadex.app.AppContainer
-import com.peakadex.app.core.ui.levelEmoji
 import com.peakadex.app.core.ui.levelName
 import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
@@ -382,23 +381,26 @@ private fun FriendRow(entry: FriendEntry, onRemove: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         UserAvatar(entry.friend.name, ListRowAvatar, entry.friend.avatarUrl)
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // Line 1: name
             Text(entry.friend.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsTextPrimary)
-            // Secondary line: level · N Cimas · N EP · [CS] N
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 1.dp),
-            ) {
-                Text(levelName(entry.friend.levelIdx), fontSize = 12.sp, color = FriendsTextSecondary, fontWeight = FontWeight.Medium)
-                Text("  ·  ", fontSize = 12.sp, color = sep)
+            // Line 2: level name
+            Text(
+                levelName(entry.friend.levelIdx),
+                fontSize = 12.sp,
+                color = FriendsTextSecondary,
+                fontWeight = FontWeight.Medium,
+            )
+            // Line 3: N cimas · cairn icon N · N EP
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("${entry.friend.uniquePeaks}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
-                Text(" ${stringResource(R.string.home_leaderboard_col_peaks)}", fontSize = 12.sp, color = FriendsTextSecondary)
+                Text(" ${stringResource(R.string.home_leaderboard_col_peaks)}", fontSize = 12.sp, color = sep)
                 Text("  ·  ", fontSize = 12.sp, color = sep)
                 CairnIcon(Modifier.padding(end = 3.dp))
                 Text("${entry.friend.totalCairns}", fontSize = 12.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold)
                 Text("  ·  ", fontSize = 12.sp, color = sep)
                 Text("${entry.friend.totalEp}", fontSize = 12.sp, color = valueColor, fontWeight = FontWeight.SemiBold)
-                Text(" ${stringResource(R.string.home_leaderboard_col_ep)}", fontSize = 12.sp, color = FriendsTextSecondary)
+                Text(" ${stringResource(R.string.home_leaderboard_col_ep)}", fontSize = 12.sp, color = sep)
             }
         }
         Box {

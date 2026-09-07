@@ -14,8 +14,17 @@ android {
         applicationId = "com.peakadex.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file(providers.gradleProperty("PEAKADEX_STORE_FILE").getOrElse(""))
+            storePassword = providers.gradleProperty("PEAKADEX_STORE_PASSWORD").getOrElse("")
+            keyAlias = providers.gradleProperty("PEAKADEX_KEY_ALIAS").getOrElse("")
+            keyPassword = providers.gradleProperty("PEAKADEX_KEY_PASSWORD").getOrElse("")
+        }
     }
 
     buildTypes {
@@ -32,6 +41,8 @@ android {
         }
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

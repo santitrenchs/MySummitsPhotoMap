@@ -10,6 +10,7 @@
 *.apk
 *.aab
 *.keystore
+*.jks
 !debug.keystore
 
 # Firebase google-services.json is intentionally committed:

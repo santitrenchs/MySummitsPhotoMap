@@ -1027,7 +1027,10 @@ export function AscentsClient({
             size="lg"
             fullWidth
             onClick={() => setFiltersOpen(false)}
-            style={{ borderRadius: 14, fontFamily: "inherit", boxShadow: "0 4px 14px rgba(3,105,161,0.32)", gap: 6 }}
+            style={{
+              borderRadius: 14, fontFamily: "inherit", gap: 6,
+              backgroundColor: "#2F7A5F", boxShadow: "0 4px 14px rgba(47,122,95,0.32)",
+            }}
           >
             {isRefetching || isFilterCtaLoading ? (
               <span style={{ fontSize: 15, fontWeight: 800 }}>…</span>
@@ -1048,6 +1051,14 @@ export function AscentsClient({
 
       {/* ── Feed ──────────────────────────────────────────────────────── */}
       {isRefetching ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "80px 0", marginTop: 8 }}>
+          <div style={{ width: 28, height: 28, border: "3px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+        </div>
+      ) : !pinnedRevealAscent && filtered.length === 0 && search.trim() && (hasMore || isFetchingMore) ? (
+        // Client-side search only sees ascents loaded so far. While there is more
+        // data the server could still return a match for, keep showing a spinner
+        // instead of "sin ascensiones" — the auto-load effect above (MIN_GROUPS_TO_FILL)
+        // is actively paging in more results in the background.
         <div style={{ display: "flex", justifyContent: "center", padding: "80px 0", marginTop: 8 }}>
           <div style={{ width: 28, height: 28, border: "3px solid #e5e7eb", borderTopColor: "#0369a1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
         </div>
