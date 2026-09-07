@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
+import { SearchField } from "@/components/ui/SearchField";
 import type { ChallengeAvailable } from "./ChallengesTab";
 
 const ACCENT = "#2F7A5F";
@@ -94,29 +95,13 @@ export function AvailableChallengesSheet({ isOpen, available, onClose, onJoined 
             small, so there is nothing to gain from a server round-trip here. */}
         {available.length > 0 && (
           <div style={{ padding: "0 16px 12px", flexShrink: 0 }}>
-            <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              background: "#f3f4f6", borderRadius: 12, padding: "0 12px", height: 44,
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0 }}>
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t.challenges_availableSearch}
-                style={{ flex: 1, background: "none", border: "none", outline: "none", fontSize: 16, color: "#111827", minWidth: 0 }}
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery("")}
-                  aria-label={t.cancel}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#9ca3af" }}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+            <SearchField
+              value={query}
+              onChange={setQuery}
+              placeholder={t.challenges_availableSearch}
+              variant="filled"
+              clearLabel={t.cancel}
+            />
           </div>
         )}
 

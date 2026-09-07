@@ -1815,6 +1815,27 @@ Keep these in mind but do not over-engineer for them in the MVP:
 
 ---
 
+## Search fields & filter buttons — shared components (web)
+
+**MANDATORY: every search input and every filter button on web uses `components/ui/SearchField.tsx` and `components/ui/FilterButton.tsx`. Never hand-roll another one.** If a screen needs something these do not cover, extend the shared component with a new optional prop — do not fork the styling locally. This mirrors the rule that already governs Android (`core/ui/PeakSearchComponents.kt` → `PeakSearchField` / `PeakFilterButton`).
+
+Web has **two** legitimate search variants and they must not be swapped:
+
+| Variant | Looks like | Where | Background it needs |
+|---|---|---|---|
+| `filled` | `#f3f4f6`, radius 12, height 44, clear ✕ | list + add headers (Amigos/Cordadas, Retos) and inside sheets | **white** |
+| `outlined` | white, `1px solid #E5E7EB`, radius-md, icon inset | filter bars (tab Cimas, detalle de un reto) | `#F4F7FA` |
+
+⚠️ **The `filled` variant needs a white band behind it.** Put it on the `#F4F7FA` list background and it reads muddy — the field is the same colour in both cases, so the bug looks like "the search box is greyer here" when the real cause is the backdrop. That exact mistake shipped once already.
+
+`FilterButton` turns **navy `#0D2538`** when active — not blue. Blue (`#eff6ff`/`#0369a1`) is for a selected chip inside a panel; navy means "this control is filtering the list". It also takes an optional `badgeCount` for the orange counter bubble.
+
+`AddButton` is the green `#2F7A5F` "+ Añadir" that pairs with a filled field. Green is the create/positive colour across the whole app, web and Android.
+
+**Migrated so far:** `PeakFiltersBar` (tab Cimas), `CordadasClient` (both its header and its add-friend modal), and the three Retos screens. **Still hand-rolled** — migrate them when you next touch them: `AscentsClient`, `PhotosTabV2`, `PersonsClient`, `MapView`, `MapPeaksSidebar`, `CordadaInviteClient`, `FriendsClient`, `PhotoTagStep`, `NewAscentModalContent`.
+
+---
+
 ## Retos (Challenges) — shipped to staging 2026-09-07
 
 A **Reto** is a curated list of peaks + each user's progress over it. Created by admin only; users just join or leave. This section is the authoritative design and matches what is on `develop`/staging.

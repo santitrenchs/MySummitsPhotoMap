@@ -4,6 +4,8 @@ import { useState, useTransition, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
+import { SearchField } from "@/components/ui/SearchField";
+import { AddButton } from "@/components/ui/FilterButton";
 import { LEVEL_DEFS } from "@/lib/level-utils";
 import type { FriendEntry } from "@/lib/services/friendship.service";
 import type { CordadaSummary, CordadaInvite } from "@/lib/services/cordada.service";
@@ -455,44 +457,14 @@ export function CordadasClient({
         position: "sticky", top: "var(--top-nav-h, 52px)", zIndex: 20, background: "white",
         display: "flex", alignItems: "center", gap: 8,
       }}>
-        <div style={{
-          flex: 1, display: "flex", alignItems: "center", gap: 10,
-          background: "#f3f4f6", borderRadius: 12, padding: "0 12px", height: 44,
-        }}>
-          <SearchIcon />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t.friends_searchPlaceholder}
-            style={{
-              flex: 1, background: "none", border: "none", outline: "none",
-              fontSize: 15, color: "#111827",
-            }}
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#9ca3af" }}
-            >
-              ✕
-            </button>
-          )}
-        </div>
-        <button
-          onClick={() => setChoiceModalOpen(true)}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "0 14px", height: 44, borderRadius: 12, border: "none",
-            background: "#2F7A5F", color: "white",
-            fontSize: 14, fontWeight: 600, cursor: "pointer", flexShrink: 0,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          {t.friends_add}
-        </button>
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          placeholder={t.friends_searchPlaceholder}
+          variant="filled"
+          clearLabel={t.cancel}
+        />
+        <AddButton label={t.friends_add} onClick={() => setChoiceModalOpen(true)} />
       </div>
 
       {/* ── Choice modal (amigo / cordada) ───────── */}
@@ -621,30 +593,14 @@ export function CordadasClient({
             </div>
             {/* Search input */}
             <div style={{ padding: "12px 16px" }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 10,
-                background: "#f3f4f6", borderRadius: 12, padding: "0 12px", height: 44,
-              }}>
-                <SearchIcon />
-                <input
-                  ref={addInputRef}
-                  value={addQuery}
-                  onChange={(e) => setAddQuery(e.target.value)}
-                  placeholder={t.friends_searchPlaceholder}
-                  style={{
-                    flex: 1, background: "none", border: "none", outline: "none",
-                    fontSize: 16, color: "#111827",
-                  }}
-                />
-                {addQuery && (
-                  <button
-                    onClick={() => setAddQuery("")}
-                    style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#9ca3af" }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
+              <SearchField
+                value={addQuery}
+                onChange={setAddQuery}
+                placeholder={t.friends_searchPlaceholder}
+                variant="filled"
+                clearLabel={t.cancel}
+                inputRef={addInputRef}
+              />
             </div>
             {/* Results */}
             <div style={{ overflowY: "auto", flex: 1 }}>
@@ -1296,13 +1252,6 @@ function CordadaRow({ cordada }: { cordada: CordadaSummary }) {
 
 // ── Small icons ────────────────────────────────────────────────────────────────
 
-function SearchIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round">
-      <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-    </svg>
-  );
-}
 
 function ChevronRightIcon() {
   return (

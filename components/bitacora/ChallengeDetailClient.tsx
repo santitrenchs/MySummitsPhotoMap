@@ -8,6 +8,8 @@ import { RARITIES } from "@/lib/rarity";
 import type { RarityId } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { imgUrl } from "@/lib/storage/image-url";
+import { SearchField } from "@/components/ui/SearchField";
+import { FilterButton } from "@/components/ui/FilterButton";
 import { BitacoraTabs } from "./BitacoraTabs";
 import type { ChallengeDetail, ChallengePeakRow } from "@/lib/services/challenge.service";
 
@@ -120,56 +122,19 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
         </div>
       </div>
 
-      {/* Search + Filters — identical shapes to PeakFiltersBar in the Cimas tab:
-          white field with a border and radius-md, and the button turning navy when
-          active. Not a pill, and not the blue accent used for chips. */}
+      {/* Shared components — same bar as the Cimas tab, by construction. */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "14px 16px 12px" }}>
-        <div style={{ flex: 1, position: "relative" }}>
-          <svg
-            width="14" height="14" viewBox="0 0 24 24"
-            fill="none" stroke="#94A3B8" strokeWidth="2.2" strokeLinecap="round"
-            style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-          >
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t.challenges_searchPeak}
-            style={{
-              width: "100%", padding: "10px 12px 10px 32px",
-              background: "white", border: "1px solid #E5E7EB",
-              borderRadius: "var(--radius-md)",
-              boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
-              fontSize: 16, color: "#0D2538", outline: "none", boxSizing: "border-box",
-            }}
-          />
-        </div>
-
-        <button
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          placeholder={t.challenges_searchPeak}
+          variant="outlined"
+        />
+        <FilterButton
+          label={t.challenges_filters}
+          active={status !== "all"}
           onClick={() => { setDraftStatus(status); setFiltersOpen(true); }}
-          style={{
-            padding: "10px 14px", borderRadius: "var(--radius-md)",
-            border: `1px solid ${status !== "all" ? "#0D2538" : "#E5E7EB"}`,
-            background: status !== "all" ? "#0D2538" : "white",
-            boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
-            cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
-          }}
-        >
-          <svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke={status !== "all" ? "white" : "#374151"} strokeWidth="1.8" strokeLinecap="round">
-            <line x1="0" y1="2" x2="14" y2="2" />
-            <line x1="2" y1="6" x2="12" y2="6" />
-            <line x1="4" y1="10" x2="10" y2="10" />
-          </svg>
-          <span style={{
-            fontFamily: "var(--font-inter, sans-serif)",
-            fontSize: 13, fontWeight: 700,
-            color: status !== "all" ? "white" : "#374151",
-          }}>
-            {t.challenges_filters}
-          </span>
-        </button>
+        />
       </div>
 
       {/* Peak list — always the full challenge, filters only hide rows */}
