@@ -55,16 +55,18 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           instead of a page of its own — and every tab is a way back out. */}
       <BitacoraTabs active="challenges" />
 
-      {/* Back row */}
+      {/* Back row — on the #F4F7FA background like everything below the tabs. The button
+          itself is white so it still reads as a control against that grey. */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        background: "white", borderBottom: "1px solid #E5E7EB", padding: "10px 14px",
+        display: "flex", alignItems: "center", gap: 10, padding: "12px 16px 4px",
       }}>
         <Link
           href="/bitacora?tab=challenges"
           aria-label={t.close}
           style={{
-            width: 28, height: 28, borderRadius: "50%", flexShrink: 0, background: "#F1F5F9",
+            width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+            background: "white", border: "1px solid #E5E7EB",
+            boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
             display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
           }}
         >
