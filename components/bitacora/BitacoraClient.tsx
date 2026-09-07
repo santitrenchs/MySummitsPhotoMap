@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeaksTabV2 } from "@/components/profile/PeaksTabV2";
 import { PhotosTabV2 } from "@/components/profile/PhotosTabV2";
+import { ChallengesTab } from "./ChallengesTab";
 import type { RarityId } from "@/lib/rarity";
 import type { PeakForFilter } from "@/components/profile/usePeakFilters";
 
@@ -24,16 +25,17 @@ type Props = {
   taggedPhotos: Photo[];
 };
 
-type Tab = "peaks" | "photos" | "tagged";
+type Tab = "peaks" | "challenges" | "photos" | "tagged";
 
 export function BitacoraClient({ peaks, photos, taggedPhotos }: Props) {
   const t = useT();
   const [tab, setTab] = useState<Tab>("peaks");
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "peaks",  label: t.profile_tab_peaks },
-    { id: "photos", label: t.field_photos },
-    { id: "tagged", label: t.profile_tab_tagged },
+    { id: "peaks",      label: t.profile_tab_peaks },
+    { id: "challenges", label: t.challenges_tab },
+    { id: "photos",     label: t.field_photos },
+    { id: "tagged",     label: t.profile_tab_tagged },
   ];
 
   return (
@@ -66,6 +68,9 @@ export function BitacoraClient({ peaks, photos, taggedPhotos }: Props) {
       <div style={{ padding: "0 16px" }}>
         {tab === "peaks" && (
           <PeaksTabV2 peaks={peaks} />
+        )}
+        {tab === "challenges" && (
+          <ChallengesTab />
         )}
         {tab === "photos" && (
           <PhotosTabV2 photos={photos} />
