@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import type { ChallengeSummary, ChallengeAvailable } from "@/lib/services/challenge.service";
@@ -13,29 +13,30 @@ export type {
   ChallengeAvailable,
 } from "@/lib/services/challenge.service";
 
+/** What the server page hands over, straight from listChallenges(). */
+export type ChallengesData = {
+  mine: ChallengeSummary[];
+  available: ChallengeAvailable[];
+};
+
 const ACCENT = "#2F7A5F";
 
-export function ChallengesTab() {
+export function ChallengesTab({ initial }: { initial: ChallengesData }) {
   const t = useT();
-  const [mine, setMine] = useState<ChallengeSummary[]>([]);
-  const [available, setAvailable] = useState<ChallengeAvailable[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Server-rendered like every other Bitácora tab, so switching to Retos shows content
+  // immediately instead of a spinner. Refetches only happen after joining.
+  const [mine, setMine] = useState<ChallengeSummary[]>(initial.mine);
+  const [available, setAvailable] = useState<ChallengeAvailable[]>(initial.available);
   const [query, setQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const load = useCallback(async () => {
-    try {
-      const res = await fetch("/api/challenges");
-      if (!res.ok) return;
-      const data = await res.json();
-      setMine(data.mine ?? []);
-      setAvailable(data.available ?? []);
-    } finally {
-      setLoading(false);
-    }
+    const res = await fetch("/api/challenges");
+    if (!res.ok) return;
+    const data = await res.json();
+    setMine(data.mine ?? []);
+    setAvailable(data.available ?? []);
   }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -55,15 +56,15 @@ export function ChallengesTab() {
     load();
   }
 
-  if (loading) {
-    return <div style={{ padding: "40px 0", textAlign: "center", color: "#94A3B8", fontSize: 14 }}>…</div>;
-  }
-
   return (
-    <div style={{ background: "#F4F7FA", margin: "0 -16px", padding: "0 16px 32px" }}>
-      {/* Search + Add — same shapes as the Amigos/Cordadas header (grey field, radius 12,
-          height 44) rather than bespoke ones, so the two screens read as one system. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12 }}>
+    <div style={{ margin: "0 -16px" }}>
+      {/* Search + Add on a white band, like the Amigos/Cordadas header. The field is the
+          same #f3f4f6 in both; what made it look muddy here was sitting on the #F4F7FA
+          list background instead of on white. */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8,
+        background: "white", padding: "12px 16px 8px",
+      }}>
         <div style={{
           flex: 1, display: "flex", alignItems: "center", gap: 10,
           background: "#f3f4f6", borderRadius: 12, padding: "0 12px", height: 44,
@@ -103,10 +104,11 @@ export function ChallengesTab() {
         </button>
       </div>
 
+      <div style={{ background: "#F4F7FA", padding: "0 16px 32px" }}>
       <p style={{
         fontFamily: "var(--font-space-grotesk, sans-serif)",
         fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
-        color: "#94A3B8", margin: "12px 0 8px 2px",
+        color: "#94A3B8", margin: 0, padding: "12px 2px 8px",
       }}>
         {i(t.challenges_countActive, { n: mine.length })}
         {" · "}
@@ -127,6 +129,8 @@ export function ChallengesTab() {
           ))}
         </div>
       )}
+
+      </div>
 
       <AvailableChallengesSheet
         isOpen={sheetOpen}
