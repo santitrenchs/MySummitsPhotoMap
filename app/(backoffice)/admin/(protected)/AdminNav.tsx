@@ -22,6 +22,12 @@ const ICON_PEAKS = (
     <polygon points="12 2 22 20 2 20"/>
   </svg>
 );
+const ICON_CHALLENGES = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 21v-7"/><path d="M4 14V4"/>
+    <path d="M4 4h11l-2 3.5L15 11H4"/>
+  </svg>
+);
 
 const NAV_SECTIONS = [
   {
@@ -33,8 +39,9 @@ const NAV_SECTIONS = [
   {
     label: "Contenido",
     items: [
-      { href: "/admin/users", label: "Usuarios", icon: ICON_USERS, exact: false as const },
-      { href: "/admin/peaks", label: "Cimas",    icon: ICON_PEAKS, exact: false as const },
+      { href: "/admin/users",      label: "Usuarios", icon: ICON_USERS,      exact: false as const },
+      { href: "/admin/peaks",      label: "Cimas",    icon: ICON_PEAKS,      exact: false as const },
+      { href: "/admin/challenges", label: "Retos",    icon: ICON_CHALLENGES, exact: false as const },
     ],
   },
 ];

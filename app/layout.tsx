@@ -34,7 +34,15 @@ export default async function RootLayout({
     pathname.startsWith("/ca") ? "ca" : "es";
 
   return (
-    <html lang={lang} className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    // suppressHydrationWarning: the admin layout runs a blocking anti-flash script that
+    // sets `data-theme` on <html> before React hydrates, so the DOM legitimately carries an
+    // attribute this server render never emits. React only suppresses one level deep — the
+    // element's own attributes — so real mismatches inside the tree are still reported.
+    <html
+      lang={lang}
+      className={`${inter.variable} ${spaceGrotesk.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-X4DRCNLPJ0" strategy="afterInteractive" />
         <Script id="ga-init" strategy="afterInteractive">{`
