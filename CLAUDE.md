@@ -1806,12 +1806,151 @@ Keep these in mind but do not over-engineer for them in the MVP:
 
 - **Email verification**: send verification link on register, block or warn until verified
 - **Friend system**: User search, friend requests, accepted friends feed, contact-first invite, external email/WhatsApp sharing, and cordadas are implemented. Pending: automatic friendship/link creation when a non-registered external invitee later registers.
-- **Challenges**: Time-limited goals (e.g., "Climb 3 peaks this month") to drive retention
-- **Collections / Lists**: Curated peak lists (e.g., "100 Pyrenean 3000ers") a user can work through
+- **Challenges (time-limited)**: Time-boxed goals (e.g., "Climb 3 peaks this month") to drive retention. Distinct from the evergreen curated Retos below — see "Retos (Challenges) — design plan".
+- **Collections / Lists**: Curated peak lists (e.g., "100 Pyrenean 3000ers") a user can work through → **designed, not yet built**: see "Retos (Challenges) — design plan"
 - **Notifications**: Friend activity alerts, milestone celebrations
 - **Explore evolution**: Filter peaks by range, altitude, country; suggested peaks based on history
 - **Profile page**: Public-facing summary of a user's ascents and stats
 - **Per-tenant DBs**: `Tenant.dbUrl` is already wired; migration path exists when needed
+
+---
+
+## Retos (Challenges) — design plan (2026-09-07, NOT YET IMPLEMENTED)
+
+A **Reto** is a curated list of peaks + each user's progress over it. Created by admin only; users just join or leave. First real one: "Els 3000 del Pirineu". This section is the authoritative design — it was reviewed for performance/security before any code was written. Nothing below is built yet.
+
+### Data model — three tables, no cached counters
+
+```prisma
+model Challenge {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  description  String?                    // subtitle on the "Disponibles" card
+  coverUrl     String?                    // R2; missing → color gradient fallback
+  sortOrder    Int      @default(0)       // manual order; tie → createdAt desc
+  isActive     Boolean  @default(true)    // retire without deleting or losing others' progress
+  peaks        ChallengePeak[]
+  participants ChallengeParticipant[]
+  createdAt    DateTime @default(now())
+
+  @@index([isActive, sortOrder])
+  @@map("challenges")
+}
+
+model ChallengePeak {
+  challengeId String
+  peakId      String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  peak        Peak      @relation(fields: [peakId], references: [id])
+
+  @@id([challengeId, peakId])
+  @@index([peakId])          // ⚠️ without this, "which challenges contain peak X?" is a seq scan
+  @@map("challenge_peaks")
+}
+
+model ChallengeParticipant {
+  challengeId String
+  userId      String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt    DateTime  @default(now())
+
+  @@id([challengeId, userId])
+  @@index([userId])
+  @@map("challenge_participants")
+}
+```
+
+`Peak` gains `challengePeaks ChallengePeak[]`, `User` gains `challenges ChallengeParticipant[]`. No `startsAt`/`endsAt` — time-limited challenges are a separate roadmap concept.
+
+### Progress is computed live — never cached
+
+**`progressCount` was deliberately rejected.** Copying the `user_stats` cache pattern here would have introduced three bugs: progress stuck at 0 when someone joins with prior ascents; 500 stale participant rows every time the admin edits a challenge's peak list; and an extra recompute inside the `POST /api/ascents` critical path (the one feeding the capture-reveal).
+
+Instead, 2 queries for the whole list:
+1. `Ascent.findMany({ where: { createdBy: userId }, select: { peakId: true } })` — covered by `@@index([createdBy])`.
+2. `ChallengePeak` rows for the challenges they joined.
+3. Intersect in memory (`Set`).
+
+~1000 rows for 5 challenges × 200 peaks. **No hook in the ascent CRUD, no invalidation, no join-time backfill.** "Completed" = `progress === total`, computed the same way. Like `recomputeUserStats`, this filters by `createdBy` and ignores `tenantId`.
+
+### API
+
+User-facing (`/api/challenges/*` web + `/api/v1/challenges/*` mobile):
+
+| Method | Route | Behaviour |
+|---|---|---|
+| `GET` | `/challenges` | `{ mine, available }` — `mine` carries progress; `available` excludes already-joined |
+| `GET` | `/challenges/{id}` | Detail: challenge peaks + done/pending **for the requester only** |
+| `POST` | `/challenges/{id}/join` | Creates `ChallengeParticipant` |
+| `DELETE` | `/challenges/{id}/join` | Leave (row deleted; progress reappears on rejoin) |
+
+Admin (`/api/admin/challenges/*`): `GET` / `POST` / `PATCH` / `DELETE` + `POST /{id}/cover`.
+
+**Non-negotiable rules:**
+- **`userId` always from the JWT/session** — never from body or query. Not in `join` (would let anyone enrol third parties), not in the detail (`?userId=` would leak another user's history).
+- **`isActive` filtered server-side and asymmetrically**: "Disponibles" → only `isActive: true`; "Mis retos" → **all, active or not** (otherwise retiring a challenge makes joined users' progress vanish). `join` must also check `isActive`, so a leaked id from an old listing can't be used.
+- **Admin routes call `requireAdmin()` in-route**, copying `app/api/admin/peaks/route.ts` (re-reads `isAdmin` from the DB). `proxy.ts` reads it from the JWT and has the documented stale-token caveat — the in-route DB check is what closes it.
+- **Explicit field whitelist** on create/update (never `create({ data: body })`), same discipline as the PATCH field-isolation pattern.
+- **Validate the peak array**: every id must exist (`findMany` + length compare) and cap the array (~500) so a huge POST can't blow up the transaction.
+- Cover upload reuses the avatar/cordada validation (mime whitelist + size cap). Slug autogenerated; `P2002` collision → handled error, not a 500.
+
+**N+1 traps to avoid:** use `_count` for the peak count (never `include: { peaks: true }`); the detail is 2 queries + in-memory merge, never one query per peak; reuse `profile.service.ts`'s `firstPhotoUrl` query for row thumbnails; **do not add a participant count** ("N people in this challenge") — it would force a cached counter back in.
+
+All logic in `lib/services/challenge.service.ts`; routes only auth + parse + call.
+
+### UI — `/bitacora`, "Retos" tab
+
+Tab order becomes **`Cimas · Retos · Fotos · Etiquetado`**.
+
+- **No inner toggle** — the tab opens straight on the user's own challenges.
+- Header: search field "Buscar reto" + green `+ Añadir` pill (same component pairing as the Amigos/Cordadas screen) + count line `1 RETO ACTIVO · 2 DISPONIBLES`.
+- **"Mis retos" = flat rows, not cards**: one white surface, rows with circular icon + name + `4/23` fraction + 3px progress bar + subtitle, separated by inset dividers. Same reasoning that removed the per-item cards from Amigos/Cordadas.
+- **`+ Añadir` opens a "Retos disponibles" bottom sheet**: capped height (`max-height: 78%`, never full screen), fixed header + search, scroll only in the list. Cards **with cover art belong here only** — this is the discovery moment. Its own search filters the sheet's list client-side (curated, small catalog — no server call), with two distinct empty states: no match vs already joined everything.
+- Joining moves the card out of the sheet into a flat row in "Mis retos" (optimistic); the sheet closes itself.
+- All available challenges are listed by default, ordered by `sortOrder` (fallback `createdAt desc`) — no truncation.
+
+### UI — Reto detail (pushed screen, mirrors the Cimas tab)
+
+- Slim topbar: back arrow + challenge name.
+- Stats header: `4 picos · 19 pendientes` left, `MÁS ALTA · 3404 m` right, progress bar with thumb — same shape as `PeaksCatalogHeader`, measuring done/pending instead of rarity.
+- `Buscar cima…` + `Filtros` button (`PeakFiltersBar`); Filtros opens a sheet with **Estado: Todos / Hechos / Pendientes** + a "Ver picos" CTA.
+- **The full peak list, always** — never a "+N más". Filters hide, they never truncate.
+- Row identical to `PeakRowCard`: rarity strip, 100px photo with altitude overlay, name, rarity pill, `ÚLTIMA` + date. For pending peaks, the "photo" is the app's existing missing-photo fallback (navy `#0D2538` + 🏔 at 40% opacity) and the date slot reads "Sin ascensión".
+- Tapping a pending peak → `+ Registrar ascensión` with that peak preselected (same flow as the map panel).
+
+### Admin panel (`/admin/challenges`)
+
+Follows the `/admin/peaks` pattern: list of existing challenges, form with name / description / cover / `sortOrder` / `isActive`, and a **peak selector built on `PeakPicker`** — peaks are picked by `Peak.id` from the real catalog, never typed as free text (free text reintroduces the missing/mislabelled-peak data risk).
+
+Minimum data to create a challenge: **name + peak list** required; description, cover, `sortOrder` and `isActive` all optional with the fallbacks listed in the schema comments.
+
+### i18n — tab label
+
+| es | ca | en | fr | de |
+|---|---|---|---|---|
+| Retos | Reptes | Challenges | Défis | **Challenges** |
+
+German keeps the loanword — `Herausforderungen` is too long for a four-tab row.
+
+### Build order
+
+1. Schema + `challenge.service.ts` (model, indexes, live progress).
+2. Admin panel — so the first real challenge can be created without a deploy.
+3. **Audit the peak catalog** for that first challenge: verify every peak exists with the right name and altitude before publishing it.
+4. User API.
+5. "Retos" tab in `/bitacora`.
+6. Reto detail.
+7. i18n across all 5 locales.
+
+### Explicitly out of scope (decided — don't let these creep in)
+
+- **No completion reward** — no bonus EP, badge or new cairn in the MVP.
+- **No participant counter** — would force a cached counter.
+- **No deadline/time-limited challenges** — separate roadmap concept.
+- **Web only** — Android/iOS parity (`BitacoraScreen`) comes later if wanted.
+- **Users never create challenges** — admin only; user-created challenges are future roadmap.
 
 ---
 

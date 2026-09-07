@@ -55,6 +55,7 @@ model Peak {
 
   rarity    Rarity?        @relation(fields: [rarityId], references: [id])
   ascents   Ascent[]
+  challengePeaks ChallengePeak[]
 
   @@index([rarityId])
   @@index([country])
@@ -117,6 +118,7 @@ model User {
   cordadasOwned          Cordada[]      @relation("CordadaOwner")
   cordadaMemberships     CordadaMember[]
   cordadaInvitesSent     CordadaMember[] @relation("CordadaInviter")
+  challenges             ChallengeParticipant[]
   @@map("users")
 }
 
@@ -397,6 +399,52 @@ enum CordadaMemberStatus {
   PENDING
   ACCEPTED
   DECLINED
+}
+
+// ── Retos (Challenges) ─────────────────────────────────────────────────────────
+// Curated peak lists created by admins; users only join or leave.
+// Progress is NEVER cached — it is computed live by intersecting the user's
+// distinct ascended peakIds with the challenge's peaks. See CLAUDE.md.
+
+model Challenge {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  description  String?                 // subtitle on the "Disponibles" card
+  coverUrl     String?                 // R2; missing → color gradient fallback
+  sortOrder    Int      @default(0)    // manual order; tie → createdAt desc
+  isActive     Boolean  @default(true) // retire without deleting or losing others' progress
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  peaks        ChallengePeak[]
+  participants ChallengeParticipant[]
+
+  @@index([isActive, sortOrder])
+  @@map("challenges")
+}
+
+model ChallengePeak {
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  peakId      String
+  peak        Peak      @relation(fields: [peakId], references: [id], onDelete: Cascade)
+
+  @@id([challengeId, peakId])
+  @@index([peakId])                    // "which challenges contain peak X?" — without this it's a seq scan
+  @@map("challenge_peaks")
+}
+
+model ChallengeParticipant {
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt    DateTime  @default(now())
+
+  @@id([challengeId, userId])
+  @@index([userId])                    // "my challenges"
+  @@map("challenge_participants")
 }
 
 model NewsletterSubscriber {
