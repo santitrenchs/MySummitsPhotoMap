@@ -1821,12 +1821,12 @@ Keep these in mind but do not over-engineer for them in the MVP:
 
 Web has **two** legitimate search variants and they must not be swapped:
 
-| Variant | Looks like | Where | Background it needs |
-|---|---|---|---|
-| `filled` | `#f3f4f6`, radius 12, height 44, clear ✕ | list + add headers (Amigos/Cordadas, Retos) and inside sheets | **white** |
-| `outlined` | white, `1px solid #E5E7EB`, radius-md, icon inset | filter bars (tab Cimas, detalle de un reto) | `#F4F7FA` |
+| Variant | Looks like | Where |
+|---|---|---|
+| `filled` | `#f3f4f6`, radius 12, height 44, clear ✕ | screens whose header band is **white**: Amigos/Cordadas, and inside sheets |
+| `outlined` | white, `1px solid #E5E7EB`, radius-md, icon inset | anything sitting on the `#F4F7FA` background: every tab inside `/bitacora`, filter bars |
 
-⚠️ **The `filled` variant needs a white band behind it.** Put it on the `#F4F7FA` list background and it reads muddy — the field is the same colour in both cases, so the bug looks like "the search box is greyer here" when the real cause is the backdrop. That exact mistake shipped once already.
+⚠️ **Pick the variant from the background, not from the screen's job.** A grey field on the `#F4F7FA` catalogue background reads muddy — same colour, wrong backdrop. **Inside `/bitacora` only the tab strip is white**; everything below it is `#F4F7FA`, so every tab there uses `outlined`. Getting this backwards shipped twice: first as a grey field on grey, then as a white band bolted under the tabs to justify the grey field. The fix both times was to match the sibling Cimas tab.
 
 `FilterButton` turns **navy `#0D2538`** when active — not blue. Blue (`#eff6ff`/`#0369a1`) is for a selected chip inside a panel; navy means "this control is filtering the list". It also takes an optional `badgeCount` for the orange counter bubble.
 

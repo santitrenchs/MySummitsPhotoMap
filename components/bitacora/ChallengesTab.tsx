@@ -59,29 +59,24 @@ export function ChallengesTab({ initial }: { initial: ChallengesData }) {
   }
 
   return (
-    <div style={{ margin: "0 -16px" }}>
-      {/* Search + Add on a white band, like the Amigos/Cordadas header. The field is the
-          same #f3f4f6 in both; what made it look muddy here was sitting on the #F4F7FA
-          list background instead of on white. */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 8,
-        background: "white", padding: "12px 16px 8px",
-      }}>
+    <div style={{ background: "#F4F7FA", margin: "0 -16px", padding: "0 16px 32px" }}>
+      {/* Inside Bitácora only the tab strip is white; everything below sits on #F4F7FA.
+          So this uses the same outlined field as the sibling Cimas tab — the filled grey
+          one belongs to screens with a white header, like Amigos/Cordadas. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 0 12px" }}>
         <SearchField
           value={query}
           onChange={setQuery}
           placeholder={t.challenges_searchPlaceholder}
-          variant="filled"
-          clearLabel={t.cancel}
+          variant="outlined"
         />
         <AddButton label={t.challenges_add} onClick={() => setSheetOpen(true)} />
       </div>
 
-      <div style={{ background: "#F4F7FA", padding: "0 16px 32px" }}>
       <p style={{
         fontFamily: "var(--font-space-grotesk, sans-serif)",
         fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
-        color: "#94A3B8", margin: 0, padding: "12px 2px 8px",
+        color: "#94A3B8", margin: 0, padding: "0 2px 8px",
       }}>
         {i(t.challenges_countActive, { n: mine.length })}
         {" · "}
@@ -102,8 +97,6 @@ export function ChallengesTab({ initial }: { initial: ChallengesData }) {
           ))}
         </div>
       )}
-
-      </div>
 
       <AvailableChallengesSheet
         isOpen={sheetOpen}
