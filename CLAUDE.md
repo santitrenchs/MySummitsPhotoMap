@@ -1806,8 +1806,8 @@ Keep these in mind but do not over-engineer for them in the MVP:
 
 - **Email verification**: send verification link on register, block or warn until verified
 - **Friend system**: User search, friend requests, accepted friends feed, contact-first invite, external email/WhatsApp sharing, and cordadas are implemented. Pending: automatic friendship/link creation when a non-registered external invitee later registers.
-- **Challenges (time-limited)**: Time-boxed goals (e.g., "Climb 3 peaks this month") to drive retention. Distinct from the evergreen curated Retos below — see "Retos (Challenges) — design plan".
-- **Collections / Lists**: Curated peak lists (e.g., "100 Pyrenean 3000ers") a user can work through → **designed, not yet built**: see "Retos (Challenges) — design plan"
+- **Challenges (time-limited)**: Time-boxed goals (e.g., "Climb 3 peaks this month") to drive retention. Distinct from the evergreen curated Retos below — see "Retos (Challenges)".
+- **Collections / Lists**: Curated peak lists (e.g., "100 Pyrenean 3000ers") a user can work through → **built**, see "Retos (Challenges)"
 - **Notifications**: Friend activity alerts, milestone celebrations
 - **Explore evolution**: Filter peaks by range, altitude, country; suggested peaks based on history
 - **Profile page**: Public-facing summary of a user's ascents and stats
@@ -1815,9 +1815,13 @@ Keep these in mind but do not over-engineer for them in the MVP:
 
 ---
 
-## Retos (Challenges) — design plan (2026-09-07, NOT YET IMPLEMENTED)
+## Retos (Challenges) — shipped to staging 2026-09-07
 
-A **Reto** is a curated list of peaks + each user's progress over it. Created by admin only; users just join or leave. First real one: "Els 3000 del Pirineu". This section is the authoritative design — it was reviewed for performance/security before any code was written. Nothing below is built yet.
+A **Reto** is a curated list of peaks + each user's progress over it. Created by admin only; users just join or leave. This section is the authoritative design and matches what is on `develop`/staging.
+
+**Built and verified in the browser:** schema + `challenge.service.ts` (24 unit tests), admin panel `/admin/challenges`, user API `/api/challenges/*`, the **Retos** tab in `/bitacora`, and the detail at `/bitacora/retos/[id]`.
+
+**Not built:** the `v1` mobile routes (no consumer yet — ~20 lines over the same service), and no real challenge exists in any database yet. See "Creating the first real challenge" at the end.
 
 ### Data model — three tables, no cached counters
 
@@ -1934,22 +1938,30 @@ Minimum data to create a challenge: **name + peak list** required; description, 
 
 German keeps the loanword — `Herausforderungen` is too long for a four-tab row.
 
-### Build order
+### What shipped, in order
 
-1. Schema + `challenge.service.ts` (model, indexes, live progress).
-2. Admin panel — so the first real challenge can be created without a deploy.
-3. **Audit the peak catalog** for that first challenge: verify every peak exists with the right name and altitude before publishing it.
-4. User API.
-5. "Retos" tab in `/bitacora`.
-6. Reto detail.
-7. i18n across all 5 locales.
+1. ✅ Schema + `challenge.service.ts` — `0207232`. Three tables, live progress, 24 tests.
+2. ✅ Admin panel `/admin/challenges` + `/api/admin/challenges/*` — `0ffc19b`. Peak picker reuses `GET /api/admin/peaks?q=`; `requireAdmin()` extracted to `lib/auth/require-admin.ts`.
+3. ✅ User API `/api/challenges/*` — `77eff5c`.
+4. ✅ Retos tab + detail — `692a07b`.
+5. ✅ i18n — 34 keys across all 5 locales, added alongside each phase.
+
+Two fixes found while verifying in the browser, both committed with their phase: the admin table blanked out on every toggle (`load()` now only shows the spinner on first load), and `app/layout.tsx` gained `suppressHydrationWarning` on `<html>` because the admin's anti-flash script sets `data-theme` before React hydrates.
+
+### Creating the first real challenge — the open blocker
+
+**The good peak catalogue lives in production, not staging** (~166k peaks vs ~84.7k; staging is missing whole peaks, notably Andorra and Catalunya Nord). Any audit of *whether a list's peaks exist* has to run against production, read-only — see the `peak-catalog-staging-stale` memory.
+
+A first attempt at the FEEC "100 Cims" was discarded for exactly this reason. Worth knowing if it is retried: it is **not** a list of 100. It is a catalogue of **522**, and since 1/7/2019 the challenge is completed by climbing **100 of a 150-peak "essencials" subset** ([normativa](https://www.feec.cat/activitats/100-cims/normativa-i-funcionament/), [PDF of the 150](https://www.feec.cat/wp-content/uploads/2020/02/Essencials-100-cims.pdf)). The FEEC list is machine-readable at `https://www.feec.cat/wp-content/cron-scripts/ascensos_cims.txt` (JSON, no scraping needed).
+
+⚠️ That "100 of 150" rule **does not fit the current model**, where a challenge is complete when every peak is done. Supporting it needs a `targetCount Int?` on `Challenge` — additive, but decide it before loading any list where the target differs from the peak count.
 
 ### Explicitly out of scope (decided — don't let these creep in)
 
 - **No completion reward** — no bonus EP, badge or new cairn in the MVP.
 - **No participant counter** — would force a cached counter.
 - **No deadline/time-limited challenges** — separate roadmap concept.
-- **Web only** — Android/iOS parity (`BitacoraScreen`) comes later if wanted.
+- **Web only** — Android/iOS parity (`BitacoraScreen`) comes later if wanted; the `v1` routes are not written.
 - **Users never create challenges** — admin only; user-created challenges are future roadmap.
 
 ---
