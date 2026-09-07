@@ -169,12 +169,23 @@ describe("listChallenges() — live progress", () => {
     const { mine, available } = await listChallenges(USER);
     expect(mine.map((c) => c.id)).toEqual(["c2"]);
     expect(available).toEqual([]);
-    // The "available" query must filter on isActive AND exclude joined ones.
+    // "available" only ever contains active challenges — inactive ones are never offered.
     expect(db.challenge.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { isActive: true, participants: { none: { userId: USER } } },
-      }),
+      expect.objectContaining({ where: { isActive: true } }),
     );
+  });
+
+  it("keeps already-joined challenges in `available`, flagged as joined", async () => {
+    // The add sheet greys them out with a tick rather than hiding them, so the user can
+    // see a challenge they just joined instead of watching it vanish.
+    db.challengeParticipant.findMany.mockResolvedValue([]);
+    db.challenge.findMany.mockResolvedValue([
+      { id: "c1", slug: "a", name: "A", description: null, coverUrl: null, isActive: true, _count: { peaks: 2 }, participants: [{ userId: USER }] },
+      { id: "c2", slug: "b", name: "B", description: null, coverUrl: null, isActive: true, _count: { peaks: 3 }, participants: [] },
+    ]);
+
+    const { available } = await listChallenges(USER);
+    expect(available.map((c) => [c.id, c.isJoined])).toEqual([["c1", true], ["c2", false]]);
   });
 
   it("skips the progress queries entirely when the user has joined nothing", async () => {

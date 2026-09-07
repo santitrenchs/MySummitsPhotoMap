@@ -208,6 +208,7 @@ export const fr: Dict = {
   challenges_joining: "En cours…",
   challenges_allJoined: "Tu as rejoint tous les défis disponibles.",
   challenges_noAvailable: "Aucun défi ne correspond à ta recherche.",
+  challenges_joinedBadge: "Déjà rejoint",
   challenges_detailEyebrow: "Défi · progression",
   challenges_detailPending: "{n} restant{n,plural,=1{}other{s}}",
   challenges_detailHighest: "Plus haut",

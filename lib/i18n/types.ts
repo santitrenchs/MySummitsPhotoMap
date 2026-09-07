@@ -228,6 +228,7 @@ export type Dict = {
   challenges_joining: string;
   challenges_allJoined: string;
   challenges_noAvailable: string;
+  challenges_joinedBadge: string;
   challenges_detailEyebrow: string;
   challenges_detailPending: string;
   challenges_detailHighest: string;

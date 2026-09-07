@@ -8,6 +8,7 @@ import { RARITIES } from "@/lib/rarity";
 import type { RarityId } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { imgUrl } from "@/lib/storage/image-url";
+import { BitacoraTabs } from "./BitacoraTabs";
 import type { ChallengeDetail, ChallengePeakRow } from "@/lib/services/challenge.service";
 
 const ACCENT = "#2F7A5F";
@@ -48,14 +49,17 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", background: "#F4F7FA", minHeight: "100%" }}>
-      {/* Top bar */}
+      {/* Same tab strip as the list, so the detail still reads as part of Bitácora
+          instead of a page of its own — and every tab is a way back out. */}
+      <BitacoraTabs active="challenges" />
+
+      {/* Back row */}
       <div style={{
         display: "flex", alignItems: "center", gap: 10,
         background: "white", borderBottom: "1px solid #E5E7EB", padding: "10px 14px",
-        position: "sticky", top: "var(--top-nav-h, 52px)", zIndex: 20,
       }}>
         <Link
-          href="/bitacora"
+          href="/bitacora?tab=challenges"
           aria-label={t.close}
           style={{
             width: 28, height: 28, borderRadius: "50%", flexShrink: 0, background: "#F1F5F9",

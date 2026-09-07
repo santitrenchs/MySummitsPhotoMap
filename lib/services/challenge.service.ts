@@ -35,6 +35,12 @@ export type ChallengeAvailable = {
   description: string | null;
   coverUrl: string | null;
   totalPeaks: number;
+  /**
+   * Already-joined challenges stay in this list so the "add" sheet can show them greyed
+   * out with a tick, instead of silently hiding what the user just joined. Anything
+   * counting "how many are available to join" must exclude these.
+   */
+  isJoined: boolean;
 };
 
 export type ChallengePeakRow = {
@@ -144,7 +150,8 @@ async function assertValidPeakIds(peakIds: string[]): Promise<string[]> {
 /**
  * Both lists in one call.
  * `mine` includes inactive challenges the user already joined (retiring a challenge
- * must never make someone's progress disappear); `available` only active, not-joined ones.
+ * must never make someone's progress disappear); `available` lists every *active*
+ * challenge, flagged with `isJoined` so the UI can show joined ones as already taken.
  */
 export async function listChallenges(
   userId: string,
@@ -155,9 +162,13 @@ export async function listChallenges(
       include: { challenge: { include: { _count: { select: { peaks: true } } } } },
       orderBy: [{ challenge: { sortOrder: "asc" } }, { challenge: { createdAt: "desc" } }],
     }),
+    // Every active challenge, joined or not — the sheet greys out the joined ones.
     prisma.challenge.findMany({
-      where: { isActive: true, participants: { none: { userId } } },
-      include: { _count: { select: { peaks: true } } },
+      where: { isActive: true },
+      include: {
+        _count: { select: { peaks: true } },
+        participants: { where: { userId }, select: { userId: true } },
+      },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     }),
   ]);
@@ -200,6 +211,7 @@ export async function listChallenges(
       description: c.description,
       coverUrl: c.coverUrl,
       totalPeaks: c._count.peaks,
+      isJoined: c.participants.length > 0,
     })),
   };
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useT } from "@/components/providers/I18nProvider";
 import { PeaksTabV2 } from "@/components/profile/PeaksTabV2";
 import { PhotosTabV2 } from "@/components/profile/PhotosTabV2";
 import { ChallengesTab } from "./ChallengesTab";
+import { BitacoraTabs } from "./BitacoraTabs";
+import type { BitacoraTab } from "./tabs";
 import type { RarityId } from "@/lib/rarity";
 import type { PeakForFilter } from "@/components/profile/usePeakFilters";
 
@@ -23,48 +24,17 @@ type Props = {
   peaks: PeakForFilter[];
   photos: Photo[];
   taggedPhotos: Photo[];
+  /** From `?tab=` so returning from a challenge detail lands back on Retos. */
+  initialTab?: BitacoraTab;
 };
 
-type Tab = "peaks" | "challenges" | "photos" | "tagged";
-
-export function BitacoraClient({ peaks, photos, taggedPhotos }: Props) {
-  const t = useT();
-  const [tab, setTab] = useState<Tab>("peaks");
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "peaks",      label: t.profile_tab_peaks },
-    { id: "challenges", label: t.challenges_tab },
-    { id: "photos",     label: t.field_photos },
-    { id: "tagged",     label: t.profile_tab_tagged },
-  ];
+export function BitacoraClient({ peaks, photos, taggedPhotos, initialTab = "peaks" }: Props) {
+  const [tab, setTab] = useState<BitacoraTab>(initialTab);
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 32 }}>
-      {/* ── Tab bar ── */}
-      <div style={{
-        display: "flex", borderBottom: "1px solid #e5e7eb",
-        position: "sticky", top: "var(--top-nav-h, 48px)", zIndex: 10,
-        background: "white",
-      }}>
-        {tabs.map(({ id, label }) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            style={{
-              flex: 1, padding: "12px 4px",
-              background: "none", border: "none", cursor: "pointer",
-              fontSize: 13, fontWeight: 600,
-              color: tab === id ? "#0369a1" : "#6b7280",
-              borderBottom: tab === id ? "2px solid #0369a1" : "2px solid transparent",
-              transition: "color 0.15s",
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <BitacoraTabs active={tab} onSelect={setTab} />
 
-      {/* ── Tab content ── */}
       <div style={{ padding: "0 16px" }}>
         {tab === "peaks" && (
           <PeaksTabV2 peaks={peaks} />

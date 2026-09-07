@@ -3,27 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
+import type { ChallengeSummary, ChallengeAvailable } from "@/lib/services/challenge.service";
 import { AvailableChallengesSheet } from "./AvailableChallengesSheet";
 
-export type ChallengeSummary = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  coverUrl: string | null;
-  totalPeaks: number;
-  completedPeaks: number;
-  isActive: boolean;
-};
-
-export type ChallengeAvailable = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  coverUrl: string | null;
-  totalPeaks: number;
-};
+// Types come straight from the service: `import type` is erased at build time, so no
+// server code reaches the client, and the shapes cannot drift apart.
+export type {
+  ChallengeSummary,
+  ChallengeAvailable,
+} from "@/lib/services/challenge.service";
 
 const ACCENT = "#2F7A5F";
 
@@ -57,7 +45,7 @@ export function ChallengesTab() {
 
   /** Joining moves the challenge from the sheet into the list without a full reload. */
   function handleJoined(joined: ChallengeAvailable) {
-    setAvailable((prev) => prev.filter((c) => c.id !== joined.id));
+    setAvailable((prev) => prev.map((c) => (c.id === joined.id ? { ...c, isJoined: true } : c)));
     setMine((prev) => [
       ...prev,
       { ...joined, completedPeaks: 0, isActive: true },
@@ -116,7 +104,7 @@ export function ChallengesTab() {
       }}>
         {i(t.challenges_countActive, { n: mine.length })}
         {" · "}
-        {i(t.challenges_countAvailable, { n: available.length })}
+        {i(t.challenges_countAvailable, { n: available.filter((c) => !c.isJoined).length })}
       </p>
 
       {mine.length === 0 ? (

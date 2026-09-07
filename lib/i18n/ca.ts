@@ -208,6 +208,7 @@ export const ca: Dict = {
   challenges_joining: "Unint-te…",
   challenges_allJoined: "Ja t'has unit a tots els reptes disponibles.",
   challenges_noAvailable: "Cap repte coincideix amb la teva cerca.",
+  challenges_joinedBadge: "Ja t'hi has unit",
   challenges_detailEyebrow: "Repte · progrés",
   challenges_detailPending: "{n} pendent{n,plural,=1{}other{s}}",
   challenges_detailHighest: "Més alt",

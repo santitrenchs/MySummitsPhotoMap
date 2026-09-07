@@ -38,7 +38,6 @@ export function AvailableChallengesSheet({ isOpen, available, onClose, onJoined 
       const res = await fetch(`/api/challenges/${challenge.id}/join`, { method: "POST" });
       if (!res.ok) return;
       onJoined(challenge);
-      if (available.length <= 1) onClose();
     } finally {
       setJoiningId(null);
     }
@@ -132,6 +131,7 @@ export function AvailableChallengesSheet({ isOpen, available, onClose, onJoined 
                 joinLabel={t.challenges_join}
                 joiningLabel={t.challenges_joining}
                 peaksLabel={i(t.challenges_peaksCount, { n: c.totalPeaks })}
+                joinedLabel={t.challenges_joinedBadge}
               />
             ))
           )}
@@ -142,7 +142,7 @@ export function AvailableChallengesSheet({ isOpen, available, onClose, onJoined 
 }
 
 function AvailableCard({
-  challenge, joining, onJoin, joinLabel, joiningLabel, peaksLabel,
+  challenge, joining, onJoin, joinLabel, joiningLabel, peaksLabel, joinedLabel,
 }: {
   challenge: ChallengeAvailable;
   joining: boolean;
@@ -150,13 +150,17 @@ function AvailableCard({
   joinLabel: string;
   joiningLabel: string;
   peaksLabel: string;
+  joinedLabel: string;
 }) {
+  // A joined challenge stays listed but reads as already taken: dimmed, with a tick
+  // where the join button was. Hiding it would make what you just joined disappear.
+  const joined = challenge.isJoined;
   return (
     <div style={{
-      display: "flex", background: "white", borderRadius: "var(--radius-lg)",
+      display: "flex", background: joined ? "#F8FAFC" : "white", borderRadius: "var(--radius-lg)",
       border: "1px solid rgba(13,37,56,0.06)",
-      boxShadow: "0 1px 3px rgba(13,37,56,0.06), 0 4px 12px rgba(13,37,56,0.05)",
-      overflow: "hidden",
+      boxShadow: joined ? "none" : "0 1px 3px rgba(13,37,56,0.06), 0 4px 12px rgba(13,37,56,0.05)",
+      overflow: "hidden", opacity: joined ? 0.72 : 1,
     }}>
       <div style={{
         width: 74, flexShrink: 0, position: "relative", overflow: "hidden",
@@ -194,7 +198,20 @@ function AvailableCard({
           <div style={{ fontSize: 12, color: "#5A6E84", lineHeight: 1.4 }}>{challenge.description}</div>
         )}
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 2 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 2 }}>
+          {joined ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "#5A6E84" }}>
+              <span style={{
+                width: 18, height: 18, borderRadius: "50%", background: ACCENT,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              {joinedLabel}
+            </span>
+          ) : (
           <button
             onClick={onJoin}
             disabled={joining}
@@ -208,6 +225,7 @@ function AvailableCard({
           >
             {joining ? joiningLabel : joinLabel}
           </button>
+          )}
         </div>
       </div>
     </div>
