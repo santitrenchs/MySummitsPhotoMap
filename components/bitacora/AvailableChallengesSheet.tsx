@@ -95,19 +95,27 @@ export function AvailableChallengesSheet({ isOpen, available, onClose, onJoined 
         {available.length > 0 && (
           <div style={{ padding: "0 16px 12px", flexShrink: 0 }}>
             <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              height: 42, padding: "0 14px", borderRadius: "var(--radius-full)", background: "#EEF1F4",
+              display: "flex", alignItems: "center", gap: 10,
+              background: "#f3f4f6", borderRadius: 12, padding: "0 12px", height: 44,
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, color: "#9CA3AF" }}>
-                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t.challenges_availableSearch}
-                style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 16, color: "#0D2538", minWidth: 0 }}
+                style={{ flex: 1, background: "none", border: "none", outline: "none", fontSize: 16, color: "#111827", minWidth: 0 }}
               />
+              {query && (
+                <button
+                  onClick={() => setQuery("")}
+                  aria-label={t.cancel}
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#9ca3af" }}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -216,11 +224,10 @@ function AvailableCard({
             onClick={onJoin}
             disabled={joining}
             style={{
-              fontSize: 12.5, fontWeight: 700, color: "white",
-              background: ACCENT, border: "none", borderRadius: "var(--radius-md)",
-              padding: "7px 16px", cursor: joining ? "default" : "pointer",
+              fontSize: 14, fontWeight: 600, color: "white",
+              background: ACCENT, border: "none", borderRadius: 10,
+              padding: "9px 20px", cursor: joining ? "default" : "pointer",
               opacity: joining ? 0.7 : 1,
-              boxShadow: "0 4px 10px -3px rgba(47,122,95,0.4)",
             }}
           >
             {joining ? joiningLabel : joinLabel}

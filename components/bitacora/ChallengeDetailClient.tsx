@@ -120,37 +120,55 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
         </div>
       </div>
 
-      {/* Search + Filters */}
-      <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "14px 16px 12px" }}>
-        <div style={{
-          flex: 1, display: "flex", alignItems: "center", gap: 8, height: 44, padding: "0 14px",
-          borderRadius: "var(--radius-full)", background: "white", border: "1px solid #E5E7EB",
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, color: "#9CA3AF" }}>
-            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      {/* Search + Filters — identical shapes to PeakFiltersBar in the Cimas tab:
+          white field with a border and radius-md, and the button turning navy when
+          active. Not a pill, and not the blue accent used for chips. */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "14px 16px 12px" }}>
+        <div style={{ flex: 1, position: "relative" }}>
+          <svg
+            width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="#94A3B8" strokeWidth="2.2" strokeLinecap="round"
+            style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+          >
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
+            type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.challenges_searchPeak}
-            style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 16, color: "#0D2538", minWidth: 0 }}
+            style={{
+              width: "100%", padding: "10px 12px 10px 32px",
+              background: "white", border: "1px solid #E5E7EB",
+              borderRadius: "var(--radius-md)",
+              boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+              fontSize: 16, color: "#0D2538", outline: "none", boxSizing: "border-box",
+            }}
           />
         </div>
+
         <button
           onClick={() => { setDraftStatus(status); setFiltersOpen(true); }}
           style={{
-            flexShrink: 0, height: 44, display: "flex", alignItems: "center", gap: 7, padding: "0 16px",
-            borderRadius: "var(--radius-lg)", cursor: "pointer", fontSize: 13.5, fontWeight: 600,
-            border: `1px solid ${status !== "all" ? "#bfdbfe" : "#E5E7EB"}`,
-            background: status !== "all" ? "#eff6ff" : "white",
-            color: status !== "all" ? "#0369a1" : "#0D2538",
+            padding: "10px 14px", borderRadius: "var(--radius-md)",
+            border: `1px solid ${status !== "all" ? "#0D2538" : "#E5E7EB"}`,
+            background: status !== "all" ? "#0D2538" : "white",
+            boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+            cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
           }}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-            <path d="M4 5h16M7 12h10M10 19h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke={status !== "all" ? "white" : "#374151"} strokeWidth="1.8" strokeLinecap="round">
+            <line x1="0" y1="2" x2="14" y2="2" />
+            <line x1="2" y1="6" x2="12" y2="6" />
+            <line x1="4" y1="10" x2="10" y2="10" />
           </svg>
-          {t.challenges_filters}
+          <span style={{
+            fontFamily: "var(--font-inter, sans-serif)",
+            fontSize: 13, fontWeight: 700,
+            color: status !== "all" ? "white" : "#374151",
+          }}>
+            {t.challenges_filters}
+          </span>
         </button>
       </div>
 
@@ -370,11 +388,12 @@ function FiltersSheet({
                 key={o.id}
                 onClick={() => setDraft(o.id)}
                 style={{
-                  border: `1.5px solid ${active ? "#bfdbfe" : "#E5E7EB"}`,
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  padding: "8px 14px", borderRadius: "var(--radius-full)", cursor: "pointer",
+                  border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
                   background: active ? "#eff6ff" : "#f9fafb",
-                  color: active ? "#0369a1" : "#5A6E84",
-                  fontSize: 13, fontWeight: 600, padding: "8px 14px",
-                  borderRadius: "var(--radius-full)", cursor: "pointer",
+                  color: active ? "#0369a1" : "#6b7280",
+                  fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
                 }}
               >
                 {o.label} · {counts[o.id]}
@@ -382,15 +401,20 @@ function FiltersSheet({
             );
           })}
         </div>
-        <div style={{ padding: "18px 20px 20px" }}>
+        <div style={{ padding: "12px 20px 16px", borderTop: "1px solid #f3f4f6", marginTop: 18 }}>
           <button
             onClick={onApply}
             style={{
-              width: "100%", height: 46, borderRadius: "var(--radius-lg)", border: "none",
-              background: ACCENT, color: "white", fontSize: 14, fontWeight: 700, cursor: "pointer",
+              width: "100%", padding: "16px",
+              background: ACCENT, color: "white", border: "none",
+              borderRadius: "var(--radius-lg)", fontFamily: "inherit",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              boxShadow: "0 4px 14px rgba(47,122,95,0.32)", cursor: "pointer",
             }}
           >
-            {i(t.challenges_filterShow, { n: count })}
+            <span style={{ fontSize: 15, fontWeight: 800 }}>
+              {i(t.challenges_filterShow, { n: count })}
+            </span>
           </button>
         </div>
       </div>

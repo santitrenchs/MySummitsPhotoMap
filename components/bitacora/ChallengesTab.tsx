@@ -61,37 +61,43 @@ export function ChallengesTab() {
 
   return (
     <div style={{ background: "#F4F7FA", margin: "0 -16px", padding: "0 16px 32px" }}>
-      {/* Search + Add */}
-      <div style={{ display: "flex", alignItems: "center", gap: 9, paddingTop: 14 }}>
+      {/* Search + Add — same shapes as the Amigos/Cordadas header (grey field, radius 12,
+          height 44) rather than bespoke ones, so the two screens read as one system. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12 }}>
         <div style={{
-          flex: 1, display: "flex", alignItems: "center", gap: 8,
-          height: 42, padding: "0 14px", borderRadius: "var(--radius-full)", background: "#EEF1F4",
+          flex: 1, display: "flex", alignItems: "center", gap: 10,
+          background: "#f3f4f6", borderRadius: 12, padding: "0 12px", height: 44,
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, color: "#9CA3AF" }}>
-            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0 }}>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.challenges_searchPlaceholder}
-            style={{
-              flex: 1, border: "none", background: "transparent", outline: "none",
-              fontSize: 16, color: "#0D2538", minWidth: 0,
-            }}
+            style={{ flex: 1, background: "none", border: "none", outline: "none", fontSize: 15, color: "#111827", minWidth: 0 }}
           />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              aria-label={t.cancel}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#9ca3af" }}
+            >
+              ✕
+            </button>
+          )}
         </div>
         <button
           onClick={() => setSheetOpen(true)}
           style={{
-            flexShrink: 0, height: 42, display: "flex", alignItems: "center", gap: 6,
-            padding: "0 16px", borderRadius: "var(--radius-full)", border: "none", cursor: "pointer",
-            background: ACCENT, color: "white", fontSize: 13.5, fontWeight: 700,
-            boxShadow: "0 4px 10px -3px rgba(47,122,95,0.45)",
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "0 14px", height: 44, borderRadius: 12, border: "none",
+            background: ACCENT, color: "white",
+            fontSize: 14, fontWeight: 600, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap",
           }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.6" strokeLinecap="round" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
           </svg>
           {t.challenges_add}
         </button>
