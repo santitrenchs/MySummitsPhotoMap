@@ -60,20 +60,19 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
       <div style={{
         display: "flex", alignItems: "center", gap: 10, padding: "12px 16px 4px",
       }}>
+        {/* Same back control as the cordada detail: 32px circle with a "←" at 18px.
+            Only the fill differs — theirs is #f3f4f6 on a white page, which would be
+            invisible on this screen's #F4F7FA, so it stays white like the search field. */}
         <Link
           href="/bitacora?tab=challenges"
           aria-label={t.close}
           style={{
-            width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-            background: "white", border: "1px solid #E5E7EB",
-            boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
-            display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
+            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+            background: "white", border: "1px solid #e5e7eb",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#374151", textDecoration: "none", fontSize: 18, lineHeight: 1,
           }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M15 18l-6-6 6-6" stroke="#0D2538" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
+        >←</Link>
         <span style={{
           fontFamily: "var(--font-space-grotesk, sans-serif)",
           fontSize: 15, fontWeight: 700, color: "#0D2538",
