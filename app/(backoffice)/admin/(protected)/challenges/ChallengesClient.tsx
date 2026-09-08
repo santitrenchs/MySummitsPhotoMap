@@ -208,15 +208,22 @@ export function ChallengesClient() {
                         {c.isActive ? "Activo" : "Inactivo"}
                       </button>
                     </td>
-                    <td>
+                    {/* Same row actions as the peaks table: .action-btn is for icon-only
+                        buttons (28px wide, no padding), so text labels overflowed it. */}
+                    <td style={{ whiteSpace: "nowrap" }}>
                       <div className="action-btns">
-                        <button className="action-btn" onClick={() => openEditor(c)}>Editar</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => openEditor(c)}>
+                          Editar
+                        </button>
                         <button
-                          className="action-btn"
+                          className="btn btn-sm"
                           onClick={() => setConfirmDelete(c)}
-                          style={{ color: "var(--danger, #dc2626)" }}
+                          style={{
+                            border: "1px solid var(--color-red-soft)", color: "var(--color-red)",
+                            background: "none", cursor: "pointer",
+                          }}
                         >
-                          Borrar
+                          Eliminar
                         </button>
                       </div>
                     </td>
@@ -242,14 +249,14 @@ export function ChallengesClient() {
       {confirmDelete && (
         <div className="modal-backdrop" onClick={() => setConfirmDelete(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h2 className="modal-title">Borrar “{confirmDelete.name}”</h2>
+            <h2 className="modal-title">Eliminar “{confirmDelete.name}”</h2>
             <p className="modal-body">
               Se borrará el reto y la participación de {confirmDelete.participantCount} usuario(s).
               Las ascensiones no se tocan. Si solo quieres retirarlo, desactívalo en vez de borrarlo.
             </p>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)}>Cancelar</button>
-              <button className="btn btn-danger" onClick={doDelete}>Borrar</button>
+              <button className="btn btn-danger" onClick={doDelete}>Eliminar</button>
             </div>
           </div>
         </div>
