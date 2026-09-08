@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import type { ChallengeSummary, ChallengeAvailable } from "@/lib/services/challenge.service";
@@ -118,7 +119,7 @@ function ChallengeRow({ challenge, isFirst }: { challenge: ChallengeSummary; isF
   const remaining = challenge.totalPeaks - challenge.completedPeaks;
 
   return (
-    <a
+    <Link
       href={`/bitacora/retos/${challenge.id}`}
       style={{
         position: "relative", display: "flex", alignItems: "center", gap: 12,
@@ -177,7 +178,7 @@ function ChallengeRow({ challenge, isFirst }: { challenge: ChallengeSummary; isF
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, color: "#C7D0D9" }}>
         <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-    </a>
+    </Link>
   );
 }
 

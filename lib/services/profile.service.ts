@@ -4,17 +4,20 @@ import { getRarityId, type RarityId } from "@/lib/rarity";
 import { peakDisplayName } from "@/lib/peak-name";
 
 export async function getProfileData(tenantId: string, userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, username: true, bio: true, avatarUrl: true },
-  });
-
-  const friendCount = await prisma.friendship.count({
-    where: {
-      status: "ACCEPTED",
-      OR: [{ requesterId: userId }, { addresseeId: userId }],
-    },
-  });
+  // Independent of each other, so one round trip instead of two. Every extra wave here
+  // is a full DB round trip on the critical path of /bitacora.
+  const [user, friendCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, username: true, bio: true, avatarUrl: true },
+    }),
+    prisma.friendship.count({
+      where: {
+        status: "ACCEPTED",
+        OR: [{ requesterId: userId }, { addresseeId: userId }],
+      },
+    }),
+  ]);
 
   const db = await getTenantConnection(tenantId);
   const [ascents, taggedPersons] = await Promise.all([
