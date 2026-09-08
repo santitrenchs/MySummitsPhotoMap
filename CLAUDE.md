@@ -1838,12 +1838,22 @@ Web has **two** legitimate search variants and they must not be swapped:
 
 ## Going back from a detail screen (web)
 
-Two patterns, picked by whether the parent is still on screen:
+**One pattern: `components/ui/BackBreadcrumb.tsx`.** Every web detail screen goes back through the
+same breadcrumb — a small uppercase label naming the parent, on the page background, above whatever
+identity block follows (cover photo, avatar row, or just a title). 10.5px/700, `0.12em`, `#5A6E84`,
+the same eyebrow style as `RETO · PROGRESO`. The label names the destination ("Retos", "Cordadas",
+the cordada's name), never "Volver".
 
-- **Parent visible → breadcrumb.** The challenge detail keeps the Bitácora tab strip with "Retos" marked, so the back affordance is a small uppercase label above the title (`‹ RETOS`, 10.5px/700, `0.12em`, `#5A6E84`, same eyebrow style as `RETO · PROGRESO`), with the title at 19px/800 below it. A breadcrumb names the parent, and here the parent is right there.
-- **Parent gone → back control.** The cordada detail drops the whole nav, so it uses a 32px circle with a `←`: white-on-photo (`rgba(0,0,0,0.45)` + blur) over a cover hero, or `#f3f4f6` + `#e5e7eb` in the compact identity header.
+Migrated: the challenge detail, the cordada detail (both the cover-photo and the compact-avatar
+variants), and the cordada invite page (whose breadcrumb points back to the **cordada**, not the
+list — that is where the user came from).
 
-⚠️ Do not copy the circle onto a screen that keeps its context. It was tried on the challenge detail and floated: on the cordada hero the circle sits over a photo that gives it contrast, and on a flat `#F4F7FA` background with nothing around it there is nothing to anchor it.
+⚠️ Do not add a second back control, and do not bring back the 32px circular `←`. It only ever
+worked over the cordada cover photo, which gave it contrast; on a flat `#F4F7FA` background it
+floated with nothing to anchor it. Screens that keep their parent nav visible (the challenge detail
+keeps the Bitácora tab strip) and screens that drop it entirely (the cordada detail) both use the
+breadcrumb — the earlier "parent gone → circle" split was a rationalisation of two designs that
+happened to exist, not a rule worth keeping.
 
 ---
 

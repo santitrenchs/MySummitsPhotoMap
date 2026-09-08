@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
+import { BackBreadcrumb } from "@/components/ui/BackBreadcrumb";
 import { LEVEL_DEFS } from "@/lib/level-utils";
 import type { FriendEntry } from "@/lib/services/friendship.service";
 
@@ -85,8 +86,14 @@ export function CordadaInviteClient({
     <div style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 80 }}>
 
       {/* ── Hero ─────────────────────────────────── */}
+      {/* Same breadcrumb as the cordada detail and the challenge detail. Here it points
+          back to the cordada, not to the list — that is where the user came from. */}
+      <div style={{ padding: "14px 16px 0" }}>
+        <BackBreadcrumb href={`/cordadas/${cordadaId}`} label={cordadaName} />
+      </div>
+
       {cordadaAvatarUrl ? (
-        <div style={{ position: "relative", margin: "12px 0 0" }}>
+        <div style={{ position: "relative", margin: "10px 0 0" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={cordadaAvatarUrl}
@@ -97,16 +104,6 @@ export function CordadaInviteClient({
             position: "absolute", inset: 0,
             background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)",
           }} />
-          <Link
-            href={`/cordadas/${cordadaId}`}
-            style={{
-              position: "absolute", top: 10, left: 10,
-              width: 32, height: 32, borderRadius: "50%",
-              background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "white", textDecoration: "none", fontSize: 18, lineHeight: 1,
-            }}
-          >←</Link>
           <div style={{ position: "absolute", bottom: 14, left: 16 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: "white", lineHeight: 1.2 }}>
               {cordadaName}
@@ -117,16 +114,7 @@ export function CordadaInviteClient({
           </div>
         </div>
       ) : (
-        <div style={{ padding: "16px 16px 0", display: "flex", alignItems: "center", gap: 14 }}>
-          <Link
-            href={`/cordadas/${cordadaId}`}
-            style={{
-              width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-              background: "#f3f4f6", border: "1px solid #e5e7eb",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#374151", textDecoration: "none", fontSize: 18, lineHeight: 1,
-            }}
-          >←</Link>
+        <div style={{ padding: "10px 16px 0", display: "flex", alignItems: "center", gap: 14 }}>
           <CordadaAvatar name={cordadaName} size={68} />
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#0D2538", lineHeight: 1.2 }}>

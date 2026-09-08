@@ -4,6 +4,7 @@ import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
+import { BackBreadcrumb } from "@/components/ui/BackBreadcrumb";
 import { LEVEL_DEFS } from "@/lib/level-utils";
 import type { CordadaDetail, CordadaMemberRanking } from "@/lib/services/cordada.service";
 
@@ -385,9 +386,15 @@ export function CordadaDetailClient({
         onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); }}
       />
 
+      {/* One way back for both variants: the breadcrumb sits above the identity block,
+          on the page background, whether or not there is a cover photo. */}
+      <div style={{ padding: "14px 16px 0" }}>
+        <BackBreadcrumb href="/cordadas" label={t.nav_cordadas} />
+      </div>
+
       {/* ── Hero header ──────────────────────────── */}
       {avatarUrl ? (
-        <div style={{ position: "relative", margin: "12px 0 0" }}>
+        <div style={{ position: "relative", margin: "10px 0 0" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={avatarUrl}
@@ -398,17 +405,6 @@ export function CordadaDetailClient({
             position: "absolute", inset: 0,
             background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)",
           }} />
-          {/* ← Back button */}
-          <Link
-            href="/cordadas"
-            style={{
-              position: "absolute", top: 10, left: 10,
-              width: 32, height: 32, borderRadius: "50%",
-              background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "white", textDecoration: "none", fontSize: 18, lineHeight: 1,
-            }}
-          >←</Link>
           <div style={{ position: "absolute", bottom: 14, left: 16, right: 16 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: "white", lineHeight: 1.2 }}>
               {cordada.name}
@@ -432,16 +428,7 @@ export function CordadaDetailClient({
           )}
         </div>
       ) : (
-        <div style={{ padding: "16px 16px 0", display: "flex", alignItems: "center", gap: 14 }}>
-          <Link
-            href="/cordadas"
-            style={{
-              width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-              background: "#f3f4f6", border: "1px solid #e5e7eb",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#374151", textDecoration: "none", fontSize: 18, lineHeight: 1,
-            }}
-          >←</Link>
+        <div style={{ padding: "10px 16px 0", display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ position: "relative" }}>
             <CordadaAvatar name={cordada.name} avatarUrl={null} size={68} />
             {amIOwner && (

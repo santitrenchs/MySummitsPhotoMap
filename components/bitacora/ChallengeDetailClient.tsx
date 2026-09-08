@@ -10,6 +10,7 @@ import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { imgUrl } from "@/lib/storage/image-url";
 import { SearchField } from "@/components/ui/SearchField";
 import { FilterButton } from "@/components/ui/FilterButton";
+import { BackBreadcrumb } from "@/components/ui/BackBreadcrumb";
 import { BitacoraTabs } from "./BitacoraTabs";
 import type { ChallengeDetail, ChallengePeakRow } from "@/lib/services/challenge.service";
 
@@ -61,20 +62,7 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           cordada detail loses all navigation, so there a back *control* earns its weight;
           with the context visible, a label is enough and the challenge name gets the room. */}
       <div style={{ padding: "14px 16px 2px" }}>
-        <Link
-          href="/bitacora?tab=challenges"
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none",
-            fontFamily: "var(--font-space-grotesk, sans-serif)",
-            fontSize: 10.5, fontWeight: 700, letterSpacing: "0.12em",
-            textTransform: "uppercase", color: "#5A6E84",
-          }}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {t.challenges_tab}
-        </Link>
+        <BackBreadcrumb href="/bitacora?tab=challenges" label={t.challenges_tab} />
         <div style={{
           fontFamily: "var(--font-space-grotesk, sans-serif)",
           fontSize: 19, fontWeight: 800, color: "#0D2538",
