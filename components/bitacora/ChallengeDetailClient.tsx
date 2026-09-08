@@ -12,6 +12,7 @@ import { SearchField } from "@/components/ui/SearchField";
 import { FilterButton } from "@/components/ui/FilterButton";
 import { BackBreadcrumb } from "@/components/ui/BackBreadcrumb";
 import { BitacoraTabs } from "./BitacoraTabs";
+import { progressPct } from "@/lib/progress-pct";
 import type { ChallengeDetail, ChallengePeakRow } from "@/lib/services/challenge.service";
 
 const ACCENT = "#2F7A5F";
@@ -93,9 +94,7 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
   }, [challenge.peaks, draftStatus]);
 
   const pending = challenge.totalPeaks - challenge.completedPeaks;
-  const pct = challenge.totalPeaks > 0
-    ? Math.round((challenge.completedPeaks / challenge.totalPeaks) * 100)
-    : 0;
+  const pct = progressPct(challenge.completedPeaks, challenge.totalPeaks);
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", background: "#F4F7FA", minHeight: "100%" }}>
@@ -151,8 +150,9 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
             than a continuous track with a knob: the knob read as a draggable slider on
             a bar that does nothing when touched. Long challenges fall back to a plain
             fill, where the notches would be unreadable anyway. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
         {challenge.totalPeaks > 0 && challenge.totalPeaks <= SEGMENTED_MAX ? (
-          <div style={{ display: "flex", height: 8, gap: 2, marginTop: 14 }}>
+          <div style={{ flex: 1, display: "flex", height: 8, gap: 2 }}>
             {Array.from({ length: challenge.totalPeaks }, (_, idx) => (
               <div key={idx} style={{
                 flex: 1, borderRadius: "var(--radius-full)",
@@ -162,8 +162,8 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           </div>
         ) : (
           <div style={{
-            height: 8, borderRadius: "var(--radius-full)", background: "#DCE3EA",
-            marginTop: 14, overflow: "hidden",
+            flex: 1, height: 8, borderRadius: "var(--radius-full)", background: "#DCE3EA",
+            overflow: "hidden",
           }}>
             <div style={{
               height: "100%", width: `${pct}%`,
@@ -171,6 +171,13 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
             }} />
           </div>
         )}
+          <span style={{
+            flexShrink: 0, fontFamily: "var(--font-mono-landing, monospace)",
+            fontSize: 12, fontWeight: 700, color: ACCENT,
+          }}>
+            {pct}%
+          </span>
+        </div>
       </div>
 
       {/* Shared components — same bar as the Cimas tab, by construction. */}

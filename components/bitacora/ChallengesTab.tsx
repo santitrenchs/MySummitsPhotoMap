@@ -7,6 +7,7 @@ import { i } from "@/lib/i18n";
 import type { ChallengeSummary, ChallengeAvailable } from "@/lib/services/challenge.service";
 import { SearchField } from "@/components/ui/SearchField";
 import { AddButton } from "@/components/ui/FilterButton";
+import { progressPct } from "@/lib/progress-pct";
 import { AvailableChallengesSheet } from "./AvailableChallengesSheet";
 
 // Types come straight from the service: `import type` is erased at build time, so no
@@ -113,9 +114,7 @@ export function ChallengesTab({ initial }: { initial: ChallengesData }) {
 
 function ChallengeRow({ challenge, isFirst }: { challenge: ChallengeSummary; isFirst: boolean }) {
   const t = useT();
-  const pct = challenge.totalPeaks > 0
-    ? Math.round((challenge.completedPeaks / challenge.totalPeaks) * 100)
-    : 0;
+  const pct = progressPct(challenge.completedPeaks, challenge.totalPeaks);
   const remaining = challenge.totalPeaks - challenge.completedPeaks;
 
   return (
@@ -158,11 +157,13 @@ function ChallengeRow({ challenge, isFirst }: { challenge: ChallengeSummary; isF
           }}>
             {challenge.name}
           </span>
+          {/* El porcentaje ocupa el sitio destacado; la fracción baja al subtítulo,
+              donde acompaña a lo que falta en vez de competir con ello. */}
           <span style={{
             flexShrink: 0, fontFamily: "var(--font-mono-landing, monospace)",
-            fontSize: 11.5, fontWeight: 700, color: "#5A6E84",
+            fontSize: 11.5, fontWeight: 700, color: ACCENT,
           }}>
-            {i(t.challenges_progress, { done: challenge.completedPeaks, total: challenge.totalPeaks })}
+            {pct}%
           </span>
         </div>
 
@@ -171,7 +172,9 @@ function ChallengeRow({ challenge, isFirst }: { challenge: ChallengeSummary; isF
         </div>
 
         <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 4 }}>
-          {remaining === 0 ? t.challenges_completed : i(t.challenges_remaining, { n: remaining })}
+          {remaining === 0
+            ? t.challenges_completed
+            : `${i(t.challenges_progress, { done: challenge.completedPeaks, total: challenge.totalPeaks })} · ${i(t.challenges_remaining, { n: remaining })}`}
         </div>
       </div>
 
