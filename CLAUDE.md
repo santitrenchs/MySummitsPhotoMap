@@ -1848,6 +1848,11 @@ Migrated: the challenge detail, the cordada detail (both the cover-photo and the
 variants), and the cordada invite page (whose breadcrumb points back to the **cordada**, not the
 list — that is where the user came from).
 
+La portada de cordada deja de ir a sangre: con la miga encima ya no toca el borde superior,
+así que toma el mismo margen lateral de 16px que el resto de la columna más `border-radius:
+var(--radius-lg)` y `overflow: hidden` (necesario para recortar el scrim y el nombre, que van en
+absoluto). Una imagen que toca dos bordes de tres se lee como una banda que se ha quedado corta.
+
 ⚠️ Do not add a second back control, and do not bring back the 32px circular `←`. It only ever
 worked over the cordada cover photo, which gave it contrast; on a flat `#F4F7FA` background it
 floated with nothing to anchor it. Screens that keep their parent nav visible (the challenge detail

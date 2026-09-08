@@ -394,7 +394,14 @@ export function CordadaDetailClient({
 
       {/* ── Hero header ──────────────────────────── */}
       {avatarUrl ? (
-        <div style={{ position: "relative", margin: "10px 0 0" }}>
+        // Since the breadcrumb pushed it off the top edge, the cover no longer bleeds:
+        // it takes the same 16px side margin as the rest of the column and the card
+        // radius, so it reads as a deliberate card instead of a band that fell short.
+        // overflow:hidden is what clips the scrim and the name to the rounded corners.
+        <div style={{
+          position: "relative", margin: "10px 16px 0",
+          borderRadius: "var(--radius-lg)", overflow: "hidden",
+        }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={avatarUrl}
