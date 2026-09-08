@@ -1836,6 +1836,17 @@ Web has **two** legitimate search variants and they must not be swapped:
 
 ---
 
+## Going back from a detail screen (web)
+
+Two patterns, picked by whether the parent is still on screen:
+
+- **Parent visible → breadcrumb.** The challenge detail keeps the Bitácora tab strip with "Retos" marked, so the back affordance is a small uppercase label above the title (`‹ RETOS`, 10.5px/700, `0.12em`, `#5A6E84`, same eyebrow style as `RETO · PROGRESO`), with the title at 19px/800 below it. A breadcrumb names the parent, and here the parent is right there.
+- **Parent gone → back control.** The cordada detail drops the whole nav, so it uses a 32px circle with a `←`: white-on-photo (`rgba(0,0,0,0.45)` + blur) over a cover hero, or `#f3f4f6` + `#e5e7eb` in the compact identity header.
+
+⚠️ Do not copy the circle onto a screen that keeps its context. It was tried on the challenge detail and floated: on the cordada hero the circle sits over a photo that gives it contrast, and on a flat `#F4F7FA` background with nothing around it there is nothing to anchor it.
+
+---
+
 ## Retos (Challenges) — shipped to staging 2026-09-07
 
 A **Reto** is a curated list of peaks + each user's progress over it. Created by admin only; users just join or leave. This section is the authoritative design and matches what is on `develop`/staging.

@@ -55,31 +55,33 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           instead of a page of its own — and every tab is a way back out. */}
       <BitacoraTabs active="challenges" />
 
-      {/* Back row — on the #F4F7FA background like everything below the tabs. The button
-          itself is white so it still reads as a control against that grey. */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10, padding: "12px 16px 4px",
-      }}>
-        {/* Same back control as the cordada detail: 32px circle with a "←" at 18px.
-            Only the fill differs — theirs is #f3f4f6 on a white page, which would be
-            invisible on this screen's #F4F7FA, so it stays white like the search field. */}
+      {/* Breadcrumb + title.
+          Deliberately NOT the cordada-detail back button. A breadcrumb names the parent,
+          and here the parent is on screen: the tab strip above still shows "Retos". The
+          cordada detail loses all navigation, so there a back *control* earns its weight;
+          with the context visible, a label is enough and the challenge name gets the room. */}
+      <div style={{ padding: "14px 16px 2px" }}>
         <Link
           href="/bitacora?tab=challenges"
-          aria-label={t.close}
           style={{
-            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-            background: "white", border: "1px solid #e5e7eb",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#374151", textDecoration: "none", fontSize: 18, lineHeight: 1,
+            display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none",
+            fontFamily: "var(--font-space-grotesk, sans-serif)",
+            fontSize: 10.5, fontWeight: 700, letterSpacing: "0.12em",
+            textTransform: "uppercase", color: "#5A6E84",
           }}
-        >←</Link>
-        <span style={{
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {t.challenges_tab}
+        </Link>
+        <div style={{
           fontFamily: "var(--font-space-grotesk, sans-serif)",
-          fontSize: 15, fontWeight: 700, color: "#0D2538",
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          fontSize: 19, fontWeight: 800, color: "#0D2538",
+          letterSpacing: "-0.02em", marginTop: 4,
         }}>
           {challenge.name}
-        </span>
+        </div>
       </div>
 
       {/* Stats — same shape as the Cimas tab catalogue header, measuring done/pending */}
