@@ -215,6 +215,7 @@ export const fr: Dict = {
   challenges_searchPeak: "Rechercher un sommet…",
   challenges_filters: "Filtres",
   challenges_filterStatus: "Statut",
+  challenges_sortComarca: "Région",
   challenges_filterAll: "Tous",
   challenges_filterDone: "Faits",
   challenges_filterPending: "À faire",

@@ -1964,9 +1964,11 @@ Tab order becomes **`Cimas · Retos · Fotos · Etiquetado`**.
 
 ### UI — Reto detail (pushed screen, mirrors the Cimas tab)
 
-- Slim topbar: back arrow + challenge name.
-- Stats header: `4 picos · 19 pendientes` left, `MÁS ALTA · 3404 m` right, progress bar with thumb — same shape as `PeaksCatalogHeader`, measuring done/pending instead of rarity.
-- `Buscar cima…` + `Filtros` button (`PeakFiltersBar`); Filtros opens a sheet with **Estado: Todos / Hechos / Pendientes** + a "Ver picos" CTA.
+- Breadcrumb `‹ RETOS` (see "Going back from a detail screen") + challenge name.
+- Stats header: `4 picos · 19 pendientes` left, `MÁS ALTA · 3404 m` right, progress bar — same shape as `PeaksCatalogHeader`, measuring done/pending instead of rarity.
+- **Progress bar: notched up to `SEGMENTED_MAX = 30` peaks, plain fill beyond.** One cell per peak (done ones first, `gap: 2`, `--radius-full`), exactly the Cimas rarity-bar construction. ⚠️ It had a continuous track with a round knob at the fill edge: that reads as a draggable slider on a bar that does nothing when touched. Never put a knob on a progress bar. Long lists (FEEC = 522) fall back to a plain filled track because the notches stop being countable.
+- `Buscar cima…` + `Filtros` button (`PeakFiltersBar`); Filtros opens a sheet with **Estado: Todos / Hechos / Pendientes**, **Ordenar por**, and a "Ver picos" CTA.
+- **Sort options are data-dependent.** Altitud ↓/↑ always; **Comarca** and **Cordillera** only when `hasGroupingValue()` finds ≥2 distinct non-null values among *that challenge's* peaks. `Peak.comarca` and `Peak.mountainRange` are populated on ~10% of the catalogue and are null on every peak of the real challenges, so offering them unconditionally would ship chips that do nothing. Geographic orders group alphabetically, put peaks without a value last, and tie-break by altitude desc. There is no province field and no grouping UI — the list stays flat.
 - **The full peak list, always** — never a "+N más". Filters hide, they never truncate.
 - Row identical to `PeakRowCard`: rarity strip, 100px photo with altitude overlay, name, rarity pill, `ÚLTIMA` + date. For pending peaks, the "photo" is the app's existing missing-photo fallback (navy `#0D2538` + 🏔 at 40% opacity) and the date slot reads "Sin ascensión".
 - Tapping a pending peak → `+ Registrar ascensión` with that peak preselected (same flow as the map panel).

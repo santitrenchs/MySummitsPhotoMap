@@ -235,6 +235,7 @@ export type Dict = {
   challenges_searchPeak: string;
   challenges_filters: string;
   challenges_filterStatus: string;
+  challenges_sortComarca: string;
   challenges_filterAll: string;
   challenges_filterDone: string;
   challenges_filterPending: string;

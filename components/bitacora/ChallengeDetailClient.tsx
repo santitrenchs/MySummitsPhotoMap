@@ -16,6 +16,32 @@ import type { ChallengeDetail, ChallengePeakRow } from "@/lib/services/challenge
 
 const ACCENT = "#2F7A5F";
 type StatusFilter = "all" | "done" | "pending";
+type SortId = "altitude_desc" | "altitude_asc" | "comarca" | "range";
+
+/** Above this many peaks the notched bar stops being countable and turns to mush,
+ *  so it falls back to a plain filled track. The FEEC list is 522. */
+const SEGMENTED_MAX = 30;
+
+/** A geographic sort is only worth offering when it would actually reorder anything:
+ *  both fields are null on ~90% of the catalogue, so on most challenges they are dead
+ *  options that look broken when tapped. */
+export function hasGroupingValue(peaks: ChallengePeakRow[], get: (p: ChallengePeakRow) => string | null) {
+  const values = new Set(peaks.map(get).filter((v): v is string => !!v));
+  return values.size >= 2;
+}
+
+/** Group by the field, peaks without a value last, altitude desc inside each group. */
+export function byGroupThenAltitude(get: (p: ChallengePeakRow) => string | null) {
+  return (a: ChallengePeakRow, b: ChallengePeakRow) => {
+    const ga = get(a), gb = get(b);
+    if (ga !== gb) {
+      if (!ga) return 1;
+      if (!gb) return -1;
+      return ga.localeCompare(gb);
+    }
+    return b.altitudeM - a.altitudeM;
+  };
+}
 
 function rarityEntry(id: RarityId) {
   return RARITIES.find((r) => r.id === id) ?? RARITIES[0];
@@ -26,19 +52,40 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [status, setStatus] = useState<StatusFilter>("all");
+  const [sort, setSort] = useState<SortId>("altitude_desc");
   // Draft lives in the sheet so the list only changes when "show N" is confirmed,
   // matching the peaks/cards filter panels.
   const [draftStatus, setDraftStatus] = useState<StatusFilter>("all");
+  const [draftSort, setDraftSort] = useState<SortId>("altitude_desc");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return challenge.peaks.filter((p) => {
+    const rows = challenge.peaks.filter((p) => {
       if (status === "done" && !p.done) return false;
       if (status === "pending" && p.done) return false;
       if (q && !p.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [challenge.peaks, status, query]);
+    // The service already returns altitude desc; the other orders sort a copy.
+    if (sort === "altitude_desc") return rows;
+    if (sort === "altitude_asc") return [...rows].sort((a, b) => a.altitudeM - b.altitudeM);
+    if (sort === "comarca") return [...rows].sort(byGroupThenAltitude((p) => p.comarca));
+    return [...rows].sort(byGroupThenAltitude((p) => p.mountainRange));
+  }, [challenge.peaks, status, query, sort]);
+
+  const sortOptions = useMemo(() => {
+    const opts: { id: SortId; key: "profile_sort_altDesc" | "profile_sort_altAsc" | "challenges_sortComarca" | "profile_filter_range" }[] = [
+      { id: "altitude_desc", key: "profile_sort_altDesc" },
+      { id: "altitude_asc", key: "profile_sort_altAsc" },
+    ];
+    if (hasGroupingValue(challenge.peaks, (p) => p.comarca)) {
+      opts.push({ id: "comarca", key: "challenges_sortComarca" });
+    }
+    if (hasGroupingValue(challenge.peaks, (p) => p.mountainRange)) {
+      opts.push({ id: "range", key: "profile_filter_range" });
+    }
+    return opts;
+  }, [challenge.peaks]);
 
   const draftCount = useMemo(() => {
     if (draftStatus === "all") return challenge.peaks.length;
@@ -100,17 +147,30 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           </div>
         </div>
 
-        <div style={{ position: "relative", height: 8, borderRadius: 999, background: "#DCE3EA", marginTop: 14 }}>
+        {/* Notched like the Cimas catalogue bar (one cell per peak, done first) rather
+            than a continuous track with a knob: the knob read as a draggable slider on
+            a bar that does nothing when touched. Long challenges fall back to a plain
+            fill, where the notches would be unreadable anyway. */}
+        {challenge.totalPeaks > 0 && challenge.totalPeaks <= SEGMENTED_MAX ? (
+          <div style={{ display: "flex", height: 8, gap: 2, marginTop: 14 }}>
+            {Array.from({ length: challenge.totalPeaks }, (_, idx) => (
+              <div key={idx} style={{
+                flex: 1, borderRadius: "var(--radius-full)",
+                background: idx < challenge.completedPeaks ? ACCENT : "#DCE3EA",
+              }} />
+            ))}
+          </div>
+        ) : (
           <div style={{
-            height: "100%", width: `${pct}%`, borderRadius: 999,
-            background: `linear-gradient(90deg, ${ACCENT}, #4BAE84)`,
-          }} />
-          <div style={{
-            position: "absolute", top: "50%", left: `${pct}%`, width: 14, height: 14,
-            borderRadius: "50%", background: "white", border: `3px solid ${ACCENT}`,
-            transform: "translate(-50%, -50%)",
-          }} />
-        </div>
+            height: 8, borderRadius: "var(--radius-full)", background: "#DCE3EA",
+            marginTop: 14, overflow: "hidden",
+          }}>
+            <div style={{
+              height: "100%", width: `${pct}%`,
+              background: `linear-gradient(90deg, ${ACCENT}, #4BAE84)`,
+            }} />
+          </div>
+        )}
       </div>
 
       {/* Shared components — same bar as the Cimas tab, by construction. */}
@@ -123,8 +183,8 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
         />
         <FilterButton
           label={t.challenges_filters}
-          active={status !== "all"}
-          onClick={() => { setDraftStatus(status); setFiltersOpen(true); }}
+          active={status !== "all" || sort !== "altitude_desc"}
+          onClick={() => { setDraftStatus(status); setDraftSort(sort); setFiltersOpen(true); }}
         />
       </div>
 
@@ -152,7 +212,10 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           done: challenge.completedPeaks,
           pending: pending,
         }}
-        onApply={() => { setStatus(draftStatus); setFiltersOpen(false); }}
+        draftSort={draftSort}
+        setDraftSort={setDraftSort}
+        sortOptions={sortOptions}
+        onApply={() => { setStatus(draftStatus); setSort(draftSort); setFiltersOpen(false); }}
         onClose={() => setFiltersOpen(false)}
       />
     </div>
@@ -292,11 +355,15 @@ function PeakRow({ peak }: { peak: ChallengePeakRow }) {
 // ── Filters sheet ─────────────────────────────────────────────────────────────
 
 function FiltersSheet({
-  isOpen, draft, setDraft, count, counts, onApply, onClose,
+  isOpen, draft, setDraft, draftSort, setDraftSort, sortOptions, count, counts, onApply, onClose,
 }: {
   isOpen: boolean;
   draft: StatusFilter;
   setDraft: (v: StatusFilter) => void;
+  draftSort: SortId;
+  setDraftSort: (v: SortId) => void;
+  /** Geographic orders are dropped when the challenge's peaks have no such data. */
+  sortOptions: { id: SortId; key: "profile_sort_altDesc" | "profile_sort_altAsc" | "challenges_sortComarca" | "profile_filter_range" }[];
   count: number;
   counts: Record<StatusFilter, number>;
   onApply: () => void;
@@ -357,6 +424,29 @@ function FiltersSheet({
             );
           })}
         </div>
+        <p style={{ ...eyebrow, padding: "18px 20px 8px", margin: 0 }}>{t.filter_sectionSort}</p>
+        <div style={{ display: "flex", gap: 8, padding: "0 20px", flexWrap: "wrap" }}>
+          {sortOptions.map((o) => {
+            const active = draftSort === o.id;
+            return (
+              <button
+                key={o.id}
+                onClick={() => setDraftSort(o.id)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  padding: "8px 14px", borderRadius: "var(--radius-full)", cursor: "pointer",
+                  border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
+                  background: active ? "#eff6ff" : "#f9fafb",
+                  color: active ? "#0369a1" : "#6b7280",
+                  fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
+                }}
+              >
+                {t[o.key]}
+              </button>
+            );
+          })}
+        </div>
+
         <div style={{ padding: "12px 20px 16px", borderTop: "1px solid #f3f4f6", marginTop: 18 }}>
           <button
             onClick={onApply}

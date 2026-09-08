@@ -49,6 +49,9 @@ export type ChallengePeakRow = {
   name: string;
   altitudeM: number;
   mountainRange: string | null;
+  /** Sparse in the catalogue (~10%). The detail only offers sorting by it when the
+   *  challenge's own peaks actually carry more than one distinct value. */
+  comarca: string | null;
   country: string | null;
   rarityId: RarityId;
   isMythic: boolean;
@@ -271,7 +274,7 @@ export async function getChallengeDetail(
           peak: {
             select: {
               id: true, name: true, nameEn: true, altitudeM: true,
-              mountainRange: true, country: true, rarityId: true, isMythic: true,
+              mountainRange: true, comarca: true, country: true, rarityId: true, isMythic: true,
             },
           },
         },
@@ -317,6 +320,7 @@ export async function getChallengeDetail(
         name: peakDisplayName(pk),
         altitudeM: pk.altitudeM,
         mountainRange: pk.mountainRange,
+        comarca: pk.comarca,
         country: pk.country ?? null,
         rarityId: (pk.rarityId as RarityId | null) ?? getRarityId(pk.altitudeM),
         isMythic: pk.isMythic ?? false,
