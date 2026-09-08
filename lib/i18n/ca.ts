@@ -196,7 +196,7 @@ export const ca: Dict = {
   challenges_countActive: "{n} repte{n,plural,=1{}other{s}} actiu{n,plural,=1{}other{s}}",
   challenges_countAvailable: "{n} disponible{n,plural,=1{}other{s}}",
   challenges_progress: "{done}/{total}",
-  challenges_remaining: "Queden {n} cim{n,plural,=1{}other{s}} — continua així.",
+  challenges_remaining: "Queden {n} cim{n,plural,=1{}other{s}}",
   challenges_completed: "Repte completat!",
   challenges_peaksCount: "{n} cim{n,plural,=1{}other{s}}",
   challenges_emptyTitle: "Encara no segueixes cap repte",

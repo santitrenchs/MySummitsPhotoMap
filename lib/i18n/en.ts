@@ -196,7 +196,7 @@ export const en: Dict = {
   challenges_countActive: "{n} active challenge{n,plural,=1{}other{s}}",
   challenges_countAvailable: "{n} available",
   challenges_progress: "{done}/{total}",
-  challenges_remaining: "{n} summit{n,plural,=1{}other{s}} to go — keep it up.",
+  challenges_remaining: "{n} summit{n,plural,=1{}other{s}} to go",
   challenges_completed: "Challenge completed!",
   challenges_peaksCount: "{n} summit{n,plural,=1{}other{s}}",
   challenges_emptyTitle: "You are not following any challenge yet",
