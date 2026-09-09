@@ -1957,7 +1957,7 @@ Tab order becomes **`Cimas · Retos · Fotos · Etiquetado`**.
 
 - **No inner toggle** — the tab opens straight on the user's own challenges.
 - Header: search field "Buscar reto" + green `+ Añadir` pill (same component pairing as the Amigos/Cordadas screen) + count line `1 RETO ACTIVO · 2 DISPONIBLES`.
-- **"Mis retos" = flat rows, not cards**: one white surface, rows with circular icon + name + `4/23` fraction + 3px progress bar + subtitle, separated by inset dividers. Same reasoning that removed the per-item cards from Amigos/Cordadas.
+- **"Mis retos" = one card per challenge**: circular icon + name + percentage + 3px progress bar + subtitle, in the same shell as the detail's peak rows (white, `--radius-lg`, `1px solid rgba(13,37,56,0.06)`, the two-layer shadow), stacked with `gap: 10`. ⚠️ It first shipped as flat rows on a single white surface with inset dividers, copying Amigos/Cordadas — with two challenges they read as one glued block. Retos are few by definition, so separating them costs nothing; do not fold them back into a shared surface.
 - **`+ Añadir` opens a "Retos disponibles" bottom sheet**: capped height (`max-height: 78%`, never full screen), fixed header + search, scroll only in the list. Cards **with cover art belong here only** — this is the discovery moment. Its own search filters the sheet's list client-side (curated, small catalog — no server call), with two distinct empty states: no match vs already joined everything.
 - Joining moves the card out of the sheet into a flat row in "Mis retos" (optimistic); the sheet closes itself.
 - All available challenges are listed by default, ordered by `sortOrder` (fallback `createdAt desc`) — no truncation.

@@ -1,0 +1,152 @@
+FEEC essencial                             pico en producción                        altitud  distancia
+----------------------------------------------------------------------------------------------------
+  1. El Cogulló de Cabra                      → el Cogulló                                 879 m      9 m
+  2. El Tossal Gros                           → Tossal Gros                                867 m      1 m
+  3. Tossa Grossa de Montferri                → Tossa Grossa de Montferri                  387 m      1 m
+  4. Bassegoda                                → Puig de Bassegoda                         1373 m      4 m
+  5. Castell Saverdera                        → Sant Salvador Saverdera                    682 m      2 m
+  6. El Mont                                  → el Mont                                   1125 m      4 m
+  7. Puig Neulós                              → Puig Neulós                               1257 m      6 m
+  8. Roc del Comptador                        → Roc del Comptador                         1451 m      1 m
+  9. El Castelllot                            → el Castellot                               465 m      5 m
+ 10. Penya del Papiol                         → Penya del Papiol                           381 m      1 m
+ 11. Cap del Verd                             → Cap del Verd                              2284 m      1 m
+ 12. Cogulló de Turp                          → Pic de Turp                               1620 m      1 m
+ 13. El Coscollet                             → lo Coscollet                              1610 m      1 m
+ 14. Monturull                                → Monturull                                 2760 m     32 m
+ 15. Pic d’Enclar (Bony de la Pica)           → Bony de la Pica                           2402 m     37 m
+ 16. Pic de Salòria                           → Pic de Salòria                            2789 m      1 m
+ 17. Sant Honorat                             → Roques de Sant Honorat                    1068 m     92 m
+ 18. Santa Fe                                 → Santa Fe                                  1211 m      1 m
+ 19. Vulturó                                  → Puig de la Canal Baridana (Vulturó)       2649 m      1 m
+ 20. Gran Tuc de Colomers                     → Gran Tuc de Colomèrs                      2933 m      1 m
+ 21. Lo Corronco                              → el Corronco                               2543 m     10 m
+ 22. Pala del Teller                          → Pala del Teller                           1889 m      2 m
+ 23. Pic de Comaloforno                       → Pic de Comaloforno                        3029 m      0 m
+ 24. Punta Alta                               → Punta Alta de Comalesbienes               3014 m     10 m
+ 25. Tossal de les Roies de Cardet            → Tossal de les Roies de Cardet             2445 m      1 m
+ 26. Montgròs                                 → Montgròs                                  1133 m      2 m
+ 27. Puig de Sant Miquel                      → Puig de Sant Miquel                        733 m      1 m
+ 28. Sant Jeroni                              → Sant Jeroni                               1238 m      1 m
+ 29. Collbaix                                 → Collbaix                                   544 m      1 m
+ 30. Montcau                                  → Montcau                                   1056 m     11 m
+ 31. Roca de Sant Salvador (l’Elefant)        → Roca de Sant Salvador                     1156 m      1 m
+ 32. Cavall Bernat de Llaberia                → Cavall Bernat                              840 m      1 m
+ 33. Mola de Colldejou                        → Mola de Colldejou                          922 m     20 m
+ 34. Mola de Genesies                         → Mola de Genessies                          711 m      2 m
+ 35. Molló Puntaire                           → Molló Puntaire                             727 m      1 m
+ 36. Puig de la Cabrafiga                     → Puig de la Cabrafiga                       619 m      2 m
+ 37. Tossal de la Baltasana                   → Tossal de la Baltasana                    1201 m      2 m
+ 38. Caro                                     → Caro                                      1441 m      1 m
+ 39. Tossal d’Engrilló                        → Tossal d'Engrilló                         1072 m      1 m
+ 40. Xàquera o Creu de Santos                 → Creu de Santos                             942 m    101 m
+ 41. Castell de Montgrí                       → Muntanya del Montgrí                       303 m      2 m
+ 42. La Morella                               → la Morella                                 594 m      2 m
+ 43. Sant Pere Màrtir                         → Sant Pere Màrtir                           389 m     30 m
+ 44. Sant Ramon                               → Montbaig                                   295 m     28 m
+ 45. Sant Salvador de les Espases             → Sant Salvador de les Espases               412 m      2 m
+ 46. Talaia del Montmell                      → Puig de la Talaia                          861 m      1 m
+ 47. Puig Castellar                           → Puig Castellar                             303 m      2 m
+ 48. Turó de Magarola                         → Turó del Maltall de Magarola               430 m      2 m
+ 49. Cap de la Gallina Pelada                 → Cap de la Gallina Pelada                  2321 m      3 m
+ 50. Cogulló d’Estela                         → Cogulló d'Estela                          1870 m      0 m
+ 51. Comabona                                 → Comabona                                  2549 m      1 m
+ 52. La Tosa                                  → la Tosa                                   2536 m      1 m
+ 53. Penyes Altes                             → Penyes Altes de Moixeró                   2276 m      1 m
+ 54. Pollegó Superior (Pedraforca)            → Pollegó Superior / Pedraforca             2506 m      1 m
+ 55. La Carabassa                             → La Carbassa                               2736 m    553 m
+ 56. La Muga                                  → Tossal de la Muga                         2860 m      2 m
+ 57. Puigpedrós                               → Puigpedrós                                2915 m      2 m
+ 58. Tossa Plana de Lles (pic de la Portell   → Tossa Plana de Lles                       2905 m      3 m
+ 59. Mola d’Estat                             → Mola d'Estat                              1127 m    123 m
+ 60. Punta del Curull                         → Punta del Curull                          1022 m      5 m
+ 61. Sant Miquel de Montclar                  → Montclar                                   948 m      1 m
+ 62. Tossal Gros de Vallbona                  → Tossal Gros de Vallbona                    804 m     14 m
+ 63. Puig de l’Àliga                          → Puig de l'Àliga                            465 m      3 m
+ 64. Els Bessons                              → els Bessons                                593 m      1 m
+ 65. Cabrera                                  → Cabrera                                   1308 m     40 m
+ 66. Comanegra                                → Comanegra                                 1558 m      1 m
+ 67. Puig Ou                                  → Puig Ou                                   1300 m      3 m
+ 68. Puigsacalm                               → Puigsacalm                                1514 m      2 m
+ 69. Castell de Sant Miquel                   → Sant Miquel                                385 m      3 m
+ 70. Els Àngels                               → els Àngels                                 485 m     23 m
+ 71. Castell de Burriac                       → Turó de Burriac                            392 m      6 m
+ 72. Montalt                                  → Montalt                                    597 m     68 m
+ 73. Puig de la Caritat                       → Puig de la Caritat                        1010 m      6 m
+ 74. Torreta del Montsià                      → Torreta de Montsià                         763 m      4 m
+ 75. Tossal dels Tres Reis                    → Tossal del Rei                            1350 m      6 m
+ 76. Pala Alta                                → Pala Alta                                  949 m      1 m
+ 77. Penya Sant Alís                          → Sant Alís                                 1675 m      5 m
+ 78. Sant Mamet                               → Sant Mamet                                1391 m      7 m
+ 79. Tossal de Mira Pallars i Urgell          → Tossal de Mirapallars                     1676 m      0 m
+ 80. Bellmunt                                 → Bellmunt                                  1248 m      4 m
+ 81. Castell de Milany                        → Milany                                    1529 m      7 m
+ 82. Creu de Gurb                             → Turó de la Creu de Gurb                    842 m      7 m
+ 83. Matagalls                                → Matagalls                                 1697 m      9 m
+ 84. Rocallarga                               → Rocallarga                                1187 m      6 m
+ 85. Cap del Boumort                          → Cap de Boumort                            2077 m      3 m
+ 86. Montsent de Pallars                      → Montsent de Pallars                       2883 m      1 m
+ 87. Pic de Peguera                           → Pic de Peguera                            2983 m      1 m
+ 88. Pica de Cerví                            → Pica de Cerví                             2754 m      2 m
+ 89. Pui de Lleràs                            → Pic de Lleràs                             1692 m      1 m
+ 90. Sant Corneli                             → Sant Corneli                              1351 m      2 m
+ 91. Tuc de la Cometa                         → Tuc de la Cometa                          2445 m      4 m
+ 92. Campirme                                 → Campirme                                  2633 m      2 m
+ 93. Lo Tèsol                                 → lo Tésol                                  2700 m      1 m
+ 94. Monteixo                                 → Monteixo                                  2905 m      1 m
+ 95. Mont-roig                                → Mont-roig                                 2864 m     14 m
+ 96. Pic de Certascan                         → Pic de Certascan                          2853 m      4 m
+ 97. Pic de Moredo                            → Pic de Moredo                             2766 m      1 m
+ 98. Pic de Sotllo                            → Pic de Sotllo                             3072 m      0 m
+ 99. Pica d’Estats                            → Pica d'Estats                             3143 m      2 m
+100. Torreta de l’Orri                        → Torreta de l'Orri                         2438 m     15 m
+101. Tuc de la Llança                         → Tuc de la Llança                          2659 m      1 m
+102. Tuc de Ratera                            → Tuc de Ratera                             2861 m     15 m
+103. La Fita Alta                             → la Fita Alta                               286 m     31 m
+104. Sant Patllarí                            → Sant Patllari                              646 m      0 m
+105. Roca Corbatera                           → Roca Corbatera                            1163 m      1 m
+106. La Picossa                               → la Picossa                                 496 m     17 m
+107. La Tossa (Tivissa)                       → la Tossa                                   718 m      2 m
+108. Lo Tormo                                 → lo Piló                                    523 m      1 m
+109. Balandrau                                → el Balandrau                              2585 m      4 m
+110. Bastiments                               → Bastiments                                2881 m      1 m
+111. Costa Pubilla o Pla de Pujalts           → Cim del Plà de Pujalts o Costa Pubilla    2056 m      2 m
+112. Costabona                                → Costabona                                 2465 m      1 m
+113. Puigmal                                  → Puigmal d'Err                             2910 m      0 m
+114. Taga                                     → Taga                                      2040 m      2 m
+115. Tossal de la Creu                        → Tossal de la Creu                          658 m      1 m
+116. Punta de Montmeneu                       → Punta de Montmaneu                         495 m      0 m
+117. Les Agudes                               → les Agudes                                1705 m      1 m
+118. Sant Miquel de Solterra                  → Sant Miquel de Solterra                   1209 m     12 m
+119. Turó de Montsoriu                        → Montsoriu                                  633 m     41 m
+120. El Cogul                                 → el Cogul                                  1526 m      1 m
+121. Puig de les Morreres                     → Puig de les Morreres                      2212 m     37 m
+122. La Mola                                  → la Mola                                    317 m      1 m
+123. Roques de Benet                          → el Castell                                1017 m      1 m
+124. Santa Bàrbara                            → Muntanya de Santa Bàrbara                  752 m      1 m
+125. Pilar d’Almenara                         → lo Pilar d'Almenara                        459 m     11 m
+126. Maubèrme                                 → Pic de Maubermé / Tuc de Maubèrme         2882 m      0 m
+127. Montardo                                 → Montardo                                  2833 m      1 m
+128. Montcorbison                             → Montcorbison                              2173 m      1 m
+129. Montlude                                 → Montlude                                  2518 m      0 m
+130. Tuc de Molieres                          → Tuc de Molières                           3010 m      1 m
+131. Tuc deth Port de Vielha                  → Tuc deth Pòrt de Vielha                   2606 m      0 m
+132. Castellsapera                            → Castellsapera                              939 m      1 m
+133. La Mola de Sant Llorenç del Munt         → la Mola                                   1103 m     26 m
+134. Puig de la Creu                          → Puig de la Creu                            668 m     30 m
+135. Sant Sadurní de Gallifa                  → la Mola                                    942 m      1 m
+136. Pic del Vent                             → Pic del Vent                               816 m      3 m
+137. Tagamanent                               → Tagamanent                                1058 m     22 m
+138. Casamanya Nord                           → Casamanya Nord                            2750 m      0 m
+139. Comapedrosa                              → Pic de Comapedrosa                        2943 m      0 m
+140. Pic de la Serrera                        → Pic de la Serrera                         2912 m      0 m
+141. Pic Negre d’Envalira                     → Pic Negre d'Envalira                      2822 m      0 m
+142. Tristaina                                → Tristaina / Tristagne                     2878 m     27 m
+143. Cambra d’Ase                             → Cambre d'Aze                              2750 m    146 m
+144. Canigó                                   → Pic du Canigou                            2785 m      0 m
+145. Carlit                                   → Pic Carlit                                2921 m      2 m
+146. Puig de Tretzevents                      → Puig dels Tres Vents                      2731 m     20 m
+147. Puig Peric                               → Pic Péric                                 2810 m      8 m
+148. Roc de Madres                            → Pic de Madrès                             2469 m      1 m
+149. Torre d’Eina                             → La Tour d’Eyne                            2831 m      1 m
+150. Torre de Madeloc                         → Madeloc                                    670 m     30 m

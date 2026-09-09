@@ -90,12 +90,12 @@ export function ChallengesTab({ initial }: { initial: ChallengesData }) {
       ) : filtered.length === 0 ? (
         <EmptyState title={t.challenges_noSearchMatch} />
       ) : (
-        <div style={{
-          background: "white", borderRadius: "var(--radius-lg)", border: "1px solid #E5E7EB",
-          overflow: "hidden",
-        }}>
-          {filtered.map((c, idx) => (
-            <ChallengeRow key={c.id} challenge={c} isFirst={idx === 0} />
+        // Una tarjeta por reto en vez de una superficie única con separadores: con dos
+        // retos ya se leían como un bloque pegado. Son pocos por definición, así que el
+        // coste de separarlos es nulo y cada uno gana su propio contorno.
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {filtered.map((c) => (
+            <ChallengeRow key={c.id} challenge={c} />
           ))}
         </div>
       )}
@@ -112,7 +112,7 @@ export function ChallengesTab({ initial }: { initial: ChallengesData }) {
 
 // ── Flat row ──────────────────────────────────────────────────────────────────
 
-function ChallengeRow({ challenge, isFirst }: { challenge: ChallengeSummary; isFirst: boolean }) {
+function ChallengeRow({ challenge }: { challenge: ChallengeSummary }) {
   const t = useT();
   const pct = progressPct(challenge.completedPeaks, challenge.totalPeaks);
   const remaining = challenge.totalPeaks - challenge.completedPeaks;
@@ -123,14 +123,11 @@ function ChallengeRow({ challenge, isFirst }: { challenge: ChallengeSummary; isF
       style={{
         position: "relative", display: "flex", alignItems: "center", gap: 12,
         padding: "13px 14px", textDecoration: "none",
-        // Inset divider: starts after the icon column, like the friends/cordadas list.
-        borderTop: isFirst ? "none" : "1px solid transparent",
-        backgroundImage: isFirst
-          ? "none"
-          : "linear-gradient(to right, transparent 0 52px, #F1F5F9 52px 100%)",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "100% 1px",
-        backgroundPosition: "top left",
+        // Mismo envoltorio que las filas de cima del detalle y que las tarjetas de la
+        // hoja de retos disponibles.
+        background: "white", borderRadius: "var(--radius-lg)",
+        border: "1px solid rgba(13,37,56,0.06)",
+        boxShadow: "0 1px 3px rgba(13,37,56,0.06), 0 4px 12px rgba(13,37,56,0.05)",
       }}
     >
       <div style={{
