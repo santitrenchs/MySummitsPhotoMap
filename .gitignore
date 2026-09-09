@@ -54,3 +54,8 @@ mobile/android/**/*.hprof
 
 # Local dev/design scratch files
 public/icon-preview.html
+
+# SQL de operaciones puntuales sobre la BD (creación de retos, backfills).
+# Se ejecutan una vez contra Railway y no forman parte del código.
+/*.sql
+/reto-*-mapeo.txt
