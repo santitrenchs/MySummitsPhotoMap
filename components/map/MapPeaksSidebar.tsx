@@ -8,6 +8,7 @@ import { RARITY_COLORS, RARITIES } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { peakDisplayParts } from "@/lib/peak-name";
 import MapPeakCard from "./MapPeakCard";
+import { MapChallengeFilter, type MapChallengeOption } from "./MapChallengeFilter";
 
 type Filter = "all" | "climbed" | "not-climbed";
 type SortMode = "distance" | "relevance" | "altitude";
@@ -45,6 +46,12 @@ interface Props {
   // Sheet mode (mobile legacy)
   asSheet?: boolean;
   onClose?: () => void;
+  // Retos — the Atlas scope. Owned by MapView (the URL drives the mode).
+  challenges?: MapChallengeOption[];
+  challengesLoading?: boolean;
+  activeChallengeId?: string | null;
+  onSelectChallenge?: (id: string | null) => void;
+  onFiltersOpen?: () => void;
 }
 
 // ─── Haversine distance ───────────────────────────────────────────────────────
@@ -70,6 +77,8 @@ export default function MapPeaksSidebar({
   hideSearchInput = false, hideFilters = false, asMobileList = false,
   sort: sortProp, onSortChange,
   asSheet = false, onClose,
+  challenges = [], challengesLoading = false, activeChallengeId = null,
+  onSelectChallenge, onFiltersOpen,
 }: Props) {
   const [internalSort, setInternalSort] = useState<SortMode>("distance");
   const sort = sortProp ?? internalSort;
@@ -319,7 +328,10 @@ export default function MapPeaksSidebar({
             {/* Filter button */}
             {!hideFilters && (
               <button
-                onClick={() => setFiltersOpen(!filtersOpen)}
+                onClick={() => {
+                  if (!filtersOpen) onFiltersOpen?.();
+                  setFiltersOpen(!filtersOpen);
+                }}
                 style={{
                   padding: "9px 12px", borderRadius: "var(--radius-md)",
                   border: `1px solid ${filtersOpen ? "#0D2538" : "#E5E7EB"}`,
@@ -598,6 +610,16 @@ export default function MapPeaksSidebar({
 
             {/* Body */}
             <div style={{ overflowY: "auto", flex: 1, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
+
+              {/* Retos — the scope, above the filters that work inside it */}
+              {onSelectChallenge && (
+                <MapChallengeFilter
+                  challenges={challenges}
+                  activeId={activeChallengeId}
+                  loading={challengesLoading}
+                  onSelect={(id) => { setFiltersOpen(false); onSelectChallenge(id); }}
+                />
+              )}
 
               {/* Rareza */}
               <div>

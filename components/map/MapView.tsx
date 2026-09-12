@@ -11,6 +11,7 @@ import { createPortal } from "react-dom";
 import MapControls from "./MapControls";
 import MapPeaksSidebar from "./MapPeaksSidebar";
 import MapOnboardingModal from "./MapOnboardingModal";
+import { MapChallengeFilter, type MapChallengeOption } from "./MapChallengeFilter";
 import { Button } from "@/components/ui/Button";
 import { imgUrl } from "@/lib/storage/image-url";
 import { CARTO_RASTER_TILES, CARTO_ATTRIBUTION } from "@/lib/map-tiles";
@@ -197,9 +198,44 @@ export default function MapView({
   // culling is off (every peak of the reto stays visible at any zoom), and the
   // camera opens framed on the peaks' bbox.
   const challengeMode = !!challengeId && !!challengePeaks && challengePeaks.length > 0;
+  // Kept in refs because the map's own event handlers are registered once, at init,
+  // and would otherwise read the mode as it was on first render forever.
   const challengeModeRef = useRef(challengeMode);
-  useEffect(() => { challengeModeRef.current = challengeMode; }, [challengeMode]);
   const challengePeakIds = useRef(new Set((challengePeaks ?? []).map((p) => p.id)));
+  useEffect(() => {
+    challengeModeRef.current = challengeMode;
+    challengePeakIds.current = new Set((challengePeaks ?? []).map((p) => p.id));
+  }, [challengeMode, challengePeaks]);
+
+  // The retos the user has joined, for the filter panels. Fetched the first time a
+  // panel opens rather than on mount: most Atlas visits never open the filters, and
+  // this must not add a request to the map's own load.
+  const [myChallenges, setMyChallenges] = useState<MapChallengeOption[]>([]);
+  const [challengesLoading, setChallengesLoading] = useState(false);
+  const challengesRequestedRef = useRef(false);
+
+  async function loadMyChallenges() {
+    if (challengesRequestedRef.current) return;
+    challengesRequestedRef.current = true;
+    setChallengesLoading(true);
+    try {
+      const res = await fetch("/api/challenges");
+      if (!res.ok) return;
+      const data: { mine?: MapChallengeOption[] } = await res.json();
+      setMyChallenges(data.mine ?? []);
+    } catch {
+      // The panel simply shows no Retos section — the rest of the filters still work.
+      challengesRequestedRef.current = false;
+    } finally {
+      setChallengesLoading(false);
+    }
+  }
+
+  /** Scope the Atlas to a reto, or back to the whole catalogue. The URL is the single
+   *  source of truth for the mode, so both entry points go through it. */
+  function selectChallenge(id: string | null) {
+    router.push(id ? `/map?challenge=${id}` : "/map");
+  }
   const t = useT();
   const tRef = useRef(t);
   useEffect(() => { tRef.current = t; }, [t]);
@@ -510,6 +546,45 @@ export default function MapView({
       updatePeakPopupPosition(peak);
     });
   }
+
+  // ── Entering / leaving challenge mode without remounting the map ──────────
+  // Selecting a reto (or pressing the chip's ✕) is a navigation to the same route:
+  // Next re-renders the page with new props but MapView keeps its instance, so the
+  // init effect never runs again. This is what actually performs the switch.
+  const prevChallengeIdRef = useRef<string | null>(challengeId ?? null);
+  useEffect(() => {
+    const prev = prevChallengeIdRef.current;
+    const next = challengeId ?? null;
+    if (prev === next) return;
+    prevChallengeIdRef.current = next;
+
+    const map = mapRef.current;
+    if (!map) return;
+
+    setSelected(null);
+
+    if (challengeMode && challengePeaks) {
+      for (const p of challengePeaks) peaksCacheRef.current.set(p.id, p);
+      setAllPeaks(challengePeaks);
+      const bounds = peaksBounds(challengePeaks);
+      if (bounds) {
+        map.fitBounds(bounds, {
+          padding: isMobile ? { top: 120, bottom: 96, left: 36, right: 36 }
+                            : { top: 80, bottom: 80, left: 80, right: 80 },
+          maxZoom: 13,
+          duration: 900,
+        });
+      }
+    } else {
+      // Leaving: the map is still showing only the reto's peaks, and no pan has
+      // happened to trigger a refetch — repopulate from where the camera is now.
+      setAllPeaks(Array.from(peaksCacheRef.current.values()));
+      const b = map.getBounds();
+      fetchPeaksForViewport({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
+    }
+    computeViewportScores(map.getZoom());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [challengeId, challengeMode, challengePeaks, isMobile]);
 
   // Apply status filter (climbed / not-climbed / all)
   useEffect(() => {
@@ -1234,7 +1309,10 @@ export default function MapView({
                 </div>
                 {/* Filter button */}
                 <button
-                  onClick={() => setMobileFiltersOpen((v) => !v)}
+                  onClick={() => {
+                    if (!mobileFiltersOpen) loadMyChallenges();
+                    setMobileFiltersOpen((v) => !v);
+                  }}
                   style={{
                     display: "flex", alignItems: "center", gap: 6,
                     padding: "10px 14px", borderRadius: "var(--radius-md)",
@@ -1546,6 +1624,14 @@ export default function MapView({
               </div>
               {/* Scrollable body */}
               <div style={{ overflowY: "auto", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 24, scrollbarWidth: "none" }}>
+
+                {/* Retos — the scope, above the filters that work inside it */}
+                <MapChallengeFilter
+                  challenges={myChallenges}
+                  activeId={challengeId ?? null}
+                  loading={challengesLoading}
+                  onSelect={(id) => { setMobileFiltersOpen(false); selectChallenge(id); }}
+                />
 
                 {/* Rareza section */}
                 <div>
@@ -2037,6 +2123,11 @@ export default function MapView({
         {/* ── Desktop sidebar — OUTSIDE containerRef, next to map ─────── */}
         {!isMobile && (
           <MapPeaksSidebar
+            challenges={myChallenges}
+            challengesLoading={challengesLoading}
+            activeChallengeId={challengeId ?? null}
+            onSelectChallenge={selectChallenge}
+            onFiltersOpen={loadMyChallenges}
             peaks={allPeaks}
             ascentByPeakId={ascentByPeakId.current}
             mapBounds={mapBounds}
