@@ -613,7 +613,8 @@ export default function MapView({
       // Climbed markers exist for every ascent the user has; in challenge mode only
       // the reto's own peaks may show, or the map would leak summits from outside it.
       const passesChallenge = !challengeMode || challengePeakIds.current.has(peakId);
-      el.style.display = showAscended && passesMythic && passesRarity && passesChallenge ? "block" : "none";
+      const visible = showAscended && passesMythic && passesRarity && passesChallenge;
+      el.style.display = visible ? (el.dataset.baseDisplay ?? "block") : "none";
     });
     const map = mapRef.current;
     if (map) {
@@ -1136,6 +1137,10 @@ export default function MapView({
         if (!entry.photoUrl) {
           el.style.background = "linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%)";
           el.style.display = "flex";
+          // Remembered so the visibility effect can restore it: a photo-less marker
+          // centres its initial with flex, and showing it as "block" puts the letter
+          // in the corner.
+          el.dataset.baseDisplay = "flex";
           el.style.alignItems = "center";
           el.style.justifyContent = "center";
           el.style.fontSize = "14px";
