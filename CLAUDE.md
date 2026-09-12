@@ -160,6 +160,7 @@ Interactive map (maplibre-gl + Carto tiles + hillshade terrain) showing all peak
 - Filter: All / Climbed / Not yet
 - Tap a peak to open a detail panel (hero photo, altitude, date, route, CTA)
 - Discover unclimbed peaks
+- Scope the whole map to one **reto** (`/map?challenge={id}`) — see "Reto en el Atlas" under Retos
 
 ### Ascensiones (web) / Bitácora (mobile)
 A combined social + personal climb log. Shows **friends' ascents by default** (same as web's default filter `"friends"`). Own ascents visible via filter. Each card shows the hero photo, peak name, altitude, date, and rarity. Tapping opens the full ascent detail with photos, route, Wikiloc embed, and tagged persons.
@@ -1862,7 +1863,7 @@ happened to exist, not a rule worth keeping.
 
 ---
 
-## Retos (Challenges) — shipped to staging 2026-09-07
+## Retos (Challenges) — staging 2026-09-07 · Atlas mode in production 2026-09-12
 
 A **Reto** is a curated list of peaks + each user's progress over it. Created by admin only; users just join or leave. This section is the authoritative design and matches what is on `develop`/staging.
 
@@ -1974,6 +1975,86 @@ Tab order becomes **`Cimas · Retos · Fotos · Etiquetado`**.
 - Row identical to `PeakRowCard`: rarity strip, 100px photo with altitude overlay, name, rarity pill, `ÚLTIMA` + date. For pending peaks, the "photo" is the app's existing missing-photo fallback (navy `#0D2538` + 🏔 at 40% opacity) and the date slot reads "Sin ascensión".
 - Tapping a pending peak → `+ Registrar ascensión` with that peak preselected (same flow as the map panel).
 
+### Reto en el Atlas — "challenge mode" (`/map?challenge={id}`, web, 2026-09-12)
+
+The reto detail and the Atlas filter panels both open an Atlas scoped to one challenge:
+**only that reto's peaks, framed so they all fit**. Shipped to production in `b591eec`,
+`34a72a8`, `74ef17a`.
+
+**Data — server-side, no client fetch.** `challenge.service.ts` → `getChallengeMapPeaks(challengeId, userId, locale)`
+returns `{ id, name, peaks: ChallengeMapPeak[] }` (coordinates, not photos or progress), with
+the **same access rule as `getChallengeDetail`**: an inactive challenge the user never joined
+comes back `null` instead of leaking its peaks. `app/(app)/map/page.tsx` reads `?challenge=`
+and passes `challengeId` / `challengeName` / `challengePeaks` through `MapContainer` into
+`MapView`, so the first paint already has what it needs to frame. There is deliberately **no
+`take`** — a reto is curated and capped at ~500 peaks on create.
+
+**What changes in `MapView` while `challengeMode` is on:**
+
+| Behaviour | Why |
+|---|---|
+| `fetchPeaksForViewport()` returns early | Without this a single pan repopulates the map from the 166k catalogue and "filtered by the reto" lasts one gesture |
+| Percentile culling off (`pct = 1.0`) | The reto's pending peaks must stay visible when zoomed out — which is exactly when the user wants to see them all |
+| `computeViewportScores()` reads `challengePeaks`, ignoring the viewport bbox | Same reason: panning away must not drop them |
+| Climbed photo markers outside the reto are hidden | Otherwise the map filters the dots but keeps showing foreign summits |
+| `allPeaks` is frozen to the reto | It feeds the sidebar and the mobile list; `flyToPeak()` skips the `setAllPeaks` append so searching a summit outside the reto can't slip it into the list |
+| The framing is **not** persisted to `MAP_VIEW_KEY` | Challenge mode is a detour, not where the user left the Atlas |
+| Onboarding modal suppressed | `showOnboarding={… && !challenge}` |
+
+**Camera:** the `maplibregl.Map` constructor takes `bounds: peaksBounds(challengePeaks)` +
+`fitBoundsOptions` (`maxZoom: 13`, bigger top/bottom padding on mobile for the top bar and the
+chip). `peaksBounds()` pads a zero-area box so a one-peak reto doesn't open at street level.
+
+**⚠️ The gotcha that cost a follow-up fix: `MapView` does NOT remount on navigation.**
+Picking a reto, or pressing the chip's ✕, is a navigation to the *same* route — Next re-renders
+the page with new props but React keeps the component instance, so the init effect never runs
+again. `b591eec` shipped without accounting for this and the ✕ left the map showing only the
+reto's peaks until the user panned. The switch is performed by a dedicated
+`useEffect([challengeId, …])` that compares against `prevChallengeIdRef`: entering re-seeds the
+cache, sets `allPeaks` and animates `fitBounds`; leaving repopulates from the current camera via
+`fetchPeaksForViewport`. Both ends then call `computeViewportScores`. **The refs
+(`challengeModeRef`, `challengePeakIds`) are synced in an effect declared *before* it** — the
+map's own handlers are registered once at init and would otherwise read first-render values
+forever.
+
+Also note `map.once("idle")` calls `computeViewportScores()` before the fetch: in challenge mode
+that is the **only** thing that paints the pending peaks, since the fetch returns early and a
+camera that lands framed fires no `moveend`.
+
+**Chip (`MapView`)** — navy `#0D2538` pill, top-left on desktop / full-width under the top bar on
+mobile: reto name + `3/8` progress + ✕ → `/map`. It is what stops an Atlas missing most of its
+peaks from reading as a fault. Navy is deliberate on a surface whose other floating elements are
+green (the `≡ Lista` button) and blue (active map controls): it is a **context banner, not an
+action**, and the dark reads as chrome.
+
+**Entry point 1 — the reto detail** (`ChallengeDetailClient`): a `Link` to `/map?challenge={id}`
+as the third control of the buscar + Filtros row, wearing **`FilterButton`'s resting box**
+(white, `1px solid #E5E7EB`, `#374151`). ⚠️ It first shipped filled navy and was changed in
+`74ef17a`: filled navy is what `FilterButton` turns when it *is* filtering, so a filled navy
+button beside it reads as a filter already applied. Green was never an option — that is "create"
+across the whole app and opening the Atlas creates nothing. Under 520px the CTA takes its own
+full-width line above the row (`order: -1`); three controls in 375px would shrink it to a mute icon.
+
+**Entry point 2 — the Atlas filter panels**: `components/map/MapChallengeFilter.tsx`, shared by
+the desktop sidebar sheet (`MapPeaksSidebar`) and the mobile sheet (`MapView`). One pill per
+**joined** reto with its `3/8`, single-select, navy when active, rendered **above Rareza and
+Estado** — a reto is not another filter, it is the *scope*, and those keep filtering inside it
+("Sin capturar" within a reto is the user's to-do list). Renders nothing when the user has joined
+no challenges. The list comes from `GET /api/challenges` (`mine`), fetched **the first time a
+panel opens** (`loadMyChallenges()` + `challengesRequestedRef`), never on map load: most Atlas
+visits never open the filters. On failure the section is simply absent and the other filters work.
+
+**One source of truth: the URL.** Both entering and leaving go through `router.push`, so there is
+no second piece of state that can drift from the chip. Rarity counts in the panel come from
+`allPeaks`, so inside a reto they are the reto's counts for free.
+
+**"Borrar todo" deliberately does not clear the reto** — it clears filters; the scope is left via
+the chip's ✕. If it did, someone who arrived by deep link would be thrown out of the reto without
+asking.
+
+**Web only.** Android's `AtlasScreen` has its own `peaksCache` + viewport-culling model and needs
+its own pass; iOS likewise.
+
 ### Admin panel (`/admin/challenges`)
 
 Follows the `/admin/peaks` pattern: list of existing challenges, form with name / description / cover / `sortOrder` / `isActive`, and a **peak selector built on `PeakPicker`** — peaks are picked by `Peak.id` from the real catalog, never typed as free text (free text reintroduces the missing/mislabelled-peak data risk).
@@ -1995,6 +2076,10 @@ German keeps the loanword — `Herausforderungen` is too long for a four-tab row
 3. ✅ User API `/api/challenges/*` — `77eff5c`.
 4. ✅ Retos tab + detail — `692a07b`.
 5. ✅ i18n — 34 keys across all 5 locales, added alongside each phase.
+6. ✅ Reto en el Atlas (`/map?challenge={id}`) + the Retos section in the Atlas filters —
+   `b591eec`, `34a72a8`, `74ef17a`. **First part of Retos to reach production** (2026-09-12);
+   everything above it had only ever been on staging. Keys `challenges_viewOnMap` +
+   `challenges_atlasExit`.
 
 Two fixes found while verifying in the browser, both committed with their phase: the admin table blanked out on every toggle (`load()` now only shows the spinner on first load), and `app/layout.tsx` gained `suppressHydrationWarning` on `<html>` because the admin's anti-flash script sets `data-theme` before React hydrates.
 
@@ -2011,7 +2096,7 @@ A first attempt at the FEEC "100 Cims" was discarded for exactly this reason. Wo
 - **No completion reward** — no bonus EP, badge or new cairn in the MVP.
 - **No participant counter** — would force a cached counter.
 - **No deadline/time-limited challenges** — separate roadmap concept.
-- **Web only** — Android/iOS parity (`BitacoraScreen`) comes later if wanted; the `v1` routes are not written.
+- **Web only** — Android/iOS parity (`BitacoraScreen`, and challenge mode in `AtlasScreen`) comes later if wanted; the `v1` routes are not written.
 - **Users never create challenges** — admin only; user-created challenges are future roadmap.
 
 ---
