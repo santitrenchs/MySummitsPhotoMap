@@ -180,8 +180,19 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
         </div>
       </div>
 
-      {/* Shared components — same bar as the Cimas tab, by construction. */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "14px 16px 12px" }}>
+      {/* Shared components — same bar as the Cimas tab, by construction, plus the
+          Atlas CTA. Navy, not green: green is "create" across the whole app and this
+          creates nothing — navy is what FilterButton already turns when it is acting
+          on the list, so the bar stays one object.
+          On narrow screens the CTA takes its own full-width line above the rest
+          (`order: -1`): three controls in 375px would shrink it to a mute icon. */}
+      <style>{`
+        .reto-atlas-cta { flex: 0 0 auto; }
+        @media (max-width: 520px) {
+          .reto-atlas-cta { order: -1; flex: 1 0 100%; justify-content: center; }
+        }
+      `}</style>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: "14px 16px 12px" }}>
         <SearchField
           value={query}
           onChange={setQuery}
@@ -193,6 +204,27 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           active={status !== "all" || sort !== "altitude_desc"}
           onClick={() => { setDraftStatus(status); setDraftSort(sort); setFiltersOpen(true); }}
         />
+        <Link
+          href={`/map?challenge=${challenge.id}`}
+          className="reto-atlas-cta"
+          style={{
+            /* Mirrors FilterButton's box exactly so the two sit at the same height. */
+            display: "flex", alignItems: "center", gap: 7,
+            padding: "10px 14px", borderRadius: "var(--radius-md)",
+            border: "1px solid #0D2538", background: "#0D2538", color: "white",
+            fontFamily: "var(--font-inter, sans-serif)",
+            fontSize: 13, fontWeight: 700,
+            textDecoration: "none", whiteSpace: "nowrap",
+            boxShadow: "0 1px 2px rgba(13,37,56,0.04)",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white"
+               strokeWidth="2.1" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <path d="M9 3.5 3 6v14.5l6-2.5 6 2.5 6-2.5V3.5l-6 2.5z" />
+            <path d="M9 3.5v14.5M15 6v14.5" />
+          </svg>
+          {t.challenges_viewOnMap}
+        </Link>
       </div>
 
       {/* Peak list — always the full challenge, filters only hide rows */}

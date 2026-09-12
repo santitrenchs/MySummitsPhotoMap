@@ -121,6 +121,23 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
 // Height of the mobile top bar (single search+filter row). Used to offset the list panel.
 const MOBILE_TOP_BAR_H = 60;
 
+/** Bounding box of a peak set, as maplibre's [[w, s], [e, n]]. */
+function peaksBounds(peaks: MapPeak[]): [[number, number], [number, number]] | null {
+  if (peaks.length === 0) return null;
+  let w = peaks[0].longitude, e = peaks[0].longitude;
+  let s = peaks[0].latitude,  n = peaks[0].latitude;
+  for (const p of peaks) {
+    if (p.longitude < w) w = p.longitude;
+    if (p.longitude > e) e = p.longitude;
+    if (p.latitude  < s) s = p.latitude;
+    if (p.latitude  > n) n = p.latitude;
+  }
+  // A single peak (or several at the same spot) gives a zero-area box, which
+  // fitBounds resolves to its maxZoom — pad it so the summit keeps some context.
+  if (w === e && s === n) return [[w - 0.06, s - 0.06], [e + 0.06, n + 0.06]];
+  return [[w, s], [e, n]];
+}
+
 // ─── Map view persistence ─────────────────────────────────────────────────────
 
 const MAP_VIEW_KEY = "peakadex_map_view";
@@ -158,13 +175,31 @@ export default function MapView({
   ascentData = [],
   rarities = [],
   showOnboarding = false,
+  challengeId = null,
+  challengeName = null,
+  challengePeaks = null,
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
   rarities?: RarityDef[];
   showOnboarding?: boolean;
+  /** Challenge mode (`/map?challenge={id}`): the Atlas is scoped to one reto. */
+  challengeId?: string | null;
+  challengeName?: string | null;
+  challengePeaks?: MapPeak[] | null;
 }) {
   const router = useRouter();
+
+  // ── Challenge mode ────────────────────────────────────────────────────────
+  // The Atlas shows this reto's peaks and nothing else: the viewport fetch is off
+  // (otherwise a single pan would repopulate the map with the whole catalogue and
+  // the "filtered by the reto" promise would last one gesture), the percentile
+  // culling is off (every peak of the reto stays visible at any zoom), and the
+  // camera opens framed on the peaks' bbox.
+  const challengeMode = !!challengeId && !!challengePeaks && challengePeaks.length > 0;
+  const challengeModeRef = useRef(challengeMode);
+  useEffect(() => { challengeModeRef.current = challengeMode; }, [challengeMode]);
+  const challengePeakIds = useRef(new Set((challengePeaks ?? []).map((p) => p.id)));
   const t = useT();
   const tRef = useRef(t);
   useEffect(() => { tRef.current = t; }, [t]);
@@ -183,7 +218,9 @@ export default function MapView({
   const popupRef = useRef<HTMLDivElement>(null);
 
   // Viewport loading: accumulates all fetched peaks (climbed + unclimbed from API)
-  const peaksCacheRef = useRef(new Map<string, MapPeak>(peaks.map((p) => [p.id, p])));
+  const peaksCacheRef = useRef(new Map<string, MapPeak>(
+    [...peaks, ...(challengePeaks ?? [])].map((p) => [p.id, p]),
+  ));
   const fetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const boundsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const CACHE_MAX = 3000; // evict oldest entries beyond this to keep iteration fast
@@ -202,7 +239,9 @@ export default function MapView({
   const [placeResults, setPlaceResults] = useState<GeocodedPlace[]>([]);
   const [refugioResults, setRefugioResults] = useState<GeocodedPlace[]>([]);
   // allPeaks grows as the user pans: starts with climbed peaks, gains viewport peaks from API
-  const [allPeaks, setAllPeaks] = useState<MapPeak[]>(peaks);
+  // In challenge mode this list is the reto and never grows: it feeds both the
+  // sidebar and the mobile list, so both are scoped to the reto by construction.
+  const [allPeaks, setAllPeaks] = useState<MapPeak[]>(challengeMode ? (challengePeaks ?? []) : peaks);
   const [loadingPeaks, setLoadingPeaks] = useState(false);
   const [hillshade, setHillshade] = useState(false);
   const [terrain3d, setTerrain3d] = useState(false);
@@ -279,12 +318,17 @@ export default function MapView({
     if (!source || !map) return;
 
     const bounds = map.getBounds();
-    const viewportPeaks = Array.from(peaksCacheRef.current.values()).filter(
-      (p) =>
-        !ascentByPeakId.current.has(p.id) &&
-        p.latitude  >= bounds.getSouth() && p.latitude  <= bounds.getNorth() &&
-        p.longitude >= bounds.getWest()  && p.longitude <= bounds.getEast(),
-    );
+    // Challenge mode ignores both the viewport and the percentile cull below: the
+    // reto is a fixed, small, curated set and every pending peak of it must stay on
+    // screen, including the ones the user has just panned past.
+    const viewportPeaks = challengeModeRef.current
+      ? (challengePeaks ?? []).filter((p) => !ascentByPeakId.current.has(p.id))
+      : Array.from(peaksCacheRef.current.values()).filter(
+          (p) =>
+            !ascentByPeakId.current.has(p.id) &&
+            p.latitude  >= bounds.getSouth() && p.latitude  <= bounds.getNorth() &&
+            p.longitude >= bounds.getWest()  && p.longitude <= bounds.getEast(),
+        );
 
     if (viewportPeaks.length === 0) {
       source.setData({ type: "FeatureCollection", features: [] });
@@ -305,7 +349,7 @@ export default function MapView({
 
     // Step 3 — percentile filter
     scored.sort((a, b) => b.score - a.score);
-    const pct =
+    const pct = challengeModeRef.current ? 1.0 :
       zoom < 6  ? 0.10 :
       zoom < 8  ? 0.25 :
       zoom < 10 ? 0.50 : 1.0;
@@ -330,6 +374,7 @@ export default function MapView({
   // Fetch peaks for the given viewport bounds from the API, merge into cache,
   // then recompute adaptive scores for the new data set.
   async function fetchPeaksForViewport(bounds: MapBounds) {
+    if (challengeModeRef.current) return; // the reto's peaks are the whole universe here
     const zoom = mapRef.current?.getZoom() ?? 0;
     if (zoom < 5) return;
     setLoadingPeaks(true);
@@ -409,10 +454,13 @@ export default function MapView({
     const map = mapRef.current;
     if (!map) return;
 
-    // Ensure the peak is in the local cache so highlight/panel work after flying
+    // Ensure the peak is in the local cache so highlight/panel work after flying.
+    // In challenge mode the cache may take it (search still reaches the whole
+    // catalogue) but the list must not: allPeaks IS the reto there, and appending a
+    // searched summit to it would quietly break the scope the chip promises.
     if (!peaksCacheRef.current.has(peak.id)) {
       peaksCacheRef.current.set(peak.id, peak);
-      setAllPeaks(Array.from(peaksCacheRef.current.values()));
+      if (!challengeModeRef.current) setAllPeaks(Array.from(peaksCacheRef.current.values()));
     }
 
     const ascent = ascentByPeakId.current.get(peak.id) ?? null;
@@ -471,7 +519,10 @@ export default function MapView({
       const peak = peaksCacheRef.current.get(peakId);
       const passesMythic = !mythicOnly || !!peak?.isMythic;
       const passesRarity = rarityFilter.length === 0 || rarityFilter.includes(peak?.rarityId ?? "");
-      el.style.display = showAscended && passesMythic && passesRarity ? "block" : "none";
+      // Climbed markers exist for every ascent the user has; in challenge mode only
+      // the reto's own peaks may show, or the map would leak summits from outside it.
+      const passesChallenge = !challengeMode || challengePeakIds.current.has(peakId);
+      el.style.display = showAscended && passesMythic && passesRarity && passesChallenge ? "block" : "none";
     });
     const map = mapRef.current;
     if (map) {
@@ -481,7 +532,7 @@ export default function MapView({
         }
       }
     }
-  }, [filter, rarityFilter, mythicOnly, peaks]);
+  }, [filter, rarityFilter, mythicOnly, peaks, challengeMode]);
 
   // Apply rarity filter to GeoJSON layers via setFilter (safe for iOS — no setData)
   useEffect(() => {
@@ -601,11 +652,24 @@ export default function MapView({
 
     const initMobile = window.innerWidth < 640;
     const { center, zoom } = resolveInitialView(ascentData, peaks);
+    // In challenge mode the camera is framed on the reto's bbox instead of the saved
+    // view: "centred on the reto's peaks, at the zoom that fits them all" IS the
+    // feature. maxZoom stops a one-peak (or tightly clustered) reto from opening at
+    // street level, where a summit has no context.
+    const challengeBounds = challengeMode ? peaksBounds(challengePeaks ?? []) : null;
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE,
-      center,
-      zoom,
+      ...(challengeBounds
+        ? {
+            bounds: challengeBounds,
+            fitBoundsOptions: {
+              padding: initMobile ? { top: 120, bottom: 96, left: 36, right: 36 }
+                                  : { top: 80, bottom: 80, left: 80, right: 80 },
+              maxZoom: 13,
+            },
+          }
+        : { center, zoom }),
       pitch: 0,
     });
     mapRef.current = map;
@@ -618,11 +682,15 @@ export default function MapView({
     };
     map.on("moveend", () => {
       try {
-        const c = map.getCenter();
-        localStorage.setItem(MAP_VIEW_KEY, JSON.stringify({
-          center: [c.lng, c.lat],
-          zoom: map.getZoom(),
-        }));
+        // Challenge mode is a detour, not where the user left the Atlas: persisting
+        // it would open their next normal visit on someone else's mountain range.
+        if (!challengeModeRef.current) {
+          const c = map.getCenter();
+          localStorage.setItem(MAP_VIEW_KEY, JSON.stringify({
+            center: [c.lng, c.lat],
+            zoom: map.getZoom(),
+          }));
+        }
       } catch { /* ignore */ }
       // Debounce sidebar bounds update — avoids re-sorting the sidebar list on
       // every frame of a flyTo animation (which fires moveend repeatedly).
@@ -1017,6 +1085,10 @@ export default function MapView({
       map.once("idle", () => {
         map.resize();
         const b = map.getBounds();
+        // Paint whatever is already in the cache first. In challenge mode this is the
+        // only thing that paints the pending peaks: the fetch below returns early and
+        // the camera lands framed without firing a moveend, so nothing else would.
+        computeViewportScores(map.getZoom());
         fetchPeaksForViewport({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
       });
     });
@@ -1040,6 +1112,9 @@ export default function MapView({
 
   // ── Derived counts ────────────────────────────────────────────────────────
   const climbedCount = ascentData.length;
+  const challengeDoneCount = challengeMode
+    ? (challengePeaks ?? []).filter((p) => ascentByPeakId.current.has(p.id)).length
+    : 0;
 
   return (
     <div className="map-viewport" style={{
@@ -1632,6 +1707,57 @@ export default function MapView({
             style={{ position: "absolute", inset: 0, pointerEvents: isMobile && mobileView === "list" ? "none" : "auto" }}
           />
 
+
+          {/* ── Challenge chip — the only sign that the Atlas is scoped ──
+               Without it the user sees an Atlas missing most of its peaks and reads
+               it as a fault, so it names the reto, carries the progress, and is the
+               way out. */}
+          {challengeMode && (!isMobile || mobileView === "map") && (
+            <div style={{
+              position: "absolute",
+              zIndex: 26,
+              ...(isMobile
+                ? { top: topBarVisible ? MOBILE_TOP_BAR_H + 8 : 12, left: 12, right: 12 }
+                : { top: 14, left: 14, maxWidth: "min(420px, calc(100% - 28px))" }),
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "7px 8px 7px 13px",
+              background: "#0D2538", color: "white",
+              borderRadius: "var(--radius-full)",
+              boxShadow: "0 4px 14px rgba(13,37,56,0.34)",
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white"
+                   strokeWidth="2.1" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
+                <path d="M9 3.5 3 6v14.5l6-2.5 6 2.5 6-2.5V3.5l-6 2.5z" />
+                <path d="M9 3.5v14.5M15 6v14.5" />
+              </svg>
+              <span style={{
+                fontSize: 12.5, fontWeight: 600, minWidth: 0,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>
+                {challengeName}
+              </span>
+              <span style={{
+                flexShrink: 0, marginLeft: "auto",
+                fontFamily: "var(--font-mono-landing, monospace)",
+                fontSize: 12, fontWeight: 600, color: "#8FD3B4",
+              }}>
+                {challengeDoneCount}/{challengePeaks?.length ?? 0}
+              </span>
+              <button
+                onClick={() => router.push("/map")}
+                aria-label={t.challenges_atlasExit}
+                title={t.challenges_atlasExit}
+                style={{
+                  flexShrink: 0, width: 20, height: 20, borderRadius: "50%",
+                  border: "none", background: "rgba(255,255,255,0.16)", color: "white",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, lineHeight: 1, padding: 0,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* ── Hover tooltip ──────────────────────────────────────────── */}
           {tooltip && !selected && (

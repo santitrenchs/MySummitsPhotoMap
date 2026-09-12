@@ -20,11 +20,27 @@ export default function MapContainer({
   ascentData = [],
   rarities = [],
   showOnboarding = false,
+  challengeId = null,
+  challengeName = null,
+  challengePeaks = null,
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
   rarities?: RarityDef[];
   showOnboarding?: boolean;
+  challengeId?: string | null;
+  challengeName?: string | null;
+  challengePeaks?: MapPeak[] | null;
 }) {
-  return <MapView peaks={peaks} ascentData={ascentData} rarities={rarities} showOnboarding={showOnboarding} />;
+  return (
+    <MapView
+      peaks={peaks}
+      ascentData={ascentData}
+      rarities={rarities}
+      showOnboarding={showOnboarding}
+      challengeId={challengeId}
+      challengeName={challengeName}
+      challengePeaks={challengePeaks}
+    />
+  );
 }

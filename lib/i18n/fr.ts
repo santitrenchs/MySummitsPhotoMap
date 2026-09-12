@@ -213,6 +213,8 @@ export const fr: Dict = {
   challenges_detailPending: "{n} restant{n,plural,=1{}other{s}}",
   challenges_detailHighest: "Plus haut",
   challenges_searchPeak: "Rechercher un sommet…",
+  challenges_viewOnMap: "Voir sur l'Atlas",
+  challenges_atlasExit: "Quitter le défi",
   challenges_filters: "Filtres",
   challenges_filterStatus: "Statut",
   challenges_sortComarca: "Région",

@@ -213,6 +213,8 @@ export const de: Dict = {
   challenges_detailPending: "{n} offen",
   challenges_detailHighest: "Höchster",
   challenges_searchPeak: "Gipfel suchen…",
+  challenges_viewOnMap: "Im Atlas ansehen",
+  challenges_atlasExit: "Challenge verlassen",
   challenges_filters: "Filter",
   challenges_filterStatus: "Status",
   challenges_sortComarca: "Region",

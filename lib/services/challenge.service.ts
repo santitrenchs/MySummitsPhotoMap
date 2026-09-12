@@ -60,6 +60,20 @@ export type ChallengePeakRow = {
   photoUrl: string | null;
 };
 
+/** Shape MapView consumes (`MapPeak`): coordinates, not photos or progress. */
+export type ChallengeMapPeak = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  altitudeM: number;
+  mountainRange: string | null;
+  country: string;
+  rarityId: string;
+  isMythic: boolean;
+  rarity: { id: string; name: string; emoji: string; order: number } | null;
+};
+
 export type ChallengeDetail = {
   id: string;
   slug: string;
@@ -345,6 +359,59 @@ export async function getChallengeDetail(
     completedPeaks: peaks.filter((p) => p.done).length,
     maxAltitudeM: peaks.reduce((max, p) => Math.max(max, p.altitudeM), 0),
     peaks,
+  };
+}
+
+/**
+ * The challenge's peaks with map coordinates, for the Atlas "challenge mode"
+ * (`/map?challenge={id}`). Same access rule as getChallengeDetail: an inactive
+ * challenge the user never joined comes back null rather than leaking its peaks.
+ *
+ * Returns every peak of the challenge — the Atlas deliberately shows them all at
+ * once instead of loading per viewport, so there is no `take` here. Challenges are
+ * curated and capped at ~500 peaks on create.
+ */
+export async function getChallengeMapPeaks(
+  challengeId: string,
+  userId: string,
+  locale: Locale = "en",
+): Promise<{ id: string; name: string; peaks: ChallengeMapPeak[] } | null> {
+  const challenge = await prisma.challenge.findUnique({
+    where: { id: challengeId },
+    select: {
+      id: true, name: true, isActive: true, translations: true,
+      participants: { where: { userId }, select: { userId: true } },
+      peaks: {
+        select: {
+          peak: {
+            select: {
+              id: true, name: true, nameEn: true, latitude: true, longitude: true,
+              altitudeM: true, mountainRange: true, country: true, rarityId: true, isMythic: true,
+              rarity: { select: { id: true, name: true, emoji: true, order: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!challenge) return null;
+  if (!challenge.isActive && challenge.participants.length === 0) return null;
+
+  return {
+    id: challenge.id,
+    name: localized(challenge.name, challenge.translations, locale, "name"),
+    peaks: challenge.peaks.map(({ peak }) => ({
+      id: peak.id,
+      name: peakDisplayName(peak),
+      latitude: peak.latitude,
+      longitude: peak.longitude,
+      altitudeM: peak.altitudeM,
+      mountainRange: peak.mountainRange,
+      country: peak.country ?? "",
+      rarityId: peak.rarityId ?? getRarityId(peak.altitudeM),
+      isMythic: peak.isMythic ?? false,
+      rarity: peak.rarity,
+    })),
   };
 }
 

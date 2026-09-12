@@ -213,6 +213,8 @@ export const es: Dict = {
   challenges_detailPending: "{n} pendiente{n,plural,=1{}other{s}}",
   challenges_detailHighest: "Más alta",
   challenges_searchPeak: "Buscar cima…",
+  challenges_viewOnMap: "Ver en el Atlas",
+  challenges_atlasExit: "Salir del reto",
   challenges_filters: "Filtros",
   challenges_filterStatus: "Estado",
   challenges_sortComarca: "Comarca",

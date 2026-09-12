@@ -2,11 +2,25 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/client";
 import { getAscentMapData } from "@/lib/services/ascent.service";
+import { getChallengeMapPeaks } from "@/lib/services/challenge.service";
+import { getLocale } from "@/lib/i18n/server";
 import MapContainer from "@/components/map/MapContainer";
 
-export default async function MapPage() {
+export default async function MapPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ challenge?: string }>;
+}) {
   const session = await auth();
   if (!session) redirect("/login");
+
+  // "Challenge mode": the Atlas is scoped to one reto's peaks and nothing else.
+  // Resolved server-side (and scoped to the session user) so the first paint already
+  // has the peaks to frame — there is no client fetch to wait for.
+  const { challenge: challengeId } = await searchParams;
+  const challenge = challengeId
+    ? await getChallengeMapPeaks(challengeId, session.user.id, await getLocale())
+    : null;
 
   const [ascentData, rarities, userPrefs] = await Promise.all([
     getAscentMapData(session.user.tenantId),
@@ -34,5 +48,15 @@ export default async function MapPage() {
       })
     : [];
 
-  return <MapContainer peaks={climbedPeaks} ascentData={ascentData} rarities={rarities} showOnboarding={!userPrefs?.mapOnboardingSeen} />;
+  return (
+    <MapContainer
+      peaks={climbedPeaks}
+      ascentData={ascentData}
+      rarities={rarities}
+      showOnboarding={!userPrefs?.mapOnboardingSeen && !challenge}
+      challengeId={challenge?.id ?? null}
+      challengeName={challenge?.name ?? null}
+      challengePeaks={challenge?.peaks ?? null}
+    />
+  );
 }

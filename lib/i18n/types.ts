@@ -233,6 +233,8 @@ export type Dict = {
   challenges_detailPending: string;
   challenges_detailHighest: string;
   challenges_searchPeak: string;
+  challenges_viewOnMap: string;
+  challenges_atlasExit: string;
   challenges_filters: string;
   challenges_filterStatus: string;
   challenges_sortComarca: string;
