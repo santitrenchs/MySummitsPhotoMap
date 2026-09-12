@@ -281,6 +281,11 @@ export default function MapView({
   // sidebar and the mobile list, so both are scoped to the reto by construction.
   const [allPeaks, setAllPeaks] = useState<MapPeak[]>(challengeMode ? (challengePeaks ?? []) : peaks);
   const [loadingPeaks, setLoadingPeaks] = useState(false);
+  // The climbed photo markers are created inside map.once("load"), which fires long
+  // after every effect of the first render. Without this flag the visibility effect
+  // runs against an empty markerEls and nothing ever re-applies it, so on a fresh
+  // load (a deep link, or F5 inside a reto) summits outside the reto stayed visible.
+  const [markersReady, setMarkersReady] = useState(false);
   const [hillshade, setHillshade] = useState(false);
   const [terrain3d, setTerrain3d] = useState(false);
   const [trails, setTrails] = useState(false);
@@ -621,7 +626,7 @@ export default function MapView({
     // challengeId, not just challengeMode: switching reto A → B keeps the mode true
     // and `peaks` identical, so with only those deps the effect never re-ran and A's
     // climbed markers stayed on the map inside B.
-  }, [filter, rarityFilter, mythicOnly, peaks, challengeMode, challengeId]);
+  }, [filter, rarityFilter, mythicOnly, peaks, challengeMode, challengeId, markersReady]);
 
   // Apply rarity filter to GeoJSON layers via setFilter (safe for iOS — no setData)
   useEffect(() => {
@@ -1164,6 +1169,7 @@ export default function MapView({
           .setLngLat([peak.longitude, peak.latitude])
           .addTo(map);
       }
+      setMarkersReady(true);
 
       // Force marker positions to recalculate after the map has fully
       // rendered. map.resize() at the top of this handler fires before
