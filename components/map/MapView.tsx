@@ -202,8 +202,10 @@ export default function MapView({
   // and would otherwise read the mode as it was on first render forever.
   const challengeModeRef = useRef(challengeMode);
   const challengePeakIds = useRef(new Set((challengePeaks ?? []).map((p) => p.id)));
+  const challengePeaksRef = useRef<MapPeak[]>(challengePeaks ?? []);
   useEffect(() => {
     challengeModeRef.current = challengeMode;
+    challengePeaksRef.current = challengePeaks ?? [];
     challengePeakIds.current = new Set((challengePeaks ?? []).map((p) => p.id));
   }, [challengeMode, challengePeaks]);
 
@@ -357,8 +359,14 @@ export default function MapView({
     // Challenge mode ignores both the viewport and the percentile cull below: the
     // reto is a fixed, small, curated set and every pending peak of it must stay on
     // screen, including the ones the user has just panned past.
+    // ⚠️ From the ref, never the `challengePeaks` prop: this function is also called
+    // from map handlers registered once at init, whose closure still holds the peaks
+    // as they were on first render (null when the user arrived at /map without a
+    // reto and picked one from the filters). Reading the prop there emptied the
+    // source 500ms after the transition had painted it — the dots appeared and then
+    // vanished, leaving only the climbed markers.
     const viewportPeaks = challengeModeRef.current
-      ? (challengePeaks ?? []).filter((p) => !ascentByPeakId.current.has(p.id))
+      ? challengePeaksRef.current.filter((p) => !ascentByPeakId.current.has(p.id))
       : Array.from(peaksCacheRef.current.values()).filter(
           (p) =>
             !ascentByPeakId.current.has(p.id) &&
@@ -574,6 +582,9 @@ export default function MapView({
           maxZoom: 13,
           duration: 900,
         });
+        // In a reto the peaks are non-negotiable: repaint once the camera lands, so
+        // nothing that ran mid-flight can leave the source empty.
+        map.once("moveend", () => computeViewportScores(map.getZoom()));
       }
     } else {
       // Leaving: the map is still showing only the reto's peaks, and no pan has
@@ -607,7 +618,10 @@ export default function MapView({
         }
       }
     }
-  }, [filter, rarityFilter, mythicOnly, peaks, challengeMode]);
+    // challengeId, not just challengeMode: switching reto A → B keeps the mode true
+    // and `peaks` identical, so with only those deps the effect never re-ran and A's
+    // climbed markers stayed on the map inside B.
+  }, [filter, rarityFilter, mythicOnly, peaks, challengeMode, challengeId]);
 
   // Apply rarity filter to GeoJSON layers via setFilter (safe for iOS — no setData)
   useEffect(() => {
