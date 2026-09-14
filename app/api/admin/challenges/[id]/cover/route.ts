@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db/client";
-import { uploadToR2, deleteFromR2 } from "@/lib/storage/r2";
+import { uploadToR2 } from "@/lib/storage/r2";
 
 // Same validation contract as the cordada avatar upload.
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -27,10 +27,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (buffer.byteLength > MAX_BYTES)
     return NextResponse.json({ error: "File too large" }, { status: 400 });
 
+  // La clave es estable (challenges/{id}.jpg) para no dejar huérfanos en R2, así que
+  // un PutObject ya sustituye el objeto: no hace falta borrarlo antes, y borrarlo era
+  // peor que inútil — si la subida fallaba después, la portada anterior ya no existía
+  // y la fila seguía apuntando a ella.
   const key = `challenges/${challenge.id}.jpg`;
   try {
-    try { await deleteFromR2(key); } catch { /* key might not exist yet */ }
-    const coverUrl = await uploadToR2({ key, body: buffer, contentType: file.type });
+    const url = await uploadToR2({ key, body: buffer, contentType: file.type });
+    // Al ser la clave estable, la URL sería idéntica a la anterior y ni el navegador ni
+    // el <img> volverían a pedirla: la portada nueva estaría en R2 pero nadie la vería.
+    // El sufijo de versión es el mismo recurso que usa la subida de avatar.
+    const coverUrl = `${url}?v=${Date.now()}`;
     await prisma.challenge.update({ where: { id: challenge.id }, data: { coverUrl } });
     return NextResponse.json({ coverUrl });
   } catch (err) {

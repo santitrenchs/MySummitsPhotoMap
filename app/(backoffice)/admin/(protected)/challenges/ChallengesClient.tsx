@@ -283,6 +283,7 @@ function ChallengeEditor({
   const [searching, setSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Peak search reuses the existing admin peaks endpoint — debounced, no new API needed.
   useEffect(() => {
@@ -328,12 +329,22 @@ function ChallengeEditor({
   async function uploadCover(file: File) {
     if (!state.id) return; // cover upload needs an existing challenge id
     setUploading(true);
+    setUploadError(null);
     try {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch(`/api/admin/challenges/${state.id}/cover`, { method: "POST", body: fd });
-      const data = await res.json();
-      if (res.ok) setState({ ...state, coverUrl: data.coverUrl });
+      const data = await res.json().catch(() => ({}));
+      // Sin esta rama, un tipo no permitido, un fichero de más de 5 MB o una sesión
+      // caducada dejaban de subir sin decir nada: el spinner paraba y la portada
+      // seguía siendo la de antes, indistinguible de una subida que sí funcionó.
+      if (!res.ok) {
+        setUploadError(data.error ?? `No se pudo subir la portada (${res.status})`);
+        return;
+      }
+      setState({ ...state, coverUrl: data.coverUrl });
+    } catch {
+      setUploadError("No se pudo subir la portada");
     } finally {
       setUploading(false);
     }
@@ -441,9 +452,19 @@ function ChallengeEditor({
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 disabled={uploading}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCover(f); }}
+                // Se limpia el value tras leer el fichero: un <input type="file"> no
+                // dispara onChange si vuelves a elegir el MISMO fichero, así que
+                // reintentar la misma portada no hacía absolutamente nada.
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) uploadCover(f);
+                }}
               />
               {uploading && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Subiendo…</span>}
+              {!uploading && uploadError && (
+                <span style={{ fontSize: 12, color: "var(--danger, #dc2626)" }}>{uploadError}</span>
+              )}
             </div>
           ) : (
             <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0 }}>
