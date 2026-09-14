@@ -477,3 +477,26 @@ model LegalConsent {
   @@index([userId])
   @@map("legal_consents")
 }
+
+// ── Account deletion audit trail ──────────────────────────────────────────────
+// `User` rows are hard-deleted (self-service from Ajustes, or from the admin
+// panel) and cascade away every trace of the account. Without this log a user
+// who signs up and deletes their account is indistinguishable from one that
+// never existed — which is exactly what happened with the 2026-09 "usuario que
+// no aparece en la lista" report. One row per deletion, never updated.
+model DeletedUserLog {
+  id           String   @id @default(uuid())
+  userId       String                    // id of the (now gone) user — no FK on purpose
+  email        String
+  name         String
+  username     String?
+  reason       String                    // "self" | "admin"
+  deletedById  String?                   // admin userId when reason = "admin"
+  signupAt     DateTime?                 // the deleted user's createdAt
+  totalAscents Int      @default(0)
+  deletedAt    DateTime @default(now())
+
+  @@index([deletedAt])
+  @@index([email])
+  @@map("deleted_user_logs")
+}

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { hashPassword } from "@/lib/auth/password";
-import { sendWelcomeEmail, sendNewUserNotification } from "@/lib/email";
+import { sendWelcomeEmail, notifyNewUser } from "@/lib/email";
 import { generateUniqueSlug, generateUsername } from "@/lib/utils/user-utils";
 import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legal/versions";
@@ -82,9 +82,7 @@ export async function POST(req: NextRequest) {
     sendWelcomeEmail(email, name, locale).catch((err) =>
       console.error("[register] welcome email failed:", err)
     );
-    sendNewUserNotification(name, email).catch((err) =>
-      console.error("[register] new user notification failed:", err)
-    );
+    notifyNewUser(name, email, "web-password");
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {

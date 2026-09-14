@@ -4,7 +4,7 @@ import { SignJWT } from "jose";
 import { prisma } from "@/lib/db/client";
 import { hashPassword } from "@/lib/auth/password";
 import { generateUniqueSlug, generateUniqueUsername } from "@/lib/utils/user-utils";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, notifyNewUser } from "@/lib/email";
 
 const TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
 
   const locale = req.headers.get("accept-language")?.slice(0, 2) ?? "es";
   sendWelcomeEmail(email, name, locale).catch(() => {});
+  notifyNewUser(name, email, "android-password");
 
   const now = Math.floor(Date.now() / 1000);
   const token = await new SignJWT({ id: userId!, email, name, tenantId: tenantId! })

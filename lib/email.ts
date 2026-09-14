@@ -693,38 +693,47 @@ ${renderBrandHeader()}
   console.log("[email] invitation sent OK, id:", data?.id);
 }
 
-export async function sendNewUserNotification(userName: string, userEmail: string) {
-  const now = new Date().toLocaleString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "full", timeStyle: "short" });
+// ── Admin notifications ───────────────────────────────────────────────────────
+// Internal alerts sent to the Peakadex admin inbox, not to end users.
 
-  const { data, error } = await resend.emails.send({
-    from: FROM,
-    to: "santitrenchs@gmail.com",
-    subject: `🧗 Nuevo usuario en Peakadex: ${userName}`,
-    html: `
+const ADMIN_INBOX = process.env.ADMIN_NOTIFICATION_EMAIL ?? "santitrenchs@gmail.com";
+
+/** Where a user account came from / how it was created. */
+export type SignupSource = "web-password" | "web-google" | "android-password" | "android-google";
+
+const SIGNUP_SOURCE_LABEL: Record<SignupSource, string> = {
+  "web-password":     "Web · email + contraseña",
+  "web-google":       "Web · Google",
+  "android-password": "Android · email + contraseña",
+  "android-google":   "Android · Google",
+};
+
+function renderAdminNotification(
+  h1: string,
+  accent: string,
+  rows: Array<[string, string]>,
+) {
+  const cells = rows
+    .map(([label, value], i) => `
+              <tr style="${i === 0 ? "background:#f8fafc;" : "border-top:1px solid #e2e8f0;"}${i > 0 && i % 2 === 0 ? "background:#f8fafc;" : ""}">
+                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;width:110px;">${label}</td>
+                <td style="padding:12px 16px;font-size:14px;color:#0f172a;">${value}</td>
+              </tr>`)
+    .join("");
+
+  return `
 <!DOCTYPE html>
 <html>
 ${renderEmailHead()}
-<body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;">
+<body style="margin:0;padding:0;background:#f8fafc;font-family:${FONT_STACK};">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
     <tr><td align="center">
       <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
 ${renderBrandHeader()}
         <tr>
           <td style="padding:32px;">
-            <h1 style="margin:0 0 20px;font-size:20px;font-weight:700;color:#0f172a;">Nuevo registro</h1>
-            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
-              <tr style="background:#f8fafc;">
-                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;width:110px;">Nombre</td>
-                <td style="padding:12px 16px;font-size:14px;color:#0f172a;font-weight:600;">${userName}</td>
-              </tr>
-              <tr style="border-top:1px solid #e2e8f0;">
-                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Email</td>
-                <td style="padding:12px 16px;font-size:14px;color:#0369a1;">${userEmail}</td>
-              </tr>
-              <tr style="border-top:1px solid #e2e8f0;background:#f8fafc;">
-                <td style="padding:12px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Fecha</td>
-                <td style="padding:12px 16px;font-size:14px;color:#0f172a;">${now}</td>
-              </tr>
+            <h1 style="margin:0 0 20px;font-size:20px;font-weight:700;color:${accent};">${h1}</h1>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">${cells}
             </table>
           </td>
         </tr>
@@ -737,12 +746,88 @@ ${renderBrandHeader()}
     </td></tr>
   </table>
 </body>
-</html>`,
-  });
+</html>`;
+}
 
+function nowInMadrid() {
+  return new Date().toLocaleString("es-ES", {
+    timeZone: "Europe/Madrid",
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+}
+
+async function sendAdminNotification(subject: string, html: string, tag: string) {
+  const { data, error } = await resend.emails.send({ from: FROM, to: ADMIN_INBOX, subject, html });
   if (error) {
-    console.error("[email] new user notification error:", error);
+    console.error(`[email] ${tag} error:`, error);
   } else {
-    console.log("[email] new user notification sent OK, id:", data?.id);
+    console.log(`[email] ${tag} sent OK, id:`, data?.id);
   }
+}
+
+export async function sendNewUserNotification(
+  userName: string,
+  userEmail: string,
+  source: SignupSource = "web-password",
+) {
+  await sendAdminNotification(
+    `🧗 Nuevo usuario en Peakadex: ${userName}`,
+    renderAdminNotification("Nuevo registro", "#0f172a", [
+      ["Nombre", `<span style="font-weight:600;">${userName}</span>`],
+      ["Email", `<span style="color:#0369a1;">${userEmail}</span>`],
+      ["Origen", SIGNUP_SOURCE_LABEL[source]],
+      ["Fecha", nowInMadrid()],
+    ]),
+    "new user notification",
+  );
+}
+
+/**
+ * Fire-and-forget wrapper. EVERY account-creation path must call this right
+ * after the creating transaction commits — web password, web Google (NextAuth
+ * adapter), Android password and Android Google. Adding a new sign-up route
+ * without this call makes users appear out of nowhere in the admin list.
+ */
+export function notifyNewUser(userName: string, userEmail: string, source: SignupSource) {
+  sendNewUserNotification(userName, userEmail, source).catch((err) =>
+    console.error("[email] new user notification failed:", err),
+  );
+}
+
+export type AccountDeletionInfo = {
+  name: string;
+  email: string;
+  userId: string;
+  /** "self" = the user deleted their own account, "admin" = deleted from the admin panel. */
+  reason: "self" | "admin";
+  signupAt?: Date | null;
+  totalAscents?: number;
+  deletedByEmail?: string | null;
+};
+
+export async function sendUserDeletedNotification(info: AccountDeletionInfo) {
+  const rows: Array<[string, string]> = [
+    ["Nombre", `<span style="font-weight:600;">${info.name}</span>`],
+    ["Email", `<span style="color:#0369a1;">${info.email}</span>`],
+    ["Motivo", info.reason === "self" ? "Baja voluntaria (Ajustes)" : `Eliminado por admin${info.deletedByEmail ? ` (${info.deletedByEmail})` : ""}`],
+  ];
+  if (info.signupAt) {
+    rows.push(["Alta", info.signupAt.toLocaleString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "long" })]);
+  }
+  rows.push(["Ascensiones", String(info.totalAscents ?? 0)]);
+  rows.push(["Fecha", nowInMadrid()]);
+
+  await sendAdminNotification(
+    `👋 Baja en Peakadex: ${info.name}`,
+    renderAdminNotification("Cuenta eliminada", "#b91c1c", rows),
+    "user deleted notification",
+  );
+}
+
+/** Fire-and-forget wrapper — call from every account-deletion path. */
+export function notifyUserDeleted(info: AccountDeletionInfo) {
+  sendUserDeletedNotification(info).catch((err) =>
+    console.error("[email] user deleted notification failed:", err),
+  );
 }

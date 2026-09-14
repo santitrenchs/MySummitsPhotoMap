@@ -6,7 +6,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db/client";
 import { verifyPassword } from "@/lib/auth/password";
 import { generateUniqueSlug, generateUniqueUsername } from "@/lib/utils/user-utils";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, notifyNewUser } from "@/lib/email";
 
 const baseAdapter = PrismaAdapter(prisma);
 
@@ -43,11 +43,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         await tx.membership.create({
           data: { userId: created.id, tenantId: tenant.id, role: "OWNER" },
         });
-        sendWelcomeEmail(created.email, created.name, "es").catch((err) =>
-          console.error("[auth] google welcome email failed:", err)
-        );
         return created;
       });
+      // Notify only once the transaction has committed — emailing from inside
+      // it means a rollback still sends the mail, and the user never exists.
+      sendWelcomeEmail(user.email, user.name, "es").catch((err) =>
+        console.error("[auth] google welcome email failed:", err)
+      );
+      notifyNewUser(user.name, user.email, "web-google");
       return user as unknown as AdapterUser;
     },
   },

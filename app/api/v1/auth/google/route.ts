@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import { SignJWT } from "jose";
 import { generateUniqueSlug, generateUniqueUsername } from "@/lib/utils/user-utils";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, notifyNewUser } from "@/lib/email";
 
 const TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
@@ -38,7 +38,7 @@ async function findUserByGoogleOrEmail(googleId: string, email: string) {
 }
 
 async function createGoogleUser(googleId: string, email: string, name: string) {
-  return prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx) => {
     const username = await generateUniqueUsername(name);
     const user = await tx.user.create({
       data: { email, name, username, emailVerified: new Date() },
@@ -51,14 +51,20 @@ async function createGoogleUser(googleId: string, email: string, name: string) {
     await tx.account.create({
       data: { userId: user.id, type: "oauth", provider: "google", providerAccountId: googleId },
     });
-    sendWelcomeEmail(email, name, "es").catch((err) =>
-      console.error("[v1/auth/google] welcome email failed:", err)
-    );
     return tx.user.findUniqueOrThrow({
       where: { id: user.id },
       include: { memberships: { select: { tenantId: true }, take: 1 } },
     });
   });
+
+  // Notify only once the transaction has committed — emailing from inside it
+  // means a rollback still sends the mail, and the user never exists.
+  sendWelcomeEmail(email, name, "es").catch((err) =>
+    console.error("[v1/auth/google] welcome email failed:", err)
+  );
+  notifyNewUser(name, email, "android-google");
+
+  return created;
 }
 
 async function ensureGoogleAccount(userId: string, googleId: string) {
