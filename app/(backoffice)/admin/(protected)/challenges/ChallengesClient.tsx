@@ -432,7 +432,9 @@ function ChallengeEditor({
                 <img
                   src={state.coverUrl}
                   alt=""
-                  style={{ width: 84, height: 56, objectFit: "cover", borderRadius: 6 }}
+                  // Cuadrado y circular: la vista previa debe enseñar el recorte real
+                  // que verá el usuario en la app, no uno apaisado que no existe.
+                  style={{ width: 56, height: 56, objectFit: "cover", borderRadius: "50%" }}
                 />
               )}
               <input

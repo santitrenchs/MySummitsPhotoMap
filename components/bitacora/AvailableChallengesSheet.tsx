@@ -155,19 +155,27 @@ function AvailableCard({
       boxShadow: joined ? "none" : "0 1px 3px rgba(13,37,56,0.06), 0 4px 12px rgba(13,37,56,0.05)",
       overflow: "hidden", opacity: joined ? 0.72 : 1,
     }}>
+      {/* Disco centrado, no una banda a sangre: las portadas de reto son logos
+          redondos sobre lienzo cuadrado, y un `cover` sobre una columna alta y
+          estrecha les rebanaba los costados. Misma forma que el icono de la fila
+          de "Mis retos", así que un reto se reconoce igual en las dos pantallas. */}
       <div style={{
-        width: 74, flexShrink: 0, position: "relative", overflow: "hidden",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: challenge.coverUrl ? undefined : "linear-gradient(160deg,#8fd6b4,#2F7A5F)",
+        width: 74, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
       }}>
-        {challenge.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={challenge.coverUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="rgba(255,255,255,0.55)">
-            <path d="M2 19 L9 7 L13 13 L16 8 L22 19 Z" />
-          </svg>
-        )}
+        <div style={{
+          width: 60, height: 60, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: challenge.coverUrl ? undefined : "linear-gradient(160deg,#8fd6b4,#2F7A5F)",
+        }}>
+          {challenge.coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={challenge.coverUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="rgba(255,255,255,0.6)">
+              <path d="M2 19 L9 7 L13 13 L16 8 L22 19 Z" />
+            </svg>
+          )}
+        </div>
       </div>
 
       <div style={{ flex: 1, minWidth: 0, padding: "11px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
