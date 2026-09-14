@@ -10,23 +10,43 @@ type UserRow = {
   isAdmin: boolean;
   createdAt: string;
   ascents: number;
-  photos: number;
-  friends: number;
+  /** null for bajas — the photos went with the cascade, nothing was snapshotted. */
+  photos: number | null;
+  friends: number | null;
+  /** null = active account; a date = the account was deleted. */
+  deletedAt: string | null;
+  deletedReason: string | null;
 };
+
+type StatusFilter = "active" | "deleted" | "all";
 
 function initials(name: string) {
   return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
-export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
+export function UsersTable({
+  users: initialUsers,
+  deletedUsers,
+}: {
+  users: UserRow[];
+  deletedUsers: UserRow[];
+}) {
   const [users, setUsers] = useState<UserRow[]>(initialUsers);
+  const [status, setStatus] = useState<StatusFilter>("active");
   const [query, setQuery] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const scoped =
+    status === "active"  ? users :
+    status === "deleted" ? deletedUsers :
+    // "Todos": bajas mixed in by date, most recent event first.
+    [...users, ...deletedUsers].sort((a, b) =>
+      (b.deletedAt ?? b.createdAt).localeCompare(a.deletedAt ?? a.createdAt));
+
   const filtered = query.trim()
-    ? users.filter(u => {
+    ? scoped.filter(u => {
         const q = query.toLowerCase();
         return (
           u.name.toLowerCase().includes(q) ||
@@ -34,7 +54,9 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
           (u.username ?? "").toLowerCase().includes(q)
         );
       })
-    : users;
+    : scoped;
+
+  const showStatusColumn = status !== "active";
 
   async function handleDelete() {
     if (!confirmDelete) return;
@@ -59,6 +81,24 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
   return (
     <div>
       <div className="toolbar" style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 4 }}>
+          {([
+            ["active",  `Activos (${users.length})`],
+            ["deleted", `Bajas (${deletedUsers.length})`],
+            ["all",     "Todos"],
+          ] as Array<[StatusFilter, string]>).map(([value, label]) => (
+            <button
+              key={value}
+              className="btn btn-sm"
+              onClick={() => setStatus(value)}
+              style={status === value
+                ? { background: "var(--text-primary)", color: "white", border: "1px solid var(--text-primary)" }
+                : { background: "none" }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="search-box">
           <svg className="search-box-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -90,19 +130,26 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
                 <th style={{ textAlign: "center" }}>Fotos</th>
                 <th style={{ textAlign: "center" }}>Amigos</th>
                 <th>Rol</th>
+                {showStatusColumn && <th>Estado</th>}
                 <th />
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9}>
-                    <div className="empty-state">Sin resultados para &ldquo;{query}&rdquo;</div>
+                  <td colSpan={showStatusColumn ? 10 : 9}>
+                    <div className="empty-state">
+                      {query.trim()
+                        ? <>Sin resultados para &ldquo;{query}&rdquo;</>
+                        : status === "deleted"
+                          ? "Ninguna baja registrada"
+                          : "Sin usuarios"}
+                    </div>
                   </td>
                 </tr>
               )}
               {filtered.map(user => (
-                <tr key={user.id}>
+                <tr key={user.id} style={user.deletedAt ? { opacity: 0.62 } : undefined}>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div
@@ -134,8 +181,27 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
                       : <span className="badge badge-neutral">Usuario</span>
                     }
                   </td>
+                  {showStatusColumn && (
+                    <td style={{ fontSize: 13 }}>
+                      {user.deletedAt ? (
+                        <span
+                          title={user.deletedReason === "admin"
+                            ? "Eliminado desde el panel de admin"
+                            : "Baja voluntaria desde Ajustes"}
+                          style={{ color: "var(--color-red)", whiteSpace: "nowrap" }}
+                        >
+                          Baja ·{" "}
+                          {new Date(user.deletedAt).toLocaleDateString("es-ES", {
+                            day: "2-digit", month: "short", year: "numeric",
+                          })}
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)" }}>Activo</span>
+                      )}
+                    </td>
+                  )}
                   <td>
-                    {!user.isAdmin && (
+                    {!user.isAdmin && !user.deletedAt && (
                       <button
                         className="btn btn-sm"
                         onClick={() => { setConfirmDelete(user); setDeleteError(null); }}
@@ -198,7 +264,7 @@ export function UsersTable({ users: initialUsers }: { users: UserRow[] }) {
   );
 }
 
-function StatNum({ value }: { value: number }) {
-  if (value === 0) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+function StatNum({ value }: { value: number | null }) {
+  if (!value) return <span style={{ color: "var(--text-muted)" }}>—</span>;
   return <span style={{ fontWeight: 600 }}>{value}</span>;
 }
