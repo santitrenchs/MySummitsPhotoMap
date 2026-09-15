@@ -164,7 +164,8 @@ function AvailableCard({
           estrecha les rebanaba los costados. Misma forma que el icono de la fila
           de "Mis retos", así que un reto se reconoce igual en las dos pantallas. */}
       <div style={{
-        width: 70, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "0 14px 0 12px",
       }}>
         <div style={{
           width: 60, height: 60, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
