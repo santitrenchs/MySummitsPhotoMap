@@ -214,16 +214,18 @@ function AvailableCard({
       </div>
 
       <div style={{ flexShrink: 0, padding: "0 12px 0 10px", display: "flex", alignItems: "center" }}>
+        {/* Mismo botón que "Unirse" pero apagado y con una sola palabra: la frase
+            entera ("Ya te has unido") con su disco de tick medía el doble que el
+            CTA y estrangulaba la columna de texto de la izquierda. */}
         {joined ? (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "#5A6E84" }}>
-            <span style={{
-              width: 18, height: 18, borderRadius: "50%", background: ACCENT,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            fontSize: 13.5, fontWeight: 600, color: "#5A6E84",
+            background: "#EEF2F6", borderRadius: 10, padding: "9px 14px", whiteSpace: "nowrap",
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+              <path d="M20 6L9 17l-5-5" stroke="#5A6E84" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
             {joinedLabel}
           </span>
         ) : (
