@@ -400,6 +400,9 @@ data class PaginatedResponse<T>(
 @Serializable
 data class AscentsResponse(
     val ascents: List<Ascent>,
+    // Only populated when the request opted into pagination via `?cursor=`.
+    val hasMore: Boolean = false,
+    val nextCursor: String? = null,
 )
 
 // MARK: - Single ascent response ({ "ascent": {...} })

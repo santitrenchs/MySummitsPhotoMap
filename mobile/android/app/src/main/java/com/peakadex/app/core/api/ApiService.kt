@@ -53,8 +53,12 @@ interface ApiService {
     ): User
 
     // MARK: - Ascents
+    // `cursor` opts into the paginated response shape (hasMore/nextCursor populated).
+    // Pass "" for the first page, then the server's `nextCursor` for subsequent pages.
+    // Omitting it entirely (default null) falls back to the legacy full-list response —
+    // kept only for callers that haven't migrated yet.
     @GET("ascents")
-    suspend fun getAscents(): AscentsResponse
+    suspend fun getAscents(@Query("cursor") cursor: String? = null): AscentsResponse
 
     @POST("ascents")
     suspend fun createAscent(@Body body: CreateAscentRequest): AscentResponse

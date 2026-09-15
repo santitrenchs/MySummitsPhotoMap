@@ -53,43 +53,49 @@ function buildPersons(photos: { faceDetections: { faceTags: { userId: string | n
   return Array.from(personMap.values());
 }
 
-export async function listAscents(tenantId: string, userId: string, friendUserIds: string[]) {
-  const db = await getTenantConnection(tenantId);
+// Page size for the chronological (own / seen-friends) streams once pagination is
+// requested by the client. Legacy (non-paginated) callers are unaffected — see the
+// `paginate` branch below.
+const PAGE_SIZE = 20;
 
-  // Run two separate queries:
-  // 1. Own ascents from the tenant DB (isUnseen is always false for own ascents)
-  // 2. Friends' ascents from the shared prisma, including feedSeens for isUnseen tracking
-  const [ownRaw, friendsRaw] = await Promise.all([
-    db.ascent.findMany({
-      where: { tenantId, createdBy: userId },
-      orderBy: { date: "desc" },
-      include: { peak: PEAK_SELECT, photos: PHOTOS_SELECT, user: USER_SELECT },
-    }),
-    friendUserIds.length > 0
-      ? prisma.ascent.findMany({
-          where: { createdBy: { in: friendUserIds } },
-          orderBy: { date: "desc" },
-          include: {
-            peak: PEAK_SELECT,
-            photos: PHOTOS_SELECT,
-            user: USER_SELECT,
-            feedSeens: { where: { userId }, select: { seenAt: true } },
-          },
-        })
-      : Promise.resolve([]),
-  ]);
+// Cap on how many unseen friend ascents the first paginated page will fetch regardless
+// of date — mirrors MAX_UNSEEN_FRIENDS in ascent-feed.ts. A friend can back-date an
+// ascent long after the fact; a plain chronological `take: PAGE_SIZE` query could bury
+// it past the user's scroll depth forever. Fetching the full unseen set up-front (once,
+// on the first page) guarantees every unseen ascent is surfaced.
+const MAX_UNSEEN_FRIENDS = 50;
 
-  type OwnRow = typeof ownRaw[number];
-  type FriendRow = typeof friendsRaw[number];
+const FRIENDS_INCLUDE = (userId: string) => ({
+  peak: PEAK_SELECT,
+  photos: PHOTOS_SELECT,
+  user: USER_SELECT,
+  feedSeens: { where: { userId }, select: { seenAt: true } },
+});
 
-  const toItem = (a: OwnRow | FriendRow, isOwn: boolean) => ({
+type AscentRow = {
+  id: string;
+  peakId: string;
+  peak: unknown;
+  createdBy: string;
+  user: { name: string | null; avatarUrl: string | null } | null;
+  date: Date;
+  route: string | null;
+  description: string | null;
+  wikiloc: string | null;
+  photos: ({ id: string; url: string; cropAspect: string | null } & Parameters<typeof buildPersons>[0][number])[];
+  createdAt: Date;
+  feedSeens?: { seenAt: Date }[];
+};
+
+function toItem(a: AscentRow, isOwn: boolean) {
+  return {
     id: a.id,
     peakId: a.peakId,
-    peak: a.peak,
+    peak: a.peak as { id: string; name: string; nameEn: string | null; altitudeM: number; mountainRange: string | null; latitude: number; longitude: number; isMythic: boolean; elevationProfile: unknown; nearbyPeaks: unknown },
     createdBy: a.createdBy,
     user: a.user ? { id: a.createdBy, name: a.user.name ?? "?", username: null as string | null, avatarUrl: a.user.avatarUrl ?? null } : null,
     isOwn,
-    isUnseen: !isOwn && ((a as FriendRow).feedSeens?.length ?? 0) === 0,
+    isUnseen: !isOwn && (a.feedSeens?.length ?? 0) === 0,
     date: a.date.toISOString(),
     route: a.route,
     description: a.description,
@@ -97,22 +103,133 @@ export async function listAscents(tenantId: string, userId: string, friendUserId
     photos: a.photos.map((p) => ({ id: p.id, url: p.url, cropAspect: p.cropAspect ?? null })),
     persons: buildPersons(a.photos as Parameters<typeof buildPersons>[0]),
     createdAt: a.createdAt.toISOString(),
-  });
+  };
+}
 
-  const all = [
-    ...ownRaw.map((a) => toItem(a, true)),
-    ...friendsRaw.map((a) => toItem(a, false)),
-  ];
+export type AscentItem = ReturnType<typeof toItem>;
 
-  // Canonical sort — same algorithm as web AscentsClient:
-  // 1. Unseen friends first, sorted by altitude desc (highest peak = most motivating)
-  // 2. Everything else (own + seen friends) sorted by date desc
-  // This sort is done server-side so all clients (web, Android, iOS) get the same order.
-  return all.sort((a, b) => {
+// Canonical sort — same algorithm as web AscentsClient:
+// 1. Unseen friends first, sorted by altitude desc (highest peak = most motivating)
+// 2. Everything else (own + seen friends) sorted by date desc
+// This sort is done server-side so all clients (web, Android, iOS) get the same order.
+// When called on a paginated "skipUnseen" page, no item ever has isUnseen=true (the
+// chronological query filters them out), so this degrades to a plain date-desc sort.
+function sortCanonical(items: AscentItem[]): AscentItem[] {
+  return items.sort((a, b) => {
     if (a.isUnseen !== b.isUnseen) return a.isUnseen ? -1 : 1;
     if (a.isUnseen && b.isUnseen) return b.peak.altitudeM - a.peak.altitudeM;
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
+}
+
+function nextCursor(raw: { date: Date }[], pageSize: number): string | null {
+  return raw.length === pageSize ? raw[raw.length - 1].date.toISOString() : null;
+}
+
+export type ListAscentsPage = {
+  items: AscentItem[];
+  nextBeforeOwn: string | null;
+  nextBeforeFriends: string | null;
+  hasMore: boolean;
+};
+
+export async function listAscents(tenantId: string, userId: string, friendUserIds: string[]): Promise<AscentItem[]>;
+export async function listAscents(
+  tenantId: string,
+  userId: string,
+  friendUserIds: string[],
+  opts: { paginate: true; beforeOwn?: Date; beforeFriends?: Date; skipUnseen?: boolean },
+): Promise<ListAscentsPage>;
+export async function listAscents(
+  tenantId: string,
+  userId: string,
+  friendUserIds: string[],
+  opts?: { paginate?: boolean; beforeOwn?: Date; beforeFriends?: Date; skipUnseen?: boolean },
+): Promise<AscentItem[] | ListAscentsPage> {
+  const db = await getTenantConnection(tenantId);
+
+  if (!opts?.paginate) {
+    // Legacy (unpaginated) behavior — kept byte-for-byte for old Android clients that
+    // don't send a `cursor` query param. Fetches the user's entire ascent history.
+    const [ownRaw, friendsRaw] = await Promise.all([
+      db.ascent.findMany({
+        where: { tenantId, createdBy: userId },
+        orderBy: { date: "desc" },
+        include: { peak: PEAK_SELECT, photos: PHOTOS_SELECT, user: USER_SELECT },
+      }),
+      friendUserIds.length > 0
+        ? prisma.ascent.findMany({
+            where: { createdBy: { in: friendUserIds } },
+            orderBy: { date: "desc" },
+            include: FRIENDS_INCLUDE(userId),
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const all = [
+      ...ownRaw.map((a) => toItem(a, true)),
+      ...friendsRaw.map((a) => toItem(a, false)),
+    ];
+    return sortCanonical(all);
+  }
+
+  const { beforeOwn, beforeFriends, skipUnseen } = opts;
+
+  const ownWhere: Record<string, unknown> = { tenantId, createdBy: userId };
+  if (beforeOwn) ownWhere.date = { lt: beforeOwn };
+
+  const chronoFriendsWhere: Record<string, unknown> = { createdBy: { in: friendUserIds } };
+  if (beforeFriends) chronoFriendsWhere.date = { lt: beforeFriends };
+  if (skipUnseen) chronoFriendsWhere.feedSeens = { some: { userId } };
+
+  const [ownRaw, unseenFriendsRaw, friendsRaw] = await Promise.all([
+    db.ascent.findMany({
+      where: ownWhere,
+      orderBy: { date: "desc" },
+      take: PAGE_SIZE,
+      include: { peak: PEAK_SELECT, photos: PHOTOS_SELECT, user: USER_SELECT },
+    }),
+    friendUserIds.length > 0 && !skipUnseen
+      ? prisma.ascent.findMany({
+          where: { createdBy: { in: friendUserIds }, feedSeens: { none: { userId } } },
+          orderBy: { date: "desc" },
+          take: MAX_UNSEEN_FRIENDS,
+          include: FRIENDS_INCLUDE(userId),
+        })
+      : Promise.resolve([]),
+    friendUserIds.length > 0
+      ? prisma.ascent.findMany({
+          where: chronoFriendsWhere,
+          orderBy: { date: "desc" },
+          take: PAGE_SIZE,
+          include: FRIENDS_INCLUDE(userId),
+        })
+      : Promise.resolve([]),
+  ]);
+
+  // The chronological fetch may overlap with the dedicated unseen fetch (a recent,
+  // still-unseen ascent matches both) — drop those from the chronological side so
+  // each ascent is only enriched/merged once.
+  const unseenIds = new Set(unseenFriendsRaw.map((a) => a.id));
+  const combinedFriendsRaw = [
+    ...unseenFriendsRaw,
+    ...friendsRaw.filter((a) => !unseenIds.has(a.id)),
+  ];
+
+  const items = sortCanonical([
+    ...ownRaw.map((a) => toItem(a, true)),
+    ...combinedFriendsRaw.map((a) => toItem(a, false)),
+  ]);
+
+  const nextBeforeOwn = nextCursor(ownRaw, PAGE_SIZE);
+  const nextBeforeFriends = nextCursor(friendsRaw, PAGE_SIZE);
+
+  return {
+    items,
+    nextBeforeOwn,
+    nextBeforeFriends,
+    hasMore: nextBeforeOwn !== null || nextBeforeFriends !== null,
+  };
 }
 
 export async function getAscentedPeakIds(tenantId: string): Promise<string[]> {

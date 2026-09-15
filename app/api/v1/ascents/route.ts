@@ -13,6 +13,26 @@ const CreateSchema = z.object({
   description: z.string().max(2000).optional(),
 });
 
+type PageCursor = { beforeOwn?: string; beforeFriends?: string };
+
+// Opaque cursor — a base64url-encoded JSON object carrying each stream's own "before"
+// date so pagination can page own + friends' ascents independently (they live in
+// different databases and can't share a single SQL cursor).
+function decodeCursor(raw: string): PageCursor | null {
+  if (!raw) return {};
+  try {
+    const parsed: unknown = JSON.parse(Buffer.from(raw, "base64url").toString("utf8"));
+    if (typeof parsed !== "object" || parsed === null) return null;
+    return parsed as PageCursor;
+  } catch {
+    return null;
+  }
+}
+
+function encodeCursor(cursor: PageCursor): string {
+  return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+}
+
 export async function GET(req: NextRequest) {
   const session = await getV1Session(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -28,17 +48,49 @@ export async function GET(req: NextRequest) {
     f.requesterId === session.userId ? f.addresseeId : f.requesterId
   );
 
-  const ascents = await listAscents(session.tenantId, session.userId, friendUserIds);
+  // Backward compatibility: a `cursor` query param (even empty, meaning "first
+  // paginated page") opts into the new paginated response shape. Clients that never
+  // send it (already-published app builds that predate this change) keep getting the
+  // full, unpaginated list exactly as before.
+  if (!req.nextUrl.searchParams.has("cursor")) {
+    const ascents = await listAscents(session.tenantId, session.userId, friendUserIds);
+    const uniquePeakIds = [...new Set(ascents.map((a) => a.peakId))];
+    const peakStatsMap = await getPeakStats(uniquePeakIds);
+    const ascentsWithStats = ascents.map((a) => ({
+      ...a,
+      peakStats: peakStatsMap.get(a.peakId) ?? null,
+    }));
+    return NextResponse.json({ ascents: ascentsWithStats });
+  }
 
-  // Attach global peak stats (total ascents + unique climbers across all tenants)
-  const uniquePeakIds = [...new Set(ascents.map((a) => a.peakId))];
+  const rawCursor = req.nextUrl.searchParams.get("cursor") ?? "";
+  const cursor = decodeCursor(rawCursor);
+  if (cursor === null) return NextResponse.json({ error: "invalid_cursor" }, { status: 400 });
+
+  const { items, nextBeforeOwn, nextBeforeFriends, hasMore } = await listAscents(
+    session.tenantId,
+    session.userId,
+    friendUserIds,
+    {
+      paginate: true,
+      skipUnseen: rawCursor !== "", // unseen-first fetch only runs once, on the first page
+      beforeOwn: cursor.beforeOwn ? new Date(cursor.beforeOwn) : undefined,
+      beforeFriends: cursor.beforeFriends ? new Date(cursor.beforeFriends) : undefined,
+    },
+  );
+
+  const uniquePeakIds = [...new Set(items.map((a) => a.peakId))];
   const peakStatsMap = await getPeakStats(uniquePeakIds);
-  const ascentsWithStats = ascents.map((a) => ({
+  const ascentsWithStats = items.map((a) => ({
     ...a,
     peakStats: peakStatsMap.get(a.peakId) ?? null,
   }));
 
-  return NextResponse.json({ ascents: ascentsWithStats });
+  const nextCursor = hasMore
+    ? encodeCursor({ beforeOwn: nextBeforeOwn ?? undefined, beforeFriends: nextBeforeFriends ?? undefined })
+    : null;
+
+  return NextResponse.json({ ascents: ascentsWithStats, hasMore, nextCursor });
 }
 
 export async function POST(req: NextRequest) {

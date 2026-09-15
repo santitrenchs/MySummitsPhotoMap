@@ -334,6 +334,8 @@ fun CardsScreen(
     val isRefreshing    by vm.isRefreshing.collectAsStateWithLifecycle()
     val filters         by vm.filters.collectAsStateWithLifecycle()
     val filteredAscents by vm.filteredAscents.collectAsStateWithLifecycle()
+    val hasMore         by vm.hasMore.collectAsStateWithLifecycle()
+    val isLoadingMore   by vm.isLoadingMore.collectAsStateWithLifecycle()
 
     // Hoist list state here so we can scroll-to-top from the refresh LaunchedEffect
     val listState = rememberLazyListState()
@@ -457,6 +459,9 @@ fun CardsScreen(
                             listState           = listState,
                             highlightId         = highlightId,
                             onHighlightConsumed = onHighlightConsumed,
+                            hasMore             = hasMore,
+                            isLoadingMore       = isLoadingMore,
+                            onLoadMore          = vm::loadMore,
                         )
                 }
             }
@@ -791,6 +796,9 @@ private fun CardsList(
     listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
     highlightId: String? = null,
     onHighlightConsumed: () -> Unit = {},
+    hasMore: Boolean = false,
+    isLoadingMore: Boolean = false,
+    onLoadMore: () -> Unit = {},
 ) {
     // Mirror web: show sky-blue ring for 2500ms then fade it out over 400ms
     LaunchedEffect(highlightId) {
@@ -798,6 +806,16 @@ private fun CardsList(
             delay(2_500L)
             onHighlightConsumed()
         }
+    }
+
+    // Fetch the next page a few items before the end of the currently loaded list.
+    LaunchedEffect(listState, hasMore, ascents.size) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisible ->
+                if (lastVisible != null && hasMore && lastVisible >= ascents.size - 5) {
+                    onLoadMore()
+                }
+            }
     }
 
     LazyColumn(
@@ -812,6 +830,16 @@ private fun CardsList(
                 onShareClick  = { onShareClick(ascent.id) },
                 isHighlighted = ascent.id == highlightId,
             )
+        }
+        if (isLoadingMore) {
+            item(key = "loading_more") {
+                Box(
+                    modifier         = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                }
+            }
         }
     }
 }

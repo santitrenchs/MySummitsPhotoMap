@@ -39,6 +39,20 @@ class CardsViewModel : ViewModel() {
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    // ── Pagination state ──────────────────────────────────────────────────────
+    // The server accumulates the full unseen-friends set on the first page (so no
+    // back-dated friend ascent gets buried), then paginates own + seen-friends
+    // chronologically. `nextCursor` is the opaque cursor for the next page.
+
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
+    private val _hasMore = MutableStateFlow(false)
+    val hasMore: StateFlow<Boolean> = _hasMore.asStateFlow()
+
+    private var nextCursor: String? = null
+    private var loadMoreJob: Job? = null
+
     // ── Filter state ──────────────────────────────────────────────────────────
 
     private val _filters = MutableStateFlow(CardsFilterState())
@@ -61,6 +75,7 @@ class CardsViewModel : ViewModel() {
     init { load() }
 
     fun load() {
+        loadMoreJob?.cancel()
         currentJob?.cancel()
         currentJob = viewModelScope.launch {
             _uiState.value = CardsUiState.Loading
@@ -69,11 +84,37 @@ class CardsViewModel : ViewModel() {
     }
 
     fun refresh() {
+        loadMoreJob?.cancel()
         currentJob?.cancel()
         currentJob = viewModelScope.launch {
             _isRefreshing.value = true
             fetch()
             _isRefreshing.value = false
+        }
+    }
+
+    /** Fetches the next page and appends it to the currently loaded ascents. */
+    fun loadMore() {
+        val cursor = nextCursor
+        if (cursor == null || _isLoadingMore.value || _uiState.value !is CardsUiState.Success) return
+        loadMoreJob = viewModelScope.launch {
+            _isLoadingMore.value = true
+            try {
+                val response = api.getAscents(cursor = cursor)
+                val current = (_uiState.value as? CardsUiState.Success)?.ascents ?: emptyList()
+                val existingIds = current.mapTo(HashSet()) { it.id }
+                val appended = current + response.ascents.filter { it.id !in existingIds }
+                _uiState.value = CardsUiState.Success(appended)
+                nextCursor = response.nextCursor
+                _hasMore.value = response.hasMore
+                markUnseenAsSeen(response.ascents)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "loadMore failed (non-critical)", e)
+            } finally {
+                _isLoadingMore.value = false
+            }
         }
     }
 
@@ -96,8 +137,11 @@ class CardsViewModel : ViewModel() {
 
     private suspend fun fetch() {
         try {
-            val response = api.getAscents()
+            // Empty cursor = "first paginated page" (opts into hasMore/nextCursor).
+            val response = api.getAscents(cursor = "")
             _uiState.value = CardsUiState.Success(response.ascents)
+            nextCursor = response.nextCursor
+            _hasMore.value = response.hasMore
             // After the feed loads, mark unseen friends' ascents as seen after a short delay
             // (simulates the user having "seen" them — same behaviour as web).
             // This updates the FeedSeen table so next refresh they appear in date order.
