@@ -150,17 +150,21 @@ function AvailableCard({
   const joined = challenge.isJoined;
   return (
     <div style={{
-      display: "flex", background: joined ? "#F8FAFC" : "white", borderRadius: "var(--radius-lg)",
+      display: "flex", alignItems: "center",
+      background: joined ? "#F8FAFC" : "white", borderRadius: "var(--radius-lg)",
       border: "1px solid rgba(13,37,56,0.06)",
       boxShadow: joined ? "none" : "0 1px 3px rgba(13,37,56,0.06), 0 4px 12px rgba(13,37,56,0.05)",
       overflow: "hidden", opacity: joined ? 0.72 : 1,
+      // Sin esto la columna flex de la hoja encoge las tarjetas en vez de scrollear:
+      // con muchos retos se aplastaban unas sobre otras y el texto salía cortado.
+      flexShrink: 0,
     }}>
       {/* Disco centrado, no una banda a sangre: las portadas de reto son logos
           redondos sobre lienzo cuadrado, y un `cover` sobre una columna alta y
           estrecha les rebanaba los costados. Misma forma que el icono de la fila
           de "Mis retos", así que un reto se reconoce igual en las dos pantallas. */}
       <div style={{
-        width: 74, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        width: 70, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         <div style={{
           width: 60, height: 60, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
@@ -178,11 +182,14 @@ function AvailableCard({
         </div>
       </div>
 
-      <div style={{ flex: 1, minWidth: 0, padding: "11px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+      {/* Dos filas, no tres: el CTA vive a la derecha en vez de en una fila propia.
+          Así caben más retos en pantalla y la descripción tiene su sitio fijo. */}
+      <div style={{ flex: 1, minWidth: 0, padding: "12px 4px 12px 0", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
           <span style={{
             fontFamily: "var(--font-space-grotesk, sans-serif)",
-            fontSize: 14.5, fontWeight: 700, color: "#0D2538", letterSpacing: "-0.01em", lineHeight: 1.2,
+            fontSize: 14.5, fontWeight: 700, color: "#0D2538", letterSpacing: "-0.01em", lineHeight: 1.25,
+            minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {challenge.name}
           </span>
@@ -195,38 +202,45 @@ function AvailableCard({
           </span>
         </div>
 
+        {/* Recorte explícito a 2 líneas: sin él la descripción o estiraba la tarjeta
+            o se perdía entera al comprimirse la lista. */}
         {challenge.description && (
-          <div style={{ fontSize: 12, color: "#5A6E84", lineHeight: 1.4 }}>{challenge.description}</div>
+          <div style={{
+            fontSize: 12, color: "#5A6E84", lineHeight: 1.4,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+          }}>
+            {challenge.description}
+          </div>
         )}
+      </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 2 }}>
-          {joined ? (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "#5A6E84" }}>
-              <span style={{
-                width: 18, height: 18, borderRadius: "50%", background: ACCENT,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              {joinedLabel}
+      <div style={{ flexShrink: 0, padding: "0 12px 0 10px", display: "flex", alignItems: "center" }}>
+        {joined ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "#5A6E84" }}>
+            <span style={{
+              width: 18, height: 18, borderRadius: "50%", background: ACCENT,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+                <path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </span>
-          ) : (
+            {joinedLabel}
+          </span>
+        ) : (
           <button
             onClick={onJoin}
             disabled={joining}
             style={{
-              fontSize: 14, fontWeight: 600, color: "white",
+              fontSize: 13.5, fontWeight: 600, color: "white",
               background: ACCENT, border: "none", borderRadius: 10,
-              padding: "9px 20px", cursor: joining ? "default" : "pointer",
-              opacity: joining ? 0.7 : 1,
+              padding: "9px 16px", cursor: joining ? "default" : "pointer",
+              opacity: joining ? 0.7 : 1, whiteSpace: "nowrap",
             }}
           >
             {joining ? joiningLabel : joinLabel}
           </button>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
