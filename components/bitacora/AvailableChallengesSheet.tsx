@@ -184,34 +184,33 @@ function AvailableCard({
 
       {/* Dos filas, no tres: el CTA vive a la derecha en vez de en una fila propia.
           Así caben más retos en pantalla y la descripción tiene su sitio fijo. */}
-      <div style={{ flex: 1, minWidth: 0, padding: "12px 4px 12px 0", display: "flex", flexDirection: "column", gap: 4 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, padding: "12px 4px 12px 0", display: "flex", flexDirection: "column", gap: 3 }}>
+        {/* El nombre manda en su propia fila y a todo el ancho. La píldora de cimas
+            vivía aquí y le robaba ~70px: en móvil casi todos los retos quedaban
+            cortados a la tercera palabra ("Los 400…"). El recuento baja a la línea
+            de datos, donde acompaña a la descripción sin competir por el ancho. */}
+        <div style={{
+          fontFamily: "var(--font-space-grotesk, sans-serif)",
+          fontSize: 14.5, fontWeight: 700, color: "#0D2538", letterSpacing: "-0.01em", lineHeight: 1.25,
+          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+        }}>
+          {challenge.name}
+        </div>
+
+        {/* Recuento + descripción en un mismo bloque recortado a 2 líneas: sin el
+            recorte la descripción o estiraba la tarjeta o se perdía entera. */}
+        <div style={{
+          fontSize: 12, color: "#5A6E84", lineHeight: 1.4,
+          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+        }}>
           <span style={{
-            fontFamily: "var(--font-space-grotesk, sans-serif)",
-            fontSize: 14.5, fontWeight: 700, color: "#0D2538", letterSpacing: "-0.01em", lineHeight: 1.25,
-            minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {challenge.name}
-          </span>
-          <span style={{
-            flexShrink: 0, fontFamily: "var(--font-mono-landing, monospace)",
-            fontSize: 10, fontWeight: 700, color: "#5A6E84",
-            background: "#F1F5F9", borderRadius: "var(--radius-full)", padding: "3px 8px", whiteSpace: "nowrap",
+            fontFamily: "var(--font-mono-landing, monospace)",
+            fontSize: 10.5, fontWeight: 700, color: "#0D2538",
           }}>
             {peaksLabel}
           </span>
+          {challenge.description ? ` · ${challenge.description}` : ""}
         </div>
-
-        {/* Recorte explícito a 2 líneas: sin él la descripción o estiraba la tarjeta
-            o se perdía entera al comprimirse la lista. */}
-        {challenge.description && (
-          <div style={{
-            fontSize: 12, color: "#5A6E84", lineHeight: 1.4,
-            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-          }}>
-            {challenge.description}
-          </div>
-        )}
       </div>
 
       <div style={{ flexShrink: 0, padding: "0 12px 0 10px", display: "flex", alignItems: "center" }}>
