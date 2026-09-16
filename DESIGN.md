@@ -1789,3 +1789,79 @@ In `CordadasClient.tsx`, the "¿No está en Peakadex todavía?" invite-by-email 
 | Key | es | ca | en | fr | de |
 |---|---|---|---|---|---|
 | `cordadas_founder` | Fundador | Fundador | Founder | Fondateur | Gründer |
+
+---
+
+## Retos — Web (listado y detalle, 2026-09-16)
+
+Web only. Android/iOS no tienen la pantalla todavía; cuando la tengan, esta es la
+referencia.
+
+### La chapa (`Challenge.coverUrl`)
+
+Cada reto tiene una **chapa**: un parche circular sobre lienzo cuadrado con
+transparencia (`media.peakadex.com/challenges/{id}.jpg`, PNG pese a la extensión).
+Es la cara del reto y se reconoce antes que su nombre, así que aparece igual en las
+tres superficies:
+
+| Superficie | Tamaño |
+|---|---|
+| Hoja "Retos disponibles" | 60 px |
+| Fila de "Mis retos" | 60 px |
+| Cabecera del detalle | 76 px |
+
+⚠️ **`object-fit: contain`, nunca `cover`, y sin recorte circular.** El dibujo ya es
+un disco con su propio anillo: recortarlo a un círculo se lo rebana. Lleva
+`drop-shadow(0 2px 4px rgba(13,37,56,0.22))` para despegarlo del blanco. El
+marcador de los retos **sin** chapa sí conserva su círculo (verde en la fila,
+degradado en la hoja) porque ahí el círculo es la forma, no un recorte.
+
+### Listado — fila de "Mis retos"
+
+Tarjeta blanca (`--radius-lg`, borde `rgba(13,37,56,0.06)`, sombra de dos capas),
+`gap: 10` entre filas. Dentro: chapa 60 px · bloque de texto · chevron.
+
+El bloque de texto son tres líneas: nombre (Space Grotesk 14/700) con el
+**porcentaje** en el hueco destacado de la derecha (mono, `#2F7A5F`), barra de 3 px,
+y subtítulo `5/239 · Quedan 234 cimas`. La fracción vive en el subtítulo, no compite
+con el porcentaje.
+
+### Detalle — dos mitades, no una lista
+
+La pantalla se parte en dos objetos distintos y **la forma lleva el estado**: foto =
+conquistada, texto = por ir. Por eso las conseguidas no necesitan tilde verde.
+
+**Ancho: 640 px, el de Bitácora.** La tira de tabs es compartida y sus pestañas son
+`flex: 1`; una columna más ancha las estiraba y el detalle dejaba de parecerse al
+resto de pestañas. No lo ensanches sin resolver antes la tira.
+
+**Cabecera** (`.reto-hdr`): chapa 76 px · nombre (19/800) · descripción a 2 líneas ·
+barra de progreso con el `%` a su derecha · línea de cifras
+`27 / 150 · 123 pendientes` con `MÁS ALTA 3143 m` alineado a la derecha. La barra
+sigue siendo la de muescas hasta `SEGMENTED_MAX = 30` picos.
+
+**"Tu colección"** (`challenges_sectionCollection`): mosaico 4:5, **3 columnas en
+móvil y 4 a partir de 640 px**. Cada tile: foto, insignia de rareza arriba a la
+izquierda (la misma cápsula blanca de 20 px del grid de Fotos), y al pie nombre +
+`3143 m`. La fecha de ascensión se añade al pie **sólo ≥640 px**: a 3 columnas en
+375 px envolvía y se salía del degradado. Lleva al feed de esa cima.
+
+**"Pendientes"** (`challenges_filterPending`): una hoja blanca con filas de **40 px**
+separadas por `1px #F1F5F8` — flor de rareza · nombre · comarca · altitud (mono, a la
+derecha). **Una sola columna a cualquier ancho.** La comarca aparece sólo ≥640 px, y
+nunca cae al código de país: "ES" en cada fila de una lista pirenaica no dice nada.
+
+La fila entera abre el modal de crear ascensión con la cima preseleccionada. En
+puntero se tiñe `#F7FAFC`; con teclado tiene `outline` verde. ⚠️ **Sin botón
+"Registrar" en hover**: reservaba ~120 px de ancho y dejaba la altitud flotando a
+media fila; si no se reservaba, aparecer empujaba el texto.
+
+Encabezado de cada mitad: etiqueta en versalitas + contador mono + filete que llena
+el resto del ancho.
+
+### Rendimiento en la lista larga
+
+Un reto puede tener 500 picos. Las fotos van con `loading="lazy"` +
+`decoding="async"`, y tiles y filas con `content-visibility: auto` +
+`contain-intrinsic-size` (200 px y 40 px) para no pagar layout ni pintado de lo que
+está fuera de pantalla.
