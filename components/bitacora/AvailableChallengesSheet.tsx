@@ -168,13 +168,27 @@ function AvailableCard({
         padding: "0 14px 0 12px",
       }}>
         <div style={{
-          width: 60, height: 60, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
+          width: 60, height: 60, flexShrink: 0,
+          borderRadius: challenge.coverUrl ? undefined : "50%",
+          overflow: "hidden",
           display: "flex", alignItems: "center", justifyContent: "center",
           background: challenge.coverUrl ? undefined : "linear-gradient(160deg,#8fd6b4,#2F7A5F)",
         }}>
           {challenge.coverUrl ? (
+            // Mismo tratamiento que la fila de "Mis retos": `contain` sin recorte
+            // circular, porque la chapa ya es un disco con su propio anillo y un
+            // `cover` se lo rebanaba.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={challenge.coverUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img
+              src={challenge.coverUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              style={{
+                width: "100%", height: "100%", objectFit: "contain",
+                filter: "drop-shadow(0 2px 4px rgba(13,37,56,0.22))",
+              }}
+            />
           ) : (
             <svg viewBox="0 0 24 24" width="28" height="28" fill="rgba(255,255,255,0.6)">
               <path d="M2 19 L9 7 L13 13 L16 8 L22 19 Z" />
