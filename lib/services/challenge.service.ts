@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db/client";
 import { getRarityId } from "@/lib/rarity";
 import type { RarityId } from "@/lib/rarity";
@@ -193,6 +194,54 @@ async function assertValidPeakIds(peakIds: string[]): Promise<string[]> {
   return unique;
 }
 
+// ── The challenge's peak list — cached, because it is the same for everyone ────
+
+/** Everything about a challenge peak that does not depend on who is looking. */
+type ChallengePeakStatic = Omit<ChallengePeakRow, "done" | "lastAscentDate" | "photoUrl">;
+
+const PEAK_SELECT = {
+  id: true, name: true, nameEn: true, altitudeM: true,
+  mountainRange: true, comarca: true, country: true, rarityId: true, isMythic: true,
+} as const;
+
+const peaksTag = (challengeId: string) => `challenge-peaks:${challengeId}`;
+
+/**
+ * The curated list is global and changes only when an admin edits the challenge,
+ * while the detail endpoint is the slowest in the app — it was spending two of its
+ * round trips re-reading the same 150-522 rows on every visit of every user.
+ *
+ * Cached by challenge id (`peakDisplayName` is locale-independent, so the locale is
+ * not part of the key) and invalidated by tag from updateChallenge/deleteChallenge.
+ * The 1h revalidate is a backstop, not the mechanism.
+ *
+ * Progress is NOT in here and never will be — see the note at the top of this file.
+ */
+function getChallengePeaks(challengeId: string): Promise<ChallengePeakStatic[]> {
+  return unstable_cache(
+    async () => {
+      const rows = await prisma.challengePeak.findMany({
+        where: { challengeId },
+        select: { peak: { select: PEAK_SELECT } },
+      });
+      return rows
+        .map(({ peak: pk }) => ({
+          id: pk.id,
+          name: peakDisplayName(pk),
+          altitudeM: pk.altitudeM,
+          mountainRange: pk.mountainRange,
+          comarca: pk.comarca,
+          country: pk.country ?? null,
+          rarityId: (pk.rarityId as RarityId | null) ?? getRarityId(pk.altitudeM),
+          isMythic: pk.isMythic ?? false,
+        }))
+        .sort((a, b) => b.altitudeM - a.altitudeM);
+    },
+    ["challenge-peaks", challengeId],
+    { tags: [peaksTag(challengeId)], revalidate: 3600 },
+  )();
+}
+
 // ── User-facing queries ────────────────────────────────────────────────────────
 
 /**
@@ -280,34 +329,36 @@ export async function getChallengeDetail(
   userId: string,
   locale: Locale = "en",
 ): Promise<ChallengeDetail | null> {
-  const challenge = await prisma.challenge.findUnique({
-    where: { id: challengeId },
-    include: {
-      peaks: {
-        include: {
-          peak: {
-            select: {
-              id: true, name: true, nameEn: true, altitudeM: true,
-              mountainRange: true, comarca: true, country: true, rarityId: true, isMythic: true,
-            },
-          },
-        },
+  // Two independent reads in parallel instead of Prisma's nested include, which
+  // walked challenge → challenge_peaks → peaks → participants one round trip at a
+  // time. The peak list comes from the tag-invalidated cache above.
+  // Membership is asked for separately rather than as a nested `participants`
+  // include: as its own query it rides along in the same parallel wave instead of
+  // costing a round trip of its own.
+  const [challenge, membership, staticPeaks] = await Promise.all([
+    prisma.challenge.findUnique({
+      where: { id: challengeId },
+      select: {
+        id: true, slug: true, name: true, description: true, coverUrl: true,
+        isActive: true, translations: true,
       },
-      participants: { where: { userId }, select: { userId: true } },
-    },
-  });
+    }),
+    prisma.challengeParticipant.findUnique({
+      where: { challengeId_userId: { challengeId, userId } },
+      select: { userId: true },
+    }),
+    getChallengePeaks(challengeId),
+  ]);
   if (!challenge) return null;
 
-  const isJoined = challenge.participants.length > 0;
+  const isJoined = membership !== null;
   if (!challenge.isActive && !isJoined) return null;
-
-  const peakIds = challenge.peaks.map((cp) => cp.peakId);
 
   // One query for every ascent of the user on these peaks, newest first,
   // with the first photo of each (same shape profile.service.ts uses).
-  const ascents = peakIds.length
+  const ascents = staticPeaks.length
     ? await prisma.ascent.findMany({
-        where: { createdBy: userId, peakId: { in: peakIds } },
+        where: { createdBy: userId, peakId: { in: staticPeaks.map((p) => p.id) } },
         orderBy: { date: "desc" },
         select: {
           peakId: true,
@@ -325,25 +376,16 @@ export async function getChallengeDetail(
     }
   }
 
-  const peaks: ChallengePeakRow[] = challenge.peaks
-    .map((cp) => {
-      const pk = cp.peak;
-      const hit = byPeak.get(pk.id);
-      return {
-        id: pk.id,
-        name: peakDisplayName(pk),
-        altitudeM: pk.altitudeM,
-        mountainRange: pk.mountainRange,
-        comarca: pk.comarca,
-        country: pk.country ?? null,
-        rarityId: (pk.rarityId as RarityId | null) ?? getRarityId(pk.altitudeM),
-        isMythic: pk.isMythic ?? false,
-        done: !!hit,
-        lastAscentDate: hit?.date ?? null,
-        photoUrl: hit?.photoUrl ?? null,
-      };
-    })
-    .sort((a, b) => b.altitudeM - a.altitudeM);
+  // Already sorted by altitude desc in the cached list.
+  const peaks: ChallengePeakRow[] = staticPeaks.map((p) => {
+    const hit = byPeak.get(p.id);
+    return {
+      ...p,
+      done: !!hit,
+      lastAscentDate: hit?.date ?? null,
+      photoUrl: hit?.photoUrl ?? null,
+    };
+  });
 
   return {
     id: challenge.id,
@@ -573,9 +615,13 @@ export async function updateChallenge(
       });
     }
   });
+
+  // The peak list is cached globally: an edit has to reach every user's next read.
+  if (peakIds) revalidateTag(peaksTag(challengeId), "max");
 }
 
 /** Cascades to challenge_peaks and challenge_participants. */
 export async function deleteChallenge(challengeId: string): Promise<void> {
   await prisma.challenge.delete({ where: { id: challengeId } });
+  revalidateTag(peaksTag(challengeId), "max");
 }

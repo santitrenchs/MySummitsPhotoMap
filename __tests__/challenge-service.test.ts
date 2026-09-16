@@ -1,18 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Mock } from "vitest";
 
+// The peak list goes through Next's data cache in production. Out of a request
+// there is no incremental cache, so unstable_cache is passed through here: these
+// tests are about the queries and the visibility rules, not about caching.
+vi.mock("next/cache", () => ({
+  unstable_cache: <T extends (...args: never[]) => unknown>(fn: T) => fn,
+  revalidateTag: vi.fn(),
+}));
+
 // Mock the Prisma client BEFORE importing the service.
 vi.mock("@/lib/db/client", () => ({
   prisma: {
     challenge:            { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     challengePeak:        { findMany: vi.fn(), deleteMany: vi.fn(), createMany: vi.fn() },
-    challengeParticipant: { findMany: vi.fn(), upsert: vi.fn(), deleteMany: vi.fn() },
+    challengeParticipant: { findMany: vi.fn(), findUnique: vi.fn(), upsert: vi.fn(), deleteMany: vi.fn() },
     ascent:               { findMany: vi.fn() },
     peak:                 { findMany: vi.fn() },
     $transaction:         vi.fn(),
   },
 }));
 
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db/client";
 import {
   listChallenges,
@@ -27,7 +36,7 @@ import {
 const db = prisma as unknown as {
   challenge:            { findUnique: Mock; findMany: Mock; create: Mock; update: Mock; delete: Mock };
   challengePeak:        { findMany: Mock; deleteMany: Mock; createMany: Mock };
-  challengeParticipant: { findMany: Mock; upsert: Mock; deleteMany: Mock };
+  challengeParticipant: { findMany: Mock; findUnique: Mock; upsert: Mock; deleteMany: Mock };
   ascent:               { findMany: Mock };
   peak:                 { findMany: Mock };
   $transaction:         Mock;
@@ -55,8 +64,10 @@ describe("getChallengeDetail() — visibility rules", () => {
   it("hides an inactive challenge from a non-participant (unpublished content is not guessable)", async () => {
     db.challenge.findUnique.mockResolvedValue({
       id: "c1", slug: "s", name: "n", description: null, coverUrl: null,
-      isActive: false, peaks: [], participants: [],
+      isActive: false,
     });
+    db.challengeParticipant.findUnique.mockResolvedValue(null);
+    db.challengePeak.findMany.mockResolvedValue([]);
 
     expect(await getChallengeDetail("c1", USER)).toBeNull();
   });
@@ -65,9 +76,9 @@ describe("getChallengeDetail() — visibility rules", () => {
     db.challenge.findUnique.mockResolvedValue({
       id: "c1", slug: "s", name: "n", description: null, coverUrl: null,
       isActive: false,
-      peaks: [{ peakId: "p1", peak: peak("p1", 3000) }],
-      participants: [{ userId: USER }],
     });
+    db.challengeParticipant.findUnique.mockResolvedValue({ userId: USER });
+    db.challengePeak.findMany.mockResolvedValue([{ peak: peak("p1", 3000) }]);
     db.ascent.findMany.mockResolvedValue([]);
 
     const detail = await getChallengeDetail("c1", USER);
@@ -78,6 +89,7 @@ describe("getChallengeDetail() — visibility rules", () => {
 
   it("returns null for a challenge that does not exist", async () => {
     db.challenge.findUnique.mockResolvedValue(null);
+    db.challengePeak.findMany.mockResolvedValue([]);
     expect(await getChallengeDetail("nope", USER)).toBeNull();
   });
 });
@@ -87,13 +99,14 @@ describe("getChallengeDetail() — done/pending mapping", () => {
     db.challenge.findUnique.mockResolvedValue({
       id: "c1", slug: "els-3000", name: "Els 3000", description: null, coverUrl: null,
       isActive: true,
-      peaks: [
-        { peakId: "low",  peak: peak("low", 3000) },
-        { peakId: "high", peak: peak("high", 3404) },
-        { peakId: "mid",  peak: peak("mid", 3200) },
-      ],
-      participants: [{ userId: USER }],
     });
+    db.challengeParticipant.findUnique.mockResolvedValue({ userId: USER });
+    // Deliberately unsorted: the cached helper is what sorts by altitude desc.
+    db.challengePeak.findMany.mockResolvedValue([
+      { peak: peak("low", 3000) },
+      { peak: peak("high", 3404) },
+      { peak: peak("mid", 3200) },
+    ]);
   });
 
   it("marks only ascended peaks as done and counts progress live", async () => {
@@ -305,6 +318,16 @@ describe("updateChallenge() — field isolation", () => {
     expect(db.challengePeak.createMany).toHaveBeenCalledWith({
       data: [{ challengeId: "c1", peakId: "p1" }, { challengeId: "c1", peakId: "p2" }],
     });
+  });
+
+  it("expires the cached peak list when the peaks change, and only then", async () => {
+    db.peak.findMany.mockResolvedValue([{ id: "p1" }]);
+    await updateChallenge("c1", { peakIds: ["p1"] });
+    expect(revalidateTag).toHaveBeenCalledWith("challenge-peaks:c1", "max");
+
+    (revalidateTag as unknown as Mock).mockClear();
+    await updateChallenge("c1", { isActive: false });
+    expect(revalidateTag).not.toHaveBeenCalled();
   });
 
   it("does not re-slug when the name is unchanged", async () => {
