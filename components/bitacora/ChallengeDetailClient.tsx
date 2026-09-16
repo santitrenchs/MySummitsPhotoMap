@@ -137,12 +137,18 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
                       filter: drop-shadow(0 3px 6px rgba(13,37,56,0.26)); }
         .reto-hdr-main { flex: 1; min-width: 0; }
         .reto-stats { display: flex; align-items: baseline; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
-        /* The way in, in the slot the progress bar occupies once you are a participant.
-           It takes its content's width, not the column's: the reading order is name →
-           what this is → the action, and a full-bleed green block there outweighs the
-           reto's own name. On a phone full width is the norm, so it takes it back. */
-        .reto-join { width: auto; min-width: 150px; }
-        @media (max-width: 520px) { .reto-join { width: 100%; } }
+        /* The way in, on the title's own line and pushed right — where a header's
+           primary action is looked for. It used to sit in the slot the progress bar
+           occupies once you are a participant, which pushed the name away from the
+           figures and left the whole right half of the title line empty. */
+        .reto-title-row { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+        .reto-title { flex: 1; min-width: 0; }
+        .reto-join { flex: 0 0 auto; }
+        /* Title and button on one line strangle the name on a phone: it drops to its
+           own full-width line under the whole header block instead. */
+        @media (max-width: 520px) {
+          .reto-join { flex: 1 0 100%; width: 100%; order: 3; }
+        }
         .reto-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
         .reto-pend { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0;
                      background: white; border-radius: var(--radius-lg);
@@ -208,53 +214,59 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           <img className="reto-patch" src={challenge.coverUrl} alt="" />
         )}
         <div className="reto-hdr-main">
-          <div style={{
-            fontFamily: "var(--font-space-grotesk, sans-serif)",
-            fontSize: 19, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.025em",
-          }}>
-            {challenge.name}
-          </div>
-          {challenge.description && (
-            <div style={{
-              fontSize: 11.5, color: "#7F93A6", marginTop: 3,
-              overflow: "hidden", display: "-webkit-box",
-              WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-            }}>
-              {challenge.description}
-            </div>
-          )}
-
-          {/* Not a participant → the bar's slot carries the way in instead. A progress
-              bar on a reto you have not taken is describing a race you are not in; the
-              figures line below still reports the peaks of it you happen to have done,
-              which is the real reason to join. */}
-          {!challenge.isJoined ? (
-            <div style={{ marginTop: 12 }}>
-              <button
-                type="button"
-                onClick={join}
-                disabled={joining}
-                className="reto-join"
-                style={{
-                  minHeight: 44, padding: "12px 24px",
-                  background: joining ? "#6B9E88" : ACCENT,
-                  color: "white", border: "none",
-                  borderRadius: "var(--radius-md)",
-                  fontFamily: "inherit", fontSize: 14.5, fontWeight: 800,
-                  letterSpacing: "-0.01em",
-                  cursor: joining ? "default" : "pointer",
-                  boxShadow: "0 2px 10px rgba(47,122,95,0.26)",
-                }}
-              >
-                {joining ? t.challenges_joining : t.challenges_join}
-              </button>
-              {joinFailed && (
-                <p role="status" style={{ margin: "8px 0 0", fontSize: 12.5, color: "#B4541F" }}>
-                  {t.challenges_joinFailed}
-                </p>
+          <div className="reto-title-row">
+            <div className="reto-title">
+              <div style={{
+                fontFamily: "var(--font-space-grotesk, sans-serif)",
+                fontSize: 19, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.025em",
+              }}>
+                {challenge.name}
+              </div>
+              {challenge.description && (
+                <div style={{
+                  fontSize: 11.5, color: "#7F93A6", marginTop: 3,
+                  overflow: "hidden", display: "-webkit-box",
+                  WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                }}>
+                  {challenge.description}
+                </div>
               )}
             </div>
-          ) : (
+
+            {/* Not a participant → the way in sits on the title's line. A progress bar
+                on a reto you have not taken is describing a race you are not in, so its
+                slot below stays empty; the figures line still reports the peaks of it
+                you happen to have done, which is the real reason to join. */}
+            {!challenge.isJoined && (
+              <div className="reto-join">
+                <button
+                  type="button"
+                  onClick={join}
+                  disabled={joining}
+                  style={{
+                    width: "100%",
+                    minHeight: 40, padding: "10px 20px",
+                    background: joining ? "#6B9E88" : ACCENT,
+                    color: "white", border: "none",
+                    borderRadius: "var(--radius-md)",
+                    fontFamily: "inherit", fontSize: 14, fontWeight: 800,
+                    letterSpacing: "-0.01em",
+                    cursor: joining ? "default" : "pointer",
+                    boxShadow: "0 2px 10px rgba(47,122,95,0.26)",
+                  }}
+                >
+                  {joining ? t.challenges_joining : t.challenges_join}
+                </button>
+                {joinFailed && (
+                  <p role="status" style={{ margin: "6px 0 0", fontSize: 12.5, color: "#B4541F" }}>
+                    {t.challenges_joinFailed}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {challenge.isJoined && (
           /* Notched like the Cimas catalogue bar (one cell per peak, done first) rather
              than a continuous track with a knob: the knob read as a draggable slider on
              a bar that does nothing when touched. Long challenges fall back to a plain
