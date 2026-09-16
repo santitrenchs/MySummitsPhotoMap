@@ -190,6 +190,8 @@ export const en: Dict = {
   profile_tab_peaks: "Peaks", profile_tab_tagged: "Tagged",
 
   // Challenges
+  map_retos_labelMany: "Challenges",
+  map_retos_openIn: "View the challenge “{name}”",
   challenges_tab: "Challenges",
   challenges_searchPlaceholder: "Search challenge",
   challenges_add: "Add",
@@ -205,6 +207,7 @@ export const en: Dict = {
   challenges_availableTitle: "Available challenges",
   challenges_availableSearch: "Search available challenge",
   challenges_join: "Join",
+  challenges_joinFailed: "Couldn't join the challenge. Try again.",
   challenges_joining: "Joining…",
   challenges_allJoined: "You have joined every available challenge.",
   challenges_noAvailable: "No challenge matches your search.",

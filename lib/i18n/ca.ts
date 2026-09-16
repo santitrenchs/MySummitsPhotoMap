@@ -190,6 +190,8 @@ export const ca: Dict = {
   profile_tab_peaks: "Cims", profile_tab_tagged: "Etiquetat",
 
   // Reptes (Challenges)
+  map_retos_labelMany: "Reptes",
+  map_retos_openIn: "Veure el repte «{name}»",
   challenges_tab: "Reptes",
   challenges_searchPlaceholder: "Cerca un repte",
   challenges_add: "Afegeix",
@@ -205,6 +207,7 @@ export const ca: Dict = {
   challenges_availableTitle: "Reptes disponibles",
   challenges_availableSearch: "Cerca un repte disponible",
   challenges_join: "Uneix-t'hi",
+  challenges_joinFailed: "No s'ha pogut unir al repte. Torna-ho a provar.",
   challenges_joining: "Unint-te…",
   challenges_allJoined: "Ja t'has unit a tots els reptes disponibles.",
   challenges_noAvailable: "Cap repte coincideix amb la teva cerca.",

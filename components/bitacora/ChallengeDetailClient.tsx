@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
@@ -50,6 +51,9 @@ function rarityEntry(id: RarityId) {
 
 export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetail }) {
   const t = useT();
+  const router = useRouter();
+  const [joining, setJoining] = useState(false);
+  const [joinFailed, setJoinFailed] = useState(false);
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -95,6 +99,27 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
 
   const pending = challenge.totalPeaks - challenge.completedPeaks;
   const pct = progressPct(challenge.completedPeaks, challenge.totalPeaks);
+
+  /**
+   * Joining from the detail itself. This screen used to be reachable only from "Mis
+   * retos", where you are a participant by definition — the Atlas patches are the first
+   * door that brings someone here who is not, and without this they landed on a reto
+   * they could read but not take.
+   */
+  async function join() {
+    setJoining(true);
+    setJoinFailed(false);
+    try {
+      const res = await fetch(`/api/challenges/${challenge.id}/join`, { method: "POST" });
+      if (!res.ok) throw new Error(String(res.status));
+      // The progress comes from the server, so the bar has to arrive with a refresh
+      // rather than be faked here.
+      router.refresh();
+    } catch {
+      setJoinFailed(true);
+      setJoining(false);
+    }
+  }
 
   // The two halves are rendered as different objects, not as one list of rows:
   // a photo means "captured", a text line means "still out there". The split
@@ -193,10 +218,40 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
             </div>
           )}
 
-          {/* Notched like the Cimas catalogue bar (one cell per peak, done first) rather
-              than a continuous track with a knob: the knob read as a draggable slider on
-              a bar that does nothing when touched. Long challenges fall back to a plain
-              fill, where the notches would be unreadable anyway. */}
+          {/* Not a participant → the bar's slot carries the way in instead. A progress
+              bar on a reto you have not taken is describing a race you are not in; the
+              figures line below still reports the peaks of it you happen to have done,
+              which is the real reason to join. */}
+          {!challenge.isJoined ? (
+            <div style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                onClick={join}
+                disabled={joining}
+                style={{
+                  width: "100%", minHeight: 44, padding: "12px 16px",
+                  background: joining ? "#6B9E88" : ACCENT,
+                  color: "white", border: "none",
+                  borderRadius: "var(--radius-md)",
+                  fontFamily: "inherit", fontSize: 14.5, fontWeight: 800,
+                  letterSpacing: "-0.01em",
+                  cursor: joining ? "default" : "pointer",
+                  boxShadow: "0 2px 10px rgba(47,122,95,0.26)",
+                }}
+              >
+                {joining ? t.challenges_joining : t.challenges_join}
+              </button>
+              {joinFailed && (
+                <p role="status" style={{ margin: "8px 0 0", fontSize: 12.5, color: "#B4541F" }}>
+                  {t.challenges_joinFailed}
+                </p>
+              )}
+            </div>
+          ) : (
+          /* Notched like the Cimas catalogue bar (one cell per peak, done first) rather
+             than a continuous track with a knob: the knob read as a draggable slider on
+             a bar that does nothing when touched. Long challenges fall back to a plain
+             fill, where the notches would be unreadable anyway. */
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
             {challenge.totalPeaks > 0 && challenge.totalPeaks <= SEGMENTED_MAX ? (
               <div style={{ flex: 1, display: "flex", height: 8, gap: 2 }}>
@@ -225,6 +280,7 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
               {pct}%
             </span>
           </div>
+          )}
 
           {/* The figures stay on one compact line under the bar. */}
           <div className="reto-stats">

@@ -242,6 +242,72 @@ function getChallengePeaks(challengeId: string): Promise<ChallengePeakStatic[]> 
   )();
 }
 
+// ── Peak → retos index (the Atlas marks) ───────────────────────────────────────
+
+export type PeakChallengeIndex = {
+  /** Ordered by the admin's `sortOrder`; the marks inherit that order everywhere. */
+  challenges: {
+    id: string;
+    name: string;
+    coverUrl: string | null;
+    totalPeaks: number;
+    isActive: boolean;
+  }[];
+  /** peakId → indices into `challenges`. Indices, not ids: the blob is mostly this map. */
+  byPeak: Record<string, number[]>;
+};
+
+const PEAK_INDEX_TAG = "challenge-peak-index";
+
+/**
+ * Which retos contain each peak, for the marks on the Atlas (the patches on the peak
+ * popup and on the list rows).
+ *
+ * Deliberately **global, not per-user**: the membership of a peak in a curated list
+ * is the same fact for everyone, so this is cached once and served to all. The
+ * per-user half (which of them you joined, and your progress) comes from
+ * `listChallenges` and is merged on the client.
+ *
+ * Inactive challenges are included, flagged: the client shows a retired reto only to
+ * someone who joined it — the same asymmetry `listChallenges` already applies, and
+ * the same rule `getChallengeMapPeaks` enforces for the scope.
+ *
+ * Keyed by locale (challenge *names* are localized, unlike peak names) and
+ * invalidated by tag whenever a challenge is created, edited or deleted.
+ */
+export function getPeakChallengeIndex(locale: Locale = "en"): Promise<PeakChallengeIndex> {
+  return unstable_cache(
+    async (loc: Locale): Promise<PeakChallengeIndex> => {
+      const rows = await prisma.challenge.findMany({
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+        select: {
+          id: true, name: true, translations: true, coverUrl: true, isActive: true,
+          peaks: { select: { peakId: true } },
+        },
+      });
+
+      const challenges = rows.map((c) => ({
+        id: c.id,
+        name: localized(c.name, c.translations, loc, "name"),
+        coverUrl: c.coverUrl,
+        totalPeaks: c.peaks.length,
+        isActive: c.isActive,
+      }));
+
+      const byPeak: Record<string, number[]> = {};
+      rows.forEach((c, idx) => {
+        for (const { peakId } of c.peaks) {
+          (byPeak[peakId] ??= []).push(idx);
+        }
+      });
+
+      return { challenges, byPeak };
+    },
+    ["challenge-peak-index"],
+    { tags: [PEAK_INDEX_TAG], revalidate: 3600 },
+  )(locale);
+}
+
 // ── User-facing queries ────────────────────────────────────────────────────────
 
 /**
@@ -563,6 +629,8 @@ export async function createChallenge(input: ChallengeInput): Promise<{ id: stri
     },
     select: { id: true },
   });
+  // The Atlas marks read a global peak → retos index: a new reto has to reach it.
+  revalidateTag(PEAK_INDEX_TAG, "max");
   return created;
 }
 
@@ -618,10 +686,14 @@ export async function updateChallenge(
 
   // The peak list is cached globally: an edit has to reach every user's next read.
   if (peakIds) revalidateTag(peaksTag(challengeId), "max");
+  // The Atlas index also carries the name, the patch and isActive, so any of these
+  // invalidates it — not just a change of peaks.
+  revalidateTag(PEAK_INDEX_TAG, "max");
 }
 
 /** Cascades to challenge_peaks and challenge_participants. */
 export async function deleteChallenge(challengeId: string): Promise<void> {
   await prisma.challenge.delete({ where: { id: challengeId } });
   revalidateTag(peaksTag(challengeId), "max");
+  revalidateTag(PEAK_INDEX_TAG, "max");
 }

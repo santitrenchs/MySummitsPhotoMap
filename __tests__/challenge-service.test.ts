@@ -327,7 +327,15 @@ describe("updateChallenge() — field isolation", () => {
 
     (revalidateTag as unknown as Mock).mockClear();
     await updateChallenge("c1", { isActive: false });
-    expect(revalidateTag).not.toHaveBeenCalled();
+    expect(revalidateTag).not.toHaveBeenCalledWith("challenge-peaks:c1", "max");
+  });
+
+  it("expires the Atlas peak→retos index on any edit, not just a change of peaks", async () => {
+    // The index carries the name, the patch and isActive too, so flipping any of them
+    // has to reach the marks on the map — unlike the peak list, which is peaks-only.
+    (revalidateTag as unknown as Mock).mockClear();
+    await updateChallenge("c1", { isActive: false });
+    expect(revalidateTag).toHaveBeenCalledWith("challenge-peak-index", "max");
   });
 
   it("does not re-slug when the name is unchanged", async () => {

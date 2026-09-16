@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import { RARITY_COLORS, RARITIES, RARITY_SCORE_WEIGHTS, RARITY_ID_MATCH_EXPR } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { peakDisplayParts } from "@/lib/peak-name";
 import { useT } from "@/components/providers/I18nProvider";
+import { i } from "@/lib/i18n";
 import { createPortal } from "react-dom";
 import MapControls from "./MapControls";
 import MapPeaksSidebar from "./MapPeaksSidebar";
 import MapOnboardingModal from "./MapOnboardingModal";
 import { MapChallengeFilter, type MapChallengeOption } from "./MapChallengeFilter";
+import { ChallengePatchButton } from "./ChallengePatch";
+import { makeRetoResolver, type PeakChallengeIndex } from "./peak-challenges";
 import { Button } from "@/components/ui/Button";
 import { imgUrl } from "@/lib/storage/image-url";
 import { CARTO_RASTER_TILES, CARTO_ATTRIBUTION } from "@/lib/map-tiles";
@@ -120,6 +123,11 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
 };
 
 // Height of the mobile top bar (single search+filter row). Used to offset the list panel.
+/** The reto patch on the peak popup. 54px artwork in a 68px button — the size at
+ *  which the artwork is actually recognisable, which is the whole point of dropping
+ *  the reto's name from the popup. */
+const RETO_PATCH_SIZE = 54;
+
 const MOBILE_TOP_BAR_H = 60;
 
 /** Bounding box of a peak set, as maplibre's [[w, s], [e, n]]. */
@@ -233,6 +241,52 @@ export default function MapView({
     }
   }
 
+  // ── The marks: which retos each peak belongs to ───────────────────────────
+  //
+  // The index is global (the same bytes for everyone) and is fetched once after mount,
+  // deliberately NOT blocking anything: popups and rows render without patches until it
+  // lands, which is a second at most and never a spinner.
+  //
+  // Membership is NOT fetched here — /api/challenges stays lazy, as it always was, so the
+  // map's own load gains a single request and not two. The only thing membership decides
+  // is whether a *retired* reto is marked (active ones are marked for everyone), so until
+  // a filter panel has been opened a retired reto the user joined carries no patch. That
+  // is a fair trade for not putting a per-user request on every Atlas visit.
+  const [peakIndex, setPeakIndex] = useState<PeakChallengeIndex | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/challenges/peak-index");
+        if (!res.ok) return;
+        const data: PeakChallengeIndex = await res.json();
+        if (alive) setPeakIndex(data);
+      } catch { /* no marks; the Atlas works exactly as before */ }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const joinedChallengeIds = useMemo(
+    () => new Set(myChallenges.map((c) => c.id)),
+    [myChallenges],
+  );
+
+  /**
+   * The active reto, for the panel's row, when it is not one the user joined — they got
+   * here from a patch or a shared link. It comes from the marks' index, which already
+   * carries every reto's name and patch, so the panel needs no catalogue of its own.
+   */
+  const activeChallengeInfo = useMemo(() => {
+    if (!challengeId || !peakIndex) return null;
+    const c = peakIndex.challenges.find((x) => x.id === challengeId);
+    return c ? { id: c.id, name: c.name, coverUrl: c.coverUrl, totalPeaks: c.totalPeaks } : null;
+  }, [challengeId, peakIndex]);
+
+  const retosForPeak = useMemo(
+    () => makeRetoResolver(peakIndex, joinedChallengeIds, challengeId ?? null),
+    [peakIndex, joinedChallengeIds, challengeId],
+  );
+
   /** Scope the Atlas to a reto, or back to the whole catalogue. The URL is the single
    *  source of truth for the mode, so both entry points go through it. */
   function selectChallenge(id: string | null) {
@@ -281,6 +335,7 @@ export default function MapView({
   // sidebar and the mobile list, so both are scoped to the reto by construction.
   const [allPeaks, setAllPeaks] = useState<MapPeak[]>(challengeMode ? (challengePeaks ?? []) : peaks);
   const [loadingPeaks, setLoadingPeaks] = useState(false);
+
   // The climbed photo markers are created inside map.once("load"), which fires long
   // after every effect of the first render. Without this flag the visibility effect
   // runs against an empty markerEls and nothing ever re-applies it, so on a fresh
@@ -1223,6 +1278,14 @@ export default function MapView({
     }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        /* Reto patches on the peak popup. The disc is there at rest — with no heading
+           above them, the patches themselves have to say they can be pressed. */
+        .reto-patch-btn { transition: background 0.14s, border-color 0.14s, transform 0.14s; }
+        .reto-patch-btn:hover { background: #EDF3F8; border-color: #D6E2EC; }
+        .reto-patch-btn--photo:hover { background: rgba(255,255,255,0.97); border-color: rgba(255,255,255,0.85); }
+        .reto-patch-btn:active { transform: scale(0.96); }
+        .reto-patch-btn:focus-visible { outline: 2px solid #0369a1; outline-offset: 1px; }
+        .reto-patch-btn--photo:focus-visible { outline-color: #ffffff; }
         /* ── Desktop sidebar width — responsive clamp ── */
         .map-viewport {
           --sidebar-w: 320px;
@@ -1653,6 +1716,7 @@ export default function MapView({
                 {/* Retos — the scope, above the filters that work inside it */}
                 <MapChallengeFilter
                   challenges={myChallenges}
+                  activeChallenge={activeChallengeInfo}
                   activeId={challengeId ?? null}
                   loading={challengesLoading}
                   onSelect={(id) => { setMobileFiltersOpen(false); selectChallenge(id); }}
@@ -1896,7 +1960,14 @@ export default function MapView({
             const { primary: peakLabel, original: peakOriginal } = peakDisplayParts(peak);
             const OFFSET = 22;
             const topBarH = isMobile && topBarVisible ? MOBILE_TOP_BAR_H : 0;
-            const POPUP_MAX_H = 340; // generous estimate for popup with photo + buttons
+            const peakRetos = retosForPeak(peak.id);
+            // Generous estimate for a popup with photo + buttons, plus the retos band —
+            // which only costs height when there is NO photo to wear the patches on.
+            // Understating it lets the top of the popup slide under the mobile top bar.
+            const retosH = ascent?.photoUrl || peakRetos.length === 0
+              ? 0
+              : 23 + (RETO_PATCH_SIZE + 22) * Math.ceil(peakRetos.length / 3);
+            const POPUP_MAX_H = 340 + retosH;
             const rawTop = peakPopup.above ? peakPopup.y - OFFSET : peakPopup.y + OFFSET;
             // When above=true the element's `top` is its BOTTOM (translateY(-100%)).
             // Clamp so the popup TOP (= rawTop - POPUP_MAX_H) stays below the top bar.
@@ -1969,9 +2040,12 @@ export default function MapView({
                   </div>
                 </div>
 
-                {/* Hero photo */}
+                {/* Hero photo — and, over it, the retos this peak belongs to.
+                    Bottom-left, the way a patch is worn: on the thing it was earned
+                    for. It costs the popup no height at all there, which is what lets
+                    the artwork be big enough to recognise. */}
                 {ascent?.photoUrl && (
-                  <div style={{ width: "100%", aspectRatio: "3/2", overflow: "hidden" }}>
+                  <div style={{ width: "100%", aspectRatio: "3/2", overflow: "hidden", position: "relative" }}>
                     <img
                       src={imgUrl(ascent.photoUrl, 400)}
                       alt=""
@@ -1982,6 +2056,51 @@ export default function MapView({
                         display: "block",
                       }}
                     />
+                    {peakRetos.length > 0 && (
+                      <div style={{
+                        position: "absolute", left: 10, bottom: 10,
+                        display: "flex", flexWrap: "wrap", gap: 8, maxWidth: "calc(100% - 20px)",
+                      }}>
+                        {peakRetos.map((r) => (
+                          <ChallengePatchButton
+                            key={r.id}
+                            name={r.name}
+                            coverUrl={r.coverUrl}
+                            size={RETO_PATCH_SIZE}
+                            label={i(t.map_retos_openIn, { name: r.name })}
+                            overPhoto
+                            onClick={() => router.push(`/bitacora/retos/${r.id}`)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* No photo (an unclimbed peak) → nothing to wear the patches on, so
+                    they take their own band above the buttons. Same size and same
+                    button, only the ground changes.
+
+                    Patches alone, with no "RETOS" heading: a row of patches under the
+                    peak is not ambiguous enough to need a label, and the heading cost a
+                    line to say what the objects already say. Each opens that reto's own
+                    screen; the accessible name carries the reto's name, which is what
+                    the patch itself no longer draws. */}
+                {!ascent?.photoUrl && peakRetos.length > 0 && (
+                  <div style={{
+                    padding: "11px 14px 12px", borderTop: "1px solid #f3f4f6",
+                    display: "flex", flexWrap: "wrap", gap: 8,
+                  }}>
+                    {peakRetos.map((r) => (
+                      <ChallengePatchButton
+                        key={r.id}
+                        name={r.name}
+                        coverUrl={r.coverUrl}
+                        size={RETO_PATCH_SIZE}
+                        label={i(t.map_retos_openIn, { name: r.name })}
+                        onClick={() => router.push(`/bitacora/retos/${r.id}`)}
+                      />
+                    ))}
                   </div>
                 )}
 
@@ -2098,6 +2217,7 @@ export default function MapView({
                 onMythicToggle={() => { setMythicOnly((v) => !v); }}
                 rarities={rarities}
                 climbedCount={climbedCount}
+                retosForPeak={retosForPeak}
                 selectedPeakId={selected?.peak.id ?? null}
                 onSelectPeak={(peak) => { setMobileView("map"); flyToPeak(peak); }}
                 searchQuery={searchQuery}
@@ -2149,6 +2269,7 @@ export default function MapView({
         {!isMobile && (
           <MapPeaksSidebar
             challenges={myChallenges}
+            activeChallenge={activeChallengeInfo}
             challengesLoading={challengesLoading}
             activeChallengeId={challengeId ?? null}
             onSelectChallenge={selectChallenge}
@@ -2164,6 +2285,7 @@ export default function MapView({
             onMythicToggle={() => { setMythicOnly((v) => !v); }}
             rarities={rarities}
             climbedCount={climbedCount}
+            retosForPeak={retosForPeak}
             selectedPeakId={selected?.peak.id ?? null}
             onSelectPeak={flyToPeak}
             searchQuery={searchQuery}

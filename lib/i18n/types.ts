@@ -210,6 +210,9 @@ export type Dict = {
   profile_tab_peaks: string; profile_tab_tagged: string;
 
   // Retos (Challenges)
+  // Retos en el Atlas (marcas + selector)
+  map_retos_labelMany: string;
+  map_retos_openIn: string;
   challenges_tab: string;
   challenges_searchPlaceholder: string;
   challenges_add: string;
@@ -225,6 +228,7 @@ export type Dict = {
   challenges_availableTitle: string;
   challenges_availableSearch: string;
   challenges_join: string;
+  challenges_joinFailed: string;
   challenges_joining: string;
   challenges_allJoined: string;
   challenges_noAvailable: string;

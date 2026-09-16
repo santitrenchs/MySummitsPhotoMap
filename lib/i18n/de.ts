@@ -190,6 +190,8 @@ export const de: Dict = {
   profile_tab_peaks: "Gipfel", profile_tab_tagged: "Markiert",
 
   // Challenges
+  map_retos_labelMany: "Challenges",
+  map_retos_openIn: "Challenge „{name}“ ansehen",
   challenges_tab: "Challenges",
   challenges_searchPlaceholder: "Challenge suchen",
   challenges_add: "Hinzufügen",
@@ -205,6 +207,7 @@ export const de: Dict = {
   challenges_availableTitle: "Verfügbare Challenges",
   challenges_availableSearch: "Verfügbare Challenge suchen",
   challenges_join: "Beitreten",
+  challenges_joinFailed: "Beitritt zur Challenge fehlgeschlagen. Versuch es erneut.",
   challenges_joining: "Trete bei…",
   challenges_allJoined: "Du bist allen verfügbaren Challenges beigetreten.",
   challenges_noAvailable: "Keine Challenge passt zu deiner Suche.",

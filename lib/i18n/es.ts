@@ -190,6 +190,8 @@ export const es: Dict = {
   profile_tab_peaks: "Cimas", profile_tab_tagged: "Etiquetado",
 
   // Retos (Challenges)
+  map_retos_labelMany: "Retos",
+  map_retos_openIn: "Ver el reto «{name}»",
   challenges_tab: "Retos",
   challenges_searchPlaceholder: "Buscar reto",
   challenges_add: "Añadir",
@@ -205,6 +207,7 @@ export const es: Dict = {
   challenges_availableTitle: "Retos disponibles",
   challenges_availableSearch: "Buscar reto disponible",
   challenges_join: "Unirse",
+  challenges_joinFailed: "No se pudo unir al reto. Inténtalo de nuevo.",
   challenges_joining: "Uniéndote…",
   challenges_allJoined: "Ya te has unido a todos los retos disponibles.",
   challenges_noAvailable: "Ningún reto coincide con tu búsqueda.",

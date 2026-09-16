@@ -8,7 +8,8 @@ import { RARITY_COLORS, RARITIES } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { peakDisplayParts } from "@/lib/peak-name";
 import MapPeakCard from "./MapPeakCard";
-import { MapChallengeFilter, type MapChallengeOption } from "./MapChallengeFilter";
+import { MapChallengeFilter, type MapChallengeOption, type MapActiveChallenge } from "./MapChallengeFilter";
+import type { PeakReto } from "./peak-challenges";
 
 type Filter = "all" | "climbed" | "not-climbed";
 type SortMode = "distance" | "relevance" | "altitude";
@@ -48,6 +49,10 @@ interface Props {
   onClose?: () => void;
   // Retos — the Atlas scope. Owned by MapView (the URL drives the mode).
   challenges?: MapChallengeOption[];
+  /** The active reto when the user has not joined it — so the panel can still show it. */
+  activeChallenge?: MapActiveChallenge | null;
+  /** Which retos a peak belongs to — drives the patches on each row. */
+  retosForPeak?: (peakId: string) => PeakReto[];
   challengesLoading?: boolean;
   activeChallengeId?: string | null;
   onSelectChallenge?: (id: string | null) => void;
@@ -77,7 +82,7 @@ export default function MapPeaksSidebar({
   hideSearchInput = false, hideFilters = false, asMobileList = false,
   sort: sortProp, onSortChange,
   asSheet = false, onClose,
-  challenges = [], challengesLoading = false, activeChallengeId = null,
+  challenges = [], activeChallenge = null, retosForPeak, challengesLoading = false, activeChallengeId = null,
   onSelectChallenge, onFiltersOpen,
 }: Props) {
   const [internalSort, setInternalSort] = useState<SortMode>("distance");
@@ -539,6 +544,7 @@ export default function MapPeaksSidebar({
               <div key={peak.id} ref={isSelected ? selectedCardRef : undefined}>
                 <MapPeakCard
                   peak={peak}
+                  retos={retosForPeak?.(peak.id) ?? []}
                   ascent={ascentByPeakId.get(peak.id)}
                   distanceKm={distMap.get(peak.id) ?? null}
                   selected={isSelected}
@@ -615,6 +621,7 @@ export default function MapPeaksSidebar({
               {onSelectChallenge && (
                 <MapChallengeFilter
                   challenges={challenges}
+                  activeChallenge={activeChallenge}
                   activeId={activeChallengeId}
                   loading={challengesLoading}
                   onSelect={(id) => { setFiltersOpen(false); onSelectChallenge(id); }}

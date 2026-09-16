@@ -190,6 +190,8 @@ export const fr: Dict = {
   profile_tab_peaks: "Sommets", profile_tab_tagged: "Identifié",
 
   // Défis (Challenges)
+  map_retos_labelMany: "Défis",
+  map_retos_openIn: "Voir le défi «{name}»",
   challenges_tab: "Défis",
   challenges_searchPlaceholder: "Rechercher un défi",
   challenges_add: "Ajouter",
@@ -205,6 +207,7 @@ export const fr: Dict = {
   challenges_availableTitle: "Défis disponibles",
   challenges_availableSearch: "Rechercher un défi disponible",
   challenges_join: "Rejoindre",
+  challenges_joinFailed: "Impossible de rejoindre le défi. Réessaie.",
   challenges_joining: "En cours…",
   challenges_allJoined: "Tu as rejoint tous les défis disponibles.",
   challenges_noAvailable: "Aucun défi ne correspond à ta recherche.",
