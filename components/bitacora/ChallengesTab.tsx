@@ -130,16 +130,30 @@ function ChallengeRow({ challenge }: { challenge: ChallengeSummary }) {
         boxShadow: "0 1px 3px rgba(13,37,56,0.06), 0 4px 12px rgba(13,37,56,0.05)",
       }}
     >
+      {/* The patch is the reto's face — at 40px it read as a favicon. 60px is what
+          the row's own height already allows, and the text block has width to spare.
+          `contain` over no background: the artwork is a disc with its own edge, so
+          cropping it to a circle shaved the ring off. */}
       <div style={{
-        flexShrink: 0, width: 40, height: 40, borderRadius: "50%",
+        flexShrink: 0, width: 60, height: 60,
+        borderRadius: challenge.coverUrl ? undefined : "50%",
         background: challenge.coverUrl ? undefined : "rgba(47,122,95,0.12)",
         display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
       }}>
         {challenge.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={challenge.coverUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img
+            src={challenge.coverUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            style={{
+              width: "100%", height: "100%", objectFit: "contain",
+              filter: "drop-shadow(0 2px 4px rgba(13,37,56,0.22))",
+            }}
+          />
         ) : (
-          <svg viewBox="0 0 24 24" width="19" height="19" fill="none">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
             <path d="M2 19 L9 7 L13 13 L16 8 L22 19 Z" fill={ACCENT} />
           </svg>
         )}

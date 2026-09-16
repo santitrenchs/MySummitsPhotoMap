@@ -96,8 +96,65 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
   const pending = challenge.totalPeaks - challenge.completedPeaks;
   const pct = progressPct(challenge.completedPeaks, challenge.totalPeaks);
 
+  // The two halves are rendered as different objects, not as one list of rows:
+  // a photo means "captured", a text line means "still out there". The split
+  // carries the state, so the done rows no longer need to spell it out.
+  const doneRows = useMemo(() => filtered.filter((p) => p.done), [filtered]);
+  const pendingRows = useMemo(() => filtered.filter((p) => !p.done), [filtered]);
+
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", background: "#F4F7FA", minHeight: "100%" }}>
+    <div className="reto-page" style={{ margin: "0 auto", background: "#F4F7FA", minHeight: "100%" }}>
+      <style>{`
+        .reto-page { max-width: 640px; }
+        .reto-body { padding-inline: 16px; }
+        .reto-hdr { display: flex; align-items: center; gap: 14px; padding: 12px 16px 4px; }
+        .reto-patch { width: 76px; height: 76px; flex: 0 0 76px; object-fit: contain;
+                      filter: drop-shadow(0 3px 6px rgba(13,37,56,0.26)); }
+        .reto-hdr-main { flex: 1; min-width: 0; }
+        .reto-stats { display: flex; align-items: baseline; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+        .reto-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+        .reto-pend { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0;
+                     background: white; border-radius: var(--radius-lg);
+                     border: 1px solid rgba(13,37,56,0.06);
+                     box-shadow: 0 1px 3px rgba(13,37,56,0.06); padding: 0 12px; }
+        .reto-pend-row { border: none; border-bottom: 1px solid #F1F5F8; }
+        .reto-pend-row:last-child { border-bottom: none; }
+        .reto-pend-zone { display: none; }
+        .reto-tile img { transition: transform 0.35s ease; }
+        /* A long challenge is 500 rows and a wall of photos: skip the layout and
+           paint work for whatever is off screen, reserving the real height so the
+           scrollbar doesn't jump. */
+        .reto-tile { content-visibility: auto; contain-intrinsic-size: auto 200px; }
+        .reto-pend-row { content-visibility: auto; contain-intrinsic-size: auto 40px; }
+        /* Three tiles across 375px leave no room for the date; it would wrap out of
+           the gradient. It comes back when the tiles widen. */
+        .reto-tile-date { display: none; }
+        .reto-atlas-cta { flex: 0 0 auto; }
+        .reto-pend-row:focus-visible { outline: 2px solid ${ACCENT}; outline-offset: -2px; }
+        @media (hover: hover) {
+          /* The whole row already opens the create-ascent sheet; a tint says so
+             without a button stealing width from the peak name. */
+          .reto-pend-row:hover { background: #F7FAFC; }
+          .reto-tile:hover img { transform: scale(1.05); }
+        }
+        @media (max-width: 520px) {
+          .reto-atlas-cta { order: -1; flex: 1 0 100%; justify-content: center; }
+        }
+        /* Wider than a phone, the tiles get a fourth column and there is finally
+           room for the date, the range and the row action. The column itself stays
+           at Bitácora's 640px: the tab strip above is shared, and a wider page made
+           it grow past the one on the tab page. */
+        @media (min-width: 640px) {
+          .reto-grid { grid-template-columns: repeat(4, 1fr); gap: 9px; }
+          .reto-tile-date { display: inline; }
+          .reto-pend-zone { display: block; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .reto-tile img { transition: none; }
+          .reto-tile:hover img { transform: none; }
+        }
+      `}</style>
+
       {/* Same tab strip as the list, so the detail still reads as part of Bitácora
           instead of a page of its own — and every tab is a way back out. */}
       <BitacoraTabs active="challenges" />
@@ -107,76 +164,90 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           and here the parent is on screen: the tab strip above still shows "Retos". The
           cordada detail loses all navigation, so there a back *control* earns its weight;
           with the context visible, a label is enough and the challenge name gets the room. */}
-      <div style={{ padding: "14px 16px 2px" }}>
+      <div className="reto-body" style={{ paddingBlock: "14px 0" }}>
         <BackBreadcrumb href="/bitacora?tab=challenges" label={t.challenges_tab} />
-        <div style={{
-          fontFamily: "var(--font-space-grotesk, sans-serif)",
-          fontSize: 19, fontWeight: 800, color: "#0D2538",
-          letterSpacing: "-0.02em", marginTop: 4,
-        }}>
-          {challenge.name}
-        </div>
       </div>
 
-      {/* Stats — same shape as the Cimas tab catalogue header, measuring done/pending */}
-      <div style={{ padding: "16px 16px 4px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={eyebrow}>{t.challenges_detailEyebrow}</div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-              <span style={{
-                fontFamily: "var(--font-space-grotesk, sans-serif)",
-                fontSize: 28, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.025em", lineHeight: 1,
-              }}>
-                {challenge.completedPeaks}
-              </span>
-              <span style={{ fontSize: 14, fontWeight: 500, color: "#5A6E84" }}>
-                / {challenge.totalPeaks} · {i(t.challenges_detailPending, { n: pending })}
-              </span>
-            </div>
+      {/* Header — the challenge's own patch takes the space that was empty to the left
+          of the figures, so the reto is recognisable before a word is read. It is the
+          same image the "Disponibles" sheet shows, so joining and opening look alike. */}
+      <div className="reto-hdr">
+        {challenge.coverUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="reto-patch" src={challenge.coverUrl} alt="" />
+        )}
+        <div className="reto-hdr-main">
+          <div style={{
+            fontFamily: "var(--font-space-grotesk, sans-serif)",
+            fontSize: 19, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.025em",
+          }}>
+            {challenge.name}
           </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={eyebrow}>{t.challenges_detailHighest}</div>
-            <span style={{
-              fontFamily: "var(--font-space-grotesk, sans-serif)",
-              fontSize: 19, fontWeight: 800, color: "#0D2538",
+          {challenge.description && (
+            <div style={{
+              fontSize: 11.5, color: "#7F93A6", marginTop: 3,
+              overflow: "hidden", display: "-webkit-box",
+              WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
             }}>
-              {challenge.maxAltitudeM} m
+              {challenge.description}
+            </div>
+          )}
+
+          {/* Notched like the Cimas catalogue bar (one cell per peak, done first) rather
+              than a continuous track with a knob: the knob read as a draggable slider on
+              a bar that does nothing when touched. Long challenges fall back to a plain
+              fill, where the notches would be unreadable anyway. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+            {challenge.totalPeaks > 0 && challenge.totalPeaks <= SEGMENTED_MAX ? (
+              <div style={{ flex: 1, display: "flex", height: 8, gap: 2 }}>
+                {Array.from({ length: challenge.totalPeaks }, (_, idx) => (
+                  <div key={idx} style={{
+                    flex: 1, borderRadius: "var(--radius-full)",
+                    background: idx < challenge.completedPeaks ? ACCENT : "#DCE3EA",
+                  }} />
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                flex: 1, height: 8, borderRadius: "var(--radius-full)", background: "#DCE3EA",
+                overflow: "hidden",
+              }}>
+                <div style={{
+                  height: "100%", width: `${pct}%`,
+                  background: `linear-gradient(90deg, ${ACCENT}, #4BAE84)`,
+                }} />
+              </div>
+            )}
+            <span style={{
+              flexShrink: 0, fontFamily: "var(--font-mono-landing, monospace)",
+              fontSize: 12, fontWeight: 700, color: ACCENT,
+            }}>
+              {pct}%
             </span>
           </div>
-        </div>
 
-        {/* Notched like the Cimas catalogue bar (one cell per peak, done first) rather
-            than a continuous track with a knob: the knob read as a draggable slider on
-            a bar that does nothing when touched. Long challenges fall back to a plain
-            fill, where the notches would be unreadable anyway. */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
-        {challenge.totalPeaks > 0 && challenge.totalPeaks <= SEGMENTED_MAX ? (
-          <div style={{ flex: 1, display: "flex", height: 8, gap: 2 }}>
-            {Array.from({ length: challenge.totalPeaks }, (_, idx) => (
-              <div key={idx} style={{
-                flex: 1, borderRadius: "var(--radius-full)",
-                background: idx < challenge.completedPeaks ? ACCENT : "#DCE3EA",
-              }} />
-            ))}
+          {/* The figures stay on one compact line under the bar. */}
+          <div className="reto-stats">
+            <span style={{
+              fontFamily: "var(--font-space-grotesk, sans-serif)",
+              fontSize: 19, fontWeight: 800, color: "#0D2538", letterSpacing: "-0.025em", lineHeight: 1,
+            }}>
+              {challenge.completedPeaks}
+            </span>
+            <span style={{ fontSize: 11.5, color: "#5A6E84" }}>
+              / {challenge.totalPeaks} · {i(t.challenges_detailPending, { n: pending })}
+            </span>
+            {/* The challenge's ceiling, the one figure the progress bar can't carry. */}
+            <span style={{ marginLeft: "auto", display: "flex", alignItems: "baseline", gap: 5 }}>
+              <span style={{ ...eyebrow, marginBottom: 0 }}>{t.challenges_detailHighest}</span>
+              <span style={{
+                fontFamily: "var(--font-mono-landing, monospace)",
+                fontSize: 12, fontWeight: 700, color: "#0D2538", fontVariantNumeric: "tabular-nums",
+              }}>
+                {challenge.maxAltitudeM} m
+              </span>
+            </span>
           </div>
-        ) : (
-          <div style={{
-            flex: 1, height: 8, borderRadius: "var(--radius-full)", background: "#DCE3EA",
-            overflow: "hidden",
-          }}>
-            <div style={{
-              height: "100%", width: `${pct}%`,
-              background: `linear-gradient(90deg, ${ACCENT}, #4BAE84)`,
-            }} />
-          </div>
-        )}
-          <span style={{
-            flexShrink: 0, fontFamily: "var(--font-mono-landing, monospace)",
-            fontSize: 12, fontWeight: 700, color: ACCENT,
-          }}>
-            {pct}%
-          </span>
         </div>
       </div>
 
@@ -188,13 +259,7 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
           controls of one family; filled navy keeps meaning exactly one thing.
           On narrow screens the CTA takes its own full-width line above the rest
           (`order: -1`): three controls in 375px would shrink it to a mute icon. */}
-      <style>{`
-        .reto-atlas-cta { flex: 0 0 auto; }
-        @media (max-width: 520px) {
-          .reto-atlas-cta { order: -1; flex: 1 0 100%; justify-content: center; }
-        }
-      `}</style>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: "14px 16px 12px" }}>
+      <div className="reto-body" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", paddingBlock: "14px 12px" }}>
         <SearchField
           value={query}
           onChange={setQuery}
@@ -229,19 +294,39 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
         </Link>
       </div>
 
-      {/* Peak list — always the full challenge, filters only hide rows */}
-      <div style={{ padding: "0 16px 32px", display: "flex", flexDirection: "column", gap: 10 }}>
-        {filtered.length === 0 ? (
+      {/* Two halves, not one list. Captured peaks are a photo wall — the photo is the
+          reward and the only thing worth the vertical space. Pending peaks are text
+          lines: there is no image to show, so a 100px card was 100px of navy placeholder
+          repeated 123 times. */}
+      {doneRows.length === 0 && pendingRows.length === 0 ? (
+        <div className="reto-body" style={{ paddingBlock: "0 32px" }}>
           <div style={{
             background: "white", borderRadius: "var(--radius-lg)", border: "1px solid #E5E7EB",
             padding: "30px 20px", textAlign: "center", fontSize: 13.5, color: "#5A6E84",
           }}>
             {t.challenges_noPeakMatch}
           </div>
-        ) : (
-          filtered.map((peak) => <PeakRow key={peak.id} peak={peak} />)
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="reto-body" style={{ paddingBlock: "0 32px" }}>
+          {doneRows.length > 0 && (
+            <>
+              <SectionHead label={t.challenges_sectionCollection} count={doneRows.length} />
+              <div className="reto-grid">
+                {doneRows.map((peak) => <PeakTile key={peak.id} peak={peak} />)}
+              </div>
+            </>
+          )}
+          {pendingRows.length > 0 && (
+            <>
+              <SectionHead label={t.challenges_filterPending} count={pendingRows.length} />
+              <div className="reto-pend">
+                {pendingRows.map((peak) => <PendingRow key={peak.id} peak={peak} />)}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <FiltersSheet
         isOpen={filtersOpen}
@@ -268,127 +353,137 @@ const eyebrow: React.CSSProperties = {
   color: "#94A3B8", textTransform: "uppercase", marginBottom: 4,
 };
 
-// ── Peak row — same anatomy as PeakRowCard in the Cimas tab ───────────────────
+// ── Section head ──────────────────────────────────────────────────────────────
 
-function PeakRow({ peak }: { peak: ChallengePeakRow }) {
+function SectionHead({ label, count }: { label: string; count: number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0 10px" }}>
+      <span style={{ ...eyebrow, marginBottom: 0 }}>{label}</span>
+      <span style={{
+        fontFamily: "var(--font-mono-landing, monospace)",
+        fontSize: 11, fontWeight: 700, color: "#5A6E84",
+      }}>
+        {count}
+      </span>
+      <span style={{ flex: 1, height: 1, background: "rgba(13,37,56,0.07)" }} />
+    </div>
+  );
+}
+
+// ── Captured peak — photo tile ────────────────────────────────────────────────
+
+function PeakTile({ peak }: { peak: ChallengePeakRow }) {
   const t = useT();
   const r = rarityEntry(peak.rarityId);
 
-  const body = (
-    <>
-      {/* Rarity strip */}
-      <div style={{ width: 4, background: r.color, flexShrink: 0 }} />
-
-      {/* Photo, or the app's existing missing-photo fallback for peaks not climbed yet */}
-      <div style={{ width: 100, flexShrink: 0, position: "relative", overflow: "hidden", background: "#0D2538" }}>
-        {peak.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imgUrl(peak.photoUrl, 400)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <div style={{
-            width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 28, opacity: 0.4,
-          }}>
-            🏔
-          </div>
-        )}
+  return (
+    <Link
+      href={`/ascents?peak=${peak.id}&view=mine`}
+      className="reto-tile"
+      style={{
+        position: "relative", display: "block", aspectRatio: "4 / 5", maxWidth: "100%",
+        borderRadius: "var(--radius-md)", overflow: "hidden", background: "#0D2538",
+        textDecoration: "none",
+      }}
+    >
+      {peak.photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imgUrl(peak.photoUrl, 400)}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+      ) : (
         <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0,
-          background: "linear-gradient(to top, rgba(13,37,56,0.62) 0%, transparent 60%)",
-          padding: "14px 8px 6px",
+          width: "100%", height: "100%", display: "flex", alignItems: "center",
+          justifyContent: "center", fontSize: 26, opacity: 0.4,
         }}>
-          <span style={{
-            fontFamily: "var(--font-mono-landing, monospace)",
-            fontSize: 11, fontWeight: 700, color: "white", textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-          }}>
-            {peak.altitudeM} m
-          </span>
+          🏔
         </div>
-      </div>
+      )}
 
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span style={{
-            fontFamily: "var(--font-space-grotesk, sans-serif)",
-            fontSize: 14, fontWeight: 700, color: "#0D2538", letterSpacing: "-0.015em",
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          }}>
-            {peak.name}
-          </span>
-          {peak.done && (
-            <span style={{
-              flexShrink: 0, width: 18, height: 18, borderRadius: "50%", background: ACCENT,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+      {/* Same rarity badge the photo grid in the Fotos tab uses, so a wall of
+          summit photos reads the same wherever it appears. */}
+      <span style={{
+        position: "absolute", top: 5, left: 5, width: 20, height: 20, borderRadius: "50%",
+        background: "rgba(255,255,255,0.95)", display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <RarityFlower id={r.id as RarityId} size={13} />
+      </span>
+
+      <div style={{
+        position: "absolute", left: 0, right: 0, bottom: 0, padding: "18px 7px 6px",
+        background: "linear-gradient(to top, rgba(13,37,56,0.88), transparent)",
+        display: "flex", flexDirection: "column", gap: 1,
+      }}>
+        <span style={{
+          fontFamily: "var(--font-space-grotesk, sans-serif)",
+          fontSize: 10.5, fontWeight: 700, color: "white", letterSpacing: "-0.01em",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
+          {peak.name}
+        </span>
+        <span style={{
+          fontFamily: "var(--font-mono-landing, monospace)",
+          fontSize: 9, color: "rgba(255,255,255,0.78)",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
+          {peak.altitudeM} m
+          {peak.lastAscentDate && (
+            <span className="reto-tile-date">
+              {` · ${new Date(peak.lastAscentDate).toLocaleDateString(t.dateLocale, { day: "numeric", month: "short", year: "2-digit" })}`}
             </span>
           )}
-        </div>
-
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: 4, alignSelf: "flex-start",
-          padding: "2px 7px", borderRadius: "var(--radius-full)", background: r.color + "22",
-        }}>
-          <RarityFlower id={r.id as RarityId} size={11} />
-          <span style={{ fontSize: 10, fontWeight: 700, color: r.colorDark }}>{r.label}</span>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 8, marginTop: "auto" }}>
-          {peak.done ? (
-            <div>
-              <div style={{
-                fontFamily: "var(--font-mono-landing, monospace)", fontSize: 8, fontWeight: 700,
-                color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.12em",
-              }}>
-                {t.challenges_lastLabel}
-              </div>
-              <div style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 11, fontWeight: 700, color: "#0D2538" }}>
-                {peak.lastAscentDate
-                  ? new Date(peak.lastAscentDate).toLocaleDateString(t.dateLocale, { day: "numeric", month: "short", year: "2-digit" })
-                  : ""}
-              </div>
-            </div>
-          ) : (
-            <span style={{ fontSize: 11.5, fontWeight: 600, color: "#B5C0CB", fontStyle: "italic" }}>
-              {t.challenges_noAscent}
-            </span>
-          )}
-          <span style={{
-            fontSize: 11, color: "#94A3B8", whiteSpace: "nowrap", overflow: "hidden",
-            textOverflow: "ellipsis", maxWidth: 110,
-          }}>
-            {peak.mountainRange ?? peak.country ?? ""}
-          </span>
-        </div>
+        </span>
       </div>
-    </>
+    </Link>
   );
+}
 
-  const shell: React.CSSProperties = {
-    display: "flex", background: "white", borderRadius: "var(--radius-lg)",
-    border: "1px solid rgba(13,37,56,0.06)",
-    boxShadow: "0 1px 3px rgba(13,37,56,0.06), 0 4px 12px rgba(13,37,56,0.05)",
-    overflow: "hidden", textDecoration: "none",
-  };
+// ── Pending peak — text row ───────────────────────────────────────────────────
 
-  // A climbed peak links to its cards; a pending one opens the create-ascent modal
-  // with the peak preselected, the same event the map panel dispatches.
-  if (peak.done) {
-    return <Link href={`/ascents?peak=${peak.id}&view=mine`} style={shell}>{body}</Link>;
-  }
+function PendingRow({ peak }: { peak: ChallengePeakRow }) {
+  const t = useT();
+  const r = rarityEntry(peak.rarityId);
+
   return (
     <button
       type="button"
+      className="reto-pend-row"
       aria-label={`${t.challenges_logAscent}: ${peak.name}`}
       onClick={() => document.dispatchEvent(
         new CustomEvent("open-ascent-modal", { detail: { peakId: peak.id, peakName: peak.name } }),
       )}
-      style={{ ...shell, padding: 0, cursor: "pointer", textAlign: "left", font: "inherit" }}
+      style={{
+        display: "flex", alignItems: "center", gap: 9, height: 40, width: "100%",
+        minWidth: 0, overflow: "hidden", padding: 0, background: "none",
+        font: "inherit", textAlign: "left", cursor: "pointer",
+      }}
     >
-      {body}
+      <RarityFlower id={r.id as RarityId} size={11} />
+      <span style={{
+        flex: "0 1 auto", minWidth: 0,
+        fontSize: 13, fontWeight: 600, color: "#0D2538",
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+      }}>
+        {peak.name}
+      </span>
+      <span style={{ flex: 1 }} />
+      <span className="reto-pend-zone" style={{
+        fontSize: 10.5, color: "#9AA9B8",
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 110,
+      }}>
+        {peak.mountainRange ?? peak.comarca ?? ""}
+      </span>
+      <span style={{
+        flexShrink: 0, minWidth: 54, textAlign: "right",
+        fontFamily: "var(--font-mono-landing, monospace)",
+        fontSize: 11.5, fontWeight: 700, color: "#5A6E84", fontVariantNumeric: "tabular-nums",
+      }}>
+        {peak.altitudeM}<span style={{ fontWeight: 500, color: "#9AA9B8" }}> m</span>
+      </span>
     </button>
   );
 }

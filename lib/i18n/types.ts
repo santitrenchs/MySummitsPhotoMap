@@ -229,7 +229,6 @@ export type Dict = {
   challenges_allJoined: string;
   challenges_noAvailable: string;
   challenges_joinedBadge: string;
-  challenges_detailEyebrow: string;
   challenges_detailPending: string;
   challenges_detailHighest: string;
   challenges_searchPeak: string;
@@ -242,9 +241,8 @@ export type Dict = {
   challenges_filterDone: string;
   challenges_filterPending: string;
   challenges_filterShow: string;
-  challenges_lastLabel: string;
-  challenges_noAscent: string;
   challenges_logAscent: string;
+  challenges_sectionCollection: string;
   challenges_noPeakMatch: string;
   profile_stat_photos: string;
   profile_timesClimbed: string;
