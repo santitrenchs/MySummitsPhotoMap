@@ -137,6 +137,12 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
                       filter: drop-shadow(0 3px 6px rgba(13,37,56,0.26)); }
         .reto-hdr-main { flex: 1; min-width: 0; }
         .reto-stats { display: flex; align-items: baseline; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+        /* The way in, in the slot the progress bar occupies once you are a participant.
+           It takes its content's width, not the column's: the reading order is name →
+           what this is → the action, and a full-bleed green block there outweighs the
+           reto's own name. On a phone full width is the norm, so it takes it back. */
+        .reto-join { width: auto; min-width: 150px; }
+        @media (max-width: 520px) { .reto-join { width: 100%; } }
         .reto-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
         .reto-pend { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0;
                      background: white; border-radius: var(--radius-lg);
@@ -228,8 +234,9 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
                 type="button"
                 onClick={join}
                 disabled={joining}
+                className="reto-join"
                 style={{
-                  width: "100%", minHeight: 44, padding: "12px 16px",
+                  minHeight: 44, padding: "12px 24px",
                   background: joining ? "#6B9E88" : ACCENT,
                   color: "white", border: "none",
                   borderRadius: "var(--radius-md)",
