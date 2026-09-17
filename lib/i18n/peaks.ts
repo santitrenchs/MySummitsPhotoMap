@@ -1,4 +1,5 @@
 import type { PeakCardData } from "@/lib/data/landing-peaks";
+import { formatAltitude, translatePlace } from "@/lib/i18n/peak-content";
 
 export type PeakLocale = "es" | "en" | "fr" | "de" | "ca";
 
@@ -241,12 +242,12 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     cta_button: "Empieza tu colección",
     cta_micro: "Gratis · Sin tarjeta de crédito · En 1 minuto",
     meta_title: (p) =>
-      `${p.peakName} (${p.altLabel}) — Ascensión y ruta en ${p.mountainRange} | Peakadex`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "es")}) — Ascensión y ruta en ${p.mountainRange} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} (${p.altLabel}) en ${p.mountainRange}. Gana tu carta coleccionable de cumbre ${rarity} y registra este logro de escalada en Peakadex — app de colección de picos.`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "es")}) en ${p.mountainRange}. Gana tu carta coleccionable de cumbre ${rarity} y registra este logro de escalada en Peakadex — app de colección de picos.`,
     schema_atlas: "Atlas de cimas",
     schema_desc: (p, rarity) =>
-      `${p.peakName} es una cima de ${p.mountainRange} (${p.country}) con ${p.altLabel} de altitud. Rareza ${rarity} en Peakadex.`,
+      `${p.peakName} es una cima de ${p.mountainRange} (${p.country}) con ${formatAltitude(p.altitudeM, "es")} de altitud. Rareza ${rarity} en Peakadex.`,
   },
   en: {
     locale: "en",
@@ -266,12 +267,12 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     cta_button: "Start your collection",
     cta_micro: "Free · No credit card · 1 minute setup",
     meta_title: (p) =>
-      `${p.peakName} (${p.altLabel}) — Ascent guide in ${p.mountainRange} | Peakadex`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "en")}) — Ascent guide in ${translatePlace(p.mountainRange, "en")} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} (${p.altLabel}) in ${p.mountainRange}. Earn your ${rarity} collectible summit card and log this climbing achievement on Peakadex — the peak collection app.`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "en")}) in ${translatePlace(p.mountainRange, "en")}. Earn your ${rarity} collectible summit card and log this climbing achievement on Peakadex — the peak collection app.`,
     schema_atlas: "Summit atlas",
     schema_desc: (p, rarity) =>
-      `${p.peakName} is a summit in ${p.mountainRange} (${p.country}) at ${p.altLabel}. Rarity: ${rarity} on Peakadex.`,
+      `${p.peakName} is a summit in ${translatePlace(p.mountainRange, "en")} (${translatePlace(p.country, "en")}) at ${formatAltitude(p.altitudeM, "en")}. Rarity: ${rarity} on Peakadex.`,
   },
   fr: {
     locale: "fr",
@@ -291,12 +292,12 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     cta_button: "Lance ta collection",
     cta_micro: "Gratuit · Sans carte bancaire · En 1 minute",
     meta_title: (p) =>
-      `${p.peakName} (${p.altLabel}) — Ascension et itinéraire dans ${p.mountainRange} | Peakadex`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "fr")}) — Ascension et itinéraire dans ${translatePlace(p.mountainRange, "fr")} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} (${p.altLabel}) dans ${p.mountainRange}. Obtiens ta carte de sommet ${rarity} à collectionner et enregistre cet exploit d'escalade sur Peakadex.`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "fr")}) dans ${translatePlace(p.mountainRange, "fr")}. Obtiens ta carte de sommet ${rarity} à collectionner et enregistre cet exploit d'escalade sur Peakadex.`,
     schema_atlas: "Atlas des sommets",
     schema_desc: (p, rarity) =>
-      `${p.peakName} est un sommet de ${p.mountainRange} (${p.country}) à ${p.altLabel}. Rareté ${rarity} sur Peakadex.`,
+      `${p.peakName} est un sommet de ${translatePlace(p.mountainRange, "fr")} (${translatePlace(p.country, "fr")}) à ${formatAltitude(p.altitudeM, "fr")}. Rareté ${rarity} sur Peakadex.`,
   },
   de: {
     locale: "de",
@@ -316,12 +317,12 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     cta_button: "Starte deine Sammlung",
     cta_micro: "Kostenlos · Keine Kreditkarte · In 1 Minute",
     meta_title: (p) =>
-      `${p.peakName} (${p.altLabel}) — Aufstieg und Route in ${p.mountainRange} | Peakadex`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "de")}) — Aufstieg und Route in ${translatePlace(p.mountainRange, "de")} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} (${p.altLabel}) in ${p.mountainRange}. Erhalte deine ${rarity}-Sammelkarte und trage diese Kletterleistung in Peakadex ein — die Gipfelsammlungs-App.`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "de")}) in ${translatePlace(p.mountainRange, "de")}. Erhalte deine ${rarity}-Sammelkarte und trage diese Kletterleistung in Peakadex ein — die Gipfelsammlungs-App.`,
     schema_atlas: "Gipfelatlas",
     schema_desc: (p, rarity) =>
-      `${p.peakName} ist ein Gipfel in ${p.mountainRange} (${p.country}) auf ${p.altLabel}. Seltenheit: ${rarity} auf Peakadex.`,
+      `${p.peakName} ist ein Gipfel in ${translatePlace(p.mountainRange, "de")} (${translatePlace(p.country, "de")}) auf ${formatAltitude(p.altitudeM, "de")}. Seltenheit: ${rarity} auf Peakadex.`,
   },
   ca: {
     locale: "ca",
@@ -341,12 +342,12 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     cta_button: "Comença la teva col·lecció",
     cta_micro: "Gratuït · Sense targeta de crèdit · En 1 minut",
     meta_title: (p) =>
-      `${p.peakName} (${p.altLabel}) — Ascensió i ruta als ${p.mountainRange} | Peakadex`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "ca")}) — Ascensió i ruta als ${translatePlace(p.mountainRange, "ca")} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} (${p.altLabel}) als ${p.mountainRange}. Aconsegueix la teva carta col·leccionable de cima ${rarity} i registra aquesta fita d'escalada a Peakadex.`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "ca")}) als ${translatePlace(p.mountainRange, "ca")}. Aconsegueix la teva carta col·leccionable de cima ${rarity} i registra aquesta fita d'escalada a Peakadex.`,
     schema_atlas: "Atles de cims",
     schema_desc: (p, rarity) =>
-      `${p.peakName} és un cim de ${p.mountainRange} (${p.country}) amb ${p.altLabel} d'altitud. Raresa ${rarity} a Peakadex.`,
+      `${p.peakName} és un cim de ${translatePlace(p.mountainRange, "ca")} (${translatePlace(p.country, "ca")}) amb ${formatAltitude(p.altitudeM, "ca")} d'altitud. Raresa ${rarity} a Peakadex.`,
   },
 };
 

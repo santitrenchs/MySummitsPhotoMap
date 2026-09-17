@@ -1,6 +1,7 @@
 import { LANDING_PEAKS, rarityForAlt, slugifyPeak, type PeakCardData } from "@/lib/data/landing-peaks";
 import { PeakadexLogo } from "@/components/brand/Logo";
 import type { PeakIndexT } from "@/lib/i18n/peaks";
+import { buildPeakCardStrings, getPeakCardLabels } from "@/lib/i18n/peak-content";
 import { PeakFooter } from "./[slug]/PeakFooter";
 import { HowItWorksSteps } from "./HowItWorksSteps";
 
@@ -9,9 +10,11 @@ const BASE = "https://www.peakadex.com";
 const MINI_W = 120;
 const MINI_H = 205;
 
-function MiniPeakCard({ peak, urlPrefix }: { peak: PeakCardData; urlPrefix: string }) {
+function MiniPeakCard({ peak, t }: { peak: PeakCardData; t: PeakIndexT }) {
   const rarity = rarityForAlt(peak.altitudeM);
   const slug = slugifyPeak(peak.peakName);
+  const l = buildPeakCardStrings(peak, t.locale);
+  const urlPrefix = t.urlPrefix;
   const initials = peak.user.split(" ").map((w) => w[0]).join("");
   return (
     <a href={`${urlPrefix}/peaks/${slug}`} style={{
@@ -29,7 +32,7 @@ function MiniPeakCard({ peak, urlPrefix }: { peak: PeakCardData; urlPrefix: stri
         }}>{initials}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 6.5, fontWeight: 700, color: "#0D2538", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{peak.user}</div>
-          <div style={{ fontSize: 5.5, color: "#6B7280" }}>{peak.date}</div>
+          <div style={{ fontSize: 5.5, color: "#6B7280" }}>{l.dateLabel}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 1.5, opacity: 0.3 }}>
           {[0, 1, 2].map(d => <div key={d} style={{ width: 1.5, height: 1.5, borderRadius: "50%", background: "#0D2538" }} />)}
@@ -49,15 +52,15 @@ function MiniPeakCard({ peak, urlPrefix }: { peak: PeakCardData; urlPrefix: stri
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 3, padding: "5px" }}>
         <div style={{ background: "#F8FAFC", borderRadius: 6, padding: "4px 2px", textAlign: "center" }}>
-          <div style={{ fontSize: 4, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>RAREZA</div>
+          <div style={{ fontSize: 4, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>{l.rarity}</div>
           <div style={{ fontSize: 5, fontWeight: 700, color: rarity.color }}>✿ {rarity.name}</div>
         </div>
         <div style={{ background: "#F8FAFC", borderRadius: 6, padding: "4px 2px", textAlign: "center" }}>
-          <div style={{ fontSize: 4, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>ALTITUD</div>
-          <div style={{ fontSize: 5, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{peak.altLabel}</div>
+          <div style={{ fontSize: 4, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>{l.altitude}</div>
+          <div style={{ fontSize: 5, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{l.altLabel}</div>
         </div>
         <div style={{ background: "#F8FAFC", borderRadius: 6, padding: "4px 2px", textAlign: "center" }}>
-          <div style={{ fontSize: 4, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>EP</div>
+          <div style={{ fontSize: 4, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 2 }}>{l.ep}</div>
           <div style={{ fontSize: 5, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{rarity.ep}</div>
         </div>
       </div>
@@ -184,9 +187,12 @@ export function PeaksIndexContent({ t }: { t: PeakIndexT }) {
         <section style={{ padding: "32px 0 48px", background: "#F4F7FA" }}>
           <div className="pk-mini-scroll">
             {LANDING_PEAKS.map((peak) => (
-              <MiniPeakCard key={peak.peakName} peak={peak} urlPrefix={t.urlPrefix} />
+              <MiniPeakCard key={peak.peakName} peak={peak} t={t} />
             ))}
           </div>
+          <p style={{ margin: "4px auto 0", maxWidth: 520, padding: "0 24px", textAlign: "center", fontSize: 11, color: "#9CA3AF", lineHeight: 1.5 }}>
+            {getPeakCardLabels(t.locale).disclaimer}
+          </p>
         </section>
 
         {/* ── CTA ──────────────────────────────────────────────────────────── */}

@@ -3,6 +3,22 @@
 import { useState } from "react";
 import type { PeakCardData } from "@/lib/data/landing-peaks";
 import { rarityForAlt } from "@/lib/data/landing-peaks";
+import type { PeakCardLabels } from "@/lib/i18n/peak-content";
+
+/**
+ * Everything the card prints, already localized and formatted by the server.
+ * This is a client component, so only plain strings cross the boundary — never
+ * the `t` object, which carries functions (see CLAUDE.md, RSC serialization).
+ */
+export type PeakCardStrings = PeakCardLabels & {
+  altLabel: string;
+  dateLabel: string;
+  message: string;
+  rangeLabel: string;
+  ascentsLabel: string;
+  climbersLabel: string;
+  maxAltLabel: string;
+};
 
 const CARD_W = 240;
 const CARD_H = 410;
@@ -45,7 +61,7 @@ function MountainScene({ color, altM, uid }: { color: string; altM: number; uid:
   );
 }
 
-export function PeakCard({ peak, uid, href }: { peak: PeakCardData; uid: string; href?: string }) {
+export function PeakCard({ peak, uid, href, l }: { peak: PeakCardData; uid: string; href?: string; l: PeakCardStrings }) {
   const [flipped, setFlipped] = useState(false);
   const rarity = rarityForAlt(peak.altitudeM);
   const initials = peak.user.split(" ").map((w: string) => w[0]).join("");
@@ -84,7 +100,7 @@ export function PeakCard({ peak, uid, href }: { peak: PeakCardData; uid: string;
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538" }}>{peak.user}</div>
-              <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{peak.date}</div>
+              <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>{l.dateLabel}</div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 3, opacity: 0.3 }}>
               {[0, 1, 2].map((d) => (
@@ -114,17 +130,17 @@ export function PeakCard({ peak, uid, href }: { peak: PeakCardData; uid: string;
           {/* Stat band */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: "10px" }}>
             <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-              <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RAREZA</div>
+              <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>{l.rarity}</div>
               <div style={{ fontSize: 10, fontWeight: 700, color: rarity.color, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, lineHeight: 1.2 }}>
                 ✿ <span>{rarity.name}</span>
               </div>
             </div>
             <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-              <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>ALTITUD</div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{peak.altLabel}</div>
+              <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>{l.altitude}</div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "#0D2538", whiteSpace: "nowrap" }}>{l.altLabel}</div>
             </div>
             <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "8px 4px", textAlign: "center" }}>
-              <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>RECOMPENSA</div>
+              <div style={{ fontSize: 8, color: "rgba(13,37,56,0.4)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>{l.reward}</div>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{rarity.ep}</div>
             </div>
           </div>
@@ -179,10 +195,10 @@ export function PeakCard({ peak, uid, href }: { peak: PeakCardData; uid: string;
                 {peak.peakName}
               </div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.92)", marginTop: 2 }}>
-                {peak.altLabel}
+                {l.altLabel}
               </div>
-              {peak.mountainRange && (
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.50)", marginTop: 2 }}>{peak.mountainRange}</div>
+              {l.rangeLabel && (
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.50)", marginTop: 2 }}>{l.rangeLabel}</div>
               )}
               <div style={{ marginTop: 10 }}>
                 <div style={{ height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 3, overflow: "hidden" }}>
@@ -190,7 +206,7 @@ export function PeakCard({ peak, uid, href }: { peak: PeakCardData; uid: string;
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                   <span style={{ fontSize: 8, color: "rgba(255,255,255,0.40)" }}>0 m</span>
-                  <span style={{ fontSize: 8, color: "rgba(255,255,255,0.40)" }}>8.849 m</span>
+                  <span style={{ fontSize: 8, color: "rgba(255,255,255,0.40)" }}>{l.maxAltLabel}</span>
                 </div>
               </div>
             </div>
@@ -201,18 +217,18 @@ export function PeakCard({ peak, uid, href }: { peak: PeakCardData; uid: string;
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px 0" }}>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: rarity.color, flexShrink: 0 }} />
               <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.10em", color: "rgba(13,37,56,0.38)", textTransform: "uppercase" }}>
-                ESTADÍSTICAS
+                {l.stats}
               </span>
             </div>
             <div style={{ display: "flex", borderTop: "1px solid rgba(13,37,56,0.07)", borderBottom: "1px solid rgba(13,37,56,0.07)", margin: "8px 0 0" }}>
               <div style={{ flex: 1, padding: "10px 14px" }}>
-                <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.35)", textTransform: "uppercase", marginBottom: 4 }}>ASCENSIONES</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{peak.ascents.toLocaleString("es")}</div>
+                <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.35)", textTransform: "uppercase", marginBottom: 4 }}>{l.ascents}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{l.ascentsLabel}</div>
               </div>
               <div style={{ width: 1, background: "rgba(13,37,56,0.07)", margin: "10px 0" }} />
               <div style={{ flex: 1, padding: "10px 14px", textAlign: "right" }}>
-                <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.35)", textTransform: "uppercase", marginBottom: 4 }}>ALPINISTAS</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{peak.climbers.toLocaleString("es")}</div>
+                <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.07em", color: "rgba(13,37,56,0.35)", textTransform: "uppercase", marginBottom: 4 }}>{l.climbers}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#0D2538", lineHeight: 1 }}>{l.climbersLabel}</div>
               </div>
             </div>
             <div style={{ padding: "9px 14px 14px", flex: 1 }}>
@@ -221,7 +237,7 @@ export function PeakCard({ peak, uid, href }: { peak: PeakCardData; uid: string;
                 margin: "4px 0 0", fontSize: 10.5, color: "#6B7280", lineHeight: 1.55,
                 display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
               }}>
-                {peak.message}
+                {l.message}
               </p>
             </div>
           </div>
@@ -242,7 +258,7 @@ export function PeakCard({ peak, uid, href }: { peak: PeakCardData; uid: string;
     <div
       style={cardStyle}
       onClick={() => setFlipped((f) => !f)}
-      title="Toca para ver el reverso"
+      title={l.flipHint}
     >
       {inner}
     </div>
