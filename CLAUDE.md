@@ -1869,7 +1869,7 @@ A **Reto** is a curated list of peaks + each user's progress over it. Created by
 
 **Built and verified in the browser:** schema + `challenge.service.ts` (24 unit tests), admin panel `/admin/challenges`, user API `/api/challenges/*`, the **Retos** tab in `/bitacora`, and the detail at `/bitacora/retos/[id]`.
 
-**Not built:** the `v1` mobile routes (no consumer yet — ~20 lines over the same service), and no real challenge exists in any database yet. See "Creating the first real challenge" at the end.
+**Not built:** the `v1` mobile routes (no consumer yet — ~20 lines over the same service). Production has **11 real challenges** since 2026-09 — see "The challenges that exist in production" at the end.
 
 ### Data model — three tables, no cached counters
 
@@ -2102,13 +2102,35 @@ German keeps the loanword — `Herausforderungen` is too long for a four-tab row
 
 Two fixes found while verifying in the browser, both committed with their phase: the admin table blanked out on every toggle (`load()` now only shows the spinner on first load), and `app/layout.tsx` gained `suppressHydrationWarning` on `<html>` because the admin's anti-flash script sets `data-theme` before React hydrates.
 
-### Creating the first real challenge — the open blocker
+### The challenges that exist in production (audited 2026-09-18)
 
-**The good peak catalogue lives in production, not staging** (~166k peaks vs ~84.7k; staging is missing whole peaks, notably Andorra and Catalunya Nord). Any audit of *whether a list's peaks exist* has to run against production, read-only — see the `peak-catalog-staging-stale` memory.
+Eleven, all `isActive`. Peak counts are what `challenge_peaks` actually holds:
 
-A first attempt at the FEEC "100 Cims" was discarded for exactly this reason. Worth knowing if it is retried: it is **not** a list of 100. It is a catalogue of **522**, and since 1/7/2019 the challenge is completed by climbing **100 of a 150-peak "essencials" subset** ([normativa](https://www.feec.cat/activitats/100-cims/normativa-i-funcionament/), [PDF of the 150](https://www.feec.cat/wp-content/uploads/2020/02/Essencials-100-cims.pdf)). The FEEC list is machine-readable at `https://www.feec.cat/wp-content/cron-scripts/ascensos_cims.txt` (JSON, no scraping needed).
+| Reto | slug | Cimas |
+|---|---|---|
+| Els 100 Cims | `els-100-cims` | 150 |
+| Los 3000 de los Pirineos | `els-3000-del-pirineu` | 212 |
+| Los 4000 de los Alpes | `els-4000-dels-alps` | 82 |
+| Los 14 ochomiles | `els-14-vuitmils` | 14 |
+| Los 16 Summits de Alemania | `els-16-summits-alemanya` | 16 |
+| Los Munros de Escocia | `els-munros-escocia` | 282 |
+| Los Wainwrights del Lake District | `els-wainwrights-lake-district` | 214 |
+| La Corona de las Montañas Polacas | `korona-gor-polski` | 28 |
+| Los catorcemiles de Colorado | `els-catorzemils-de-colorado` | 53 |
+| Los 46 de los Adirondacks | `els-46-dels-adirondacks` | 46 |
+| Las Siete Cumbres | `les-set-cimes` | 7 |
 
-⚠️ That "100 of 150" rule **does not fit the current model**, where a challenge is complete when every peak is done. Supporting it needs a `targetCount Int?` on `Challenge` — additive, but decide it before loading any list where the target differs from the peak count.
+**The good peak catalogue lives in production, not staging** (~166k peaks vs ~84.7k; staging is missing whole peaks, notably Andorra and Catalunya Nord). Any audit of *whether a list's peaks exist* has to run against production, read-only — see the `peak-catalog-staging-stale` memory. Staging does not necessarily hold the same challenges.
+
+⚠️ **`Els 100 Cims` carries 150 peaks, and completing it really means 100 of those 150** ([normativa](https://www.feec.cat/activitats/100-cims/normativa-i-funcionament/) — the full FEEC catalogue is 522 and the loaded list is the "essencials" subset; machine-readable at `https://www.feec.cat/wp-content/cron-scripts/ascensos_cims.txt`). The current model marks a challenge complete only when **every** peak is done, so this reto can never show 100%. Fixing it needs a `targetCount Int?` on `Challenge` — additive, still not decided.
+
+### Cross-referencing the SEO peak pages with the challenges
+
+The 20 landing peaks in `lib/data/landing-peaks.ts` are hardcoded **by name and coordinates, with no `Peak.id`**, so they can only be matched against the catalogue geographically — never by text. 14 of the 20 are in a challenge; Pica d'Estats is in two (Els 100 Cims + Los 3000).
+
+Two traps that this matching will hit again:
+- **The catalogue name is often not the popular one.** Aneto is `Tuca d'Aneto / Maladeta de Corones`, Snowdon is `Yr Wyddfa`, and the Buachaille Etive Mòr Munro is filed under its summit, `Stob Dearg`. Matching by name silently misses all three.
+- **A 3 km radius is too loose in a massif.** Around the Aneto it returns 35 neighbouring 3000ers. Require the altitude to match within ~30 m as well, or compare against the single nearest peak.
 
 ### Explicitly out of scope (decided — don't let these creep in)
 
