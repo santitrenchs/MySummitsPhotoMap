@@ -291,6 +291,10 @@ export default function MapControls({
           </button>
         )}
 
+        {/* Compass — first in the column: orientation is context you read before
+            you reach for a control, not an action. */}
+        {map && <CompassButton map={map} />}
+
         {/* Layers */}
         <button
           ref={layersBtnRef}
@@ -305,9 +309,6 @@ export default function MapControls({
             <polyline points="2 12 12 17 22 12" />
           </svg>
         </button>
-
-        {/* Compass — renders itself only while the map is rotated */}
-        {map && <CompassButton map={map} />}
 
         {/* 3D */}
         <button
