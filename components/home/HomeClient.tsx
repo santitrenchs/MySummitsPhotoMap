@@ -581,7 +581,7 @@ function MetricCell({ value, label, unit }: { value: string; label: string; unit
     <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
       <span style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1 }}>
         {value}
-        {unit && <sup style={{ fontSize: 10, fontWeight: 400, verticalAlign: "super", marginLeft: 1, opacity: 0.55 }}>{unit}</sup>}
+        {unit && <sup style={{ fontSize: 10, fontWeight: 400, verticalAlign: "super", marginLeft: 3, opacity: 0.55 }}>{unit}</sup>}
       </span>
       <span style={{ fontSize: 10.5, fontWeight: 400, color: "rgba(255,255,255,0.65)" }}>{label}</span>
     </div>

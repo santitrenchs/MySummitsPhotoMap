@@ -43,6 +43,8 @@ type Props = {
   /** Display units. A prop, not a hook: the public share page renders this
    *  component outside I18nProvider. Defaults to metric. */
   units?: Units;
+  /** "always" forces the thousands separator, for the public share card. */
+  grouping?: "auto" | "always";
   peakStats?: { totalAscents: number; uniqueClimbers: number } | null;
   /** Optional footer rendered below the stat band (e.g. byline + description) */
   footer?: React.ReactNode;
@@ -61,6 +63,7 @@ export function CardBack({
   isFlipped,
   locale,
   units,
+  grouping,
   peakStats,
   footer,
   mythicLabel = "Mítico",
@@ -92,7 +95,7 @@ export function CardBack({
         <div className="back-map-data">
           <div className="back-map-geo">📍 {latStr} · {lngStr}</div>
           <div className="back-map-name">{peakName}</div>
-          <div className="back-map-alt">{formatAltitude(peak.altitudeM, { locale, units })}</div>
+          <div className="back-map-alt">{formatAltitude(peak.altitudeM, { locale, units, grouping })}</div>
           {peak.mountainRange && (
             <div className="back-map-zone">{peak.mountainRange}</div>
           )}
