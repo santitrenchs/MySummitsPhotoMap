@@ -413,11 +413,18 @@ class AtlasViewModel : ViewModel() {
             ?.takeIf { it > 0.0 } ?: 1.0
 
         val scored = peaks.map { peak ->
-            val normAlt  = if (maxAlt > 0) peak.altitudeM.toDouble() / maxAlt else 0.0
-            val rw       = peak.rarityId?.let { rarityWeights[it] } ?: 0.1
             val distKm   = haversineKm(centerLat, centerLon, peak.latitude, peak.longitude)
             val normDist = 1.0 - (distKm / maxDist).coerceIn(0.0, 1.0)   // closer = higher
-            peak to (normAlt * 0.5 + rw * 0.3 + normDist * 0.2)
+            // `importance` (altitude + isolation, precomputed server-side) replaces the
+            // altitude+rarity pair, which were the SAME variable twice: rarityId is a
+            // pure function of altitude, so the two terms only ever re-sorted by height
+            // and handed a whole massif to one summit's sub-peaks.
+            val merit = peak.importance ?: run {
+                val normAlt = if (maxAlt > 0) peak.altitudeM.toDouble() / maxAlt else 0.0
+                val rw      = peak.rarityId?.let { rarityWeights[it] } ?: 0.1
+                normAlt * 0.625 + rw * 0.375   // same 0.5/0.3 ratio, rescaled to 0..1
+            }
+            peak to (merit * 0.8 + normDist * 0.2)
         }.sortedByDescending { it.second }
 
         val pct = when {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getV1Session } from "@/lib/api-v1/auth";
 import { prisma } from "@/lib/db/client";
+import { sampleViewportPeakIds } from "@/lib/peaks/viewport-sample";
 
 // ── Nominatim geocoding ────────────────────────────────────────────────────────
 
@@ -101,22 +102,22 @@ export async function GET(req: NextRequest) {
   let includeElevationProfile = true;
 
   if (!isNaN(north) && !isNaN(south) && !isNaN(east) && !isNaN(west)) {
-    where = {
-      latitude: { gte: south, lte: north },
-      // Viewports crossing the antimeridian arrive with east < west — a single
-      // gte/lte range matches nothing there. Split into the two hemibands.
-      ...(west <= east
-        ? { longitude: { gte: west, lte: east } }
-        : { OR: [{ longitude: { gte: west } }, { longitude: { lte: east } }] }),
-    };
-    // Return fewer peaks at low zoom (large viewport) and more at high zoom
-    // (small viewport where every local peak matters).
-    take = !isNaN(zoom)
+    // Fewer peaks at low zoom (large viewport), more at high zoom (small viewport
+    // where every local peak matters).
+    const budget = !isNaN(zoom)
       ? zoom < 6  ? 50
       : zoom < 8  ? 150
       : zoom < 11 ? 300
       :             500
       : 300; // fallback for clients that don't send zoom
+
+    // ⚠️ Shared with the web route on purpose — see sampleViewportPeakIds. Ordering
+    // the bbox by altitude and taking the first N is a global altitude cut wearing a
+    // viewport's clothes: it empties the flat half of the screen entirely. With a
+    // budget of 50 at zoom 5 it is even harsher here than on web.
+    const ids = await sampleViewportPeakIds(north, south, east, west, budget);
+    if (ids.length === 0) return NextResponse.json({ peaks: [], places: [] });
+    where = { id: { in: ids } };
   } else if (!isNaN(lat) && !isNaN(lng) && !isNaN(radius)) {
     where = {
       latitude:  { gte: lat - radius, lte: lat + radius },
@@ -148,6 +149,9 @@ export async function GET(req: NextRequest) {
       country: true,
       rarityId: true,
       isMythic: true,
+      // Altitude + isolation ranking, so the Android viewport scoring can rank a
+      // mountain above its own shoulder instead of re-sorting by height.
+      importance: true,
       ...(includeElevationProfile ? { elevationProfile: true } : {}),
     },
   });

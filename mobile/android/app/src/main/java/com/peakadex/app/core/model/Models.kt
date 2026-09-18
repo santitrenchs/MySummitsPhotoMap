@@ -95,6 +95,14 @@ data class Peak(
     val country: String? = null,
     val rarityId: String? = null,
     val isMythic: Boolean? = null,
+    /**
+     * Altitude + isolation ranking (0..1) precomputed server-side. Altitude alone
+     * cannot tell a mountain from its own shoulder: sorted by height the Mont Blanc
+     * massif returns Mont Blanc five times before it reaches the Grandes Jorasses.
+     * Null on responses that do not select it, and on rows the backfill has not
+     * reached — callers fall back to the altitude score.
+     */
+    val importance: Double? = null,
     val elevationProfile: ElevationProfileData? = null,
     val nearbyPeaks: List<NearbyPeak>? = null,
 ) {
