@@ -6,15 +6,21 @@ import { useI18n } from "@/components/providers/I18nProvider";
 import { LOCALE_OPTIONS } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n/types";
 import { Button } from "@/components/ui/Button";
+import type { Units } from "@/lib/units";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type UserSettings = {
-  id: string; name: string; email: string; username: string | null; language: string;
+  id: string; name: string; email: string; username: string | null; language: string; units: string;
   appearInSearch: boolean; allowOthersToTag: boolean;
   emailNotifications: boolean; activityNotifications: boolean;
   hasPassword: boolean; googleLinked: boolean;
 };
+
+const UNIT_OPTIONS: { value: Units; labelKey: "settings_unitsMetric" | "settings_unitsImperial" }[] = [
+  { value: "metric",   labelKey: "settings_unitsMetric" },
+  { value: "imperial", labelKey: "settings_unitsImperial" },
+];
 
 type UsernameState = "idle" | "checking" | "available" | "taken" | "invalid";
 const USERNAME_RE = /^[a-zA-Z0-9_.]{3,20}$/;
@@ -78,7 +84,7 @@ function Card({ children }: { children: React.ReactNode }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
-  const { t, locale, setLocale } = useI18n();
+  const { t, locale, setLocale, units, setUnits } = useI18n();
   const [settings, setSettings] = useState(initialUser);
   // Account form
   const [name, setName] = useState(initialUser.name);
@@ -152,6 +158,14 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
       body: JSON.stringify({ [field]: value }),
     });
   }, []);
+
+  async function saveUnits(newUnits: Units) {
+    setUnits(newUnits); // immediate UI update, like the language switch
+    await fetch("/api/settings", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ units: newUnits }),
+    });
+  }
 
   async function saveLanguage(newLocale: Locale) {
     setLocale(newLocale); // immediate UI update
@@ -265,6 +279,39 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
             </button>
           );
         })}
+      </Card>
+
+      {/* Units — a presentation preference, like the language above it. Two
+          options, so a segmented control rather than the language dropdown. */}
+      <SectionHeader label={t.settings_units} />
+      <Card>
+        <div style={{ padding: "12px 16px 14px" }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            {UNIT_OPTIONS.map(({ value, labelKey }) => {
+              const active = units === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => saveUnits(value)}
+                  aria-pressed={active}
+                  style={{
+                    flex: 1, height: 40, cursor: "pointer",
+                    borderRadius: "var(--radius-md)",
+                    border: `1.5px solid ${active ? "#0369a1" : "#e5e7eb"}`,
+                    background: active ? "#f0f9ff" : "white",
+                    color: active ? "#0369a1" : "#374151",
+                    fontSize: 14, fontWeight: active ? 700 : 500,
+                    transition: "background 0.1s, border-color 0.1s",
+                  }}
+                >
+                  {t[labelKey] as string}
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 11, color: "#9ca3af", margin: "8px 0 0" }}>{t.settings_unitsNote}</p>
+        </div>
       </Card>
 
       {/* Account */}

@@ -3,6 +3,7 @@ package com.peakadex.app.core.auth
 import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.api.AuthInterceptor
 import com.peakadex.app.core.model.User
+import com.peakadex.app.core.util.UnitsState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +27,8 @@ class AuthSession(
         // Restore token + cached user profile on app start
         tokenStorage.getToken()?.let { token ->
             authInterceptor.token = token
+            // Before the first frame, so nothing renders in the wrong unit and flips.
+            UnitsState.set(tokenStorage.getSavedUnits())
             val name = tokenStorage.getSavedUserName()
             if (name != null) {
                 _currentUser.value = User(
@@ -40,6 +43,8 @@ class AuthSession(
     fun login(token: String, user: User) {
         tokenStorage.saveToken(token)
         tokenStorage.saveUserProfile(user.name, user.avatarUrl)
+        tokenStorage.saveUnits(user.units)
+        UnitsState.set(user.units)
         authInterceptor.token = token
         _currentUser.value = user
         _sessionExpired.value = false
@@ -59,6 +64,8 @@ class AuthSession(
 
     fun updateUser(user: User) {
         tokenStorage.saveUserProfile(user.name, user.avatarUrl)
+        tokenStorage.saveUnits(user.units)
+        UnitsState.set(user.units)
         _currentUser.value = user
         Telemetry.setUser(user.id)
     }

@@ -11,6 +11,7 @@ import { formatAltitude } from "@/lib/units";
 import MapPeakCard from "./MapPeakCard";
 import { MapChallengeFilter, type MapChallengeOption, type MapActiveChallenge } from "./MapChallengeFilter";
 import type { PeakReto } from "./peak-challenges";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 type Filter = "all" | "climbed" | "not-climbed";
 type SortMode = "distance" | "relevance" | "altitude";
@@ -86,6 +87,7 @@ export default function MapPeaksSidebar({
   challenges = [], activeChallenge = null, retosForPeak, challengesLoading = false, activeChallengeId = null,
   onSelectChallenge, onFiltersOpen,
 }: Props) {
+  const u = useUnitOpts();
   const [internalSort, setInternalSort] = useState<SortMode>("distance");
   const sort = sortProp ?? internalSort;
   const setSort = (s: SortMode) => { onSortChange ? onSortChange(s) : setInternalSort(s); };
@@ -447,7 +449,7 @@ export default function MapPeaksSidebar({
                           {peakLabel}
                         </p>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
-                          {formatAltitude(peak.altitudeM)}
+                          {formatAltitude(peak.altitudeM, u)}
                         </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>

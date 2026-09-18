@@ -6,6 +6,7 @@ import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap
 import { CardBack } from "@/components/cards/CardBack";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 import { peakDisplayName } from "@/lib/peak-name";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 import { formatAltitude } from "@/lib/units";
 import { imgUrl } from "@/lib/storage/image-url";
 
@@ -149,6 +150,7 @@ function InitialsAvatar({ name, size = 34 }: { name: string; size?: number }) {
 // ─── AscentCard ───────────────────────────────────────────────────────────────
 
 export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal, disableEntrance }: Props) {
+  const u = useUnitOpts();
   const t = useT();
   const [isFlipped, setIsFlipped] = useState(false);
   const [sharePopover, setSharePopover] = useState<string | null>(null); // URL string when open
@@ -176,6 +178,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
     <CardBack
       peak={ascent.peak}
       peakName={peakName}
+      units={u.units}
       rarity={rarity}
       isFlipped={isFlipped}
       locale={locale}
@@ -313,7 +316,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
       <section className="capture-frame">
         <div className="image-frame">
           {showMap && isFlipped
-            ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={peakName} altitudeM={ascent.peak.altitudeM} />
+            ? <PeakMiniMap lat={ascent.peak.latitude} lng={ascent.peak.longitude} peakId={ascent.peak.id} peakName={peakName} altitudeM={ascent.peak.altitudeM} units={u.units} />
             : ascent.photoUrl
               ? ascent.cropAspect === "landscape"
                 // eslint-disable-next-line @next/next/no-img-element
@@ -344,7 +347,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
           {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
           <div className="peak-info">
             <div className="peak-name">{peakName}</div>
-            <div className="peak-alt">{formatAltitude(ascent.peak.altitudeM, { locale })}</div>
+            <div className="peak-alt">{formatAltitude(ascent.peak.altitudeM, u)}</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
           </div>
           {/* Capture-reveal: light-gray cover (hides photo + name during build) + scene
@@ -376,7 +379,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_altitude}</span>
-            <div className="stat-value" style={{ textAlign: "center", marginTop: 2, fontSize: 11, whiteSpace: "nowrap" }}>{formatAltitude(ascent.peak.altitudeM, { locale })}</div>
+            <div className="stat-value" style={{ textAlign: "center", marginTop: 2, fontSize: 11, whiteSpace: "nowrap" }}>{formatAltitude(ascent.peak.altitudeM, u)}</div>
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_reward}</span>

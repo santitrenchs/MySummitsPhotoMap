@@ -8,6 +8,7 @@ import { peakDisplayParts } from "@/lib/peak-name";
 import { formatAltitude, formatDistance } from "@/lib/units";
 import { ChallengePatch } from "./ChallengePatch";
 import type { PeakReto } from "./peak-challenges";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 interface MapPeakCardProps {
   peak: MapPeak;
@@ -23,6 +24,7 @@ interface MapPeakCardProps {
 const MAX_PATCHES = 3;
 
 export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClick, retos = [] }: MapPeakCardProps) {
+  const u = useUnitOpts();
   const rarityColor = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
   const rarityEntry = peak.rarityId ? RARITIES.find((r) => r.id === peak.rarityId) : null;
   const { primary: peakLabel, original: peakOriginal } = peakDisplayParts(peak);
@@ -51,7 +53,7 @@ export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClic
             {peakLabel}
           </p>
           <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
-            {formatAltitude(peak.altitudeM)}
+            {formatAltitude(peak.altitudeM, u)}
           </span>
         </div>
 
@@ -102,7 +104,7 @@ export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClic
 
         {distanceKm !== null && (
           <span style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, display: "block" }}>
-            {formatDistance(distanceKm)}
+            {formatDistance(distanceKm, u)}
           </span>
         )}
       </div>

@@ -116,6 +116,8 @@ export type Dict = {
   cordadas_photoLabel: string; cordadas_changePhoto: string; cordadas_founder: string;
 
   // Settings
+  settings_units: string; settings_unitsMetric: string; settings_unitsImperial: string;
+  settings_unitsNote: string;
   settings_title: string; settings_subtitle: string; settings_language: string;
   settings_account: string; settings_username: string;
   settings_name: string; settings_email: string; settings_emailNote: string;

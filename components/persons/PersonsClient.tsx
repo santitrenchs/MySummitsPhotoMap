@@ -1,5 +1,6 @@
 "use client";
 import { formatAltitude } from "@/lib/units";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 import Link from "next/link";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
@@ -74,6 +75,7 @@ function formatDate(iso: string | null, dateLocale: string) {
 export function PersonsClient({ persons }: { persons: PersonCard[] }) {
   const router = useRouter();
   const t = useT();
+  const u = useUnitOpts();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("ascents");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -618,7 +620,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                               {a.peakName}
                             </p>
                             <p style={{ fontSize: 9, color: "rgba(255,255,255,0.85)", margin: 0, textShadow: "0 1px 3px rgba(0,0,0,0.7)" }}>
-                              {formatAltitude(a.altitudeM, { locale: t.dateLocale })}
+                              {formatAltitude(a.altitudeM, u)}
                             </p>
                           </div>
                         </div>
@@ -637,7 +639,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                 }}>
                   {person.highestPeak && (
                     <span style={{ fontSize: 11, color: "#6b7280" }}>
-                      🏔 <strong style={{ color: "#374151" }}>{person.highestPeak.name}</strong> · {formatAltitude(person.highestPeak.altitudeM, { locale: t.dateLocale })}
+                      🏔 <strong style={{ color: "#374151" }}>{person.highestPeak.name}</strong> · {formatAltitude(person.highestPeak.altitudeM, u)}
                     </span>
                   )}
                   {person.lastAscentDate && (

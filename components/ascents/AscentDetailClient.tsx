@@ -8,6 +8,7 @@ import { useT } from "@/components/providers/I18nProvider";
 import { ImageCropModal, resizeForStorage, type CropMeta } from "@/components/photos/ImageCropModal";
 import { PhotoTagStep, type FaceDraft } from "@/components/photos/PhotoTagStep";
 import { imgUrl } from "@/lib/storage/image-url";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ export type AscentDetailProps = {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function AscentDetailClient(props: AscentDetailProps) {
+  const u = useUnitOpts();
   const {
     id, peakName, peakAltitudeM, peakMountainRange,
     peakLatitude, peakLongitude,
@@ -547,7 +549,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
             borderRadius: 20, padding: "5px 10px",
           }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "white", letterSpacing: "0.01em" }}>
-              {formatAltitude(peakAltitudeM)}
+              {formatAltitude(peakAltitudeM, u)}
             </span>
           </div>
         </div>

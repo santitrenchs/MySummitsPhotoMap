@@ -150,9 +150,9 @@
     <string name="onboarding_card_coords">45.8326°N · 6.8652°E</string>
     <string name="home_hero_alt_for_level">Reach %1$dm for %2$s</string>
     <string name="home_hero_for_level">for %s</string>
-    <string name="home_level_req_altitude">Reach %dm</string>
+    <string name="home_level_req_altitude">Reach %s</string>
     <string name="home_level_progress_peaks">%1$d / %2$d peaks</string>
-    <string name="home_level_req_altitude_progress">→ Reach %d m</string>
+    <string name="home_level_req_altitude_progress">→ Reach %s</string>
     <plurals name="home_level_remaining_peaks">
         <item quantity="one">→ %d more peak</item>
         <item quantity="other">→ %d more peaks</item>
@@ -439,4 +439,8 @@
     <string name="cards_friends_empty_subtitle">Keep climbing and share your ascents.</string>
     <string name="cards_mine_empty">You haven\'t logged any ascents yet.</string>
     <string name="cards_mine_empty_subtitle">Capture your first summit to get started.</string>
+    <string name="settings_section_units">UNITS</string>
+    <string name="settings_units_metric">Metres</string>
+    <string name="settings_units_imperial">Feet</string>
+    <string name="settings_units_note">How altitudes and distances are shown. It does not change your rarities or your level.</string>
 </resources>

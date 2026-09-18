@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { peakDisplayName, peakDisplayParts } from "@/lib/peak-name";
 import { formatAltitude } from "@/lib/units";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 type Peak = {
   id: string;
@@ -39,6 +40,7 @@ export function PeakPicker({
   onSelect?: (peak: Peak | null) => void;
 }) {
   const t = useT();
+  const u = useUnitOpts();
   const [selected, setSelected] = useState<Peak | null>(initialPeak);
   const [query, setQuery] = useState(initialPeak ? label(initialPeak) : defaultPeakName ?? "");
   const [open, setOpen] = useState(false);
@@ -143,7 +145,7 @@ export function PeakPicker({
               {label(selected)}
             </div>
             <div style={{ fontSize: 12, fontWeight: 400, color: "#3b82f6", marginTop: 1 }}>
-              {formatAltitude(selected.altitudeM)}
+              {formatAltitude(selected.altitudeM, u)}
             </div>
           </div>
           <span style={{
@@ -240,7 +242,7 @@ export function PeakPicker({
                       {primary}
                     </div>
                     <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>
-                      {formatAltitude(peak.altitudeM)}{sub ? ` · ${sub}` : ""}
+                      {formatAltitude(peak.altitudeM, u)}{sub ? ` · ${sub}` : ""}
                     </div>
                   </div>
                   );

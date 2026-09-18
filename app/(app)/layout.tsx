@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/nav/Sidebar";
 import { I18nProvider } from "@/components/providers/I18nProvider";
 import { getLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/types";
+import type { Units } from "@/lib/units";
 import { countPendingRequests } from "@/lib/services/friendship.service";
 import { countUnseenFeed } from "@/lib/services/feed.service";
 import { prisma } from "@/lib/db/client";
@@ -25,7 +26,7 @@ export default async function AppLayout({
     getLocale(),
     countPendingRequests(userId),
     countUnseenFeed(userId),
-    prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true, units: true } }),
     // Wrapped in try/catch: if the table doesn't exist yet (pending migration) let the user through
     Promise.all([
       prisma.legalConsent.findUnique({
@@ -51,7 +52,7 @@ export default async function AppLayout({
     {/* maplibre-gl styles — only loaded for authenticated app pages, not landing */}
     {/* eslint-disable-next-line @next/next/no-page-custom-font */}
     <link rel="stylesheet" href="/maplibre-gl.css" />
-    <I18nProvider initialLocale={locale as Locale}>
+    <I18nProvider initialLocale={locale as Locale} initialUnits={(dbUser?.units as Units) ?? undefined}>
       <div style={{ minHeight: "100svh", display: "flex", flexDirection: "column" }}>
         {/* Desktop sidebar (fixed, hidden on mobile via CSS) */}
         <Sidebar {...navProps} />

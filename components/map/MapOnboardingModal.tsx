@@ -1,17 +1,18 @@
 "use client";
 import { altitudeValue, formatAltitude } from "@/lib/units";
+import { useUnitOpts, type UnitOpts } from "@/components/providers/I18nProvider";
 
 import { useRef, useState } from "react";
 import { RARITIES } from "@/lib/rarity";
 import { useT } from "@/components/providers/I18nProvider";
 
 // altitude display helper — "< 1.500 m", "1.500 – 2.999 m", "≥ 8.000 m"
-function altRange(idx: number, locale: string): string {
+function altRange(idx: number, u: UnitOpts): string {
   const cur = RARITIES[idx];
   const next = RARITIES[idx + 1];
-  if (idx === 0) return `< ${formatAltitude(next!.minAlt, { locale })}`;
-  if (!next) return `≥ ${formatAltitude(cur.minAlt, { locale })}`;
-  return `${altitudeValue(cur.minAlt, { locale })} – ${formatAltitude(next.minAlt - 1, { locale })}`;
+  if (idx === 0) return `< ${formatAltitude(next!.minAlt, u)}`;
+  if (!next) return `≥ ${formatAltitude(cur.minAlt, u)}`;
+  return `${altitudeValue(cur.minAlt, u)} – ${formatAltitude(next.minAlt - 1, u)}`;
 }
 
 const CARD_STYLES: Record<string, { bg: string; border: string; text: string }> = {
@@ -28,6 +29,7 @@ const CARD_STYLES: Record<string, { bg: string; border: string; text: string }> 
 
 export default function MapOnboardingModal() {
   const t = useT();
+  const u = useUnitOpts();
   const [visible, setVisible] = useState(true);
   const [dontShow, setDontShow] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -71,8 +73,6 @@ export default function MapOnboardingModal() {
   }
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-  // derive locale from document lang for number formatting
-  const locale = typeof document !== "undefined" ? (document.documentElement.lang || "en") : "en";
 
   // split title on \n for the line break
   const titleParts = t.map_onboarding_title.split("\n");
@@ -173,7 +173,7 @@ export default function MapOnboardingModal() {
                   {r.label}
                 </span>
                 <span style={{ fontSize: 9.5, color: cs.text, opacity: 0.65, lineHeight: 1.2 }}>
-                  {altRange(idx, locale)}
+                  {altRange(idx, u)}
                 </span>
               </div>
             );

@@ -1,5 +1,5 @@
 "use client";
-import { formatAltitude } from "@/lib/units";
+import { formatAltitude, type Units } from "@/lib/units";
 
 import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
 import { ElevationProfile } from "@/components/cards/ElevationProfile";
@@ -40,6 +40,9 @@ type Props = {
   rarity: RarityId;
   isFlipped: boolean;
   locale: string;
+  /** Display units. A prop, not a hook: the public share page renders this
+   *  component outside I18nProvider. Defaults to metric. */
+  units?: Units;
   peakStats?: { totalAscents: number; uniqueClimbers: number } | null;
   /** Optional footer rendered below the stat band (e.g. byline + description) */
   footer?: React.ReactNode;
@@ -57,6 +60,7 @@ export function CardBack({
   rarity,
   isFlipped,
   locale,
+  units,
   peakStats,
   footer,
   mythicLabel = "Mítico",
@@ -77,6 +81,7 @@ export function CardBack({
             peakId={peak.id}
             peakName={peak.name}
             altitudeM={peak.altitudeM}
+            units={units}
             disableNearby={disableNearby}
           />
         )}
@@ -87,7 +92,7 @@ export function CardBack({
         <div className="back-map-data">
           <div className="back-map-geo">📍 {latStr} · {lngStr}</div>
           <div className="back-map-name">{peakName}</div>
-          <div className="back-map-alt">{formatAltitude(peak.altitudeM, { locale })}</div>
+          <div className="back-map-alt">{formatAltitude(peak.altitudeM, { locale, units })}</div>
           {peak.mountainRange && (
             <div className="back-map-zone">{peak.mountainRange}</div>
           )}

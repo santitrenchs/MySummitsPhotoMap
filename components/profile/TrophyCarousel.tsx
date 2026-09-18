@@ -1,5 +1,6 @@
 "use client";
 import { formatAltitude } from "@/lib/units";
+import { useUnitOpts, type UnitOpts } from "@/components/providers/I18nProvider";
 
 import { useRef, useState, useEffect } from "react";
 import { RARITIES, RARITY_COLORS, RARITY_LABELS } from "@/lib/rarity";
@@ -18,7 +19,7 @@ type Trophy = {
   highlightValue: string;
 };
 
-function buildTrophies(peaks: PeakForFilter[], t: ReturnType<typeof useT>): Trophy[] {
+function buildTrophies(peaks: PeakForFilter[], t: ReturnType<typeof useT>, u: UnitOpts): Trophy[] {
   if (peaks.length === 0) return [];
 
   const trophies: Trophy[] = [];
@@ -42,7 +43,7 @@ function buildTrophies(peaks: PeakForFilter[], t: ReturnType<typeof useT>): Trop
     peak: highest,
     accent: RARITY_COLORS[highest.rarityId] ?? "#0E7490",
     highlightLabel: t.profile_trophy_label_altitude,
-    highlightValue: formatAltitude(highest.altitudeM),
+    highlightValue: formatAltitude(highest.altitudeM, u),
   });
 
   // Most recent
@@ -68,7 +69,8 @@ function formatDateShort(date: Date): string {
 
 export function TrophyCarousel({ peaks }: { peaks: PeakForFilter[] }) {
   const t = useT();
-  const trophies = buildTrophies(peaks, t);
+  const u = useUnitOpts();
+  const trophies = buildTrophies(peaks, t, u);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
 
@@ -140,6 +142,7 @@ export function TrophyCarousel({ peaks }: { peaks: PeakForFilter[] }) {
 }
 
 function TrophyHeroCard({ trophy, index, total }: { trophy: Trophy; index: number; total: number }) {
+  const u = useUnitOpts();
   const rarityColor = RARITY_COLORS[trophy.peak.rarityId] ?? "#94A3B8";
   const rarityLabel = RARITY_LABELS[trophy.peak.rarityId as RarityId] ?? trophy.peak.rarityId;
   const highlightLong = trophy.highlightValue.length > 7;
@@ -232,7 +235,7 @@ function TrophyHeroCard({ trophy, index, total }: { trophy: Trophy; index: numbe
           fontSize: 11, fontWeight: 700,
           color: rarityColor,
         }}>
-          {formatAltitude(trophy.peak.altitudeM)} · {rarityLabel}
+          {formatAltitude(trophy.peak.altitudeM, u)} · {rarityLabel}
         </div>
 
         <div style={{ flex: 1 }} />

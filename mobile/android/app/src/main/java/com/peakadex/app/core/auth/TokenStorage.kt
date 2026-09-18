@@ -10,6 +10,7 @@ class TokenStorage(private val context: Context) {
         private const val KEY_TOKEN  = "auth_token"
         private const val KEY_USER_NAME       = "user_name"
         private const val KEY_USER_AVATAR_URL = "user_avatar_url"
+        private const val KEY_UNITS = "units"
     }
 
     private val prefs by lazy {
@@ -38,6 +39,7 @@ class TokenStorage(private val context: Context) {
             .remove(KEY_TOKEN)
             .remove(KEY_USER_NAME)
             .remove(KEY_USER_AVATAR_URL)
+            .remove(KEY_UNITS)
             .apply()
     }
 
@@ -47,6 +49,14 @@ class TokenStorage(private val context: Context) {
             .putString(KEY_USER_AVATAR_URL, avatarUrl)
             .apply()
     }
+
+    /** Persisted so altitudes render in the right unit on the very first frame,
+     *  before any network call. */
+    fun saveUnits(units: String?) {
+        prefs.edit().putString(KEY_UNITS, units).apply()
+    }
+
+    fun getSavedUnits(): String? = prefs.getString(KEY_UNITS, null)
 
     fun getSavedUserName(): String? = prefs.getString(KEY_USER_NAME, null)
     fun getSavedAvatarUrl(): String? = prefs.getString(KEY_USER_AVATAR_URL, null)

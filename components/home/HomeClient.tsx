@@ -9,6 +9,7 @@ import { i } from "@/lib/i18n";
 import { LEVEL_DEFS, getAltCount, meetsLevel, getLevelState } from "@/lib/level-utils";
 import { RARITIES } from "@/lib/rarity";
 import { imgUrl } from "@/lib/storage/image-url";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -180,6 +181,7 @@ export function HomeClient({ data, locale, t }: {
   locale: string;
   t: Dict;
 }) {
+  const u = useUnitOpts();
   const { user, stats, leaderboard, userRank, nextRankName, nextRankGap, recentAscents } = data;
   const meEntry = leaderboard.find((e) => e.isCurrentUser);
   const myEp = meEntry?.ep ?? 0;
@@ -205,7 +207,7 @@ export function HomeClient({ data, locale, t }: {
   const firstAltReq = heroInProgress.altReqs?.[0];
   const altReqLabel = levelState.isMaxLevel ? null
     : firstAltReq
-      ? `${i(t.home_altReq, { m: firstAltReq.threshold.toLocaleString(locale) })} ${i(t.home_heroForLevel, { name: levelName })}`
+      ? `${i(t.home_altReq, { alt: formatAltitude(firstAltReq.threshold, u) })} ${i(t.home_heroForLevel, { name: levelName })}`
       : i(t.home_heroForLevel, { name: levelName });
   const heroProgressLabel = altReqLabel
     ? `${heroProgressBase}  ·  ${altReqLabel}`
@@ -305,9 +307,9 @@ export function HomeClient({ data, locale, t }: {
               <MetricCell value={String(stats.uniquePeaks)} label={t.home_metricPeaks} />
               <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
               <MetricCell
-                value={stats.maxAltitude > 0 ? altitudeValue(stats.maxAltitude, { locale }) : "—"}
+                value={stats.maxAltitude > 0 ? altitudeValue(stats.maxAltitude, u) : "—"}
                 label={t.home_metricMaxAlt}
-                unit={stats.maxAltitude > 0 ? altitudeUnit() : undefined}
+                unit={stats.maxAltitude > 0 ? altitudeUnit(u.units) : undefined}
               />
             </div>
           </div>
@@ -557,7 +559,7 @@ export function HomeClient({ data, locale, t }: {
                         {a.peakName}
                       </p>
                       <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
-                        {formatAltitude(a.altitudeM, { locale })}
+                        {formatAltitude(a.altitudeM, u)}
                       </p>
                     </div>
                   </div>

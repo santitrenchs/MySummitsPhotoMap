@@ -992,7 +992,7 @@ private fun LevelCard(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Pill(pluralStringResource(R.plurals.home_level_req_ascents_pill, def.targetPeaks, def.targetPeaks))
-                def.altReqs.forEach { r -> Pill(stringResource(R.string.home_level_req_altitude, r.threshold)) }
+                def.altReqs.forEach { r -> Pill(stringResource(R.string.home_level_req_altitude, formatAltitude(r.threshold))) }
             }
 
             // Progress row — in-progress level only
@@ -1055,7 +1055,7 @@ private fun LevelCard(
                 // AltReq hints — show pending requirements
                 def.altReqs.filter { r -> getAltCount(stats, r.threshold) < r.count }.forEach { r ->
                     Text(
-                        text     = stringResource(R.string.home_level_req_altitude_progress, r.threshold),
+                        text     = stringResource(R.string.home_level_req_altitude_progress, formatAltitude(r.threshold)),
                         fontSize = 12.sp,
                         color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

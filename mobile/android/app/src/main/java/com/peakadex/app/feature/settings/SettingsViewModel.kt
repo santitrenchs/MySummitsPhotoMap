@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import com.peakadex.app.core.util.UnitsState
+import com.peakadex.app.core.util.Units
 
 private const val TAG = "SettingsViewModel"
 
@@ -39,6 +41,8 @@ data class SettingsUiState(
     val allowOthersToTag: Boolean = true,
     val emailNotifications: Boolean = true,
     val activityNotifications: Boolean = true,
+    // units
+    val selectedUnits: Units = UnitsState.current,
     // language
     val selectedLanguage: String = "es",
     val isLanguageSheetOpen: Boolean = false,
@@ -265,6 +269,27 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(saveSuccess = false, passwordSuccess = false) }
 
     fun clearError() = _state.update { it.copy(error = null) }
+
+    // ─── Units ────────────────────────────────────────────────────────────────
+
+    /** Display-only. The thresholds that decide rarity and level stay in metres. */
+    fun saveUnits(units: Units) {
+        val raw = if (units == Units.IMPERIAL) "imperial" else "metric"
+        // Applied optimistically: the whole app re-renders off UnitsState, and a
+        // failed PATCH only means the choice is not persisted for the next session.
+        UnitsState.current = units
+        AppContainer.tokenStorage.saveUnits(raw)
+        _state.update { it.copy(selectedUnits = units) }
+        viewModelScope.launch {
+            try {
+                AppContainer.apiService.updateSettings(UpdateSettingsRequest(units = raw))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "saveUnits error", e)
+            }
+        }
+    }
 
     // ─── Language ─────────────────────────────────────────────────────────────
 

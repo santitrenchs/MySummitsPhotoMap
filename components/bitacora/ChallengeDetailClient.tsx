@@ -1,5 +1,6 @@
 "use client";
 import { formatAltitude } from "@/lib/units";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -52,6 +53,7 @@ function rarityEntry(id: RarityId) {
 
 export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetail }) {
   const t = useT();
+  const u = useUnitOpts();
   const router = useRouter();
   const [joining, setJoining] = useState(false);
   const [joinFailed, setJoinFailed] = useState(false);
@@ -320,7 +322,7 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
                 fontFamily: "var(--font-mono-landing, monospace)",
                 fontSize: 12, fontWeight: 700, color: "#0D2538", fontVariantNumeric: "tabular-nums",
               }}>
-                {formatAltitude(challenge.maxAltitudeM)}
+                {formatAltitude(challenge.maxAltitudeM, u)}
               </span>
             </span>
           </div>
@@ -450,6 +452,7 @@ function SectionHead({ label, count }: { label: string; count: number }) {
 
 function PeakTile({ peak }: { peak: ChallengePeakRow }) {
   const t = useT();
+  const u = useUnitOpts();
   const r = rarityEntry(peak.rarityId);
 
   return (
@@ -506,7 +509,7 @@ function PeakTile({ peak }: { peak: ChallengePeakRow }) {
           fontSize: 9, color: "rgba(255,255,255,0.78)",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
-          {formatAltitude(peak.altitudeM)}
+          {formatAltitude(peak.altitudeM, u)}
           {peak.lastAscentDate && (
             <span className="reto-tile-date">
               {` · ${new Date(peak.lastAscentDate).toLocaleDateString(t.dateLocale, { day: "numeric", month: "short", year: "2-digit" })}`}

@@ -50,6 +50,10 @@ import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBlueLight
 import com.peakadex.app.core.ui.UiText
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
+import com.peakadex.app.core.util.Units
 
 // ── Profile menu bottom sheet ─────────────────────────────────────────────────
 // Shown when the user taps the avatar in MainTopBar.
@@ -294,6 +298,33 @@ fun SettingsScreen(
                                 modifier = Modifier.size(16.dp),
                             )
                         }
+                    }
+                }
+            }
+
+            // ── Unidades ──────────────────────────────────────────────────────
+            // A presentation preference, like the language above it. Two options,
+            // so a segmented control rather than the language bottom sheet.
+            item { SectionHeader(stringResource(R.string.settings_section_units)) }
+            item {
+                SettingsCard {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                            UNIT_OPTIONS.forEachIndexed { idx, opt ->
+                                SegmentedButton(
+                                    selected = state.selectedUnits == opt.units,
+                                    onClick  = { vm.saveUnits(opt.units) },
+                                    shape    = SegmentedButtonDefaults.itemShape(idx, UNIT_OPTIONS.size),
+                                    label    = { Text(stringResource(opt.labelRes), fontSize = 14.sp) },
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text     = stringResource(R.string.settings_units_note),
+                            fontSize = 12.sp,
+                            color    = Color(0xFF9CA3AF),
+                        )
                     }
                 }
             }
@@ -575,6 +606,13 @@ fun SettingsScreen(
 // ── Language picker sheet ─────────────────────────────────────────────────────
 
 private data class LangOption(val code: String, val nameRes: Int, val flagRes: Int)
+
+private data class UnitOption(val units: Units, val labelRes: Int)
+
+private val UNIT_OPTIONS = listOf(
+    UnitOption(Units.METRIC,   R.string.settings_units_metric),
+    UnitOption(Units.IMPERIAL, R.string.settings_units_imperial),
+)
 
 private val LANGUAGE_OPTIONS = listOf(
     LangOption("es", R.string.settings_lang_es, R.drawable.flag_es),

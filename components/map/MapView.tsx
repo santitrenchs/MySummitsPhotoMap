@@ -19,6 +19,7 @@ import { makeRetoResolver, type PeakChallengeIndex } from "./peak-challenges";
 import { Button } from "@/components/ui/Button";
 import { imgUrl } from "@/lib/storage/image-url";
 import { CARTO_RASTER_TILES, CARTO_ATTRIBUTION } from "@/lib/map-tiles";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -290,6 +291,9 @@ export default function MapView({
   const t = useT();
   const tRef = useRef(t);
   useEffect(() => { tRef.current = t; }, [t]);
+  const u = useUnitOpts();
+  const uRef = useRef(u);
+  useEffect(() => { uRef.current = u; }, [u]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -463,7 +467,7 @@ export default function MapView({
         // `label` is what the tooltip shows — the Latin nameEn for non-Western
         // names. `name` stays raw for anything matching by canonical name.
         id: p.id, name: p.name, label: peakDisplayName(p),
-        alt: p.altitudeM, altLabel: formatAltitude(p.altitudeM),
+        alt: p.altitudeM, altLabel: formatAltitude(p.altitudeM, uRef.current),
         rarityId: p.rarityId ?? "",
         isMythic: p.isMythic ? 1 : 0,
         score,
@@ -1157,7 +1161,7 @@ export default function MapView({
         const props = e.features?.[0]?.properties;
         if (!props || !containerRef.current) return;
         const pt = map.project(e.lngLat);
-        setTooltip({ text: `${props.label ?? props.name} · ${formatAltitude(Number(props.alt), { locale: tRef.current.dateLocale })}`, x: pt.x, y: pt.y });
+        setTooltip({ text: `${props.label ?? props.name} · ${formatAltitude(Number(props.alt), uRef.current)}`, x: pt.x, y: pt.y });
       });
       map.on("mouseleave", "unclustered-peaks", () => setTooltip(null));
 
@@ -1176,7 +1180,7 @@ export default function MapView({
         const peakLabel = peakDisplayName(peak);
 
         const el = document.createElement("div");
-        el.setAttribute("aria-label", `${peakLabel} ${formatAltitude(peak.altitudeM)} (climbed)`);
+        el.setAttribute("aria-label", `${peakLabel} ${formatAltitude(peak.altitudeM, uRef.current)} (climbed)`);
         el.style.cssText = [
           "position:absolute",  // explicit — maplibre-gl.css may not apply on iOS Safari
           "width:44px", "height:44px", "border-radius:50%",
@@ -1211,7 +1215,7 @@ export default function MapView({
           const me = e as MouseEvent;
           const cRect = containerRef.current.getBoundingClientRect();
           setTooltip({
-            text: `${peakLabel} · ${formatAltitude(peak.altitudeM, { locale: tRef.current.dateLocale })}`,
+            text: `${peakLabel} · ${formatAltitude(peak.altitudeM, uRef.current)}`,
             x: me.clientX - cRect.left,
             y: me.clientY - cRect.top,
           });
@@ -1561,7 +1565,7 @@ export default function MapView({
                                   {peakLabel}
                                 </p>
                                 <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
-                                  {formatAltitude(peak.altitudeM)}
+                                  {formatAltitude(peak.altitudeM, u)}
                                 </span>
                               </div>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
@@ -2018,7 +2022,7 @@ export default function MapView({
                       )}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#6b7280", whiteSpace: "nowrap" }}>
-                      {formatAltitude(peak.altitudeM)}
+                      {formatAltitude(peak.altitudeM, u)}
                     </div>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>

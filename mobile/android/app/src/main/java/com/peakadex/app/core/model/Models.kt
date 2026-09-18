@@ -14,6 +14,8 @@ data class User(
     val bio: String? = null,
     val avatarUrl: String? = null,
     val language: String? = null,
+    /** "metric" | "imperial" — display only. */
+    val units: String? = null,
     val appearInSearch: Boolean? = null,
     val allowOthersToTag: Boolean? = null,
     val emailNotifications: Boolean? = null,
@@ -41,6 +43,7 @@ data class UpdateSettingsRequest(
     val name: String? = null,
     val username: String? = null,
     val language: String? = null,
+    val units: String? = null,
     val appearInSearch: Boolean? = null,
     val allowOthersToTag: Boolean? = null,
     val emailNotifications: Boolean? = null,

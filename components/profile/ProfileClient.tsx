@@ -12,6 +12,7 @@ import { PhotosTabV2 } from "@/components/profile/PhotosTabV2";
 import type { RarityId } from "@/lib/rarity";
 import type { PeakForFilter } from "@/components/profile/usePeakFilters";
 import { imgUrl } from "@/lib/storage/image-url";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 type Ascent = {
   id: string;
@@ -205,6 +206,7 @@ function AscentsTab({ ascents, dateLocale, noAscents }: {
   dateLocale: string;
   noAscents: string;
 }) {
+  const u = useUnitOpts();
   if (ascents.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af", fontSize: 14 }}>
@@ -256,7 +258,7 @@ function AscentsTab({ ascents, dateLocale, noAscents }: {
                   fontSize: 11, fontWeight: 700, color: "#0369a1",
                   background: "#eff6ff", borderRadius: "var(--radius-full)", padding: "1px 6px",
                 }}>
-                  {formatAltitude(a.altitudeM, { locale: dateLocale })}
+                  {formatAltitude(a.altitudeM, u)}
                 </span>
                 {a.mountainRange && (
                   <span style={{ fontSize: 11, color: "#9ca3af" }}>{a.mountainRange}</span>
@@ -289,6 +291,7 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
   dateLocale: string;
   timesClimbed: string;
 }) {
+  const u = useUnitOpts();
   const PAGE = 20;
   const [visible, setVisible] = useState(PAGE);
   const seeMoreLabel = ({ ca: "Veure més", es: "Ver más", en: "See more", fr: "Voir plus", de: "Mehr" } as Record<string, string>)[dateLocale] ?? "Ver más";
@@ -314,7 +317,7 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
           }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{pk.name}</div>
-              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>{formatAltitude(pk.altitudeM)}</div>
+              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>{formatAltitude(pk.altitudeM, u)}</div>
             </div>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#6b7280", flexShrink: 0 }}>
               ×{pk.count}
@@ -342,6 +345,7 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
 // ── Photos tab ───────────────────────────────────────────────────────────────
 
 function PhotosTab({ photos, showCreator = false }: { photos: Photo[]; showCreator?: boolean }) {
+  const u = useUnitOpts();
   if (photos.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af", fontSize: 14 }}>
@@ -369,7 +373,7 @@ function PhotosTab({ photos, showCreator = false }: { photos: Photo[]; showCreat
                   {p.peakName}
                 </div>
                 <div style={{ fontSize: 8, color: "rgba(255,255,255,0.8)", lineHeight: 1 }}>
-                  {formatAltitude(p.altitudeM)}
+                  {formatAltitude(p.altitudeM, u)}
                 </div>
               </div>
               {/* Bottom overlay — date (+ creator if tagged tab) */}

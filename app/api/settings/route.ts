@@ -11,6 +11,7 @@ const SettingsPatchSchema = z.object({
   username:              z.string().max(20).nullable().optional(),
   bio:                   z.string().max(500).nullable().optional(),
   language:              z.string().optional(),
+  units:                 z.enum(["metric", "imperial"]).optional(),
   appearInSearch:        z.boolean().optional(),
   allowOthersToTag:      z.boolean().optional(),
   emailNotifications:    z.boolean().optional(),
@@ -25,7 +26,7 @@ export async function GET() {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      id: true, name: true, email: true, username: true, language: true,
+      id: true, name: true, email: true, username: true, language: true, units: true,
       appearInSearch: true, allowOthersToTag: true,
       emailNotifications: true, activityNotifications: true,
     },
@@ -67,7 +68,7 @@ export async function PATCH(req: Request) {
       where: { id: session.user.id },
       data,
       select: {
-        id: true, name: true, email: true, username: true, language: true,
+        id: true, name: true, email: true, username: true, language: true, units: true,
         appearInSearch: true, allowOthersToTag: true,
         emailNotifications: true, activityNotifications: true,
       },

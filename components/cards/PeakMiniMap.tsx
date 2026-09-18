@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import { getRarityColor as getRarityColorFromLib, RARITY_ALT_STEP_EXPR } from "@/lib/rarity";
 import { peakDisplayName } from "@/lib/peak-name";
-import { formatAltitude } from "@/lib/units";
+import { formatAltitude, type Units } from "@/lib/units";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -90,6 +90,7 @@ export function PeakMiniMap({
   lng,
   peakId,
   altitudeM,
+  units,
   disableNearby = false,
 }: {
   lat: number;
@@ -97,6 +98,8 @@ export function PeakMiniMap({
   peakId: string;
   peakName: string;
   altitudeM: number;
+  /** Display units — a prop for the same reason as in CardBack. */
+  units?: Units;
   /** Skip the nearby-peaks fetch/markers entirely (e.g. public share page where
    *  /api/peaks is not accessible). Base map + central peak marker still render. */
   disableNearby?: boolean;
@@ -127,7 +130,7 @@ export function PeakMiniMap({
           features: nearby.map((p) => ({
             type: "Feature" as const,
             geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
-            properties: { name: peakDisplayName(p), altLabel: formatAltitude(p.altitudeM) },
+            properties: { name: peakDisplayName(p), altLabel: formatAltitude(p.altitudeM, { units }) },
           })),
         },
       });

@@ -135,9 +135,9 @@
     <string name="onboarding_card_coords">45.8326°N · 6.8652°E</string>
     <string name="home_hero_alt_for_level">Superar els %1$dm per a %2$s</string>
     <string name="home_hero_for_level">per a %s</string>
-    <string name="home_level_req_altitude">Superar els %dm</string>
+    <string name="home_level_req_altitude">Superar els %s</string>
     <string name="home_level_progress_peaks">%1$d / %2$d cims</string>
-    <string name="home_level_req_altitude_progress">→ Superar els %d m</string>
+    <string name="home_level_req_altitude_progress">→ Superar els %s</string>
     <plurals name="home_level_remaining_peaks">
         <item quantity="one">→ %d cim més</item>
         <item quantity="other">→ %d cims més</item>
@@ -440,4 +440,8 @@
     <string name="profile_sort_alpha">A–Z</string>
     <string name="profile_date_ultima">ÚLTIMA</string>
     <string name="profile_date_primera">PRIMERA</string>
+    <string name="settings_section_units">UNITATS</string>
+    <string name="settings_units_metric">Metres</string>
+    <string name="settings_units_imperial">Peus</string>
+    <string name="settings_units_note">Com es mostren altituds i distàncies. No canvia les teves rareses ni el teu nivell.</string>
 </resources>

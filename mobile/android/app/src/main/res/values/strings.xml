@@ -150,9 +150,9 @@
     <string name="onboarding_card_coords">45.8326°N · 6.8652°E</string>
     <string name="home_hero_alt_for_level">Superar los %1$dm para %2$s</string>
     <string name="home_hero_for_level">para %s</string>
-    <string name="home_level_req_altitude">Superar los %dm</string>
+    <string name="home_level_req_altitude">Superar los %s</string>
     <string name="home_level_progress_peaks">%1$d / %2$d cimas</string>
-    <string name="home_level_req_altitude_progress">→ Superar los %d m</string>
+    <string name="home_level_req_altitude_progress">→ Superar los %s</string>
     <plurals name="home_level_remaining_peaks">
         <item quantity="one">→ %d cima más</item>
         <item quantity="other">→ %d cimas más</item>
@@ -444,4 +444,8 @@
     <string name="cards_friends_empty_subtitle">Sigue escalando y comparte tus ascensiones.</string>
     <string name="cards_mine_empty">Aún no tienes ninguna ascensión registrada.</string>
     <string name="cards_mine_empty_subtitle">Captura tu primera cima para empezar.</string>
+    <string name="settings_section_units">UNIDADES</string>
+    <string name="settings_units_metric">Metros</string>
+    <string name="settings_units_imperial">Pies</string>
+    <string name="settings_units_note">Cómo se muestran altitudes y distancias. No cambia tus rarezas ni tu nivel.</string>
 </resources>

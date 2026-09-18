@@ -12,6 +12,7 @@ const PatchSchema = z.object({
   username:              z.string().max(20).nullable().optional(),
   bio:                   z.string().max(500).nullable().optional(),
   language:              z.string().optional(),
+  units:                 z.enum(["metric", "imperial"]).optional(),
   appearInSearch:        z.boolean().optional(),
   allowOthersToTag:      z.boolean().optional(),
   emailNotifications:    z.boolean().optional(),
@@ -19,7 +20,7 @@ const PatchSchema = z.object({
 });
 
 const SELECT = {
-  id: true, name: true, email: true, username: true, language: true,
+  id: true, name: true, email: true, username: true, language: true, units: true,
   appearInSearch: true, allowOthersToTag: true,
   emailNotifications: true, activityNotifications: true,
   passwordHash: true,

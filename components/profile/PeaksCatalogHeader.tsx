@@ -1,5 +1,6 @@
 "use client";
 import { formatAltitude } from "@/lib/units";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 import { RARITIES, RARITY_COLORS } from "@/lib/rarity";
 import type { RarityId } from "@/lib/rarity";
@@ -14,6 +15,7 @@ type Props = {
 
 export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
   const t = useT();
+  const u = useUnitOpts();
   const totalAscents = peaks.reduce((s, p) => s + p.count, 0);
   const maxAlt = peaks.length > 0 ? Math.max(...peaks.map((p) => p.altitudeM)) : 0;
 
@@ -75,7 +77,7 @@ export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
             fontSize: 20, fontWeight: 800, color: "#0D2538",
             letterSpacing: "-0.025em", lineHeight: 1,
           }}>
-            {formatAltitude(maxAlt)}
+            {formatAltitude(maxAlt, u)}
           </div>
         </div>
       </div>

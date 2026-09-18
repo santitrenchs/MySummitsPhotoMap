@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { formatAltitude, altitudeValue, altitudeUnit, formatDistance, metresToFeet } from "@/lib/units";
+import { getRarityId, RARITIES } from "@/lib/rarity";
 
 describe("formatAltitude", () => {
   it("prints bare digits when no locale is given", () => {
@@ -50,5 +51,29 @@ describe("formatDistance", () => {
     expect(formatDistance(0.85, { units: "imperial" })).toBe("2789 ft");
     expect(formatDistance(4.27, { units: "imperial" })).toBe("2.7 mi");
     expect(formatDistance(42.4, { units: "imperial" })).toBe("26 mi");
+  });
+});
+
+describe("the preference is display-only", () => {
+  it("gives rarity no way to see the preference", () => {
+    // The guarantee the whole feature rests on, asserted structurally rather
+    // than by calling the function twice with the same argument: getRarityId
+    // takes metres and nothing else, so no display preference can reach it.
+    // If someone adds a units parameter, this fails and they have to justify it.
+    expect(getRarityId.length).toBe(1);
+    expect(getRarityId(3000)).toBe("tundra");
+    expect(getRarityId(2999)).toBe("gentian");
+    // Only the printed figure differs.
+    expect(formatAltitude(8848, { units: "metric" })).toBe("8848 m");
+    expect(formatAltitude(8848, { units: "imperial" })).toBe("29029 ft");
+  });
+
+  it("keeps every tier boundary unambiguous in feet", () => {
+    // If two different metre values collapsed onto one foot value, two cards
+    // with different rarities would print the same altitude and look broken.
+    for (const r of RARITIES) {
+      if (!r.minAlt) continue;
+      expect(metresToFeet(r.minAlt - 1)).toBeLessThan(metresToFeet(r.minAlt));
+    }
   });
 });

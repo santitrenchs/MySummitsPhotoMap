@@ -13,6 +13,7 @@ type RarityEntry = { id: string; label: string; color: string; colorDark: string
 
 // Get rarity entry from RARITIES array
 import { RARITIES } from "@/lib/rarity";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 function getRarityEntry(id: RarityId): RarityEntry {
   return RARITIES.find((r) => r.id === id) ?? RARITIES[0];
@@ -28,6 +29,7 @@ type Props = {
 };
 
 export function PeakRowCard({ peak, dateLocale }: Props) {
+  const u = useUnitOpts();
   const r = getRarityEntry(peak.rarityId);
 
   return (
@@ -73,7 +75,7 @@ export function PeakRowCard({ peak, dateLocale }: Props) {
               fontSize: 10, fontWeight: 700, color: "white",
               textShadow: "0 1px 2px rgba(0,0,0,0.5)",
             }}>
-              {formatAltitude(peak.altitudeM)}
+              {formatAltitude(peak.altitudeM, u)}
             </span>
           </div>
         </div>

@@ -135,9 +135,9 @@
     <string name="onboarding_card_coords">45.8326°N · 6.8652°E</string>
     <string name="home_hero_alt_for_level">Über %1$dm für %2$s</string>
     <string name="home_hero_for_level">für %s</string>
-    <string name="home_level_req_altitude">Über %dm</string>
+    <string name="home_level_req_altitude">Über %s</string>
     <string name="home_level_progress_peaks">%1$d / %2$d Gipfel</string>
-    <string name="home_level_req_altitude_progress">→ Über %d m</string>
+    <string name="home_level_req_altitude_progress">→ Über %s</string>
     <plurals name="home_level_remaining_peaks">
         <item quantity="one">→ noch %d Gipfel</item>
         <item quantity="other">→ noch %d Gipfel</item>
@@ -440,4 +440,8 @@
     <string name="profile_sort_alpha">A–Z</string>
     <string name="profile_date_ultima">LETZTE</string>
     <string name="profile_date_primera">ERSTE</string>
+    <string name="settings_section_units">EINHEITEN</string>
+    <string name="settings_units_metric">Meter</string>
+    <string name="settings_units_imperial">Fuß</string>
+    <string name="settings_units_note">Wie Höhen und Entfernungen angezeigt werden. Ändert weder deine Seltenheiten noch dein Level.</string>
 </resources>
