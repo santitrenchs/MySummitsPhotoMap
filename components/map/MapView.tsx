@@ -6,6 +6,7 @@ import maplibregl from "maplibre-gl";
 import { RARITY_COLORS, RARITIES, RARITY_SCORE_WEIGHTS, RARITY_ID_MATCH_EXPR } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { peakDisplayName, peakDisplayParts } from "@/lib/peak-name";
+import { formatAltitude } from "@/lib/units";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { createPortal } from "react-dom";
@@ -68,12 +69,6 @@ function distKm(lat1: number, lng1: number, lat2: number, lng2: number): number 
   const a = Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function formatDist(km: number): string {
-  if (km < 1) return `${Math.round(km * 1000)} m`;
-  if (km < 10) return `${km.toFixed(1)} km`;
-  return `${Math.round(km)} km`;
 }
 
 // ─── Re-exports (lib/rarity.ts is the source of truth) ───────────────────────
@@ -467,7 +462,8 @@ export default function MapView({
       properties: {
         // `label` is what the tooltip shows — the Latin nameEn for non-Western
         // names. `name` stays raw for anything matching by canonical name.
-        id: p.id, name: p.name, label: peakDisplayName(p), alt: p.altitudeM,
+        id: p.id, name: p.name, label: peakDisplayName(p),
+        alt: p.altitudeM, altLabel: formatAltitude(p.altitudeM),
         rarityId: p.rarityId ?? "",
         isMythic: p.isMythic ? 1 : 0,
         score,
@@ -1134,7 +1130,7 @@ export default function MapView({
         source: "unascended-peaks",
         minzoom: 10,
         layout: {
-          "text-field": ["concat", ["get", "label"], "\n", ["to-string", ["get", "alt"]], " m"],
+          "text-field": ["concat", ["get", "label"], "\n", ["get", "altLabel"]],
           "text-font": ["Noto Sans Regular"],
           "text-size": ["interpolate", ["linear"], ["get", "score"], 0, 9, 1, 12],
           "text-offset": [0, 1.2],
@@ -1161,7 +1157,7 @@ export default function MapView({
         const props = e.features?.[0]?.properties;
         if (!props || !containerRef.current) return;
         const pt = map.project(e.lngLat);
-        setTooltip({ text: `${props.label ?? props.name} · ${Number(props.alt).toLocaleString(tRef.current.dateLocale)} m`, x: pt.x, y: pt.y });
+        setTooltip({ text: `${props.label ?? props.name} · ${formatAltitude(Number(props.alt), { locale: tRef.current.dateLocale })}`, x: pt.x, y: pt.y });
       });
       map.on("mouseleave", "unclustered-peaks", () => setTooltip(null));
 
@@ -1180,7 +1176,7 @@ export default function MapView({
         const peakLabel = peakDisplayName(peak);
 
         const el = document.createElement("div");
-        el.setAttribute("aria-label", `${peakLabel} ${peak.altitudeM}m (climbed)`);
+        el.setAttribute("aria-label", `${peakLabel} ${formatAltitude(peak.altitudeM)} (climbed)`);
         el.style.cssText = [
           "position:absolute",  // explicit — maplibre-gl.css may not apply on iOS Safari
           "width:44px", "height:44px", "border-radius:50%",
@@ -1215,7 +1211,7 @@ export default function MapView({
           const me = e as MouseEvent;
           const cRect = containerRef.current.getBoundingClientRect();
           setTooltip({
-            text: `${peakLabel} · ${peak.altitudeM.toLocaleString(tRef.current.dateLocale)} m`,
+            text: `${peakLabel} · ${formatAltitude(peak.altitudeM, { locale: tRef.current.dateLocale })}`,
             x: me.clientX - cRect.left,
             y: me.clientY - cRect.top,
           });
@@ -1565,7 +1561,7 @@ export default function MapView({
                                   {peakLabel}
                                 </p>
                                 <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
-                                  {peak.altitudeM} m
+                                  {formatAltitude(peak.altitudeM)}
                                 </span>
                               </div>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
@@ -2022,7 +2018,7 @@ export default function MapView({
                       )}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#6b7280", whiteSpace: "nowrap" }}>
-                      {peak.altitudeM} m
+                      {formatAltitude(peak.altitudeM)}
                     </div>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>

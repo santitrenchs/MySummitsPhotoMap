@@ -5,6 +5,7 @@ import { RARITY_COLORS } from "./MapView";
 import { RARITIES } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { peakDisplayParts } from "@/lib/peak-name";
+import { formatAltitude, formatDistance } from "@/lib/units";
 import { ChallengePatch } from "./ChallengePatch";
 import type { PeakReto } from "./peak-challenges";
 
@@ -20,12 +21,6 @@ interface MapPeakCardProps {
 
 /** Beyond this, the row shows the first two patches and a +N. */
 const MAX_PATCHES = 3;
-
-function formatDist(km: number): string {
-  if (km < 1) return `${Math.round(km * 1000)} m`;
-  if (km < 10) return `${km.toFixed(1)} km`;
-  return `${Math.round(km)} km`;
-}
 
 export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClick, retos = [] }: MapPeakCardProps) {
   const rarityColor = peak.rarityId ? (RARITY_COLORS[peak.rarityId] ?? "#6b7280") : "#6b7280";
@@ -56,7 +51,7 @@ export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClic
             {peakLabel}
           </p>
           <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
-            {peak.altitudeM.toLocaleString()} m
+            {formatAltitude(peak.altitudeM)}
           </span>
         </div>
 
@@ -107,7 +102,7 @@ export default function MapPeakCard({ peak, ascent, distanceKm, selected, onClic
 
         {distanceKm !== null && (
           <span style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, display: "block" }}>
-            {formatDist(distanceKm)}
+            {formatDistance(distanceKm)}
           </span>
         )}
       </div>

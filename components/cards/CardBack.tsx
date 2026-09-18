@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import { PeakMiniMap } from "@/components/cards/PeakMiniMap";
 import { ElevationProfile } from "@/components/cards/ElevationProfile";
@@ -86,7 +87,7 @@ export function CardBack({
         <div className="back-map-data">
           <div className="back-map-geo">📍 {latStr} · {lngStr}</div>
           <div className="back-map-name">{peakName}</div>
-          <div className="back-map-alt">{peak.altitudeM.toLocaleString(locale)} m</div>
+          <div className="back-map-alt">{formatAltitude(peak.altitudeM, { locale })}</div>
           {peak.mountainRange && (
             <div className="back-map-zone">{peak.mountainRange}</div>
           )}

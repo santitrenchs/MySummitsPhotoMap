@@ -7,6 +7,7 @@ import { RARITY_SCORE_WEIGHTS } from "./MapView";
 import { RARITY_COLORS, RARITIES } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { peakDisplayParts } from "@/lib/peak-name";
+import { formatAltitude } from "@/lib/units";
 import MapPeakCard from "./MapPeakCard";
 import { MapChallengeFilter, type MapChallengeOption, type MapActiveChallenge } from "./MapChallengeFilter";
 import type { PeakReto } from "./peak-challenges";
@@ -446,7 +447,7 @@ export default function MapPeaksSidebar({
                           {peakLabel}
                         </p>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
-                          {peak.altitudeM} m
+                          {formatAltitude(peak.altitudeM)}
                         </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>

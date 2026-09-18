@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import type { RarityId } from "@/lib/rarity";
 
@@ -35,7 +36,7 @@ export function CimasStatsHeader({
         </div>
         <div style={{ marginLeft: "auto", textAlign: "right" }}>
           <div style={{ fontSize: 22, fontWeight: 800, color: "#0f2233", lineHeight: 1 }}>
-            {maxAltitudeM > 0 ? `${maxAltitudeM} m` : "—"}
+            {maxAltitudeM > 0 ? formatAltitude(maxAltitudeM) : "—"}
           </div>
           <div style={{ fontSize: 11, color: "#6b7280", marginTop: 3, fontWeight: 600 }}>
             alt. máx

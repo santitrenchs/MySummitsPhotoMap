@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import Link from "next/link";
 import { RARITY_COLORS } from "@/lib/rarity";
@@ -72,7 +73,7 @@ export function PeakRowCard({ peak, dateLocale }: Props) {
               fontSize: 10, fontWeight: 700, color: "white",
               textShadow: "0 1px 2px rgba(0,0,0,0.5)",
             }}>
-              {peak.altitudeM} m
+              {formatAltitude(peak.altitudeM)}
             </span>
           </div>
         </div>

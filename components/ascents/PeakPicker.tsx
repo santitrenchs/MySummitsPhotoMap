@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useT } from "@/components/providers/I18nProvider";
 import { peakDisplayName, peakDisplayParts } from "@/lib/peak-name";
+import { formatAltitude } from "@/lib/units";
 
 type Peak = {
   id: string;
@@ -142,7 +143,7 @@ export function PeakPicker({
               {label(selected)}
             </div>
             <div style={{ fontSize: 12, fontWeight: 400, color: "#3b82f6", marginTop: 1 }}>
-              {selected.altitudeM} m
+              {formatAltitude(selected.altitudeM)}
             </div>
           </div>
           <span style={{
@@ -239,7 +240,7 @@ export function PeakPicker({
                       {primary}
                     </div>
                     <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>
-                      {peak.altitudeM} m{sub ? ` · ${sub}` : ""}
+                      {formatAltitude(peak.altitudeM)}{sub ? ` · ${sub}` : ""}
                     </div>
                   </div>
                   );

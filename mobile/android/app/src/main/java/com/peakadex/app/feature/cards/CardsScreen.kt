@@ -107,6 +107,7 @@ import kotlin.math.ln
 import kotlin.math.roundToInt
 import kotlin.math.tan
 import kotlin.math.sqrt
+import com.peakadex.app.core.util.formatAltitude
 
 // Rarity palette lives in core/ui/RarityPalette.kt (shared with HomeScreen)
 
@@ -1056,7 +1057,7 @@ internal fun CardFront(
             Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart).padding(horizontal = 14.dp, vertical = 14.dp)) {
                 Text(ascent.peak.displayName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
                     letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black,
+                Text(formatAltitude(ascent.peak.altitudeM), fontSize = 28.sp, fontWeight = FontWeight.Black,
                     color = Color.White, letterSpacing = (-0.04).em)
                 if (!ascent.route.isNullOrBlank()) {
                     Spacer(Modifier.height(2.dp))
@@ -1089,7 +1090,7 @@ internal fun CardFront(
                 scale       = reveal?.rarityScale ?: 1f,
                 modifier    = Modifier.weight(1f),
             )
-            StatBandItem(stringResource(R.string.cards_stat_altitude), "${ascent.peak.altitudeM} m", PeakOnSurface, Modifier.weight(1f))
+            StatBandItem(stringResource(R.string.cards_stat_altitude), formatAltitude(ascent.peak.altitudeM), PeakOnSurface, Modifier.weight(1f))
             RewardStatItem(
                 ep       = reveal?.epDisplay ?: rarity.ep,
                 epScale  = reveal?.epScale ?: 1f,
@@ -1283,7 +1284,7 @@ private fun CardMiniMap(peak: Peak, rarityColor: androidx.compose.ui.graphics.Co
                 )
 
                 if (pos.y < labelBottomLimit) {
-                    val rawLabel = "${nearby.displayName} · ${nearby.altitudeM} m"
+                    val rawLabel = "${nearby.displayName} · ${formatAltitude(nearby.altitudeM)}"
                     val label = fitTextToWidth(rawLabel, labelPaint, labelMaxWidth)
                     val labelWidth = labelPaint.measureText(label)
                     val baselineY = pos.y + (labelHeight / 2f) - labelMetrics.descent
@@ -1495,7 +1496,7 @@ private fun CardBack(ascent: Ascent, rarity: RarityInfo) {
                     }
                     Text(ascent.peak.displayName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
                         letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black,
+                    Text(formatAltitude(ascent.peak.altitudeM), fontSize = 28.sp, fontWeight = FontWeight.Black,
                         color = Color.White, letterSpacing = (-0.04).em)
                     Spacer(Modifier.height(8.dp))
                     ElevationProfileCanvas(

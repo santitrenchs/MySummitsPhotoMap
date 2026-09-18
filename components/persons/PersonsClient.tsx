@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import Link from "next/link";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
@@ -617,7 +618,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                               {a.peakName}
                             </p>
                             <p style={{ fontSize: 9, color: "rgba(255,255,255,0.85)", margin: 0, textShadow: "0 1px 3px rgba(0,0,0,0.7)" }}>
-                              {a.altitudeM.toLocaleString("en-GB")} m
+                              {formatAltitude(a.altitudeM, { locale: t.dateLocale })}
                             </p>
                           </div>
                         </div>
@@ -636,7 +637,7 @@ export function PersonsClient({ persons }: { persons: PersonCard[] }) {
                 }}>
                   {person.highestPeak && (
                     <span style={{ fontSize: 11, color: "#6b7280" }}>
-                      🏔 <strong style={{ color: "#374151" }}>{person.highestPeak.name}</strong> · {person.highestPeak.altitudeM.toLocaleString("en-GB")} m
+                      🏔 <strong style={{ color: "#374151" }}>{person.highestPeak.name}</strong> · {formatAltitude(person.highestPeak.altitudeM, { locale: t.dateLocale })}
                     </span>
                   )}
                   {person.lastAscentDate && (

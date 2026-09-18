@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
@@ -753,7 +754,7 @@ export default function GeoposicionClient() {
                 }}
               >
                 <span style={{ fontWeight: 600 }}>{peak.name}</span>
-                <span style={{ color: "#6b7280", marginLeft: 6 }}>{peak.altitudeM} m</span>
+                <span style={{ color: "#6b7280", marginLeft: 6 }}>{formatAltitude(peak.altitudeM)}</span>
                 {peak.mountainRange && (
                   <span style={{ color: "#9ca3af", marginLeft: 6, fontSize: 12 }}>· {peak.mountainRange}</span>
                 )}
@@ -771,7 +772,7 @@ export default function GeoposicionClient() {
             borderRadius: 8, padding: "10px 14px", marginBottom: 14,
             fontSize: 13, color: "#166534",
           }}>
-            <strong>{selectedPeak.name}</strong> — {selectedPeak.altitudeM} m
+            <strong>{selectedPeak.name}</strong> — {formatAltitude(selectedPeak.altitudeM)}
             {selectedPeak.mountainRange && ` · ${selectedPeak.mountainRange}`}
           </div>
         )}
@@ -1090,7 +1091,7 @@ export default function GeoposicionClient() {
                   {clickedPoint.osmName ?? "Cima sin nombre"}
                   {clickedPoint.osmEle && (
                     <span style={{ fontWeight: 400, color: "#6b7280", marginLeft: 6, fontSize: 13 }}>
-                      {clickedPoint.osmEle} m
+                      {formatAltitude(clickedPoint.osmEle)}
                     </span>
                   )}
                   <span style={{

@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import { RARITIES, RARITY_COLORS } from "@/lib/rarity";
 import type { RarityId } from "@/lib/rarity";
@@ -74,7 +75,7 @@ export function PeaksCatalogHeader({ peaks, tier, setTier }: Props) {
             fontSize: 20, fontWeight: 800, color: "#0D2538",
             letterSpacing: "-0.025em", lineHeight: 1,
           }}>
-            {maxAlt} m
+            {formatAltitude(maxAlt)}
           </div>
         </div>
       </div>

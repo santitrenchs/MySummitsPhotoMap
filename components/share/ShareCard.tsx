@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -163,7 +164,7 @@ export function ShareCard(props: ShareCardData) {
           </div>
         </StatCell>
         <StatCell label={labels.altitude}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538" }}>{peak.altitudeM.toLocaleString("en")} m</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0D2538" }}>{formatAltitude(peak.altitudeM, { locale: "en" })}</div>
         </StatCell>
         <StatCell label={labels.reward}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#fef3c7", borderRadius: "var(--radius-full)", padding: "3px 8px", whiteSpace: "nowrap" }}>

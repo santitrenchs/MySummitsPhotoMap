@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import { getRarityColor as getRarityColorFromLib, RARITY_ALT_STEP_EXPR } from "@/lib/rarity";
 import { peakDisplayName } from "@/lib/peak-name";
+import { formatAltitude } from "@/lib/units";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -126,7 +127,7 @@ export function PeakMiniMap({
           features: nearby.map((p) => ({
             type: "Feature" as const,
             geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
-            properties: { name: peakDisplayName(p), alt: p.altitudeM },
+            properties: { name: peakDisplayName(p), altLabel: formatAltitude(p.altitudeM) },
           })),
         },
       });
@@ -148,7 +149,7 @@ export function PeakMiniMap({
         type: "symbol",
         source: "nearby-peaks",
         layout: {
-          "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
+          "text-field": ["concat", ["get", "name"], "\n", ["get", "altLabel"]],
           "text-font": ["Noto Sans Regular"],
           "text-size": 10,
           "text-offset": [0, 1.2],

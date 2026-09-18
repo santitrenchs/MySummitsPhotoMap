@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import { useState, useRef, useCallback, useTransition } from "react";
 import Link from "next/link";
@@ -255,7 +256,7 @@ function AscentsTab({ ascents, dateLocale, noAscents }: {
                   fontSize: 11, fontWeight: 700, color: "#0369a1",
                   background: "#eff6ff", borderRadius: "var(--radius-full)", padding: "1px 6px",
                 }}>
-                  {a.altitudeM.toLocaleString(dateLocale)} m
+                  {formatAltitude(a.altitudeM, { locale: dateLocale })}
                 </span>
                 {a.mountainRange && (
                   <span style={{ fontSize: 11, color: "#9ca3af" }}>{a.mountainRange}</span>
@@ -313,7 +314,7 @@ function PeaksTab({ peaks, dateLocale, timesClimbed }: {
           }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{pk.name}</div>
-              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>{pk.altitudeM} m</div>
+              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>{formatAltitude(pk.altitudeM)}</div>
             </div>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#6b7280", flexShrink: 0 }}>
               ×{pk.count}
@@ -368,7 +369,7 @@ function PhotosTab({ photos, showCreator = false }: { photos: Photo[]; showCreat
                   {p.peakName}
                 </div>
                 <div style={{ fontSize: 8, color: "rgba(255,255,255,0.8)", lineHeight: 1 }}>
-                  {p.altitudeM} m
+                  {formatAltitude(p.altitudeM)}
                 </div>
               </div>
               {/* Bottom overlay — date (+ creator if tagged tab) */}

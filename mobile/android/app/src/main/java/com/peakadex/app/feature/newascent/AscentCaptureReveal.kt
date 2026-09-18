@@ -74,6 +74,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import com.peakadex.app.core.util.formatAltitude
 
 // ── Timeline (ms) — card-grounded cinematic reveal ──────────────────────────────
 // The real card floats over the feed under an opaque cover. Sequence: flower blooms
@@ -327,7 +328,7 @@ fun AscentCaptureReveal(
                             ) {
                                 Text(ascent.peak.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = rarity.color,
                                     letterSpacing = (-0.04).em, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
-                                Text("${ascent.peak.altitudeM} m", fontSize = 28.sp, fontWeight = FontWeight.Black, color = rarity.color,
+                                Text(formatAltitude(ascent.peak.altitudeM), fontSize = 28.sp, fontWeight = FontWeight.Black, color = rarity.color,
                                     letterSpacing = (-0.04).em, textAlign = TextAlign.Center)
                             }
 

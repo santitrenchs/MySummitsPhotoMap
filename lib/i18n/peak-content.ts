@@ -15,6 +15,7 @@
 
 import { slugifyPeak, type PeakCardData } from "@/lib/data/landing-peaks";
 import type { PeakLocale } from "@/lib/i18n/peaks";
+import { formatAltitude as sharedFormatAltitude } from "@/lib/units";
 
 // ─── Demo comments ────────────────────────────────────────────────────────────
 // Keyed by peak slug so a rename of the peak name surfaces as a missing message
@@ -213,7 +214,7 @@ export function formatPeakNumber(n: number, locale: PeakLocale): string {
 
 /** "4.808 m" in es/de, "4,808 m" in en, "4 808 m" in fr… */
 export function formatAltitude(m: number, locale: PeakLocale): string {
-  return `${formatPeakNumber(m, locale)} m`;
+  return sharedFormatAltitude(m, { locale, grouping: "always" });
 }
 
 // ─── Card labels + demo disclaimer ────────────────────────────────────────────

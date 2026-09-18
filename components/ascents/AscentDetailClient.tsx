@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -546,7 +547,7 @@ export function AscentDetailClient(props: AscentDetailProps) {
             borderRadius: 20, padding: "5px 10px",
           }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "white", letterSpacing: "0.01em" }}>
-              {peakAltitudeM} m
+              {formatAltitude(peakAltitudeM)}
             </span>
           </div>
         </div>

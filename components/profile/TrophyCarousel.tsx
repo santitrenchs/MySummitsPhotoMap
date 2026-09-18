@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import { useRef, useState, useEffect } from "react";
 import { RARITIES, RARITY_COLORS, RARITY_LABELS } from "@/lib/rarity";
@@ -41,7 +42,7 @@ function buildTrophies(peaks: PeakForFilter[], t: ReturnType<typeof useT>): Trop
     peak: highest,
     accent: RARITY_COLORS[highest.rarityId] ?? "#0E7490",
     highlightLabel: t.profile_trophy_label_altitude,
-    highlightValue: `${highest.altitudeM} m`,
+    highlightValue: formatAltitude(highest.altitudeM),
   });
 
   // Most recent
@@ -231,7 +232,7 @@ function TrophyHeroCard({ trophy, index, total }: { trophy: Trophy; index: numbe
           fontSize: 11, fontWeight: 700,
           color: rarityColor,
         }}>
-          {trophy.peak.altitudeM} m · {rarityLabel}
+          {formatAltitude(trophy.peak.altitudeM)} · {rarityLabel}
         </div>
 
         <div style={{ flex: 1 }} />

@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -508,7 +509,7 @@ function ChallengeEditor({
                   >
                     <span style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</span>
                     <span style={{ fontFamily: "monospace", fontSize: 12, color: "var(--text-muted)" }}>
-                      {p.altitudeM} m
+                      {formatAltitude(p.altitudeM)}
                     </span>
                     <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: "auto" }}>
                       {p.mountainRange ?? p.comarca ?? p.country ?? ""}
@@ -535,7 +536,7 @@ function ChallengeEditor({
                 >
                   <span style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</span>
                   <span style={{ fontFamily: "monospace", fontSize: 12, color: "var(--text-muted)" }}>
-                    {p.altitudeM} m
+                    {formatAltitude(p.altitudeM)}
                   </span>
                   <button
                     onClick={() => removePeak(p.id)}

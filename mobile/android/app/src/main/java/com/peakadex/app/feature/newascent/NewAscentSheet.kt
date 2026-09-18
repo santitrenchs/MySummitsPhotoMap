@@ -114,6 +114,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import com.peakadex.app.core.util.formatAltitude
 
 // NOTES_MAX_CHARS lives in NewAscentViewModel.kt (shared by create + edit).
 
@@ -891,7 +892,7 @@ private fun PeakResultRow(peak: Peak, onClick: () -> Unit) {
             Text(peak.displayName, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = PeakNavyDark)
             peak.mountainRange?.let { Text(it, fontSize = 12.sp, color = PeakSubtle) }
         }
-        Text("${peak.altitudeM} m", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PeakBlueActive)
+        Text(formatAltitude(peak.altitudeM), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PeakBlueActive)
     }
 }
 

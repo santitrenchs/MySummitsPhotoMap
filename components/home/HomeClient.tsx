@@ -1,4 +1,5 @@
 "use client";
+import { altitudeUnit, altitudeValue, formatAltitude } from "@/lib/units";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -304,9 +305,9 @@ export function HomeClient({ data, locale, t }: {
               <MetricCell value={String(stats.uniquePeaks)} label={t.home_metricPeaks} />
               <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
               <MetricCell
-                value={stats.maxAltitude > 0 ? stats.maxAltitude.toLocaleString(locale) : "—"}
+                value={stats.maxAltitude > 0 ? altitudeValue(stats.maxAltitude, { locale }) : "—"}
                 label={t.home_metricMaxAlt}
-                unit={stats.maxAltitude > 0 ? "m" : undefined}
+                unit={stats.maxAltitude > 0 ? altitudeUnit() : undefined}
               />
             </div>
           </div>
@@ -556,7 +557,7 @@ export function HomeClient({ data, locale, t }: {
                         {a.peakName}
                       </p>
                       <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
-                        {a.altitudeM.toLocaleString(locale)} m
+                        {formatAltitude(a.altitudeM, { locale })}
                       </p>
                     </div>
                   </div>

@@ -1,4 +1,5 @@
 "use client";
+import { altitudeValue, formatAltitude } from "@/lib/units";
 
 import { useRef, useState } from "react";
 import { RARITIES } from "@/lib/rarity";
@@ -8,9 +9,9 @@ import { useT } from "@/components/providers/I18nProvider";
 function altRange(idx: number, locale: string): string {
   const cur = RARITIES[idx];
   const next = RARITIES[idx + 1];
-  if (idx === 0) return `< ${next!.minAlt.toLocaleString(locale)} m`;
-  if (!next) return `≥ ${cur.minAlt.toLocaleString(locale)} m`;
-  return `${cur.minAlt.toLocaleString(locale)} – ${(next.minAlt - 1).toLocaleString(locale)} m`;
+  if (idx === 0) return `< ${formatAltitude(next!.minAlt, { locale })}`;
+  if (!next) return `≥ ${formatAltitude(cur.minAlt, { locale })}`;
+  return `${altitudeValue(cur.minAlt, { locale })} – ${formatAltitude(next.minAlt - 1, { locale })}`;
 }
 
 const CARD_STYLES: Record<string, { bg: string; border: string; text: string }> = {

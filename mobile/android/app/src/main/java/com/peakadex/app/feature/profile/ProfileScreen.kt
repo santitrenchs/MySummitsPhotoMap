@@ -56,6 +56,7 @@ import com.peakadex.app.core.ui.theme.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Locale
+import com.peakadex.app.core.util.formatAltitude
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
@@ -986,7 +987,7 @@ private fun CimasStatsHeader(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text       = "${stats.maxAltitude} m",
+                        text       = formatAltitude(stats.maxAltitude),
                         fontSize   = 20.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color      = PeakNavyDark,
@@ -1144,7 +1145,7 @@ private fun PeakRowCard(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text       = "${peak.altitudeM} m",
+                        text       = formatAltitude(peak.altitudeM),
                         fontSize   = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color      = Color.White,

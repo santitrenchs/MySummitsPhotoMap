@@ -190,6 +190,8 @@ import kotlin.math.sqrt
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
+import com.peakadex.app.core.util.formatDistance
+import com.peakadex.app.core.util.formatAltitude
 
 // ── Map base type ─────────────────────────────────────────────────────────────
 
@@ -1406,7 +1408,7 @@ private fun SearchResultsList(
                     Text(peak.displayName, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                     // Non-Western peaks show their local name here instead of the range,
                     // mirroring the web search list (`peakOriginal ?? mountainRange`).
-                    val sub = listOfNotNull(peak.originalName ?: peak.mountainRange, "${peak.altitudeM} m").joinToString(" · ")
+                    val sub = listOfNotNull(peak.originalName ?: peak.mountainRange, formatAltitude(peak.altitudeM)).joinToString(" · ")
                     if (sub.isNotEmpty()) {
                         Text(sub, fontSize = 12.sp, color = PeakMuted)
                     }
@@ -1583,7 +1585,7 @@ private fun PeakDetailSheet(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text       = "${peak.altitudeM} m",
+                        text       = formatAltitude(peak.altitudeM),
                         fontSize   = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color      = PeakMuted,
@@ -2052,14 +2054,13 @@ private fun PeaksListPanel(
                         Spacer(Modifier.width(12.dp))
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                "${peak.altitudeM} m",
+                                formatAltitude(peak.altitudeM),
                                 fontSize   = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color      = PeakNavyDark,
                             )
                             if (distKm != null) {
-                                val distStr = if (distKm < 1.0) "${(distKm * 1000).toInt()} m"
-                                              else "${"%.1f".format(distKm)} km"
+                                val distStr = formatDistance(distKm)
                                 Text(distStr, fontSize = 11.sp, color = PeakSubtle)
                             }
                         }

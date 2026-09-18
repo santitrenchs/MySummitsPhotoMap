@@ -78,6 +78,7 @@ import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+import com.peakadex.app.core.util.formatAltitude
 
 // ── Level definitions — mirrors lib/level-utils.ts exactly ───────────────────
 //
@@ -1819,7 +1820,7 @@ private fun RecentAscentCard(ascent: RecentAscentSummary) {
                         overflow   = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text  = "${ascent.altitudeM} m",
+                        text  = formatAltitude(ascent.altitudeM),
                         fontSize = 10.sp,
                         color = Color.White.copy(alpha = 0.8f),
                         fontWeight = FontWeight.Medium,

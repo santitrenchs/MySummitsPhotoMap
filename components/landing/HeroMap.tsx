@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import Image from "next/image";
 
@@ -73,8 +74,8 @@ export default function HeroMap() {
       {PEAKS.filter((p) => p.xPct >= 52).map((peak) => {
         const color = peak.captured ? "#22c55e" : rarityColor(peak.altM);
         const altLabel = peak.altM >= 1000
-          ? `${Math.floor(peak.altM / 1000)}.${String(peak.altM % 1000).padStart(3, "0")} m`
-          : `${peak.altM} m`;
+          ? formatAltitude(peak.altM, { locale: "es-ES", grouping: "always" })
+          : formatAltitude(peak.altM);
 
         return (
           <div

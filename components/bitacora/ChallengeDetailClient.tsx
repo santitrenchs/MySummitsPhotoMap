@@ -1,4 +1,5 @@
 "use client";
+import { formatAltitude } from "@/lib/units";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -319,7 +320,7 @@ export function ChallengeDetailClient({ challenge }: { challenge: ChallengeDetai
                 fontFamily: "var(--font-mono-landing, monospace)",
                 fontSize: 12, fontWeight: 700, color: "#0D2538", fontVariantNumeric: "tabular-nums",
               }}>
-                {challenge.maxAltitudeM} m
+                {formatAltitude(challenge.maxAltitudeM)}
               </span>
             </span>
           </div>
@@ -505,7 +506,7 @@ function PeakTile({ peak }: { peak: ChallengePeakRow }) {
           fontSize: 9, color: "rgba(255,255,255,0.78)",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
-          {peak.altitudeM} m
+          {formatAltitude(peak.altitudeM)}
           {peak.lastAscentDate && (
             <span className="reto-tile-date">
               {` · ${new Date(peak.lastAscentDate).toLocaleDateString(t.dateLocale, { day: "numeric", month: "short", year: "2-digit" })}`}

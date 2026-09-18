@@ -6,6 +6,7 @@ import { PeakMiniMap, prefetchNearbyPeaks } from "@/components/cards/PeakMiniMap
 import { CardBack } from "@/components/cards/CardBack";
 import { type RarityId, getRarityId, RARITY_LABELS, RARITY_EP, RARITY_COLORS } from "@/lib/rarity";
 import { peakDisplayName } from "@/lib/peak-name";
+import { formatAltitude } from "@/lib/units";
 import { imgUrl } from "@/lib/storage/image-url";
 
 const APP_URL =
@@ -343,7 +344,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
           {isMythic && <div className="mythic-badge">{t.card_mythic}</div>}
           <div className="peak-info">
             <div className="peak-name">{peakName}</div>
-            <div className="peak-alt">{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+            <div className="peak-alt">{formatAltitude(ascent.peak.altitudeM, { locale })}</div>
             {ascent.route && <div className="peak-route">{ascent.route}</div>}
           </div>
           {/* Capture-reveal: light-gray cover (hides photo + name during build) + scene
@@ -375,7 +376,7 @@ export function AscentCard({ variant, ascent, locale, animationIndex = 0, reveal
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_altitude}</span>
-            <div className="stat-value" style={{ textAlign: "center", marginTop: 2, fontSize: 11, whiteSpace: "nowrap" }}>{ascent.peak.altitudeM.toLocaleString(locale)} m</div>
+            <div className="stat-value" style={{ textAlign: "center", marginTop: 2, fontSize: 11, whiteSpace: "nowrap" }}>{formatAltitude(ascent.peak.altitudeM, { locale })}</div>
           </div>
           <div className="stat-item" style={{ textAlign: "center" }}>
             <span className="stat-label">{t.card_reward}</span>
