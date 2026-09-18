@@ -39,7 +39,22 @@ export async function generateMetadata({
         ca:  `${BASE}/ca/peaks/${slug}`,
       },
     },
-    openGraph: { type: "website", url, title, description, locale: "de_DE" },
+    openGraph: {
+      type: "article",
+      url,
+      title,
+      description,
+      locale: "de_DE",
+      // The peak photo itself. Portrait (≈430×600), so it is cropped on the
+      // social cards — a proper 1200×630 card is still pending.
+      images: peak.photo ? [{ url: `${BASE}${peak.photo}`, alt: peak.peakName }] : undefined,
+    },
+    twitter: {
+      card: peak.photo ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: peak.photo ? [`${BASE}${peak.photo}`] : undefined,
+    },
   };
 }
 

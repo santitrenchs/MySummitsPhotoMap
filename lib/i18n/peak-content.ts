@@ -289,3 +289,147 @@ export function buildPeakCardStrings(peak: PeakCardData, locale: PeakLocale) {
     maxAltLabel: formatAltitude(EVEREST_M, locale),
   };
 }
+
+// ─── Challenge block ("Retos de Peakadex") ────────────────────────────────────
+// Templates carry {peak}, {challenge}, {count} and {n}; `fill()` below replaces
+// them. The heading is split on {challenge} / {highlight} so the caller can wrap
+// that part in the amber accent.
+
+export type PeakChallengeLabels = {
+  eyebrow: string;
+  /** "{peak} cuenta para {challenge}" */
+  headingOne: string;
+  /** "{peak} cuenta para {highlight}" */
+  headingMany: string;
+  /** What replaces {highlight}: "{n} retos" */
+  manyHighlight: string;
+  /** Appended after the challenge's own description. */
+  introSuffixOne: string;
+  introMany: string;
+  /** "{peak} es una de esas {count}" */
+  inListOne: string;
+  ctaOne: string;
+  ctaMany: string;
+  step1Title: string;
+  step1Body: string;
+  step2Title: string;
+  step2Body: string;
+  step3Title: string;
+  step3BodyOne: string;
+  step3BodyMany: string;
+};
+
+const CHALLENGE_LABELS: Record<PeakLocale, PeakChallengeLabels> = {
+  es: {
+    eyebrow: "Retos de Peakadex",
+    headingOne: "{peak} cuenta para {challenge}",
+    headingMany: "{peak} cuenta para {highlight}",
+    manyHighlight: "{n} retos",
+    introSuffixOne: "Te unes desde la app y cada cima que registras avanza tu progreso.",
+    introMany: "Un reto es una lista de cimas que se completa una ascensión a la vez. Esta subida avanza los {n} a la vez.",
+    inListOne: "{peak} es una de esas {count} cimas",
+    ctaOne: "Empezar el reto",
+    ctaMany: "Empezar los retos",
+    step1Title: "Únete al reto",
+    step1Body: "Desde la pestaña Retos, en un toque. Puedes estar en varios a la vez.",
+    step2Title: "Sube la cima",
+    step2Body: "Haz la foto arriba y registra la ascensión. Esa es toda la prueba.",
+    step3Title: "Tacha la cima",
+    step3BodyOne: "Se marca sola en tu lista y la barra de progreso avanza.",
+    step3BodyMany: "Se marca en los {n} a la vez y todas las barras avanzan.",
+  },
+  en: {
+    eyebrow: "Peakadex challenges",
+    headingOne: "{peak} counts towards {challenge}",
+    headingMany: "{peak} counts towards {highlight}",
+    manyHighlight: "{n} challenges",
+    introSuffixOne: "Join from the app and every summit you log moves your progress.",
+    introMany: "A challenge is a list of summits you complete one climb at a time. This one climb moves all {n}.",
+    inListOne: "{peak} is one of those {count} summits",
+    ctaOne: "Start the challenge",
+    ctaMany: "Start the challenges",
+    step1Title: "Join the challenge",
+    step1Body: "One tap from the Challenges tab. You can be in several at once.",
+    step2Title: "Climb the summit",
+    step2Body: "Take the photo up there and log the ascent. That is the whole proof.",
+    step3Title: "Tick it off",
+    step3BodyOne: "It marks itself on your list and the progress bar moves.",
+    step3BodyMany: "It ticks off in all {n} at once and every bar moves.",
+  },
+  fr: {
+    eyebrow: "Défis Peakadex",
+    headingOne: "{peak} compte pour {challenge}",
+    headingMany: "{peak} compte pour {highlight}",
+    manyHighlight: "{n} défis",
+    introSuffixOne: "Tu rejoins le défi depuis l'app et chaque sommet enregistré fait avancer ta progression.",
+    introMany: "Un défi est une liste de sommets qui se complète une ascension à la fois. Cette course fait avancer les {n} d'un coup.",
+    inListOne: "{peak} est l'un de ces {count} sommets",
+    ctaOne: "Commencer le défi",
+    ctaMany: "Commencer les défis",
+    step1Title: "Rejoins le défi",
+    step1Body: "Depuis l'onglet Défis, en un geste. Tu peux en suivre plusieurs.",
+    step2Title: "Monte au sommet",
+    step2Body: "Prends la photo là-haut et enregistre l'ascension. C'est toute la preuve.",
+    step3Title: "Coche le sommet",
+    step3BodyOne: "Il se coche tout seul dans ta liste et la barre avance.",
+    step3BodyMany: "Il se coche dans les {n} à la fois et toutes les barres avancent.",
+  },
+  de: {
+    eyebrow: "Peakadex-Challenges",
+    headingOne: "{peak} zählt für die Challenge {challenge}",
+    headingMany: "{peak} zählt für {highlight}",
+    manyHighlight: "{n} Challenges",
+    introSuffixOne: "Du trittst in der App bei, und jeder eingetragene Gipfel bringt deinen Fortschritt voran.",
+    introMany: "Eine Challenge ist eine Gipfelliste, die du Besteigung für Besteigung abarbeitest. Diese eine Tour bringt alle {n} voran.",
+    inListOne: "Steht auf dieser Liste mit {count} Gipfeln",
+    ctaOne: "Challenge starten",
+    ctaMany: "Challenges starten",
+    step1Title: "Tritt der Challenge bei",
+    step1Body: "Ein Tipp im Challenges-Tab. Du kannst in mehreren gleichzeitig sein.",
+    step2Title: "Besteig den Gipfel",
+    step2Body: "Mach oben das Foto und trag die Besteigung ein. Mehr Beweis braucht es nicht.",
+    step3Title: "Hak ihn ab",
+    step3BodyOne: "Er hakt sich in deiner Liste selbst ab und der Fortschrittsbalken wächst.",
+    step3BodyMany: "Er hakt sich in allen {n} zugleich ab und alle Balken wachsen.",
+  },
+  ca: {
+    eyebrow: "Reptes de Peakadex",
+    headingOne: "{peak} compta per a {challenge}",
+    headingMany: "{peak} compta per a {highlight}",
+    manyHighlight: "{n} reptes",
+    introSuffixOne: "T'hi apuntes des de l'app i cada cim que registres fa avançar el teu progrés.",
+    introMany: "Un repte és una llista de cims que es completa una ascensió a la vegada. Aquesta pujada fa avançar els {n} alhora.",
+    inListOne: "{peak} és un d'aquests {count} cims",
+    ctaOne: "Comença el repte",
+    ctaMany: "Comença els reptes",
+    step1Title: "Apunta't al repte",
+    step1Body: "Des de la pestanya Reptes, en un toc. Pots ser-hi a diversos alhora.",
+    step2Title: "Puja al cim",
+    step2Body: "Fes la foto a dalt i registra l'ascensió. Aquesta és tota la prova.",
+    step3Title: "Ratlla el cim",
+    step3BodyOne: "Es marca sol a la teva llista i la barra de progrés avança.",
+    step3BodyMany: "Es marca als {n} alhora i totes les barres avancen.",
+  },
+};
+
+export function getPeakChallengeLabels(locale: PeakLocale): PeakChallengeLabels {
+  return CHALLENGE_LABELS[locale];
+}
+
+/** Replaces {peak}, {challenge}, {highlight}, {count} and {n} in a template. */
+export function fill(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (m, key) =>
+    key in vars ? String(vars[key]) : m,
+  );
+}
+
+/**
+ * The catalogue files Alpine districts under their administrative label
+ * ("Landkreis Garmisch-Partenkirchen", "Verwaltungskreis Interlaken-Oberhasli").
+ * That prefix is bureaucratic noise on a mountain page — drop it.
+ */
+export function formatComarca(comarca: string | null): string | null {
+  if (!comarca) return null;
+  const clean = comarca.replace(/^(Landkreis|Verwaltungskreis|Bezirk|Département)\s+/i, "").trim();
+  return clean || null;
+}

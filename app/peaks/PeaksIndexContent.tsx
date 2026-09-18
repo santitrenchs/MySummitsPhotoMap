@@ -112,6 +112,30 @@ export function PeaksIndexContent({ t }: { t: PeakIndexT }) {
       <style>{`
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; }
+        /* Nav: the logo is a fixed-width nowrap block, so at 375px the 32px side
+           padding pushed the actions on top of it. Tighten both under 420px. */
+        .pk-nav { background: #FFFFFF; border-bottom: 1px solid rgba(13,37,56,0.07); position: sticky; top: 0; z-index: 10; }
+        .pk-nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .pk-nav-actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+        .pk-nav-login { font-size: 14px; font-weight: 500; color: #0D2538; text-decoration: none; white-space: nowrap; }
+        .pk-nav-cta { background: #2F7A5F; color: #FFFFFF; font-size: 13px; font-weight: 700; padding: 8px 20px; border-radius: 99px; text-decoration: none; white-space: nowrap; }
+        @media (max-width: 420px) {
+          .pk-nav-inner { padding: 0 16px; gap: 8px; }
+          .pk-nav-actions { gap: 10px; }
+          .pk-nav-login { font-size: 13px; }
+          .pk-nav-cta { font-size: 12px; padding: 7px 14px; }
+        }
+        @media (max-width: 400px) {
+          /* The logo block has a fixed intrinsic width and cannot wrap, so it is
+             scaled down instead: the box shrinks with it and stops colliding. */
+          .pk-nav-logo { display: block; width: 126px; transform: scale(0.8); transform-origin: left center; }
+          .pk-nav-cta { font-size: 12px; padding: 7px 13px; }
+        }
+        @media (max-width: 360px) {
+          /* Below this the two actions no longer fit beside the logo. Sign-up is
+             the page's job; signing in stays reachable from that screen. */
+          .pk-nav-login { display: none; }
+        }
         .pk-mini-scroll {
           display: flex;
           gap: 16px;
@@ -142,14 +166,12 @@ export function PeaksIndexContent({ t }: { t: PeakIndexT }) {
       <div style={{ fontFamily: "var(--font-inter, sans-serif)", background: "#F4F7FA", minHeight: "100vh", color: "#0D2538" }}>
 
         {/* ── Nav ─────────────────────────────────────────────────────────── */}
-        <header style={{ background: "#fff", borderBottom: "1px solid rgba(13,37,56,0.07)", position: "sticky", top: 0, zIndex: 10 }}>
-          <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <a href={homeHref} style={{ textDecoration: "none" }}><PeakadexLogo height={32} /></a>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <a href="/login" style={{ fontSize: 14, fontWeight: 500, color: "#0D2538", textDecoration: "none" }}>{t.nav_login}</a>
-              <a href="/register" style={{ background: "#2F7A5F", color: "#fff", fontSize: 13, fontWeight: 700, padding: "8px 20px", borderRadius: 99, textDecoration: "none" }}>
-                {t.nav_register}
-              </a>
+        <header className="pk-nav">
+          <div className="pk-nav-inner" style={{ maxWidth: 1100 }}>
+            <a href={homeHref} className="pk-nav-logo" style={{ textDecoration: "none" }}><PeakadexLogo height={32} /></a>
+            <div className="pk-nav-actions">
+              <a href="/login" className="pk-nav-login">{t.nav_login}</a>
+              <a href="/register" className="pk-nav-cta">{t.nav_register}</a>
             </div>
           </div>
         </header>

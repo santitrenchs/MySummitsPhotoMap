@@ -1,7 +1,9 @@
 import { LANDING_PEAKS, rarityForAlt, slugifyPeak, type PeakCardData } from "@/lib/data/landing-peaks";
 import { PeakadexLogo } from "@/components/brand/Logo";
 import type { PeakPageT } from "@/lib/i18n/peaks";
-import { buildPeakCardStrings, getPeakCardLabels, getPeakMessage } from "@/lib/i18n/peak-content";
+import { buildPeakCardStrings, formatComarca, getPeakCardLabels, getPeakMessage, translatePlace } from "@/lib/i18n/peak-content";
+import { getPeakChallenges } from "@/lib/data/peak-challenges";
+import { PeakChallenges } from "./PeakChallenges";
 import { PeakCard } from "./PeakCard";
 import { PeakFooter } from "./PeakFooter";
 
@@ -73,6 +75,12 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
   const relatedPeaks = LANDING_PEAKS.filter((p) => p.peakName !== peak.peakName);
   const cardStrings = buildPeakCardStrings(peak, t.locale);
   const disclaimer = getPeakCardLabels(t.locale).disclaimer;
+  const challenges = getPeakChallenges(slug);
+  const comarcaLabel = formatComarca(peak.comarca);
+  // Where the mountain actually is — the page never said it in prose before.
+  const placeLine = [comarcaLabel, translatePlace(peak.mountainRange, t.locale), translatePlace(peak.country, t.locale)]
+    .filter(Boolean)
+    .join(" · ");
   const homeHref = t.urlPrefix ? t.urlPrefix : "/";
 
   const jsonLd = {
@@ -81,7 +89,17 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
       {
         "@type": "Mountain",
         name: peak.peakName,
+        ...(peak.catalogName !== peak.peakName ? { alternateName: peak.catalogName } : {}),
         geo: { "@type": "GeoCoordinates", latitude: peak.lat, longitude: peak.lng },
+        elevation: { "@type": "QuantitativeValue", value: peak.altitudeM, unitCode: "MTR" },
+        containedInPlace: {
+          "@type": "Place",
+          name: translatePlace(peak.mountainRange, t.locale),
+          ...(comarcaLabel ? { containedInPlace: { "@type": "AdministrativeArea", name: comarcaLabel } } : {}),
+          address: { "@type": "PostalAddress", addressCountry: translatePlace(peak.country, t.locale) },
+        },
+        ...(peak.photo ? { image: `${BASE}${peak.photo}` } : {}),
+        sameAs: [`https://www.openstreetmap.org/node/${peak.osmId.replace(/^node\//, "")}`],
         description: t.schema_desc(peak, rarity.name),
         url: `${BASE}${t.urlPrefix}/peaks/${slug}`,
       },
@@ -106,6 +124,30 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
       <style>{`
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; }
+        /* Nav: the logo is a fixed-width nowrap block, so at 375px the 32px side
+           padding pushed the actions on top of it. Tighten both under 420px. */
+        .pk-nav { background: #FFFFFF; border-bottom: 1px solid rgba(13,37,56,0.07); position: sticky; top: 0; z-index: 10; }
+        .pk-nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .pk-nav-actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+        .pk-nav-login { font-size: 14px; font-weight: 500; color: #0D2538; text-decoration: none; white-space: nowrap; }
+        .pk-nav-cta { background: #2F7A5F; color: #FFFFFF; font-size: 13px; font-weight: 700; padding: 8px 20px; border-radius: 99px; text-decoration: none; white-space: nowrap; }
+        @media (max-width: 420px) {
+          .pk-nav-inner { padding: 0 16px; gap: 8px; }
+          .pk-nav-actions { gap: 10px; }
+          .pk-nav-login { font-size: 13px; }
+          .pk-nav-cta { font-size: 12px; padding: 7px 14px; }
+        }
+        @media (max-width: 400px) {
+          /* The logo block has a fixed intrinsic width and cannot wrap, so it is
+             scaled down instead: the box shrinks with it and stops colliding. */
+          .pk-nav-logo { display: block; width: 126px; transform: scale(0.8); transform-origin: left center; }
+          .pk-nav-cta { font-size: 12px; padding: 7px 13px; }
+        }
+        @media (max-width: 360px) {
+          /* Below this the two actions no longer fit beside the logo. Sign-up is
+             the page's job; signing in stays reachable from that screen. */
+          .pk-nav-login { display: none; }
+        }
         .pk-hero-grid {
           display: grid;
           grid-template-columns: 240px 1fr;
@@ -129,7 +171,15 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
         .pk-mini-scroll > a { scroll-snap-align: start; flex-shrink: 0; }
         .pk-cta { transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
         .pk-cta:hover { background: #2F7A5F !important; transform: translateY(-1px); box-shadow: 0 8px 40px rgba(220, 80, 60, 0.38); }
+        .pk-challenge-hero { display: flex; align-items: center; gap: 40px; }
+        .pk-challenge-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+        .pk-challenge-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+        @media (max-width: 760px) {
+          .pk-challenge-grid { grid-template-columns: 1fr; gap: 24px; }
+          .pk-challenge-steps { grid-template-columns: 1fr; gap: 20px; }
+        }
         @media (max-width: 640px) {
+          .pk-challenge-hero { flex-direction: column; align-items: flex-start; gap: 24px; }
           .pk-hero-grid {
             grid-template-columns: 1fr;
             gap: 32px;
@@ -142,15 +192,12 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
       <div style={{ fontFamily: "var(--font-inter, sans-serif)", background: "#F4F7FA", minHeight: "100vh", color: "#0D2538" }}>
 
         {/* Nav */}
-        <header style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(13,37,56,0.07)", position: "sticky", top: 0, zIndex: 10 }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <a href={homeHref} style={{ textDecoration: "none" }}><PeakadexLogo height={32} /></a>
-            <div />
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <a href="/login" style={{ fontSize: 14, fontWeight: 500, color: "#0D2538", textDecoration: "none" }}>{t.nav_login}</a>
-              <a href="/register" style={{ background: "#2F7A5F", color: "#FFFFFF", fontSize: 13, fontWeight: 700, padding: "8px 20px", borderRadius: 99, textDecoration: "none", letterSpacing: "-0.01em" }}>
-                {t.nav_register}
-              </a>
+        <header className="pk-nav">
+          <div className="pk-nav-inner">
+            <a href={homeHref} className="pk-nav-logo" style={{ textDecoration: "none" }}><PeakadexLogo height={32} /></a>
+            <div className="pk-nav-actions">
+              <a href="/login" className="pk-nav-login">{t.nav_login}</a>
+              <a href="/register" className="pk-nav-cta">{t.nav_register}</a>
             </div>
           </div>
         </header>
@@ -174,6 +221,8 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
               <h1 style={{ margin: "0 0 16px", fontSize: 36, fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#0D2538" }}>
                 {t.h1_prefix}<span style={{ color: "#F5A623" }}>{peak.peakName}</span>{t.h1_suffix}
               </h1>
+
+              <p style={{ margin: "0 0 20px", fontSize: 14, color: "#4B5563" }}>{placeLine}</p>
 
               <div style={{ display: "inline-grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 24, minWidth: 280 }}>
                 <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
@@ -207,6 +256,8 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
             </div>
           </div>
         </section>
+
+        <PeakChallenges peakName={peak.peakName} challenges={challenges} locale={t.locale} />
 
         {/* CTA section */}
         <section style={{ background: "#FFFFFF", borderTop: "1px solid rgba(13,37,56,0.07)", borderBottom: "1px solid rgba(13,37,56,0.07)", padding: "64px 24px", textAlign: "center" }}>
