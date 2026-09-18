@@ -80,7 +80,7 @@ const INDEX_TRANSLATIONS: Record<PeakLocale, PeakIndexT> = {
     nav_login: "Sign in",
     nav_register: "Sign up",
     meta_title: "Summit Cards — Collect Mythic Peaks | Peakadex",
-    meta_desc: "Turn every summit photo into a collectible summit card. Explore the mountain rarity system, earn climbing achievements and build your peak collection.",
+    meta_desc: "Turn every summit photo into a collectible summit card. Peak bagging app with a mountain rarity system, challenge lists and climbing achievements.",
     schema_name: "Peakadex Summit Cards — Collect Mythic Peaks",
     schema_desc: "In Peakadex every ascent becomes a collectible card with rarity based on altitude. MYTHIC peaks award special crains.",
     hero_title: "Every summit you climb\nbecomes part of your legend.",
@@ -138,7 +138,7 @@ const INDEX_TRANSLATIONS: Record<PeakLocale, PeakIndexT> = {
     nav_login: "Anmelden",
     nav_register: "Registrieren",
     meta_title: "Gipfelkarten — Sammle mythische Gipfel | Peakadex",
-    meta_desc: "Verwandle Gipfelfotos in sammelbare Gipfelkarten. Bergseltenheitssystem, Kletterleistungen und Gipfelsammlung für Bergsteiger.",
+    meta_desc: "Verwandle Gipfelfotos in sammelbare Gipfelkarten. App fürs Gipfelsammeln mit Bergseltenheitssystem, Gipfellisten und Kletterleistungen.",
     schema_name: "Peakadex Gipfelkarten — Sammle mythische Gipfel",
     schema_desc: "In Peakadex wird jede Besteigung zu einer Sammelkarte mit Seltenheit basierend auf der Höhe. MYTHIC-Gipfel verleihen besondere Crains.",
     hero_title: "Jeder Gipfel, den du bestiegst,\nwird Teil deiner Legende.",
@@ -269,7 +269,7 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     meta_title: (p) =>
       `${p.peakName} (${formatAltitude(p.altitudeM, "en")}) — Ascent guide in ${translatePlace(p.mountainRange, "en")} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} (${formatAltitude(p.altitudeM, "en")}) in ${translatePlace(p.mountainRange, "en")}. Earn your ${rarity} collectible summit card and log this climbing achievement on Peakadex — the peak collection app.`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "en")}) in ${translatePlace(p.mountainRange, "en")}. Earn your ${rarity} collectible summit card and log this climbing achievement on Peakadex — the peak bagging app.`,
     schema_atlas: "Summit atlas",
     schema_desc: (p, rarity) =>
       `${p.peakName} is a summit in ${translatePlace(p.mountainRange, "en")} (${translatePlace(p.country, "en")}) at ${formatAltitude(p.altitudeM, "en")}. Rarity: ${rarity} on Peakadex.`,
@@ -319,7 +319,7 @@ const TRANSLATIONS: Record<PeakLocale, PeakPageT> = {
     meta_title: (p) =>
       `${p.peakName} (${formatAltitude(p.altitudeM, "de")}) — Aufstieg und Route in ${translatePlace(p.mountainRange, "de")} | Peakadex`,
     meta_desc: (p, rarity) =>
-      `${p.peakName} (${formatAltitude(p.altitudeM, "de")}) in ${translatePlace(p.mountainRange, "de")}. Erhalte deine ${rarity}-Sammelkarte und trage diese Kletterleistung in Peakadex ein — die Gipfelsammlungs-App.`,
+      `${p.peakName} (${formatAltitude(p.altitudeM, "de")}) in ${translatePlace(p.mountainRange, "de")}. Erhalte deine ${rarity}-Sammelkarte und trage diese Kletterleistung in Peakadex ein — die App fürs Gipfelsammeln.`,
     schema_atlas: "Gipfelatlas",
     schema_desc: (p, rarity) =>
       `${p.peakName} ist ein Gipfel in ${translatePlace(p.mountainRange, "de")} (${translatePlace(p.country, "de")}) auf ${formatAltitude(p.altitudeM, "de")}. Seltenheit: ${rarity} auf Peakadex.`,
