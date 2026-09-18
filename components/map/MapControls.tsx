@@ -2,9 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import type maplibregl from "maplibre-gl";
 
 interface MapControlsProps {
   isMobile: boolean;
+  /** Null until the map finishes initialising; the compass subscribes to it. */
+  map: maplibregl.Map | null;
   hillshade: boolean;
   onHillshadeToggle: () => void;
   terrain3d: boolean;
@@ -99,8 +102,57 @@ function LayerCard({
   );
 }
 
+/**
+ * Compass / reset-north button.
+ *
+ * It subscribes to the map's own "rotate" event instead of taking the bearing as a
+ * prop: the needle has to follow the gesture frame by frame, and lifting that state
+ * into MapView would re-render the whole Atlas on every degree.
+ *
+ * It only exists while the map is actually rotated. A compass that is always there
+ * and usually does nothing is noise in a column that already has four buttons.
+ */
+function CompassButton({ map }: { map: maplibregl.Map }) {
+  const [bearing, setBearing] = useState(() => map.getBearing());
+
+  useEffect(() => {
+    const sync = () => setBearing(map.getBearing());
+    sync();
+    map.on("rotate", sync);
+    return () => { map.off("rotate", sync); };
+  }, [map]);
+
+  // Normalise to (-180, 180] so a bearing of 359.6° counts as "straight", not as
+  // 359.6° off north.
+  const norm = ((bearing % 360) + 360) % 360;
+  const off = norm > 180 ? norm - 360 : norm;
+  if (Math.abs(off) < 0.5) return null;
+
+  return (
+    <button
+      style={BTN()}
+      onClick={() => map.easeTo({ bearing: 0, duration: 420 })}
+      aria-label="Orientar al norte"
+      title="Orientar al norte"
+    >
+      {/* The needle points north, so it counter-rotates the map's bearing. */}
+      <svg
+        width="20" height="20" viewBox="0 0 24 24" fill="none"
+        style={{ transform: `rotate(${-bearing}deg)` }}
+        aria-hidden="true"
+      >
+        <path d="M12 3 L15.4 12 L12 10.4 Z" fill="#EF4444" />
+        <path d="M12 21 L8.6 12 L12 13.6 Z" fill="#94A3B8" />
+        <path d="M12 3 L8.6 12 L12 10.4 Z" fill="#DC2626" />
+        <path d="M12 21 L15.4 12 L12 13.6 Z" fill="#CBD5E1" />
+      </svg>
+    </button>
+  );
+}
+
 export default function MapControls({
   isMobile,
+  map,
   hillshade, onHillshadeToggle,
   terrain3d, onTerrain3dToggle,
   trails, onTrailsToggle,
@@ -237,6 +289,9 @@ export default function MapControls({
             <polyline points="2 12 12 17 22 12" />
           </svg>
         </button>
+
+        {/* Compass — renders itself only while the map is rotated */}
+        {map && <CompassButton map={map} />}
 
         {/* 3D */}
         <button

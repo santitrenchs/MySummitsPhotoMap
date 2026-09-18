@@ -351,6 +351,8 @@ export default function MapView({
   // runs against an empty markerEls and nothing ever re-applies it, so on a fresh
   // load (a deep link, or F5 inside a reto) summits outside the reto stayed visible.
   const [markersReady, setMarkersReady] = useState(false);
+  // Handed to MapControls so the compass can subscribe to rotation itself.
+  const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const [hillshade, setHillshade] = useState(false);
   const [terrain3d, setTerrain3d] = useState(false);
   const [trails, setTrails] = useState(false);
@@ -836,6 +838,9 @@ export default function MapView({
       pitch: 0,
     });
     mapRef.current = map;
+    // The compass lives in MapControls and subscribes to the map's own "rotate"
+    // event, so the needle tracks the gesture without re-rendering this component.
+    setMapInstance(map);
 
     // Save map position on every move so we can restore it next session
     // Also update mapBounds state so the sidebar list stays in sync
@@ -2162,6 +2167,7 @@ export default function MapView({
           {/* ── Map controls (layers, 3D, zoom, geolocate) ────────────── */}
           <MapControls
             isMobile={isMobile}
+            map={mapInstance}
             hillshade={hillshade}
             onHillshadeToggle={() => setHillshade((v) => !v)}
             terrain3d={terrain3d}
