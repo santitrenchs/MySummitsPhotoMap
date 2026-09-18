@@ -247,6 +247,9 @@
 
     <!-- ── Atlas — Kartensteuerung ───────────────────────────────────────────── -->
     <string name="atlas_action_layers">Ebenen</string>
+    <string name="atlas_action_north">Nach Norden ausrichten</string>
+    <string name="atlas_action_facing_north">Karte zeigt nach Norden</string>
+    <string name="atlas_compass_north_letter">N</string>
     <string name="atlas_action_my_location">Mein Standort</string>
     <string name="atlas_toggle_list">Liste</string>
     <string name="atlas_toggle_map">Karte</string>

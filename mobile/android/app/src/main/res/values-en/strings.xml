@@ -262,6 +262,9 @@
 
     <!-- ── Atlas — map controls ──────────────────────────────────────────────── -->
     <string name="atlas_action_layers">Layers</string>
+    <string name="atlas_action_north">Face north</string>
+    <string name="atlas_action_facing_north">Map is facing north</string>
+    <string name="atlas_compass_north_letter">N</string>
     <string name="atlas_action_my_location">My location</string>
     <string name="atlas_toggle_list">List</string>
     <string name="atlas_toggle_map">Map</string>

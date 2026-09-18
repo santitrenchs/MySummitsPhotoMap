@@ -247,6 +247,9 @@
 
     <!-- ── Atlas — contrôles de carte ────────────────────────────────────────── -->
     <string name="atlas_action_layers">Calques</string>
+    <string name="atlas_action_north">Orienter au nord</string>
+    <string name="atlas_action_facing_north">La carte est orientée au nord</string>
+    <string name="atlas_compass_north_letter">N</string>
     <string name="atlas_action_my_location">Ma position</string>
     <string name="atlas_toggle_list">Liste</string>
     <string name="atlas_toggle_map">Carte</string>

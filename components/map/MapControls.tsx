@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import type maplibregl from "maplibre-gl";
+import type { Dict } from "@/lib/i18n/types";
+import { i } from "@/lib/i18n";
+import { useT } from "@/components/providers/I18nProvider";
 
 interface MapControlsProps {
   isMobile: boolean;
@@ -119,7 +122,7 @@ function LayerCard({
  * The rose carries an explicit "N" that orbits with the bearing, so it marks where
  * north actually fell instead of relying on the reader knowing that red means north.
  */
-function CompassButton({ map }: { map: maplibregl.Map }) {
+function CompassButton({ map, t }: { map: maplibregl.Map; t: Dict }) {
   const [bearing, setBearing] = useState(() => map.getBearing());
 
   useEffect(() => {
@@ -139,8 +142,8 @@ function CompassButton({ map }: { map: maplibregl.Map }) {
     <button
       style={BTN()}
       onClick={() => { if (!atNorth) map.easeTo({ bearing: 0, duration: 420 }); }}
-      aria-label={atNorth ? "El mapa mira al norte" : "Orientar al norte"}
-      title={atNorth ? "El mapa mira al norte" : "Orientar al norte"}
+      aria-label={atNorth ? t.map_facingNorth : t.map_north}
+      title={atNorth ? t.map_facingNorth : t.map_north}
     >
       {/* Everything counter-rotates the map's bearing, so the needle and the "N"
           keep pointing at true north. */}
@@ -177,6 +180,7 @@ export default function MapControls({
   onGeolocate,
   topBarVisible, onTopBarToggle,
 }: MapControlsProps) {
+  const t = useT();
   const [layersOpen, setLayersOpen] = useState(false);
   const [geoState, setGeoState] = useState<GeoState>("idle");
   const [geoErrorMsg, setGeoErrorMsg] = useState<string | null>(null);
@@ -221,7 +225,7 @@ export default function MapControls({
     if (geoState === "locating") return;
     if (!navigator.geolocation) {
       setGeoState("error");
-      showGeoError("Tu navegador no soporta geolocalización.");
+      showGeoError(t.map_geoUnsupported);
       return;
     }
     setGeoState("locating");
@@ -242,11 +246,11 @@ export default function MapControls({
           : /Safari/.test(ua) ? "Safari"
           : null;
         const msg = browserName
-          ? `Permite el acceso a tu ubicación en Ajustes > ${browserName} > Ubicación.`
-          : "Permite el acceso a tu ubicación en los ajustes del navegador.";
+          ? i(t.map_geoDeniedIn, { browser: browserName })
+          : t.map_geoDenied;
         showGeoError(msg);
       } else {
-        showGeoError("No se pudo obtener tu ubicación.");
+        showGeoError(t.map_geoFailed);
       }
     };
 
@@ -280,8 +284,8 @@ export default function MapControls({
           <button
             style={BTN(!topBarVisible)}
             onClick={onTopBarToggle}
-            aria-label={topBarVisible ? "Ocultar buscador" : "Mostrar buscador"}
-            title={topBarVisible ? "Ocultar buscador" : "Mostrar buscador"}
+            aria-label={topBarVisible ? t.map_hideSearch : t.map_showSearch}
+            title={topBarVisible ? t.map_hideSearch : t.map_showSearch}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
@@ -293,15 +297,15 @@ export default function MapControls({
 
         {/* Compass — first in the column: orientation is context you read before
             you reach for a control, not an action. */}
-        {map && <CompassButton map={map} />}
+        {map && <CompassButton map={map} t={t} />}
 
         {/* Layers */}
         <button
           ref={layersBtnRef}
           style={BTN(layersOpen || hasActiveLayers)}
           onClick={() => layersOpen ? setLayersOpen(false) : openLayers()}
-          aria-label="Capas"
-          title="Capas"
+          aria-label={t.map_layers}
+          title={t.map_layers}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -323,10 +327,10 @@ export default function MapControls({
         {/* Zoom — desktop only */}
         {!isMobile && (
           <>
-            <button style={BTN()} onClick={onZoomIn} aria-label="Acercar" title="Acercar">
+            <button style={BTN()} onClick={onZoomIn} aria-label={t.map_zoomIn} title={t.map_zoomIn}>
               <span style={{ fontSize: 22, fontWeight: 300, lineHeight: 1 }}>+</span>
             </button>
-            <button style={BTN()} onClick={onZoomOut} aria-label="Alejar" title="Alejar">
+            <button style={BTN()} onClick={onZoomOut} aria-label={t.map_zoomOut} title={t.map_zoomOut}>
               <span style={{ fontSize: 22, fontWeight: 300, lineHeight: 1 }}>−</span>
             </button>
           </>
@@ -337,8 +341,8 @@ export default function MapControls({
           ref={geoBtnRef}
           style={{ ...BTN(), color: geoColor }}
           onClick={handleGeolocate}
-          aria-label="Mi ubicación"
-          title="Mi ubicación"
+          aria-label={t.map_myLocation}
+          title={t.map_myLocation}
         >
           {geoState === "locating" ? (
             <span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid #bfdbfe", borderTopColor: "#0369a1", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
@@ -391,10 +395,10 @@ export default function MapControls({
 
           {/* Tipo de mapa */}
           <div>
-            <p style={sectionLabel}>Tipo de mapa</p>
+            <p style={sectionLabel}>{t.map_mapType}</p>
             <div style={{ display: "flex", gap: 8 }}>
               <LayerCard
-                label="Normal"
+                label={t.map_layerNormal}
                 active={!hillshade}
                 onClick={() => { if (hillshade) onHillshadeToggle(); }}
                 icon={
@@ -409,7 +413,7 @@ export default function MapControls({
                 }
               />
               <LayerCard
-                label="Relieve"
+                label={t.map_layerRelief}
                 active={hillshade}
                 onClick={() => { if (!hillshade) onHillshadeToggle(); }}
                 icon={
@@ -425,10 +429,10 @@ export default function MapControls({
 
           {/* Capas */}
           <div>
-            <p style={sectionLabel}>Capas</p>
+            <p style={sectionLabel}>{t.map_layers}</p>
             <div style={{ display: "flex", gap: 8 }}>
               <LayerCard
-                label="Senderos"
+                label={t.map_layerTrails}
                 active={trails}
                 onClick={onTrailsToggle}
                 icon={
@@ -440,7 +444,7 @@ export default function MapControls({
                 }
               />
               <LayerCard
-                label="Refugios"
+                label={t.map_layerHuts}
                 active={huts}
                 onClick={onHutsToggle}
                 icon={

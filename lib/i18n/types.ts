@@ -23,6 +23,14 @@ export type Dict = {
   map_logAscent: string; map_notYetClimbed: string;
   map_climbedBadge: string; map_ascentsBadge: string; map_last: string;
   map_zoomIn: string; map_zoomOut: string; map_unclimbedPeaks: string;
+  // Map controls column + layers panel
+  map_north: string; map_facingNorth: string;
+  map_showSearch: string; map_hideSearch: string;
+  map_layers: string; map_myLocation: string;
+  map_mapType: string; map_layerNormal: string; map_layerRelief: string;
+  map_layerTrails: string; map_layerHuts: string;
+  map_geoUnsupported: string; map_geoDeniedIn: string;
+  map_geoDenied: string; map_geoFailed: string;
 
   // Peak picker
   peak_notFound: string; peak_moreResults: string;

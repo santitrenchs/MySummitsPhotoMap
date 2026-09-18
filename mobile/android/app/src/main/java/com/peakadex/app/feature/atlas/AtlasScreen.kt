@@ -115,6 +115,11 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.peakadex.app.core.util.CartoTiles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -687,6 +692,7 @@ fun AtlasScreen(
         // ── Map control buttons (bottom-right) ────────────────────────────────
         if (!uiState.showList) {
             MapControlsColumn(
+                map            = mapRef.value,
                 showTopBar     = showTopBar,
                 onToggleTopBar = { showTopBar = !showTopBar },
                 hasActiveLayers= mapType != MapType.NORMAL || trails || huts,
@@ -1810,6 +1816,7 @@ private fun haversineKm(lat1: Double, lng1: Double, lat2: Double, lng2: Double):
 
 @Composable
 private fun MapControlsColumn(
+    map: MapLibreMap?,
     showTopBar: Boolean,
     onToggleTopBar: () -> Unit,
     hasActiveLayers: Boolean,
@@ -1828,6 +1835,9 @@ private fun MapControlsColumn(
                 tint = if (!showTopBar) androidx.compose.ui.graphics.Color.White else PeakSlate,
                 modifier = Modifier.size(18.dp))
         }
+        // Compass — above Layers: orientation is context you read before you reach
+        // for a control, not an action.
+        if (map != null) CompassButton(map)
         // Layers
         MapControlBtn(active = layersOpen || hasActiveLayers, onClick = onToggleLayers) {
             Icon(LayersIcon, contentDescription = stringResource(R.string.atlas_action_layers),
@@ -1854,6 +1864,107 @@ private fun MapControlsColumn(
                     modifier = Modifier.size(18.dp))
             }
         }
+    }
+}
+
+/**
+ * Compass / reset-north button, matching the web Atlas.
+ *
+ * It registers its own camera listeners instead of reading a bearing hoisted into
+ * AtlasScreen: the needle has to follow the gesture frame by frame, and holding that
+ * state up there would recompose the whole screen on every pan.
+ *
+ * Always visible. Google and Apple hide theirs while you face north because on a
+ * navigation map the compass is an undo button; this is a topographic map, where the
+ * north arrow is the scale bar's twin — furniture, not a control.
+ */
+@Composable
+private fun CompassButton(map: MapLibreMap) {
+    var bearing by remember { mutableFloatStateOf(map.cameraPosition.bearing.toFloat()) }
+
+    DisposableEffect(map) {
+        val sync = { bearing = map.cameraPosition.bearing.toFloat() }
+        val onMove = MapLibreMap.OnCameraMoveListener { sync() }
+        val onIdle = MapLibreMap.OnCameraIdleListener { sync() }
+        sync()
+        map.addOnCameraMoveListener(onMove)
+        map.addOnCameraIdleListener(onIdle)
+        onDispose {
+            map.removeOnCameraMoveListener(onMove)
+            map.removeOnCameraIdleListener(onIdle)
+        }
+    }
+
+    // Normalise to (-180, 180] so a bearing of 359.6° reads as "straight", not as
+    // 359.6° off north.
+    val norm = ((bearing % 360f) + 360f) % 360f
+    val off = if (norm > 180f) norm - 360f else norm
+    val atNorth = kotlin.math.abs(off) < 0.5f
+
+    val label = stringResource(
+        if (atNorth) R.string.atlas_action_facing_north else R.string.atlas_action_north,
+    )
+
+    MapControlBtn(
+        active  = false,
+        onClick = {
+            if (!atNorth) {
+                map.animateCamera(CameraUpdateFactory.bearingTo(0.0), 420)
+            }
+        },
+    ) {
+        CompassRose(bearing = bearing, label = label)
+    }
+}
+
+/**
+ * Ring + orbiting "N" + two-tone needle, drawn on a 24-unit grid so the paths match
+ * the web SVG one to one. The whole rose counter-rotates the bearing, so the needle
+ * and the letter keep pointing at true north.
+ */
+@Composable
+private fun CompassRose(bearing: Float, label: String) {
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .rotate(-bearing)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+            val k = size.minDimension / 24f
+            fun p(x: Float, y: Float) = Offset(x * k, y * k)
+
+            drawCircle(
+                color  = androidx.compose.ui.graphics.Color(0xFFE6EBF0),
+                radius = 11.2f * k,
+                center = Offset(size.width / 2f, size.height / 2f),
+                style  = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f * k),
+            )
+
+            fun dart(ax: Float, ay: Float, sx: Float, sy: Float, ix: Float, iy: Float, c: Long) {
+                val path = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(p(ax, ay).x, p(ax, ay).y)
+                    lineTo(p(sx, sy).x, p(sx, sy).y)
+                    lineTo(p(ix, iy).x, p(ix, iy).y)
+                    close()
+                }
+                drawPath(path, androidx.compose.ui.graphics.Color(c))
+            }
+
+            dart(12f, 7f, 14.4f, 12f, 12f, 10.6f, 0xFFEF4444)   // north, lit facet
+            dart(12f, 7f, 9.6f, 12f, 12f, 10.6f, 0xFFDC2626)    // north, shaded facet
+            dart(12f, 17f, 9.6f, 12f, 12f, 13.4f, 0xFF94A3B8)   // south, shaded facet
+            dart(12f, 17f, 14.4f, 12f, 12f, 13.4f, 0xFFCBD5E1)  // south, lit facet
+        }
+        Text(
+            text       = stringResource(R.string.atlas_compass_north_letter),
+            fontSize   = 8.sp,
+            lineHeight = 8.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color      = androidx.compose.ui.graphics.Color(0xFF334155),
+            modifier   = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 

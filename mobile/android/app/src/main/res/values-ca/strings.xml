@@ -247,6 +247,9 @@
 
     <!-- ── Atlas — controls del mapa ─────────────────────────────────────────── -->
     <string name="atlas_action_layers">Capes</string>
+    <string name="atlas_action_north">Orientar al nord</string>
+    <string name="atlas_action_facing_north">El mapa mira al nord</string>
+    <string name="atlas_compass_north_letter">N</string>
     <string name="atlas_action_my_location">La meva ubicació</string>
     <string name="atlas_toggle_list">Llista</string>
     <string name="atlas_toggle_map">Mapa</string>
