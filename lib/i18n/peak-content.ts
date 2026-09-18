@@ -231,6 +231,8 @@ export type PeakCardLabels = {
   flipHint: string;
   /** Says out loud that the cards, comments and figures are made up. */
   disclaimer: string;
+  /** Caption over the terrain profile. It is a 16 km south→north transect. */
+  profileLabel: string;
 };
 
 const CARD_LABELS: Record<PeakLocale, PeakCardLabels> = {
@@ -239,30 +241,35 @@ const CARD_LABELS: Record<PeakLocale, PeakCardLabels> = {
     stats: "ESTADÍSTICAS", ascents: "ASCENSIONES", climbers: "ALPINISTAS",
     flipHint: "Toca para ver el reverso",
     disclaimer: "Ejemplo ilustrativo: las cartas, los comentarios y las cifras de esta página son ficticios.",
+    profileLabel: "Perfil del terreno · 16 km de sur a norte",
   },
   en: {
     rarity: "RARITY", altitude: "ALTITUDE", reward: "REWARD", ep: "EP",
     stats: "STATS", ascents: "ASCENTS", climbers: "CLIMBERS",
     flipHint: "Tap to see the back",
     disclaimer: "Illustrative example: the cards, comments and figures on this page are fictional.",
+    profileLabel: "Terrain profile · 16 km south to north",
   },
   fr: {
     rarity: "RARETÉ", altitude: "ALTITUDE", reward: "RÉCOMPENSE", ep: "EP",
     stats: "STATISTIQUES", ascents: "ASCENSIONS", climbers: "ALPINISTES",
     flipHint: "Toucher pour voir le verso",
     disclaimer: "Exemple illustratif : les cartes, les commentaires et les chiffres de cette page sont fictifs.",
+    profileLabel: "Profil du terrain · 16 km du sud au nord",
   },
   de: {
     rarity: "SELTENHEIT", altitude: "HÖHE", reward: "BELOHNUNG", ep: "EP",
     stats: "STATISTIKEN", ascents: "BESTEIGUNGEN", climbers: "BERGSTEIGER",
     flipHint: "Tippen für die Rückseite",
     disclaimer: "Illustratives Beispiel: Karten, Kommentare und Zahlen auf dieser Seite sind fiktiv.",
+    profileLabel: "Geländeprofil · 16 km von Süd nach Nord",
   },
   ca: {
     rarity: "RARESA", altitude: "ALTITUD", reward: "RECOMPENSA", ep: "EP",
     stats: "ESTADÍSTIQUES", ascents: "ASCENSIONS", climbers: "ALPINISTES",
     flipHint: "Toca per veure el revers",
     disclaimer: "Exemple il·lustratiu: les cartes, els comentaris i les xifres d'aquesta pàgina són ficticis.",
+    profileLabel: "Perfil del terreny · 16 km de sud a nord",
   },
 };
 

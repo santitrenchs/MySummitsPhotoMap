@@ -4,6 +4,8 @@ import type { PeakPageT } from "@/lib/i18n/peaks";
 import { buildPeakCardStrings, formatComarca, getPeakCardLabels, getPeakMessage, translatePlace } from "@/lib/i18n/peak-content";
 import { getPeakChallenges } from "@/lib/data/peak-challenges";
 import { PeakChallenges } from "./PeakChallenges";
+import { getPeakProfile } from "@/lib/data/peak-profiles";
+import { ElevationProfile } from "@/components/cards/ElevationProfile";
 import { PeakCard } from "./PeakCard";
 import { PeakFooter } from "./PeakFooter";
 
@@ -77,6 +79,7 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
   const disclaimer = getPeakCardLabels(t.locale).disclaimer;
   const challenges = getPeakChallenges(slug);
   const comarcaLabel = formatComarca(peak.comarca);
+  const profile = getPeakProfile(slug);
   // Where the mountain actually is — the page never said it in prose before.
   const placeLine = [comarcaLabel, translatePlace(peak.mountainRange, t.locale), translatePlace(peak.country, t.locale)]
     .filter(Boolean)
@@ -238,6 +241,21 @@ export function PeakPageContent({ peak, slug, t }: { peak: PeakCardData; slug: s
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#F97316", whiteSpace: "nowrap" }}>+{rarity.ep}</div>
                 </div>
               </div>
+
+              {profile && (
+                <div style={{ maxWidth: 360, marginBottom: 22 }}>
+                  <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(13,37,56,0.4)" }}>
+                    {cardStrings.profileLabel}
+                  </p>
+                  <ElevationProfile
+                    peakId={peak.peakId}
+                    altitudeM={peak.altitudeM}
+                    rarityColor={rarity.color}
+                    profile={profile}
+                    lineColor={rarity.color}
+                  />
+                </div>
+              )}
 
               <blockquote style={{ margin: "0 0 20px", borderLeft: `3px solid ${rarity.color}`, paddingLeft: 16, fontStyle: "italic", fontSize: 14, color: "#374151", lineHeight: 1.7 }}>
                 &ldquo;{getPeakMessage(peak.peakName, t.locale)}&rdquo;
