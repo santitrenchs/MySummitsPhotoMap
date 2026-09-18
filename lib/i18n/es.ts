@@ -314,7 +314,7 @@ export const es: Dict = {
   home_onboarding_title: "Cada cima guarda una historia.",
   home_onboarding_sub: "Captura tu primera ascensión y empieza a escribir la tuya.",
   home_onboarding_cta: "Capturar primera ascensión",
-  home_chartTitle: "Últimos 6 meses", home_chartMeters: "metros ascendidos",
+  home_chartTitle: "Últimos 6 meses", home_chartAscended: "ascendidos",
   home_rarityChartTitle: "Cimas por rareza",
 
   auth_nameHint: "Así te verán tus amigos en la app",

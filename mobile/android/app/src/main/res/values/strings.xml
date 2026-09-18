@@ -137,7 +137,7 @@
     <string name="home_leaderboard_col_ep">EP</string>
     <string name="home_leaderboard_you"> (tú)</string>
     <string name="home_period_peaks_suffix"> cimas</string>
-    <string name="home_period_meters_suffix"> m ascendidos</string>
+    <string name="home_period_ascended_suffix"> ascendidos</string>
     <string name="home_onboarding_title">🏔️ Registra tu primera ascensión</string>
     <string name="onboarding_card_title">Tu primera carta te espera</string>
     <string name="onboarding_card_desc">Captura una cima y desbloquea tu primera carta coleccionable de montaña.</string>

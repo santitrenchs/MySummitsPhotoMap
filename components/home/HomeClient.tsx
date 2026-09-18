@@ -468,10 +468,10 @@ export function HomeClient({ data, locale, t }: {
                     {periodMeters > 0 && (
                       <span style={{ fontSize: 13, color: "#6b7280" }}>
                         <span style={{ fontWeight: 700, color: "#111827" }}>
-                          {periodMeters.toLocaleString(locale)}
+                          {formatAltitude(periodMeters, u)}
                         </span>
-                        {" m "}
-                        {t.home_chartMeters}
+                        {" "}
+                        {t.home_chartAscended}
                       </span>
                     )}
                   </div>

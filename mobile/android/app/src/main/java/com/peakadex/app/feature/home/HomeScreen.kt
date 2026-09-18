@@ -1088,8 +1088,8 @@ private fun MonthlyChartSection(
                 }
                 if (periodMeters > 0) {
                     Row {
-                        Text("${"%,d".format(periodMeters).replace(',', '.')}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Text(stringResource(R.string.home_period_meters_suffix), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(formatAltitude(periodMeters), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.home_period_ascended_suffix), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

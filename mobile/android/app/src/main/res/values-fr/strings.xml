@@ -122,7 +122,7 @@
     <string name="home_leaderboard_col_ep">EP</string>
     <string name="home_leaderboard_you"> (toi)</string>
     <string name="home_period_peaks_suffix"> sommets</string>
-    <string name="home_period_meters_suffix"> m gravis</string>
+    <string name="home_period_ascended_suffix"> gravis</string>
     <string name="home_onboarding_title">🏔️ Enregistre ta première ascension</string>
     <string name="onboarding_card_title">Ta première carte t\'attend</string>
     <string name="onboarding_card_desc">Capture un sommet et débloque ta première carte de montagne à collectionner.</string>

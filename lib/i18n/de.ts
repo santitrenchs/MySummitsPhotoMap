@@ -316,7 +316,7 @@ export const de: Dict = {
   home_onboarding_title: "Jeder Gipfel birgt eine Geschichte.",
   home_onboarding_sub: "Erfasse deinen ersten Aufstieg und beginne deine zu schreiben.",
   home_onboarding_cta: "Ersten Aufstieg erfassen",
-  home_chartTitle: "Letzte 6 Monate", home_chartMeters: "Höhenmeter",
+  home_chartTitle: "Letzte 6 Monate", home_chartAscended: "Aufstieg",
   home_rarityChartTitle: "Gipfel nach Seltenheit",
 
   auth_nameHint: "So sehen dich deine Freunde in der App",

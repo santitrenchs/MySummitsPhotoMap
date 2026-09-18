@@ -337,7 +337,7 @@ export type Dict = {
   home_altZone4: string; home_altZone5: string; home_altZone6: string;
   // Onboarding (new users, 0 ascents)
   home_onboarding_title: string; home_onboarding_sub: string; home_onboarding_cta: string;
-  home_chartTitle: string; home_chartMeters: string;
+  home_chartTitle: string; home_chartAscended: string;
   home_rarityChartTitle: string;
   // Peakadex capture cards
   card_capturedSummit: string; card_capturedMythicSummit: string;

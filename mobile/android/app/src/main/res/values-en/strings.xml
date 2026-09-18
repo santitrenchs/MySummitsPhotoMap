@@ -137,7 +137,7 @@
     <string name="home_leaderboard_col_ep">EP</string>
     <string name="home_leaderboard_you"> (you)</string>
     <string name="home_period_peaks_suffix"> peaks</string>
-    <string name="home_period_meters_suffix"> m gained</string>
+    <string name="home_period_ascended_suffix"> gained</string>
     <string name="home_onboarding_title">🏔️ Log your first ascent</string>
     <string name="onboarding_card_title">Your first card awaits</string>
     <string name="onboarding_card_desc">Capture a summit and unlock your first collectible mountain card.</string>

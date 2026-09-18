@@ -316,7 +316,7 @@ export const ca: Dict = {
   home_onboarding_title: "Cada cim guarda una història.",
   home_onboarding_sub: "Captura la teva primera ascensió i comença a escriure la teva.",
   home_onboarding_cta: "Capturar primera ascensió",
-  home_chartTitle: "Últims 6 mesos", home_chartMeters: "metres ascendits",
+  home_chartTitle: "Últims 6 mesos", home_chartAscended: "ascendits",
   home_rarityChartTitle: "Cims per raresa",
 
   auth_nameHint: "Així et veuran els teus amics a l'app",
