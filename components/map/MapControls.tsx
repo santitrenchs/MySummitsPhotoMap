@@ -109,8 +109,15 @@ function LayerCard({
  * prop: the needle has to follow the gesture frame by frame, and lifting that state
  * into MapView would re-render the whole Atlas on every degree.
  *
- * It only exists while the map is actually rotated. A compass that is always there
- * and usually does nothing is noise in a column that already has four buttons.
+ * It is ALWAYS visible, unlike Google's and Apple's, which only appear once you are
+ * rotated. Those are consumer navigation maps where the compass is an undo button.
+ * This is a topographic map — it already draws a scale bar, and in cartography the
+ * north arrow is the scale bar's twin: both are map furniture, not controls. Outdoor
+ * maps (Gaia, CalTopo, OS Maps) all keep it on screen, and so does MapLibre's own
+ * NavigationControl.
+ *
+ * The rose carries an explicit "N" that orbits with the bearing, so it marks where
+ * north actually fell instead of relying on the reader knowing that red means north.
  */
 function CompassButton({ map }: { map: maplibregl.Map }) {
   const [bearing, setBearing] = useState(() => map.getBearing());
@@ -122,29 +129,38 @@ function CompassButton({ map }: { map: maplibregl.Map }) {
     return () => { map.off("rotate", sync); };
   }, [map]);
 
-  // Normalise to (-180, 180] so a bearing of 359.6° counts as "straight", not as
+  // Normalise to (-180, 180] so a bearing of 359.6° reads as "straight", not as
   // 359.6° off north.
   const norm = ((bearing % 360) + 360) % 360;
   const off = norm > 180 ? norm - 360 : norm;
-  if (Math.abs(off) < 0.5) return null;
+  const atNorth = Math.abs(off) < 0.5;
 
   return (
     <button
       style={BTN()}
-      onClick={() => map.easeTo({ bearing: 0, duration: 420 })}
-      aria-label="Orientar al norte"
-      title="Orientar al norte"
+      onClick={() => { if (!atNorth) map.easeTo({ bearing: 0, duration: 420 }); }}
+      aria-label={atNorth ? "El mapa mira al norte" : "Orientar al norte"}
+      title={atNorth ? "El mapa mira al norte" : "Orientar al norte"}
     >
-      {/* The needle points north, so it counter-rotates the map's bearing. */}
+      {/* Everything counter-rotates the map's bearing, so the needle and the "N"
+          keep pointing at true north. */}
       <svg
-        width="20" height="20" viewBox="0 0 24 24" fill="none"
+        width="28" height="28" viewBox="0 0 24 24" fill="none"
         style={{ transform: `rotate(${-bearing}deg)` }}
         aria-hidden="true"
       >
-        <path d="M12 3 L15.4 12 L12 10.4 Z" fill="#EF4444" />
-        <path d="M12 21 L8.6 12 L12 13.6 Z" fill="#94A3B8" />
-        <path d="M12 3 L8.6 12 L12 10.4 Z" fill="#DC2626" />
-        <path d="M12 21 L15.4 12 L12 13.6 Z" fill="#CBD5E1" />
+        <circle cx="12" cy="12" r="11.2" stroke="#E6EBF0" strokeWidth="1" />
+        <text
+          x="12" y="4.9" textAnchor="middle"
+          fontSize="7" fontWeight="800" fill="#334155"
+          fontFamily="var(--font-inter, sans-serif)"
+        >N</text>
+        {/* Double dart centred on (12,12) so it spins on its own axis. Each half is
+            split into two facets to read as a needle rather than a flat triangle. */}
+        <path d="M12 7 L14.4 12 L12 10.6 Z" fill="#EF4444" />
+        <path d="M12 7 L9.6 12 L12 10.6 Z" fill="#DC2626" />
+        <path d="M12 17 L9.6 12 L12 13.4 Z" fill="#94A3B8" />
+        <path d="M12 17 L14.4 12 L12 13.4 Z" fill="#CBD5E1" />
       </svg>
     </button>
   );
