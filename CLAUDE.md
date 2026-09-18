@@ -392,6 +392,7 @@ FaceDetection / FaceTag
 - **Production URL**: [www.peakadex.com](https://www.peakadex.com) (custom domain via GoDaddy CNAME → Railway)
 - **Platform**: Railway. **Production** auto-deploys on push to `main`. **Staging** (project "courteous-youth") auto-deploys from the **`develop`** branch (confirmed in the Railway panel 2026-06-15: branch=`develop`, auto-deploy ON, Wait-for-CI OFF). So **push to `develop` to deploy staging** — the `staging` branch is NOT what Railway watches. ⚠️ Auto-deploys can occasionally stall (a push lands on `develop` but Railway doesn't create the deploy); fix with a **manual Redeploy of the latest commit** in Railway, or push an empty commit to `develop` to re-fire the webhook. Note: Railway's "Redeploy" reuses that deployment's commit, so to ship the newest code redeploy the *latest* commit, not a stale one.
 - **Android backend targets**: debug builds use the Railway staging API (`mysummitsphotomap-staging.up.railway.app`); release builds use production (`www.peakadex.com`). After backend/API changes needed by Android, push to `develop` so staging is updated.
+- **Schema changes**: this project uses `prisma db push`, but **the auto-mode classifier blocks it** (it syncs the whole schema and can drop what is not in `schema.prisma`). Get the exact SQL with `npx prisma migrate diff --from-url "$DB" --to-schema-datamodel prisma/schema.prisma --script`, check it carries no `DROP`, and run that `ALTER ... IF NOT EXISTS` with `psql`. **Apply the column before pushing the code that selects it**, or the deploy takes the app down.
 - **Databases**: Two Railway PostgreSQL instances — sandbox (port 40040) and production (port 10046 / internal `postgres-52e3.railway.internal:5432`)
 - **File storage**: Cloudflare R2, public base URL `https://pub-e648f9ddf0d74df1b67853b9453fbca5.r2.dev`
   - Avatar key pattern: `avatars/{userId}.jpg`
@@ -632,8 +633,112 @@ When tapping a climbed peak, the panel shows the hero photo (if any) with altitu
 
 ---
 
+## Peak names — Latin label, local original (production 2026-09-18)
+
+Peaks imported from OSM keep their local-language `name` (`Эльбрус`, `富士山`). When that
+name is in a **non-Western script** and a Latin `nameEn` exists, the Latin one is shown.
+
+**One rule, one place: `lib/peak-name.ts`** → `peakDisplayName()` / `peakDisplayParts()`
+(Android mirror: `core/util/PeakName.kt`, `Peak.displayName` / `Peak.originalName`).
+
+⚠️ **Never write `nameEn ?? name`.** The flip is decided by SCRIPT, not by "has a nameEn":
+688 catalogue rows have a `nameEn` that differs from an already-Latin `name`, so that
+shortcut showed a Spanish reader "Highwood" where the peak is called `Hochwald/Hvozd`.
+
+**Where the original shows**, as a rule rather than case by case:
+- **Cards and compact lists**: the Latin label only — no room, and it competes with the photo.
+- **Search, map panel, peak detail, Atlas list**: `primary` + `original` underneath, in the
+  subtitle slot (it takes the place of the mountain range: `original ?? mountainRange`).
+- **Search matches both columns** server-side (`/api/peaks?q=` ORs `name` and `nameEn`), so
+  typing either spelling finds the peak. Filter and match on `name`, display `displayName`.
+- **maplibre labels and tooltips** take a preformatted `label` in the feature properties —
+  a style expression cannot call a function per feature.
+
+### Romanization — `lib/romanize-peak.ts` (versioned + unit tested)
+
+⚠️ **There is no single "romanize Cyrillic": it depends on the LANGUAGE.** The
+`transliteration` package maps х→h and ц→c, which is right for Serbian/Macedonian/Bosnian
+(Gaj's Latin is co-official there, so it is a spelling, not a transcription) and **wrong for
+Russian**, whose standard (BGN/PCGN, used by GeoNames, USGS and OSM's own `name:en`) is
+kh/ts. Three profiles by country: `ru` (RU UA BY MD KZ KG TJ UZ TM MN GE AM AZ), `bg` (BG:
+h + ts), `sh` (RS MK BA ME HR XK: package defaults). All-caps tokens are initialisms and are
+not expanded (`ЦСКА` → `CSKA`, not `TsSKA`).
+
+`Peak.nameEnSource` (`"osm"` | `"translit"` | null) tells a human-written `name:en` from a
+generated one, so a rules change can recompute the second without ever overwriting the first.
+`scripts/backfill-name-en.ts` has `--fill` and `--recompute`; recompute only touches rows
+whose current value matches the old romanizer verbatim, which is the proof it was machine-made.
+
+⚠️ **Uzbekistan, which exposed all this, was not an Uzbek problem**: of its 223 Cyrillic
+peaks, **zero** use Uzbek-Cyrillic letters (ў ғ қ ҳ) and 37 use Russian-only ones. They are
+Soviet-era **Russian** toponyms. Applying an Uzbek Latin table to them would be a regression.
+
+---
+
+## Units — metres or feet (web + Android, production 2026-09-18)
+
+`User.units` (`"metric"` | `"imperial"`, default metric) chooses how altitudes and
+distances are **displayed**. Users pick it in Ajustes, in its own section right under
+Idioma — a two-option segmented control, not a dropdown, saving on tap.
+
+**Display only, and structurally so.** The rarity tiers (`lib/rarity.ts`) and the level
+requirements (`lib/level-utils.ts`) are compared **in metres whatever the preference
+says**, so two users with the same peaks have the same rarity, the same EP and the same
+level. `getRarityId(altitudeM)` takes metres and nothing else — `__tests__/units.test.ts`
+asserts its arity so that adding a units parameter fails the build. A second test asserts
+no tier boundary collides when rounded to feet (9,839 < 9,843 at Tundra), which is the
+only way the legend and a card could contradict each other.
+
+⚠️ **Never convert a threshold into a "rounder" imperial number.** Relabelling Tundra as
+"10,000 ft+" when the cut is at 3,000 m = 9,843 ft makes the legend disagree with the
+cards a user is holding. Ugly and true beats tidy and wrong.
+
+**Every altitude and distance goes through one formatter** — `lib/units.ts`
+(`formatAltitude`, `altitudeValue`, `altitudeUnit`, `formatDistance`) and
+`core/util/Units.kt` on Android. Never hand-write `" m"` again.
+
+| How the preference reaches the formatter | |
+|---|---|
+| Web, client components | `useUnitOpts()` from `I18nProvider` → `formatAltitude(m, u)` |
+| Web, `CardBack` / `PeakMiniMap` / `ElevationProfile` | **a prop, not a hook** — the public share page renders them **outside** `I18nProvider` and a hook there throws |
+| Web, module-level helpers | an argument (`UnitOpts`), like `t` already is |
+| Web, maplibre handlers | a `uRef` kept fresh by an effect, mirroring the existing `tRef` |
+| Android | `UnitsState`, Compose snapshot state, restored from `TokenStorage` **before the first frame** |
+
+**Stays metric on purpose:** the admin panel (raw catalogue data; the column is literally
+`Alt (m)`), the landing, the SEO peak pages, and the public share page + OG image, which
+have no session to read a preference from.
+
+**Never put the unit inside a translated string.** It used to live in 20 of them
+(`"Superar los {m}m"`, Android `"Superar los %dm"`), which made it unconvertible — and
+unwatched: the two Android variants of the same sentence disagreed on the space before
+the `m`. The placeholder now carries the whole quantity (`{alt}`, `%s`). `check-i18n.js`
+compares **placeholders across locales**, not just key presence, because a `{m}` left in
+one language rendered the literal text `{m}` and the script passed green.
+
+**When auditing for missed spots, search for what renders an altitude — not for the
+`"m"`.** Three shapes have no unit literal to grep: the number and the unit in separate
+elements (reto pending rows), no unit at all (the photo grid printed a bare `4748`), and
+maplibre style expressions, which cannot call a function per feature and take a
+preformatted `altLabel` in the feature properties instead.
+
+---
+
 ## Known Gotchas
 
+- **maplibre's `ScaleControl` keeps its own unit** — `new ScaleControl({ unit })` does not
+  follow anything else, so the bar reads "10 km" under a map whose labels are in feet.
+  Set it at construction from the preference and update it with `setUnit`. ⚠️ `setUnit`
+  touches the control's DOM and **throws on a control whose map is gone**: StrictMode's
+  double mount tears the first map down and the unguarded call broke the whole map. Guard
+  on `mapRef.current` and wrap in try/catch.
+- **`toLocaleString()` with no locale is a hydration mismatch** — already documented
+  below, but note `lib/units.ts` prints bare digits when no locale is passed precisely so
+  a call site cannot reintroduce it by accident.
+- **Turbopack can serve a module older than the file on disk.** A `units is not defined`
+  error pointed at a line number **two lines off** from the real file — the dev server had
+  not recompiled after a parameter was added. Restart the dev server before hunting a bug
+  whose stack trace does not line up with the source.
 - **CI (`.github/workflows/ci.yml`) gates — keep green**: runs `tsc --noEmit` (over the WHOLE project incl. `__tests__`), `node scripts/check-i18n.js`, vitest, and ESLint. (1) `__tests__/level-utils.test.ts` must track the current `LEVEL_DEFS` (6 levels: Scout base → Zenith 220 unique + 6500m) and the **9 rarities** in `rarityBreakdown` + `levelIdx` in the stats mock — it was stale for a while and reddened both the TS and unit-test jobs. (2) `check-i18n.js` strips `//` and `/* */` comments before extracting Dict keys — a `word:` inside a type comment (e.g. `// Validation error:`) otherwise registers as a phantom missing key. (3) **`react-hooks/immutability`** (React Compiler) flags writes to `document.cookie` / `window.location.href` as "value cannot be modified" even in event handlers — these are legitimate browser side-effects; add `// eslint-disable-next-line react-hooks/immutability`. Railway deploys independently of CI, so prod can ship while CI is red — but keep CI green so it can catch real regressions.
 - **`toLocaleString()` without locale**: causes hydration mismatch between Node.js server and browser. Always pass an explicit locale string, or skip formatting entirely for short numbers (e.g. `{altitudeM} m` not `{altitudeM.toLocaleString()} m`).
 - **Array guard on face detections**: API endpoints that return face detections can return non-arrays on edge cases. Always guard with `Array.isArray(data) ? data : []` before calling `.some()`, `.map()`, etc.
