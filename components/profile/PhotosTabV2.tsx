@@ -11,6 +11,8 @@ import { PhotoFiltersPanel } from "./PhotoFiltersPanel";
 import { usePhotoFilters } from "./usePhotoFilters";
 import type { PhotoForFilter } from "./usePhotoFilters";
 import { imgUrl } from "@/lib/storage/image-url";
+import { formatAltitude } from "@/lib/units";
+import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 type Props = {
   photos: PhotoForFilter[];
@@ -91,6 +93,7 @@ function getInitials(name: string): string {
 }
 
 function PhotoTile({ photo, isTagged, dateLocale }: { photo: PhotoForFilter; isTagged: boolean; dateLocale: string }) {
+  const u = useUnitOpts();
   const [imgError, setImgError] = useState(false);
   const color = RARITY_COLORS[photo.rarityId] ?? "#94A3B8";
   const dateStr = new Date(photo.date).toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "2-digit" });
@@ -133,7 +136,7 @@ function PhotoTile({ photo, isTagged, dateLocale }: { photo: PhotoForFilter; isT
             {photo.peakName}
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 8, fontWeight: 700, color }}>{photo.altitudeM}</span>
+            <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 8, fontWeight: 700, color }}>{formatAltitude(photo.altitudeM, u)}</span>
             <span style={{ fontFamily: "var(--font-mono-landing, monospace)", fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{dateStr}</span>
           </div>
         </div>

@@ -79,6 +79,8 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 import com.peakadex.app.core.util.formatAltitude
+import com.peakadex.app.core.util.altitudeUnit
+import com.peakadex.app.core.util.altitudeValue
 
 // ── Level definitions — mirrors lib/level-utils.ts exactly ───────────────────
 //
@@ -735,9 +737,9 @@ private fun HeroHeader(data: HomeData, user: User?) {
                 )
                 Box(Modifier.width(1.dp).height(32.dp).background(Color(0x26FFFFFF)))
                 MetricCell(
-                    value = if (data.stats.maxAltitude > 0) "${data.stats.maxAltitude}" else "—",
+                    value = if (data.stats.maxAltitude > 0) altitudeValue(data.stats.maxAltitude) else "—",
                     label = stringResource(R.string.home_stat_max_alt_label),
-                    unit  = if (data.stats.maxAltitude > 0) "m" else null,
+                    unit  = if (data.stats.maxAltitude > 0) altitudeUnit() else null,
                 )
             }
         } // end main padded Column

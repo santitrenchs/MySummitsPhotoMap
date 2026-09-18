@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import type { ElevationProfile as ElevationProfileData } from "@/lib/services/elevation.service";
+import { formatAltitude, formatDistance, type Units } from "@/lib/units";
+
+/** The bar's full scale: the highest there is. */
+const EVEREST_M = 8849;
 
 type Props = {
   peakId: string;
@@ -12,9 +16,12 @@ type Props = {
   /** Stroke/fill/label colour. Defaults to white (for the dark card-back map);
    *  the capture-reveal passes the rarity colour (over the light-gray cover). */
   lineColor?: string;
+  /** Display units — a prop, not a hook: the public share page renders this
+   *  outside I18nProvider. Defaults to metric. */
+  units?: Units;
 };
 
-export function ElevationProfile({ peakId, altitudeM, rarityColor, profile: initialProfile, lineColor = "white" }: Props) {
+export function ElevationProfile({ peakId, altitudeM, rarityColor, profile: initialProfile, lineColor = "white", units }: Props) {
   const [profile, setProfile] = useState<ElevationProfileData | null>(initialProfile ?? null);
   const [loading, setLoading] = useState(!initialProfile);
 
@@ -37,10 +44,10 @@ export function ElevationProfile({ peakId, altitudeM, rarityColor, profile: init
   }
 
   if (!profile) {
-    return <ElevationFallbackBar altitudeM={altitudeM} rarityColor={rarityColor} />;
+    return <ElevationFallbackBar altitudeM={altitudeM} rarityColor={rarityColor} units={units} />;
   }
 
-  return <ElevationSVG profile={profile} rarityColor={rarityColor} altitudeM={altitudeM} lineColor={lineColor} />;
+  return <ElevationSVG profile={profile} rarityColor={rarityColor} altitudeM={altitudeM} lineColor={lineColor} units={units} />;
 }
 
 // ─── SVG rendering ────────────────────────────────────────────────────────────
@@ -55,11 +62,13 @@ function ElevationSVG({
   rarityColor,
   altitudeM,
   lineColor = "white",
+  units,
 }: {
   profile: ElevationProfileData;
   rarityColor: string;
   altitudeM: number;
   lineColor?: string;
+  units?: Units;
 }) {
   const { points, minElevation, maxElevation, summitIndex } = profile;
   const range = maxElevation - minElevation || 1;
@@ -103,10 +112,10 @@ function ElevationSVG({
 
         {/* Distance labels */}
         <text x={PAD_X} y={H - 1} fontSize="7" fill={lineColor} fillOpacity="0.45" style={{ fontFamily: "system-ui, sans-serif" }}>
-          −8 km
+          {"−" + formatDistance(8, { units })}
         </text>
         <text x={W - PAD_X} y={H - 1} fontSize="7" fill={lineColor} fillOpacity="0.45" textAnchor="end" style={{ fontFamily: "system-ui, sans-serif" }}>
-          +8 km
+          {"+" + formatDistance(8, { units })}
         </text>
       </svg>
     </div>
@@ -135,8 +144,8 @@ function ElevationSkeleton({ rarityColor }: { rarityColor: string }) {
 
 // ─── Fallback: simple altitude bar (when profile unavailable) ─────────────────
 
-function ElevationFallbackBar({ altitudeM, rarityColor }: { altitudeM: number; rarityColor: string }) {
-  const pct = Math.min(100, (altitudeM / 8849) * 100).toFixed(1);
+function ElevationFallbackBar({ altitudeM, rarityColor, units }: { altitudeM: number; rarityColor: string; units?: Units }) {
+  const pct = Math.min(100, (altitudeM / EVEREST_M) * 100).toFixed(1);
   return (
     <div style={{ padding: "6px 0 4px" }}>
       <div style={{
@@ -153,7 +162,7 @@ function ElevationFallbackBar({ altitudeM, rarityColor }: { altitudeM: number; r
         display: "flex", justifyContent: "space-between",
         fontSize: 9, color: "rgba(255,255,255,0.45)", marginTop: 2,
       }}>
-        <span>0 m</span><span>8.849 m</span>
+        <span>{formatAltitude(0, { units })}</span><span>{formatAltitude(EVEREST_M, { locale: "es-ES", grouping: "always", units })}</span>
       </div>
     </div>
   );

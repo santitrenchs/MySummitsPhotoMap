@@ -1,5 +1,5 @@
 "use client";
-import { formatAltitude } from "@/lib/units";
+import { altitudeUnit, altitudeValue, formatAltitude } from "@/lib/units";
 import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 import Link from "next/link";
@@ -525,6 +525,7 @@ function PeakTile({ peak }: { peak: ChallengePeakRow }) {
 
 function PendingRow({ peak }: { peak: ChallengePeakRow }) {
   const t = useT();
+  const u = useUnitOpts();
   const r = rarityEntry(peak.rarityId);
 
   return (
@@ -557,11 +558,11 @@ function PendingRow({ peak }: { peak: ChallengePeakRow }) {
         {peak.mountainRange ?? peak.comarca ?? ""}
       </span>
       <span style={{
-        flexShrink: 0, minWidth: 54, textAlign: "right",
+        flexShrink: 0, minWidth: 64, textAlign: "right",
         fontFamily: "var(--font-mono-landing, monospace)",
         fontSize: 11.5, fontWeight: 700, color: "#5A6E84", fontVariantNumeric: "tabular-nums",
       }}>
-        {peak.altitudeM}<span style={{ fontWeight: 500, color: "#9AA9B8" }}> m</span>
+        {altitudeValue(peak.altitudeM, u)}<span style={{ fontWeight: 500, color: "#9AA9B8" }}> {altitudeUnit(u.units)}</span>
       </span>
     </button>
   );

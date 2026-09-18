@@ -38,6 +38,7 @@ import com.peakadex.app.core.model.Photo
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
+import com.peakadex.app.core.util.formatAltitude
 
 // ── Entry point ────────────────────────────────────────────────────────────────
 
@@ -185,7 +186,7 @@ private fun HeroImage(photo: Photo?, peakName: String, altitudeM: Int) {
                 .padding(horizontal = 10.dp, vertical = 5.dp),
         ) {
             Text(
-                text       = "$altitudeM m",
+                text       = formatAltitude(altitudeM),
                 fontSize   = 14.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color      = Color.White,

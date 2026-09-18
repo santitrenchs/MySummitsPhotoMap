@@ -100,6 +100,7 @@ export function CardBack({
         {isFlipped && (
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
             <ElevationProfile
+              units={units}
               peakId={peak.id}
               altitudeM={peak.altitudeM}
               rarityColor={rarityColor}

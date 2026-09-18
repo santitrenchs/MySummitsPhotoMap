@@ -288,7 +288,7 @@ export function CaptureRevealOverlay({ ascent, locale, values }: OverlayProps) {
 
       {/* Elevation profile — rarity-tinted, flush to the bottom */}
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, opacity: values.infoAppear, transition: "opacity 350ms ease" }}>
-        <ElevationProfile peakId={ascent.peak.id} altitudeM={ascent.peak.altitudeM} rarityColor={color} lineColor={color} />
+        <ElevationProfile peakId={ascent.peak.id} altitudeM={ascent.peak.altitudeM} rarityColor={color} lineColor={color} units={u.units} />
       </div>
 
       {/* MYTHIC pill — top-left, pops in on the beat */}

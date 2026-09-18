@@ -46,6 +46,13 @@ fun metresToFeet(m: Int): Int = (m * FEET_PER_METRE).roundToInt()
 fun formatAltitude(altitudeM: Int, units: Units = UnitsState.current): String =
     if (units == Units.IMPERIAL) "${metresToFeet(altitudeM)} ft" else "$altitudeM m"
 
+/** Just the number — for the few places that render value and unit apart. */
+fun altitudeValue(altitudeM: Int, units: Units = UnitsState.current): String =
+    if (units == Units.IMPERIAL) "${metresToFeet(altitudeM)}" else "$altitudeM"
+
+fun altitudeUnit(units: Units = UnitsState.current): String =
+    if (units == Units.IMPERIAL) "ft" else "m"
+
 /** "850 m" / "12.4 km" — how far a peak is from the map centre. */
 fun formatDistance(km: Double, units: Units = UnitsState.current): String {
     if (units == Units.IMPERIAL) {
