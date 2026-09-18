@@ -89,3 +89,30 @@ describe("peakDisplayParts()", () => {
     });
   });
 });
+
+// Real rows from the production catalogue — Uzbekistan is the country that
+// exposed this: 223 of its 275 peaks carry a Cyrillic `name`.
+describe("peakDisplayParts — Uzbek catalogue", () => {
+  it("flips Cyrillic peaks to their Latin nameEn and keeps the original", () => {
+    expect(peakDisplayParts({ name: "Ходжа Буз Борак", nameEn: "Hodzha Buz Borak" })).toEqual({
+      primary: "Hodzha Buz Borak",
+      original: "Ходжа Буз Борак",
+    });
+  });
+
+  it("leaves peaks already written in Uzbek Latin untouched", () => {
+    expect(peakDisplayParts({ name: "Yetimtog'", nameEn: null })).toEqual({
+      primary: "Yetimtog'",
+      original: null,
+    });
+  });
+
+  it("does not translate a Western name that happens to carry a nameEn", () => {
+    // 688 rows have a nameEn that differs from an all-Latin name. `nameEn ?? name`
+    // would show "Highwood" to a Spanish user; the script rule must not.
+    expect(peakDisplayParts({ name: "Hochwald/Hvozd", nameEn: "Highwood" })).toEqual({
+      primary: "Hochwald/Hvozd",
+      original: null,
+    });
+  });
+});

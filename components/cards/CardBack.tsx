@@ -9,12 +9,12 @@ import { type RarityId, RARITY_COLORS } from "@/lib/rarity";
 //
 // Back-face for AscentCard: map hero + Peakadex stats + optional footer
 // (Cordada pills + message blockquote). The caller passes the display name
-// (nameEn ?? name) and the footer node.
+// (peakDisplayName) and the footer node.
 //
 // Usage:
 //   <CardBack
 //     peak={peak}
-//     peakName={peak.nameEn ?? peak.name}
+//     peakName={peakDisplayName(peak)}
 //     rarity={rarity}
 //     isFlipped={isFlipped}
 //     locale={locale}
@@ -34,7 +34,7 @@ type CardBackPeak = {
 
 type Props = {
   peak: CardBackPeak;
-  /** Display name — caller decides whether to prefer nameEn */
+  /** Display name — the caller resolves it with `peakDisplayName`. */
   peakName: string;
   rarity: RarityId;
   isFlipped: boolean;

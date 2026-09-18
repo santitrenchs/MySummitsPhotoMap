@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import { RARITY_COLORS, RARITIES, RARITY_SCORE_WEIGHTS, RARITY_ID_MATCH_EXPR } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
-import { peakDisplayParts } from "@/lib/peak-name";
+import { peakDisplayName, peakDisplayParts } from "@/lib/peak-name";
 import { useT } from "@/components/providers/I18nProvider";
 import { i } from "@/lib/i18n";
 import { createPortal } from "react-dom";
@@ -465,7 +465,9 @@ export default function MapView({
       type: "Feature" as const,
       geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
       properties: {
-        id: p.id, name: p.name, alt: p.altitudeM,
+        // `label` is what the tooltip shows — the Latin nameEn for non-Western
+        // names. `name` stays raw for anything matching by canonical name.
+        id: p.id, name: p.name, label: peakDisplayName(p), alt: p.altitudeM,
         rarityId: p.rarityId ?? "",
         isMythic: p.isMythic ? 1 : 0,
         score,
@@ -1132,7 +1134,7 @@ export default function MapView({
         source: "unascended-peaks",
         minzoom: 10,
         layout: {
-          "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "alt"]], " m"],
+          "text-field": ["concat", ["get", "label"], "\n", ["to-string", ["get", "alt"]], " m"],
           "text-font": ["Noto Sans Regular"],
           "text-size": ["interpolate", ["linear"], ["get", "score"], 0, 9, 1, 12],
           "text-offset": [0, 1.2],
@@ -1159,7 +1161,7 @@ export default function MapView({
         const props = e.features?.[0]?.properties;
         if (!props || !containerRef.current) return;
         const pt = map.project(e.lngLat);
-        setTooltip({ text: `${props.name} · ${Number(props.alt).toLocaleString(tRef.current.dateLocale)} m`, x: pt.x, y: pt.y });
+        setTooltip({ text: `${props.label ?? props.name} · ${Number(props.alt).toLocaleString(tRef.current.dateLocale)} m`, x: pt.x, y: pt.y });
       });
       map.on("mouseleave", "unclustered-peaks", () => setTooltip(null));
 
@@ -1175,8 +1177,10 @@ export default function MapView({
         const RING = `0 0 0 3.5px ${ringColor}, 0 4px 16px rgba(0,0,0,0.32)`;
         const RING_HOVER = `0 0 0 5px ${ringColor}, 0 6px 22px rgba(0,0,0,0.4)`;
 
+        const peakLabel = peakDisplayName(peak);
+
         const el = document.createElement("div");
-        el.setAttribute("aria-label", `${peak.name} ${peak.altitudeM}m (climbed)`);
+        el.setAttribute("aria-label", `${peakLabel} ${peak.altitudeM}m (climbed)`);
         el.style.cssText = [
           "position:absolute",  // explicit — maplibre-gl.css may not apply on iOS Safari
           "width:44px", "height:44px", "border-radius:50%",
@@ -1202,7 +1206,7 @@ export default function MapView({
           el.style.fontWeight = "700";
           el.style.color = "#0369a1";
           el.style.fontFamily = "system-ui, -apple-system, sans-serif";
-          el.textContent = peak.name[0]?.toUpperCase() ?? "?";
+          el.textContent = peakLabel[0]?.toUpperCase() ?? "?";
         }
 
         el.addEventListener("mouseenter", () => { el.style.boxShadow = RING_HOVER; });
@@ -1211,7 +1215,7 @@ export default function MapView({
           const me = e as MouseEvent;
           const cRect = containerRef.current.getBoundingClientRect();
           setTooltip({
-            text: `${peak.name} · ${peak.altitudeM.toLocaleString(tRef.current.dateLocale)} m`,
+            text: `${peakLabel} · ${peak.altitudeM.toLocaleString(tRef.current.dateLocale)} m`,
             x: me.clientX - cRect.left,
             y: me.clientY - cRect.top,
           });

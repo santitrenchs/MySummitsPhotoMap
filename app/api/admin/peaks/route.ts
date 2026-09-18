@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       skip,
       take: limit,
       select: {
-        id: true, name: true, latitude: true, longitude: true,
+        id: true, name: true, nameEn: true, latitude: true, longitude: true,
         altitudeM: true, country: true, mountainRange: true,
         comarca: true, tag1: true, tag2: true, tag3: true,
         osmId: true, gpsVerified: true, isMythic: true,

@@ -34,6 +34,10 @@ model Peak {
   id            String   @id @default(uuid())
   name          String
   nameEn        String?
+  /// Where nameEn came from: "osm" (human-written name:en — never overwrite) or
+  /// "translit" (produced by lib/romanize-peak.ts — safe to recompute when the
+  /// rules improve). Null on rows filled before this column existed.
+  nameEnSource  String?
   comarca       String?
   latitude      Float
   longitude     Float

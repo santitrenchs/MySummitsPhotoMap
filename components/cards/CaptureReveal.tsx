@@ -13,6 +13,7 @@ const RevealFlower = dynamic(
   { ssr: false },
 );
 import { getRarityId, RARITY_COLORS, RARITY_EP } from "@/lib/rarity";
+import { peakDisplayName } from "@/lib/peak-name";
 
 // ── Timeline (ms), mirrors Android AscentCaptureReveal ───────────────────────────
 const BLOOM = 2600;      // flower bloom (daisy is ~3s; we sequence off a fixed beat)
@@ -275,7 +276,7 @@ export function CaptureRevealOverlay({ ascent, locale, values }: OverlayProps) {
         opacity: values.infoAppear, transition: "opacity 350ms ease",
       }}>
         <div style={{ fontSize: 22, fontWeight: 900, color, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
-          {ascent.peak.nameEn ?? ascent.peak.name}
+          {peakDisplayName(ascent.peak)}
         </div>
         <div style={{ fontSize: 28, fontWeight: 900, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1 }}>
           {ascent.peak.altitudeM.toLocaleString(locale)} m

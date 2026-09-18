@@ -38,3 +38,11 @@ fun peakDisplayName(name: String, nameEn: String?): String =
         nameEn
     else
         name
+
+/**
+ * The original local-language name, for surfaces that show it as a secondary
+ * subtitle under [peakDisplayName]. Null when we did not flip — i.e. when the
+ * displayed label already IS the original, so repeating it would be noise.
+ */
+fun peakOriginalName(name: String, nameEn: String?): String? =
+    if (peakDisplayName(name, nameEn) != name) name else null

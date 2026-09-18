@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Peak = {
   id: string;
   name: string;
+  /** Latin label shown to users when `name` is non-Western. Read-only here. */
+  nameEn: string | null;
   latitude: number;
   longitude: number;
   altitudeM: number;
@@ -20,7 +22,7 @@ type Peak = {
   _count: { ascents: number };
 };
 
-type EditState = Partial<Omit<Peak, "id" | "_count" | "gpsVerified" | "isMythic">> & { gpsVerified?: boolean; isMythic?: boolean };
+type EditState = Partial<Omit<Peak, "id" | "nameEn" | "_count" | "gpsVerified" | "isMythic">> & { gpsVerified?: boolean; isMythic?: boolean };
 
 const LIMIT = 50;
 
@@ -550,7 +552,12 @@ function ViewRow({
 
   return (
     <tr>
-      <td style={{ fontWeight: 600, fontSize: 13 }}>{peak.name}</td>
+      <td style={{ fontWeight: 600, fontSize: 13 }}>
+        {peak.name}
+        {peak.nameEn && peak.nameEn !== peak.name && (
+          <div style={{ fontWeight: 400, fontSize: 11, color: "#6b7280" }}>{peak.nameEn}</div>
+        )}
+      </td>
       {col("altitude") && (
         <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>
           {peak.altitudeM.toLocaleString("es-ES")}

@@ -3,10 +3,11 @@
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import { getRarityColor as getRarityColorFromLib, RARITY_ALT_STEP_EXPR } from "@/lib/rarity";
+import { peakDisplayName } from "@/lib/peak-name";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type NearbyPeak = { id: string; name: string; latitude: number; longitude: number; altitudeM: number };
+type NearbyPeak = { id: string; name: string; nameEn?: string | null; latitude: number; longitude: number; altitudeM: number };
 
 // ─── Nearby peaks cache ───────────────────────────────────────────────────────
 
@@ -125,7 +126,7 @@ export function PeakMiniMap({
           features: nearby.map((p) => ({
             type: "Feature" as const,
             geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
-            properties: { name: p.name, alt: p.altitudeM },
+            properties: { name: peakDisplayName(p), alt: p.altitudeM },
           })),
         },
       });

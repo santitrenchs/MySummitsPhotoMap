@@ -1404,7 +1404,9 @@ private fun SearchResultsList(
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(peak.displayName, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                    val sub = listOfNotNull(peak.mountainRange, "${peak.altitudeM} m").joinToString(" · ")
+                    // Non-Western peaks show their local name here instead of the range,
+                    // mirroring the web search list (`peakOriginal ?? mountainRange`).
+                    val sub = listOfNotNull(peak.originalName ?: peak.mountainRange, "${peak.altitudeM} m").joinToString(" · ")
                     if (sub.isNotEmpty()) {
                         Text(sub, fontSize = 12.sp, color = PeakMuted)
                     }
@@ -1587,10 +1589,12 @@ private fun PeakDetailSheet(
                         color      = PeakMuted,
                     )
                 }
-                // Comarca / mountain range — own line below name
-                if (!peak.mountainRange.isNullOrBlank()) {
+                // Local name (non-Western peaks) or comarca / mountain range —
+                // own line below the name, same slot as web's MapPeakCard.
+                val peakSubtitle = peak.originalName ?: peak.mountainRange
+                if (!peakSubtitle.isNullOrBlank()) {
                     Text(
-                        text     = peak.mountainRange,
+                        text     = peakSubtitle,
                         fontSize = 12.sp,
                         color    = PeakSubtle,
                         modifier = Modifier.padding(top = 2.dp),

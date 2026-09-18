@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useT } from "@/components/providers/I18nProvider";
+import { peakDisplayName, peakDisplayParts } from "@/lib/peak-name";
 
 type Peak = {
   id: string;
@@ -10,6 +11,11 @@ type Peak = {
   altitudeM: number;
   mountainRange?: string | null;
 };
+
+// What the field and the list show for a peak: the Latin nameEn when the OSM
+// `name` is non-Western. The query text is matched server-side against BOTH
+// columns, so typing either spelling finds the peak.
+const label = (p: Peak) => peakDisplayName(p);
 
 export function PeakPicker({
   initialPeak = null,
@@ -33,7 +39,7 @@ export function PeakPicker({
 }) {
   const t = useT();
   const [selected, setSelected] = useState<Peak | null>(initialPeak);
-  const [query, setQuery] = useState(initialPeak?.name ?? defaultPeakName ?? "");
+  const [query, setQuery] = useState(initialPeak ? label(initialPeak) : defaultPeakName ?? "");
   const [open, setOpen] = useState(false);
   const [showChip, setShowChip] = useState(suggested && !!initialPeak);
   // Track whether the user has explicitly cleared the field so we don't fall back to
@@ -53,7 +59,7 @@ export function PeakPicker({
   useEffect(() => {
     if (!initialPeak) return;
     setSelected(initialPeak);
-    setQuery(initialPeak.name);
+    setQuery(label(initialPeak));
     setShowChip(suggested);
     setUserCleared(false);
   }, [initialPeak]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -63,7 +69,7 @@ export function PeakPicker({
   useEffect(() => {
     const q = query.trim();
     // Don't search when the query just mirrors the selected peak's name.
-    if (selected && q === selected.name) { setResults([]); setSearching(false); return; }
+    if (selected && q === label(selected)) { setResults([]); setSearching(false); return; }
     if (q.length < 2) { setResults([]); setSearching(false); return; }
     if (searchTimer.current) clearTimeout(searchTimer.current);
     setSearching(true);
@@ -103,7 +109,7 @@ export function PeakPicker({
   function handleSelect(peak: Peak) {
     setSelected(peak);
     setUserCleared(false);
-    setQuery(peak.name);
+    setQuery(label(peak));
     setOpen(false);
     setResults([]);
     onSelect?.(peak);
@@ -133,7 +139,7 @@ export function PeakPicker({
           <span style={{ fontSize: 14, flexShrink: 0 }}>📍</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: "#1e40af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {selected.name}
+              {label(selected)}
             </div>
             <div style={{ fontSize: 12, fontWeight: 400, color: "#3b82f6", marginTop: 1 }}>
               {selected.altitudeM} m
@@ -213,7 +219,11 @@ export function PeakPicker({
                   {t.peak_notFound}
                 </div>
               ) : (
-                visible.map((peak, idx) => (
+                visible.map((peak, idx) => {
+                  // The local name takes the subtitle slot, same as the Atlas list.
+                  const { primary, original } = peakDisplayParts(peak);
+                  const sub = original ?? peak.mountainRange;
+                  return (
                   <div
                     key={peak.id}
                     onMouseDown={(e) => { e.preventDefault(); handleSelect(peak); }}
@@ -226,13 +236,14 @@ export function PeakPicker({
                     }}
                   >
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {peak.name}
+                      {primary}
                     </div>
                     <div style={{ fontSize: 12, color: "#6b7280", marginTop: 1 }}>
-                      {peak.altitudeM} m{peak.mountainRange ? ` · ${peak.mountainRange}` : ""}
+                      {peak.altitudeM} m{sub ? ` · ${sub}` : ""}
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}

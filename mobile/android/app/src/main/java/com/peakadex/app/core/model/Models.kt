@@ -97,6 +97,9 @@ data class Peak(
 ) {
     /** Latin transliteration when [name] is non-Western (mirrors web peakDisplayName). */
     val displayName: String get() = com.peakadex.app.core.util.peakDisplayName(name, nameEn)
+
+    /** The local-language name, to show under [displayName]. Null when not flipped. */
+    val originalName: String? get() = com.peakadex.app.core.util.peakOriginalName(name, nameEn)
 }
 
 @Serializable
