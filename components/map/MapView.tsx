@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
-import { RARITY_COLORS, RARITIES, RARITY_SCORE_WEIGHTS, RARITY_ID_MATCH_EXPR } from "@/lib/rarity";
+import { RARITY_COLORS, RARITIES, RARITY_SCORE_WEIGHTS } from "@/lib/rarity";
 import { RarityFlower } from "@/components/brand/RarityFlowers";
 import { peakDisplayName, peakDisplayParts } from "@/lib/peak-name";
 import { formatAltitude } from "@/lib/units";
@@ -94,7 +94,7 @@ function applyRarityLayerFilter(
   } else if (rarityFilter.length > 0) {
     filter = ["in", ["get", "rarityId"], ["literal", rarityFilter]] as unknown as maplibregl.FilterSpecification;
   }
-  for (const layer of ["unclustered-peaks", "mythic-glow", "peak-labels"]) {
+  for (const layer of ["unclustered-peaks", "mythic-glow"]) {
     if (map.getLayer(layer)) {
       if (filter) map.setFilter(layer, filter);
       else map.setFilter(layer, undefined as unknown as maplibregl.FilterSpecification);
@@ -146,6 +146,49 @@ function peaksBounds(peaks: MapPeak[]): [[number, number], [number, number]] | n
 // ─── Map view persistence ─────────────────────────────────────────────────────
 
 const MAP_VIEW_KEY = "peakadex_map_view";
+// Altitude that scores a full 1.0 on the size/priority ramp. 3000 m rather than
+// the world maximum: above it every summit is already "as big as the dot gets",
+// and 84% of the catalogue sits under 2000 m, so anchoring on Everest would
+// squash the entire useful range into the bottom third of the scale.
+const ALT_REFERENCE_M = 3000;
+
+/**
+ * One dot bitmap per rarity, registered in the style so the peaks symbol layer can
+ * pick it with `["concat", "peak-dot-", ["get","rarityId"]]`.
+ *
+ * A symbol layer needs an image; it cannot paint a colour the way a circle layer
+ * does. Drawn once at init at 64px with pixelRatio 2, then scaled down by
+ * `icon-size` — generating it large and shrinking keeps the edge clean.
+ *
+ * `peak-dot-` with an empty suffix is registered too: a peak with a null rarityId
+ * produces exactly that name, and a missing image makes MapLibre drop the feature
+ * and log on every frame.
+ */
+function addPeakDotImages(map: maplibregl.Map) {
+  const SIZE = 64;
+  const RING = 7;
+  const entries: Array<[string, string]> = [
+    ...Object.entries(RARITY_COLORS),
+    ["", "#60a5fa"], // no rarityId — same fallback as RARITY_ID_MATCH_EXPR
+  ];
+  for (const [id, color] of entries) {
+    const name = `peak-dot-${id}`;
+    if (map.hasImage(name)) continue;
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = SIZE;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
+    const c = SIZE / 2;
+    ctx.beginPath();
+    ctx.arc(c, c, c - RING / 2 - 1, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.lineWidth = RING;
+    ctx.strokeStyle = "#ffffff";
+    ctx.stroke();
+    map.addImage(name, ctx.getImageData(0, 0, SIZE, SIZE), { pixelRatio: 2 });
+  }
+}
 
 function resolveInitialView(
   ascentData: AscentMapEntry[],
@@ -413,16 +456,20 @@ export default function MapView({
   }, []);
 
 
-  // Compute adaptive scores for peaks in the current viewport and update the
+  // Rank the unclimbed peaks of the current viewport and hand them all to the
   // GeoJSON source. Called after every pan/zoom and after each viewport fetch.
   //
-  // Algorithm:
-  //   1. Collect unclimbed peaks inside current map bounds
-  //   2. Normalize altitude locally (relative to viewport max)
-  //   3. Score = 0.5 * norm_alt + 0.3 * rarity_weight + 0.2 * captured_bonus
-  //   4. Keep top N% based on zoom level (10% → 25% → 50% → 100%)
-  //   5. Encode score as circle-radius / circle-opacity via GeoJSON property
-  function computeViewportScores(zoom: number) {
+  // ⚠️ This used to keep only the top 10/25/50% by zoom, and that is what emptied
+  // quiet regions: a percentage asks "what fraction", when the screen's question is
+  // "how many dots fit", which is the same number everywhere. Measured over 1°×1°
+  // cells at zoom 5 it drew 95 dots on Mont Blanc and 20 in inland Galicia — the
+  // emptier the area, the fewer it drew, which is backwards.
+  //
+  // Now every peak is emitted and MapLibre's own collision index decides what fits,
+  // placing them in `score` order (see the symbol layer's symbol-sort-key). Dense
+  // massifs thin themselves out, sparse regions show everything, and nothing has to
+  // guess a percentage.
+  function computeViewportScores() {
     const map = mapRef.current;
     const source = map?.getSource("unascended-peaks") as maplibregl.GeoJSONSource | undefined;
     if (!source || !map) return;
@@ -451,29 +498,21 @@ export default function MapView({
       return;
     }
 
-    // Step 1 — local normalization (reduce avoids spread stack overflow on large arrays)
-    let maxAlt = 0;
-    for (const p of viewportPeaks) if (p.altitudeM > maxAlt) maxAlt = p.altitudeM;
-
-    // Step 2 — score
+    // ⚠️ Normalised against a FIXED reference, not against the viewport's own
+    // maximum. Relative normalisation made a 900 m summit score 0.19 with Mont Blanc
+    // on screen and 0.90 without it, so the same peak grew, shrank and changed rank
+    // depending on its neighbours — it flickered as you panned. The dot now means
+    // the same thing wherever you are.
     const scored = viewportPeaks.map((p) => {
-      const normAlt      = maxAlt > 0 ? p.altitudeM / maxAlt : 0;
+      const normAlt      = Math.min(p.altitudeM / ALT_REFERENCE_M, 1);
       const rarityWeight = RARITY_SCORE_WEIGHTS[p.rarityId ?? ""] ?? 0.1;
       const score        = normAlt * 0.5 + rarityWeight * 0.3;
       return { p, score };
     });
 
-    // Step 3 — percentile filter
-    scored.sort((a, b) => b.score - a.score);
-    const pct = challengeModeRef.current ? 1.0 :
-      zoom < 6  ? 0.10 :
-      zoom < 8  ? 0.25 :
-      zoom < 10 ? 0.50 : 1.0;
-    const keep = Math.max(1, Math.ceil(scored.length * pct));
-    const visible = scored.slice(0, keep);
-
-    // Build GeoJSON — score stored as property so paint expressions can read it
-    const features = visible.map(({ p, score }) => ({
+    // Build GeoJSON — score stored as property so the sort key and the paint
+    // expressions can read it. No slicing: collision does the thinning.
+    const features = scored.map(({ p, score }) => ({
       type: "Feature" as const,
       geometry: { type: "Point" as const, coordinates: [p.longitude, p.latitude] },
       properties: {
@@ -519,7 +558,7 @@ export default function MapView({
         }
       }
       if (hasNew) setAllPeaks(Array.from(peaksCacheRef.current.values()));
-      computeViewportScores(zoom);
+      computeViewportScores();
     } catch { /* ignore network errors */ } finally {
       setLoadingPeaks(false);
     }
@@ -659,7 +698,7 @@ export default function MapView({
         });
         // In a reto the peaks are non-negotiable: repaint once the camera lands, so
         // nothing that ran mid-flight can leave the source empty.
-        map.once("moveend", () => computeViewportScores(map.getZoom()));
+        map.once("moveend", () => computeViewportScores());
       }
     } else {
       // Leaving: the map is still showing only the reto's peaks, and no pan has
@@ -668,7 +707,7 @@ export default function MapView({
       const b = map.getBounds();
       fetchPeaksForViewport({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
     }
-    computeViewportScores(map.getZoom());
+    computeViewportScores();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [challengeId, challengeMode, challengePeaks, isMobile]);
 
@@ -688,7 +727,7 @@ export default function MapView({
     });
     const map = mapRef.current;
     if (map) {
-      for (const layer of ["unclustered-peaks", "mythic-glow", "peak-labels"]) {
+      for (const layer of ["unclustered-peaks", "mythic-glow"]) {
         if (map.getLayer(layer)) {
           map.setLayoutProperty(layer, "visibility", showUnascended ? "visible" : "none");
         }
@@ -870,8 +909,7 @@ export default function MapView({
       if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
       fetchDebounceRef.current = setTimeout(() => {
         const b = map.getBounds();
-        const z = map.getZoom();
-        computeViewportScores(z); // immediate update from cache
+        computeViewportScores(); // immediate update from cache
         fetchPeaksForViewport({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
       }, 500);
     });
@@ -1117,53 +1155,55 @@ export default function MapView({
         },
       });
 
-      // Main adaptive peaks layer:
-      //   circle-radius ∝ score  (5px low-score → 15px top-score)
-      //   circle-color  = rarity color
-      //   circle-opacity fades with lower score so top peaks pop
+      addPeakDotImages(map);
+
+      // Main peaks layer — a SYMBOL layer, and that is the whole point.
+      //
+      // ⚠️ A circle layer cannot deconflict: MapLibre's collision index only applies
+      // to symbols, so with circles the only way to control density was to delete
+      // features up front (the percentile cull that emptied quiet regions). As
+      // symbols, every peak is submitted and MapLibre places them in `symbol-sort-key`
+      // order, dropping whatever would overlap something already placed. The screen
+      // fills to the same density everywhere, by construction.
+      //
+      // The dot and its label are ONE symbol, not two layers, so a peak never keeps a
+      // label whose dot lost its place. `text-optional` lets the dot survive alone
+      // when only the text does not fit — which is the common case in a massif.
       map.addLayer({
         id: "unclustered-peaks",
-        type: "circle",
-        source: "unascended-peaks",
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["get", "score"],
-            0,   5,
-            0.4, 8,
-            0.7, 11,
-            1.0, 15,
-          ],
-          "circle-color": RARITY_ID_MATCH_EXPR as maplibregl.ExpressionSpecification,
-          "circle-opacity": ["interpolate", ["linear"], ["get", "score"],
-            0,   0.55,
-            0.5, 0.80,
-            1.0, 0.95,
-          ],
-          "circle-stroke-width": ["interpolate", ["linear"], ["get", "score"],
-            0,   1.5,
-            1.0, 2.5,
-          ],
-          "circle-stroke-color": "white",
-          "circle-pitch-alignment": "map",
-        },
-      });
-
-      // Labels appear only at high zoom, sized by score
-      map.addLayer({
-        id: "peak-labels",
         type: "symbol",
         source: "unascended-peaks",
-        minzoom: 10,
         layout: {
-          "text-field": ["concat", ["get", "label"], "\n", ["get", "altLabel"]],
+          "icon-image": ["concat", "peak-dot-", ["get", "rarityId"]],
+          // The bitmap is 64px at pixelRatio 2 → 32 CSS px at size 1.
+          "icon-size": ["interpolate", ["linear"], ["get", "score"],
+            0,   0.20,
+            0.4, 0.28,
+            0.7, 0.38,
+            1.0, 0.50,
+          ],
+          // Lower key = placed first = wins the spot. Mythic peaks go ahead of
+          // everything so the glow underneath never outlives its dot.
+          "symbol-sort-key": ["case",
+            ["==", ["get", "isMythic"], 1], -1,
+            ["-", 1, ["get", "score"]],
+          ],
+          "text-field": ["step", ["zoom"],
+            "", 10, ["concat", ["get", "label"], "\n", ["get", "altLabel"]],
+          ],
           "text-font": ["Noto Sans Regular"],
           "text-size": ["interpolate", ["linear"], ["get", "score"], 0, 9, 1, 12],
-          "text-offset": [0, 1.2],
+          "text-offset": [0, 1.1],
           "text-anchor": "top",
           "text-optional": true,
-          "text-allow-overlap": false,
           "text-max-width": 9,
         },
         paint: {
+          "icon-opacity": ["interpolate", ["linear"], ["get", "score"],
+            0,   0.70,
+            0.5, 0.88,
+            1.0, 1.0,
+          ],
           "text-color": "#374151",
           "text-halo-color": "rgba(255,255,255,0.92)",
           "text-halo-width": 1.5,
@@ -1267,7 +1307,7 @@ export default function MapView({
         // Paint whatever is already in the cache first. In challenge mode this is the
         // only thing that paints the pending peaks: the fetch below returns early and
         // the camera lands framed without firing a moveend, so nothing else would.
-        computeViewportScores(map.getZoom());
+        computeViewportScores();
         fetchPeaksForViewport({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
       });
     });
