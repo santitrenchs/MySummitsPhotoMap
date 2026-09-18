@@ -50,6 +50,15 @@ model Peak {
   gpsVerified   Boolean  @default(false)
   isMythic          Boolean  @default(false)
   rarityId          String?
+  /// Distance in km to the nearest HIGHER peak in the catalogue — the standard
+  /// mountaineering "isolation". Measured, not derived: it is what makes a summit
+  /// the one you would name. Mont Blanc's runs to hundreds of km; an aiguille on
+  /// its ridge has one or two. Null until scripts/backfill-peak-importance.ts runs.
+  isolationKm       Float?
+  /// 0..1 ranking used to decide which peaks win a spot on the map. Derived from
+  /// altitude + isolation, so it is cheap to recompute when the formula changes
+  /// without repeating the expensive nearest-higher sweep.
+  importance        Float?
   elevationProfile  Json?
   nearbyPeaks       Json?
   nearbyPeaksUpdatedAt DateTime?
@@ -64,6 +73,7 @@ model Peak {
   @@index([rarityId])
   @@index([country])
   @@index([altitudeM])
+  @@index([importance])
   @@index([latitude, longitude])
   @@map("peaks")
 }

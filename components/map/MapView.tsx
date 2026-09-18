@@ -42,6 +42,9 @@ export type MapPeak = {
   country: string;
   rarityId: string | null;
   isMythic: boolean;
+  /** Precomputed altitude+isolation ranking (0..1). Null on rows the backfill has
+   *  not reached; the client falls back to an altitude-only score for those. */
+  importance?: number | null;
   rarity: { id: string; name: string; emoji: string; order: number } | null;
 };
 
@@ -498,15 +501,21 @@ export default function MapView({
       return;
     }
 
-    // ⚠️ Normalised against a FIXED reference, not against the viewport's own
-    // maximum. Relative normalisation made a 900 m summit score 0.19 with Mont Blanc
-    // on screen and 0.90 without it, so the same peak grew, shrank and changed rank
-    // depending on its neighbours — it flickered as you panned. The dot now means
-    // the same thing wherever you are.
+    // `importance` (altitude + isolation, precomputed — see
+    // scripts/backfill-peak-importance.ts) is the ranking. Altitude alone cannot
+    // tell a mountain from its own shoulder: sorted by height, the Mont Blanc massif
+    // returns Mont Blanc five times over before it reaches the Grandes Jorasses, so
+    // a screenful of labels goes to one summit's ridge.
+    //
+    // The fallback is altitude-only for rows the backfill has not reached, and is
+    // normalised against a FIXED reference rather than the viewport maximum: with
+    // relative normalisation a 900 m summit scored 0.19 with Mont Blanc on screen
+    // and 0.90 without it, so the same peak grew, shrank and changed rank depending
+    // on its neighbours — it flickered as you panned.
     const scored = viewportPeaks.map((p) => {
       const normAlt      = Math.min(p.altitudeM / ALT_REFERENCE_M, 1);
       const rarityWeight = RARITY_SCORE_WEIGHTS[p.rarityId ?? ""] ?? 0.1;
-      const score        = normAlt * 0.5 + rarityWeight * 0.3;
+      const score        = p.importance ?? (normAlt * 0.5 + rarityWeight * 0.3);
       return { p, score };
     });
 

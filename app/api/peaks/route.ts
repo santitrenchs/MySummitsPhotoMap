@@ -91,7 +91,7 @@ async function sampleViewportPeakIds(
 
   const rows = await prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
     WITH vp AS (
-      SELECT id, "altitudeM", latitude,
+      SELECT id, "altitudeM", importance, latitude,
              CASE WHEN longitude < ${west}::float8 THEN longitude + 360 ELSE longitude END AS lon
       FROM peaks
       WHERE latitude BETWEEN ${south}::float8 AND ${north}::float8
@@ -103,7 +103,7 @@ async function sampleViewportPeakIds(
       -- when it happens to be integral), and width_bucket has no overload for that
       -- mix — the call fails with 42883 at runtime while the same SQL typed by hand
       -- in psql works fine, because there the literals resolve to one type.
-      SELECT id, "altitudeM",
+      SELECT id, "altitudeM", importance,
              LEAST(GREATEST(width_bucket(
                latitude::float8, ${south}::float8, ${latHi}::float8, ${GRID}::int), 1), ${GRID}) AS gy,
              LEAST(GREATEST(width_bucket(
@@ -111,12 +111,18 @@ async function sampleViewportPeakIds(
       FROM vp
     ),
     ranked AS (
-      SELECT id, "altitudeM",
-             row_number() OVER (PARTITION BY gx, gy ORDER BY "altitudeM" DESC, id) AS rn
+      SELECT id, "altitudeM", importance,
+             -- importance, not altitude: ordering a massif by height hands the whole
+             -- cell to one mountain's sub-summits. COALESCE keeps rows the backfill
+             -- has not reached yet from sorting as NULL-last and vanishing.
+             row_number() OVER (
+               PARTITION BY gx, gy
+               ORDER BY COALESCE(importance, 0) DESC, "altitudeM" DESC, id
+             ) AS rn
       FROM binned
     )
     SELECT id FROM ranked
-    ORDER BY rn ASC, "altitudeM" DESC
+    ORDER BY rn ASC, COALESCE(importance, 0) DESC, "altitudeM" DESC
     LIMIT ${budget}::int
   `);
 
@@ -217,6 +223,7 @@ export async function GET(request: Request) {
       country: true,
       rarityId: true,
       isMythic: true,
+      importance: true,
       rarity: { select: { id: true, name: true, emoji: true, order: true } },
     },
   });
