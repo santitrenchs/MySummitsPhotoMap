@@ -58,7 +58,14 @@ fun formatDistance(km: Double, units: Units = UnitsState.current): String {
     if (units == Units.IMPERIAL) {
         val miles = km * MILES_PER_KM
         return if (miles < 1.0) "${metresToFeet((km * 1000).toInt())} ft"
-               else "${"%.1f".format(miles)} mi"
+               else "${oneDecimal(miles)} mi"
     }
-    return if (km < 1.0) "${(km * 1000).toInt()} m" else "${"%.1f".format(km)} km"
+    return if (km < 1.0) "${(km * 1000).toInt()} m" else "${oneDecimal(km)} km"
+}
+
+/** One decimal under 10, none above, and never a bare ".0". */
+private fun oneDecimal(n: Double): String {
+    if (n >= 10.0) return "${Math.round(n)}"
+    val r = Math.round(n * 10) / 10.0
+    return if (r == Math.floor(r)) "${r.toInt()}" else "%.1f".format(r)
 }

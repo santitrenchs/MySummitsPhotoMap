@@ -70,13 +70,21 @@ export function altitudeUnit(units: Units = DEFAULT_UNITS): "m" | "ft" {
  * Under a kilometre it switches to metres (feet in imperial) rather than
  * printing "0.8 km".
  */
+/** One decimal under 10, none above — and never a bare ".0", which reads as
+ *  false precision on an axis label that used to say "8 km". */
+function oneDecimal(n: number): string {
+  if (n >= 10) return String(Math.round(n));
+  const r = Math.round(n * 10) / 10;
+  return Number.isInteger(r) ? String(r) : r.toFixed(1);
+}
+
 export function formatDistance(km: number, opts: { units?: Units } = {}): string {
   const { units = DEFAULT_UNITS } = opts;
   if (units === "imperial") {
     const miles = km * MILES_PER_KM;
     if (miles < 1) return `${metresToFeet(km * 1000)} ft`;
-    return `${miles < 10 ? miles.toFixed(1) : Math.round(miles)} mi`;
+    return `${oneDecimal(miles)} mi`;
   }
   if (km < 1) return `${Math.round(km * 1000)} m`;
-  return `${km < 10 ? km.toFixed(1) : Math.round(km)} km`;
+  return `${oneDecimal(km)} km`;
 }

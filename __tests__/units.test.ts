@@ -50,6 +50,10 @@ describe("formatDistance", () => {
   it("drops to feet under a mile in imperial", () => {
     expect(formatDistance(0.85, { units: "imperial" })).toBe("2789 ft");
     expect(formatDistance(4.27, { units: "imperial" })).toBe("2.7 mi");
+    // 8 km is 4.97 mi: a round result must not print as "5.0 mi", and the
+    // metric axis label that has always said "8 km" must not become "8.0 km".
+    expect(formatDistance(8, { units: "imperial" })).toBe("5 mi");
+    expect(formatDistance(8)).toBe("8 km");
     expect(formatDistance(42.4, { units: "imperial" })).toBe("26 mi");
   });
 });

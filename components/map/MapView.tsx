@@ -294,9 +294,20 @@ export default function MapView({
   const u = useUnitOpts();
   const uRef = useRef(u);
   useEffect(() => { uRef.current = u; }, [u]);
+  const scaleControlRef = useRef<maplibregl.ScaleControl | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+
+  // maplibre's scale bar keeps its own unit, so it is told separately or it
+  // reads "10 km" under a map whose labels are in feet. setUnit touches the
+  // control's DOM, so it must not run for a control whose map is gone.
+  useEffect(() => {
+    if (!mapRef.current || !scaleControlRef.current) return;
+    try {
+      scaleControlRef.current.setUnit(u.units === "imperial" ? "imperial" : "metric");
+    } catch { /* control already detached */ }
+  }, [u.units]);
   const ascentByPeakId = useRef(new Map(ascentData.map((a) => [a.peakId, a])));
   const markerEls = useRef(new Map<string, HTMLElement>());
   const justSelectedRef = useRef(false);
@@ -862,7 +873,11 @@ export default function MapView({
     map.on("zoomend", updateBounds);
     map.on("move", () => updatePeakPopupPosition());
 
-    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+    // maplibre keeps its own unit setting, so it has to be told too or the bar
+    // says "10 km" under a map whose labels are in feet.
+    const scaleControl = new maplibregl.ScaleControl({ unit: uRef.current.units === "imperial" ? "imperial" : "metric" });
+    scaleControlRef.current = scaleControl;
+    map.addControl(scaleControl, "bottom-left");
 
     map.on("click", (e) => {
       if (justSelectedRef.current) { justSelectedRef.current = false; return; }
