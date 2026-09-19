@@ -682,17 +682,22 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
         }}>
           {/* Photo thumbnail on mobile */}
           {isMobile && preview && (
-            <div style={{ marginBottom: 20, position: "relative", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
-              {previewIsLandscape ? (
-                <div style={{ position: "relative", width: "100%", maxHeight: 200, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ position: "absolute", inset: 0, backgroundImage: `url("${preview}")`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(20px)", transform: "scale(1.1)" }} />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={preview} alt="" style={{ position: "relative", width: "100%", maxHeight: 200, objectFit: "contain", display: "block", zIndex: 1 }} />
-                </div>
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={preview} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: "var(--radius-md)", display: "block" }} />
-              )}
+            // The crop the user just made is shown WHOLE: the box takes the photo's own
+            // aspect (capped in height so the form stays reachable) and the image is
+            // contained over a blurred fill. A fixed maxHeight + object-fit:cover used to
+            // re-crop a 4:5 photo down to a ~200px sliver.
+            <div style={{
+              marginBottom: 20, position: "relative",
+              borderRadius: "var(--radius-md)", overflow: "hidden",
+              background: "#111",
+              width: "100%",
+              aspectRatio: previewIsLandscape ? "3 / 2" : "4 / 5",
+              maxHeight: "38vh",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <div style={{ position: "absolute", inset: 0, backgroundImage: `url("${preview}")`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(20px)", transform: "scale(1.1)" }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={preview} alt="" style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: 1 }} />
               {renderEditPhotoActions(true)}
             </div>
           )}

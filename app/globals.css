@@ -53,8 +53,10 @@
 
 /* ── AscentCard shared styles ─────────────────────────────────────────── */
 @keyframes cardFadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  /* translate3d, not translateY: the z keeps the flip-card front face in its own 3D
+     context so iOS Safari honours backface-visibility (see .card-front). */
+  from { opacity: 0; transform: translate3d(0, 20px, 1px); }
+  to   { opacity: 1; transform: translate3d(0, 0, 1px); }
 }
 
 .ascent-card {
@@ -145,6 +147,7 @@
 }
 
 .card-face {
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
@@ -154,6 +157,11 @@
   border-radius: var(--radius-xl);
   animation: cardFadeUp 0.4s ease both;
   animation-delay: calc(var(--card-i, 0) * 55ms);
+  /* Its own 3D transform. Without one, iOS Safari ignores backface-visibility on this
+     face and the flipped card shows the front mirrored through the back. The entrance
+     animation used to supply a transform, so the bug only appeared where the animation
+     is disabled (the capture-reveal card). */
+  transform: translateZ(1px);
 }
 
 .card-back {
