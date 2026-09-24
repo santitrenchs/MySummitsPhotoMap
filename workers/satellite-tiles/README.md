@@ -118,6 +118,36 @@ So `/health` carries a countdown:
 
 Point any uptime monitor at `/health` and have it assert `ok === true`.
 
+### The daily alert
+
+`/health` only helps if something polls it, so the Worker also watches its own
+key: a cron at 09:00 UTC (`triggers.crons`) runs `scheduled()`, and on the
+milestone days — 30, 14, 7, 3 and 1 day out, then every day once expired — it
+emails via Resend.
+
+It deliberately does **not** mail every day for a month: a daily mail for 30 days
+is a daily mail people learn to delete, and the one that matters would arrive
+looking like the 29 before it.
+
+Needs one secret and two vars (the vars are already in `wrangler.jsonc`):
+
+```bash
+npx wrangler secret put RESEND_API_KEY   # same key the Next app uses
+```
+
+⚠️ **Cloudflare refuses to register a cron until the account has a workers.dev
+subdomain.** If `wrangler deploy` fails with `code: 10063`, open the Workers
+section of the Cloudflare dashboard once — that creates it — then deploy again.
+The code still deploys in that case; only the schedule is skipped, so the map
+keeps working and the alert silently does not exist.
+
+Test the handler without waiting for 09:00:
+
+```bash
+npx wrangler dev --test-scheduled --var KEY_EXPIRES_AT:2026-10-02
+curl "http://localhost:8787/__scheduled?cron=0+9+*+*+*"
+```
+
 After rotating the key, update `KEY_EXPIRES_AT` in `wrangler.jsonc` and deploy —
 otherwise the countdown keeps describing the old key.
 

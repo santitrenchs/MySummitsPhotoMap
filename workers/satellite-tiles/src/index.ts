@@ -45,10 +45,32 @@ export interface Env {
    * check complain weeks ahead instead of a user finding it.
    */
   KEY_EXPIRES_AT?: string;
+
+  /**
+   * Resend API key, for the expiry alert mail. Same provider the app already
+   * uses. Optional: with no key the cron still logs, it just cannot email.
+   *   npx wrangler secret put RESEND_API_KEY
+   */
+  RESEND_API_KEY?: string;
+
+  /** Where the expiry alert goes. */
+  ALERT_EMAIL?: string;
+
+  /** From address, matching the app's verified Resend domain. */
+  ALERT_FROM?: string;
 }
 
 /** Days before expiry at which /health stops reporting "ok". */
 const EXPIRY_WARN_DAYS = 30;
+
+/**
+ * Days-remaining values that trigger an alert mail.
+ *
+ * Not "every day for a month": a daily mail for 30 days is a daily mail people
+ * learn to delete, and the one that matters arrives looking like the 29 before
+ * it. Past expiry it does nag daily, because by then it is broken.
+ */
+const ALERT_ON_DAYS = new Set([30, 14, 7, 3, 1, 0]);
 
 /** Esri's legacy public imagery service. No key, no SLA, not licensed for commercial use. */
 const DEFAULT_UPSTREAM =
@@ -134,7 +156,90 @@ export default {
 
     return withCorsHeaders(response, "MISS");
   },
+
+  /**
+   * Daily key-expiry watch (cron in wrangler.jsonc).
+   *
+   * /health already exposes the countdown, but it only helps if something is
+   * polling it. This is the belt to that braces: the Worker checks its own key
+   * and mails when the date gets close, so the failure cannot arrive unannounced
+   * just because nobody wired up a monitor.
+   */
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    const key = keyExpiry(env.KEY_EXPIRES_AT);
+
+    if (key.status === "unknown") {
+      console.warn("[expiry] KEY_EXPIRES_AT is not set — cannot warn about the ArcGIS key");
+      return;
+    }
+
+    console.log(`[expiry] status=${key.status} daysLeft=${key.daysLeft} expiresAt=${key.expiresAt}`);
+
+    if (key.status === "ok") return;
+    // Past expiry, nag every day; before it, only on the milestone days.
+    if (key.daysLeft > 0 && !ALERT_ON_DAYS.has(key.daysLeft)) return;
+
+    ctx.waitUntil(sendExpiryAlert(env, key));
+  },
 } satisfies ExportedHandler<Env>;
+
+async function sendExpiryAlert(
+  env: Env,
+  key: Extract<KeyExpiry, { status: "ok" | "expiring" | "expired" }>,
+): Promise<void> {
+  const to = env.ALERT_EMAIL;
+  if (!env.RESEND_API_KEY || !to) {
+    console.error("[expiry] RESEND_API_KEY or ALERT_EMAIL missing — alert not sent");
+    return;
+  }
+
+  const expired = key.status === "expired";
+  const subject = expired
+    ? `🔴 Peakadex: la clave de ArcGIS caducó hace ${Math.abs(key.daysLeft)} día(s)`
+    : `⚠️ Peakadex: la clave de ArcGIS caduca en ${key.daysLeft} día(s)`;
+
+  const body = [
+    expired
+      ? "La capa Satélite del Atlas ya no carga imágenes."
+      : "Cuando caduque, la capa Satélite del Atlas dejará de cargar imágenes sin mostrar ningún error.",
+    "",
+    `Caduca: ${key.expiresAt} (${key.daysLeft} días)`,
+    "",
+    "Para renovarla:",
+    "1. location.arcgis.com → Developer credentials → nueva API key (pública, solo Basemaps, sin referrers).",
+    "2. npx wrangler secret put ARCGIS_API_KEY",
+    "3. Actualiza KEY_EXPIRES_AT en workers/satellite-tiles/wrangler.jsonc y despliega.",
+    "",
+    "Estado: https://tiles.peakadex.com/health",
+  ].join("\n");
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.ALERT_FROM ?? "Peakadex <noreply@mail.peakadex.com>",
+        to: [to],
+        subject,
+        text: body,
+      }),
+    });
+
+    // Resend answers 200 with an error object rather than throwing, which is how
+    // failed sends get mistaken for successes — read the body, don't trust the
+    // status alone.
+    if (!res.ok) {
+      console.error(`[expiry] Resend rejected the alert: ${res.status} ${await res.text()}`);
+      return;
+    }
+    console.log(`[expiry] alert sent to ${to}`);
+  } catch (err) {
+    console.error("[expiry] could not reach Resend", err);
+  }
+}
 
 type KeyExpiry =
   | { status: "unknown" }

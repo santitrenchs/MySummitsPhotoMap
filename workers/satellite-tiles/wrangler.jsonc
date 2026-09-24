@@ -6,6 +6,10 @@
   "observability": {
     "enabled": true
   },
+  // Daily key-expiry check at 09:00 UTC. See the scheduled() handler.
+  "triggers": {
+    "crons": ["0 9 * * *"]
+  },
   // Custom domain — Cloudflare provisions the cert and the DNS record itself.
   // Comment this out to deploy to the *.workers.dev subdomain instead.
   "routes": [
@@ -24,7 +28,11 @@
 
     // Expiry of ARCGIS_API_KEY. Update this whenever the key is rotated —
     // /health turns "ok": false 30 days out and 503 once past it.
-    "KEY_EXPIRES_AT": "2027-09-21"
+    "KEY_EXPIRES_AT": "2027-09-21",
+
+    // Where the daily expiry alert goes. RESEND_API_KEY is a secret.
+    "ALERT_EMAIL": "santitrenchs@gmail.com",
+    "ALERT_FROM": "Peakadex <noreply@mail.peakadex.com>"
   }
   // ARCGIS_API_KEY is a SECRET, never a var — set it with:
   //   npx wrangler secret put ARCGIS_API_KEY
