@@ -12,6 +12,7 @@ import com.peakadex.app.feature.auth.LoginScreen
 import com.peakadex.app.feature.auth.RegisterScreen
 import com.peakadex.app.feature.detail.AscentDetailScreen
 import com.peakadex.app.feature.profile.ProfileSummaryScreen
+import com.peakadex.app.feature.challenges.ChallengeDetailRoute
 import com.peakadex.app.feature.friends.CordadaDetailRoute
 import com.peakadex.app.feature.settings.SettingsScreen
 import com.peakadex.app.feature.splash.SplashScreen
@@ -109,6 +110,35 @@ fun NavGraph(isAuthenticated: Boolean) {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+            )
+        }
+
+        composable(Screen.ChallengeDetail.route) { backStackEntry ->
+            val challengeId = backStackEntry.arguments?.getString("id") ?: return@composable
+            ChallengeDetailRoute(
+                challengeId     = challengeId,
+                onBack          = { navController.popBackStack() },
+                // Registrar una cima pendiente y ver las cartas de una hecha son las
+                // dos salidas de esta pantalla, pero la hoja de alta y el tab de
+                // Cards viven dentro de MainScaffold, un nivel de NavHost más abajo.
+                // Se le devuelve el resultado por el savedStateHandle de su entrada
+                // y se vuelve; MainScaffold lo consume al recuperar el foco.
+                onLogAscent = { peakId, peakName ->
+                    navController.previousBackStackEntry?.savedStateHandle?.apply {
+                        set(RESULT_PEAK_ID, peakId)
+                        set(RESULT_PEAK_NAME, peakName)
+                        set(RESULT_ACTION, ACTION_LOG_ASCENT)
+                    }
+                    navController.popBackStack()
+                },
+                onOpenPeakCards = { peakId, peakName ->
+                    navController.previousBackStackEntry?.savedStateHandle?.apply {
+                        set(RESULT_PEAK_ID, peakId)
+                        set(RESULT_PEAK_NAME, peakName)
+                        set(RESULT_ACTION, ACTION_OPEN_CARDS)
+                    }
+                    navController.popBackStack()
                 },
             )
         }

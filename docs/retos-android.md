@@ -1,6 +1,6 @@
 # Retos en Android — auditoría y plan de port
 
-Estado: **Fases 1, 2, 3 y 6 hechas** · Auditoría del 2026-09-24 contra `develop`.
+Estado: **Fases 1-4 y 6 hechas. Solo queda la 5 (Atlas).** · Auditoría del 2026-09-24.
 
 La funcionalidad de Retos existe solo en web. Este documento audita lo que hay y
 define los pasos para llevarla a Android.
@@ -172,11 +172,32 @@ sus cimas subida de antes. El progreso de un reto recién unido no es cero, porq
 se calcula desde las ascensiones que ya existen. El estado optimista pone 0 solo
 para el primer frame y la recarga trae la cifra real.
 
-### Fase 4 · Detalle del reto
+### Fase 4 · Detalle del reto — ✅ hecha
 
-Ruta a pantalla completa en el navController **externo**, como
-`CordadaDetailRoute` — pierde la barra inferior, que es lo correcto en un
-drill-down.
+`ChallengeDetailScreen.kt` + `ChallengeDetailViewModel.kt`, ruta
+`challenge/{id}` en el navController **externo** como `CordadaDetailRoute` —
+pierde la barra inferior, que es lo correcto en un drill-down.
+
+**Las dos salidas de la pantalla van por `savedStateHandle`.** Registrar una cima
+pendiente abre la hoja de alta y tocar un tile lleva al tab de Cards, pero las dos
+viven dentro de `MainScaffold`, un NavHost más abajo, y el detalle no puede
+tocarlas. Deja la acción y la cima en el `savedStateHandle` de la entrada de Main
+y hace `popBackStack`; `MainScaffold` lo consume al recuperar el foco. Es el
+mecanismo estándar de Navigation Compose, en vez de un singleton o un ViewModel
+compartido.
+
+⚠️ **Hay que borrar las claves al leerlas.** Si no, volver a Main por cualquier
+otro camino reabriría la hoja con la cima de la última vez.
+
+**Verificado en emulador**: cabecera con parche 76dp y barra segmentada (8 muescas,
+2 llenas, 25%); "Tu colección" en mosaico 4:5 con insignia de rareza; "Pendientes"
+en filas con la altitud partida en valor+unidad; tocar una pendiente abre la hoja
+de alta; tocar un tile de Tuca de Posets lleva a Cards filtrado por esa cima.
+
+Una observación de datos, no de código: en staging **Aneto (3404 m) llega con
+`rarityId: "edelweiss"`** cuando por altitud le tocaría `tundra`. Es el desajuste
+conocido entre la tabla `rarities` y `lib/rarity.ts` — producción se resincronizó,
+staging no. La pantalla usa el `rarityId` del servidor, que es lo correcto.
 
 - Cabecera: parche 76dp + nombre + descripción (2 líneas) + barra con `%` a la
   derecha + línea `27 / 150 · 123 pendientes` con `MÁS ALTA` empujado a la derecha.
