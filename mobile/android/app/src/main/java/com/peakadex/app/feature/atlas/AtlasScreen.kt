@@ -318,12 +318,15 @@ fun AtlasScreen(
                     // opens the full source list on tap — not decorative, it is the
                     // licence term every one of those providers asks for.
                     //
-                    // Bottom-left is the only free corner: the map controls sit
-                    // bottom-end and the Lista/Mapa pill bottom-center. The bottom
-                    // margin clears the pill's row on short screens.
+                    // Flush in the bottom-left corner, the convention every map
+                    // uses. It is legal chrome, not a control: it belongs out of
+                    // the way, and it cannot collide with anything — the pill is
+                    // centred and the controls hug the right edge. These margins
+                    // are MapView pixels, and the MapView is already inset by the
+                    // Scaffold, so no system-gesture clearance is needed here.
                     .attributionEnabled(true)
                     .attributionGravity(android.view.Gravity.BOTTOM or android.view.Gravity.START)
-                    .attributionMargins(intArrayOf(dp(8), 0, 0, dp(84)))
+                    .attributionMargins(intArrayOf(dp(8), 0, 0, dp(12)))
                     .attributionTintColor(android.graphics.Color.parseColor("#0D2538"))
                 // Restore the camera from the previous tab visit so the map opens
                 // exactly where the user left it (instead of the world-default 0,0).
@@ -717,10 +720,20 @@ fun AtlasScreen(
                 onToggle3D     = { terrain3d = !terrain3d },
                 geoLocating    = geoLocating,
                 onGeolocate    = ::handleGeolocate,
+                // No navigationBarsPadding(): MainScaffold already hands this
+                // content an innerPadding whose bottom is the tab bar, and the tab
+                // bar itself carries the system inset. Adding it here counted the
+                // gesture inset twice and pushed everything ~25dp up. The tab bar
+                // never hides on Atlas (MapLibre dispatches no nested scroll), so
+                // nothing here can reach the gesture strip.
+                //
+                // 20dp, not 72: the bottom-right corner is the easiest place to
+                // reach one-handed, and geolocate is the most-used control. The old
+                // value cleared the Lista/Mapa pill's row, but they never overlap —
+                // the pill is centred and ~150dp wide, these hug the right edge.
                 modifier       = Modifier
                     .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(end = 12.dp, bottom = 72.dp),
+                    .padding(end = 12.dp, bottom = 20.dp),
             )
         }
 
@@ -756,9 +769,9 @@ fun AtlasScreen(
                 val c = cameraCenter.value
                 vm.onToggleList(c?.latitude, c?.longitude)
             },
+            // No navigationBarsPadding() — see MapControlsColumn above.
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
                 .padding(bottom = 16.dp),
         )
 
