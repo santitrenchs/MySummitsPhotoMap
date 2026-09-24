@@ -16,6 +16,18 @@ object CartoTiles {
     private val keyParam: String =
         if (BuildConfig.CARTO_API_KEY.isNotBlank()) "?key=${BuildConfig.CARTO_API_KEY}" else ""
 
+    /**
+     * Required credit for the Voyager basemap. CARTO's terms ask for the CARTO
+     * and OpenStreetMap credits to stay visible.
+     *
+     * ⚠️ Must be HTML anchors: MapLibre's `AttributionParser` keeps only the
+     * `URLSpan`s it finds after `Html.fromHtml`, so plain text is dropped
+     * without a warning. See [SatelliteTiles.ATTRIBUTION].
+     */
+    const val ATTRIBUTION: String =
+        "<a href=\"https://carto.com/attributions\">© CARTO</a>, " +
+            "<a href=\"https://www.openstreetmap.org/copyright\">© OpenStreetMap contributors</a>"
+
     /** Voyager raster tiles for the MapLibre basemap source, sharded across CARTO's CDN. */
     val basemapUrls: Array<String> = arrayOf("a", "b", "c").map { sub ->
         "https://$sub.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png$keyParam"

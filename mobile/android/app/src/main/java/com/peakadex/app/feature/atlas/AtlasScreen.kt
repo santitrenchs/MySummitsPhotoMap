@@ -121,6 +121,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.peakadex.app.core.util.CartoTiles
+import com.peakadex.app.core.util.SatelliteTiles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -307,10 +308,23 @@ fun AtlasScreen(
         // ── Map ───────────────────────────────────────────────────────────────
         AndroidView(
             factory = { ctx ->
+                val density = ctx.resources.displayMetrics.density
+                fun dp(v: Int) = (v * density).toInt()
                 val options = MapLibreMapOptions.createFromAttributes(ctx)
                     .compassEnabled(false)
                     .logoEnabled(false)
-                    .attributionEnabled(false)
+                    // Required credit for the tile sources (CARTO, Esri imagery,
+                    // OpenStreetMap). Rendered as MapLibre's small (i) button, which
+                    // opens the full source list on tap — not decorative, it is the
+                    // licence term every one of those providers asks for.
+                    //
+                    // Bottom-left is the only free corner: the map controls sit
+                    // bottom-end and the Lista/Mapa pill bottom-center. The bottom
+                    // margin clears the pill's row on short screens.
+                    .attributionEnabled(true)
+                    .attributionGravity(android.view.Gravity.BOTTOM or android.view.Gravity.START)
+                    .attributionMargins(intArrayOf(dp(8), 0, 0, dp(84)))
+                    .attributionTintColor(android.graphics.Color.parseColor("#0D2538"))
                 // Restore the camera from the previous tab visit so the map opens
                 // exactly where the user left it (instead of the world-default 0,0).
                 savedCameraPos.value?.let { c ->
@@ -358,6 +372,7 @@ fun AtlasScreen(
                         val tileSet = TileSet("2.2.0", *CartoTiles.basemapUrls)
                         tileSet.setMaxZoom(19f)
                         tileSet.setMinZoom(0f)
+                        tileSet.attribution = CartoTiles.ATTRIBUTION
                         val basemapSource = RasterSource("carto-basemap", tileSet, 256)
                         val basemapLayer  = RasterLayer("carto-basemap-layer", "carto-basemap")
 
@@ -819,11 +834,12 @@ fun AtlasScreen(
 // ── Map source / layer setup ──────────────────────────────────────────────────
 
 private fun setupSources(style: org.maplibre.android.maps.Style) {
-    // ESRI World Imagery satellite tiles — no API key required.
-    // Path order is {z}/{y}/{x} (row then col) which MapLibre substitutes correctly.
-    val satTileSet = TileSet("2.2.0",
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}")
-    satTileSet.setMaxZoom(19f)
+    // Satellite imagery via our own Cloudflare Worker (workers/satellite-tiles),
+    // which holds the ArcGIS key and caches tiles at the edge. Conventional XYZ
+    // order here — the Worker transposes to Esri's {z}/{y}/{x} internally.
+    val satTileSet = TileSet("2.2.0", SatelliteTiles.tileUrl)
+    satTileSet.setMaxZoom(SatelliteTiles.MAX_ZOOM)
+    satTileSet.attribution = SatelliteTiles.ATTRIBUTION
     style.addSource(RasterSource(SRC_SATELLITE, satTileSet, 256))
 
     // terrain-dem source is declared in baseStyleJson (needed there for the

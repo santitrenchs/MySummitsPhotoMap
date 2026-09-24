@@ -59,3 +59,7 @@ public/icon-preview.html
 # Se ejecutan una vez contra Railway y no forman parte del código.
 /*.sql
 /reto-*-mapeo.txt
+
+# Cloudflare Worker local secrets
+workers/*/.dev.vars
+workers/*/.wrangler/

@@ -34,10 +34,18 @@ android {
         // (CARTO_API_KEY in ~/.gradle/gradle.properties) rather than committed. Without it
         // the basemap tiles render with an "API KEY REQUIRED" watermark.
         val cartoApiKey = "\"" + providers.gradleProperty("CARTO_API_KEY").getOrElse("") + "\""
+        // Satellite imagery goes through our own Cloudflare Worker, never straight to
+        // Esri: the ArcGIS key stays in a Worker secret instead of inside the APK, and
+        // the edge cache absorbs repeat tiles. See workers/satellite-tiles/.
+        // Override with SATELLITE_TILES_URL in ~/.gradle/gradle.properties to point a
+        // debug build at `wrangler dev`.
+        val satelliteTilesUrl = "\"" + providers.gradleProperty("SATELLITE_TILES_URL")
+            .getOrElse("https://tiles.peakadex.com/satellite/{z}/{x}/{y}") + "\""
         debug {
             buildConfigField("String", "BASE_URL", "\"https://mysummitsphotomap-staging.up.railway.app/api/v1/\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", googleWebClientId)
             buildConfigField("String", "CARTO_API_KEY", cartoApiKey)
+            buildConfigField("String", "SATELLITE_TILES_URL", satelliteTilesUrl)
         }
         release {
             isMinifyEnabled = true
@@ -50,6 +58,7 @@ android {
             buildConfigField("String", "BASE_URL", "\"https://www.peakadex.com/api/v1/\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", googleWebClientId)
             buildConfigField("String", "CARTO_API_KEY", cartoApiKey)
+            buildConfigField("String", "SATELLITE_TILES_URL", satelliteTilesUrl)
         }
     }
 

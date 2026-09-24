@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "peakadex-satellite-tiles",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "observability": {
+    "enabled": true
+  },
+  // Custom domain — Cloudflare provisions the cert and the DNS record itself.
+  // Comment this out to deploy to the *.workers.dev subdomain instead.
+  "routes": [
+    {
+      "pattern": "tiles.peakadex.com",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    // Licensed ArcGIS Location Platform imagery endpoint. Taken from the
+    // Basemap Styles service (`styles/v2/styles/arcgis/imagery` → sources →
+    // tiles), not guessed — that style is the only place the real URL is
+    // published. Same {z}/{y}/{x} row/col order as the legacy service, and
+    // 256 px tiles, so no client change was needed to adopt it.
+    "UPSTREAM_TEMPLATE": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+
+    // Expiry of ARCGIS_API_KEY. Update this whenever the key is rotated —
+    // /health turns "ok": false 30 days out and 503 once past it.
+    "KEY_EXPIRES_AT": "2027-09-21"
+  }
+  // ARCGIS_API_KEY is a SECRET, never a var — set it with:
+  //   npx wrangler secret put ARCGIS_API_KEY
+}
