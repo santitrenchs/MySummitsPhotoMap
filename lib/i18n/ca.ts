@@ -28,6 +28,7 @@ export const ca: Dict = {
   map_mapType: "Tipus de mapa",
   map_layerNormal: "Normal",
   map_layerRelief: "Relleu",
+  map_layerSatellite: "Satèl·lit",
   map_layerTrails: "Senders",
   map_layerHuts: "Refugis",
   map_geoUnsupported: "El teu navegador no admet geolocalització.",

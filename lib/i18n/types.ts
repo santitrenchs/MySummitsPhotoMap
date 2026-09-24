@@ -28,6 +28,7 @@ export type Dict = {
   map_showSearch: string; map_hideSearch: string;
   map_layers: string; map_myLocation: string;
   map_mapType: string; map_layerNormal: string; map_layerRelief: string;
+  map_layerSatellite: string;
   map_layerTrails: string; map_layerHuts: string;
   map_geoUnsupported: string; map_geoDeniedIn: string;
   map_geoDenied: string; map_geoFailed: string;

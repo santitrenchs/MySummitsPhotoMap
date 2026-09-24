@@ -28,6 +28,7 @@ export const en: Dict = {
   map_mapType: "Map type",
   map_layerNormal: "Normal",
   map_layerRelief: "Relief",
+  map_layerSatellite: "Satellite",
   map_layerTrails: "Trails",
   map_layerHuts: "Huts",
   map_geoUnsupported: "Your browser does not support geolocation.",

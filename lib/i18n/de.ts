@@ -28,6 +28,7 @@ export const de: Dict = {
   map_mapType: "Kartentyp",
   map_layerNormal: "Normal",
   map_layerRelief: "Relief",
+  map_layerSatellite: "Satellit",
   map_layerTrails: "Wanderwege",
   map_layerHuts: "Hütten",
   map_geoUnsupported: "Dein Browser unterstützt keine Standortbestimmung.",

@@ -24,3 +24,30 @@ export const CARTO_RASTER_TILES: string[] = ["a", "b", "c"].map(
 
 /** Required by CARTO's terms — must be credited on every map. */
 export const CARTO_ATTRIBUTION = "© OpenStreetMap © CARTO";
+
+/**
+ * Satellite imagery tiles — served by our own Cloudflare Worker
+ * (`workers/satellite-tiles/`), never straight from Esri.
+ *
+ * The Worker holds the ArcGIS API key in a secret and caches at the edge, so the
+ * key is not in the client bundle and a tile already seen never reaches Esri
+ * again. Conventional XYZ here — Esri's own level/row/col order is transposed
+ * inside the Worker so no client has to know about it.
+ *
+ * Override with NEXT_PUBLIC_SATELLITE_TILES_URL to point at `wrangler dev`.
+ */
+export const SATELLITE_TILES_URL =
+  process.env.NEXT_PUBLIC_SATELLITE_TILES_URL ??
+  "https://tiles.peakadex.com/satellite/{z}/{x}/{y}";
+
+/**
+ * Required credit for Esri imagery, as the ArcGIS Basemap Styles service reports
+ * it for World_Imagery. Keep in sync with `SatelliteTiles.ATTRIBUTION` on
+ * Android and `ATTRIBUTION` in the Worker.
+ */
+export const SATELLITE_ATTRIBUTION =
+  "Source: Esri, Vantor, GeoEye, Earthstar Geographics, CNES/Airbus DS, " +
+  "USDA, USGS, AeroGRID, IGN, and the GIS User Community";
+
+/** Esri has reliable global imagery to z19; beyond it, coverage is patchy. */
+export const SATELLITE_MAX_ZOOM = 19;

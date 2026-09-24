@@ -28,6 +28,7 @@ export const fr: Dict = {
   map_mapType: "Type de carte",
   map_layerNormal: "Normal",
   map_layerRelief: "Relief",
+  map_layerSatellite: "Satellite",
   map_layerTrails: "Sentiers",
   map_layerHuts: "Refuges",
   map_geoUnsupported: "Ton navigateur ne prend pas en charge la géolocalisation.",

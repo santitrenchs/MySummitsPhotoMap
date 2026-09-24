@@ -18,7 +18,14 @@ import { ChallengePatchButton } from "./ChallengePatch";
 import { makeRetoResolver, type PeakChallengeIndex } from "./peak-challenges";
 import { Button } from "@/components/ui/Button";
 import { imgUrl } from "@/lib/storage/image-url";
-import { CARTO_RASTER_TILES, CARTO_ATTRIBUTION } from "@/lib/map-tiles";
+import {
+  CARTO_RASTER_TILES,
+  CARTO_ATTRIBUTION,
+  SATELLITE_TILES_URL,
+  SATELLITE_ATTRIBUTION,
+  SATELLITE_MAX_ZOOM,
+} from "@/lib/map-tiles";
+import type { MapType } from "./MapControls";
 import { useUnitOpts } from "@/components/providers/I18nProvider";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -399,7 +406,11 @@ export default function MapView({
   const [markersReady, setMarkersReady] = useState(false);
   // Handed to MapControls so the compass can subscribe to rotation itself.
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
-  const [hillshade, setHillshade] = useState(false);
+  // One basemap at a time, mirroring Android's MapType enum. It replaced a
+  // `hillshade` boolean when satellite arrived: three mutually exclusive
+  // basemaps do not fit a flag, and two booleans would allow "relief + satellite"
+  // which renders as a darkened, unreadable photo.
+  const [mapType, setMapType] = useState<MapType>("normal");
   const [terrain3d, setTerrain3d] = useState(false);
   const [trails, setTrails] = useState(false);
   const [huts, setHuts] = useState(false);
@@ -772,12 +783,25 @@ export default function MapView({
     if (rarityFilter.length > 0 && !rarityFilter.includes(selected.peak.rarityId ?? "")) setSelected(null);
   }, [filter, rarityFilter, mythicOnly, selected]);
 
-  // Hillshade toggle
+  // Basemap toggle — normal / terrain / satellite
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.getLayer("hillshading")) return;
-    map.setLayoutProperty("hillshading", "visibility", hillshade ? "visible" : "none");
-  }, [hillshade]);
+
+    const show = (id: string, visible: boolean) => {
+      if (map.getLayer(id)) {
+        map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+      }
+    };
+
+    // Hiding the CARTO raster under the satellite matters: its labels would
+    // otherwise show through wherever the imagery has any transparency, and it
+    // would keep costing CARTO tile requests for something nobody can see.
+    show("carto-tiles", mapType !== "satellite");
+    show("satellite-tiles", mapType === "satellite");
+    // Hillshade belongs to terrain only — over a photo it just darkens it.
+    show("hillshading", mapType === "terrain");
+  }, [mapType]);
 
   // Trails toggle
   useEffect(() => {
@@ -971,6 +995,24 @@ export default function MapView({
     map.once("load", () => {
       map.resize();
       updateBounds();
+
+      // ── Satellite basemap ──────────────────────────────────────────────
+      // Added first so it sits directly above the CARTO raster and below
+      // everything else: peaks, trails and labels must stay on top of the photo.
+      // Hidden until the user picks it in the layers panel.
+      map.addSource("satellite", {
+        type: "raster",
+        tiles: [SATELLITE_TILES_URL],
+        tileSize: 256,
+        maxzoom: SATELLITE_MAX_ZOOM,
+        attribution: SATELLITE_ATTRIBUTION,
+      });
+      map.addLayer({
+        id: "satellite-tiles",
+        type: "raster",
+        source: "satellite",
+        layout: { visibility: "none" },
+      });
 
       // ── Terrain sources + 3D + hillshade ───────────────────────────────
       // Two separate sources to avoid the maplibre warning about sharing
@@ -2217,8 +2259,8 @@ export default function MapView({
           <MapControls
             isMobile={isMobile}
             map={mapInstance}
-            hillshade={hillshade}
-            onHillshadeToggle={() => setHillshade((v) => !v)}
+            mapType={mapType}
+            onMapTypeChange={setMapType}
             terrain3d={terrain3d}
             onTerrain3dToggle={() => setTerrain3d((v) => !v)}
             trails={trails}

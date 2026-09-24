@@ -7,12 +7,18 @@ import type { Dict } from "@/lib/i18n/types";
 import { i } from "@/lib/i18n";
 import { useT } from "@/components/providers/I18nProvider";
 
+/**
+ * The three mutually exclusive basemaps, mirroring Android's `MapType` enum.
+ * Exported so `MapView` types its state from the same definition.
+ */
+export type MapType = "normal" | "terrain" | "satellite";
+
 interface MapControlsProps {
   isMobile: boolean;
   /** Null until the map finishes initialising; the compass subscribes to it. */
   map: maplibregl.Map | null;
-  hillshade: boolean;
-  onHillshadeToggle: () => void;
+  mapType: MapType;
+  onMapTypeChange: (type: MapType) => void;
   terrain3d: boolean;
   onTerrain3dToggle: () => void;
   trails: boolean;
@@ -172,7 +178,7 @@ function CompassButton({ map, t }: { map: maplibregl.Map; t: Dict }) {
 export default function MapControls({
   isMobile,
   map,
-  hillshade, onHillshadeToggle,
+  mapType, onMapTypeChange,
   terrain3d, onTerrain3dToggle,
   trails, onTrailsToggle,
   huts, onHutsToggle,
@@ -192,7 +198,7 @@ export default function MapControls({
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Layers button is "active" when any non-default layer is on
-  const hasActiveLayers = hillshade || trails || huts;
+  const hasActiveLayers = mapType !== "normal" || trails || huts;
 
   function openLayers() {
     if (!layersBtnRef.current) return;
@@ -388,7 +394,9 @@ export default function MapControls({
           background: "white", borderRadius: "var(--radius-lg)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.16)",
           border: "1px solid #e5e7eb",
-          zIndex: 9999, width: 212,
+          // 248, not 212: the map-type row went from two cards to three, and at
+          // the old width each card was narrower than its own 44px icon box.
+          zIndex: 9999, width: 248,
           padding: "16px 14px",
           display: "flex", flexDirection: "column", gap: 16,
         }}>
@@ -399,8 +407,8 @@ export default function MapControls({
             <div style={{ display: "flex", gap: 8 }}>
               <LayerCard
                 label={t.map_layerNormal}
-                active={!hillshade}
-                onClick={() => { if (hillshade) onHillshadeToggle(); }}
+                active={mapType === "normal"}
+                onClick={() => onMapTypeChange("normal")}
                 icon={
                   <svg width="26" height="22" viewBox="0 0 26 22" fill="none">
                     <rect x="1" y="1" width="24" height="20" rx="3" fill="currentColor" opacity="0.12"/>
@@ -414,13 +422,28 @@ export default function MapControls({
               />
               <LayerCard
                 label={t.map_layerRelief}
-                active={hillshade}
-                onClick={() => { if (!hillshade) onHillshadeToggle(); }}
+                active={mapType === "terrain"}
+                onClick={() => onMapTypeChange("terrain")}
                 icon={
                   <svg width="26" height="22" viewBox="0 0 26 22" fill="none">
                     <path d="M1 18 L8 8 L13 13 L18 5 L25 18 Z" fill="currentColor" opacity="0.2"/>
                     <path d="M1 18 L8 8 L13 13 L18 5 L25 18" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
                     <path d="M16 5 L18 5 L20 8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+                  </svg>
+                }
+              />
+              <LayerCard
+                label={t.map_layerSatellite}
+                active={mapType === "satellite"}
+                onClick={() => onMapTypeChange("satellite")}
+                icon={
+                  /* Globe framed in a rounded square — the same shape Android's
+                     SatelliteIcon uses, so the two panels read as one product. */
+                  <svg width="26" height="22" viewBox="0 0 26 22" fill="none">
+                    <rect x="1" y="1" width="24" height="20" rx="4" fill="currentColor" opacity="0.15"/>
+                    <rect x="1" y="1" width="24" height="20" rx="4" stroke="currentColor" strokeWidth="1.5"/>
+                    <line x1="13" y1="1" x2="13" y2="21" stroke="currentColor" strokeWidth="1.2" opacity="0.55"/>
+                    <line x1="1" y1="11" x2="25" y2="11" stroke="currentColor" strokeWidth="1.2" opacity="0.55"/>
                   </svg>
                 }
               />
