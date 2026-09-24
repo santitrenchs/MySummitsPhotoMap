@@ -908,6 +908,11 @@ export default function MapView({
           }
         : { center, zoom }),
       pitch: 0,
+      // The default control prints every source as one long line, which on a wide
+      // screen runs under the peaks sidebar and gets cut mid-sentence. Replaced
+      // below by a compact one next to the scale bar — the same (i) the Android
+      // Atlas shows.
+      attributionControl: false,
     });
     mapRef.current = map;
     // The compass lives in MapControls and subscribes to the map's own "rotate"
@@ -954,6 +959,29 @@ export default function MapView({
     const scaleControl = new maplibregl.ScaleControl({ unit: uRef.current.units === "imperial" ? "imperial" : "metric" });
     scaleControlRef.current = scaleControl;
     map.addControl(scaleControl, "bottom-left");
+
+    // Credits as an (i) that expands on click, like the Android Atlas. The
+    // default control prints CARTO + OSM + Esri as one line that runs under the
+    // peaks sidebar and gets cut mid-sentence; the credit is a licence term, not
+    // something anyone reads.
+    //
+    // ⚠️ Added AFTER the scale on purpose: maplibre inserts bottom-corner
+    // controls at the start of the container, so the LAST one added sits on top.
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
+
+    // `compact: true` still opens EXPANDED and only folds once the user moves the
+    // map, so every load flashes the very line we are hiding.
+    //
+    // Marking it compact ourselves is what fixes it, and the direction matters:
+    // maplibre's _updateCompact adds `maplibregl-compact` and
+    // `maplibregl-compact-show` together, and skips the whole branch when the
+    // container already carries `maplibregl-compact`. Setting that class first
+    // makes it leave the control alone; removing `-show` instead loses a race,
+    // because _updateCompact runs later (on styledata/resize) and puts it back.
+    const attribEl = map.getContainer().querySelector(".maplibregl-ctrl-attrib");
+    attribEl?.classList.add("maplibregl-compact");
+    attribEl?.classList.remove("maplibregl-compact-show");
+    attribEl?.removeAttribute("open");
 
     map.on("click", (e) => {
       if (justSelectedRef.current) { justSelectedRef.current = false; return; }
