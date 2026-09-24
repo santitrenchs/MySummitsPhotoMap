@@ -230,4 +230,23 @@ interface ApiService {
 
     @POST("invitations/resolve")
     suspend fun resolveInvitation(@Body body: Map<String, String>): Map<String, String>
+
+    // MARK: - Challenges (Retos)
+    @GET("challenges")
+    suspend fun getChallenges(): ChallengesResponse
+
+    @GET("challenges/{id}")
+    suspend fun getChallengeDetail(@Path("id") id: String): ChallengeDetailResponse
+
+    /** Idempotente: unirse dos veces responde 200 igual. */
+    @POST("challenges/{id}/join")
+    suspend fun joinChallenge(@Path("id") id: String)
+
+    /** Idempotente. No destruye progreso: nunca se almacenó, se recalcula al volver. */
+    @DELETE("challenges/{id}/join")
+    suspend fun leaveChallenge(@Path("id") id: String)
+
+    /** Solo coordenadas, para acotar el Atlas a un reto (fase 5). */
+    @GET("challenges/{id}/map")
+    suspend fun getChallengeMap(@Path("id") id: String): ChallengeMapResponse
 }

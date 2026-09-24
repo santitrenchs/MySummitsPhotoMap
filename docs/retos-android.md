@@ -1,6 +1,6 @@
 # Retos en Android — auditoría y plan de port
 
-Estado: **Fase 1 hecha y verificada** · Auditoría del 2026-09-24 contra `develop`.
+Estado: **Fases 1 y 2 hechas** · Auditoría del 2026-09-24 contra `develop`.
 
 La funcionalidad de Retos existe solo en web. Este documento audita lo que hay y
 define los pasos para llevarla a Android.
@@ -121,17 +121,35 @@ soportada → cae a `User.language`.
 Dato para la fase 2: **`lastAscentDate` llega como `"2026-06-05T00:00:00.000Z"`**,
 un String ISO. En Kotlin es `String?`, nunca `Date`.
 
-### Fase 2 · Modelos + Retrofit
+### Fase 2 · Modelos + Retrofit — ✅ hecha
 
-`ChallengeSummary`, `ChallengeAvailable`, `ChallengeDetail`, `ChallengePeakRow`,
-`ChallengeMapPeak` y sus wrappers.
+9 `@Serializable` en `core/model/Models.kt` (`ChallengeSummary`,
+`ChallengeAvailable`, `ChallengesResponse`, `ChallengePeakRow`,
+`ChallengeDetail`, `ChallengeDetailResponse`, `ChallengeMapPeak`,
+`ChallengeMap`, `ChallengeMapResponse`) y 5 métodos en `ApiService`.
 
-⚠️ Trampas ya conocidas del proyecto, todas aplican:
-- **Respuestas envueltas**: `{ challenge }` necesita un `ChallengeResponse`, no
-  se deserializa contra el modelo directamente.
-- `lastAscentDate` llega como **String ISO**, no como Date.
-- Todo campo que pueda faltar necesita **valor por defecto** o la
-  deserialización revienta en silencio.
+Trampas del proyecto, todas contempladas:
+- **Respuestas envueltas**: `{ challenge }` va contra `ChallengeDetailResponse`,
+  nunca contra el modelo directo.
+- `lastAscentDate` es **`String?`** — llega como `"2026-06-05T00:00:00.000Z"`.
+- Todo campo omitible lleva **valor por defecto**.
+
+**`ChallengeSerializationTest`** (`app/src/test/.../core/model/`) deserializa
+**capturas literales de la API** — 5 tests, todos en verde. Existe porque en este
+proyecto la deserialización de Kotlinx **falla en silencio**: un default que falta
+o un wrapper olvidado no rompen la compilación, la pantalla simplemente sale
+vacía. Compilar no demuestra nada. Cubre la lista, el detalle con una cima hecha
+y una pendiente, las cimas del mapa, los campos desconocidos (el `rarity` anidado
+que el modelo ignora) y los ausentes.
+
+⚠️ Es el **primer test de Android del repo** y **CI no lo ejecuta**: el workflow
+solo corre `tsc`, `check-i18n`, vitest y ESLint, nada de Gradle. Hay que lanzarlo
+a mano con `./gradlew testDebugUnitTest`, o añadir un job.
+
+⚠️ Al escribir KDoc en Kotlin, **una barra seguida de asterisco abre un comentario
+anidado** y deja el bloque sin cerrar. Escribir `v1/challenges/` con un comodín
+dentro de un KDoc rompe la compilación con un "Unclosed comment" a 100 líneas de
+distancia.
 
 ### Fase 3 · Tab "Retos" en Bitácora
 

@@ -610,3 +610,112 @@ data class UserStatsResponse(
     val totalCairns: Int = 0,
     val levelIdx: Int = 1,
 )
+
+// MARK: - Challenges (Retos)
+//
+// Espejo de los tipos de lib/services/challenge.service.ts. El progreso NUNCA se
+// almacena en servidor: se recalcula cruzando las ascensiones del usuario con las
+// cimas del reto, así que estos números son siempre frescos y salir de un reto no
+// destruye nada.
+
+/** Un reto al que el usuario ya pertenece, con su progreso. */
+@Serializable
+data class ChallengeSummary(
+    val id: String,
+    val slug: String,
+    val name: String,
+    val description: String? = null,
+    val coverUrl: String? = null,
+    val totalPeaks: Int = 0,
+    val completedPeaks: Int = 0,
+    /** Un reto retirado sigue en "mine": ocultarlo haría desaparecer el progreso. */
+    val isActive: Boolean = true,
+)
+
+/** Un reto del catálogo. Los ya unidos siguen apareciendo, marcados. */
+@Serializable
+data class ChallengeAvailable(
+    val id: String,
+    val slug: String,
+    val name: String,
+    val description: String? = null,
+    val coverUrl: String? = null,
+    val totalPeaks: Int = 0,
+    /**
+     * Los retos ya unidos NO se filtran de la lista: se pintan marcados, para que
+     * el usuario vea dónde fue a parar lo que acaba de añadir. Cualquier recuento
+     * de "cuántos quedan por unir" tiene que excluirlos.
+     */
+    val isJoined: Boolean = false,
+)
+
+@Serializable
+data class ChallengesResponse(
+    val mine: List<ChallengeSummary> = emptyList(),
+    val available: List<ChallengeAvailable> = emptyList(),
+)
+
+/** Una cima dentro del detalle de un reto, con el estado para ESTE usuario. */
+@Serializable
+data class ChallengePeakRow(
+    val id: String,
+    val name: String,
+    val altitudeM: Int = 0,
+    val mountainRange: String? = null,
+    /** Poblada en ~10% del catálogo y null en todas las cimas de los retos reales. */
+    val comarca: String? = null,
+    val country: String? = null,
+    val rarityId: String? = null,
+    val isMythic: Boolean = false,
+    val done: Boolean = false,
+    /** ⚠️ ISO-8601 (`"2026-06-05T00:00:00.000Z"`), no un Date. */
+    val lastAscentDate: String? = null,
+    val photoUrl: String? = null,
+)
+
+@Serializable
+data class ChallengeDetail(
+    val id: String,
+    val slug: String,
+    val name: String,
+    val description: String? = null,
+    val coverUrl: String? = null,
+    val isActive: Boolean = true,
+    val isJoined: Boolean = false,
+    val totalPeaks: Int = 0,
+    val completedPeaks: Int = 0,
+    val maxAltitudeM: Int = 0,
+    val peaks: List<ChallengePeakRow> = emptyList(),
+)
+
+/** ⚠️ El detalle llega envuelto en `{ challenge }`, como el resto de la API v1. */
+@Serializable
+data class ChallengeDetailResponse(
+    val challenge: ChallengeDetail,
+)
+
+/** Cima del reto para el mapa: coordenadas, sin fotos ni progreso. */
+@Serializable
+data class ChallengeMapPeak(
+    val id: String,
+    val name: String,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val altitudeM: Int = 0,
+    val mountainRange: String? = null,
+    val country: String? = null,
+    val rarityId: String? = null,
+    val isMythic: Boolean = false,
+)
+
+@Serializable
+data class ChallengeMap(
+    val id: String,
+    val name: String,
+    val peaks: List<ChallengeMapPeak> = emptyList(),
+)
+
+@Serializable
+data class ChallengeMapResponse(
+    val challenge: ChallengeMap,
+)
