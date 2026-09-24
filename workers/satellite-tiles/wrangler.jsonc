@@ -31,8 +31,13 @@
     "KEY_EXPIRES_AT": "2027-09-21",
 
     // Where the daily expiry alert goes. RESEND_API_KEY is a secret.
+    //
+    // ALERT_FROM matches the app's own RESEND_FROM on Railway. It is hola@,
+    // not the noreply@ that some docs still mention: the sender has to be one
+    // the Resend domain actually has verified, and a wrong one fails the same
+    // silent way a bad key does — 200-with-an-error-body, never an exception.
     "ALERT_EMAIL": "santitrenchs@gmail.com",
-    "ALERT_FROM": "Peakadex <noreply@mail.peakadex.com>"
+    "ALERT_FROM": "Peakadex <hola@mail.peakadex.com>"
   }
   // ARCGIS_API_KEY is a SECRET, never a var — set it with:
   //   npx wrangler secret put ARCGIS_API_KEY
