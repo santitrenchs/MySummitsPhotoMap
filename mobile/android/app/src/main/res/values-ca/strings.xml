@@ -447,4 +447,59 @@
     <string name="settings_units_metric">Metres</string>
     <string name="settings_units_imperial">Peus</string>
     <string name="settings_units_note">Com es mostren altituds i distàncies. No canvia les teves rareses ni el teu nivell.</string>
+
+    <!-- Retos (Challenges) -->
+    <string name="challenges_tab">Reptes</string>
+    <string name="challenges_search_hint">Cerca un repte</string>
+    <string name="challenges_add">Afegeix</string>
+    <string name="challenges_progress">%1$d/%2$d</string>
+    <string name="challenges_completed">Repte completat!</string>
+    <string name="challenges_empty_title">Encara no segueixes cap repte</string>
+    <string name="challenges_empty_body">Els reptes són llistes de cims per anar completant. Toca «Afegeix» per veure els disponibles.</string>
+    <string name="challenges_no_search_match">Cap repte teu coincideix amb la cerca.</string>
+    <string name="challenges_available_title">Reptes disponibles</string>
+    <string name="challenges_available_search">Cerca un repte disponible</string>
+    <string name="challenges_join">Uneix-t\'hi</string>
+    <string name="challenges_joining">Unint-te…</string>
+    <string name="challenges_join_failed">No s\'ha pogut unir al repte. Torna-ho a provar.</string>
+    <string name="challenges_joined_badge">Unit</string>
+    <string name="challenges_all_joined">Ja t\'has unit a tots els reptes disponibles.</string>
+    <string name="challenges_no_available">Cap repte coincideix amb la teva cerca.</string>
+    <string name="challenges_detail_highest">Més alt</string>
+    <string name="challenges_search_peak">Cerca un cim…</string>
+    <string name="challenges_view_on_map">Veure a l\'Atlas</string>
+    <string name="challenges_atlas_exit">Surt del repte</string>
+    <string name="challenges_filters">Filtres</string>
+    <string name="challenges_filter_status">Estat</string>
+    <string name="challenges_filter_all">Tots</string>
+    <string name="challenges_filter_done">Fets</string>
+    <string name="challenges_filter_pending">Pendents</string>
+    <string name="challenges_sort_comarca">Comarca</string>
+    <string name="challenges_log_ascent">Registrar ascensió</string>
+    <string name="challenges_section_collection">La teva col·lecció</string>
+    <string name="challenges_no_peak_match">Cap cim coincideix amb la cerca.</string>
+    <plurals name="challenges_count_active">
+        <item quantity="one">%d repte actiu</item>
+        <item quantity="other">%d reptes actius</item>
+    </plurals>
+    <plurals name="challenges_count_available">
+        <item quantity="one">%d disponible</item>
+        <item quantity="other">%d disponibles</item>
+    </plurals>
+    <plurals name="challenges_remaining">
+        <item quantity="one">Queda %d cim</item>
+        <item quantity="other">Queden %d cims</item>
+    </plurals>
+    <plurals name="challenges_peaks_count">
+        <item quantity="one">%d cim</item>
+        <item quantity="other">%d cims</item>
+    </plurals>
+    <plurals name="challenges_detail_pending">
+        <item quantity="one">%d pendent</item>
+        <item quantity="other">%d pendents</item>
+    </plurals>
+    <plurals name="challenges_filter_show">
+        <item quantity="one">Veure %d cim</item>
+        <item quantity="other">Veure %d cims</item>
+    </plurals>
 </resources>

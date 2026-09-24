@@ -447,4 +447,59 @@
     <string name="settings_units_metric">Meter</string>
     <string name="settings_units_imperial">Fuß</string>
     <string name="settings_units_note">Wie Höhen und Entfernungen angezeigt werden. Ändert weder deine Seltenheiten noch dein Level.</string>
+
+    <!-- Retos (Challenges) -->
+    <string name="challenges_tab">Challenges</string>
+    <string name="challenges_search_hint">Challenge suchen</string>
+    <string name="challenges_add">Hinzufügen</string>
+    <string name="challenges_progress">%1$d/%2$d</string>
+    <string name="challenges_completed">Challenge geschafft!</string>
+    <string name="challenges_empty_title">Du verfolgst noch keine Challenge</string>
+    <string name="challenges_empty_body">Challenges sind Gipfellisten zum Abarbeiten. Tippe auf „Hinzufügen“, um die verfügbaren zu sehen.</string>
+    <string name="challenges_no_search_match">Keine deiner Challenges passt zu dieser Suche.</string>
+    <string name="challenges_available_title">Verfügbare Challenges</string>
+    <string name="challenges_available_search">Verfügbare Challenge suchen</string>
+    <string name="challenges_join">Beitreten</string>
+    <string name="challenges_joining">Trete bei…</string>
+    <string name="challenges_join_failed">Beitritt zur Challenge fehlgeschlagen. Versuch es erneut.</string>
+    <string name="challenges_joined_badge">Dabei</string>
+    <string name="challenges_all_joined">Du bist allen verfügbaren Challenges beigetreten.</string>
+    <string name="challenges_no_available">Keine Challenge passt zu deiner Suche.</string>
+    <string name="challenges_detail_highest">Höchster</string>
+    <string name="challenges_search_peak">Gipfel suchen…</string>
+    <string name="challenges_view_on_map">Im Atlas ansehen</string>
+    <string name="challenges_atlas_exit">Challenge verlassen</string>
+    <string name="challenges_filters">Filter</string>
+    <string name="challenges_filter_status">Status</string>
+    <string name="challenges_filter_all">Alle</string>
+    <string name="challenges_filter_done">Erledigt</string>
+    <string name="challenges_filter_pending">Offen</string>
+    <string name="challenges_sort_comarca">Region</string>
+    <string name="challenges_log_ascent">Besteigung eintragen</string>
+    <string name="challenges_section_collection">Deine Sammlung</string>
+    <string name="challenges_no_peak_match">Kein Gipfel passt zu dieser Suche.</string>
+    <plurals name="challenges_count_active">
+        <item quantity="one">%d aktive Challenge</item>
+        <item quantity="other">%d aktive Challenges</item>
+    </plurals>
+    <plurals name="challenges_count_available">
+        <item quantity="one">%d verfügbar</item>
+        <item quantity="other">%d verfügbar</item>
+    </plurals>
+    <plurals name="challenges_remaining">
+        <item quantity="one">Noch %d Gipfel</item>
+        <item quantity="other">Noch %d Gipfel</item>
+    </plurals>
+    <plurals name="challenges_peaks_count">
+        <item quantity="one">%d Gipfel</item>
+        <item quantity="other">%d Gipfel</item>
+    </plurals>
+    <plurals name="challenges_detail_pending">
+        <item quantity="one">%d offen</item>
+        <item quantity="other">%d offen</item>
+    </plurals>
+    <plurals name="challenges_filter_show">
+        <item quantity="one">%d Gipfel anzeigen</item>
+        <item quantity="other">%d Gipfel anzeigen</item>
+    </plurals>
 </resources>

@@ -446,4 +446,59 @@
     <string name="settings_units_metric">Metres</string>
     <string name="settings_units_imperial">Feet</string>
     <string name="settings_units_note">How altitudes and distances are shown. It does not change your rarities or your level.</string>
+
+    <!-- Retos (Challenges) -->
+    <string name="challenges_tab">Challenges</string>
+    <string name="challenges_search_hint">Search challenge</string>
+    <string name="challenges_add">Add</string>
+    <string name="challenges_progress">%1$d/%2$d</string>
+    <string name="challenges_completed">Challenge completed!</string>
+    <string name="challenges_empty_title">You are not following any challenge yet</string>
+    <string name="challenges_empty_body">Challenges are lists of summits to work through. Tap “Add” to see the available ones.</string>
+    <string name="challenges_no_search_match">None of your challenges match that search.</string>
+    <string name="challenges_available_title">Available challenges</string>
+    <string name="challenges_available_search">Search available challenge</string>
+    <string name="challenges_join">Join</string>
+    <string name="challenges_joining">Joining…</string>
+    <string name="challenges_join_failed">Couldn\'t join the challenge. Try again.</string>
+    <string name="challenges_joined_badge">Joined</string>
+    <string name="challenges_all_joined">You have joined every available challenge.</string>
+    <string name="challenges_no_available">No challenge matches your search.</string>
+    <string name="challenges_detail_highest">Highest</string>
+    <string name="challenges_search_peak">Search summit…</string>
+    <string name="challenges_view_on_map">View on the Atlas</string>
+    <string name="challenges_atlas_exit">Leave challenge view</string>
+    <string name="challenges_filters">Filters</string>
+    <string name="challenges_filter_status">Status</string>
+    <string name="challenges_filter_all">All</string>
+    <string name="challenges_filter_done">Done</string>
+    <string name="challenges_filter_pending">Pending</string>
+    <string name="challenges_sort_comarca">Region</string>
+    <string name="challenges_log_ascent">Log ascent</string>
+    <string name="challenges_section_collection">Your collection</string>
+    <string name="challenges_no_peak_match">No summit matches that search.</string>
+    <plurals name="challenges_count_active">
+        <item quantity="one">%d active challenge</item>
+        <item quantity="other">%d active challenges</item>
+    </plurals>
+    <plurals name="challenges_count_available">
+        <item quantity="one">%d available</item>
+        <item quantity="other">%d available</item>
+    </plurals>
+    <plurals name="challenges_remaining">
+        <item quantity="one">%d summit to go</item>
+        <item quantity="other">%d summits to go</item>
+    </plurals>
+    <plurals name="challenges_peaks_count">
+        <item quantity="one">%d summit</item>
+        <item quantity="other">%d summits</item>
+    </plurals>
+    <plurals name="challenges_detail_pending">
+        <item quantity="one">%d to go</item>
+        <item quantity="other">%d to go</item>
+    </plurals>
+    <plurals name="challenges_filter_show">
+        <item quantity="one">Show %d summit</item>
+        <item quantity="other">Show %d summits</item>
+    </plurals>
 </resources>

@@ -447,4 +447,59 @@
     <string name="settings_units_metric">Mètres</string>
     <string name="settings_units_imperial">Pieds</string>
     <string name="settings_units_note">Comment s’affichent altitudes et distances. Cela ne change ni tes raretés ni ton niveau.</string>
+
+    <!-- Retos (Challenges) -->
+    <string name="challenges_tab">Défis</string>
+    <string name="challenges_search_hint">Rechercher un défi</string>
+    <string name="challenges_add">Ajouter</string>
+    <string name="challenges_progress">%1$d/%2$d</string>
+    <string name="challenges_completed">Défi terminé !</string>
+    <string name="challenges_empty_title">Tu ne suis encore aucun défi</string>
+    <string name="challenges_empty_body">Les défis sont des listes de sommets à compléter. Touche « Ajouter » pour voir les défis disponibles.</string>
+    <string name="challenges_no_search_match">Aucun de tes défis ne correspond à cette recherche.</string>
+    <string name="challenges_available_title">Défis disponibles</string>
+    <string name="challenges_available_search">Rechercher un défi disponible</string>
+    <string name="challenges_join">Rejoindre</string>
+    <string name="challenges_joining">En cours…</string>
+    <string name="challenges_join_failed">Impossible de rejoindre le défi. Réessaie.</string>
+    <string name="challenges_joined_badge">Rejoint</string>
+    <string name="challenges_all_joined">Tu as rejoint tous les défis disponibles.</string>
+    <string name="challenges_no_available">Aucun défi ne correspond à ta recherche.</string>
+    <string name="challenges_detail_highest">Plus haut</string>
+    <string name="challenges_search_peak">Rechercher un sommet…</string>
+    <string name="challenges_view_on_map">Voir sur l\'Atlas</string>
+    <string name="challenges_atlas_exit">Quitter le défi</string>
+    <string name="challenges_filters">Filtres</string>
+    <string name="challenges_filter_status">Statut</string>
+    <string name="challenges_filter_all">Tous</string>
+    <string name="challenges_filter_done">Faits</string>
+    <string name="challenges_filter_pending">À faire</string>
+    <string name="challenges_sort_comarca">Région</string>
+    <string name="challenges_log_ascent">Enregistrer l\'ascension</string>
+    <string name="challenges_section_collection">Ta collection</string>
+    <string name="challenges_no_peak_match">Aucun sommet ne correspond à cette recherche.</string>
+    <plurals name="challenges_count_active">
+        <item quantity="one">%d défi actif</item>
+        <item quantity="other">%d défis actifs</item>
+    </plurals>
+    <plurals name="challenges_count_available">
+        <item quantity="one">%d disponible</item>
+        <item quantity="other">%d disponibles</item>
+    </plurals>
+    <plurals name="challenges_remaining">
+        <item quantity="one">Encore %d sommet</item>
+        <item quantity="other">Encore %d sommets</item>
+    </plurals>
+    <plurals name="challenges_peaks_count">
+        <item quantity="one">%d sommet</item>
+        <item quantity="other">%d sommets</item>
+    </plurals>
+    <plurals name="challenges_detail_pending">
+        <item quantity="one">%d restant</item>
+        <item quantity="other">%d restants</item>
+    </plurals>
+    <plurals name="challenges_filter_show">
+        <item quantity="one">Voir %d sommet</item>
+        <item quantity="other">Voir %d sommets</item>
+    </plurals>
 </resources>

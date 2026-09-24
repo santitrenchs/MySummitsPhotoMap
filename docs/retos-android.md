@@ -1,6 +1,6 @@
 # Retos en Android — auditoría y plan de port
 
-Estado: **Fases 1 y 2 hechas** · Auditoría del 2026-09-24 contra `develop`.
+Estado: **Fases 1, 2, 3 y 6 hechas** · Auditoría del 2026-09-24 contra `develop`.
 
 La funcionalidad de Retos existe solo en web. Este documento audita lo que hay y
 define los pasos para llevarla a Android.
@@ -151,15 +151,26 @@ anidado** y deja el bloque sin cerrar. Escribir `v1/challenges/` con un comodín
 dentro de un KDoc rompe la compilación con un "Unclosed comment" a 100 líneas de
 distancia.
 
-### Fase 3 · Tab "Retos" en Bitácora
+### Fase 3 · Tab "Retos" en Bitácora — ✅ hecha
 
-Cuarta pestaña, en segunda posición. Tarjeta por reto: parche 60dp + nombre +
-porcentaje + barra + subtítulo `2/8 · Quedan 6 cimas`. CTA verde `+ Añadir` que
-abre la hoja "Retos disponibles" (altura máxima 78%, búsqueda propia, cabecera
-fija). Join optimista: la tarjeta salta de la hoja a la lista y la hoja se cierra.
+`feature/challenges/ChallengesTab.kt` + `ChallengesViewModel.kt`. Cuarta pestaña
+en segunda posición (Cimas · Retos · Fotos · Etiquetado), con `PeakSearchField`
+compartido y CTA verde que abre la hoja "Retos disponibles".
 
-**Obligatorio** usar `PeakSearchField` / `PeakFilterButton` de
-`core/ui/PeakSearchComponents.kt`. No se hacen buscadores a medida.
+**Verificado en emulador contra staging**: la lista carga los retos reales con su
+progreso; la barra sale **segmentada en 8 muescas** para "Els 3000 del Piriney" y
+**lisa** para "Buyse's 3000ers" (239 cimas); la hoja muestra los ya unidos
+marcados en vez de esconderlos; y el reto sin chapa cae a su círculo con inicial.
+
+`progressPct` se portó a Kotlin desde `lib/progress-pct.ts` con su regla: nunca
+redondear a una cifra que contradiga la fracción de al lado. Visible en la
+captura — 5/239 es **2%**, no 0%.
+
+**El join optimista necesita recargar después.** Al unirse a "Miradors de
+Barcelona" la pantalla mostró **1/3 · 33%**, no 0/3: el usuario ya tenía una de
+sus cimas subida de antes. El progreso de un reto recién unido no es cero, porque
+se calcula desde las ascensiones que ya existen. El estado optimista pone 0 solo
+para el primer frame y la recarga trae la cifra real.
 
 ### Fase 4 · Detalle del reto
 
@@ -191,10 +202,16 @@ culling, ocultar marcadores de cimas ajenas, encuadrar con `fitBounds`, chip nav
 con progreso y ✕, y sección de retos **encima** de Rareza y Estado en el panel de
 filtros (un reto es el *ámbito*, no un filtro más).
 
-### Fase 6 · i18n
+### Fase 6 · i18n — ✅ hecha (adelantada a la fase 3)
 
-35 claves × 5 locales en `strings.xml`. Android **recorta espacios finales** y
-los plurales no se escriben como en `lib/i18n`.
+29 `<string>` + 6 `<plurals>` × 5 locales. Se hizo entera de una vez, incluidas
+las claves de las fases 4 y 5, para no tocar cinco ficheros dos veces.
+
+Los `{n,plural,=1{}other{s}}` de `lib/i18n` se convierten a `<plurals>` de
+Android con `quantity="one"` / `"other"`, y los `{n}` a `%d` posicionales.
+⚠️ Android trata la apóstrofe como carácter de control: hay que escaparla en
+catalán ("Uneix-t'hi", "t'has") y francés ("l'Atlas", "l'ascension") o el build
+falla.
 
 ### Fuera de alcance
 

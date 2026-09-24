@@ -57,6 +57,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Locale
 import com.peakadex.app.core.util.formatAltitude
+import com.peakadex.app.feature.challenges.ChallengesTab
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
@@ -135,6 +136,8 @@ fun BitacoraScreen(
     onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     onCaptureFirstSummit: () -> Unit = {},
+    /** Abre el detalle del reto como ruta a pantalla completa (navController externo). */
+    onOpenChallenge: (challengeId: String) -> Unit = {},
     vm: ProfileViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -166,6 +169,7 @@ fun BitacoraScreen(
             }
             is ProfileUiState.Success -> {
                 ProfileContent(
+                    onOpenChallenge      = onOpenChallenge,
                     state                = s,
                     onPeakQuery          = vm::setPeakQuery,
                     onPeakRarityFilter   = vm::setPeakRarityFilter,
@@ -376,10 +380,13 @@ private fun ProfileContent(
     onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     onCaptureFirstSummit: () -> Unit = {},
+    onOpenChallenge: (challengeId: String) -> Unit = {},
 ) {
     var activeTab by remember { mutableIntStateOf(0) }
+    // Mismo orden que web: Cimas · Retos · Fotos · Etiquetado.
     val tabs = listOf(
         stringResource(R.string.profile_tab_peaks),
+        stringResource(R.string.challenges_tab),
         stringResource(R.string.profile_tab_photos),
         stringResource(R.string.profile_tab_tagged),
     )
@@ -428,12 +435,13 @@ private fun ProfileContent(
                 onCaptureFirstSummit = onCaptureFirstSummit,
                 onNavigateToCards    = onNavigateToCards,
             )
-            1 -> PhotosTab(
+            1 -> ChallengesTab(onOpenChallenge = onOpenChallenge)
+            2 -> PhotosTab(
                 photos        = state.data.photos,
                 rarities      = state.data.rarities,
                 onAscentClick = { ascentId -> onAscentClick(ascentId, true) },
             )
-            2 -> PhotosTab(
+            3 -> PhotosTab(
                 photos        = state.data.taggedPhotos,
                 rarities      = state.data.rarities,
                 showCreator   = true,
