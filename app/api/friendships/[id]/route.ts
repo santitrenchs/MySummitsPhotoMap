@@ -6,8 +6,7 @@ const FriendshipActionSchema = z.object({
   action: z.enum(["ACCEPTED", "REJECTED", "BLOCKED", "UNBLOCKED"]),
 });
 import { respondToFriendRequest, removeFriendship, blockUser, unblockUser } from "@/lib/services/friendship.service";
-import { prisma } from "@/lib/db/client";
-import { sendFriendAcceptedEmail } from "@/lib/email";
+import { notifyFriendAccepted } from "@/lib/services/notify.service";
 
 export async function PATCH(
   req: Request,
@@ -35,17 +34,7 @@ export async function PATCH(
     const result = await respondToFriendRequest(id, session.user.id, action);
 
     if (action === "ACCEPTED") {
-      const requester = await prisma.user.findUnique({
-        where: { id: result.requesterId },
-        select: { email: true, emailNotifications: true, language: true },
-      });
-      if (requester?.emailNotifications) {
-        sendFriendAcceptedEmail(
-          requester.email,
-          session.user.name ?? session.user.email ?? "",
-          requester.language,
-        ).catch((e) => console.error("[friendships] accepted email failed:", e));
-      }
+      notifyFriendAccepted(result.requesterId, session.user.name ?? session.user.email ?? "");
     }
 
     return NextResponse.json(result);

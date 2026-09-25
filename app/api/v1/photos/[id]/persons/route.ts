@@ -4,7 +4,7 @@ import { getV1Session } from "@/lib/api-v1/auth";
 import { prisma } from "@/lib/db/client";
 import { getTenantConnection } from "@/lib/db/tenant-resolver";
 import { setFaceTag } from "@/lib/services/face-detection.service";
-import { sendPhotoTagEmail } from "@/lib/email";
+import { notifyPhotoTag } from "@/lib/services/notify.service";
 
 const Schema = z.object({ userId: z.string().uuid() });
 
@@ -77,15 +77,9 @@ export async function POST(
       where: { id: session.userId },
       select: { name: true },
     });
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true, activityNotifications: true, emailNotifications: true, language: true },
-    }).then((u) => {
-      if (u?.activityNotifications && u.emailNotifications && tagger) {
-        sendPhotoTagEmail(u.email, tagger.name ?? "", photo.ascent!.peak.name, photo.ascent!.id, u.language, photo.url)
-          .catch((e) => console.error("[v1/persons POST] tag email failed:", e));
-      }
-    }).catch(() => {});
+    if (tagger) {
+      notifyPhotoTag(userId, tagger.name ?? "", photo.ascent.peak.name, photo.ascent.id, photo.url);
+    }
   }
 
   return NextResponse.json({ ok: true }, { status: 201 });

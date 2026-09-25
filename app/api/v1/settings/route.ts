@@ -17,12 +17,13 @@ const PatchSchema = z.object({
   allowOthersToTag:      z.boolean().optional(),
   emailNotifications:    z.boolean().optional(),
   activityNotifications: z.boolean().optional(),
+  pushNotifications: z.boolean().optional(),
 });
 
 const SELECT = {
   id: true, name: true, email: true, username: true, language: true, units: true,
   appearInSearch: true, allowOthersToTag: true,
-  emailNotifications: true, activityNotifications: true,
+  emailNotifications: true, activityNotifications: true, pushNotifications: true,
   passwordHash: true,
   accounts: { select: { provider: true } },
 };

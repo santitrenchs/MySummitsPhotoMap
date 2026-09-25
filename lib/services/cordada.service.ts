@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/client";
-import { sendCordadaInviteEmail } from "@/lib/email";
+import { notifyCordadaInvite } from "@/lib/services/notify.service";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -235,23 +235,16 @@ export async function inviteToCordada(cordadaId: string, ownerId: string, target
     },
   });
 
-  // Best-effort email notification to the invitee (respects the master
-  // emailNotifications kill-switch). Never blocks/fails the invite.
-  try {
-    const [owner, target] = await Promise.all([
-      prisma.user.findUnique({ where: { id: ownerId }, select: { name: true, username: true } }),
-      prisma.user.findUnique({
-        where: { id: targetUserId },
-        select: { email: true, emailNotifications: true, language: true },
-      }),
-    ]);
-    if (target?.email && target.emailNotifications) {
-      const inviterName = owner?.username ?? owner?.name ?? "Alguien";
-      await sendCordadaInviteEmail(target.email, inviterName, cordada.name, target.language ?? "es");
-    }
-  } catch (e) {
-    console.error("[cordada] invite email failed:", e);
-  }
+  // Aviso al invitado. Nunca bloquea ni tumba la invitación.
+  const owner = await prisma.user
+    .findUnique({ where: { id: ownerId }, select: { name: true, username: true } })
+    .catch(() => null);
+  await notifyCordadaInvite(
+    targetUserId,
+    owner?.username ?? owner?.name ?? "Alguien",
+    cordada.name,
+    cordadaId,
+  );
 
   return member;
 }

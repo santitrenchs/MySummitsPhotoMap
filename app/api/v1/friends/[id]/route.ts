@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getV1Session } from "@/lib/api-v1/auth";
 import { respondToFriendRequest, removeFriendship, blockUser, unblockUser } from "@/lib/services/friendship.service";
 import { prisma } from "@/lib/db/client";
-import { sendFriendAcceptedEmail } from "@/lib/email";
+import { notifyFriendAccepted } from "@/lib/services/notify.service";
 
 const ActionSchema = z.object({
   action: z.enum(["ACCEPTED", "REJECTED", "BLOCKED", "UNBLOCKED"]),
@@ -33,21 +33,11 @@ export async function PATCH(
     const result = await respondToFriendRequest(id, session.userId, action);
 
     if (action === "ACCEPTED") {
-      const requester = await prisma.user.findUnique({
-        where: { id: result.requesterId },
-        select: { email: true, emailNotifications: true, language: true },
-      });
       const me = await prisma.user.findUnique({
         where: { id: session.userId },
         select: { name: true, email: true },
       });
-      if (requester?.emailNotifications) {
-        sendFriendAcceptedEmail(
-          requester.email,
-          me?.name ?? me?.email ?? "",
-          requester.language,
-        ).catch(() => {});
-      }
+      notifyFriendAccepted(result.requesterId, me?.name ?? me?.email ?? "");
     }
 
     return NextResponse.json({ friendship: result });

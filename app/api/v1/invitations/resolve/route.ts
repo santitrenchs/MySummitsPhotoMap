@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getV1Session } from "@/lib/api-v1/auth";
 import { prisma } from "@/lib/db/client";
 import { getFriendshipBetween, sendFriendRequest } from "@/lib/services/friendship.service";
-import { sendFriendRequestEmail } from "@/lib/email";
+import { notifyFriendRequest } from "@/lib/services/notify.service";
 
 const Schema = z.object({
   email: z.string().email().optional(),
@@ -48,13 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 400 });
   }
 
-  if (existingUser.emailNotifications) {
-    sendFriendRequestEmail(
-      existingUser.email,
-      me?.name ?? me?.email ?? "",
-      existingUser.language,
-    ).catch((e) => console.error("[v1/invitations/resolve] email failed:", e));
-  }
+  notifyFriendRequest(existingUser.id, me?.name ?? me?.email ?? "");
 
   return NextResponse.json({ status: "friend_request_sent" }, { status: 201 });
 }

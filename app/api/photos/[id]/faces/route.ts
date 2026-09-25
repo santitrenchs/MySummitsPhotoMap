@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getFaceDetections, saveFaceDetections } from "@/lib/services/face-detection.service";
 import { prisma } from "@/lib/db/client";
-import { sendPhotoTagEmail } from "@/lib/email";
+import { notifyPhotoTag } from "@/lib/services/notify.service";
 
 const BoundingBoxSchema = z.object({
   x: z.number(), y: z.number(), width: z.number(), height: z.number(),
@@ -61,15 +61,7 @@ export async function POST(
         tags.flatMap((t) => t?.userId && t.userId !== session.user.id ? [t.userId] : [])
       )];
       for (const userId of notifyIds) {
-        prisma.user.findUnique({
-          where: { id: userId },
-          select: { email: true, activityNotifications: true, emailNotifications: true, language: true },
-        }).then((u) => {
-          if (u?.activityNotifications && u.emailNotifications) {
-            sendPhotoTagEmail(u.email, taggerName, photo.ascent!.peak.name, photo.ascent!.id, u.language, photo.url)
-              .catch((e) => console.error("[faces] tag email failed:", e));
-          }
-        }).catch(() => {});
+        notifyPhotoTag(userId, taggerName, photo.ascent.peak.name, photo.ascent.id, photo.url);
       }
     }
 

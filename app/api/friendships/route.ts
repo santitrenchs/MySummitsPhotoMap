@@ -10,8 +10,7 @@ import {
   listBlockedUsers,
   sendFriendRequest,
 } from "@/lib/services/friendship.service";
-import { prisma } from "@/lib/db/client";
-import { sendFriendRequestEmail } from "@/lib/email";
+import { notifyFriendRequest } from "@/lib/services/notify.service";
 
 export async function GET() {
   const session = await auth();
@@ -38,18 +37,7 @@ export async function POST(req: Request) {
   try {
     const friendship = await sendFriendRequest(session.user.id, addresseeId);
 
-    const addressee = await prisma.user.findUnique({
-      where: { id: addresseeId },
-      select: { email: true, emailNotifications: true, language: true },
-    });
-
-    if (addressee?.emailNotifications) {
-      sendFriendRequestEmail(
-        addressee.email,
-        session.user.name ?? session.user.email ?? "",
-        addressee.language,
-      ).catch((e) => console.error("[friendships] email failed:", e));
-    }
+    notifyFriendRequest(addresseeId, session.user.name ?? session.user.email ?? "");
 
     return NextResponse.json(friendship);
   } catch (err) {

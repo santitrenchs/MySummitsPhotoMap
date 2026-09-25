@@ -166,6 +166,33 @@ módulo fresco en cada caso (`vi.resetModules()` + `await import`).
 - Reglas: el correo sigue gobernado por `emailNotifications` +
   `activityNotifications`; el push, por `pushNotifications`. Independientes.
 
+#### Estado de la fase 3 (hecha)
+
+`lib/services/notify.service.ts`, una función por evento. Las **nueve** llamadas
+dispersas pasan por ella; fuera de ese fichero no queda ni una llamada directa a
+los cuatro envíos de correo.
+
+Campo `pushNotifications` aplicado en staging
+(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS ... DEFAULT true`) y expuesto en
+`/api/settings` y `/api/v1/settings`. Los 10 usuarios de staging quedan con push
+activado por defecto.
+
+Gobierno de cada canal, conservando el del correo tal cual estaba:
+
+| Evento | Correo | Push |
+|---|---|---|
+| Solicitud de amistad | `emailNotifications` | `pushNotifications` |
+| Amistad aceptada | `emailNotifications` | `pushNotifications` |
+| Invitación a cordada | `emailNotifications` | `pushNotifications` |
+| Etiquetado en foto | `activityNotifications` **y** `emailNotifications` | `pushNotifications` |
+
+El refactor dejó cuatro consultas e imports huérfanos —`findUnique` que ya no
+leía nadie— y se limpiaron: eran round trips de verdad, no solo avisos de lint.
+
+**Falta el interruptor en la interfaz**: el campo existe en la API pero Ajustes
+de Android todavía no lo pinta. Es la fase 5. Web no lo lleva a propósito, porque
+el push hoy es solo de Android.
+
 ### Fase 4 — Android: recibir
 - Dependencia `firebase-messaging` al BOM que ya existe.
 - `POST_NOTIFICATIONS` en el manifiesto + el servicio con

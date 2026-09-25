@@ -102,6 +102,9 @@ model User {
   // Notifications
   emailNotifications    Boolean @default(true)
   activityNotifications Boolean @default(true)
+  /// Push. Independiente del correo a propósito: apagar los emails no debe
+  /// dejarte sin avisos en el móvil sin haberlo pedido.
+  pushNotifications     Boolean @default(true)
 
   // Photos & Tagging
   autoDetectFaces       Boolean @default(true)

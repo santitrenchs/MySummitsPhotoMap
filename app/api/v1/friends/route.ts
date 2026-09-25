@@ -8,7 +8,7 @@ import {
   sendFriendRequest,
 } from "@/lib/services/friendship.service";
 import { prisma } from "@/lib/db/client";
-import { sendFriendRequestEmail } from "@/lib/email";
+import { notifyFriendRequest } from "@/lib/services/notify.service";
 
 const SendSchema = z.object({ addresseeId: z.string().min(1) });
 
@@ -36,22 +36,12 @@ export async function POST(req: NextRequest) {
   try {
     const friendship = await sendFriendRequest(session.userId, addresseeId);
 
-    const addressee = await prisma.user.findUnique({
-      where: { id: addresseeId },
-      select: { email: true, emailNotifications: true, language: true, name: true },
-    });
     const sender = await prisma.user.findUnique({
       where: { id: session.userId },
       select: { name: true, email: true },
     });
 
-    if (addressee?.emailNotifications) {
-      sendFriendRequestEmail(
-        addressee.email,
-        sender?.name ?? sender?.email ?? "",
-        addressee.language,
-      ).catch((e) => console.error("[v1/friends] email failed:", e));
-    }
+    notifyFriendRequest(addresseeId, sender?.name ?? sender?.email ?? "");
 
     return NextResponse.json({ friendship }, { status: 201 });
   } catch (err) {

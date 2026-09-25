@@ -16,6 +16,7 @@ const SettingsPatchSchema = z.object({
   allowOthersToTag:      z.boolean().optional(),
   emailNotifications:    z.boolean().optional(),
   activityNotifications: z.boolean().optional(),
+  pushNotifications: z.boolean().optional(),
   mapOnboardingSeen:     z.boolean().optional(),
 });
 
@@ -28,7 +29,7 @@ export async function GET() {
     select: {
       id: true, name: true, email: true, username: true, language: true, units: true,
       appearInSearch: true, allowOthersToTag: true,
-      emailNotifications: true, activityNotifications: true,
+      emailNotifications: true, activityNotifications: true, pushNotifications: true,
     },
   });
 
@@ -70,7 +71,7 @@ export async function PATCH(req: Request) {
       select: {
         id: true, name: true, email: true, username: true, language: true, units: true,
         appearInSearch: true, allowOthersToTag: true,
-        emailNotifications: true, activityNotifications: true,
+        emailNotifications: true, activityNotifications: true, pushNotifications: true,
       },
     });
 
