@@ -1,6 +1,6 @@
 # Retos en Android — auditoría y plan de port
 
-Estado: **Fases 1-4 y 6 hechas. Solo queda la 5 (Atlas).** · Auditoría del 2026-09-24.
+Estado: **Todas las fases hechas** · Auditoría del 2026-09-24, fase 5 el 2026-09-25.
 
 La funcionalidad de Retos existe solo en web. Este documento audita lo que hay y
 define los pasos para llevarla a Android.
@@ -216,12 +216,49 @@ Detalles fáciles de perder:
   los retos reales.
 - **La lista completa siempre**, nunca un "+N más". Los filtros ocultan, no truncan.
 
-### Fase 5 · Reto en el Atlas *(separable)*
+### Fase 5 · Reto en el Atlas — ✅ hecha
 
-Congelar `peaksCache` al reto, saltar el fetch por viewport, desactivar el
-culling, ocultar marcadores de cimas ajenas, encuadrar con `fitBounds`, chip navy
-con progreso y ✕, y sección de retos **encima** de Rareza y Estado en el panel de
-filtros (un reto es el *ámbito*, no un filtro más).
+**Resultó mucho menos invasiva de lo previsto**, y esa es la lección: el modelo de
+viewport de Android no se tocó. `updateMapSources` recibe `climbed` y `viewport`
+como parámetros, así que acotar el Atlas se resuelve cambiando **las entradas**,
+no la fontanería.
+
+Dos propiedades calculadas en `AtlasUiState` concentran todo el modo:
+- `mapUnclimbed` → las cimas del reto en vez de `peaksCache`.
+- `mapClimbed` → solo las ascensiones de cimas del reto, ocultando cumbres ajenas.
+
+El resto: `onMapIdle` sale temprano en modo reto (un paneo repoblaría el mapa
+desde el catálogo y "filtrado por el reto" duraría un gesto), `fitBounds` al
+recibir las cimas, chip navy con `N/total` y ✕, y sección de retos **encima** de
+Rareza y Estado en el panel de filtros — un reto es el ámbito, no un filtro más.
+
+Entradas: el CTA "Ver en el Atlas" del detalle (vía `savedStateHandle`, como las
+otras dos salidas) y las píldoras del panel de filtros.
+
+⚠️ **El encuadre se dispara con la LISTA de cimas, no con el id**: el id llega
+antes que los datos y encuadrar sobre una lista vacía no hace nada. Y no se
+guarda en `savedCameraPos`: el modo reto es un desvío, volver al Atlas debe
+devolverte donde lo dejaste.
+
+⚠️ `Color` en `AtlasScreen.kt` resuelve a `android.graphics.Color`, no al de
+Compose. Hay que cualificar `androidx.compose.ui.graphics.Color` como hace el
+resto del fichero.
+
+**Verificado en emulador**: el chip sale con "Els 3000 del Piriney 2/8", la cámara
+encuadra los Pirineos, solo aparecen las 2 cimas subidas del reto (las ajenas se
+ocultan) y el ✕ repuebla el catálogo (127 cimas).
+
+#### Pendiente, y NO es de esta fase
+
+Las cimas **sin subir no se pintan como puntos a zoom medio (~8)**. Comprobado con
+el experimento de control: al salir del reto, con 127 features metidas en la
+fuente, la pantalla sigue mostrando solo marcadores de foto. **El comportamiento
+es idéntico dentro y fuera del modo reto**, así que es una cuestión previa del
+Atlas, no una regresión.
+
+La fuente es `SRC_UNCLIMBED_CLUSTERED` con `clusterMaxZoom(9)`: por debajo de ese
+zoom todo se agrupa, y los círculos de clúster tampoco aparecen. Los puntos sí se
+ven a zoom alto. Merece su propia investigación.
 
 ### Fase 6 · i18n — ✅ hecha (adelantada a la fase 3)
 

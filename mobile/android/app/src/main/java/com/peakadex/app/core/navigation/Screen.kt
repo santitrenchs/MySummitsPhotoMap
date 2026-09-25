@@ -47,3 +47,8 @@ const val RESULT_PEAK_NAME = "result_peak_name"
 
 const val ACTION_LOG_ASCENT = "log_ascent"
 const val ACTION_OPEN_CARDS = "open_cards"
+const val ACTION_OPEN_ATLAS = "open_atlas"
+
+/** Id del reto con el que acotar el Atlas, para ACTION_OPEN_ATLAS. */
+const val RESULT_CHALLENGE_ID = "result_challenge_id"
+const val RESULT_CHALLENGE_NAME = "result_challenge_name"

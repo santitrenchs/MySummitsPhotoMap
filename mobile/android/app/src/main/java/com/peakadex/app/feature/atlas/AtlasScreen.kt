@@ -86,6 +86,7 @@ import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.size.Size
 import com.peakadex.app.R
+import com.peakadex.app.core.model.ChallengeSummary
 import com.peakadex.app.core.model.MapAscent
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Rarity
@@ -129,7 +130,9 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.maplibre.android.camera.CameraUpdateFactory
+import android.util.Log
 import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapLibreMapOptions
 import org.maplibre.android.maps.MapView
@@ -237,6 +240,10 @@ private const val LYR_SATELLITE           = "satellite-layer"
 @Composable
 fun AtlasScreen(
     atlasRefreshTrigger: Int = 0,
+    /** Reto con el que acotar el Atlas al entrar, puesto por el detalle del reto. */
+    pendingChallengeId: String? = null,
+    pendingChallengeName: String? = null,
+    onChallengeConsumed: () -> Unit = {},
     onNavigateToCards: (peakId: String, peakName: String) -> Unit = { _, _ -> },
     onNavigateToNewAscent: (peakId: String, peakName: String) -> Unit = { _, _ -> },
     vm: AtlasViewModel = viewModel(),
@@ -248,6 +255,14 @@ fun AtlasScreen(
     // Reload climbed peaks when a new ascent is created elsewhere in the app.
     LaunchedEffect(atlasRefreshTrigger) {
         if (atlasRefreshTrigger > 0) vm.loadClimbedAscents()
+    }
+
+    // Entrada desde el detalle del reto. Se consume en cuanto se aplica para que
+    // volver al tab del Atlas más tarde no vuelva a meterte en el mismo reto.
+    LaunchedEffect(pendingChallengeId) {
+        val id = pendingChallengeId ?: return@LaunchedEffect
+        vm.enterChallenge(id, pendingChallengeName)
+        onChallengeConsumed()
     }
 
     val mapViewRef    = remember { mutableStateOf<MapView?>(null) }
@@ -500,8 +515,12 @@ fun AtlasScreen(
         }
 
         // ── Update GeoJSON sources when peaks / filter change ─────────────────
-        val climbed           = uiState.climbedByPeakId
-        val viewport          = uiState.peaksCache.values.toList()
+        // En modo reto estas dos pasan a ser las cimas del reto y solo sus
+        // ascensiones; todo lo de abajo (features, filtros, capas) sigue igual.
+        // Acotar el Atlas se resuelve cambiando las ENTRADAS del mapa, no su
+        // fontanería, que es lo que evita tocar el modelo de viewport.
+        val climbed           = uiState.mapClimbed
+        val viewport          = uiState.mapUnclimbed
         val filter            = uiState.filter
         val rarities          = uiState.rarities
         val selectedRarityIds = uiState.selectedRarityIds
@@ -593,6 +612,40 @@ fun AtlasScreen(
                     CameraUpdateFactory.newLatLngZoom(LatLng(41.3851, 2.1734), 8.0), 800,
                 )
             }
+        }
+
+        // ── Encuadre del reto ─────────────────────────────────────────────────
+        //
+        // Al entrar en un reto la cámara se lleva a sus cimas. Se dispara con la
+        // LISTA, no con el id: el id llega antes que las cimas y encuadrar sobre
+        // una lista vacía no haría nada, dejando al usuario en donde estuviera.
+        //
+        // ⚠️ Este encuadre NO se guarda en savedCameraPos: el modo reto es un
+        // desvío, y volver al Atlas debe devolverte donde lo dejaste.
+        LaunchedEffect(uiState.challengePeaks) {
+            val peaks = uiState.challengePeaks
+            if (peaks.isEmpty()) return@LaunchedEffect
+            val map = mapRef.value ?: return@LaunchedEffect
+            hasInitialFlown.value = true   // impide que el vuelo inicial lo pise
+
+            val boundsBuilder = LatLngBounds.Builder()
+            peaks.forEach { boundsBuilder.include(LatLng(it.latitude, it.longitude)) }
+            runCatching {
+                // Un reto de una sola cima da un área nula y LatLngBounds lanza:
+                // en ese caso se centra a un zoom razonable en vez de encuadrar.
+                if (peaks.size == 1) {
+                    map.animateCamera(
+                        CameraUpdateFactory.newLatLngZoom(
+                            LatLng(peaks[0].latitude, peaks[0].longitude), 12.0,
+                        ), 700,
+                    )
+                } else {
+                    map.animateCamera(
+                        CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 120),
+                        700,
+                    )
+                }
+            }.onFailure { Log.e("AtlasScreen", "challenge fitBounds failed: ${it.message}") }
         }
 
         // ── Glow pulse ring on selected peak ──────────────────────────────────
@@ -709,6 +762,50 @@ fun AtlasScreen(
 
         // ── Map control buttons (bottom-right) ────────────────────────────────
         if (!uiState.showList) {
+            // ── Chip del reto activo ──────────────────────────────────────────
+            //
+            // Navy, no verde ni azul: es un banner de CONTEXTO, no una acción, y
+            // en una superficie donde lo verde crea y lo azul filtra, el oscuro se
+            // lee como cromo. Es además lo que impide que un Atlas al que le
+            // faltan casi todas sus cimas parezca una avería.
+            if (uiState.inChallengeMode) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .statusBarsPadding()
+                        .padding(top = if (showTopBar) 68.dp else 12.dp, start = 12.dp, end = 12.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(PeakSlate)
+                        .padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = uiState.challengeName.orEmpty(),
+                        color = androidx.compose.ui.graphics.Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Text(
+                        text = "${uiState.challengeDone}/${uiState.challengePeaks.size}",
+                        color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.75f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    IconButton(onClick = vm::exitChallenge, modifier = Modifier.size(28.dp)) {
+                        Icon(
+                            CloseIcon,
+                            contentDescription = stringResource(R.string.challenges_atlas_exit),
+                            tint = androidx.compose.ui.graphics.Color.White,
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
+                }
+            }
+
             MapControlsColumn(
                 map            = mapRef.value,
                 showTopBar     = showTopBar,
@@ -802,6 +899,7 @@ fun AtlasScreen(
                 if (bounds == null) viewport
                 else viewport.filter { bounds.contains(it.latitude, it.longitude) }
             }
+            LaunchedEffect(Unit) { vm.loadMyChallenges() }
             FiltersPanel(
                 rarities              = rarities,
                 climbed               = climbed,
@@ -817,6 +915,12 @@ fun AtlasScreen(
                 isDirty               = isDirty,
                 onClearFilters        = vm::clearFilters,
                 onDismiss             = { filtersOpen = false },
+                myChallenges          = uiState.myChallenges,
+                activeChallengeId     = uiState.challengeId,
+                onChallengeSelected   = { c ->
+                    if (c == null) vm.exitChallenge() else vm.enterChallenge(c.id, c.name)
+                    filtersOpen = false
+                },
             )
         }
 
@@ -2376,6 +2480,9 @@ private fun FiltersPanel(
     isDirty: Boolean,
     onClearFilters: () -> Unit,
     onDismiss: () -> Unit,
+    myChallenges: List<ChallengeSummary>,
+    activeChallengeId: String?,
+    onChallengeSelected: (ChallengeSummary?) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -2462,6 +2569,46 @@ private fun FiltersPanel(
                     .padding(horizontal = 20.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
+
+                // ── Retos ─────────────────────────────────────────────────────
+                // Va ANTES de Rareza y Estado a propósito: un reto no es otro
+                // filtro, es el ÁMBITO. Los de abajo siguen filtrando dentro de él
+                // ("Sin capturar" dentro de un reto es tu lista de pendientes).
+                // Sin retos unidos la sección no se pinta.
+                if (myChallenges.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = stringResource(R.string.challenges_tab).uppercase(),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PeakSubtle,
+                            letterSpacing = 0.8.sp,
+                        )
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            myChallenges.forEach { c ->
+                                val active = c.id == activeChallengeId
+                                Box(
+                                    modifier = Modifier
+                                        .padding(bottom = 8.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(if (active) PeakSlate else androidx.compose.ui.graphics.Color(0xFFF3F4F6))
+                                        // Volver a tocar el activo sale del reto:
+                                        // es selección única, no una lista de checks.
+                                        .clickable { onChallengeSelected(if (active) null else c) }
+                                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                                ) {
+                                    Text(
+                                        text = "${c.name}  ${c.completedPeaks}/${c.totalPeaks}",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (active) androidx.compose.ui.graphics.Color.White else PeakTextHeadline,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
 
                 // ── RAREZA ────────────────────────────────────────────────────
                 if (rarities.isNotEmpty()) {

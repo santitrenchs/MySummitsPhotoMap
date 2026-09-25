@@ -140,6 +140,14 @@ fun NavGraph(isAuthenticated: Boolean) {
                     }
                     navController.popBackStack()
                 },
+                onViewOnAtlas = { id, name ->
+                    navController.previousBackStackEntry?.savedStateHandle?.apply {
+                        set(RESULT_CHALLENGE_ID, id)
+                        set(RESULT_CHALLENGE_NAME, name)
+                        set(RESULT_ACTION, ACTION_OPEN_ATLAS)
+                    }
+                    navController.popBackStack()
+                },
             )
         }
 

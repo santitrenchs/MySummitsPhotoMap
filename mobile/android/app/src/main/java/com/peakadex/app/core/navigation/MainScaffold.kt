@@ -114,6 +114,8 @@ fun MainScaffold(navController: NavController) {
     // New ascent sheet — peak pre-fill from Atlas "Capturar" button
     var showNewAscent         by remember { mutableStateOf(false) }
     var autoOpenFriendInvite  by remember { mutableStateOf(false) }
+    var pendingChallengeId    by remember { mutableStateOf<String?>(null) }
+    var pendingChallengeName  by remember { mutableStateOf<String?>(null) }
     var newAscentPeakId       by remember { mutableStateOf<String?>(null) }
     var newAscentPeakName     by remember { mutableStateOf<String?>(null) }
 
@@ -135,15 +137,29 @@ fun MainScaffold(navController: NavController) {
         val handle = mainEntry?.savedStateHandle ?: return@LaunchedEffect
         val peakId = handle.get<String>(RESULT_PEAK_ID)
         val peakName = handle.get<String>(RESULT_PEAK_NAME)
+        val challengeId = handle.get<String>(RESULT_CHALLENGE_ID)
+        val challengeName = handle.get<String>(RESULT_CHALLENGE_NAME)
         handle.remove<String>(RESULT_ACTION)
         handle.remove<String>(RESULT_PEAK_ID)
         handle.remove<String>(RESULT_PEAK_NAME)
+        handle.remove<String>(RESULT_CHALLENGE_ID)
+        handle.remove<String>(RESULT_CHALLENGE_NAME)
 
         when (action) {
             ACTION_LOG_ASCENT -> {
                 newAscentPeakId = peakId
                 newAscentPeakName = peakName
                 showNewAscent = true
+            }
+            ACTION_OPEN_ATLAS -> {
+                // El Atlas se acota desde su propio ViewModel, que es de ámbito
+                // Activity: basta con dejar la petición aquí y navegar al tab.
+                pendingChallengeId = challengeId
+                pendingChallengeName = challengeName
+                tabNavController.navigate(Screen.Map.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                }
             }
             ACTION_OPEN_CARDS -> {
                 pendingPeakId = peakId
@@ -377,6 +393,9 @@ fun MainScaffold(navController: NavController) {
             composable(Screen.Map.route) {
                 AtlasScreen(
                     atlasRefreshTrigger = atlasRefreshTrigger,
+                    pendingChallengeId   = pendingChallengeId,
+                    pendingChallengeName = pendingChallengeName,
+                    onChallengeConsumed  = { pendingChallengeId = null; pendingChallengeName = null },
                     onNavigateToCards = { peakId, peakName ->
                         pendingPeakId   = peakId
                         pendingPeakName = peakName

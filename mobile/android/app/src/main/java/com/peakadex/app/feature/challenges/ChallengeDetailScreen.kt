@@ -89,11 +89,12 @@ fun ChallengeDetailRoute(
     onBack: () -> Unit,
     onLogAscent: (peakId: String, peakName: String) -> Unit,
     onOpenPeakCards: (peakId: String, peakName: String) -> Unit,
+    onViewOnAtlas: (challengeId: String, challengeName: String) -> Unit,
     vm: ChallengeDetailViewModel = viewModel(),
 ) {
     LaunchedEffect(challengeId) { vm.load(challengeId) }
     BackHandler { onBack() }
-    ChallengeDetailScreen(vm, onBack, onLogAscent, onOpenPeakCards)
+    ChallengeDetailScreen(vm, onBack, onLogAscent, onOpenPeakCards, onViewOnAtlas)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,6 +104,7 @@ private fun ChallengeDetailScreen(
     onBack: () -> Unit,
     onLogAscent: (String, String) -> Unit,
     onOpenPeakCards: (String, String) -> Unit,
+    onViewOnAtlas: (String, String) -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     var filtersOpen by remember { mutableStateOf(false) }
@@ -173,6 +175,13 @@ private fun ChallengeDetailScreen(
                                 state.status != ChallengeStatusFilter.ALL ||
                                 state.sort != ChallengeSort.ALTITUDE_DESC,
                             onOpenFilters = { filtersOpen = true },
+                            // ⚠️ Con el aspecto EN REPOSO de PeakFilterButton, no
+                            // relleno: el relleno oscuro es lo que ese botón hace
+                            // cuando SÍ está filtrando, y uno oscuro al lado se
+                            // leería como un filtro ya aplicado. Verde tampoco:
+                            // en toda la app verde es crear, y abrir el Atlas no
+                            // crea nada.
+                            onViewOnAtlas = { onViewOnAtlas(c.id, c.name) },
                         )
                     }
                 }
@@ -316,21 +325,45 @@ private fun DetailProgressBar(done: Int, total: Int) {
 }
 
 @Composable
-private fun FilterBar(query: String, onQuery: (String) -> Unit, dirty: Boolean, onOpenFilters: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        PeakSearchField(
-            value = query, onValueChange = onQuery,
-            placeholder = stringResource(R.string.challenges_search_peak),
-            modifier = Modifier.weight(1f),
-        )
-        PeakFilterButton(
-            label = stringResource(R.string.challenges_filters),
-            active = dirty, showBadge = dirty, onClick = onOpenFilters,
-        )
+private fun FilterBar(
+    query: String,
+    onQuery: (String) -> Unit,
+    dirty: Boolean,
+    onOpenFilters: () -> Unit,
+    onViewOnAtlas: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PeakSearchField(
+                value = query, onValueChange = onQuery,
+                placeholder = stringResource(R.string.challenges_search_peak),
+                modifier = Modifier.weight(1f),
+            )
+            PeakFilterButton(
+                label = stringResource(R.string.challenges_filters),
+                active = dirty, showBadge = dirty, onClick = onOpenFilters,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        // En su propia línea: tres controles en 360dp dejarían el CTA en un icono mudo.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(Color.White)
+                .clickable(onClick = onViewOnAtlas),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                stringResource(R.string.challenges_view_on_map),
+                fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PeakNavyDark,
+            )
+        }
     }
 }
 

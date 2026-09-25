@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
 import com.peakadex.app.core.model.GeocodedPlace
 import com.peakadex.app.core.model.MapAscent
+import com.peakadex.app.core.model.ChallengeSummary
 import com.peakadex.app.core.model.Peak
 import com.peakadex.app.core.model.Rarity
 import kotlinx.coroutines.CancellationException
@@ -61,7 +62,46 @@ data class AtlasUiState(
     // Current camera bounds — lets the UI (filter counts) scope the accumulative
     // peaksCache to what the user is actually looking at.
     val bounds: ViewportBounds? = null,
-)
+
+    // ── Modo reto ────────────────────────────────────────────────────────────
+    // Cuando hay un reto activo el Atlas deja de ser el catálogo y pasa a ser
+    // SOLO las cimas de ese reto. No es un filtro más: es el ámbito, y por eso
+    // los filtros de rareza y estado siguen funcionando dentro de él.
+    val challengeId: String? = null,
+    val challengeName: String? = null,
+    val challengePeaks: List<Peak> = emptyList(),
+    val isLoadingChallenge: Boolean = false,
+    /** Retos a los que el usuario pertenece, para la sección del panel de filtros. */
+    val myChallenges: List<ChallengeSummary> = emptyList(),
+) {
+    val inChallengeMode: Boolean get() = challengeId != null
+    private val challengePeakIds: Set<String> get() = challengePeaks.mapTo(HashSet()) { it.id }
+
+    /**
+     * Cimas del reto ya subidas. El endpoint del mapa no manda progreso porque no
+     * hace falta: es el cruce de sus cimas con las ascensiones que ya tenemos.
+     */
+    val challengeDone: Int get() = challengePeaks.count { it.id in climbedByPeakId }
+
+    /**
+     * Lo que se pinta como "no subido".
+     *
+     * En modo reto son SUS cimas, no la caché del viewport: si saliera de la
+     * caché, un paneo repoblaría el mapa desde el catálogo entero y "filtrado por
+     * el reto" duraría un gesto.
+     */
+    val mapUnclimbed: List<Peak> get() =
+        if (inChallengeMode) challengePeaks else peaksCache.values.toList()
+
+    /**
+     * Marcadores de foto a pintar. En modo reto se ocultan las cimas subidas que
+     * no pertenecen al reto: si no, el mapa filtra los puntos pero sigue
+     * enseñando cumbres ajenas y la pantalla deja de significar nada.
+     */
+    val mapClimbed: Map<String, MapAscent> get() =
+        if (inChallengeMode) climbedByPeakId.filterKeys { it in challengePeakIds }
+        else climbedByPeakId
+}
 
 private const val TAG = "AtlasViewModel"
 
@@ -133,6 +173,10 @@ class AtlasViewModel : ViewModel() {
     fun onMapIdle(north: Double, south: Double, east: Double, west: Double, zoom: Double) {
         lastBounds = ViewportBounds(north, south, east, west, zoom)
         _uiState.update { it.copy(bounds = lastBounds) }
+        // En modo reto el mapa muestra un conjunto fijo: pedir cimas por viewport
+        // lo repoblaría desde el catálogo. Las bounds sí se guardan, para poder
+        // repoblar al salir sin esperar a que el usuario mueva la cámara.
+        if (_uiState.value.inChallengeMode) return
         if (_uiState.value.filter == AtlasFilter.CLIMBED) return
         viewportJob?.cancel()
         viewportJob = viewModelScope.launch {
@@ -169,6 +213,85 @@ class AtlasViewModel : ViewModel() {
                 _uiState.update { it.copy(viewportError = true) }
             }
         }
+    }
+
+    // ── Modo reto ────────────────────────────────────────────────────────────
+
+    /** Carga los retos del usuario para la sección del panel de filtros. */
+    fun loadMyChallenges() {
+        if (_uiState.value.myChallenges.isNotEmpty()) return
+        viewModelScope.launch {
+            try {
+                val res = api.getChallenges()
+                _uiState.update { it.copy(myChallenges = res.mine) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Sin retos la sección simplemente no se pinta y el resto de
+                // filtros sigue funcionando: no merece romper el panel.
+                Log.e(TAG, "my challenges fetch failed: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Acota el Atlas a un reto. La cámara la encuadra la pantalla, que es quien
+     * tiene el mapa; aquí solo se cargan las cimas.
+     */
+    fun enterChallenge(challengeId: String, challengeName: String?) {
+        if (_uiState.value.challengeId == challengeId) return
+        viewportJob?.cancel()   // un fetch en vuelo repoblaría el mapa tras entrar
+        _uiState.update {
+            it.copy(
+                challengeId = challengeId,
+                challengeName = challengeName,
+                challengePeaks = emptyList(),
+                isLoadingChallenge = true,
+                selected = null,
+            )
+        }
+        viewModelScope.launch {
+            try {
+                val c = api.getChallengeMap(challengeId).challenge
+                val peaks = c.peaks.map { p ->
+                    Peak(
+                        id = p.id, name = p.name,
+                        latitude = p.latitude, longitude = p.longitude,
+                        altitudeM = p.altitudeM, mountainRange = p.mountainRange,
+                        country = p.country, rarityId = p.rarityId, isMythic = p.isMythic,
+                    )
+                }
+                _uiState.update {
+                    it.copy(
+                        challengeName = c.name,
+                        challengePeaks = peaks,
+                        isLoadingChallenge = false,
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "challenge map fetch failed: ${e.message}")
+                // Salir del modo en vez de dejar un Atlas vacío con el chip puesto,
+                // que parecería un reto sin cimas.
+                _uiState.update {
+                    it.copy(challengeId = null, challengeName = null, isLoadingChallenge = false)
+                }
+                lastBounds?.let { b -> onMapIdle(b.north, b.south, b.east, b.west, b.zoom) }
+            }
+        }
+    }
+
+    /**
+     * Vuelve al catálogo. Repuebla desde las últimas bounds conocidas en vez de
+     * esperar a que el usuario mueva la cámara, que dejaría el mapa vacío.
+     */
+    fun exitChallenge() {
+        if (!_uiState.value.inChallengeMode) return
+        _uiState.update {
+            it.copy(challengeId = null, challengeName = null, challengePeaks = emptyList(), selected = null)
+        }
+        lastBounds?.let { b -> onMapIdle(b.north, b.south, b.east, b.west, b.zoom) }
     }
 
     // Retries whatever failed: the climbed-ascents load and/or the last viewport fetch.
