@@ -222,6 +222,13 @@
     <string name="settings_email_notifications">Notificacions per correu</string>
     <string name="settings_activity_notifications">Notificacions d\'activitat</string>
 
+    <string name="push_priming_title">No et perdis el que passa</string>
+    <string name="push_priming_body">T’avisem quan algú accepti la teva sol·licitud, et convidi a una cordada o t’etiqueti en una foto. Res més.</string>
+    <string name="push_priming_accept">Activar avisos</string>
+    <string name="push_priming_later">Ara no</string>
+    <string name="settings_push_notif">Notificacions push</string>
+    <string name="settings_push_notif_desc">Avisos en aquest dispositiu</string>
+    <string name="settings_push_denied">Activa-les als ajustos del sistema</string>
     <string name="push_channel_social">Amistats i cordades</string>
     <string name="push_channel_social_desc">Sol·licituds, invitacions i respostes</string>
     <string name="push_channel_tags">Etiquetes a fotos</string>

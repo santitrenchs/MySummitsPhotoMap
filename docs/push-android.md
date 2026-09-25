@@ -237,6 +237,34 @@ como binario y calla en vez de reportar la coincidencia — eso me dio un falso
   sistema cuando el permiso está denegado.
 - Sin el permiso concedido, no registrar token: evita filas que nunca entregarán.
 
+#### Estado de la fase 5 (hecha)
+
+`PushPermission` + `PushPrimingSheet`, alojada en `MainScaffold` para que pueda
+aparecer sobre cualquier pestaña. Se dispara desde `FriendsViewModel` tras la
+primera solicitud de amistad o invitación enviada, una sola vez.
+
+La marca de «ya se enseñó» se pone **acepte o no**: insistir tras un «ahora no»
+es lo que convierte un permiso en una molestia. Queda el interruptor de Ajustes.
+
+El interruptor tiene dos formas, y las dos se verificaron en el emulador:
+
+| Permiso | Fila |
+|---|---|
+| concedido | interruptor real, ligado a `pushNotifications` |
+| denegado | enlace con chevron → abre los ajustes del sistema |
+
+Se relee en cada `ON_RESUME`, porque el usuario puede ir a los ajustes del
+sistema y volver. El interruptor persiste: comprobado `t → f → t` contra la base
+de datos de staging.
+
+⚠️ **La hoja de priming no se ha visto en pantalla.** Dispararla exige una
+solicitud de amistad real, que crea datos y manda un correo a una persona. Las
+dos ramas del interruptor sí se verificaron. Queda como comprobación manual.
+
+Al conceder el permiso desde la hoja se registra el token en ese momento: antes
+no se registraba, porque un token sin permiso solo sirve para gastar envíos que
+el sistema descarta en silencio.
+
 ### Fase 6 — Android: abrir donde toca
 - Al tocar la notificación, abrir la pantalla del evento: Cordada para las
   solicitudes e invitaciones, la carta para el etiquetado.

@@ -20,6 +20,7 @@ data class User(
     val allowOthersToTag: Boolean? = null,
     val emailNotifications: Boolean? = null,
     val activityNotifications: Boolean? = null,
+    val pushNotifications: Boolean? = null,
     val hasPassword: Boolean? = null,
     val googleLinked: Boolean? = null,
 )
@@ -48,6 +49,7 @@ data class UpdateSettingsRequest(
     val allowOthersToTag: Boolean? = null,
     val emailNotifications: Boolean? = null,
     val activityNotifications: Boolean? = null,
+    val pushNotifications: Boolean? = null,
 )
 
 @Serializable

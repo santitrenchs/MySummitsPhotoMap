@@ -55,6 +55,10 @@ import com.peakadex.app.core.ui.theme.PeakLayerActiveBg
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBlueLight
 import com.peakadex.app.core.ui.UiText
+import com.peakadex.app.core.push.PushPermission
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SegmentedButton
@@ -240,6 +244,17 @@ fun SettingsScreen(
     }
 
     val context             = LocalContext.current
+    // Se relee en cada resume: el usuario puede haber ido a los ajustes del
+    // sistema y vuelto, y la fila debe reflejarlo sin reiniciar la app.
+    var pushGranted by remember { mutableStateOf(PushPermission.isGranted(context)) }
+    val pushLifecycle = LocalLifecycleOwner.current
+    DisposableEffect(pushLifecycle) {
+        val obs = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) pushGranted = PushPermission.isGranted(context)
+        }
+        pushLifecycle.lifecycle.addObserver(obs)
+        onDispose { pushLifecycle.lifecycle.removeObserver(obs) }
+    }
     val snackbarHostState   = remember { SnackbarHostState() }
     val savedMsg            = stringResource(R.string.settings_snack_saved)
     val passwordSavedMsg    = stringResource(R.string.settings_snack_password_saved)
@@ -683,6 +698,28 @@ fun SettingsScreen(
                         checked   = state.activityNotifications,
                         onChecked = vm::onActivityNotificationsChange,
                     )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    // Push, separado del correo: son dos canales y apagar uno no
+                    // debe apagar el otro.
+                    //
+                    // Con el permiso denegado a nivel de sistema el interruptor no
+                    // puede encender nada, y tampoco puede mostrar el diálogo —
+                    // Android solo lo permite una vez—. Así que la fila cambia de
+                    // papel y abre los ajustes del sistema: un interruptor que no
+                    // hace nada al pulsarlo es peor que no tenerlo.
+                    if (pushGranted) {
+                        SettingsToggleRow(
+                            label     = stringResource(R.string.settings_push_notif),
+                            checked   = state.pushNotifications,
+                            onChecked = vm::onPushNotificationsChange,
+                        )
+                    } else {
+                        SettingsLinkRow(
+                            label    = stringResource(R.string.settings_push_notif),
+                            subtitle = stringResource(R.string.settings_push_denied),
+                            onClick  = { PushPermission.openAppSettings(context) },
+                        )
+                    }
                 }
             }
 
@@ -946,7 +983,7 @@ private fun SettingsTextField(
 }
 
 @Composable
-private fun SettingsLinkRow(label: String, onClick: () -> Unit) {
+private fun SettingsLinkRow(label: String, subtitle: String? = null, onClick: () -> Unit) {
     Row(
         modifier          = Modifier
             .fillMaxWidth()
@@ -954,7 +991,12 @@ private fun SettingsLinkRow(label: String, onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, fontSize = 15.sp, color = Color(0xFF111827), modifier = Modifier.weight(1f))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, fontSize = 15.sp, color = Color(0xFF111827))
+            if (subtitle != null) {
+                Text(subtitle, fontSize = 12.sp, color = Color(0xFF9CA3AF))
+            }
+        }
         Icon(
             imageVector        = ChevronRightIcon,
             contentDescription = null,

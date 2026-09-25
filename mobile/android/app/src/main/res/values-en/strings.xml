@@ -237,6 +237,13 @@
     <string name="settings_email_notifications">Email notifications</string>
     <string name="settings_activity_notifications">Activity notifications</string>
 
+    <string name="push_priming_title">Do not miss what happens</string>
+    <string name="push_priming_body">We will let you know when someone accepts your request, invites you to a rope team or tags you in a photo. Nothing else.</string>
+    <string name="push_priming_accept">Turn on alerts</string>
+    <string name="push_priming_later">Not now</string>
+    <string name="settings_push_notif">Push notifications</string>
+    <string name="settings_push_notif_desc">Alerts on this device</string>
+    <string name="settings_push_denied">Turn them on in system settings</string>
     <string name="push_channel_social">Friends and rope teams</string>
     <string name="push_channel_social_desc">Requests, invitations and replies</string>
     <string name="push_channel_tags">Photo tags</string>

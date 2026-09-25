@@ -222,6 +222,13 @@
     <string name="settings_email_notifications">Notifications par e-mail</string>
     <string name="settings_activity_notifications">Notifications d\'activité</string>
 
+    <string name="push_priming_title">Ne rate pas ce qui se passe</string>
+    <string name="push_priming_body">On te prévient quand quelqu’un accepte ta demande, t’invite dans une cordée ou t’identifie sur une photo. Rien de plus.</string>
+    <string name="push_priming_accept">Activer les alertes</string>
+    <string name="push_priming_later">Pas maintenant</string>
+    <string name="settings_push_notif">Notifications push</string>
+    <string name="settings_push_notif_desc">Alertes sur cet appareil</string>
+    <string name="settings_push_denied">Active-les dans les réglages du système</string>
     <string name="push_channel_social">Amis et cordées</string>
     <string name="push_channel_social_desc">Demandes, invitations et réponses</string>
     <string name="push_channel_tags">Identifications sur photos</string>

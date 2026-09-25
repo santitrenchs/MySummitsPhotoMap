@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakadex.app.AppContainer
 import com.peakadex.app.core.analytics.Telemetry
+import com.peakadex.app.core.push.PushPermission
 import com.peakadex.app.core.model.FriendEntry
 import com.peakadex.app.core.model.IncomingRequest
 import com.peakadex.app.core.model.SentRequest
@@ -51,6 +52,8 @@ enum class InviteState {
 }
 
 class FriendsViewModel : ViewModel() {
+
+    private val appContext get() = AppContainer.appContext
 
     private val api = AppContainer.apiService
 
@@ -164,6 +167,9 @@ class FriendsViewModel : ViewModel() {
                 }
                 if (next == InviteState.INVITED) {
                     Telemetry.logEvent(Telemetry.Event.FRIEND_INVITED, mapOf("method" to "email_external"))
+                    // El momento con sentido: acaba de mandar algo que contesta
+                    // otra persona más tarde.
+                    PushPermission.maybeShowPrimingAfterSocialAction(appContext)
                 }
                 _state.update { it.copy(inviteState = next) }
             } catch (e: HttpException) {
@@ -199,6 +205,7 @@ class FriendsViewModel : ViewModel() {
                 }
                 if (next == InviteState.FRIEND_REQUEST_SENT) {
                     Telemetry.logEvent(Telemetry.Event.FRIEND_INVITED, mapOf("method" to "friend_request"))
+                    PushPermission.maybeShowPrimingAfterSocialAction(appContext)
                 }
                 _state.update { it.copy(inviteState = next) }
                 if (next == InviteState.FRIEND_REQUEST_SENT) load()

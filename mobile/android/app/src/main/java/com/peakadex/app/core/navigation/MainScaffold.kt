@@ -12,7 +12,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import com.peakadex.app.core.push.PushPermission
+import com.peakadex.app.core.push.PushPrimingSheet
+import com.peakadex.app.core.push.PushTokenRegistrar
 import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -103,6 +110,31 @@ fun MainScaffold(navController: NavController) {
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope             = rememberCoroutineScope()
+
+    // ── Permiso de notificaciones ────────────────────────────────────────────
+    // La hoja de explicación se dispara desde la primera acción social (ver
+    // PushPermission) y vive aquí porque tiene que poder aparecer sobre
+    // cualquier pestaña.
+    val pushContext  = LocalContext.current
+    val showPriming by PushPermission.showPriming.collectAsStateWithLifecycle()
+    val pushLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        // Concedido: hay que registrar el token ahora. Antes no se registraba,
+        // porque un token sin permiso solo sirve para gastar envíos que el
+        // sistema descarta en silencio.
+        if (granted) PushTokenRegistrar.syncOnLogin(pushContext)
+    }
+
+    if (showPriming) {
+        PushPrimingSheet(
+            onAccept = {
+                PushPermission.onPrimingDismissed(pushContext)
+                pushLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            },
+            onDismiss = { PushPermission.onPrimingDismissed(pushContext) },
+        )
+    }
 
     // Pending peak filter — Atlas → Cards
     var pendingPeakId   by remember { mutableStateOf<String?>(null) }

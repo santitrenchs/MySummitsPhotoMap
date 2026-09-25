@@ -222,6 +222,13 @@
     <string name="settings_email_notifications">E-Mail-Benachrichtigungen</string>
     <string name="settings_activity_notifications">Aktivitätsbenachrichtigungen</string>
 
+    <string name="push_priming_title">Verpasse nichts</string>
+    <string name="push_priming_body">Wir melden uns, wenn jemand deine Anfrage annimmt, dich zu einer Seilschaft einlädt oder dich auf einem Foto markiert. Sonst nichts.</string>
+    <string name="push_priming_accept">Hinweise aktivieren</string>
+    <string name="push_priming_later">Jetzt nicht</string>
+    <string name="settings_push_notif">Push-Benachrichtigungen</string>
+    <string name="settings_push_notif_desc">Hinweise auf diesem Gerät</string>
+    <string name="settings_push_denied">Aktiviere sie in den Systemeinstellungen</string>
     <string name="push_channel_social">Freunde und Seilschaften</string>
     <string name="push_channel_social_desc">Anfragen, Einladungen und Antworten</string>
     <string name="push_channel_tags">Foto-Markierungen</string>

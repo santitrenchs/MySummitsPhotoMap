@@ -41,6 +41,7 @@ data class SettingsUiState(
     val allowOthersToTag: Boolean = true,
     val emailNotifications: Boolean = true,
     val activityNotifications: Boolean = true,
+    val pushNotifications: Boolean = true,
     // units
     val selectedUnits: Units = UnitsState.current,
     // language
@@ -98,6 +99,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                     allowOthersToTag      = user.allowOthersToTag ?: true,
                     emailNotifications    = user.emailNotifications ?: true,
                     activityNotifications = user.activityNotifications ?: true,
+                    pushNotifications     = user.pushNotifications ?: true,
                     selectedLanguage      = user.language ?: "es",
                     hasPassword           = user.hasPassword ?: false,
                     googleLinked          = user.googleLinked ?: false,
@@ -187,11 +189,17 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         saveToggle(activityNotifications = value)
     }
 
+    fun onPushNotificationsChange(value: Boolean) {
+        _state.update { it.copy(pushNotifications = value) }
+        saveToggle(pushNotifications = value)
+    }
+
     private fun saveToggle(
         appearInSearch: Boolean? = null,
         allowOthersToTag: Boolean? = null,
         emailNotifications: Boolean? = null,
         activityNotifications: Boolean? = null,
+        pushNotifications: Boolean? = null,
     ) {
         viewModelScope.launch {
             try {
@@ -201,6 +209,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                         allowOthersToTag      = allowOthersToTag,
                         emailNotifications    = emailNotifications,
                         activityNotifications = activityNotifications,
+                        pushNotifications     = pushNotifications,
                     )
                 ).user
                 AppContainer.authSession.updateUser(updated)

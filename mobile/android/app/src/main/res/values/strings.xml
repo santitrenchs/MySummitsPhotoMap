@@ -237,6 +237,13 @@
     <string name="settings_email_notifications">Notificaciones por email</string>
     <string name="settings_activity_notifications">Notificaciones de actividad</string>
 
+    <string name="push_priming_title">No te pierdas lo que pasa</string>
+    <string name="push_priming_body">Te avisamos cuando alguien acepte tu solicitud, te invite a una cordada o te etiquete en una foto. Nada más.</string>
+    <string name="push_priming_accept">Activar avisos</string>
+    <string name="push_priming_later">Ahora no</string>
+    <string name="settings_push_notif">Notificaciones push</string>
+    <string name="settings_push_notif_desc">Avisos en este dispositivo</string>
+    <string name="settings_push_denied">Actívalas en los ajustes del sistema</string>
     <string name="push_channel_social">Amistades y cordadas</string>
     <string name="push_channel_social_desc">Solicitudes, invitaciones y respuestas</string>
     <string name="push_channel_tags">Etiquetas en fotos</string>
