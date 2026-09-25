@@ -7,8 +7,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import android.net.Uri
 import androidx.compose.foundation.clickable
@@ -29,9 +31,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -58,6 +62,8 @@ import com.peakadex.app.core.ui.theme.PeakSubtle
 import com.peakadex.app.core.ui.theme.PeakMuted
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.AlertDialog
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 // ── Profile menu bottom sheet ─────────────────────────────────────────────────
 // Shown when the user taps the avatar in MainTopBar.
@@ -238,6 +244,10 @@ fun SettingsScreen(
     val passwordSavedMsg    = stringResource(R.string.settings_snack_password_saved)
     val languageSavedMsg    = stringResource(R.string.settings_snack_language_saved)
     val googleUnlinkedMsg   = stringResource(R.string.settings_snack_google_unlinked)
+    val scope               = rememberCoroutineScope()
+    val clipboard           = LocalClipboardManager.current
+    val supportSubject      = stringResource(R.string.settings_support_subject)
+    val supportCopiedMsg    = stringResource(R.string.settings_support_copied, SUPPORT_EMAIL)
 
     LaunchedEffect(state.saveSuccess) {
         if (state.saveSuccess) { snackbarHostState.showSnackbar(savedMsg); vm.clearSuccessFlags() }
@@ -651,6 +661,28 @@ fun SettingsScreen(
             }
 
             // ── Información ──────────────────────────────────────────────────
+            // Seccion propia y no dentro de Informacion: privacidad, terminos y
+            // version son documentos y datos; esto es una accion.
+            item { SectionHeader(stringResource(R.string.settings_section_help)) }
+            item {
+                SettingsCard {
+                    SettingsLinkRow(
+                        label   = stringResource(R.string.settings_contact_support),
+                        onClick = {
+                            val opened = openSupportEmail(
+                                context = context,
+                                subject = supportSubject,
+                                user    = state.user,
+                            )
+                            if (!opened) {
+                                clipboard.setText(AnnotatedString(SUPPORT_EMAIL))
+                                scope.launch { snackbarHostState.showSnackbar(supportCopiedMsg) }
+                            }
+                        },
+                    )
+                }
+            }
+
             item { SectionHeader(stringResource(R.string.settings_section_info)) }
             item {
                 SettingsCard {
@@ -1122,6 +1154,60 @@ private val ChevronUpIcon: ImageVector by lazy {
 
 private fun openUrl(context: Context, url: String) {
     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+}
+
+/** Bandeja de soporte. Es la que se publica tambien en la ficha de Play. */
+const val SUPPORT_EMAIL = "hello@peakadex.com"
+
+/**
+ * Abre el cliente de correo con un mensaje de soporte a medio escribir.
+ *
+ * El cuerpo ya lleva el bloque de diagnostico porque es justo lo que nadie
+ * contesta cuando se lo pides despues: version, dispositivo y cuenta. El usuario
+ * escribe encima y puede adjuntar una captura, que en una app visual suele valer
+ * mas que el texto.
+ *
+ * ACTION_SENDTO sobre un `mailto:` lo resuelven solo clientes de correo.
+ * ACTION_SEND abriria tambien WhatsApp o Drive, que no llevan a ninguna parte.
+ *
+ * Devuelve false si no hay ningun cliente instalado, para que la pantalla copie
+ * la direccion al portapapeles: un intent que no resuelve no avisa de nada por
+ * si solo, asi que el boton pareceria roto.
+ *
+ * No se usa `resolveActivity` para comprobarlo antes: desde Android 11 devuelve
+ * null aunque haya cliente de correo, salvo que se declare un `<queries>` en el
+ * manifiesto. Intentarlo y capturar el fallo es lo que funciona en todas las
+ * versiones.
+ */
+private fun openSupportEmail(context: Context, subject: String, user: User?): Boolean {
+    // Las etiquetas van en inglés a propósito y no por `stringResource`: este bloque
+    // lo lee quien atiende el soporte, no el usuario, y una clave fija se puede
+    // buscar igual vengan los correos en los cinco idiomas.
+    val diagnostics = buildString {
+        append("\n\n---\n")
+        // Identificar al usuario necesita estas dos lineas: el remitente del correo
+        // es la cuenta del cliente de correo del movil, que a menudo no es la de
+        // Peakadex, asi que no sirve para buscarlo.
+        //
+        // Y se escriben siempre, incluso vacias: un hueco dice "no habia sesion" o
+        // "el campo no cargo"; una linea ausente no dice nada.
+        append("Account: ${user?.email?.takeIf { it.isNotBlank() } ?: "(no session)"}\n")
+        append("User ID: ${user?.id?.takeIf { it.isNotBlank() } ?: "-"}\n")
+        append("Peakadex ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})\n")
+        append("Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})\n")
+        append("${Build.MANUFACTURER} ${Build.MODEL}\n")
+        append("${Locale.getDefault().toLanguageTag()}\n")
+    }
+    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL")).apply {
+        putExtra(Intent.EXTRA_SUBJECT, subject)
+        putExtra(Intent.EXTRA_TEXT, diagnostics)
+    }
+    return try {
+        context.startActivity(intent)
+        true
+    } catch (e: ActivityNotFoundException) {
+        false
+    }
 }
 
 private val ChevronRightIcon: ImageVector by lazy {

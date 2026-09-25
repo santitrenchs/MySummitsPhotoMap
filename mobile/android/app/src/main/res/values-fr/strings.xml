@@ -222,6 +222,10 @@
     <string name="settings_email_notifications">Notifications par e-mail</string>
     <string name="settings_activity_notifications">Notifications d\'activité</string>
 
+    <string name="settings_section_help">Aide</string>
+    <string name="settings_contact_support">Contacter le support</string>
+    <string name="settings_support_subject">Support Peakadex</string>
+    <string name="settings_support_copied">Aucune application de messagerie. Adresse copiée : %1$s</string>
     <string name="settings_section_info">Informations</string>
     <string name="settings_privacy_policy">Politique de confidentialité</string>
     <string name="settings_terms">Conditions d\'utilisation</string>

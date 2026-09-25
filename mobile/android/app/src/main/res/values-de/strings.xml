@@ -222,6 +222,10 @@
     <string name="settings_email_notifications">E-Mail-Benachrichtigungen</string>
     <string name="settings_activity_notifications">Aktivitätsbenachrichtigungen</string>
 
+    <string name="settings_section_help">Hilfe</string>
+    <string name="settings_contact_support">Support kontaktieren</string>
+    <string name="settings_support_subject">Peakadex Support</string>
+    <string name="settings_support_copied">Keine E-Mail-App gefunden. Adresse kopiert: %1$s</string>
     <string name="settings_section_info">Informationen</string>
     <string name="settings_privacy_policy">Datenschutzrichtlinie</string>
     <string name="settings_terms">Nutzungsbedingungen</string>

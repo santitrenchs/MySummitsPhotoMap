@@ -222,6 +222,10 @@
     <string name="settings_email_notifications">Notificacions per correu</string>
     <string name="settings_activity_notifications">Notificacions d\'activitat</string>
 
+    <string name="settings_section_help">Ajuda</string>
+    <string name="settings_contact_support">Contactar amb suport</string>
+    <string name="settings_support_subject">Suport Peakadex</string>
+    <string name="settings_support_copied">No hi ha cap app de correu. Adreça copiada: %1$s</string>
     <string name="settings_section_info">Informació</string>
     <string name="settings_privacy_policy">Política de privacitat</string>
     <string name="settings_terms">Termes i condicions</string>
