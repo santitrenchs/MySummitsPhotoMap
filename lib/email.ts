@@ -2,6 +2,11 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM ?? "Peakadex <hola@mail.peakadex.com>";
+// Los envíos salen desde mail.peakadex.com, que es el subdominio de ENVÍO de
+// Resend y no tiene MX: una respuesta a cualquiera de estos correos rebotaba sin
+// que nadie se enterara. El Reply-To la lleva al buzón de soporte, que sí recibe
+// (regla de Cloudflare Email Routing sobre la raíz del dominio).
+const REPLY_TO = process.env.RESEND_REPLY_TO ?? "hello@peakadex.com";
 const APP_URL = (
   process.env.APP_URL ??
   process.env.NEXTAUTH_URL ??
@@ -88,6 +93,7 @@ export async function sendPasswordResetEmail(to: string, token: string, locale =
 
   const { data, error } = await resend.emails.send({
     from: FROM,
+    replyTo: REPLY_TO,
     to,
     subject: copy.subject,
     html: `
@@ -186,6 +192,7 @@ export async function sendWelcomeEmail(to: string, name: string, locale = "es") 
 
   const { data, error } = await resend.emails.send({
     from: FROM,
+    replyTo: REPLY_TO,
     to,
     subject: copy.subject(firstName),
     html: `
@@ -308,6 +315,7 @@ export async function sendFriendAcceptedEmail(to: string, acceptorName: string, 
 
   const { data, error } = await resend.emails.send({
     from: FROM,
+    replyTo: REPLY_TO,
     to,
     subject: copy.subject(acceptorName),
     html: `
@@ -364,6 +372,7 @@ export async function sendFriendRequestEmail(to: string, senderName: string, loc
 
   const { data, error } = await resend.emails.send({
     from: FROM,
+    replyTo: REPLY_TO,
     to,
     subject: copy.subject(senderName),
     html: `
@@ -456,6 +465,7 @@ export async function sendCordadaInviteEmail(to: string, inviterName: string, co
 
   const { data, error } = await resend.emails.send({
     from: FROM,
+    replyTo: REPLY_TO,
     to,
     subject: copy.subject(inviterName, cordadaName),
     html: `
@@ -552,6 +562,7 @@ export async function sendPhotoTagEmail(
 
   const { data, error } = await resend.emails.send({
     from: FROM,
+    replyTo: REPLY_TO,
     to,
     subject: copy.subject(taggerName, peakName),
     html: `
@@ -644,6 +655,7 @@ export async function sendFriendInvitationEmail(to: string, inviterName: string,
 
   const { data, error } = await resend.emails.send({
     from: FROM,
+    replyTo: REPLY_TO,
     to,
     subject: copy.subject(inviterName),
     html: `
