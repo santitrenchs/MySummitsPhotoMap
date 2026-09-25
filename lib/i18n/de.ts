@@ -166,7 +166,7 @@ export const de: Dict = {
   delacc_deleted1: "Dein Profil: Name, Benutzername, E-Mail-Adresse und Profilbild.",
   delacc_deleted2: "Alle deine Besteigungen mit Datum, Route und Kommentaren.",
   delacc_deleted3: "Alle deine Fotos, einschließlich der gespeicherten Dateien, nicht nur deren Verweise.",
-  delacc_deleted4: "Deine Freundschaften und deine Mitgliedschaft in Seilschaften.",
+  delacc_deleted4: "Deine Freundschaften und deine Mitgliedschaft in Seilschaften. Wenn dir eine Seilschaft gehörte, geht sie an das dienstälteste Mitglied über; warst du allein darin, wird sie gelöscht.",
   delacc_deleted5: "Dein Fortschritt bei Challenges, deine Statistiken und deine Markierungen auf Fotos anderer.",
   delacc_keptTitle: "Was aufbewahrt wird",
   delacc_keptBody: "Wir bewahren einen minimalen Löschvermerk auf — E-Mail-Adresse, Name, Registrierungsdatum und Anzahl der Besteigungen —, um Missbrauch zu verhindern und dir antworten zu können, wenn du nach einem gelöschten Konto fragst. Er enthält weder Fotos noch Besteigungen.",

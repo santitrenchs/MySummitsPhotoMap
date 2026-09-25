@@ -53,6 +53,45 @@ export async function deleteAccount(userId: string, tenantId?: string | null): P
     }
   }
 
+  // Las cordadas que posee cambian de dueño antes de que el usuario desaparezca.
+  //
+  // `Cordada.owner` es una relación obligatoria sin `onDelete`, y el valor por
+  // defecto de Prisma en ese caso es `Restrict`: sin esto, `user.delete()` lanza y
+  // quien haya creado una cordada no puede darse de baja. Disolver la cordada no
+  // era opción — se llevaría por delante el grupo de los demás miembros.
+  //
+  // Hereda el miembro aceptado más antiguo. Es el criterio menos arbitrario que no
+  // exige preguntar a nadie: quien lleva más tiempo dentro es quien más contexto
+  // tiene del grupo. Los invitados pendientes no cuentan: todavía no han dicho que
+  // sí, y despertarse siendo dueño de un grupo al que no te habías unido es peor
+  // que quedarse sin cordada.
+  const ownedCordadas = await prisma.cordada.findMany({
+    where: { ownerId: userId },
+    select: { id: true },
+  });
+  for (const { id: cordadaId } of ownedCordadas) {
+    const heir = await prisma.cordadaMember.findFirst({
+      where: { cordadaId, userId: { not: userId }, status: "ACCEPTED" },
+      orderBy: [{ joinedAt: "asc" }, { createdAt: "asc" }],
+      select: { userId: true },
+    });
+    if (heir) {
+      // En transacción: una cordada cuyo `ownerId` apunta a alguien que no es OWNER
+      // en `cordada_members` rompe las comprobaciones de permiso de todo el
+      // servicio de cordadas, que consulta las dos cosas.
+      await prisma.$transaction([
+        prisma.cordada.update({ where: { id: cordadaId }, data: { ownerId: heir.userId } }),
+        prisma.cordadaMember.update({
+          where: { cordadaId_userId: { cordadaId, userId: heir.userId } },
+          data: { role: "OWNER" },
+        }),
+      ]);
+    } else {
+      // Nadie a quien transferir: la cordada era solo suya y se va con él.
+      await prisma.cordada.delete({ where: { id: cordadaId } });
+    }
+  }
+
   await prisma.user.delete({ where: { id: userId } });
 
   // The avatar is keyed by user id and belongs to the person, not to the tenant,

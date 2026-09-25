@@ -166,7 +166,7 @@ export const es: Dict = {
   delacc_deleted1: "Tu perfil: nombre, nombre de usuario, correo electrónico y foto de perfil.",
   delacc_deleted2: "Todas tus ascensiones, con sus fechas, rutas y comentarios.",
   delacc_deleted3: "Todas tus fotos, incluidos los ficheros almacenados, no solo sus referencias.",
-  delacc_deleted4: "Tus amistades y tu pertenencia a cordadas.",
+  delacc_deleted4: "Tus amistades y tu pertenencia a cordadas. Si eras propietario de alguna, pasa al miembro más antiguo; si estabas solo en ella, se elimina.",
   delacc_deleted5: "Tu progreso en los retos, tus estadísticas y tus etiquetas en fotos de otros.",
   delacc_keptTitle: "Qué se conserva",
   delacc_keptBody: "Guardamos un registro mínimo del borrado —correo electrónico, nombre, fecha de alta y número de ascensiones— para evitar abusos y poder responder si nos preguntas por una cuenta eliminada. No contiene fotos ni ascensiones.",

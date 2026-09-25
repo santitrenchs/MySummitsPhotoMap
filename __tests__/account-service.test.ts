@@ -10,6 +10,9 @@ vi.mock("@/lib/db/client", () => ({
     tenant:         { delete: vi.fn() },
     photo:          { findMany: vi.fn() },
     deletedUserLog: { create: vi.fn() },
+    cordada:        { findMany: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    cordadaMember:  { findFirst: vi.fn(), update: vi.fn() },
+    $transaction:   vi.fn(),
   },
 }));
 vi.mock("@/lib/email", () => ({ notifyUserDeleted: vi.fn() }));
@@ -26,6 +29,9 @@ const db = prisma as unknown as {
   tenant:         { delete: Mock };
   photo:          { findMany: Mock };
   deletedUserLog: { create: Mock };
+  cordada:        { findMany: Mock; update: Mock; delete: Mock };
+  cordadaMember:  { findFirst: Mock; update: Mock };
+  $transaction:   Mock;
 };
 const r2 = vi.mocked(deleteFromR2);
 
@@ -43,6 +49,9 @@ beforeEach(() => {
   db.ascent.count.mockResolvedValue(3);
   db.deletedUserLog.create.mockResolvedValue({});
   db.photo.findMany.mockResolvedValue([]);
+  db.cordada.findMany.mockResolvedValue([]);
+  db.cordadaMember.findFirst.mockResolvedValue(null);
+  db.$transaction.mockResolvedValue([]);
   r2.mockResolvedValue(undefined);
 });
 
@@ -106,5 +115,64 @@ describe("deleteAccount() — limpieza de R2", () => {
     expect(await deleteAccount("u1", "t1")).toBe(false);
     expect(db.user.delete).not.toHaveBeenCalled();
     expect(r2).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteAccount() — cordadas que posee el usuario", () => {
+  beforeEach(() => {
+    db.membership.count.mockResolvedValue(1);
+  });
+
+  it("transfiere la propiedad al miembro aceptado más antiguo", async () => {
+    db.cordada.findMany.mockResolvedValue([{ id: "c1" }]);
+    db.cordadaMember.findFirst.mockResolvedValue({ userId: "u2" });
+
+    await deleteAccount("u1", "t1");
+
+    // Excluye al que se va y a los invitados que aún no han aceptado: despertarse
+    // siendo dueño de un grupo al que no te habías unido es peor que no heredarlo.
+    expect(db.cordadaMember.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { cordadaId: "c1", userId: { not: "u1" }, status: "ACCEPTED" },
+        orderBy: [{ joinedAt: "asc" }, { createdAt: "asc" }],
+      }),
+    );
+    // Las dos escrituras van juntas: un ownerId que no coincide con el rol OWNER
+    // en cordada_members rompe las comprobaciones de permiso del servicio.
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    expect(db.cordada.update).toHaveBeenCalledWith({
+      where: { id: "c1" },
+      data: { ownerId: "u2" },
+    });
+    expect(db.cordadaMember.update).toHaveBeenCalledWith({
+      where: { cordadaId_userId: { cordadaId: "c1", userId: "u2" } },
+      data: { role: "OWNER" },
+    });
+    expect(db.cordada.delete).not.toHaveBeenCalled();
+  });
+
+  it("disuelve la cordada cuando no queda nadie a quien transferirla", async () => {
+    db.cordada.findMany.mockResolvedValue([{ id: "c1" }]);
+    db.cordadaMember.findFirst.mockResolvedValue(null);
+
+    await deleteAccount("u1", "t1");
+
+    expect(db.cordada.delete).toHaveBeenCalledWith({ where: { id: "c1" } });
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("transfiere antes de borrar al usuario", async () => {
+    // Cordada.owner es una relación obligatoria sin onDelete, así que Prisma la
+    // trata como Restrict: al revés, user.delete() lanzaría y quien hubiera creado
+    // una cordada no podría darse de baja.
+    const order: string[] = [];
+    db.cordada.findMany.mockResolvedValue([{ id: "c1" }]);
+    db.cordadaMember.findFirst.mockResolvedValue({ userId: "u2" });
+    db.$transaction.mockImplementation(async () => { order.push("transfer"); return []; });
+    db.user.delete.mockImplementation(async () => { order.push("userDelete"); return {}; });
+
+    await deleteAccount("u1", "t1");
+
+    expect(order).toEqual(["transfer", "userDelete"]);
   });
 });

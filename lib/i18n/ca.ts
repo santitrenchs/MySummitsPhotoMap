@@ -166,7 +166,7 @@ export const ca: Dict = {
   delacc_deleted1: "El teu perfil: nom, nom d’usuari, correu electrònic i foto de perfil.",
   delacc_deleted2: "Totes les teves ascensions, amb les dates, rutes i comentaris.",
   delacc_deleted3: "Totes les teves fotos, inclosos els fitxers emmagatzemats, no només les referències.",
-  delacc_deleted4: "Les teves amistats i la teva pertinença a cordades.",
+  delacc_deleted4: "Les teves amistats i la teva pertinença a cordades. Si eres propietari d’alguna, passa al membre més antic; si hi eres sol, s’elimina.",
   delacc_deleted5: "El teu progrés als reptes, les teves estadístiques i les teves etiquetes a fotos d’altres.",
   delacc_keptTitle: "Què es conserva",
   delacc_keptBody: "Guardem un registre mínim de l’esborrat —correu electrònic, nom, data d’alta i nombre d’ascensions— per evitar abusos i poder respondre si ens preguntes per un compte eliminat. No conté fotos ni ascensions.",

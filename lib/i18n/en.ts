@@ -166,7 +166,7 @@ export const en: Dict = {
   delacc_deleted1: "Your profile: name, username, email address and profile picture.",
   delacc_deleted2: "All your ascents, with their dates, routes and comments.",
   delacc_deleted3: "All your photos, including the stored files, not just the references to them.",
-  delacc_deleted4: "Your friendships and your rope team memberships.",
+  delacc_deleted4: "Your friendships and your rope team memberships. If you owned a rope team, it passes to its longest-standing member; if you were alone in it, it is deleted.",
   delacc_deleted5: "Your challenge progress, your statistics and your tags in other people’s photos.",
   delacc_keptTitle: "What is kept",
   delacc_keptBody: "We keep a minimal record of the deletion — email address, name, sign-up date and number of ascents — to prevent abuse and to be able to answer you if you ask about a deleted account. It contains no photos and no ascents.",

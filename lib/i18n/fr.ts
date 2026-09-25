@@ -166,7 +166,7 @@ export const fr: Dict = {
   delacc_deleted1: "Votre profil : nom, nom d’utilisateur, adresse e-mail et photo de profil.",
   delacc_deleted2: "Toutes vos ascensions, avec leurs dates, itinéraires et commentaires.",
   delacc_deleted3: "Toutes vos photos, y compris les fichiers stockés, et pas seulement leurs références.",
-  delacc_deleted4: "Vos amitiés et votre appartenance aux cordées.",
+  delacc_deleted4: "Vos amitiés et votre appartenance aux cordées. Si vous étiez propriétaire d’une cordée, elle passe au membre le plus ancien ; si vous y étiez seul, elle est supprimée.",
   delacc_deleted5: "Votre progression dans les défis, vos statistiques et vos identifications sur les photos des autres.",
   delacc_keptTitle: "Ce qui est conservé",
   delacc_keptBody: "Nous conservons un enregistrement minimal de la suppression — adresse e-mail, nom, date d’inscription et nombre d’ascensions — afin d’éviter les abus et de pouvoir vous répondre si vous nous interrogez sur un compte supprimé. Il ne contient ni photos ni ascensions.",
