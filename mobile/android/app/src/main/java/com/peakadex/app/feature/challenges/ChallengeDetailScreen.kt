@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
@@ -97,6 +98,17 @@ fun ChallengeDetailRoute(
     ChallengeDetailScreen(vm, onBack, onLogAscent, onOpenPeakCards, onViewOnAtlas)
 }
 
+/**
+ * Detalle de un reto, **dentro de la pestaña Retos**.
+ *
+ * No es una pantalla aparte y por eso no lleva `TopAppBar` propia: la tira de tabs
+ * de Bitácora sigue arriba, igual que en web, así el detalle se lee como parte de
+ * Bitácora y cada pestaña es una salida. Una barra aquí además se apilaría con la
+ * de `MainScaffold`.
+ *
+ * Tampoco lleva miga de pan como web: allí existe porque el navegador no tiene
+ * botón atrás dentro de la app. Android sí, y ya funciona por `BackHandler`.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChallengeDetailScreen(
@@ -108,115 +120,78 @@ private fun ChallengeDetailScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     var filtersOpen by remember { mutableStateOf(false) }
-    var menuOpen by remember { mutableStateOf(false) }
     var confirmLeave by remember { mutableStateOf(false) }
 
-    Scaffold(
-        containerColor = PeakBackground,
-        topBar = {
-            // Barra sobria: solo atrás y el overflow. El nombre del reto vive en la
-            // cabecera, no se duplica aquí.
-            CenterAlignedTopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(BackIcon, stringResource(R.string.action_back), tint = PeakNavyDark)
-                    }
-                },
-                actions = {
-                    if (state.challenge?.isJoined == true) {
-                        IconButton(onClick = { menuOpen = true }) {
-                            Icon(MoreIcon, null, tint = PeakNavyDark)
-                        }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.challenges_atlas_exit), color = Color(0xFFDC2626)) },
-                                onClick = { menuOpen = false; confirmLeave = true },
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
-            )
-        },
-    ) { inner ->
-        val c = state.challenge
-        when {
-            state.isLoading -> Box(Modifier.fillMaxSize().padding(inner), Alignment.Center) {
-                CircularProgressIndicator()
+    val c = state.challenge
+    when {
+        state.isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+        c == null -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+            Text(state.error ?: "", color = PeakSubtle, fontSize = 13.sp)
+        }
+        else -> LazyVerticalGrid(
+            // Un solo grid para las dos mitades: arriba mosaico, abajo lista, y así
+            // ambas reciclan. Con 500 cimas, dos listas anidadas pagarían el layout
+            // de todo lo que no se ve.
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.fillMaxSize().background(PeakBackground),
+            contentPadding = PaddingValues(bottom = 32.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column {
+                    DetailHeader(
+                        name = c.name,
+                        description = c.description,
+                        coverUrl = c.coverUrl,
+                        done = c.completedPeaks,
+                        total = c.totalPeaks,
+                        maxAltitudeM = c.maxAltitudeM,
+                        canLeave = c.isJoined,
+                        onLeave = { confirmLeave = true },
+                    )
+                    FilterBar(
+                        query = state.query,
+                        onQuery = vm::onQuery,
+                        dirty = state.query.isNotBlank() ||
+                            state.status != ChallengeStatusFilter.ALL ||
+                            state.sort != ChallengeSort.ALTITUDE_DESC,
+                        onOpenFilters = { filtersOpen = true },
+                        onViewOnAtlas = { onViewOnAtlas(c.id, c.name) },
+                    )
+                }
             }
-            c == null -> Box(Modifier.fillMaxSize().padding(inner), Alignment.Center) {
-                Text(state.error ?: "", color = PeakSubtle, fontSize = 13.sp)
+
+            val done = state.doneRows
+            val pending = state.pendingRows
+
+            if (done.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionHead(stringResource(R.string.challenges_section_collection), done.size)
+                }
+                items(done, key = { "d-${it.id}" }) { p ->
+                    PeakTile(p) { onOpenPeakCards(p.id, p.name) }
+                }
             }
-            else -> LazyVerticalGrid(
-                // Un solo grid para toda la pantalla: la mitad de arriba es un
-                // mosaico y la de abajo una lista, y así ambas se reciclan. Con 500
-                // cimas, dos listas anidadas pagarían el layout de todo lo que no se ve.
-                columns = GridCells.Fixed(3),
-                modifier = Modifier.fillMaxSize().padding(inner),
-                contentPadding = PaddingValues(bottom = 32.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                    Column {
-                        DetailHeader(
-                            name = c.name,
-                            description = c.description,
-                            coverUrl = c.coverUrl,
-                            done = c.completedPeaks,
-                            total = c.totalPeaks,
-                            maxAltitudeM = c.maxAltitudeM,
-                        )
-                        FilterBar(
-                            query = state.query,
-                            onQuery = vm::onQuery,
-                            dirty = state.query.isNotBlank() ||
-                                state.status != ChallengeStatusFilter.ALL ||
-                                state.sort != ChallengeSort.ALTITUDE_DESC,
-                            onOpenFilters = { filtersOpen = true },
-                            // ⚠️ Con el aspecto EN REPOSO de PeakFilterButton, no
-                            // relleno: el relleno oscuro es lo que ese botón hace
-                            // cuando SÍ está filtrando, y uno oscuro al lado se
-                            // leería como un filtro ya aplicado. Verde tampoco:
-                            // en toda la app verde es crear, y abrir el Atlas no
-                            // crea nada.
-                            onViewOnAtlas = { onViewOnAtlas(c.id, c.name) },
-                        )
-                    }
+
+            if (pending.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionHead(stringResource(R.string.challenges_filter_pending), pending.size)
                 }
-
-                val done = state.doneRows
-                val pending = state.pendingRows
-
-                if (done.isNotEmpty()) {
-                    item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                        SectionHead(stringResource(R.string.challenges_section_collection), done.size)
-                    }
-                    items(done, key = { "d-${it.id}" }) { p ->
-                        PeakTile(p) { onOpenPeakCards(p.id, p.name) }
-                    }
+                // Las pendientes son UNA columna a cualquier ancho: son texto, no
+                // fotos, y la forma es la que lleva el estado.
+                items(pending, span = { GridItemSpan(maxLineSpan) }, key = { "p-${it.id}" }) { p ->
+                    PendingRow(p) { onLogAscent(p.id, p.name) }
                 }
+            }
 
-                if (pending.isNotEmpty()) {
-                    item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                        SectionHead(stringResource(R.string.challenges_filter_pending), pending.size)
-                    }
-                    // Las pendientes son UNA columna a cualquier ancho: son texto,
-                    // no fotos, y la forma es la que lleva el estado.
-                    items(pending, span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }, key = { "p-${it.id}" }) { p ->
-                        PendingRow(p) { onLogAscent(p.id, p.name) }
-                    }
-                }
-
-                if (done.isEmpty() && pending.isEmpty()) {
-                    item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                        Text(
-                            stringResource(R.string.challenges_no_peak_match),
-                            fontSize = 13.sp, color = PeakSubtle,
-                            modifier = Modifier.fillMaxWidth().padding(32.dp),
-                        )
-                    }
+            if (done.isEmpty() && pending.isEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text(
+                        stringResource(R.string.challenges_no_peak_match),
+                        fontSize = 13.sp, color = PeakSubtle,
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    )
                 }
             }
         }
@@ -262,43 +237,89 @@ private fun DetailHeader(
     done: Int,
     total: Int,
     maxAltitudeM: Int,
+    canLeave: Boolean,
+    onLeave: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().background(Color.White).padding(16.dp)) {
-        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            ChallengePatch(coverUrl, name, size = 76)
-            Column(Modifier.weight(1f)) {
-                Text(name, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = PeakNavyDark)
-                if (!description.isNullOrBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        description, fontSize = 12.sp, color = PeakMuted,
-                        maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 16.sp,
-                    )
+    var menuOpen by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().background(Color.White).padding(16.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        ChallengePatch(coverUrl, name, size = 76)
+
+        // Todo lo demás vive en ESTA columna, a la derecha del parche — incluida la
+        // barra de progreso. Sacarla fuera la estiraba de borde a borde; en web
+        // arranca donde arranca el nombre porque comparte contenedor con él.
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f)) {
+                    Text(name, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = PeakNavyDark)
+                    if (!description.isNullOrBlank()) {
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            description, fontSize = 11.5.sp, color = Color(0xFF7F93A6),
+                            maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 15.sp,
+                        )
+                    }
+                }
+                // Overflow anclado al elemento sobre el que actúa, no en una barra
+                // propia: esta pantalla no tiene ninguna, y una la apilaría con la de
+                // MainScaffold. Salir de un reto es raro y destructivo, así que no
+                // es contenido permanente — misma regla que el detalle de cordada.
+                if (canLeave) {
+                    Box {
+                        IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(28.dp)) {
+                            Icon(MoreIcon, null, tint = PeakSubtle, modifier = Modifier.size(18.dp))
+                        }
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(R.string.challenges_atlas_exit),
+                                        color = Color(0xFFDC2626),
+                                    )
+                                },
+                                onClick = { menuOpen = false; onLeave() },
+                            )
+                        }
+                    }
                 }
             }
-        }
 
-        Spacer(Modifier.height(14.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.weight(1f)) { DetailProgressBar(done, total) }
-            Text("${progressPct(done, total)}%", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PeakGreenCTA)
-        }
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.weight(1f)) { DetailProgressBar(done, total) }
+                Text("${progressPct(done, total)}%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PeakGreenCTA)
+            }
 
-        Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.challenges_progress, done, total) + " · " +
-                    pluralStringResource(
+            Spacer(Modifier.height(7.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    "$done",
+                    fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = PeakNavyDark,
+                )
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    "/ $total · " + pluralStringResource(
                         R.plurals.challenges_detail_pending,
                         (total - done).coerceAtLeast(0), (total - done).coerceAtLeast(0),
                     ),
-                fontSize = 12.sp, color = PeakMuted, modifier = Modifier.weight(1f),
-            )
-            if (maxAltitudeM > 0) {
-                Text(
-                    stringResource(R.string.challenges_detail_highest).uppercase() + " " + formatAltitude(maxAltitudeM),
-                    fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = PeakSubtle,
+                    fontSize = 11.5.sp, color = PeakNavyMid,
+                    modifier = Modifier.weight(1f),
                 )
+                if (maxAltitudeM > 0) {
+                    Text(
+                        stringResource(R.string.challenges_detail_highest).uppercase(),
+                        fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = PeakSubtle,
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        formatAltitude(maxAltitudeM),
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PeakNavyDark,
+                    )
+                }
             }
         }
     }

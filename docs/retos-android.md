@@ -172,22 +172,41 @@ sus cimas subida de antes. El progreso de un reto recién unido no es cero, porq
 se calcula desde las ascensiones que ya existen. El estado optimista pone 0 solo
 para el primer frame y la recarga trae la cifra real.
 
-### Fase 4 · Detalle del reto — ✅ hecha
+### Fase 4 · Detalle del reto — ✅ hecha (rehecha el 2026-09-25 para igualar web)
 
 `ChallengeDetailScreen.kt` + `ChallengeDetailViewModel.kt`, ruta
 `challenge/{id}` en el navController **externo** como `CordadaDetailRoute` —
 pierde la barra inferior, que es lo correcto en un drill-down.
 
-**Las dos salidas de la pantalla van por `savedStateHandle`.** Registrar una cima
-pendiente abre la hoja de alta y tocar un tile lleva al tab de Cards, pero las dos
-viven dentro de `MainScaffold`, un NavHost más abajo, y el detalle no puede
-tocarlas. Deja la acción y la cima en el `savedStateHandle` de la entrada de Main
-y hace `popBackStack`; `MainScaffold` lo consume al recuperar el foco. Es el
-mecanismo estándar de Navigation Compose, en vez de un singleton o un ViewModel
-compartido.
+**El detalle vive DENTRO de la pestaña Retos, no en una ruta aparte.** Se montó
+primero como ruta a pantalla completa copiando `CordadaDetailRoute` y estaba mal:
+allí la cordada pierde toda la navegación a propósito, mientras que web deja la
+tira de tabs de Bitácora visible para que el detalle se lea como parte de ella y
+cada pestaña sea una salida.
 
-⚠️ **Hay que borrar las claves al leerlas.** Si no, volver a Main por cualquier
-otro camino reabriría la hoja con la cima de la última vez.
+Consecuencias de haberlo corregido:
+- **Sin `TopAppBar` propia.** Una barra aquí se apilaría con la de `MainScaffold`
+  — el bug que este repo ya pagó con Cordadas.
+- **Sin miga de pan**, aunque web la tenga: allí existe porque el navegador no
+  tiene botón atrás dentro de la app. Android sí, y ya funciona por `BackHandler`.
+  Añadir una flecha además sería redundante y le robaría espacio al nombre.
+- **El `⋮` de salir del reto pasa al header**, alineado a la derecha del título.
+  Sigue siendo el patrón correcto —overflow para lo destructivo y raro, misma
+  regla que el detalle de cordada— solo que anclado al elemento en vez de a una
+  barra que ya no existe.
+- **Desaparece todo el `savedStateHandle`** que hacía falta cuando el detalle
+  estaba un NavHost por encima. Ahora "registrar ascensión", "ver cartas" y "ver
+  en el Atlas" son callbacks directos. Menos código y menos estado que limpiar.
+
+⚠️ **La barra de progreso va DENTRO de la columna derecha del header**, junto al
+parche, no a todo el ancho. En web comparte contenedor con el nombre
+(`.reto-hdr-main`, `flex: 1`), así que arranca donde arranca el nombre. Sacarla
+fuera la estira de borde a borde y deja de parecerse.
+
+**Web no tiene "salir del reto" en ninguna parte**: el endpoint `DELETE /join`
+existe pero ningún componente lo llama. Android sí lo ofrece. Y al revés, web
+tiene "Unirse" en el detalle para retos no unidos, que en Android no aplica
+porque solo se llega desde "Mis retos".
 
 **Verificado en emulador**: cabecera con parche 76dp y barra segmentada (8 muescas,
 2 llenas, 25%); "Tu colección" en mosaico 4:5 con insignia de rareza; "Pendientes"

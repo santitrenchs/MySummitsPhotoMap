@@ -136,8 +136,10 @@ fun BitacoraScreen(
     onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     onCaptureFirstSummit: () -> Unit = {},
-    /** Abre el detalle del reto como ruta a pantalla completa (navController externo). */
-    onOpenChallenge: (challengeId: String) -> Unit = {},
+    /** Registrar una ascensión con la cima ya puesta, desde una fila pendiente. */
+    onLogAscent: (peakId: String, peakName: String) -> Unit = { _, _ -> },
+    /** Acotar el Atlas a un reto. */
+    onViewOnAtlas: (challengeId: String, challengeName: String) -> Unit = { _, _ -> },
     vm: ProfileViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -169,7 +171,8 @@ fun BitacoraScreen(
             }
             is ProfileUiState.Success -> {
                 ProfileContent(
-                    onOpenChallenge      = onOpenChallenge,
+                    onLogAscent          = onLogAscent,
+                    onViewOnAtlas        = onViewOnAtlas,
                     state                = s,
                     onPeakQuery          = vm::setPeakQuery,
                     onPeakRarityFilter   = vm::setPeakRarityFilter,
@@ -380,7 +383,8 @@ private fun ProfileContent(
     onNavigateToCards: (peakId: String, peakName: String) -> Unit,
     onAscentClick: (ascentId: String, isOwn: Boolean) -> Unit,
     onCaptureFirstSummit: () -> Unit = {},
-    onOpenChallenge: (challengeId: String) -> Unit = {},
+    onLogAscent: (peakId: String, peakName: String) -> Unit = { _, _ -> },
+    onViewOnAtlas: (challengeId: String, challengeName: String) -> Unit = { _, _ -> },
 ) {
     var activeTab by remember { mutableIntStateOf(0) }
     // Mismo orden que web: Cimas · Retos · Fotos · Etiquetado.
@@ -435,7 +439,11 @@ private fun ProfileContent(
                 onCaptureFirstSummit = onCaptureFirstSummit,
                 onNavigateToCards    = onNavigateToCards,
             )
-            1 -> ChallengesTab(onOpenChallenge = onOpenChallenge)
+            1 -> ChallengesTab(
+                onLogAscent     = onLogAscent,
+                onOpenPeakCards = onNavigateToCards,
+                onViewOnAtlas   = onViewOnAtlas,
+            )
             2 -> PhotosTab(
                 photos        = state.data.photos,
                 rarities      = state.data.rarities,

@@ -119,59 +119,6 @@ fun MainScaffold(navController: NavController) {
     var newAscentPeakId       by remember { mutableStateOf<String?>(null) }
     var newAscentPeakName     by remember { mutableStateOf<String?>(null) }
 
-    // ── Resultados de las pantallas de detalle del NavHost externo ────────────
-    //
-    // El detalle de reto vive un nivel por encima y no puede tocar ni la hoja de
-    // alta ni el tabNavController, así que deja lo que quiere en el
-    // savedStateHandle de ESTA entrada y vuelve. Se consume aquí.
-    //
-    // ⚠️ Hay que borrar las claves al leerlas: si no, volver a esta pantalla por
-    // cualquier otro camino reabriría la hoja con la cima de la última vez.
-    val mainEntry = navController.currentBackStackEntry
-    val pendingResult by (mainEntry?.savedStateHandle
-        ?.getStateFlow<String?>(RESULT_ACTION, null)
-        ?: MutableStateFlow(null)).collectAsStateWithLifecycle()
-
-    LaunchedEffect(pendingResult) {
-        val action = pendingResult ?: return@LaunchedEffect
-        val handle = mainEntry?.savedStateHandle ?: return@LaunchedEffect
-        val peakId = handle.get<String>(RESULT_PEAK_ID)
-        val peakName = handle.get<String>(RESULT_PEAK_NAME)
-        val challengeId = handle.get<String>(RESULT_CHALLENGE_ID)
-        val challengeName = handle.get<String>(RESULT_CHALLENGE_NAME)
-        handle.remove<String>(RESULT_ACTION)
-        handle.remove<String>(RESULT_PEAK_ID)
-        handle.remove<String>(RESULT_PEAK_NAME)
-        handle.remove<String>(RESULT_CHALLENGE_ID)
-        handle.remove<String>(RESULT_CHALLENGE_NAME)
-
-        when (action) {
-            ACTION_LOG_ASCENT -> {
-                newAscentPeakId = peakId
-                newAscentPeakName = peakName
-                showNewAscent = true
-            }
-            ACTION_OPEN_ATLAS -> {
-                // El Atlas se acota desde su propio ViewModel, que es de ámbito
-                // Activity: basta con dejar la petición aquí y navegar al tab.
-                pendingChallengeId = challengeId
-                pendingChallengeName = challengeName
-                tabNavController.navigate(Screen.Map.route) {
-                    popUpTo(Screen.Home.route) { saveState = true }
-                    launchSingleTop = true
-                }
-            }
-            ACTION_OPEN_CARDS -> {
-                pendingPeakId = peakId
-                pendingPeakName = peakName
-                tabNavController.navigate(Screen.Cards.route) {
-                    popUpTo(Screen.Home.route) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = false
-                }
-            }
-        }
-    }
     // Edit-ascent sheet — non-null while editing one of the user's own cards.
     var editAscent            by remember { mutableStateOf<Ascent?>(null) }
     var cardsRefreshTrigger  by remember { mutableIntStateOf(0) }
@@ -415,8 +362,18 @@ fun MainScaffold(navController: NavController) {
             composable(Screen.Bitacora.route) {
                 BitacoraScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                    onOpenChallenge      = { id ->
-                        navController.navigate(Screen.ChallengeDetail.createRoute(id))
+                    onLogAscent = { peakId, peakName ->
+                        newAscentPeakId   = peakId
+                        newAscentPeakName = peakName
+                        showNewAscent     = true
+                    },
+                    onViewOnAtlas = { id, name ->
+                        pendingChallengeId   = id
+                        pendingChallengeName = name
+                        tabNavController.navigate(Screen.Map.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                        }
                     },
                     onCaptureFirstSummit = { showNewAscent = true },
                     onNavigateToCards  = { peakId, peakName ->

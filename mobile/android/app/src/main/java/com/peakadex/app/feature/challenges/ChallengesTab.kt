@@ -79,11 +79,31 @@ private const val SEGMENTED_MAX = 30
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChallengesTab(
-    onOpenChallenge: (id: String) -> Unit,
+    onLogAscent: (peakId: String, peakName: String) -> Unit,
+    onOpenPeakCards: (peakId: String, peakName: String) -> Unit,
+    onViewOnAtlas: (challengeId: String, challengeName: String) -> Unit,
     vm: ChallengesViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     var sheetOpen by remember { mutableStateOf(false) }
+
+    // El detalle vive DENTRO de la pestaña, no en una ruta aparte: así la tira de
+    // tabs sigue arriba y el detalle se lee como parte de Bitácora, igual que en
+    // web. Cada pestaña es además una salida.
+    //
+    // Al volver se recarga la lista, porque desde el detalle se puede salir de un
+    // reto y la tarjeta tiene que desaparecer.
+    var openChallengeId by remember { mutableStateOf<String?>(null) }
+    openChallengeId?.let { id ->
+        ChallengeDetailRoute(
+            challengeId = id,
+            onBack = { openChallengeId = null; vm.load() },
+            onLogAscent = onLogAscent,
+            onOpenPeakCards = onOpenPeakCards,
+            onViewOnAtlas = onViewOnAtlas,
+        )
+        return
+    }
 
     Column(Modifier.fillMaxSize()) {
         // ── Buscador + Añadir ────────────────────────────────────────────────
@@ -142,7 +162,7 @@ fun ChallengesTab(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(state.filteredMine, key = { it.id }) { c ->
-                    ChallengeRow(c) { onOpenChallenge(c.id) }
+                    ChallengeRow(c) { openChallengeId = c.id }
                 }
             }
         }
