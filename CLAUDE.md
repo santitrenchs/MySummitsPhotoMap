@@ -727,6 +727,17 @@ preformatted `altLabel` in the feature properties instead.
 
 ## Known Gotchas
 
+- **Android — never add system-inset padding inside `MainScaffold`'s content.** No
+  `statusBarsPadding()`, no `navigationBarsPadding()`. `MainScaffold` already hands the
+  content a `padding(innerPadding)` whose edges are the top bar and the tab bar, and each
+  of those bars carries the system inset itself. Adding it again counts the inset twice.
+  It never errors — it just pushes things away from the edge by ~25dp, which reads as a
+  design choice rather than a bug. It has bitten three times: the Atlas map controls sat
+  102dp from the bottom when the code said 72, and the reto chip floated below the search
+  bar instead of under it. **Measure against a sibling**: the MapLibre attribution button,
+  which uses MapView pixel margins and no Compose insets, lands exactly where it is told —
+  it is the control case. Bottom sheets are the exception: they are separate windows and
+  do need `navigationBarsPadding()`.
 - **maplibre's `ScaleControl` keeps its own unit** — `new ScaleControl({ unit })` does not
   follow anything else, so the bar reads "10 km" under a map whose labels are in feet.
   Set it at construction from the preference and update it with `setUnit`. ⚠️ `setUnit`
