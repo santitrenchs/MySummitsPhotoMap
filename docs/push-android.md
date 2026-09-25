@@ -270,6 +270,38 @@ el sistema descarta en silencio.
   solicitudes e invitaciones, la carta para el etiquetado.
 - `data` en el mensaje FCM con el destino; `MainActivity` lo interpreta.
 
+#### Estado de la fase 6 (hecha)
+
+`PushNavigation` + `PushDestination`. `MainActivity` lee los extras y
+`MainScaffold` navega.
+
+⚠️ **Dos caminos para el mismo intent, y los dos hacen falta**:
+
+| Estado de la app | Quién construye el aviso | Por dónde llega |
+|---|---|---|
+| primer plano | `PeakadexMessagingService` | `onNewIntent` |
+| segundo plano o cerrada | **el sistema**, `onMessageReceived` no corre | `onCreate` |
+
+⚠️ `MainActivity` pasa a `launchMode="singleTask"`. Con el `standard` de antes,
+`CLEAR_TOP|SINGLE_TOP` no garantizaba `onNewIntent` y podía apilarse una Activity
+nueva encima.
+
+⚠️ Los extras se limpian tras leerlos: sin eso, una rotación de pantalla
+reentrega el mismo intent y la app vuelve a saltar al destino con el usuario ya
+en otro sitio.
+
+Verificado tocando notificaciones de verdad en el emulador, con la app en
+segundo plano (o sea, el camino del aviso construido por el sistema):
+
+| `data.screen` | Abre en |
+|---|---|
+| `friends` | pestaña Rope Team ✓ |
+| `card` | pestaña Cards ✓ |
+| `cordada` | mismo mecanismo + un `navigate` al navController externo — **no probado por separado** |
+
+De paso quedó confirmado que el canal `tags` aterriza en la sección **Silent** de
+la bandeja, que es lo que se buscaba con `IMPORTANCE_LOW`.
+
 ### Fase 7 — Verificación
 - Emulador con Google Play para recibir push de verdad.
 - Comprobar: token registrado al entrar, borrado al salir, permiso denegado →

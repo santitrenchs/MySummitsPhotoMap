@@ -17,6 +17,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import com.peakadex.app.core.push.PushDestination
+import com.peakadex.app.core.push.PushNavigation
 import com.peakadex.app.core.push.PushPermission
 import com.peakadex.app.core.push.PushPrimingSheet
 import com.peakadex.app.core.push.PushTokenRegistrar
@@ -136,6 +138,7 @@ fun MainScaffold(navController: NavController) {
         )
     }
 
+
     // Pending peak filter — Atlas → Cards
     var pendingPeakId   by remember { mutableStateOf<String?>(null) }
     var pendingPeakName by remember { mutableStateOf<String?>(null) }
@@ -159,6 +162,48 @@ fun MainScaffold(navController: NavController) {
     // WITHOUT showing its ring while the reveal overlay is up. The ring is armed
     // (via cardsHighlightId) only on the reveal's final tap.
     var cardsScrollId        by remember { mutableStateOf<String?>(null) }
+
+    // ── Destino de una notificación tocada ───────────────────────────────────
+    // Lo deposita MainActivity desde los extras del intent, por los dos caminos:
+    // onCreate (app cerrada, aviso del sistema) y onNewIntent (app abierta).
+    val pushDestination by PushNavigation.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(pushDestination) {
+        when (val dest = pushDestination) {
+            null -> Unit
+            is PushDestination.Friends -> {
+                tabNavController.navigate(Screen.Friends.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState    = true
+                }
+                PushNavigation.consume()
+            }
+            is PushDestination.Cordada -> {
+                // Detalle de cordada: vive en el navController EXTERNO, no en el
+                // de pestañas. Se pasa antes por la pestaña para que al volver
+                // atrás se aterrice en la lista y no en Stats.
+                tabNavController.navigate(Screen.Friends.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState    = true
+                }
+                navController.navigate(Screen.CordadaDetail.createRoute(dest.id))
+                PushNavigation.consume()
+            }
+            is PushDestination.Card -> {
+                // Mismo camino que un toque desde Fotos: marcar el id y saltar.
+                // No se toca cardsRefreshTrigger porque la carta es de otro y el
+                // filtro Mine la escondería.
+                cardsHighlightId = dest.ascentId
+                tabNavController.navigate(Screen.Cards.route) {
+                    popUpTo(Screen.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState    = false
+                }
+                PushNavigation.consume()
+            }
+        }
+    }
     var atlasRefreshTrigger    by remember { mutableIntStateOf(0) }
     var captureReveal          by remember { mutableStateOf<CaptureRevealState?>(null) }
 
