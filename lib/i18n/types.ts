@@ -145,6 +145,7 @@ export type Dict = {
   settings_autoDetect: string; settings_autoDetectDesc: string;
   settings_autoSuggest: string; settings_autoSuggestDesc: string;
   settings_reviewFaces: string; settings_reviewFacesDesc: string;
+  settings_help: string; settings_contactSupport: string; settings_contactSupportAction: string;
   settings_dangerZone: string; settings_signOut: string; settings_signOutDesc: string;
   settings_deleteAccount: string; settings_deletePermanent: string;
   settings_deleteWarning: string; settings_deleteConfirmPlaceholder: string;

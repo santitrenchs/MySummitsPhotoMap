@@ -17,6 +17,10 @@ type UserSettings = {
   hasPassword: boolean; googleLinked: boolean;
 };
 
+// La misma que ofrece Ajustes en Android (SUPPORT_EMAIL). Es una regla de
+// reenvío de Cloudflare, no un buzón; `contact@` es la otra y va en los legales.
+const SUPPORT_EMAIL = "hello@peakadex.com";
+
 const UNIT_OPTIONS: { value: Units; labelKey: "settings_unitsMetric" | "settings_unitsImperial" }[] = [
   { value: "metric",   labelKey: "settings_unitsMetric" },
   { value: "imperial", labelKey: "settings_unitsImperial" },
@@ -102,6 +106,31 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
   const [pwSaving, setPwSaving] = useState(false);
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
+
+  // Soporte. El href arranca como un mailto pelado y se enriquece con el
+  // diagnóstico en un efecto: `navigator` no existe durante el render del
+  // servidor, así que calcularlo en el cuerpo del componente rompería el SSR.
+  // Si la hidratación no llegara, el enlace sigue siendo válido, solo más pobre.
+  const [supportHref, setSupportHref] = useState(`mailto:${SUPPORT_EMAIL}`);
+  useEffect(() => {
+    // Account y User ID van delante del resto: el remitente del correo es la
+    // cuenta de correo del usuario, que no tiene por qué ser la de Peakadex, así
+    // que por sí solo no identifica a nadie. Y son lo primero que se pierde si
+    // alguien recorta el bloque antes de enviar.
+    const body = [
+      "",
+      "",
+      "---",
+      `Account: ${settings.email || "(no session)"}`,
+      `User ID: ${settings.id || "-"}`,
+      "Peakadex web",
+      navigator.userAgent,
+      locale,
+    ].join("\n");
+    setSupportHref(
+      `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Peakadex support")}&body=${encodeURIComponent(body)}`,
+    );
+  }, [settings.email, settings.id, locale]);
 
   // Language picker
   const [langOpen, setLangOpen] = useState(false);
@@ -471,6 +500,22 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
         </SettingsRow>
         <SettingsRow label={t.settings_activityNotif} description={t.settings_activityNotifDesc} last>
           <Toggle value={settings.activityNotifications} onChange={(v) => saveToggle("activityNotifications", v)} />
+        </SettingsRow>
+      </Card>
+
+      {/* Help */}
+      <SectionHeader label={t.settings_help} />
+      <Card>
+        <SettingsRow label={t.settings_contactSupport} description={SUPPORT_EMAIL} last>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => { window.location.href = supportHref; }}
+            style={{ flexShrink: 0 }}
+          >
+            {t.settings_contactSupportAction}
+          </Button>
         </SettingsRow>
       </Card>
 
