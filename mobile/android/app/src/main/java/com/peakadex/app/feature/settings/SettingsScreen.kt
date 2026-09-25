@@ -412,7 +412,15 @@ fun SettingsScreen(
                                 SegmentedButton(
                                     selected = state.selectedUnits == opt.units,
                                     onClick  = { vm.saveUnits(opt.units) },
-                                    shape    = SegmentedButtonDefaults.itemShape(idx, UNIT_OPTIONS.size),
+                                    // `baseShape` explícito. El defecto de Material 3 para un
+                                    // control segmentado es `CornerFull`, una cápsula, y salía
+                                    // como el único elemento redondo de la pantalla: los dos
+                                    // CTA verdes son de 10dp y el botón «Desvincular» de 8dp.
+                                    shape    = SegmentedButtonDefaults.itemShape(
+                                        index     = idx,
+                                        count     = UNIT_OPTIONS.size,
+                                        baseShape = RoundedCornerShape(10.dp),
+                                    ),
                                     label    = { Text(stringResource(opt.labelRes), fontSize = 14.sp) },
                                 )
                             }
