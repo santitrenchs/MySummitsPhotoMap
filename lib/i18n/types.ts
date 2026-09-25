@@ -145,6 +145,7 @@ export type Dict = {
   settings_autoDetect: string; settings_autoDetectDesc: string;
   settings_autoSuggest: string; settings_autoSuggestDesc: string;
   settings_reviewFaces: string; settings_reviewFacesDesc: string;
+  delacc_title: string; delacc_intro: string; delacc_inAppTitle: string; delacc_inAppBody: string; delacc_noAppTitle: string; delacc_noAppBody: string; delacc_deletedTitle: string; delacc_deleted1: string; delacc_deleted2: string; delacc_deleted3: string; delacc_deleted4: string; delacc_deleted5: string; delacc_keptTitle: string; delacc_keptBody: string; delacc_timingTitle: string; delacc_timingBody: string;
   settings_help: string; settings_contactSupport: string; settings_contactSupportAction: string;
   settings_dangerZone: string; settings_signOut: string; settings_signOutDesc: string;
   settings_deleteAccount: string; settings_deletePermanent: string;

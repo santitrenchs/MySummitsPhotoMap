@@ -78,6 +78,11 @@ export default auth((req) => {
     pathname.startsWith("/peaks/") ||
     pathname.match(/^\/(en|fr|de|ca)\/peaks(\/|$)/) !== null;
 
+  // ⚠️ Deliberadamente fuera de `isAuthPage`: esa lista también redirige a /map a
+  // quien ya tiene sesión, y esta página la tienen que poder leer los dos. Es
+  // requisito de Google Play que sea accesible sin la app y sin cuenta.
+  const isPublicInfoPage = pathname === "/delete-account";
+
   const isAuthApi = pathname.startsWith("/api/auth");
   const isV1Api = pathname.startsWith("/api/v1");
   const isPublicApi =
@@ -159,7 +164,7 @@ export default auth((req) => {
   }
 
   // Redirect unauthenticated users to login (except landing pages, auth pages, and public ascent pages)
-  if (!isLoggedIn && !isAuthPage && !isLanding && !isPublicAscentPage) {
+  if (!isLoggedIn && !isAuthPage && !isLanding && !isPublicAscentPage && !isPublicInfoPage) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
 
