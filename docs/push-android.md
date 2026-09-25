@@ -207,6 +207,29 @@ el push hoy es solo de Android.
   arrancar. Verificar que el registrar de messaging queda cubierto — **el fallo
   solo se ve en build de release**.
 
+#### Estado de la fase 4 (hecha)
+
+`core/push/`: `PeakadexMessagingService`, `NotificationChannels`,
+`PushTokenRegistrar`. Endpoints Retrofit `registerDevice` / `unregisterDevice`.
+
+**Probado de extremo a extremo en el emulador**: la app arranca, registra su
+token en la tabla de staging, y dos envíos reales por FCM llegan a la bandeja
+con el canal y la importancia correctos (`social` → 3 DEFAULT, `tags` → 2 LOW).
+
+⚠️ **El permiso no se pide todavía**: `POST_NOTIFICATIONS` salía `granted=false`
+e `importance=NONE`, y por eso el primer envío llegó a FCM pero no se mostró.
+Para la prueba se concedió con `adb shell pm grant`. Pedirlo es la fase 5.
+
+⚠️ **`kotlinx-coroutines-play-services` se declaró explícita.** Llegaba solo de
+forma transitiva vía `credentials-play-services-auth`; cambiar aquella habría
+roto el push con un `unresolved reference: await` que no señala a nada.
+
+⚠️ **R8 verificado, no supuesto.** La regla comodín de `proguard-rules.pro` cubre
+`FirebaseMessagingRegistrar`: comprobado buscándolo en el `classes.dex` del APK
+de release ya minificado. **Ojo con `grep` sobre un `.dex`**: sin `-a` lo trata
+como binario y calla en vez de reportar la coincidencia — eso me dio un falso
+"ausente" en el primer intento.
+
 ### Fase 5 — Android: permiso y ajustes
 - Hoja de *priming* tras la primera solicitud de amistad o invitación a cordada.
 - Diálogo del sistema solo si el usuario acepta el priming.

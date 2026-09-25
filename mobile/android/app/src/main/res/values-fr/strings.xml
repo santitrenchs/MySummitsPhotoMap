@@ -222,6 +222,10 @@
     <string name="settings_email_notifications">Notifications par e-mail</string>
     <string name="settings_activity_notifications">Notifications d\'activité</string>
 
+    <string name="push_channel_social">Amis et cordées</string>
+    <string name="push_channel_social_desc">Demandes, invitations et réponses</string>
+    <string name="push_channel_tags">Identifications sur photos</string>
+    <string name="push_channel_tags_desc">Quand quelqu’un t’identifie sur une photo</string>
     <string name="settings_section_help">Aide</string>
     <string name="settings_contact_support">Contacter le support</string>
     <string name="settings_support_subject">Support Peakadex</string>

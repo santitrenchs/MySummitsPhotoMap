@@ -101,6 +101,10 @@ dependencies {
     implementation(libs.security.crypto)
     implementation(libs.core.splashscreen)
     implementation(libs.kotlinx.coroutines.android)
+    // `Task.await()` en PushTokenRegistrar. Llegaba transitivamente vía
+    // credentials-play-services-auth; declararla evita que cambiar aquella
+    // rompa el push con un "unresolved reference: await".
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.maplibre.android.sdk)
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
@@ -110,6 +114,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.messaging)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

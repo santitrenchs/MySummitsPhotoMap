@@ -222,6 +222,10 @@
     <string name="settings_email_notifications">Notificacions per correu</string>
     <string name="settings_activity_notifications">Notificacions d\'activitat</string>
 
+    <string name="push_channel_social">Amistats i cordades</string>
+    <string name="push_channel_social_desc">Sol·licituds, invitacions i respostes</string>
+    <string name="push_channel_tags">Etiquetes a fotos</string>
+    <string name="push_channel_tags_desc">Quan algú t’etiqueta en una foto</string>
     <string name="settings_section_help">Ajuda</string>
     <string name="settings_contact_support">Contactar amb suport</string>
     <string name="settings_support_subject">Suport Peakadex</string>

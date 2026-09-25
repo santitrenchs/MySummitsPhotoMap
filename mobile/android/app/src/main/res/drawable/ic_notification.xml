@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Icono de la barra de estado para las notificaciones push.
+
+  ⚠️ Silueta blanca sobre transparente, sin excepción. Android aplica una máscara
+  al icono de la barra de estado: cualquier color se descarta y todo lo que no
+  sea transparente se pinta de blanco. Un icono a color —el del lanzador, por
+  ejemplo— acaba como un cuadrado blanco sólido.
+
+  Una montaña maciza, sin trazo: a 24dp en la barra de estado un contorno fino se
+  pierde.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Cima principal -->
+    <path
+        android:pathData="M12,5 L19.5,19 L4.5,19 Z"
+        android:fillColor="#FFFFFFFF" />
+
+    <!-- Cima secundaria, a la derecha y más baja -->
+    <path
+        android:pathData="M17,10 L22,19 L13.5,19 Z"
+        android:fillColor="#FFFFFFFF" />
+
+</vector>

@@ -237,6 +237,10 @@
     <string name="settings_email_notifications">Notificaciones por email</string>
     <string name="settings_activity_notifications">Notificaciones de actividad</string>
 
+    <string name="push_channel_social">Amistades y cordadas</string>
+    <string name="push_channel_social_desc">Solicitudes, invitaciones y respuestas</string>
+    <string name="push_channel_tags">Etiquetas en fotos</string>
+    <string name="push_channel_tags_desc">Cuando alguien te etiqueta en una foto</string>
     <string name="settings_section_help">Ayuda</string>
     <string name="settings_contact_support">Contactar con soporte</string>
     <string name="settings_support_subject">Soporte Peakadex</string>

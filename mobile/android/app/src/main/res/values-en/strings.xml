@@ -237,6 +237,10 @@
     <string name="settings_email_notifications">Email notifications</string>
     <string name="settings_activity_notifications">Activity notifications</string>
 
+    <string name="push_channel_social">Friends and rope teams</string>
+    <string name="push_channel_social_desc">Requests, invitations and replies</string>
+    <string name="push_channel_tags">Photo tags</string>
+    <string name="push_channel_tags_desc">When someone tags you in a photo</string>
     <string name="settings_section_help">Help</string>
     <string name="settings_contact_support">Contact support</string>
     <string name="settings_support_subject">Peakadex support</string>

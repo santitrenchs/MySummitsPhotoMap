@@ -240,6 +240,18 @@ interface ApiService {
     @DELETE("settings/account")
     suspend fun deleteAccount()
 
+    // MARK: - Push
+    /** Alta del dispositivo. Idempotente: repetirlo solo refresca lastSeenAt. */
+    @POST("devices")
+    suspend fun registerDevice(@Body body: Map<String, String>)
+
+    /**
+     * Baja al cerrar sesión. Con cuerpo, no en la URL: el token no cabe con
+     * holgura en una query y acabaría en los logs de acceso de todo el camino.
+     */
+    @HTTP(method = "DELETE", path = "devices", hasBody = true)
+    suspend fun unregisterDevice(@Body body: Map<String, String>)
+
     // MARK: - Challenges (Retos)
     @GET("challenges")
     suspend fun getChallenges(): ChallengesResponse

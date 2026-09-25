@@ -61,7 +61,7 @@
 # AGP handles most Compose rules; keep ViewModel subclasses for nav
 -keep class * extends androidx.lifecycle.ViewModel { *; }
 
-# --------------- Firebase (Analytics + Crashlytics) ---------
+# --------------- Firebase (Analytics + Crashlytics + Messaging) ---
 # R8 full mode (default on AGP 9) strips the no-arg constructors of Firebase
 # ComponentRegistrar implementations, which crashes the app at launch with
 # "FirebaseCrashlytics component is not present". Keep the registrars + their
@@ -70,6 +70,10 @@
     <init>();
 }
 -keepnames class com.google.firebase.components.ComponentRegistrar
+# La regla de arriba es un comodín y cubre también FirebaseMessagingRegistrar:
+# verificado el 25/09/2026 buscándolo en el classes.dex del APK de release ya
+# minificado. PeakadexMessagingService lo conserva R8 solo, por estar declarado
+# en el manifiesto.
 -keep class com.google.firebase.crashlytics.** { *; }
 -dontwarn com.google.firebase.**
 

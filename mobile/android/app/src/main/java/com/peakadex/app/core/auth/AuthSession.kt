@@ -1,8 +1,10 @@
 package com.peakadex.app.core.auth
 
+import android.content.Context
 import com.peakadex.app.core.analytics.Telemetry
 import com.peakadex.app.core.api.AuthInterceptor
 import com.peakadex.app.core.model.User
+import com.peakadex.app.core.push.PushTokenRegistrar
 import com.peakadex.app.core.util.UnitsState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,6 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 class AuthSession(
     private val tokenStorage: TokenStorage,
     private val authInterceptor: AuthInterceptor,
+    /** Contexto de aplicación. Lo necesita el registro del token de push. */
+    private val appContext: Context,
 ) {
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
@@ -49,6 +53,7 @@ class AuthSession(
         _currentUser.value = user
         _sessionExpired.value = false
         Telemetry.setUser(user.id)
+        PushTokenRegistrar.syncOnLogin(appContext)
     }
 
     /** Called from AuthInterceptor (OkHttp thread) when a 401 arrives with a token attached. */
@@ -71,6 +76,11 @@ class AuthSession(
     }
 
     fun logout() {
+        // ⚠️ Antes de borrar el token de autenticación: la baja del dispositivo
+        // necesita la cabecera Authorization. Al revés responde 401, el token se
+        // queda vivo en el servidor y le llegan notificaciones de esta cuenta a
+        // quien use el aparato después.
+        PushTokenRegistrar.unregisterOnLogout(appContext)
         tokenStorage.deleteToken()
         authInterceptor.token = null
         _currentUser.value = null
