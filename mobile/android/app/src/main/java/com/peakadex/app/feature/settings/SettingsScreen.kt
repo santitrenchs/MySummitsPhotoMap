@@ -51,6 +51,7 @@ import com.peakadex.app.R
 import com.peakadex.app.core.model.User
 import com.peakadex.app.core.ui.theme.PeakBackground
 import com.peakadex.app.core.ui.theme.PeakBlueActive
+import com.peakadex.app.core.ui.theme.PeakLayerActiveBg
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
 import com.peakadex.app.core.ui.theme.PeakBlueLight
 import com.peakadex.app.core.ui.UiText
@@ -420,6 +421,23 @@ fun SettingsScreen(
                                         index     = idx,
                                         count     = UNIT_OPTIONS.size,
                                         baseShape = RoundedCornerShape(10.dp),
+                                    ),
+                                    // Colores explícitos, como los otros diez componentes
+                                    // seleccionables de la app. Por defecto Material 3 tira de
+                                    // `secondaryContainer`, que en este tema es verde: un estado
+                                    // seleccionado pintado del color que aquí significa «crear».
+                                    // Estos son los mismos tokens que usan los chips del Atlas.
+                                    //
+                                    // No se cambia `secondaryContainer` en el tema aunque este
+                                    // control sea hoy su único consumidor: es una ranura genérica
+                                    // y redefinirla decide por adelantado el color de cualquier
+                                    // chip futuro que nadie haya pintado a mano.
+                                    colors   = SegmentedButtonDefaults.colors(
+                                        activeContainerColor   = PeakLayerActiveBg,
+                                        activeContentColor     = PeakBlueActive,
+                                        activeBorderColor      = PeakBlueActive,
+                                        inactiveContainerColor = Color.White,
+                                        inactiveContentColor   = PeakMuted,
                                     ),
                                     label    = { Text(stringResource(opt.labelRes), fontSize = 14.sp) },
                                 )
