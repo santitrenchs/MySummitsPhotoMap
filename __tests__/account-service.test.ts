@@ -15,11 +15,12 @@ vi.mock("@/lib/db/client", () => ({
     $transaction:   vi.fn(),
   },
 }));
-vi.mock("@/lib/email", () => ({ notifyUserDeleted: vi.fn() }));
+vi.mock("@/lib/email", () => ({ notifyUserDeleted: vi.fn(), sendCordadaOwnershipEmail: vi.fn() }));
 vi.mock("@/lib/storage/r2", () => ({ deleteFromR2: vi.fn() }));
 
 import { prisma } from "@/lib/db/client";
 import { deleteFromR2 } from "@/lib/storage/r2";
+import { sendCordadaOwnershipEmail } from "@/lib/email";
 import { deleteAccount } from "@/lib/services/account.service";
 
 const db = prisma as unknown as {
@@ -34,6 +35,7 @@ const db = prisma as unknown as {
   $transaction:   Mock;
 };
 const r2 = vi.mocked(deleteFromR2);
+const ownershipEmail = vi.mocked(sendCordadaOwnershipEmail);
 
 const USER = {
   id: "u1",
@@ -52,6 +54,7 @@ beforeEach(() => {
   db.cordada.findMany.mockResolvedValue([]);
   db.cordadaMember.findFirst.mockResolvedValue(null);
   db.$transaction.mockResolvedValue([]);
+  ownershipEmail.mockResolvedValue(undefined);
   r2.mockResolvedValue(undefined);
 });
 
@@ -125,7 +128,7 @@ describe("deleteAccount() — cordadas que posee el usuario", () => {
 
   it("transfiere la propiedad al miembro aceptado más antiguo", async () => {
     db.cordada.findMany.mockResolvedValue([{ id: "c1" }]);
-    db.cordadaMember.findFirst.mockResolvedValue({ userId: "u2" });
+    db.cordadaMember.findFirst.mockResolvedValue({ userId: "u2", user: { email: "u2@example.com", language: "ca" } });
 
     await deleteAccount("u1", "t1");
 
@@ -167,12 +170,54 @@ describe("deleteAccount() — cordadas que posee el usuario", () => {
     // una cordada no podría darse de baja.
     const order: string[] = [];
     db.cordada.findMany.mockResolvedValue([{ id: "c1" }]);
-    db.cordadaMember.findFirst.mockResolvedValue({ userId: "u2" });
+    db.cordadaMember.findFirst.mockResolvedValue({ userId: "u2", user: { email: "u2@example.com", language: "ca" } });
     db.$transaction.mockImplementation(async () => { order.push("transfer"); return []; });
     db.user.delete.mockImplementation(async () => { order.push("userDelete"); return {}; });
 
     await deleteAccount("u1", "t1");
 
     expect(order).toEqual(["transfer", "userDelete"]);
+  });
+});
+
+describe("deleteAccount() — aviso al nuevo dueño", () => {
+  beforeEach(() => {
+    db.membership.count.mockResolvedValue(1);
+  });
+
+  it("avisa al heredero en su idioma, nombrando la cordada y al dueño anterior", async () => {
+    db.cordada.findMany.mockResolvedValue([{ id: "c1", name: "Els Matiners" }]);
+    db.cordadaMember.findFirst.mockResolvedValue({
+      userId: "u2",
+      user: { email: "u2@example.com", language: "ca" },
+    });
+
+    await deleteAccount("u1", "t1");
+
+    expect(ownershipEmail).toHaveBeenCalledWith("u2@example.com", "Els Matiners", "Santi", "ca");
+  });
+
+  it("no avisa a nadie cuando la cordada se disuelve", async () => {
+    db.cordada.findMany.mockResolvedValue([{ id: "c1", name: "Els Matiners" }]);
+    db.cordadaMember.findFirst.mockResolvedValue(null);
+
+    await deleteAccount("u1", "t1");
+
+    expect(ownershipEmail).not.toHaveBeenCalled();
+  });
+
+  it("un fallo del correo no tumba el borrado", async () => {
+    // La cuenta ya no existe cuando se envía. Propagar el error convertiria un
+    // borrado consumado en un 500 que invita a reintentarlo.
+    db.cordada.findMany.mockResolvedValue([{ id: "c1", name: "Els Matiners" }]);
+    db.cordadaMember.findFirst.mockResolvedValue({
+      userId: "u2",
+      user: { email: "u2@example.com", language: null },
+    });
+    ownershipEmail.mockRejectedValue(new Error("Resend caído"));
+
+    await expect(deleteAccount("u1", "t1")).resolves.toBe(true);
+    // Sin idioma en el perfil, castellano.
+    expect(ownershipEmail).toHaveBeenCalledWith("u2@example.com", "Els Matiners", "Santi", "es");
   });
 });

@@ -516,6 +516,112 @@ ${renderBrandHeader()}
   console.log("[email] cordada invite sent OK, id:", data?.id);
 }
 
+const CORDADA_OWNER_COPY: Record<string, { subject: (c: string) => string; h1: string; body: (c: string, n: string) => string; cta: string }> = {
+  es: {
+    subject: (c) => `Ahora administras la cordada "${c}"`,
+    h1: "Eres el nuevo responsable",
+    body: (c, n) => `<strong>${n}</strong> ha eliminado su cuenta de Peakadex, y la cordada <strong>${c}</strong> ha pasado a ti por ser quien lleva más tiempo en ella. Puedes invitar y quitar miembros, cambiar la foto o eliminarla.`,
+    cta: "Ver la cordada →",
+  },
+  ca: {
+    subject: (c) => `Ara administres la cordada "${c}"`,
+    h1: "Ets el nou responsable",
+    body: (c, n) => `<strong>${n}</strong> ha eliminat el seu compte de Peakadex, i la cordada <strong>${c}</strong> ha passat a tu per ser qui hi porta més temps. Pots convidar i treure membres, canviar la foto o eliminar-la.`,
+    cta: "Veure la cordada →",
+  },
+  en: {
+    subject: (c) => `You now manage the "${c}" rope team`,
+    h1: "You are the new owner",
+    body: (c, n) => `<strong>${n}</strong> deleted their Peakadex account, and the <strong>${c}</strong> rope team has passed to you as its longest-standing member. You can invite and remove members, change the photo or delete it.`,
+    cta: "View rope team →",
+  },
+  fr: {
+    subject: (c) => `Tu administres désormais la cordée "${c}"`,
+    h1: "Tu es le nouveau responsable",
+    body: (c, n) => `<strong>${n}</strong> a supprimé son compte Peakadex, et la cordée <strong>${c}</strong> te revient en tant que membre le plus ancien. Tu peux inviter et retirer des membres, changer la photo ou la supprimer.`,
+    cta: "Voir la cordée →",
+  },
+  de: {
+    subject: (c) => `Du verwaltest jetzt die Seilschaft "${c}"`,
+    h1: "Du bist die neue Verantwortliche Person",
+    body: (c, n) => `<strong>${n}</strong> hat das Peakadex-Konto gelöscht, und die Seilschaft <strong>${c}</strong> ist als dienstältestem Mitglied an dich übergegangen. Du kannst Mitglieder einladen und entfernen, das Foto ändern oder sie löschen.`,
+    cta: "Seilschaft ansehen →",
+  },
+};
+
+/**
+ * Avisa a quien hereda una cordada porque su dueño ha borrado la cuenta.
+ *
+ * Sin esto la persona pasa a administrar un grupo sin enterarse, y solo lo
+ * descubre el día que le aparecen botones que antes no tenía.
+ *
+ * ⚠️ No se filtra por `emailNotifications`: no es una notificación de actividad
+ * que se pueda silenciar, es el aviso de que ahora respondes de un grupo. Quien
+ * apaga las notificaciones está diciendo que no quiere ruido, no que no quiera
+ * saber lo que ha pasado con sus datos.
+ */
+export async function sendCordadaOwnershipEmail(
+  to: string,
+  cordadaName: string,
+  previousOwnerName: string,
+  locale = "es",
+) {
+  const copy = CORDADA_OWNER_COPY[locale] ?? CORDADA_OWNER_COPY.es;
+  const friendsUrl = `${APP_URL}/friends`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM,
+    replyTo: REPLY_TO,
+    to,
+    subject: copy.subject(cordadaName),
+    html: `
+<!DOCTYPE html>
+<html lang="${locale}">
+${renderEmailHead()}
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+${renderBrandHeader()}
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${copy.h1}</h1>
+            <p style="margin:0 0 24px;font-size:15px;color:#64748b;line-height:1.6;">
+              ${copy.body(cordadaName, previousOwnerName)}
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center">
+                  <a href="${friendsUrl}"
+                     style="display:inline-block;background:#2F7A5F;color:#ffffff;font-size:15px;font-weight:700;
+                            text-decoration:none;padding:14px 32px;border-radius:10px;letter-spacing:-0.01em;">
+                    ${copy.cta}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} Peakadex · <a href="${APP_URL}" style="color:#94a3b8;">www.peakadex.com</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+
+  if (error) {
+    console.error("[email] cordada ownership Resend error:", error);
+    throw new Error(`Resend failed: ${JSON.stringify(error)}`);
+  }
+
+  console.log("[email] cordada ownership sent OK, id:", data?.id);
+}
+
 const PHOTO_TAG_COPY: Record<string, { subject: (n: string, peak: string) => string; h1: (n: string) => string; body: (n: string, peak: string) => string; cta: string }> = {
   es: {
     subject: (n, peak) => `Revive el momento vivido con ${n} en ${peak}`,

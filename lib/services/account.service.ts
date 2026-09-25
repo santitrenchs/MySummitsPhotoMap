@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/client";
-import { notifyUserDeleted } from "@/lib/email";
+import { notifyUserDeleted, sendCordadaOwnershipEmail } from "@/lib/email";
 import { deleteFromR2 } from "@/lib/storage/r2";
 
 /**
@@ -67,13 +67,15 @@ export async function deleteAccount(userId: string, tenantId?: string | null): P
   // que quedarse sin cordada.
   const ownedCordadas = await prisma.cordada.findMany({
     where: { ownerId: userId },
-    select: { id: true },
+    select: { id: true, name: true },
   });
-  for (const { id: cordadaId } of ownedCordadas) {
+  const heirsToNotify: { email: string; cordadaName: string; locale: string }[] = [];
+
+  for (const { id: cordadaId, name: cordadaName } of ownedCordadas) {
     const heir = await prisma.cordadaMember.findFirst({
       where: { cordadaId, userId: { not: userId }, status: "ACCEPTED" },
       orderBy: [{ joinedAt: "asc" }, { createdAt: "asc" }],
-      select: { userId: true },
+      select: { userId: true, user: { select: { email: true, language: true } } },
     });
     if (heir) {
       // En transacción: una cordada cuyo `ownerId` apunta a alguien que no es OWNER
@@ -86,6 +88,15 @@ export async function deleteAccount(userId: string, tenantId?: string | null): P
           data: { role: "OWNER" },
         }),
       ]);
+      // Se acumula y se envía al final: si el correo se mandara aquí y el borrado
+      // fallara después, alguien recibiría el aviso de una herencia que no ocurrió.
+      if (heir.user?.email) {
+        heirsToNotify.push({
+          email: heir.user.email,
+          cordadaName,
+          locale: heir.user.language ?? "es",
+        });
+      }
     } else {
       // Nadie a quien transferir: la cordada era solo suya y se va con él.
       await prisma.cordada.delete({ where: { id: cordadaId } });
@@ -127,6 +138,14 @@ export async function deleteAccount(userId: string, tenantId?: string | null): P
       },
     })
     .catch((err: unknown) => console.error("[deleteAccount] audit log failed:", err));
+
+  // Best-effort, ya consumado el borrado: quien hereda tiene que enterarse, pero
+  // un fallo de Resend no puede deshacer una cuenta que ya no existe.
+  for (const h of heirsToNotify) {
+    sendCordadaOwnershipEmail(h.email, h.cordadaName, user.name, h.locale).catch(
+      (err: unknown) => console.error("[deleteAccount] aviso de herencia de cordada falló:", err),
+    );
+  }
 
   notifyUserDeleted({
     userId: user.id,
