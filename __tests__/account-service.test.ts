@@ -5,7 +5,7 @@ import type { Mock } from "vitest";
 vi.mock("@/lib/db/client", () => ({
   prisma: {
     user:           { findUnique: vi.fn(), delete: vi.fn() },
-    ascent:         { count: vi.fn() },
+    ascent:         { count: vi.fn(), deleteMany: vi.fn() },
     membership:     { count: vi.fn(), deleteMany: vi.fn() },
     tenant:         { delete: vi.fn() },
     photo:          { findMany: vi.fn() },
@@ -25,7 +25,7 @@ import { deleteAccount } from "@/lib/services/account.service";
 
 const db = prisma as unknown as {
   user:           { findUnique: Mock; delete: Mock };
-  ascent:         { count: Mock };
+  ascent:         { count: Mock; deleteMany: Mock };
   membership:     { count: Mock; deleteMany: Mock };
   tenant:         { delete: Mock };
   photo:          { findMany: Mock };
@@ -49,6 +49,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   db.user.findUnique.mockResolvedValue(USER);
   db.ascent.count.mockResolvedValue(3);
+  db.ascent.deleteMany.mockResolvedValue({ count: 0 });
   db.deletedUserLog.create.mockResolvedValue({});
   db.photo.findMany.mockResolvedValue([]);
   db.cordada.findMany.mockResolvedValue([]);
@@ -91,15 +92,32 @@ describe("deleteAccount() — limpieza de R2", () => {
     expect(order).toEqual(["findMany", "tenantDelete"]);
   });
 
-  it("no toca las fotos en un tenant compartido: sobreviven a quien se va", async () => {
+  it("en un tenant compartido borra solo SUS fotos, no las del grupo", async () => {
     db.membership.count.mockResolvedValue(3);
+    db.photo.findMany.mockResolvedValue([{ storageKey: "tenant/t1/photos/mia.jpg", originalStorageKey: null }]);
 
     await deleteAccount("u1", "t1");
 
     expect(db.tenant.delete).not.toHaveBeenCalled();
-    expect(db.photo.findMany).not.toHaveBeenCalled();
-    // El avatar sí: es de la persona, no del tenant.
-    expect(r2.mock.calls.map((c) => c[0])).toEqual(["avatars/u1.jpg"]);
+    // El ámbito es sus ascensiones, nunca el tenant entero: las de los demás se quedan.
+    expect(db.photo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { OR: [{ ascent: { createdBy: "u1" } }] } }),
+    );
+    expect(r2.mock.calls.map((c) => c[0])).toEqual(["tenant/t1/photos/mia.jpg", "avatars/u1.jpg"]);
+  });
+
+  it("las ascensiones son de la persona: se borran y desbloquean el user.delete", async () => {
+    // Ascent.user es obligatoria y sin onDelete, o sea Restrict: una fila que siga
+    // apuntando al usuario haria fallar el borrado en un tenant compartido.
+    const order: string[] = [];
+    db.membership.count.mockResolvedValue(3);
+    db.ascent.deleteMany.mockImplementation(async () => { order.push("ascents"); return { count: 7 }; });
+    db.user.delete.mockImplementation(async () => { order.push("userDelete"); return {}; });
+
+    await deleteAccount("u1", "t1");
+
+    expect(db.ascent.deleteMany).toHaveBeenCalledWith({ where: { createdBy: "u1" } });
+    expect(order).toEqual(["ascents", "userDelete"]);
   });
 
   it("un fallo del bucket no tumba un borrado que ya ha ocurrido", async () => {

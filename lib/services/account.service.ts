@@ -31,27 +31,49 @@ export async function deleteAccount(userId: string, tenantId?: string | null): P
   //
   // Only the sole-member branch collects them. In a shared tenant the ascents (and
   // therefore the photos) survive the departure, so their files must not be touched.
-  let photoKeys: string[] = [];
   const soleMember =
     tenantId != null && (await prisma.membership.count({ where: { tenantId } })) === 1;
 
+  // Dos ámbitos, unidos y deduplicados. El del tenant recoge también lo que no
+  // cuelgue de una ascensión suya; el de `createdBy` alcanza cualquier otro tenant
+  // del que sea miembro, cuyas fotos el primero no vería.
+  const photos = await prisma.photo.findMany({
+    where: {
+      OR: [
+        ...(soleMember && tenantId ? [{ tenantId }] : []),
+        { ascent: { createdBy: userId } },
+      ],
+    },
+    select: { storageKey: true, originalStorageKey: true },
+  });
+  const photoKeys = [
+    ...new Set(
+      photos.flatMap((p) =>
+        [p.storageKey, p.originalStorageKey].filter((k): k is string => !!k),
+      ),
+    ),
+  ];
+
   if (tenantId) {
     if (soleMember) {
-      const photos = await prisma.photo.findMany({
-        where: { tenantId },
-        select: { storageKey: true, originalStorageKey: true },
-      });
-      photoKeys = photos.flatMap((p) =>
-        [p.storageKey, p.originalStorageKey].filter((k): k is string => !!k),
-      );
       // Sole member: the tenant goes with them, cascading ascents and photos.
       await prisma.tenant.delete({ where: { id: tenantId } });
     } else {
-      // Shared tenant: only this person leaves. Deleting it would take the other
-      // members' ascents with it.
+      // Tenant compartido: solo se va esta persona. Borrarlo se llevaría por
+      // delante las ascensiones de los demás.
       await prisma.membership.deleteMany({ where: { userId, tenantId } });
     }
   }
+
+  // Las ascensiones son de la persona, no del grupo: se van con ella y el grupo
+  // se queda con un miembro menos. Además es lo que desbloquea el borrado —
+  // `Ascent.user` es una relación obligatoria sin `onDelete`, o sea `Restrict`
+  // por defecto, y cualquier fila que siga apuntando al usuario haría fallar el
+  // `user.delete()` de más abajo.
+  //
+  // En la rama de miembro único no borra nada: la cascada del tenant ya se las
+  // llevó. Aquí cubre el tenant compartido y cualquier otro del que fuera miembro.
+  await prisma.ascent.deleteMany({ where: { createdBy: userId } });
 
   // Las cordadas que posee cambian de dueño antes de que el usuario desaparezca.
   //
