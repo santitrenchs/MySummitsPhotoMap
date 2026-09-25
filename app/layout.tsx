@@ -1,13 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import { headers } from "next/headers";
 import { Providers } from "@/components/providers";
 import CookieBanner from "@/components/CookieBanner";
 import Script from "next/script";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter" });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-space" });
+// Fuentes autoalojadas, no `next/font/google`. Ese helper las descarga DURANTE el
+// build, así que las seis familias del proyecto eran seis peticiones de red que
+// tenían que salir bien para que un despliegue funcionara. El 25/09/2026 falló la
+// de Nunito y tumbó el despliegue de producción con un `module-not-found` sobre un
+// CSS generado, que no se parece en nada a la causa real.
+//
+// Se guarda la versión VARIABLE de cada familia: un fichero cubre todos los pesos
+// y pesa menos que los estáticos sueltos que sustituye. Las seis suman 212 KB.
+const inter = localFont({
+  src: "./fonts/Inter-Variable.woff2",
+  weight: "400 700",
+  variable: "--font-inter",
+  display: "swap",
+});
+const spaceGrotesk = localFont({
+  src: "./fonts/SpaceGrotesk-Variable.woff2",
+  weight: "300 700",
+  variable: "--font-space",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.peakadex.com"),

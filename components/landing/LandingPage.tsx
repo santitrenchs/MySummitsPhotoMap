@@ -1,7 +1,7 @@
 // Server Component — no "use client" directive
 // Landing-specific fonts are loaded here so they don't bloat the root layout
 // (Inter + Space_Grotesk remain in app/layout.tsx for authenticated pages)
-import { Baloo_2, Nunito, Manrope, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./landing.css";
 import LandingNav from "./LandingNav";
 import LandingHero from "./LandingHero";
@@ -17,10 +17,25 @@ import { LandingTProvider } from "./LandingLocaleContext";
 import { getLandingT } from "@/lib/i18n/landing";
 import type { LandingLocale } from "@/lib/i18n/landing";
 
-const baloo2 = Baloo_2({ subsets: ["latin"], weight: ["800"], variable: "--font-baloo2", display: "swap" });
-const nunito = Nunito({ subsets: ["latin"], weight: ["700", "800"], variable: "--font-nunito", display: "swap" });
-const manrope = Manrope({ subsets: ["latin"], weight: ["800"], variable: "--font-manrope", display: "swap" });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono-landing", display: "swap" });
+// Autoalojadas — ver el comentario de `app/layout.tsx`. Los ficheros viven todos
+// en `app/fonts/` aunque este componente esté en `components/`: una sola carpeta
+// evita que la misma familia acabe duplicada en dos sitios.
+// Aquí había también Baloo 2 y Nunito. Se quitaron el 25/09/2026 al comprobar que
+// `--font-baloo2` y `--font-nunito` no tenían ni una sola referencia en el
+// repositorio: se descargaban en cada build y no pintaban un píxel. Nunito era
+// justamente la que tumbó el despliegue de producción esa mañana.
+const manrope = localFont({
+  src: "../../app/fonts/Manrope-Variable.woff2",
+  weight: "200 800",
+  variable: "--font-manrope",
+  display: "swap",
+});
+const jetbrainsMono = localFont({
+  src: "../../app/fonts/JetBrainsMono-Variable.woff2",
+  weight: "100 800",
+  variable: "--font-mono-landing",
+  display: "swap",
+});
 
 type Stats = {
   totalRarities: number;
@@ -48,7 +63,7 @@ export default function LandingPage({
 }) {
   const t = getLandingT(locale);
   // Font variables are scoped to the landing root div — no effect outside landing pages
-  const fontClasses = `${baloo2.variable} ${nunito.variable} ${manrope.variable} ${jetbrainsMono.variable}`;
+  const fontClasses = `${manrope.variable} ${jetbrainsMono.variable}`;
 
   const jsonLd = {
     "@context": "https://schema.org",
