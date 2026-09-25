@@ -502,4 +502,12 @@
         <item quantity="one">Veure %d cim</item>
         <item quantity="other">Veure %d cims</item>
     </plurals>
+
+    <!-- Filtros de Fotos / Etiquetado -->
+    <string name="profile_photos_search_hint">Cercar foto per cim…</string>
+    <string name="profile_photos_search_tagged_hint">Cercar foto on apareixes…</string>
+    <plurals name="profile_photos_show">
+        <item quantity="one">Veure %d foto</item>
+        <item quantity="other">Veure %d fotos</item>
+    </plurals>
 </resources>

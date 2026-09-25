@@ -506,4 +506,12 @@
         <item quantity="one">Ver %d cima</item>
         <item quantity="other">Ver %d cimas</item>
     </plurals>
+
+    <!-- Filtros de Fotos / Etiquetado -->
+    <string name="profile_photos_search_hint">Buscar foto por cima…</string>
+    <string name="profile_photos_search_tagged_hint">Buscar foto donde apareces…</string>
+    <plurals name="profile_photos_show">
+        <item quantity="one">Ver %d foto</item>
+        <item quantity="other">Ver %d fotos</item>
+    </plurals>
 </resources>

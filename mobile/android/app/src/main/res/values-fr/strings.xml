@@ -502,4 +502,12 @@
         <item quantity="one">Voir %d sommet</item>
         <item quantity="other">Voir %d sommets</item>
     </plurals>
+
+    <!-- Filtros de Fotos / Etiquetado -->
+    <string name="profile_photos_search_hint">Chercher photo par sommet…</string>
+    <string name="profile_photos_search_tagged_hint">Chercher photo où tu apparais…</string>
+    <plurals name="profile_photos_show">
+        <item quantity="one">Voir %d photo</item>
+        <item quantity="other">Voir %d photos</item>
+    </plurals>
 </resources>

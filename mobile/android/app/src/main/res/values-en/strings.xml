@@ -501,4 +501,12 @@
         <item quantity="one">Show %d summit</item>
         <item quantity="other">Show %d summits</item>
     </plurals>
+
+    <!-- Filtros de Fotos / Etiquetado -->
+    <string name="profile_photos_search_hint">Search photo by peak…</string>
+    <string name="profile_photos_search_tagged_hint">Search photos you appear in…</string>
+    <plurals name="profile_photos_show">
+        <item quantity="one">Show %d photo</item>
+        <item quantity="other">Show %d photos</item>
+    </plurals>
 </resources>

@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -58,6 +59,9 @@ import java.time.LocalDate
 import java.util.Locale
 import com.peakadex.app.core.util.formatAltitude
 import com.peakadex.app.feature.challenges.ChallengesTab
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.runtime.saveable.rememberSaveable
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
@@ -1257,6 +1261,34 @@ private fun PhotosTab(
 ) {
     val rarityMap = remember(rarities) { rarities.associateBy { it.id } }
 
+    // Mismo juego de filtros que web (usePhotoFilters): búsqueda por nombre de
+    // cima, rareza y orden. **Sin cordillera ni mítico**, que sí están en Cimas:
+    // una foto se busca por dónde se hizo y poco más, y cada control de sobra es
+    // uno que el usuario tiene que descartar.
+    var query by rememberSaveable { mutableStateOf("") }
+    var tier by rememberSaveable { mutableStateOf<String?>(null) }
+    // remember, no rememberSaveable: rememberSaveable no sabe guardar un enum sin
+    // un Saver propio, y el orden no merece uno — al rotar vuelve a "más reciente",
+    // que es el valor por defecto.
+    var sort by remember { mutableStateOf(PhotoSort.RECENT) }
+    var filtersOpen by remember { mutableStateOf(false) }
+
+    val isDirty = tier != null || sort != PhotoSort.RECENT
+
+    val filtered = remember(photos, query, tier, sort) {
+        var r = photos
+        val q = query.trim()
+        if (q.isNotEmpty()) r = r.filter { it.peakName.contains(q, ignoreCase = true) }
+        if (tier != null) r = r.filter { it.rarityId == tier }
+        when (sort) {
+            // La fecha llega como "YYYY-MM-DD", así que ordena bien como texto y
+            // no hace falta parsearla.
+            PhotoSort.RECENT -> r.sortedByDescending { it.date }
+            PhotoSort.ALTITUDE_DESC -> r.sortedByDescending { it.altitudeM }
+            PhotoSort.ALPHA -> r.sortedBy { it.peakName.lowercase() }
+        }
+    }
+
     if (photos.isEmpty()) {
         Box(
             Modifier.fillMaxSize().padding(48.dp),
@@ -1272,20 +1304,196 @@ private fun PhotosTab(
         return
     }
 
+    Column(Modifier.fillMaxSize().background(PeakBackground)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            com.peakadex.app.core.ui.PeakSearchField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = stringResource(
+                    if (showCreator) R.string.profile_photos_search_tagged_hint
+                    else R.string.profile_photos_search_hint,
+                ),
+                modifier = Modifier.weight(1f),
+            )
+            com.peakadex.app.core.ui.PeakFilterButton(
+                label = stringResource(R.string.profile_filter_button),
+                active = isDirty,
+                showBadge = isDirty,
+                onClick = { filtersOpen = true },
+            )
+        }
+
+        if (filtered.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(48.dp), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.profile_empty_filtered), fontSize = 14.sp, color = PeakSubtle)
+            }
+        } else {
     LazyVerticalGrid(
         columns            = GridCells.Fixed(3),
         contentPadding     = PaddingValues(4.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp),
         verticalArrangement   = Arrangement.spacedBy(3.dp),
-        modifier           = Modifier.fillMaxSize().background(PeakBackground),
+        modifier           = Modifier.fillMaxSize(),
     ) {
-        items(photos, key = { it.id }) { photo ->
+        items(filtered, key = { it.id }) { photo ->
             PhotoTile(
                 photo         = photo,
                 rarityMap     = rarityMap,
                 showCreator   = showCreator,
                 onClick       = { onAscentClick(photo.ascentId) },
             )
+        }
+    }
+        }
+    }
+
+    if (filtersOpen) {
+        PhotoFiltersPanel(
+            photos = photos,
+            rarities = rarities,
+            filteredCount = filtered.size,
+            tier = tier,
+            sort = sort,
+            isDirty = isDirty,
+            onTier = { tier = it },
+            onSort = { sort = it },
+            onClearAll = { tier = null; sort = PhotoSort.RECENT; query = "" },
+            onDismiss = { filtersOpen = false },
+        )
+    }
+}
+
+enum class PhotoSort { RECENT, ALTITUDE_DESC, ALPHA }
+
+/**
+ * Filtros de Fotos / Etiquetado: rareza y orden.
+ *
+ * Deliberadamente **sin cordillera ni mítico**, que sí están en Cimas. Web hace lo
+ * mismo (`usePhotoFilters` tampoco los tiene): una foto se busca por dónde se hizo,
+ * y cada control de más es uno que el usuario tiene que descartar.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PhotoFiltersPanel(
+    photos: List<ProfilePhoto>,
+    rarities: List<Rarity>,
+    filteredCount: Int,
+    tier: String?,
+    sort: PhotoSort,
+    isDirty: Boolean,
+    onTier: (String?) -> Unit,
+    onSort: (PhotoSort) -> Unit,
+    onClearAll: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // Los recuentos salen del conjunto COMPLETO, no del filtrado: si salieran del
+    // filtrado, elegir una rareza pondría las demás a cero y no se podría cambiar
+    // de idea sin limpiar antes.
+    val counts = remember(photos) { photos.groupingBy { it.rarityId }.eachCount() }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color.White,
+    ) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 4.dp)) {
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.profile_filter_title),
+                    fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = PeakNavyDark,
+                )
+                if (isDirty) {
+                    TextButton(onClick = onClearAll) {
+                        Text(
+                            stringResource(R.string.profile_filter_clearAll),
+                            fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PeakBlueActive,
+                        )
+                    }
+                }
+            }
+
+            Text(
+                stringResource(R.string.profile_filter_rarity).uppercase(),
+                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = PeakSubtle, letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(10.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rarities.forEach { r ->
+                    val n = counts[r.id] ?: 0
+                    val active = tier == r.id
+                    val color = runCatching { Color(android.graphics.Color.parseColor(r.color)) }
+                        .getOrDefault(PeakClimbedGreen)
+                    Box(
+                        Modifier
+                            .padding(bottom = 8.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (active) color.copy(alpha = 0.16f) else Color(0xFFF3F4F6))
+                            // Las rarezas sin fotos no se pueden tocar: encenderlas
+                            // solo llevaría a una cuadrícula vacía.
+                            .then(if (n > 0) Modifier.clickable { onTier(if (active) null else r.id) } else Modifier)
+                            .padding(horizontal = 13.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            "✿ ${r.label} " + if (n > 0) "$n" else "–",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (n > 0) color else PeakSubtle,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            Text(
+                stringResource(R.string.profile_filter_sort).uppercase(),
+                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = PeakSubtle, letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(10.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    PhotoSort.RECENT to R.string.profile_sort_recent,
+                    PhotoSort.ALTITUDE_DESC to R.string.profile_sort_altDesc,
+                    PhotoSort.ALPHA to R.string.profile_sort_alpha,
+                ).forEach { (id, labelRes) ->
+                    val active = sort == id
+                    Box(
+                        Modifier
+                            .padding(bottom = 8.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (active) PeakNavyDark else Color(0xFFF3F4F6))
+                            .clickable { onSort(id) }
+                            .padding(horizontal = 14.dp, vertical = 9.dp),
+                    ) {
+                        Text(
+                            stringResource(labelRes),
+                            fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                            color = if (active) Color.White else PeakNavyDark,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(18.dp))
+            Box(
+                Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(24.dp))
+                    .background(PeakGreenCTA).clickable(onClick = onDismiss),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    pluralStringResource(R.plurals.profile_photos_show, filteredCount, filteredCount),
+                    color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
         }
     }
 }

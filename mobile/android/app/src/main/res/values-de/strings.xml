@@ -502,4 +502,12 @@
         <item quantity="one">%d Gipfel anzeigen</item>
         <item quantity="other">%d Gipfel anzeigen</item>
     </plurals>
+
+    <!-- Filtros de Fotos / Etiquetado -->
+    <string name="profile_photos_search_hint">Foto nach Gipfel suchen…</string>
+    <string name="profile_photos_search_tagged_hint">Fotos suchen, auf denen du erscheinst…</string>
+    <plurals name="profile_photos_show">
+        <item quantity="one">%d Foto anzeigen</item>
+        <item quantity="other">%d Fotos anzeigen</item>
+    </plurals>
 </resources>
