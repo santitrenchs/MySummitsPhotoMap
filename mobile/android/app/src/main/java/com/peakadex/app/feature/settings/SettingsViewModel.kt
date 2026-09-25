@@ -61,6 +61,8 @@ data class SettingsUiState(
     val saveSuccess: Boolean = false,
     val passwordSuccess: Boolean = false,
     val languageSaved: Boolean = false,
+    val isDeletingAccount: Boolean = false,
+    val deleteAccountFailed: Boolean = false,
     val googleUnlinked: Boolean = false,
     val error: UiText? = null,
     val passwordError: UiText? = null,
@@ -295,6 +297,37 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     fun onShowLanguageSheet(show: Boolean) =
         _state.update { it.copy(isLanguageSheetOpen = show) }
+
+    // ── Eliminar cuenta ──────────────────────────────────────────────────────
+
+    /**
+     * Borra la cuenta y cierra la sesión. Irreversible.
+     *
+     * `onDeleted` solo se invoca si el servidor confirma: navegar en el catch
+     * dejaría al usuario en la pantalla de login creyendo que su cuenta ya no
+     * existe cuando sigue ahí.
+     */
+    fun deleteAccount(onDeleted: () -> Unit) {
+        viewModelScope.launch {
+            _state.update { it.copy(isDeletingAccount = true, deleteAccountFailed = false) }
+            try {
+                AppContainer.apiService.deleteAccount()
+                // La sesión se limpia aquí, no en la pantalla: el token ya no vale
+                // para nada y dejarlo guardado haría que el siguiente arranque
+                // intentara restaurar una cuenta borrada.
+                AppContainer.authSession.logout()
+                _state.update { it.copy(isDeletingAccount = false) }
+                onDeleted()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "deleteAccount failed", e)
+                _state.update { it.copy(isDeletingAccount = false, deleteAccountFailed = true) }
+            }
+        }
+    }
+
+    fun clearDeleteAccountError() = _state.update { it.copy(deleteAccountFailed = false) }
 
     fun saveLanguage(locale: String) {
         Log.d(TAG, "saveLanguage: called with locale='$locale'")

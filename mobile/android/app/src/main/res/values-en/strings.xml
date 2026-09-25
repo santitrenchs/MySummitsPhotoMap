@@ -509,4 +509,13 @@
         <item quantity="one">Show %d photo</item>
         <item quantity="other">Show %d photos</item>
     </plurals>
+
+    <!-- Eliminar cuenta (requisito de Google Play) -->
+    <string name="settings_delete_account">Delete account</string>
+    <string name="settings_delete_permanent">This is permanent and cannot be undone.</string>
+    <string name="settings_delete_warning">All your ascents, photos, and data will be permanently deleted. Type DELETE to confirm.</string>
+    <string name="settings_delete_confirm_hint">Type DELETE to confirm</string>
+    <string name="settings_delete_confirm_button">Delete my account</string>
+    <string name="settings_delete_confirm_word">DELETE</string>
+    <string name="settings_delete_failed">Couldn\'t delete the account. Try again.</string>
 </resources>

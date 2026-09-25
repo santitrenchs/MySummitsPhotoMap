@@ -514,4 +514,13 @@
         <item quantity="one">Ver %d foto</item>
         <item quantity="other">Ver %d fotos</item>
     </plurals>
+
+    <!-- Eliminar cuenta (requisito de Google Play) -->
+    <string name="settings_delete_account">Eliminar cuenta</string>
+    <string name="settings_delete_permanent">Esta acción es permanente y no se puede deshacer.</string>
+    <string name="settings_delete_warning">Todas tus ascensiones, fotos y datos se eliminarán de forma permanente. Escribe ELIMINAR para confirmar.</string>
+    <string name="settings_delete_confirm_hint">Escribe ELIMINAR para confirmar</string>
+    <string name="settings_delete_confirm_button">Eliminar mi cuenta</string>
+    <string name="settings_delete_confirm_word">ELIMINAR</string>
+    <string name="settings_delete_failed">No se pudo eliminar la cuenta. Inténtalo de nuevo.</string>
 </resources>

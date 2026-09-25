@@ -510,4 +510,13 @@
         <item quantity="one">%d Foto anzeigen</item>
         <item quantity="other">%d Fotos anzeigen</item>
     </plurals>
+
+    <!-- Eliminar cuenta (requisito de Google Play) -->
+    <string name="settings_delete_account">Konto löschen</string>
+    <string name="settings_delete_permanent">Diese Aktion ist dauerhaft und kann nicht rückgängig gemacht werden.</string>
+    <string name="settings_delete_warning">Alle deine Besteigungen, Fotos und Daten werden dauerhaft gelöscht. Gib LÖSCHEN ein, um zu bestätigen.</string>
+    <string name="settings_delete_confirm_hint">Gib LÖSCHEN ein, um zu bestätigen</string>
+    <string name="settings_delete_confirm_button">Mein Konto löschen</string>
+    <string name="settings_delete_confirm_word">LÖSCHEN</string>
+    <string name="settings_delete_failed">Konto konnte nicht gelöscht werden. Versuch es erneut.</string>
 </resources>

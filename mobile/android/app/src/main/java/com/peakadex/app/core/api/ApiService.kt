@@ -231,6 +231,15 @@ interface ApiService {
     @POST("invitations/resolve")
     suspend fun resolveInvitation(@Body body: Map<String, String>): Map<String, String>
 
+    /**
+     * Borra la cuenta del usuario del token. Irreversible.
+     *
+     * Requisito de Google Play desde 2023 para cualquier app que permita crear
+     * cuenta: tiene que haber una ruta de borrado dentro de la propia app.
+     */
+    @DELETE("settings/account")
+    suspend fun deleteAccount()
+
     // MARK: - Challenges (Retos)
     @GET("challenges")
     suspend fun getChallenges(): ChallengesResponse

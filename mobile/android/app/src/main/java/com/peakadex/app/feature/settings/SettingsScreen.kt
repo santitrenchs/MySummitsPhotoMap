@@ -54,6 +54,10 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SegmentedButton
 import com.peakadex.app.core.util.Units
+import com.peakadex.app.core.ui.theme.PeakSubtle
+import com.peakadex.app.core.ui.theme.PeakMuted
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AlertDialog
 
 // ── Profile menu bottom sheet ─────────────────────────────────────────────────
 // Shown when the user taps the avatar in MainTopBar.
@@ -67,6 +71,7 @@ fun ProfileMenuSheet(
     onLogout: () -> Unit,
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+
 
     if (showLogoutDialog) {
         AlertDialog(
@@ -144,6 +149,89 @@ fun SettingsScreen(
     vm: SettingsViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteConfirmText by remember { mutableStateOf("") }
+
+    // ── Diálogo de eliminar cuenta ───────────────────────────────────────────
+    //
+    // Pide teclear una palabra, no un simple "¿seguro?": borra todas las
+    // ascensiones y fotos y no hay vuelta atrás. Es la misma barrera que web.
+    //
+    // La palabra sale de los recursos y por tanto está traducida, igual que el
+    // aviso que la nombra: si una se tradujera y la otra no, el diálogo pediría
+    // algo distinto de lo que dice pedir.
+    if (showDeleteDialog) {
+        val confirmWord = stringResource(R.string.settings_delete_confirm_word)
+        val canConfirm = deleteConfirmText.trim().equals(confirmWord, ignoreCase = false) &&
+            !state.isDeletingAccount
+
+        AlertDialog(
+            onDismissRequest = {
+                if (!state.isDeletingAccount) {
+                    showDeleteDialog = false
+                    deleteConfirmText = ""
+                    vm.clearDeleteAccountError()
+                }
+            },
+            title = { Text(stringResource(R.string.settings_delete_account)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.settings_delete_permanent), fontSize = 14.sp)
+                    Spacer(Modifier.height(10.dp))
+                    Text(stringResource(R.string.settings_delete_warning), fontSize = 13.sp, color = PeakMuted)
+                    Spacer(Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value = deleteConfirmText,
+                        onValueChange = { deleteConfirmText = it },
+                        singleLine = true,
+                        enabled = !state.isDeletingAccount,
+                        placeholder = {
+                            Text(stringResource(R.string.settings_delete_confirm_hint), fontSize = 14.sp)
+                        },
+                        // 16sp: por debajo, iOS/Android hacen zoom al enfocar.
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (state.deleteAccountFailed) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.settings_delete_failed),
+                            fontSize = 12.sp, color = Color(0xFFDC2626),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = canConfirm,
+                    onClick = {
+                        vm.deleteAccount {
+                            showDeleteDialog = false
+                            deleteConfirmText = ""
+                            onLogout()   // misma salida que cerrar sesión: pila limpia hasta Login
+                        }
+                    },
+                ) {
+                    Text(
+                        stringResource(R.string.settings_delete_confirm_button),
+                        color = if (canConfirm) Color(0xFFDC2626) else PeakSubtle,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !state.isDeletingAccount,
+                    onClick = {
+                        showDeleteDialog = false
+                        deleteConfirmText = ""
+                        vm.clearDeleteAccountError()
+                    },
+                ) { Text(stringResource(R.string.action_cancel)) }
+            },
+        )
+    }
+
     val context             = LocalContext.current
     val snackbarHostState   = remember { SnackbarHostState() }
     val savedMsg            = stringResource(R.string.settings_snack_saved)
@@ -596,6 +684,27 @@ fun SettingsScreen(
                         Icon(LogoutIcon, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.settings_logout), fontSize = 15.sp)
+                    }
+                }
+            }
+
+            // ── Eliminar cuenta ───────────────────────────────────────────────
+            // Google Play lo exige desde 2023 para cualquier app que permita crear
+            // cuenta: tiene que existir una ruta de borrado DENTRO de la app, no
+            // solo un email de soporte.
+            //
+            // Va la última y separada de cerrar sesión a propósito: son acciones de
+            // aspecto parecido y consecuencias incomparables.
+            item {
+                SettingsCard {
+                    TextButton(
+                        onClick  = { showDeleteDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        colors   = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444)),
+                    ) {
+                        Text(stringResource(R.string.settings_delete_account), fontSize = 15.sp)
                     }
                 }
             }

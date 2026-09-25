@@ -50,6 +50,18 @@
 ### Invitaciones
 - `GET|POST /api/v1/invitations`
 
+### Cuenta
+- `DELETE /api/v1/settings/account` — el usuario borra su propia cuenta.
+  **Requisito de Google Play desde 2023** para cualquier app que permita crear
+  cuenta: tiene que haber una ruta de borrado dentro de la app, no solo un email
+  de soporte. La lógica vive en `lib/services/account.service.ts`, compartida con
+  la ruta web `/api/settings/account`.
+
+  Borra el tenant solo si el usuario es su único miembro (cascada de ascensiones y
+  fotos); si lo comparte, solo se va su membresía. Deja un `DeletedUserLog` de
+  auditoría y avisa por email. El `userId` sale del JWT: un parámetro en el body
+  sería una primitiva de borrado de cuentas apuntable a quien se quiera.
+
 ### Retos
 - `GET /api/v1/challenges` — `{ mine, available }`. `mine` lleva progreso e incluye
   los retirados (ocultarlos haría desaparecer el progreso de quien ya estaba);
