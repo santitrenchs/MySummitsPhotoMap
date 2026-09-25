@@ -136,6 +136,7 @@ model User {
   cordadaMemberships     CordadaMember[]
   cordadaInvitesSent     CordadaMember[] @relation("CordadaInviter")
   challenges             ChallengeParticipant[]
+  deviceTokens           DeviceToken[]
   @@map("users")
 }
 
@@ -516,4 +517,26 @@ model DeletedUserLog {
   @@index([deletedAt])
   @@index([email])
   @@map("deleted_user_logs")
+}
+
+/// Un dispositivo al que se le pueden mandar notificaciones push.
+///
+/// Una fila por (usuario, instalación). La misma persona puede tener varias —
+/// móvil y tablet — y el mismo aparato puede cambiar de dueño, por eso el token
+/// es único globalmente y no por usuario: FCM lo reasigna y dos filas con el
+/// mismo token entregarían a quien ya no toca.
+model DeviceToken {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Registration token de FCM. Rota solo, por eso se hace upsert y no create.
+  token      String   @unique
+  platform   String                     // "android" | "ios"
+  createdAt  DateTime @default(now())
+  /// Se refresca en cada arranque. Sirve para purgar lo que lleve meses mudo
+  /// aunque FCM nunca lo haya declarado muerto.
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("device_tokens")
 }

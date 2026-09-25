@@ -1,0 +1,192 @@
+# Notificaciones push en Android — plan
+
+Estado de partida auditado el 2026-09-25. **Está todo por hacer menos el proyecto
+de Firebase**: `peakadex-7f545` existe, `google-services.json` está commiteado y
+FCM viene activado de serie en cualquier proyecto de Firebase.
+
+Lo que no existe:
+
+| | Estado |
+|---|---|
+| Dependencia `firebase-messaging` | ❌ solo `analytics` y `crashlytics` |
+| Permiso `POST_NOTIFICATIONS` / servicio en el manifiesto | ❌ nada |
+| Código Android (`FirebaseMessaging`, `NotificationChannel`, …) | ❌ ni un fichero |
+| Tabla de tokens de dispositivo | ❌ nada en `schema.prisma` |
+| Endpoint de registro | ❌ no hay `app/api/v1/devices` |
+| Envío desde el servidor | ❌ ninguna dependencia en `package.json` |
+
+⚠️ **Los interruptores de Ajustes → Notificaciones que ya existen son solo de
+correo.** `emailNotifications` y `activityNotifications` se consultan únicamente
+para decidir si se manda un email. Quien los ve encendidos hoy no recibe ningún
+push, porque no existen.
+
+## Decisiones tomadas
+
+**Eventos con push** — cuatro de los cinco que hoy mandan correo:
+
+| Evento | Push | Email |
+|---|---|---|
+| Solicitud de amistad | ✅ | ✅ |
+| Amistad aceptada | ✅ | ✅ |
+| Invitación a cordada | ✅ | ✅ |
+| Etiquetado en foto | ✅ | ✅ |
+| Herencia de cordada | ❌ | ✅ |
+
+La herencia se queda fuera a propósito: es un aviso de responsabilidad que
+conviene leer entero, no una interrupción de tres líneas.
+
+**Ajustes separados.** Un campo nuevo `pushNotifications`, independiente de
+`emailNotifications`. Reutilizar `activityNotifications` dejaría sin push a quien
+apagó el correo sin haberlo pedido nunca.
+
+## El problema de arquitectura que hay que resolver primero
+
+Los cuatro eventos se envían desde **nueve sitios**, duplicados entre las rutas de
+web y las de v1:
+
+```
+solicitud de amistad   app/api/friendships/route.ts:47
+                       app/api/v1/friends/route.ts:49
+                       app/api/v1/invitations/resolve/route.ts:52
+amistad aceptada       app/api/friendships/[id]/route.ts:43
+                       app/api/v1/friends/[id]/route.ts:45
+invitación a cordada   lib/services/cordada.service.ts:250
+etiquetado en foto     app/api/photos/[id]/faces/route.ts:69
+                       app/api/face-detections/[id]/tag/route.ts:34
+                       app/api/v1/photos/[id]/persons/route.ts:85
+```
+
+Añadir el push en los nueve garantiza que con el tiempo se desincronicen: alguien
+tocará una ruta y no su gemela. Ya pasó con `emailNotifications`, que durante
+meses solo se respetaba en los emails de solicitud de amistad y no en los de
+etiquetado.
+
+**Fase 3 extrae un `notify.service.ts`** con una función por evento que decide a
+la vez correo y push, y las nueve llamadas pasan a invocarla. Mismo patrón que
+`account.service.ts`, que ya unificó el borrado de cuenta entre web y v1.
+
+## Cuándo pedir el permiso
+
+⚠️ Desde Android 13 `POST_NOTIFICATIONS` es un permiso en tiempo de ejecución, y
+**el sistema solo deja preguntar una vez**. Denegado, la app ya no puede volver a
+mostrar el diálogo: el usuario tendría que ir a los ajustes del sistema. En
+Android 12 y anteriores se concede al instalar, así que el flujo tiene que
+contemplar los dos casos.
+
+**Momento elegido: justo después de que el usuario mande su primera solicitud de
+amistad o su primera invitación a cordada.** Los cuatro eventos con push son
+sociales y, todos, cosas que **contesta otra persona más tarde**. En ese instante
+la propuesta es concreta y verificable — «te avisamos cuando responda» — y el
+usuario acaba de demostrar intención social.
+
+Descartado pedirlo al arrancar: es el error clásico, la gente deniega por reflejo
+y se quema la única oportunidad.
+
+Descartado también tras capturar la primera cima: es el momento de más emoción,
+pero no explica por qué querrías un aviso, porque capturar no genera ninguno.
+
+**Antes del diálogo del sistema va una hoja de explicación propia** (*priming*).
+Si el usuario dice que no ahí, no se llega a lanzar el diálogo del sistema y la
+bala queda sin gastar para más adelante.
+
+**Y el interruptor de Ajustes es la puerta permanente**: cuando el permiso está
+denegado a nivel de sistema, activarlo no puede mostrar el diálogo, así que abre
+la pantalla de ajustes de la app. Un interruptor que no hace nada al pulsarlo es
+peor que no tenerlo.
+
+## Fases
+
+### Fase 1 — Servidor: modelo y registro del token
+- `DeviceToken`: `id`, `userId`, `token` (único), `platform` (`android`|`ios`),
+  `createdAt`, `lastSeenAt`. Índice por `userId`.
+- `POST /api/v1/devices` registra o refresca (upsert por token, `lastSeenAt`).
+  **`userId` siempre del JWT**, nunca del cuerpo.
+- `DELETE /api/v1/devices` al cerrar sesión, borrando solo ese token.
+- ⚠️ **El esquema exige SQL manual**: `db push` está bloqueado en este proyecto.
+  Sacar el `ALTER` con `prisma migrate diff`, comprobar que no lleva ningún `DROP`
+  y aplicarlo con `psql` **antes** de desplegar el código que lo lee.
+
+#### SQL de la fase 1 (generado, **sin aplicar**)
+
+Sacado con `prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel
+prisma/schema.prisma --script`. Comprobado: **no contiene ningún `DROP`**.
+
+```sql
+CREATE TABLE "device_tokens" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "platform" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "lastSeenAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "device_tokens_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "device_tokens_token_key" ON "device_tokens"("token");
+CREATE INDEX "device_tokens_userId_idx" ON "device_tokens"("userId");
+ALTER TABLE "device_tokens" ADD CONSTRAINT "device_tokens_userId_fkey"
+  FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+⚠️ **Hay que aplicarlo antes de desplegar el código que lo lee**, o el endpoint
+responde 500. Y conviene aplicarlo a la vez que el `pushNotifications` de la fase
+3, para no repetir la operación manual.
+
+### Fase 2 — Servidor: envío por FCM
+- ⚠️ **La API legacy de FCM está apagada desde 2024.** Hay que usar HTTP v1, que
+  se autentica con OAuth2 a partir de una **cuenta de servicio**, no con la vieja
+  server key. Variable nueva en Railway con el JSON de la cuenta.
+- `lib/services/push.service.ts` con `sendPush(userId, payload)`: busca los tokens
+  del usuario, envía y **borra las filas que devuelvan `UNREGISTERED` o
+  `INVALID_ARGUMENT`**. Sin esa limpieza la tabla crece sin límite y cada envío
+  falla en silencio para siempre.
+- Best-effort como el correo: un fallo de FCM no puede tumbar la acción que lo
+  originó.
+- ⚠️ Comprobar el error en el cuerpo de la respuesta, no solo el status. Es la
+  misma trampa que con Resend, que responde 200 con el error dentro.
+
+### Fase 3 — Servidor: unificar correo y push
+- `lib/services/notify.service.ts`, una función por evento.
+- Sustituir las nueve llamadas dispersas.
+- Campo `pushNotifications` en `User` (`@default(true)`) — **segundo `ALTER`
+  manual**, se puede aplicar junto al de la fase 1.
+- Reglas: el correo sigue gobernado por `emailNotifications` +
+  `activityNotifications`; el push, por `pushNotifications`. Independientes.
+
+### Fase 4 — Android: recibir
+- Dependencia `firebase-messaging` al BOM que ya existe.
+- `POST_NOTIFICATIONS` en el manifiesto + el servicio con
+  `intent-filter MESSAGING_EVENT`.
+- `PeakadexMessagingService`: `onNewToken` → registra contra el servidor;
+  `onMessageReceived` → construye el aviso.
+- Canales de notificación, obligatorios desde Android 8. Uno por categoría
+  (social / etiquetado) para que se puedan silenciar por separado.
+- Registrar el token al iniciar sesión y borrarlo al cerrarla.
+- ⚠️ **R8**: `app/proguard-rules.pro:64` ya protege los `ComponentRegistrar` de
+  Firebase, porque R8 en modo full borraba sus constructores y la app crasheaba al
+  arrancar. Verificar que el registrar de messaging queda cubierto — **el fallo
+  solo se ve en build de release**.
+
+### Fase 5 — Android: permiso y ajustes
+- Hoja de *priming* tras la primera solicitud de amistad o invitación a cordada.
+- Diálogo del sistema solo si el usuario acepta el priming.
+- Interruptor nuevo en Ajustes → Notificaciones, con salida a los ajustes del
+  sistema cuando el permiso está denegado.
+- Sin el permiso concedido, no registrar token: evita filas que nunca entregarán.
+
+### Fase 6 — Android: abrir donde toca
+- Al tocar la notificación, abrir la pantalla del evento: Cordada para las
+  solicitudes e invitaciones, la carta para el etiquetado.
+- `data` en el mensaje FCM con el destino; `MainActivity` lo interpreta.
+
+### Fase 7 — Verificación
+- Emulador con Google Play para recibir push de verdad.
+- Comprobar: token registrado al entrar, borrado al salir, permiso denegado →
+  sin token, `pushNotifications` apagado → llega el correo y no el push,
+  desinstalar → el token se borra solo al primer envío fallido.
+
+## Fuera de alcance
+
+- **iOS/APNs**: el mismo `DeviceToken` sirve (`platform`), pero el envío y el
+  cliente son otro trabajo.
+- **Web push**: no se contempla.
+- **Agrupar o silenciar por remitente**: más adelante, si molestan.
