@@ -371,15 +371,23 @@ private fun FilterBar(
         }
         Spacer(Modifier.height(8.dp))
         // En su propia línea: tres controles en 360dp dejarían el CTA en un icono mudo.
-        Box(
+        Row(
             Modifier
                 .fillMaxWidth()
                 .height(44.dp)
                 .clip(RoundedCornerShape(22.dp))
                 .background(Color.White)
                 .clickable(onClick = onViewOnAtlas),
-            contentAlignment = Alignment.Center,
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            Icon(
+                FoldedMapIcon,
+                contentDescription = null,
+                tint = Color(0xFF374151),
+                modifier = Modifier.size(14.dp),
+            )
+            Spacer(Modifier.width(7.dp))
             Text(
                 stringResource(R.string.challenges_view_on_map),
                 fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PeakNavyDark,
@@ -586,6 +594,39 @@ private val MoreIcon: ImageVector by lazy {
             curveTo(13.1f, 20f, 14f, 19.1f, 14f, 18f)
             curveTo(14f, 16.9f, 13.1f, 16f, 12f, 16f)
             close()
+        }
+    }.build()
+}
+
+/**
+ * Mapa plegado. Mismo trazado que el SVG del CTA de web, para que el control se
+ * reconozca igual en las dos plataformas.
+ */
+private val FoldedMapIcon: ImageVector by lazy {
+    ImageVector.Builder("FoldedMap", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke = SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 2.1f,
+            strokeLineJoin = StrokeJoin.Round,
+        ) {
+            moveTo(9f, 3.5f)
+            lineTo(3f, 6f)
+            verticalLineToRelative(14.5f)
+            lineToRelative(6f, -2.5f)
+            lineToRelative(6f, 2.5f)
+            lineToRelative(6f, -2.5f)
+            verticalLineTo(3.5f)
+            lineToRelative(-6f, 2.5f)
+            close()
+        }
+        path(
+            stroke = SolidColor(Color(0xFF374151)),
+            strokeLineWidth = 2.1f,
+            strokeLineJoin = StrokeJoin.Round,
+        ) {
+            // Los dos pliegues.
+            moveTo(9f, 3.5f); verticalLineToRelative(14.5f)
+            moveTo(15f, 6f); verticalLineToRelative(14.5f)
         }
     }.build()
 }
