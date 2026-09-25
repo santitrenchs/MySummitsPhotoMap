@@ -59,3 +59,15 @@ export async function getUserDeviceTokens(
     select: { id: true, token: true, platform: true },
   });
 }
+
+/**
+ * Borra tokens por id. Lo usa el envío cuando FCM responde que ya no existen.
+ *
+ * Sin esta purga la tabla crece sin límite —cada desinstalación deja una fila
+ * inmortal— y, peor, cada notificación futura gasta una petición a FCM que ya se
+ * sabe que va a fallar, en silencio.
+ */
+export async function deleteDeviceTokensByIds(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  await prisma.deviceToken.deleteMany({ where: { id: { in: ids } } });
+}

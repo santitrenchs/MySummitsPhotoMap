@@ -144,6 +144,20 @@ responde 500. Y conviene aplicarlo a la vez que el `pushNotifications` de la fas
 - ⚠️ Comprobar el error en el cuerpo de la respuesta, no solo el status. Es la
   misma trampa que con Resend, que responde 200 con el error dentro.
 
+#### Estado de la fase 2 (hecha)
+
+`lib/services/push.service.ts`. Credencial en `FIREBASE_SERVICE_ACCOUNT_B64`,
+puesta **solo en Staging** hasta probar un envío real a un dispositivo.
+
+Verificado contra Google, no solo con mocks: el intercambio OAuth2 devuelve 200 y
+un envío a un token inventado responde **400 `INVALID_ARGUMENT`**, que es la
+prueba de que la autenticación se acepta (un 401 sería credencial mala) y de que
+`INVALID_ARGUMENT` es efectivamente lo que devuelve un token basura.
+
+⚠️ El access token se cachea a nivel de módulo, con un minuto de margen antes de
+expirar. Eso rompe el aislamiento entre tests: el fichero de pruebas importa el
+módulo fresco en cada caso (`vi.resetModules()` + `await import`).
+
 ### Fase 3 — Servidor: unificar correo y push
 - `lib/services/notify.service.ts`, una función por evento.
 - Sustituir las nueve llamadas dispersas.
