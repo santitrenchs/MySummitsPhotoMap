@@ -28,10 +28,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -93,6 +99,7 @@ import com.peakadex.app.core.model.Rarity
 import com.peakadex.app.core.ui.theme.PeakBlueActive
 import com.peakadex.app.core.ui.theme.PeakBorderLight
 import com.peakadex.app.core.ui.theme.PeakGreenCTA
+import com.peakadex.app.feature.challenges.ChallengePatch
 import com.peakadex.app.core.ui.theme.PeakClimbedGreen
 import com.peakadex.app.core.ui.theme.PeakLayerActiveBg
 import com.peakadex.app.core.ui.theme.PeakMuted
@@ -773,34 +780,52 @@ fun AtlasScreen(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .statusBarsPadding()
+                        // De lado a lado bajo el buscador, como en web: ancho
+                        // completo con 12dp a cada lado, no una píldora centrada.
+                        .fillMaxWidth()
                         .padding(top = if (showTopBar) 68.dp else 12.dp, start = 12.dp, end = 12.dp)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(100.dp))
                         .background(PeakSlate)
-                        .padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+                        .padding(start = 13.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    Icon(
+                        MapOutlineIcon,
+                        contentDescription = null,
+                        tint = androidx.compose.ui.graphics.Color.White,
+                        modifier = Modifier.size(13.dp),
+                    )
                     Text(
                         text = uiState.challengeName.orEmpty(),
                         color = androidx.compose.ui.graphics.Color.White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
+                        modifier = Modifier.weight(1f),
                     )
                     Text(
                         text = "${uiState.challengeDone}/${uiState.challengePeaks.size}",
-                        color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.75f),
+                        // Verde claro, no blanco translúcido: es el dato que el
+                        // usuario viene a mirar y tiene que destacar sobre el navy.
+                        color = androidx.compose.ui.graphics.Color(0xFF8FD3B4),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
-                    IconButton(onClick = vm::exitChallenge, modifier = Modifier.size(28.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.16f))
+                            .clickable(onClick = vm::exitChallenge),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Icon(
                             CloseIcon,
                             contentDescription = stringResource(R.string.challenges_atlas_exit),
                             tint = androidx.compose.ui.graphics.Color.White,
-                            modifier = Modifier.size(14.dp),
+                            modifier = Modifier.size(11.dp),
                         )
                     }
                 }
@@ -2576,32 +2601,41 @@ private fun FiltersPanel(
                 // ("Sin capturar" dentro de un reto es tu lista de pendientes).
                 // Sin retos unidos la sección no se pinta.
                 if (myChallenges.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column {
                         Text(
                             text = stringResource(R.string.challenges_tab).uppercase(),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
                             color = PeakSubtle,
-                            letterSpacing = 0.8.sp,
+                            letterSpacing = 1.sp,
+                            modifier = Modifier.padding(bottom = 8.dp),
                         )
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            myChallenges.forEach { c ->
-                                val active = c.id == activeChallengeId
-                                Box(
-                                    modifier = Modifier
-                                        .padding(bottom = 8.dp)
-                                        .clip(RoundedCornerShape(20.dp))
-                                        .background(if (active) PeakSlate else androidx.compose.ui.graphics.Color(0xFFF3F4F6))
+                        // Filas apiladas, no píldoras. Para leerse como filas de
+                        // lista tienen que salirse del padding lateral del panel.
+                        //
+                        // ⚠️ En Compose el padding NEGATIVO lanza
+                        // "Padding must be non-negative" EN EJECUCIÓN, no al
+                        // compilar. Se hace con offset (desplaza) + un ancho que
+                        // recupere lo que el offset deja fuera, y ese ancho hay que
+                        // medirlo: de ahí el BoxWithConstraints.
+                        BoxWithConstraints {
+                            val fullWidth = maxWidth + 40.dp
+                            Column(
+                                modifier = Modifier
+                                    .offset(x = (-20).dp)
+                                    // requiredWidth, no width: BoxWithConstraints
+                                    // impone su maxWidth al hijo y un width() mayor
+                                    // se recorta, dejando la banda corta por la
+                                    // derecha. requiredWidth ignora esa restricción.
+                                    .requiredWidth(fullWidth),
+                            ) {
+                                myChallenges.forEach { c ->
+                                    ChallengeFilterRow(
+                                        challenge = c,
+                                        active = c.id == activeChallengeId,
                                         // Volver a tocar el activo sale del reto:
                                         // es selección única, no una lista de checks.
-                                        .clickable { onChallengeSelected(if (active) null else c) }
-                                        .padding(horizontal = 14.dp, vertical = 9.dp),
-                                ) {
-                                    Text(
-                                        text = "${c.name}  ${c.completedPeaks}/${c.totalPeaks}",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = if (active) androidx.compose.ui.graphics.Color.White else PeakTextHeadline,
+                                        onClick = { onChallengeSelected(if (c.id == activeChallengeId) null else c) },
                                     )
                                 }
                             }
@@ -3095,4 +3129,93 @@ private val CheckIcon: ImageVector by lazy {
             moveTo(1.5f, 5f); lineTo(4f, 7.5f); lineTo(8.5f, 2.5f)
         }
     }.build()
+}
+
+
+/**
+ * Una fila de reto en el panel de filtros.
+ *
+ * **El progreso es lo que distingue una fila de otra**: la fracción y la barra
+ * verde dicen por sí solas que estás dentro, así que no hace falta ninguna
+ * insignia de "unido" que repita en decoración lo que ya dicen los datos.
+ *
+ * El seleccionado va en AZUL, no navy: esto es una selección *dentro de un
+ * panel*. El navy es lo que se pone el botón Filtros cuando está filtrando.
+ */
+@Composable
+private fun ChallengeFilterRow(
+    challenge: ChallengeSummary,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    val pct = if (challenge.totalPeaks > 0) {
+        ((challenge.completedPeaks.toDouble() / challenge.totalPeaks) * 100).toInt().coerceIn(1, 100)
+    } else 0
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .background(
+                if (active) androidx.compose.ui.graphics.Color(0xFFEFF6FF)
+                else androidx.compose.ui.graphics.Color.Transparent,
+            )
+            .clickable(onClick = onClick)
+            // start = 20 exactos: la fila va desplazada -20 para sangrar, así que
+            // este padding devuelve la barra al borde real de la hoja. Con menos,
+            // la barra se sale de pantalla.
+            .padding(start = 20.dp, end = 40.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp),
+    ) {
+        // Barra de 3dp pegada al borde. Ocupa sitio siempre (transparente cuando
+        // no está activa) para que el contenido no se desplace al seleccionar.
+        Box(
+            Modifier
+                .width(3.dp)
+                .height(34.dp)
+                .background(if (active) PeakBlueActive else androidx.compose.ui.graphics.Color.Transparent),
+        )
+        ChallengePatch(challenge.coverUrl, challenge.name, size = 32)
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = challenge.name,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (active) androidx.compose.ui.graphics.Color(0xFF075985) else PeakTextHeadline,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(3.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                Row {
+                    Text(
+                        "${challenge.completedPeaks}",
+                        fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = PeakGreenCTA,
+                    )
+                    Text(
+                        "/${challenge.totalPeaks}",
+                        fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = PeakSubtle,
+                    )
+                }
+                Box(
+                    Modifier
+                        .width(84.dp)
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(androidx.compose.ui.graphics.Color(0xFFE8EDF2)),
+                ) {
+                    if (pct > 0) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth(pct / 100f)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(PeakGreenCTA),
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

@@ -233,7 +233,24 @@ recibir las cimas, chip navy con `N/total` y ✕, y sección de retos **encima**
 Rareza y Estado en el panel de filtros — un reto es el ámbito, no un filtro más.
 
 Entradas: el CTA "Ver en el Atlas" del detalle (vía `savedStateHandle`, como las
-otras dos salidas) y las píldoras del panel de filtros.
+otras dos salidas) y las filas del panel de filtros.
+
+**Las dos superficies copian la web al detalle** (2026-09-25):
+- **Panel de filtros**: filas apiladas —chapa 32dp a la izquierda, nombre,
+  `N/total` con el hecho en verde y barra de 3dp—, no píldoras. La activa lleva
+  fondo `#EFF6FF`, barra azul de 3dp pegada al borde y nombre `#075985`. **Azul,
+  no navy**: es una selección *dentro de un panel*; el navy es lo que se pone el
+  botón Filtros cuando está filtrando.
+- **Chip**: de lado a lado bajo el buscador, con icono de mapa, el progreso en
+  verde claro `#8FD3B4` y la ✕ en un círculo translúcido.
+
+⚠️ Dos trampas de Compose al sangrar las filas fuera del padding del panel:
+- El **padding negativo lanza `Padding must be non-negative` EN EJECUCIÓN**, no al
+  compilar. Se hace con `offset`.
+- `BoxWithConstraints` impone su `maxWidth` al hijo, así que un `width()` mayor se
+  recorta y la banda queda corta por la derecha. Hay que usar **`requiredWidth`**.
+- Y el padding inicial de la fila debe ser exactamente el mismo que el offset
+  (20dp), o la barra de 3dp se sale de pantalla.
 
 ⚠️ **El encuadre se dispara con la LISTA de cimas, no con el id**: el id llega
 antes que los datos y encuadrar sobre una lista vacía no hace nada. Y no se
