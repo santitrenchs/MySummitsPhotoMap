@@ -57,14 +57,13 @@ export default auth((req) => {
     }
   }
 
+  // Solo las páginas que pierden sentido con la sesión ya iniciada: más abajo,
+  // estar en esta lista implica que a quien ha entrado se le redirige a /map.
   const isAuthPage =
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/forgot-password" ||
-    pathname === "/reset-password" ||
-    pathname === "/privacy" ||
-    pathname === "/terms" ||
-    pathname === "/cookies";
+    pathname === "/reset-password";
 
   // Accept-terms is only for authenticated users; unauthenticated ones get sent to login
   if (pathname === "/accept-terms") {
@@ -78,10 +77,20 @@ export default auth((req) => {
     pathname.startsWith("/peaks/") ||
     pathname.match(/^\/(en|fr|de|ca)\/peaks(\/|$)/) !== null;
 
-  // ⚠️ Deliberadamente fuera de `isAuthPage`: esa lista también redirige a /map a
-  // quien ya tiene sesión, y esta página la tienen que poder leer los dos. Es
-  // requisito de Google Play que sea accesible sin la app y sin cuenta.
-  const isPublicInfoPage = pathname === "/delete-account";
+  // Legibles por cualquiera, con sesión y sin ella.
+  //
+  // ⚠️ Los tres documentos legales estaban en `isAuthPage`, y como esa lista
+  // redirige a /map a quien ha iniciado sesión, un usuario registrado no podía
+  // leer la política de privacidad: se le echaba al mapa. Justo al revés de lo
+  // que pide el RGPD, que la quiere accesible en todo momento.
+  //
+  // `/delete-account` nació ya aquí por el mismo motivo, más el de Google Play,
+  // que la exige accesible sin la app y sin cuenta.
+  const isPublicInfoPage =
+    pathname === "/delete-account" ||
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname === "/cookies";
 
   const isAuthApi = pathname.startsWith("/api/auth");
   const isV1Api = pathname.startsWith("/api/v1");
