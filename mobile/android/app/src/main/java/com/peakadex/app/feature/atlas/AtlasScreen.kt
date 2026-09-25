@@ -779,11 +779,17 @@ fun AtlasScreen(
                 Row(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .statusBarsPadding()
-                        // De lado a lado bajo el buscador, como en web: ancho
-                        // completo con 12dp a cada lado, no una píldora centrada.
+                        // Sin statusBarsPadding: el mapa ya va dentro del padding
+                        // del Scaffold, que descuenta la barra superior. Añadirlo
+                        // aquí contaba el inset dos veces y dejaba un hueco entre
+                        // el buscador y el chip.
+                        //
+                        // 64dp = los 8 de padding superior del buscador + sus 48 de
+                        // alto + 8 de aire. El buscador tampoco lleva
+                        // statusBarsPadding, así que las dos medidas son del mismo
+                        // origen.
                         .fillMaxWidth()
-                        .padding(top = if (showTopBar) 68.dp else 12.dp, start = 12.dp, end = 12.dp)
+                        .padding(top = if (showTopBar) 64.dp else 12.dp, start = 12.dp, end = 12.dp)
                         .clip(RoundedCornerShape(100.dp))
                         .background(PeakSlate)
                         .padding(start = 13.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),

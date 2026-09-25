@@ -242,7 +242,12 @@ otras dos salidas) y las filas del panel de filtros.
   no navy**: es una selección *dentro de un panel*; el navy es lo que se pone el
   botón Filtros cuando está filtrando.
 - **Chip**: de lado a lado bajo el buscador, con icono de mapa, el progreso en
-  verde claro `#8FD3B4` y la ✕ en un círculo translúcido.
+  verde claro `#8FD3B4` y la ✕ en un círculo translúcido. Su `top` es **64dp** —
+  los 8 de padding del buscador + sus 48 de alto + 8 de aire— y **sin
+  `statusBarsPadding()`**: el buscador tampoco lo lleva, así que las dos medidas
+  parten del mismo origen. Añadirlo contaba el inset dos veces y dejaba un hueco
+  visible entre ambos. Es la tercera vez en este repo que ese doble inset muerde;
+  ver también la posición de los controles del Atlas.
 
 ⚠️ Dos trampas de Compose al sangrar las filas fuera del padding del panel:
 - El **padding negativo lanza `Padding must be non-negative` EN EJECUCIÓN**, no al
