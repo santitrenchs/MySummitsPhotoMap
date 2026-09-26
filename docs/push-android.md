@@ -302,11 +302,34 @@ segundo plano (o sea, el camino del aviso construido por el sistema):
 De paso quedó confirmado que el canal `tags` aterriza en la sección **Silent** de
 la bandeja, que es lo que se buscaba con `IMPORTANCE_LOW`.
 
-### Fase 7 — Verificación
-- Emulador con Google Play para recibir push de verdad.
-- Comprobar: token registrado al entrar, borrado al salir, permiso denegado →
-  sin token, `pushNotifications` apagado → llega el correo y no el push,
-  desinstalar → el token se borra solo al primer envío fallido.
+### Fase 7 — Verificación (hecha)
+
+**El circuito completo funciona desde una acción real**, no solo por piezas. Se
+mandó una solicitud de amistad de verdad contra la API de staging, firmando un
+JWT para una cuenta de prueba (`testonboarding1`), y el push llegó al emulador:
+`POST /api/v1/friends` → `sendFriendRequest` → `notifyFriendRequest` →
+`sendPush` → FCM → dispositivo, en el canal `social` y en el idioma del
+destinatario.
+
+⚠️ **Y destapó un fallo real de privacidad.** El aviso decía
+*"testpdx1@mailinator.com wants to be your friend"*: el correo de quien manda,
+enseñado a alguien que todavía no le conoce. Eran dos cosas sumadas — el
+`name ?? email` de amistades caía al correo, y el registro copia el correo
+**también** en `name`. La invitación a cordada ya lo hacía bien, así que
+convivían dos criterios para lo mismo. Arreglado moviendo la decisión dentro de
+`notify.service`, que recibe el id y resuelve el nombre. Ver `a95dadd`.
+
+Esto es lo que justifica la fase: las piezas estaban todas verdes y el defecto
+solo aparecía al recorrer el circuito entero con datos reales.
+
+**Sin probar todavía**, por necesitar condiciones que no se dan en el emulador:
+
+- Token borrado al cerrar sesión (hace falta volver a entrar, y no tengo
+  credenciales).
+- `pushNotifications` apagado → llega el correo y no el push.
+- Desinstalar → el token se purga al primer envío fallido (`UNREGISTERED`).
+- El destino `cordada` de una notificación tocada.
+- La hoja de priming en pantalla.
 
 ## Fuera de alcance
 
