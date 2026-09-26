@@ -33,11 +33,7 @@ export async function PATCH(
     const result = await respondToFriendRequest(id, session.userId, action);
 
     if (action === "ACCEPTED") {
-      const me = await prisma.user.findUnique({
-        where: { id: session.userId },
-        select: { name: true, email: true },
-      });
-      notifyFriendAccepted(result.requesterId, me?.name ?? me?.email ?? "");
+      notifyFriendAccepted(result.requesterId, session.userId);
     }
 
     return NextResponse.json({ friendship: result });

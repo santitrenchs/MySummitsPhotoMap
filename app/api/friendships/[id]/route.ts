@@ -34,7 +34,7 @@ export async function PATCH(
     const result = await respondToFriendRequest(id, session.user.id, action);
 
     if (action === "ACCEPTED") {
-      notifyFriendAccepted(result.requesterId, session.user.name ?? session.user.email ?? "");
+      notifyFriendAccepted(result.requesterId, session.user.id);
     }
 
     return NextResponse.json(result);

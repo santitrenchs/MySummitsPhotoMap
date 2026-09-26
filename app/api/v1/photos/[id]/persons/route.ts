@@ -78,7 +78,7 @@ export async function POST(
       select: { name: true },
     });
     if (tagger) {
-      notifyPhotoTag(userId, tagger.name ?? "", photo.ascent.peak.name, photo.ascent.id, photo.url);
+      notifyPhotoTag(userId, session.userId, photo.ascent.peak.name, photo.ascent.id, photo.url);
     }
   }
 

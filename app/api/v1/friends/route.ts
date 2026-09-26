@@ -36,12 +36,7 @@ export async function POST(req: NextRequest) {
   try {
     const friendship = await sendFriendRequest(session.userId, addresseeId);
 
-    const sender = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { name: true, email: true },
-    });
-
-    notifyFriendRequest(addresseeId, sender?.name ?? sender?.email ?? "");
+    notifyFriendRequest(addresseeId, session.userId);
 
     return NextResponse.json({ friendship }, { status: 201 });
   } catch (err) {

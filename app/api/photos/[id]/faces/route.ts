@@ -56,12 +56,11 @@ export async function POST(
       include: { ascent: { include: { peak: true } } },
     });
     if (photo?.ascent) {
-      const taggerName = session.user.name ?? session.user.email ?? "";
       const notifyIds = [...new Set(
         tags.flatMap((t) => t?.userId && t.userId !== session.user.id ? [t.userId] : [])
       )];
       for (const userId of notifyIds) {
-        notifyPhotoTag(userId, taggerName, photo.ascent.peak.name, photo.ascent.id, photo.url);
+        notifyPhotoTag(userId, session.user.id, photo.ascent.peak.name, photo.ascent.id, photo.url);
       }
     }
 

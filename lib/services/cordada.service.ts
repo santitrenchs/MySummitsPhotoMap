@@ -236,15 +236,7 @@ export async function inviteToCordada(cordadaId: string, ownerId: string, target
   });
 
   // Aviso al invitado. Nunca bloquea ni tumba la invitación.
-  const owner = await prisma.user
-    .findUnique({ where: { id: ownerId }, select: { name: true, username: true } })
-    .catch(() => null);
-  await notifyCordadaInvite(
-    targetUserId,
-    owner?.username ?? owner?.name ?? "Alguien",
-    cordada.name,
-    cordadaId,
-  );
+  await notifyCordadaInvite(targetUserId, ownerId, cordada.name, cordadaId);
 
   return member;
 }

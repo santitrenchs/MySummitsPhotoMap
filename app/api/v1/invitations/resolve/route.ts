@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 400 });
   }
 
-  notifyFriendRequest(existingUser.id, me?.name ?? me?.email ?? "");
+  notifyFriendRequest(existingUser.id, session.userId);
 
   return NextResponse.json({ status: "friend_request_sent" }, { status: 201 });
 }

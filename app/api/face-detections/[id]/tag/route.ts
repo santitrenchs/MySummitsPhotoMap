@@ -27,7 +27,7 @@ export async function POST(
     if (detection?.photo?.ascent) {
       notifyPhotoTag(
         taggedUserId,
-        session.user.name ?? session.user.email ?? "",
+        session.user.id,
         detection.photo.ascent.peak.name,
         detection.photo.ascent.id,
         detection.photo.url,

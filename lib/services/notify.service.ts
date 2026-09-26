@@ -84,13 +84,41 @@ const PHOTO_TAG: Record<string, PushCopy> = {
   de: { title: "Du wurdest markiert", body: (n, p) => `${n} hat dich bei ${p} markiert` },
 };
 
+/** Cómo llamar a alguien cuyo nombre no sabemos, en el idioma de quien lee. */
+const SOMEONE: Record<string, string> = {
+  es: "Alguien", ca: "Algú", en: "Someone", fr: "Quelqu'un", de: "Jemand",
+};
+
+/**
+ * El nombre con el que presentar a una persona en un aviso.
+ *
+ * ⚠️ **Nunca el correo.** Una solicitud de amistad llega de alguien que todavía
+ * no te conoce, así que enseñar su dirección es revelar un dato personal a un
+ * desconocido — y al revés. Antes se hacía `name ?? email`, y como el registro
+ * guarda el correo también en `name`, la dirección salía por partida doble.
+ *
+ * `username` primero, que es lo que muestra el resto de la aplicación: las
+ * pastillas de la cordada, las etiquetas de las fotos y el ranking.
+ */
+async function displayName(userId: string, recipientLocale: string | null): Promise<string> {
+  const fallback = SOMEONE[recipientLocale ?? "es"] ?? SOMEONE.es;
+  const u = await prisma.user
+    .findUnique({ where: { id: userId }, select: { username: true, name: true } })
+    .catch(() => null);
+  const candidate = u?.username?.trim() || u?.name?.trim() || "";
+  // Un `name` con arroba es un correo que el registro copió ahí. Se descarta.
+  if (!candidate || candidate.includes("@")) return fallback;
+  return candidate;
+}
+
 // ─── Eventos ─────────────────────────────────────────────────────────────────
 
 /** Alguien te ha mandado una solicitud de amistad. */
-export async function notifyFriendRequest(recipientId: string, senderName: string): Promise<void> {
+export async function notifyFriendRequest(recipientId: string, senderId: string): Promise<void> {
   try {
     const u = await loadPrefs(recipientId);
     if (!u) return;
+    const senderName = await displayName(senderId, u.language);
 
     if (u.emailNotifications) {
       await sendFriendRequestEmail(u.email, senderName, u.language ?? "es").catch((e: unknown) =>
@@ -107,10 +135,11 @@ export async function notifyFriendRequest(recipientId: string, senderName: strin
 }
 
 /** Han aceptado la solicitud que mandaste. */
-export async function notifyFriendAccepted(recipientId: string, accepterName: string): Promise<void> {
+export async function notifyFriendAccepted(recipientId: string, accepterId: string): Promise<void> {
   try {
     const u = await loadPrefs(recipientId);
     if (!u) return;
+    const accepterName = await displayName(accepterId, u.language);
 
     if (u.emailNotifications) {
       await sendFriendAcceptedEmail(u.email, accepterName, u.language ?? "es").catch((e: unknown) =>
@@ -129,13 +158,14 @@ export async function notifyFriendAccepted(recipientId: string, accepterName: st
 /** Te han invitado a una cordada. */
 export async function notifyCordadaInvite(
   recipientId: string,
-  inviterName: string,
+  inviterId: string,
   cordadaName: string,
   cordadaId: string,
 ): Promise<void> {
   try {
     const u = await loadPrefs(recipientId);
     if (!u) return;
+    const inviterName = await displayName(inviterId, u.language);
 
     if (u.emailNotifications) {
       await sendCordadaInviteEmail(u.email, inviterName, cordadaName, u.language ?? "es").catch(
@@ -165,7 +195,7 @@ export async function notifyCordadaInvite(
  */
 export async function notifyPhotoTag(
   recipientId: string,
-  taggerName: string,
+  taggerId: string,
   peakName: string,
   ascentId: string,
   photoUrl: string,
@@ -173,6 +203,7 @@ export async function notifyPhotoTag(
   try {
     const u = await loadPrefs(recipientId);
     if (!u) return;
+    const taggerName = await displayName(taggerId, u.language);
 
     if (u.activityNotifications && u.emailNotifications) {
       await sendPhotoTagEmail(

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   try {
     const friendship = await sendFriendRequest(session.user.id, addresseeId);
 
-    notifyFriendRequest(addresseeId, session.user.name ?? session.user.email ?? "");
+    notifyFriendRequest(addresseeId, session.user.id);
 
     return NextResponse.json(friendship);
   } catch (err) {

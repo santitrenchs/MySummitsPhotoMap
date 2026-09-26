@@ -32,7 +32,11 @@ const cordEmail = sendCordadaInviteEmail  as unknown as Mock;
 const tagEmail  = sendPhotoTagEmail       as unknown as Mock;
 const push      = sendPush                as unknown as Mock;
 
-/** Preferencias del destinatario, todo encendido salvo lo que se pise. */
+/**
+ * Lo que devuelve `findUnique`. Se usa para las DOS consultas del servicio —las
+ * preferencias del destinatario y el nombre del remitente—, así que lleva los
+ * campos de ambas; el mock ignora el `select`.
+ */
 function prefs(over: Partial<Record<string, unknown>> = {}) {
   return {
     email: "dest@example.com",
@@ -40,6 +44,8 @@ function prefs(over: Partial<Record<string, unknown>> = {}) {
     emailNotifications: true,
     activityNotifications: true,
     pushNotifications: true,
+    username: "santi",
+    name: "Santi Trenchs",
     ...over,
   };
 }
@@ -111,7 +117,7 @@ describe("idioma del push", () => {
 
     const arg = push.mock.calls[0][1];
     expect(arg.title).toBe("New friend request");
-    expect(arg.body).toContain("Santi");
+    expect(arg.body).toContain("santi");
   });
 
   it("cae a castellano con un idioma desconocido o nulo", async () => {
@@ -158,5 +164,36 @@ describe("nunca tumba la acción que lo originó", () => {
   it("un fallo de la consulta de preferencias no lanza", async () => {
     db.user.findUnique.mockRejectedValue(new Error("DB caída"));
     await expect(notifyPhotoTag("u1", "S", "Aneto", "a1", "u")).resolves.toBeUndefined();
+  });
+});
+
+describe("cómo se nombra a quien manda el aviso", () => {
+  it("usa el username, que es lo que muestra el resto de la aplicación", async () => {
+    db.user.findUnique.mockResolvedValue(prefs({ username: "clarademiguel", name: "Clara de Miguel" }));
+    await notifyFriendRequest("u1", "u2");
+
+    expect(push.mock.calls[0][1].body).toContain("clarademiguel");
+  });
+
+  it("NUNCA enseña el correo de quien manda", async () => {
+    // Una solicitud de amistad llega de alguien que todavía no te conoce:
+    // enseñar su dirección es revelar un dato personal a un desconocido. Y el
+    // registro copia el correo también en `name`, así que salía por partida
+    // doble con el viejo `name ?? email`.
+    db.user.findUnique.mockResolvedValue(
+      prefs({ username: null, name: "testpdx1@mailinator.com", language: "es" }),
+    );
+    await notifyFriendRequest("u1", "u2");
+
+    const body = push.mock.calls[0][1].body;
+    expect(body).not.toContain("@");
+    expect(body).toContain("Alguien");
+  });
+
+  it("el genérico va en el idioma de quien lee, no de quien manda", async () => {
+    db.user.findUnique.mockResolvedValue(prefs({ username: null, name: null, language: "en" }));
+    await notifyFriendRequest("u1", "u2");
+
+    expect(push.mock.calls[0][1].body).toContain("Someone");
   });
 });
