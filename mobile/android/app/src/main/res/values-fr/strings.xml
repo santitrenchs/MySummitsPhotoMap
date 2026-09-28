@@ -462,6 +462,12 @@
     <string name="settings_units_metric">Mètres</string>
     <string name="settings_units_imperial">Pieds</string>
     <string name="settings_units_note">Comment s’affichent altitudes et distances. Cela ne change ni tes raretés ni ton niveau.</string>
+    <string name="register_country_hint">Pays (facultatif)</string>
+    <string name="settings_section_country">PAYS</string>
+    <string name="settings_country_label">Pays</string>
+    <string name="country_not_specified">Non précisé</string>
+    <string name="country_search_hint">Rechercher un pays…</string>
+    <string name="settings_country_note">Détecté à partir de la langue de ton appareil. Non visible par les autres utilisateurs.</string>
 
     <!-- Retos (Challenges) -->
     <string name="challenges_tab">Défis</string>

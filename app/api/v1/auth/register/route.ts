@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/client";
 import { hashPassword } from "@/lib/auth/password";
 import { generateUniqueSlug, generateUniqueUsername } from "@/lib/utils/user-utils";
 import { sendWelcomeEmail, notifyNewUser } from "@/lib/email";
+import { resolveSignupCountry } from "@/lib/country";
 
 const TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
@@ -13,6 +14,8 @@ const RegisterSchema = z.object({
   email:       z.string().email().transform((v) => v.trim().toLowerCase()),
   password:    z.string().min(8),
   voucherCode: z.string().optional(), // kept for API compat, ignored (system removed)
+  // ISO code prefilled from the phone locale; null = the user cleared it.
+  country:     z.string().nullable().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -26,6 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { name, email, password } = parsed.data;
+  const country = resolveSignupCountry(body as Record<string, unknown>, req.headers.get("accept-language"));
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ error: "email_taken" }, { status: 409 });
@@ -46,7 +50,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({ data: { email, name, username, passwordHash } });
+      const user = await tx.user.create({ data: { email, name, username, passwordHash, country } });
       const tenant = await tx.tenant.create({ data: { name, slug } });
       await tx.membership.create({ data: { userId: user.id, tenantId: tenant.id, role: "OWNER" } });
       userId = user.id;
@@ -70,7 +74,7 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId! },
-    select: { id: true, email: true, name: true, username: true, avatarUrl: true },
+    select: { id: true, email: true, name: true, username: true, avatarUrl: true, country: true },
   });
 
   return NextResponse.json({ token, user: { ...user, tenantId: tenantId! } }, { status: 201 });

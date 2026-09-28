@@ -7,11 +7,13 @@ import { LOCALE_OPTIONS } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n/types";
 import { Button } from "@/components/ui/Button";
 import type { Units } from "@/lib/units";
+import { CountryPicker } from "@/components/ui/CountryPicker";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type UserSettings = {
   id: string; name: string; email: string; username: string | null; language: string; units: string;
+  country: string | null;
   appearInSearch: boolean; allowOthersToTag: boolean;
   emailNotifications: boolean; activityNotifications: boolean;
   hasPassword: boolean; googleLinked: boolean;
@@ -196,6 +198,14 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
     });
   }
 
+  async function saveCountry(code: string | null) {
+    setSettings((s) => ({ ...s, country: code })); // optimistic, like the toggles
+    await fetch("/api/settings", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ country: code }),
+    });
+  }
+
   async function saveLanguage(newLocale: Locale) {
     setLocale(newLocale); // immediate UI update
     await fetch("/api/settings", {
@@ -342,6 +352,17 @@ export function SettingsClient({ initialUser }: { initialUser: UserSettings }) {
           <p style={{ fontSize: 11, color: "#9ca3af", margin: "8px 0 0" }}>{t.settings_unitsNote}</p>
         </div>
       </Card>
+
+      {/* Country — private; today it only frames the first Atlas view. */}
+      <SectionHeader label={t.settings_country} />
+      <Card>
+        <CountryPicker
+          value={settings.country}
+          onChange={saveCountry}
+          triggerStyle={{ border: "none", borderRadius: 0, height: 52, padding: "0 16px", fontSize: 14, fontWeight: 600, color: settings.country ? "#111827" : "#9ca3af" }}
+        />
+      </Card>
+      <p style={{ fontSize: 11, color: "#9ca3af", margin: "8px 4px 0" }}>{t.settings_countryNote}</p>
 
       {/* Account */}
       <SectionHeader label={t.settings_account} />

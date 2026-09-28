@@ -39,6 +39,7 @@ class AuthSession(
                     id        = "",
                     name      = name,
                     avatarUrl = tokenStorage.getSavedAvatarUrl(),
+                    country   = tokenStorage.getSavedCountry(),
                 )
             }
         }
@@ -48,6 +49,10 @@ class AuthSession(
         tokenStorage.saveToken(token)
         tokenStorage.saveUserProfile(user.name, user.avatarUrl)
         tokenStorage.saveUnits(user.units)
+        // The auth responses (login / register / google) do not carry `country`, so a
+        // null here means "unknown", not "not specified". Only a real code is kept;
+        // otherwise the key is cleared and MainScaffold's getMe() fills it in.
+        if (user.country != null) tokenStorage.saveCountry(user.country) else tokenStorage.clearCountry()
         UnitsState.set(user.units)
         authInterceptor.token = token
         _currentUser.value = user
@@ -70,6 +75,7 @@ class AuthSession(
     fun updateUser(user: User) {
         tokenStorage.saveUserProfile(user.name, user.avatarUrl)
         tokenStorage.saveUnits(user.units)
+        tokenStorage.saveCountry(user.country)
         UnitsState.set(user.units)
         _currentUser.value = user
         Telemetry.setUser(user.id)

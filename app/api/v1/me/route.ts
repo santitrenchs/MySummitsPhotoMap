@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
       name: true,
       username: true,
       avatarUrl: true,
+      country: true,
     },
   });
 

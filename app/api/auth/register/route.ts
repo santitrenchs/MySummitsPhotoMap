@@ -6,6 +6,7 @@ import { sendWelcomeEmail, notifyNewUser } from "@/lib/email";
 import { generateUniqueSlug, generateUsername } from "@/lib/utils/user-utils";
 import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
 import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legal/versions";
+import { resolveSignupCountry } from "@/lib/country";
 
 // Max 5 registration attempts per IP per 15 minutes
 const isRateLimited = createRateLimiter(5, 15 * 60 * 1000);
@@ -18,6 +19,8 @@ const RegisterSchema = z.object({
   acceptedTerms:   z.literal(true, { errorMap: () => ({ message: "Must accept terms" }) }),
   acceptedPrivacy: z.literal(true, { errorMap: () => ({ message: "Must accept privacy policy" }) }),
   marketing:       z.boolean().optional().default(false),
+  // ISO code prefilled from the browser locale; null = the user cleared it.
+  country:         z.string().nullable().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -30,8 +33,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = RegisterSchema.parse(await req.json());
+    const raw = await req.json();
+    const body = RegisterSchema.parse(raw);
     const { name, username, email, password, marketing } = body;
+    const country = resolveSignupCountry(raw, req.headers.get("accept-language"));
 
     const [existingEmail, existingUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email } }),
@@ -54,7 +59,7 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
-          email, name, username, passwordHash,
+          email, name, username, passwordHash, country,
           marketingConsent: marketing,
           marketingConsentAt: marketing ? now : undefined,
         },

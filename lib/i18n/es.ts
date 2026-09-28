@@ -134,6 +134,8 @@ export const es: Dict = {
   settings_title: "Ajustes", settings_subtitle: "Gestiona tu cuenta y preferencias",
   settings_units: "Unidades", settings_unitsMetric: "Metros", settings_unitsImperial: "Pies",
   settings_unitsNote: "Cómo se muestran altitudes y distancias. No cambia tus rarezas ni tu nivel.",
+  settings_country: "País", country_placeholder: "País (opcional)", country_notSpecified: "Sin especificar",
+  country_search: "Buscar país…", settings_countryNote: "Detectado por el idioma de tu dispositivo. No se muestra a otros usuarios.",
   settings_language: "Idioma", settings_account: "Cuenta",
   settings_username: "Nombre de usuario", settings_name: "Nombre",
   settings_email: "Correo electrónico", settings_emailNote: "Contacta con soporte para cambiar tu correo.",

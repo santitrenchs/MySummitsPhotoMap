@@ -23,6 +23,7 @@ export default function MapContainer({
   challengeId = null,
   challengeName = null,
   challengePeaks = null,
+  userCountry = null,
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
@@ -31,6 +32,7 @@ export default function MapContainer({
   challengeId?: string | null;
   challengeName?: string | null;
   challengePeaks?: MapPeak[] | null;
+  userCountry?: string | null;
 }) {
   return (
     <MapView
@@ -41,6 +43,7 @@ export default function MapContainer({
       challengeId={challengeId}
       challengeName={challengeName}
       challengePeaks={challengePeaks}
+      userCountry={userCountry}
     />
   );
 }

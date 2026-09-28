@@ -61,6 +61,8 @@ export function SearchField({
         />
         {value && (
           <button
+            // Explicit: inside a <form> a bare <button> submits it.
+            type="button"
             onClick={() => onChange("")}
             aria-label={clearLabel}
             style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#9ca3af" }}

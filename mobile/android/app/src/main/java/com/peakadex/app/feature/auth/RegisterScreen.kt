@@ -35,7 +35,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.peakadex.app.R
+import com.peakadex.app.core.ui.CountryPickerSheet
 import com.peakadex.app.core.ui.PeakadexLogo
+import com.peakadex.app.core.util.countryName
+import com.peakadex.app.core.util.detectCountry
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.core.os.ConfigurationCompat
 import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.ui.theme.*
 
@@ -79,6 +89,9 @@ fun RegisterScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var termsAccepted   by remember { mutableStateOf(false) }
     var marketing       by remember { mutableStateOf(false) }
+    // Prefilled from the phone's region; the user can change it or leave it empty.
+    var country         by rememberSaveable { mutableStateOf(detectCountry()) }
+    var countrySheetOpen by remember { mutableStateOf(false) }
 
     // Auto-suggest username from name unless the user has manually edited it
     LaunchedEffect(name) {
@@ -105,6 +118,14 @@ fun RegisterScreen(
 
     // Auto-focus name on first composition
     LaunchedEffect(Unit) { nameFocus.requestFocus() }
+
+    if (countrySheetOpen) {
+        CountryPickerSheet(
+            selected  = country,
+            onSelect  = { country = it; countrySheetOpen = false },
+            onDismiss = { countrySheetOpen = false },
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -190,6 +211,35 @@ fun RegisterScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { passwordFocus.requestFocus() }),
                     )
+                    Spacer(Modifier.height(10.dp))
+
+                    // Country — optional, opens the picker (not typed)
+                    val appLocale = ConfigurationCompat.getLocales(LocalConfiguration.current)[0]
+                        ?: java.util.Locale.getDefault()
+                    Box(Modifier.fillMaxWidth()) {
+                        PeakTextField(
+                            value         = country?.let { countryName(it, appLocale) } ?: "",
+                            onValueChange = {},
+                            placeholder   = stringResource(R.string.register_country_hint),
+                            trailingIcon  = {
+                                Icon(
+                                    imageVector        = ChevronDownIcon,
+                                    contentDescription = null,
+                                    tint               = PeakNavyLight,
+                                    modifier           = Modifier.size(20.dp),
+                                )
+                            },
+                        )
+                        // Overlay: taps open the sheet and never focus the text field.
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .clickable(enabled = !isLoading) {
+                                    focusManager.clearFocus()
+                                    countrySheetOpen = true
+                                },
+                        )
+                    }
                     Spacer(Modifier.height(10.dp))
 
                     // Password with show/hide
@@ -313,7 +363,7 @@ fun RegisterScreen(
                                 return@Button
                             }
                             focusManager.clearFocus()
-                            viewModel.register(name, username, email, password, marketing)
+                            viewModel.register(name, username, email, password, marketing, country)
                         },
                         enabled   = !isLoading,
                         modifier  = Modifier.fillMaxWidth().height(50.dp),
@@ -382,4 +432,16 @@ fun RegisterScreen(
             }
         }
     }
+}
+
+private val ChevronDownIcon: ImageVector by lazy {
+    ImageVector.Builder("ChevronDown", 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            stroke          = SolidColor(Color.Black),
+            strokeLineWidth = 2f,
+            strokeLineCap   = StrokeCap.Round,
+        ) {
+            moveTo(6f, 9f); lineTo(12f, 15f); lineTo(18f, 9f)
+        }
+    }.build()
 }

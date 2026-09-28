@@ -462,6 +462,12 @@
     <string name="settings_units_metric">Metres</string>
     <string name="settings_units_imperial">Peus</string>
     <string name="settings_units_note">Com es mostren altituds i distàncies. No canvia les teves rareses ni el teu nivell.</string>
+    <string name="register_country_hint">País (opcional)</string>
+    <string name="settings_section_country">PAÍS</string>
+    <string name="settings_country_label">País</string>
+    <string name="country_not_specified">Sense especificar</string>
+    <string name="country_search_hint">Cerca país…</string>
+    <string name="settings_country_note">Detectat per l’idioma del teu dispositiu. No es mostra a altres usuaris.</string>
 
     <!-- Retos (Challenges) -->
     <string name="challenges_tab">Reptes</string>

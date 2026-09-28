@@ -63,6 +63,8 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SegmentedButton
 import com.peakadex.app.core.util.Units
+import com.peakadex.app.core.util.countryName
+import com.peakadex.app.core.ui.CountryPickerSheet
 import com.peakadex.app.core.ui.theme.PeakSubtle
 import com.peakadex.app.core.ui.theme.PeakMuted
 import androidx.compose.material3.OutlinedTextField
@@ -289,6 +291,15 @@ fun SettingsScreen(
         if (state.error != null) { snackbarHostState.showSnackbar(state.error!!.asString(context)); vm.clearError() }
     }
 
+    // ── Country picker sheet ──────────────────────────────────────────────────
+    if (state.isCountrySheetOpen) {
+        CountryPickerSheet(
+            selected  = state.selectedCountry,
+            onSelect  = { code -> vm.saveCountry(code) },
+            onDismiss = { vm.onShowCountrySheet(false) },
+        )
+    }
+
     // ── Language picker sheet ─────────────────────────────────────────────────
     if (state.isLanguageSheetOpen) {
         LanguagePickerSheet(
@@ -465,6 +476,47 @@ fun SettingsScreen(
                             color    = Color(0xFF9CA3AF),
                         )
                     }
+                }
+            }
+
+            // ── País ──────────────────────────────────────────────────────────
+            // Private: only frames the Atlas for someone with no ascents yet.
+            item { SectionHeader(stringResource(R.string.settings_section_country)) }
+            item {
+                val appLocale = androidx.core.os.ConfigurationCompat
+                    .getLocales(androidx.compose.ui.platform.LocalConfiguration.current)[0]
+                    ?: Locale.getDefault()
+                val countryLabel = state.selectedCountry?.let { countryName(it, appLocale) }
+                    ?: stringResource(R.string.country_not_specified)
+                SettingsCard {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { vm.onShowCountrySheet(true) }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text     = stringResource(R.string.settings_country_label),
+                            fontSize = 15.sp,
+                            color    = Color(0xFF111827),
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(countryLabel, fontSize = 14.sp, color = Color(0xFF6B7280))
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            ChevronRightIcon,
+                            contentDescription = null,
+                            tint     = Color(0xFFD1D5DB),
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                    Text(
+                        text     = stringResource(R.string.settings_country_note),
+                        fontSize = 12.sp,
+                        color    = Color(0xFF9CA3AF),
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                    )
                 }
             }
 

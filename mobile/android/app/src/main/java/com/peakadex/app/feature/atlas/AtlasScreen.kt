@@ -128,7 +128,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.peakadex.app.AppContainer
 import com.peakadex.app.core.util.CartoTiles
+import com.peakadex.app.core.util.countryBounds
 import com.peakadex.app.core.util.SatelliteTiles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -601,7 +603,7 @@ fun AtlasScreen(
             )
         }
 
-        // ── Initial camera position (most recent ascent → Barcelona fallback) ─
+        // ── Initial camera position (most recent ascent → user country → Barcelona) ─
         LaunchedEffect(styleReady.value, uiState.isLoadingAscents) {
             if (!styleReady.value || hasInitialFlown.value || uiState.isLoadingAscents) return@LaunchedEffect
             val map = mapRef.value ?: return@LaunchedEffect
@@ -614,10 +616,19 @@ fun AtlasScreen(
                     ), 800,
                 )
             } else {
-                // No ascents — default to Barcelona / Pyrenees
-                map.animateCamera(
-                    CameraUpdateFactory.newLatLngZoom(LatLng(41.3851, 2.1734), 8.0), 800,
-                )
+                // No ascents — frame the user's country (private, set at sign-up or
+                // in Settings), else Barcelona / Pyrenees. Restored from TokenStorage
+                // before the first frame and refreshed by MainScaffold's getMe().
+                val bounds = countryBounds(AppContainer.authSession.currentUser.value?.country)
+                val framed = bounds != null && runCatching {
+                    val paddingPx = (48 * context.resources.displayMetrics.density).toInt()
+                    map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, paddingPx), 800)
+                }.onFailure { Log.e("AtlasScreen", "country fitBounds failed: ${it.message}") }.isSuccess
+                if (!framed) {
+                    map.animateCamera(
+                        CameraUpdateFactory.newLatLngZoom(LatLng(41.3851, 2.1734), 8.0), 800,
+                    )
+                }
             }
         }
 

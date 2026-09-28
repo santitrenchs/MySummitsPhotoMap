@@ -27,6 +27,7 @@ import {
 } from "@/lib/map-tiles";
 import type { MapType } from "./MapControls";
 import { useUnitOpts } from "@/components/providers/I18nProvider";
+import { countryBounds } from "@/lib/country";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -200,10 +201,15 @@ function addPeakDotImages(map: maplibregl.Map) {
   }
 }
 
+type InitialView =
+  | { center: [number, number]; zoom: number }
+  | { bounds: [[number, number], [number, number]] };
+
 function resolveInitialView(
   ascentData: AscentMapEntry[],
-  peaks: MapPeak[]
-): { center: [number, number]; zoom: number } {
+  peaks: MapPeak[],
+  userCountry: string | null,
+): InitialView {
   // Priority 1: last saved map position
   try {
     const saved = localStorage.getItem(MAP_VIEW_KEY);
@@ -222,7 +228,12 @@ function resolveInitialView(
     if (peak) return { center: [peak.longitude, peak.latitude], zoom: 9 };
   }
 
-  // Priority 3: Barcelona default
+  // Priority 3: the user's country, framed whole. A box rather than a centre +
+  // fixed zoom, so Andorra and the United States both fit the screen.
+  const box = countryBounds(userCountry);
+  if (box) return { bounds: [[box[0], box[1]], [box[2], box[3]]] };
+
+  // Priority 4: Barcelona default
   return { center: [2.1734, 41.3851], zoom: 8 };
 }
 
@@ -236,11 +247,14 @@ export default function MapView({
   challengeId = null,
   challengeName = null,
   challengePeaks = null,
+  userCountry = null,
 }: {
   peaks: MapPeak[];
   ascentData?: AscentMapEntry[];
   rarities?: RarityDef[];
   showOnboarding?: boolean;
+  /** `User.country` — frames the first view of a user with no ascents yet. */
+  userCountry?: string | null;
   /** Challenge mode (`/map?challenge={id}`): the Atlas is scoped to one reto. */
   challengeId?: string | null;
   challengeName?: string | null;
@@ -888,7 +902,7 @@ export default function MapView({
     if (!containerRef.current || mapRef.current) return;
 
     const initMobile = window.innerWidth < 640;
-    const { center, zoom } = resolveInitialView(ascentData, peaks);
+    const initialView = resolveInitialView(ascentData, peaks, userCountry);
     // In challenge mode the camera is framed on the reto's bbox instead of the saved
     // view: "centred on the reto's peaks, at the zoom that fits them all" IS the
     // feature. maxZoom stops a one-peak (or tightly clustered) reto from opening at
@@ -906,7 +920,15 @@ export default function MapView({
               maxZoom: 13,
             },
           }
-        : { center, zoom }),
+        : "bounds" in initialView
+          ? {
+              bounds: initialView.bounds,
+              fitBoundsOptions: {
+                padding: initMobile ? { top: 110, bottom: 90, left: 24, right: 24 }
+                                    : { top: 60, bottom: 60, left: 60, right: 60 },
+              },
+            }
+          : initialView),
       pitch: 0,
       // The default control prints every source as one long line, which on a wide
       // screen runs under the peaks sidebar and gets cut mid-sentence. Replaced

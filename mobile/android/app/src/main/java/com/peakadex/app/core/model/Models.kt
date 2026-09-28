@@ -16,6 +16,8 @@ data class User(
     val language: String? = null,
     /** "metric" | "imperial" — display only. */
     val units: String? = null,
+    /** ISO 3166-1 alpha-2, or null ("not specified"). Private — never shown to others. */
+    val country: String? = null,
     val appearInSearch: Boolean? = null,
     val allowOthersToTag: Boolean? = null,
     val emailNotifications: Boolean? = null,
@@ -37,7 +39,28 @@ data class RegisterRequest(
     val acceptedTerms: Boolean = true,
     val acceptedPrivacy: Boolean = true,
     val marketing: Boolean = false,
+    // ⚠️ NO default on purpose. The Json config keeps `encodeDefaults = false`, so a
+    // `= null` default would drop the key when the user picked "not specified", and
+    // the server would read "absent" and fall back to Accept-Language. Android sends
+    // no Accept-Language, so absent would also end as null today — but an explicit
+    // null is the contract ("the user chose none"), so it is always serialized.
+    val country: String?,
 )
+
+/** Body of `POST /auth/google`. `country` only matters when the login creates the account. */
+@Serializable
+data class GoogleLoginRequest(
+    val idToken: String,
+    val country: String?,   // no default: see RegisterRequest
+)
+
+/**
+ * `PATCH /settings` for the country alone. A separate body because in
+ * [UpdateSettingsRequest] a null means "don't touch", while here a null must reach
+ * the server as `"country": null` ("not specified"). No default, so it is encoded.
+ */
+@Serializable
+data class UpdateCountryRequest(val country: String?)
 
 @Serializable
 data class UpdateSettingsRequest(

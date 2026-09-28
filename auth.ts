@@ -7,6 +7,8 @@ import { prisma } from "@/lib/db/client";
 import { verifyPassword } from "@/lib/auth/password";
 import { generateUniqueSlug, generateUniqueUsername } from "@/lib/utils/user-utils";
 import { sendWelcomeEmail, notifyNewUser } from "@/lib/email";
+import { headers } from "next/headers";
+import { countryFromLocale } from "@/lib/country";
 
 const baseAdapter = PrismaAdapter(prisma);
 
@@ -18,6 +20,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     getUserByEmail: (email) => baseAdapter.getUserByEmail!(email.trim().toLowerCase()),
     // When a new user signs in via Google, create Tenant + Membership too
     createUser: async (data) => {
+      // Google sign-up has no form, so the country comes from the browser's
+      // Accept-Language on the OAuth callback. Best effort: never block sign-up.
+      let country: string | null = null;
+      try {
+        country = countryFromLocale((await headers()).get("accept-language"));
+      } catch { /* not in a request scope */ }
       const user = await prisma.$transaction(async (tx) => {
         const email = data.email.trim().toLowerCase();
         const username = await generateUniqueUsername(data.name ?? email ?? "user");
@@ -34,6 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: data.name ?? email ?? "user",
             username,
             avatarUrl: image ?? null,
+            country,
           },
         });
         const slug = await generateUniqueSlug(created.name ?? created.email);

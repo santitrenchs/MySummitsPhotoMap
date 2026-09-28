@@ -11,6 +11,10 @@ class TokenStorage(private val context: Context) {
         private const val KEY_USER_NAME       = "user_name"
         private const val KEY_USER_AVATAR_URL = "user_avatar_url"
         private const val KEY_UNITS = "units"
+        private const val KEY_COUNTRY = "country"
+        /** Stored for a null country, because putString(key, null) removes the key
+         *  and "not specified" must stay distinguishable from "never fetched". */
+        private const val COUNTRY_NONE = ""
     }
 
     private val prefs by lazy {
@@ -40,6 +44,7 @@ class TokenStorage(private val context: Context) {
             .remove(KEY_USER_NAME)
             .remove(KEY_USER_AVATAR_URL)
             .remove(KEY_UNITS)
+            .remove(KEY_COUNTRY)
             .apply()
     }
 
@@ -57,6 +62,22 @@ class TokenStorage(private val context: Context) {
     }
 
     fun getSavedUnits(): String? = prefs.getString(KEY_UNITS, null)
+
+    /** Persisted so the Atlas can frame the user's country on a cold start,
+     *  before `getMe()` answers. */
+    fun saveCountry(country: String?) {
+        prefs.edit().putString(KEY_COUNTRY, country ?: COUNTRY_NONE).apply()
+    }
+
+    fun clearCountry() {
+        prefs.edit().remove(KEY_COUNTRY).apply()
+    }
+
+    fun getSavedCountry(): String? =
+        prefs.getString(KEY_COUNTRY, null)?.takeIf { it != COUNTRY_NONE }
+
+    /** False for sessions restored from before the country existed: fetch it once. */
+    fun hasSavedCountry(): Boolean = prefs.contains(KEY_COUNTRY)
 
     fun getSavedUserName(): String? = prefs.getString(KEY_USER_NAME, null)
     fun getSavedAvatarUrl(): String? = prefs.getString(KEY_USER_AVATAR_URL, null)

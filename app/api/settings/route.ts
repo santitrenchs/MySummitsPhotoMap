@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { isValidLocale } from "@/lib/i18n";
+import { normalizeCountry } from "@/lib/country";
 
 const USERNAME_RE = /^[a-zA-Z0-9_.]{3,20}$/;
 
@@ -12,6 +13,7 @@ const SettingsPatchSchema = z.object({
   bio:                   z.string().max(500).nullable().optional(),
   language:              z.string().optional(),
   units:                 z.enum(["metric", "imperial"]).optional(),
+  country:               z.string().nullable().optional(),
   appearInSearch:        z.boolean().optional(),
   allowOthersToTag:      z.boolean().optional(),
   emailNotifications:    z.boolean().optional(),
@@ -27,7 +29,7 @@ export async function GET() {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      id: true, name: true, email: true, username: true, language: true, units: true,
+      id: true, name: true, email: true, username: true, language: true, units: true, country: true,
       appearInSearch: true, allowOthersToTag: true,
       emailNotifications: true, activityNotifications: true, pushNotifications: true,
     },
@@ -60,6 +62,13 @@ export async function PATCH(req: Request) {
     data.name = (data.name as string).trim();
   }
 
+  // null clears it ("Sin especificar"); any other value must be a real ISO code.
+  if ("country" in data && data.country !== null) {
+    const code = normalizeCountry(data.country);
+    if (!code) return NextResponse.json({ error: "Invalid country" }, { status: 400 });
+    data.country = code;
+  }
+
   if ("language" in data && !isValidLocale(data.language)) {
     return NextResponse.json({ error: "Invalid locale" }, { status: 400 });
   }
@@ -69,7 +78,7 @@ export async function PATCH(req: Request) {
       where: { id: session.user.id },
       data,
       select: {
-        id: true, name: true, email: true, username: true, language: true, units: true,
+        id: true, name: true, email: true, username: true, language: true, units: true, country: true,
         appearInSearch: true, allowOthersToTag: true,
         emailNotifications: true, activityNotifications: true, pushNotifications: true,
       },

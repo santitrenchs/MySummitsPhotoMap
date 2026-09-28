@@ -25,7 +25,7 @@ export default async function MapPage({
   const [ascentData, rarities, userPrefs] = await Promise.all([
     getAscentMapData(session.user.tenantId),
     prisma.rarity.findMany({ orderBy: { order: "asc" } }),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { mapOnboardingSeen: true } }).catch(() => null),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { mapOnboardingSeen: true, country: true } }).catch(() => null),
   ]);
 
   // Only fetch the user's climbed peaks — unclimbed peaks load client-side per viewport
@@ -57,6 +57,7 @@ export default async function MapPage({
       challengeId={challenge?.id ?? null}
       challengeName={challenge?.name ?? null}
       challengePeaks={challenge?.peaks ?? null}
+      userCountry={userPrefs?.country ?? null}
     />
   );
 }

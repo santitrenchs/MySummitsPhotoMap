@@ -725,6 +725,27 @@ preformatted `altLabel` in the feature properties instead.
 
 ---
 
+## User country (web + Android, staging 2026-09-28)
+
+`User.country` — ISO 3166-1 alpha-2 or null. **Private** (never shown to other users) and
+optional. One helper: `lib/country.ts` (Android mirror `core/util/Country.kt` — keep the bounds
+table identical).
+
+- **Sign-up**: the form shows a "País (opcional)" field between email and password,
+  **prefilled** from the device/browser main locale (`es-ES` → ES). Only the FIRST locale tag
+  counts: `"es,en-US"` gives null, never US. Numeric regions (`es-419`) give null. Google sign-up
+  has no form: web reads `Accept-Language` in `createUser` (`auth.ts`), Android sends
+  `country` in the `/api/v1/auth/google` body (used only when the login creates the account).
+- **`resolveSignupCountry`**: a `country` key in the body wins, **including an explicit null**
+  (the user chose "Sin especificar"); only an absent key falls back to the header.
+- **Settings**: section "País" below Unidades, `CountryPicker` (`components/ui/CountryPicker.tsx`),
+  saves on pick via `PATCH /api/settings` / `/api/v1/settings` `{ country }`. Invalid codes → 400.
+- **Atlas first view**: saved view (web) → most recent ascent → **country bounds** (`fitBounds`
+  on the MAIN territory: Spain without the Canaries, US without Alaska) → Barcelona. Countries
+  not in the table (and Russia, which straddles the antimeridian) fall through to Barcelona.
+
+---
+
 ## Known Gotchas
 
 - **Android — never add system-inset padding inside `MainScaffold`'s content.** No

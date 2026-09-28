@@ -462,6 +462,12 @@
     <string name="settings_units_metric">Meter</string>
     <string name="settings_units_imperial">Fuß</string>
     <string name="settings_units_note">Wie Höhen und Entfernungen angezeigt werden. Ändert weder deine Seltenheiten noch dein Level.</string>
+    <string name="register_country_hint">Land (optional)</string>
+    <string name="settings_section_country">LAND</string>
+    <string name="settings_country_label">Land</string>
+    <string name="country_not_specified">Nicht angegeben</string>
+    <string name="country_search_hint">Land suchen…</string>
+    <string name="settings_country_note">Anhand der Sprache deines Geräts erkannt. Wird anderen Nutzern nicht angezeigt.</string>
 
     <!-- Retos (Challenges) -->
     <string name="challenges_tab">Challenges</string>

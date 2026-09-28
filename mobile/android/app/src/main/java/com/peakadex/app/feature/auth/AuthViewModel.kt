@@ -15,7 +15,9 @@ import com.peakadex.app.AppContainer
 import com.peakadex.app.BuildConfig
 import com.peakadex.app.R
 import com.peakadex.app.core.analytics.Telemetry
+import com.peakadex.app.core.model.GoogleLoginRequest
 import com.peakadex.app.core.model.RegisterRequest
+import com.peakadex.app.core.util.detectCountry
 import com.peakadex.app.core.ui.UiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -85,6 +87,7 @@ class AuthViewModel : ViewModel() {
         email: String,
         password: String,
         marketing: Boolean,
+        country: String?,
     ) {
         when {
             name.isBlank() || email.isBlank() || password.isBlank() ->
@@ -104,9 +107,11 @@ class AuthViewModel : ViewModel() {
                         acceptedTerms   = true,
                         acceptedPrivacy = true,
                         marketing       = marketing,
+                        country         = country,
                     )
                 )
-                AppContainer.authSession.login(response.token, response.user)
+                // The register response omits `country`; we know what we just sent.
+                AppContainer.authSession.login(response.token, response.user.copy(country = country))
                 Telemetry.logEvent(Telemetry.Event.SIGN_UP, mapOf(Telemetry.PARAM_METHOD to "password"))
                 _uiState.value = AuthUiState.Success
             } catch (e: HttpException) {
@@ -146,7 +151,9 @@ class AuthViewModel : ViewModel() {
                 val credential = GoogleIdTokenCredential.createFrom(result.credential.data)
                 val idToken = credential.idToken
 
-                val response = AppContainer.apiService.loginWithGoogle(mapOf("idToken" to idToken))
+                val response = AppContainer.apiService.loginWithGoogle(
+                    GoogleLoginRequest(idToken = idToken, country = detectCountry()),
+                )
                 AppContainer.authSession.login(response.token, response.user)
                 Telemetry.logEvent(Telemetry.Event.LOGIN, mapOf(Telemetry.PARAM_METHOD to "google"))
                 _uiState.value = AuthUiState.Success

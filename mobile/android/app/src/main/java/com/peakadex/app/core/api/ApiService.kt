@@ -12,7 +12,7 @@ interface ApiService {
     suspend fun login(@Body body: Map<String, String>): AuthResponse
 
     @POST("auth/google")
-    suspend fun loginWithGoogle(@Body body: Map<String, String>): AuthResponse
+    suspend fun loginWithGoogle(@Body body: GoogleLoginRequest): AuthResponse
 
     @POST("auth/register")
     suspend fun register(@Body body: RegisterRequest): AuthResponse
@@ -39,6 +39,9 @@ interface ApiService {
 
     @PATCH("settings")
     suspend fun updateSettings(@Body body: UpdateSettingsRequest): SettingsResponse
+
+    @PATCH("settings")
+    suspend fun updateCountry(@Body body: UpdateCountryRequest): SettingsResponse
 
     @POST("settings/password")
     suspend fun updatePassword(@Body body: UpdatePasswordRequest)

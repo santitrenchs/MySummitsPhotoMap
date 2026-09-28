@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { getV1Session } from "@/lib/api-v1/auth";
 import { prisma } from "@/lib/db/client";
 import { isValidLocale } from "@/lib/i18n";
+import { normalizeCountry } from "@/lib/country";
 
 const USERNAME_RE = /^[a-zA-Z0-9_.]{3,20}$/;
 
@@ -13,6 +14,7 @@ const PatchSchema = z.object({
   bio:                   z.string().max(500).nullable().optional(),
   language:              z.string().optional(),
   units:                 z.enum(["metric", "imperial"]).optional(),
+  country:               z.string().nullable().optional(),
   appearInSearch:        z.boolean().optional(),
   allowOthersToTag:      z.boolean().optional(),
   emailNotifications:    z.boolean().optional(),
@@ -21,7 +23,7 @@ const PatchSchema = z.object({
 });
 
 const SELECT = {
-  id: true, name: true, email: true, username: true, language: true, units: true,
+  id: true, name: true, email: true, username: true, language: true, units: true, country: true,
   appearInSearch: true, allowOthersToTag: true,
   emailNotifications: true, activityNotifications: true, pushNotifications: true,
   passwordHash: true,
@@ -67,6 +69,13 @@ export async function PATCH(req: NextRequest) {
   }
 
   if ("name" in data) data.name = (data.name as string).trim();
+
+  // null clears it ("Sin especificar"); any other value must be a real ISO code.
+  if ("country" in data && data.country !== null) {
+    const code = normalizeCountry(data.country);
+    if (!code) return NextResponse.json({ error: "invalid_country" }, { status: 400 });
+    data.country = code;
+  }
 
   if ("language" in data && !isValidLocale(data.language)) {
     return NextResponse.json({ error: "invalid_locale" }, { status: 400 });

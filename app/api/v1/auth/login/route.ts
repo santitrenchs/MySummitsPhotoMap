@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
       name: user.name,
       username: user.username,
       avatarUrl: user.avatarUrl,
+      country: user.country,
       tenantId,
     },
   });

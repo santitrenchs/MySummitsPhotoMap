@@ -127,6 +127,8 @@ export type Dict = {
   // Settings
   settings_units: string; settings_unitsMetric: string; settings_unitsImperial: string;
   settings_unitsNote: string;
+  settings_country: string; country_placeholder: string; country_notSpecified: string;
+  country_search: string; settings_countryNote: string;
   settings_title: string; settings_subtitle: string; settings_language: string;
   settings_account: string; settings_username: string;
   settings_name: string; settings_email: string; settings_emailNote: string;

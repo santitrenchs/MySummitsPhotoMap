@@ -134,6 +134,8 @@ export const en: Dict = {
   settings_title: "Settings", settings_subtitle: "Manage your account and preferences",
   settings_units: "Units", settings_unitsMetric: "Metres", settings_unitsImperial: "Feet",
   settings_unitsNote: "How altitudes and distances are shown. It does not change your rarities or your level.",
+  settings_country: "Country", country_placeholder: "Country (optional)", country_notSpecified: "Not specified",
+  country_search: "Search country…", settings_countryNote: "Detected from your device language. Not shown to other users.",
   settings_language: "Language", settings_account: "Account",
   settings_username: "Username", settings_name: "Name",
   settings_email: "Email", settings_emailNote: "Contact support to change your email address.",

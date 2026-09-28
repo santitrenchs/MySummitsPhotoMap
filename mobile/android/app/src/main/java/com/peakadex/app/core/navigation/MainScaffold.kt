@@ -103,8 +103,11 @@ fun MainScaffold(navController: NavController) {
     val context = LocalContext.current
 
     // Fetch current user on app restore — also when avatarUrl is null (not yet persisted)
+    // or the country was never persisted (sessions from before `User.country` existed).
     LaunchedEffect(Unit) {
-        if (AppContainer.authSession.isAuthenticated && (user == null || user?.avatarUrl == null)) {
+        val needsFetch = user == null || user?.avatarUrl == null ||
+            !AppContainer.tokenStorage.hasSavedCountry()
+        if (AppContainer.authSession.isAuthenticated && needsFetch) {
             runCatching { AppContainer.apiService.getMe() }
                 .onSuccess { AppContainer.authSession.updateUser(it) }
         }

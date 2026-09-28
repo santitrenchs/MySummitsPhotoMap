@@ -11,6 +11,7 @@ import com.peakadex.app.R
 import com.peakadex.app.core.model.UpdatePasswordRequest
 import com.peakadex.app.core.ui.UiText
 import com.peakadex.app.core.model.UpdateSettingsRequest
+import com.peakadex.app.core.model.UpdateCountryRequest
 import com.peakadex.app.core.model.User
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +45,9 @@ data class SettingsUiState(
     val pushNotifications: Boolean = true,
     // units
     val selectedUnits: Units = UnitsState.current,
+    // country (ISO alpha-2, null = not specified)
+    val selectedCountry: String? = null,
+    val isCountrySheetOpen: Boolean = false,
     // language
     val selectedLanguage: String = "es",
     val isLanguageSheetOpen: Boolean = false,
@@ -101,6 +105,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                     activityNotifications = user.activityNotifications ?: true,
                     pushNotifications     = user.pushNotifications ?: true,
                     selectedLanguage      = user.language ?: "es",
+                    selectedCountry       = user.country,
                     hasPassword           = user.hasPassword ?: false,
                     googleLinked          = user.googleLinked ?: false,
                 ) }
@@ -298,6 +303,32 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "saveUnits error", e)
+            }
+        }
+    }
+
+    // ─── Country ──────────────────────────────────────────────────────────────
+
+    fun onShowCountrySheet(show: Boolean) =
+        _state.update { it.copy(isCountrySheetOpen = show) }
+
+    /** Immediate PATCH like the toggles, applied optimistically; reverted on failure. */
+    fun saveCountry(code: String?) {
+        val previous = _state.value.selectedCountry
+        _state.update { it.copy(selectedCountry = code, isCountrySheetOpen = false) }
+        if (code == previous) return
+        viewModelScope.launch {
+            try {
+                val updated = AppContainer.apiService.updateCountry(UpdateCountryRequest(country = code)).user
+                AppContainer.authSession.updateUser(updated)
+                _state.update { it.copy(user = updated, selectedCountry = updated.country) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: IOException) {
+                _state.update { it.copy(selectedCountry = previous, error = UiText.StringRes(R.string.error_no_connection)) }
+            } catch (e: Exception) {
+                Log.e(TAG, "saveCountry error", e)
+                _state.update { it.copy(selectedCountry = previous, error = UiText.StringRes(R.string.error_save)) }
             }
         }
     }

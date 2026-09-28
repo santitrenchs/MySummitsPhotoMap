@@ -134,6 +134,8 @@ export const ca: Dict = {
   settings_title: "Configuració", settings_subtitle: "Gestiona el teu compte i preferències",
   settings_units: "Unitats", settings_unitsMetric: "Metres", settings_unitsImperial: "Peus",
   settings_unitsNote: "Com es mostren altituds i distàncies. No canvia les teves rareses ni el teu nivell.",
+  settings_country: "País", country_placeholder: "País (opcional)", country_notSpecified: "Sense especificar",
+  country_search: "Cerca un país…", settings_countryNote: "Detectat per l'idioma del teu dispositiu. No es mostra a altres usuaris.",
   settings_language: "Idioma", settings_account: "Compte",
   settings_username: "Nom d'usuari", settings_name: "Nom",
   settings_email: "Correu electrònic", settings_emailNote: "Contacta amb suport per canviar el teu correu.",

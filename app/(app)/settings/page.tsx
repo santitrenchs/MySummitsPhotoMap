@@ -15,6 +15,7 @@ export default async function SettingsPage() {
       username: true,
       language: true,
       units: true,
+      country: true,
       appearInSearch: true,
       allowOthersToTag: true,
       emailNotifications: true,

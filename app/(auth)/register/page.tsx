@@ -6,6 +6,8 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useT } from "@/components/providers/I18nProvider";
 import { PeakadexLogo } from "@/components/brand/Logo";
+import { CountryPicker } from "@/components/ui/CountryPicker";
+import { countryFromLocale } from "@/lib/country";
 
 // ── Design tokens (DESIGN.md) ─────────────────────────────────────────────────
 const C = {
@@ -58,6 +60,13 @@ export default function RegisterPage() {
   const [marketing,      setMarketing]      = useState(false);
   const [submitting,     setSubmitting]     = useState(false);
   const [formError,      setFormError]      = useState<string | null>(null);
+  const [country,        setCountry]        = useState<string | null>(null);
+
+  // Prefill from the browser's main locale ("es-ES" → ES). In an effect, not in
+  // the initial state: `navigator` does not exist during the server render.
+  useEffect(() => {
+    setCountry((current) => current ?? countryFromLocale(navigator.languages?.[0] ?? navigator.language));
+  }, []);
 
   useEffect(() => {
     if (usernameEdited) return;
@@ -82,7 +91,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, username, email, password, acceptedTerms: true, acceptedPrivacy: true, marketing }),
+        body: JSON.stringify({ name, username, email, password, acceptedTerms: true, acceptedPrivacy: true, marketing, country }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -181,6 +190,9 @@ export default function RegisterPage() {
             autoComplete="email"
             placeholder={t.settings_email}
           />
+
+          {/* Country — prefilled, optional, private */}
+          <CountryPicker value={country} onChange={setCountry} />
 
           {/* Password with show/hide */}
           <div style={{ position: "relative" }}>

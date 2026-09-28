@@ -94,6 +94,10 @@ model User {
   /// "metric" | "imperial" — how altitudes and distances are DISPLAYED. The
   /// thresholds that decide rarity and level stay in metres whatever this says.
   units        String   @default("metric")
+  /// ISO 3166-1 alpha-2 ("ES", "US"), or null when unknown. Inferred from the
+  /// device/browser locale at sign-up and editable in Settings. Private: never
+  /// shown to other users. Used to frame the first Atlas view.
+  country      String?
 
   // Privacy
   appearInSearch        Boolean @default(true)

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/client";
 import { SignJWT } from "jose";
 import { generateUniqueSlug, generateUniqueUsername } from "@/lib/utils/user-utils";
 import { sendWelcomeEmail, notifyNewUser } from "@/lib/email";
+import { normalizeCountry } from "@/lib/country";
 
 const TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
@@ -37,11 +38,11 @@ async function findUserByGoogleOrEmail(googleId: string, email: string) {
   });
 }
 
-async function createGoogleUser(googleId: string, email: string, name: string) {
+async function createGoogleUser(googleId: string, email: string, name: string, country: string | null) {
   const created = await prisma.$transaction(async (tx) => {
     const username = await generateUniqueUsername(name);
     const user = await tx.user.create({
-      data: { email, name, username, emailVerified: new Date() },
+      data: { email, name, username, emailVerified: new Date(), country },
     });
     const slug = await generateUniqueSlug(name);
     const tenant = await tx.tenant.create({ data: { name, slug } });
@@ -78,7 +79,9 @@ async function ensureGoogleAccount(userId: string, googleId: string) {
 // ── POST /api/v1/auth/google ──────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  let body: { idToken?: string };
+  // `country` is the phone's locale region, sent by the app; only used when
+  // this login creates the account.
+  let body: { idToken?: string; country?: string | null };
   try {
     body = await req.json();
   } catch {
@@ -141,7 +144,7 @@ export async function POST(req: NextRequest) {
   try {
     const found = await findUserByGoogleOrEmail(googleId, email);
     if (!found) {
-      user = await createGoogleUser(googleId, email, name ?? email);
+      user = await createGoogleUser(googleId, email, name ?? email, normalizeCountry(body.country));
       isNewUser = true;
     } else {
       user = found;
@@ -173,6 +176,7 @@ export async function POST(req: NextRequest) {
       name: user.name,
       username: user.username,
       avatarUrl: user.avatarUrl,
+      country: user.country,
       tenantId,
     },
   });
