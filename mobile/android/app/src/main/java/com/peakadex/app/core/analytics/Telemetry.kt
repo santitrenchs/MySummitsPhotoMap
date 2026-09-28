@@ -79,7 +79,10 @@ object Telemetry {
     // ── Non-fatal error reporting ──────────────────────────────────────
 
     /** Report a handled exception to Crashlytics without crashing the app. */
-    fun recordError(throwable: Throwable) {
+    fun recordError(throwable: Throwable, context: String? = null) {
+        // The breadcrumb travels with the non-fatal, so the console shows where it
+        // happened without having to guess from the stack trace. No PII in it.
+        context?.let { crashlytics.log(it) }
         crashlytics.recordException(throwable)
     }
 

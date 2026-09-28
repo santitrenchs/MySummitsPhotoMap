@@ -128,6 +128,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
   },
+  events: {
+    // A positive signal per login. Failures already reach the logs through
+    // NextAuth's own `[auth][error]` lines; successes left no trace at all.
+    signIn({ user, account, isNewUser }) {
+      console.info(
+        `[auth] login ok provider=${account?.provider ?? "unknown"} userId=${user.id} new=${isNewUser ?? false}`
+      );
+    },
+  },
   pages: {
     signIn: "/login",
   },

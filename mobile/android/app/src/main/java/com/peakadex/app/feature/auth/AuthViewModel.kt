@@ -156,18 +156,23 @@ class AuthViewModel : ViewModel() {
                 _uiState.value = AuthUiState.Idle
             } catch (e: NoCredentialException) {
                 Log.e(TAG, "Google sign-in: no credentials available", e)
+                // These fail on the device, before any request: the server never sees them.
+                Telemetry.recordError(e, "google_signin: no_credential")
                 _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_google_no_account))
             } catch (e: GetCredentialException) {
                 Log.e(TAG, "Google credential error type=${e.type} class=${e::class.simpleName} msg=${e.message}", e)
+                Telemetry.recordError(e, "google_signin: credential_error type=${e.type}")
                 _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_google_unexpected))
             } catch (e: HttpException) {
                 Log.e(TAG, "Google login HTTP ${e.code()}", e)
+                Telemetry.recordError(e, "google_signin: backend_http ${e.code()}")
                 _uiState.value = AuthUiState.Error(UiText.Dynamic("Error Google (${e.code()})"))
             } catch (e: IOException) {
                 Log.e(TAG, "Google login network error", e)
                 _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_no_connection))
             } catch (e: Exception) {
                 Log.e(TAG, "Google login unexpected: ${e::class.simpleName}", e)
+                Telemetry.recordError(e, "google_signin: unexpected")
                 _uiState.value = AuthUiState.Error(UiText.StringRes(R.string.error_google_unexpected))
             }
         }

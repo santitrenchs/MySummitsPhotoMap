@@ -98,11 +98,16 @@ export async function POST(req: NextRequest) {
       { signal: AbortSignal.timeout(5000) }
     );
     tokenInfo = await res.json();
-  } catch {
+  } catch (err) {
+    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    console.error("[v1/auth/google] tokeninfo unreachable:", msg);
     return NextResponse.json({ error: "google_unreachable" }, { status: 502 });
   }
 
   if (tokenInfo.error || tokenInfo.email_verified !== "true") {
+    // The reason only — never the token or the email.
+    const reason = tokenInfo.error ? `google_error=${tokenInfo.error}` : "email_not_verified";
+    console.warn("[v1/auth/google] invalid token:", reason);
     return NextResponse.json({ error: "invalid_token" }, { status: 401 });
   }
 
@@ -126,15 +131,18 @@ export async function POST(req: NextRequest) {
 
   const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
   if (!secret) {
+    console.error("[v1/auth/google] AUTH_SECRET env var is not set — refusing login");
     return NextResponse.json({ error: "server_error", detail: "missing AUTH_SECRET" }, { status: 500 });
   }
 
   // 2. Find or create user
   let user: NonNullable<UserWithMembership>;
+  let isNewUser = false;
   try {
     const found = await findUserByGoogleOrEmail(googleId, email);
     if (!found) {
       user = await createGoogleUser(googleId, email, name ?? email);
+      isNewUser = true;
     } else {
       user = found;
       // Link Google account if user registered with password first
@@ -154,6 +162,8 @@ export async function POST(req: NextRequest) {
     .setIssuedAt(now)
     .setExpirationTime(now + TTL_SECONDS)
     .sign(new TextEncoder().encode(secret));
+
+  console.info(`[v1/auth/google] login ok userId=${user.id} new=${isNewUser}`);
 
   return NextResponse.json({
     token,
