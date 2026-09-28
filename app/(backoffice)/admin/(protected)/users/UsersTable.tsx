@@ -8,6 +8,9 @@ type UserRow = {
   email: string;
   username: string | null;
   isAdmin: boolean;
+  /** ISO code; null when unknown (and always for bajas — not snapshotted). */
+  country: string | null;
+  countryName: string | null;
   createdAt: string;
   ascents: number;
   /** null for bajas — the photos went with the cascade, nothing was snapshotted. */
@@ -51,7 +54,9 @@ export function UsersTable({
         return (
           u.name.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
-          (u.username ?? "").toLowerCase().includes(q)
+          (u.username ?? "").toLowerCase().includes(q) ||
+          (u.countryName ?? "").toLowerCase().includes(q) ||
+          (u.country ?? "").toLowerCase() === q
         );
       })
     : scoped;
@@ -125,6 +130,7 @@ export function UsersTable({
                 <th>Nombre</th>
                 <th>Email</th>
                 <th>Usuario</th>
+                <th>País</th>
                 <th>Registrado</th>
                 <th style={{ textAlign: "center" }}>Ascensiones</th>
                 <th style={{ textAlign: "center" }}>Fotos</th>
@@ -137,7 +143,7 @@ export function UsersTable({
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={showStatusColumn ? 10 : 9}>
+                  <td colSpan={showStatusColumn ? 11 : 10}>
                     <div className="empty-state">
                       {query.trim()
                         ? <>Sin resultados para &ldquo;{query}&rdquo;</>
@@ -166,6 +172,9 @@ export function UsersTable({
                   <td style={{ fontSize: 13 }}>{user.email}</td>
                   <td style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                     {user.username ? `@${user.username}` : "—"}
+                  </td>
+                  <td style={{ fontSize: 13, whiteSpace: "nowrap" }} title={user.country ?? undefined}>
+                    {user.countryName ?? <span style={{ color: "var(--text-muted)" }}>—</span>}
                   </td>
                   <td style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                     {new Date(user.createdAt).toLocaleDateString("es-ES", {

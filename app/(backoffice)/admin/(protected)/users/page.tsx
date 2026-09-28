@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/client";
 import { UsersTable } from "./UsersTable";
+import { countryName } from "@/lib/country";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function AdminUsersPage() {
         email: true,
         username: true,
         isAdmin: true,
+        country: true,
         createdAt: true,
         _count: { select: { ascents: true } },
       },
@@ -59,6 +61,10 @@ export default async function AdminUsersPage() {
     email: u.email,
     username: u.username,
     isAdmin: u.isAdmin,
+    // Named on the server so the client renders exactly the same string (no
+    // Node-vs-browser ICU drift at hydration).
+    country: u.country,
+    countryName: u.country ? countryName(u.country, "es") : null,
     createdAt: u.createdAt.toISOString(),
     ascents: u._count.ascents,
     photos: photoMap.get(u.id) ?? 0,
@@ -75,6 +81,8 @@ export default async function AdminUsersPage() {
     email: d.email,
     username: d.username,
     isAdmin: false,
+    country: null,
+    countryName: null,
     createdAt: (d.signupAt ?? d.deletedAt).toISOString(),
     ascents: d.totalAscents,
     photos: null,
