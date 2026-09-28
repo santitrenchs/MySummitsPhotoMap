@@ -540,4 +540,5 @@
     <string name="settings_delete_confirm_button">Mein Konto löschen</string>
     <string name="settings_delete_confirm_word">LÖSCHEN</string>
     <string name="settings_delete_failed">Konto konnte nicht gelöscht werden. Versuch es erneut.</string>
+    <string name="new_ascent_date_no_exif">Das Foto hat kein Datum. Wenn es eine ältere Besteigung ist, ändere es hier.</string>
 </resources>

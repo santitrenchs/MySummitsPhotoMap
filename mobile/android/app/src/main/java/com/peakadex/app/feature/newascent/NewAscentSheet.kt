@@ -723,6 +723,15 @@ private fun AscentFormStep(
                             disabledTrailingIconColor = PeakMuted,
                         ),
                     )
+                    if (!state.isEditMode && !state.photoHasDate && !state.dateTouched) {
+                        Text(
+                            text       = stringResource(R.string.new_ascent_date_no_exif),
+                            fontSize   = 12.sp,
+                            lineHeight = 16.sp,
+                            color      = Color(0xFFB45309),
+                            modifier   = Modifier.padding(start = 2.dp, top = 2.dp),
+                        )
+                    }
                 }
             }
 

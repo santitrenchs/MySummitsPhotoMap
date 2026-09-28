@@ -540,4 +540,5 @@
     <string name="settings_delete_confirm_button">Eliminar el meu compte</string>
     <string name="settings_delete_confirm_word">ELIMINAR</string>
     <string name="settings_delete_failed">No s\'ha pogut eliminar el compte. Torna-ho a provar.</string>
+    <string name="new_ascent_date_no_exif">La foto no porta data. Si és una ascensió antiga, canvia-la aquí.</string>
 </resources>

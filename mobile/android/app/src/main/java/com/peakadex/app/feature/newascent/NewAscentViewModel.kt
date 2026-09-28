@@ -52,6 +52,11 @@ data class NewAscentUiState(
     val selectedPeak: Peak? = null,
     val isPeakDropdownOpen: Boolean = false,
     val date: String = LocalDate.now().toString(),  // YYYY-MM-DD
+    // True when the date came from the photo's EXIF. When it did not, the date is
+    // just "today" — how old climbs get logged as today — so the form says so
+    // until the user touches the field ([dateTouched]).
+    val photoHasDate: Boolean = false,
+    val dateTouched: Boolean = false,
     val route: String = "",
     val notes: String = "",
     val personQuery: String = "",
@@ -152,10 +157,12 @@ class NewAscentViewModel : ViewModel() {
                         return@launch
                     }
 
-                // Read EXIF rotation using low-level API (android.media.ExifInterface)
+                // Read EXIF rotation + capture date using low-level API (android.media.ExifInterface)
+                var exifDate: LocalDate? = null
                 val exifDegrees = runCatching {
                     context.contentResolver.openInputStream(uri)!!.use { stream ->
                         val exif = android.media.ExifInterface(stream)
+                        exifDate = exifCaptureDate(exif)
                         val orientation = exif.getAttributeInt(
                             android.media.ExifInterface.TAG_ORIENTATION,
                             android.media.ExifInterface.ORIENTATION_NORMAL,
@@ -183,7 +190,16 @@ class NewAscentViewModel : ViewModel() {
                 } else oriented
 
                 withContext(Dispatchers.Main) {
-                    _state.update { it.copy(originalBitmap = display, step = NewAscentStep.CROP, error = null) }
+                    _state.update {
+                        // Create mode only: in edit mode a replacement photo must never
+                        // change the ascent's date (same rule as the web edit flow).
+                        if (it.isEditMode) it.copy(originalBitmap = display, step = NewAscentStep.CROP, error = null)
+                        else it.copy(
+                            originalBitmap = display, step = NewAscentStep.CROP, error = null,
+                            date = exifDate?.toString() ?: it.date,
+                            photoHasDate = exifDate != null,
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -250,7 +266,7 @@ class NewAscentViewModel : ViewModel() {
 
     fun onPeakDropdownDismiss() = _state.update { it.copy(isPeakDropdownOpen = false) }
 
-    fun onDateChange(date: String)     = _state.update { it.copy(date = date) }
+    fun onDateChange(date: String)     = _state.update { it.copy(date = date, dateTouched = true) }
     fun onRouteChange(route: String)   = _state.update { it.copy(route = route) }
     fun onNotesChange(notes: String)   = _state.update { it.copy(notes = notes) }
 
@@ -445,4 +461,19 @@ class NewAscentViewModel : ViewModel() {
         } else bitmap
         return ByteArrayOutputStream().also { scaled.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
     }
+}
+
+/**
+ * The day the photo was taken, from EXIF (`DateTimeOriginal`, then `DateTime`),
+ * formatted "yyyy:MM:dd HH:mm:ss". Null when missing, unparseable, or in the
+ * future — a wrong camera clock must not produce an impossible ascent date.
+ */
+private fun exifCaptureDate(exif: android.media.ExifInterface): LocalDate? {
+    val raw = exif.getAttribute(android.media.ExifInterface.TAG_DATETIME_ORIGINAL)
+        ?: exif.getAttribute(android.media.ExifInterface.TAG_DATETIME)
+        ?: return null
+    val date = runCatching {
+        LocalDate.parse(raw.trim().take(10), java.time.format.DateTimeFormatter.ofPattern("yyyy:MM:dd"))
+    }.getOrNull() ?: return null
+    return date.takeUnless { it.isAfter(LocalDate.now()) }
 }

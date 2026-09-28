@@ -129,6 +129,7 @@ export type Dict = {
   settings_unitsNote: string;
   settings_country: string; country_placeholder: string; country_notSpecified: string;
   country_search: string; settings_countryNote: string;
+  newAscent_dateNoExif: string;
   settings_title: string; settings_subtitle: string; settings_language: string;
   settings_account: string; settings_username: string;
   settings_name: string; settings_email: string; settings_emailNote: string;

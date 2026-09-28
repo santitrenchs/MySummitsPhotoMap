@@ -539,4 +539,5 @@
     <string name="settings_delete_confirm_button">Delete my account</string>
     <string name="settings_delete_confirm_word">DELETE</string>
     <string name="settings_delete_failed">Couldn\'t delete the account. Try again.</string>
+    <string name="new_ascent_date_no_exif">This photo has no date. If it\'s an older climb, change it here.</string>
 </resources>

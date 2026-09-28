@@ -540,4 +540,5 @@
     <string name="settings_delete_confirm_button">Supprimer mon compte</string>
     <string name="settings_delete_confirm_word">SUPPRIMER</string>
     <string name="settings_delete_failed">Impossible de supprimer le compte. Réessaie.</string>
+    <string name="new_ascent_date_no_exif">La photo n\'a pas de date. S\'il s\'agit d\'une ascension ancienne, modifie-la ici.</string>
 </resources>

@@ -136,6 +136,7 @@ export const ca: Dict = {
   settings_unitsNote: "Com es mostren altituds i distàncies. No canvia les teves rareses ni el teu nivell.",
   settings_country: "País", country_placeholder: "País (opcional)", country_notSpecified: "Sense especificar",
   country_search: "Cerca un país…", settings_countryNote: "Detectat per l'idioma del teu dispositiu. No es mostra a altres usuaris.",
+  newAscent_dateNoExif: "La foto no porta data. Si és una ascensió antiga, canvia-la aquí.",
   settings_language: "Idioma", settings_account: "Compte",
   settings_username: "Nom d'usuari", settings_name: "Nom",
   settings_email: "Correu electrònic", settings_emailNote: "Contacta amb suport per canviar el teu correu.",

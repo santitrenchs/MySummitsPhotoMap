@@ -136,6 +136,7 @@ export const es: Dict = {
   settings_unitsNote: "Cómo se muestran altitudes y distancias. No cambia tus rarezas ni tu nivel.",
   settings_country: "País", country_placeholder: "País (opcional)", country_notSpecified: "Sin especificar",
   country_search: "Buscar país…", settings_countryNote: "Detectado por el idioma de tu dispositivo. No se muestra a otros usuarios.",
+  newAscent_dateNoExif: "La foto no trae fecha. Si es una ascensión antigua, cámbiala aquí.",
   settings_language: "Idioma", settings_account: "Cuenta",
   settings_username: "Nombre de usuario", settings_name: "Nombre",
   settings_email: "Correo electrónico", settings_emailNote: "Contacta con soporte para cambiar tu correo.",

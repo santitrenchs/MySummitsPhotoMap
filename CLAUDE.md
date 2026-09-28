@@ -863,7 +863,7 @@ EDIT mode:    form  (starts here directly) → crop → form → (submit) → ro
 
 - **`pick`**: PickStep. User selects ≥1 image. Validates size ≤ 10 MB. Triggers EXIF extraction for date + GPS peak suggestion (skipped if `defaultPeakId` is present). **Create mode only.** Edit mode must never render `PickStep`; it starts and returns to `form`.
 - **`crop`**: ImageCropModal for each queued file. Ratios: 1:1 or 4:5. Supports 90° rotation. Produces `{ blob, cropMeta, originalFile }` per photo. In edit mode, `Re-encuadrar` fetches the original via `GET /api/photos/{id}/original`; `Cambiar foto` opens a file picker directly and marks the pending photo as a true replacement.
-- **`form`**: Fields: peak (required), date (required, default today or EXIF date), route (optional, max 500), notes (optional, max 2000), persons (optional), wikiloc (edit mode only, optional).
+- **`form`**: Fields: peak (required), date (required, default today or EXIF date — when the photo carries no EXIF date, an amber hint `newAscent_dateNoExif` / Android `new_ascent_date_no_exif` sits under the field until the user changes it; create mode only. Android reads `DateTimeOriginal` too since 2026-09-28, ignoring future dates, and never in edit mode), route (optional, max 500), notes (optional, max 2000), persons (optional), wikiloc (edit mode only, optional).
 
 ### Web edit photo UX contract (2026-06-18)
 

@@ -73,6 +73,9 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [suggestedDate, setSuggestedDate] = useState<string | null>(null);
+  // The date field defaults to today when the photo carries no date of its own.
+  // That is how old climbs end up logged as today, so we say so until it's touched.
+  const [dateTouched, setDateTouched] = useState(false);
   const [suggestedPeakId, setSuggestedPeakId] = useState<string | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<{
     blob: Blob;
@@ -735,8 +738,14 @@ export function NewAscentModalContent({ onClose, onHeaderChange, defaultPeakId, 
               <input
                 id="modal-date" name="date" type="date" required
                 defaultValue={isEditMode ? editAscent!.date : (suggestedDate ?? new Date().toISOString().split("T")[0])}
+                onChange={() => setDateTouched(true)}
                 style={{ ...inputStyle, WebkitAppearance: "none", appearance: "none" }}
               />
+              {!isEditMode && !suggestedDate && !dateTouched && (
+                <p style={{ fontSize: 12, color: "#B45309", margin: "6px 2px 0", lineHeight: 1.4 }}>
+                  {t.newAscent_dateNoExif}
+                </p>
+              )}
             </div>
 
             {/* Route */}
